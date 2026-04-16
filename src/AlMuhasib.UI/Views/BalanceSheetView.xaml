@@ -1,0 +1,323 @@
+﻿<UserControl x:Class="AlMuhasib.UI.Views.BalanceSheetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="LineLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="LineValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="SubLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#757575"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="24,0,0,0"/>
+        </Style>
+        <Style x:Key="SubValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#757575"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="TotalLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="TotalValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- TOP BAR: Date + Buttons -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="12" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <DatePicker Grid.Column="0" Width="180"
+                            md:HintAssist.Hint="تاريخ الميزانية"
+                            Style="{StaticResource FilledDatePicker}"
+                            SelectedDate="{Binding SelectedDate}"/>
+
+                <Button Grid.Column="2"
+                        Command="{Binding LoadBalanceSheetCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="تحديث"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="3"
+                        Command="{Binding PrintBalanceSheetCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Printer" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="طباعة"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </md:Card>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- MAIN: Two Columns -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- COLUMN 1 (RIGHT): حقوق الملكية والالتزامات -->
+            <!-- ═══════════════════════════════════════════ -->
+            <StackPanel Grid.Column="0">
+                <!-- Equity Card -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24,20" md:ElevationAssist.Elevation="Dp3" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                   Text="حقوق الملكية"
+                                   Style="{StaticResource SectionTitle}"
+                                   Foreground="#1565C0"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="رأس المال" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Capital, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#1976D2"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="+ تسويات" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Adjustments, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="+ الأرباح المتراكمة" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AccumulatedProfits, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
+
+                        <Separator Grid.Row="4" Grid.ColumnSpan="2" Margin="0,16,0,12"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="الإجمالي" Style="{StaticResource TotalLabel}"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding EquityTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#1565C0"/>
+                    </Grid>
+                </md:Card>
+
+                <!-- Liabilities Card -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24,20" md:ElevationAssist.Elevation="Dp3" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                   Text="الالتزامات"
+                                   Style="{StaticResource SectionTitle}"
+                                   Foreground="#E65100"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="المطلوبات للموردين" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SupplierPayables, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#EF6C00"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ودائع المستثمرين" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InvestorDeposits, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
+
+                        <Separator Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,12"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="الإجمالي" Style="{StaticResource TotalLabel}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiabilitiesTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#E65100"/>
+                    </Grid>
+                </md:Card>
+
+                <!-- Grand Total: Equity + Liabilities -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24,12" md:ElevationAssist.Elevation="Dp3">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="إجمالي الملكية والالتزامات" Style="{StaticResource TotalLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding EquityAndLiabilitiesTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#4A148C"/>
+                    </Grid>
+                </md:Card>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- COLUMN 2 (LEFT): الموجودات -->
+            <!-- ═══════════════════════════════════════════ -->
+            <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="2" Padding="24,20" md:ElevationAssist.Elevation="Dp3" VerticalAlignment="Top">
+                <StackPanel>
+                    <!-- Section Title -->
+                    <TextBlock Text="الموجودات"
+                               Style="{StaticResource SectionTitle}"
+                               Foreground="#2E7D32"/>
+
+                    <!-- Cash Boxes -->
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="الصناديق (النقدية)" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding CashBoxesTotal, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#388E3C"/>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding CashBoxLines}" Margin="0,0,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Style="{StaticResource SubLabel}">
+                                        <Run Text="- "/>
+                                        <Run Text="{Binding Name, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Balance, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Banks -->
+                    <Grid Margin="0,4,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="البنوك" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding BanksTotal, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#388E3C"/>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding BankLines}" Margin="0,0,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Style="{StaticResource SubLabel}">
+                                        <Run Text="- "/>
+                                        <Run Text="{Binding Name, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding Balance, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Customer Debts -->
+                    <Grid Margin="0,4,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="المدينون (ذمم العملاء)" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding CustomerDebts, StringFormat=N0}" Style="{StaticResource LineValue}"/>
+                    </Grid>
+
+                    <!-- Inventory Value -->
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="قيمة بضاعة المخازن" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding InventoryValue, StringFormat=N0}" Style="{StaticResource LineValue}"/>
+                    </Grid>
+
+                    <!-- Installment Receivables -->
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="الأقساط المستحقة (أصول)" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding InstallmentReceivables, StringFormat=N0}" Style="{StaticResource LineValue}"/>
+                    </Grid>
+
+                    <!-- Separator + Total -->
+                    <Separator Margin="0,16,0,12"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="الإجمالي" Style="{StaticResource TotalLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding AssetsTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#2E7D32"/>
+                    </Grid>
+                </StackPanel>
+            </md:Card>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- BOTTOM: Balance Status -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="16,12" md:ElevationAssist.Elevation="Dp3" Margin="0,20,0,0"
+                 HorizontalAlignment="Stretch">
+            <TextBlock Text="{Binding BalanceStatusText}"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="#D32F2F"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsBalanced}" Value="True">
+                                <Setter Property="Foreground" Value="#2E7D32"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </md:Card>
+    </Grid>
+</UserControl>

@@ -1,0 +1,1390 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CUSTOM COLOR OVERRIDES
+         Override MaterialDesign's primary/secondary palette
+    ══════════════════════════════════════════════════════════════ -->
+
+    <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PrimaryHueMidForegroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PrimaryHueDarkBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PrimaryHueDarkForegroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PrimaryHueLightBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="PrimaryHueLightForegroundBrush" Color="#212121"/>
+    <SolidColorBrush x:Key="SecondaryHueMidBrush" Color="#FF8F00"/>
+    <SolidColorBrush x:Key="SecondaryHueMidForegroundBrush" Color="#FFFFFF"/>
+
+    <!-- Additional custom brushes -->
+    <SolidColorBrush x:Key="SuccessBrush" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#F9A825"/>
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#F5F7FA"/>
+    <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#0D1B2A"/>
+    <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#1B2A3D"/>
+    <SolidColorBrush x:Key="SubtleBorderBrush" Color="#E8EDF2"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FONT RESOURCES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <FontFamily x:Key="AppFont">Segoe UI</FontFamily>
+    <sys:Double x:Key="TinyFontSize">11</sys:Double>
+    <sys:Double x:Key="SmallFontSize">12</sys:Double>
+    <sys:Double x:Key="NormalFontSize">14</sys:Double>
+    <sys:Double x:Key="MediumFontSize">16</sys:Double>
+    <sys:Double x:Key="LargeFontSize">20</sys:Double>
+    <sys:Double x:Key="HugeFontSize">28</sys:Double>
+    <sys:Double x:Key="GiantFontSize">36</sys:Double>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ANIMATIONS (Storyboard resources)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- 1. FadeIn: Opacity 0→1, 0.4s -->
+    <Storyboard x:Key="FadeInAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.4">
+            <DoubleAnimation.EasingFunction>
+                <QuadraticEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 2. SlideInFromRight: TranslateX -30→0 + FadeIn, 0.4s -->
+    <Storyboard x:Key="SlideInFromRightAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                         From="-30" To="0" Duration="0:0:0.4">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.4">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 3. SlideInFromBottom: TranslateY 20→0 + FadeIn, 0.35s -->
+    <Storyboard x:Key="SlideInFromBottomAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="20" To="0" Duration="0:0:0.35">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.35">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 4. ScaleIn: Scale 0.95→1.0 + FadeIn, 0.3s -->
+    <Storyboard x:Key="ScaleInAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         From="0.95" To="1.0" Duration="0:0:0.3">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         From="0.95" To="1.0" Duration="0:0:0.3">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.3">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 5. CardHoverEnter: Scale to 1.015, 0.2s -->
+    <Storyboard x:Key="CardHoverEnterAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="1.015" Duration="0:0:0.2">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="1.015" Duration="0:0:0.2">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 6. CardHoverLeave: Scale back to 1.0, 0.2s -->
+    <Storyboard x:Key="CardHoverLeaveAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="1.0" Duration="0:0:0.2">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="1.0" Duration="0:0:0.2">
+            <DoubleAnimation.EasingFunction>
+                <CubicEase EasingMode="EaseOut"/>
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- 7. Pulse: Opacity 1→0.4→1 repeating, 1.5s -->
+    <Storyboard x:Key="PulseAnimation" RepeatBehavior="Forever">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1"/>
+            <EasingDoubleKeyFrame KeyTime="0:0:0.75" Value="0.4">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+            <EasingDoubleKeyFrame KeyTime="0:0:1.5" Value="1">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+        </DoubleAnimationUsingKeyFrames>
+    </Storyboard>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PAGE BASE STYLE
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="PageStyle" TargetType="UserControl">
+        <Setter Property="FlowDirection" Value="RightToLeft"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4">
+                            <DoubleAnimation.EasingFunction>
+                                <QuadraticEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                         From="-30" To="0" Duration="0:0:0.4">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         BUTTON STYLES (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Primary raised button -->
+    <Style x:Key="PrimaryButton" TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="Background" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontSize" Value="{StaticResource MediumFontSize}"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                <Setter Property="Background" Value="{StaticResource PrimaryHueDarkBrush}"/>
+            </Trigger>
+            <EventTrigger RoutedEvent="ButtonBase.Click">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         From="0.96" To="1" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         From="0.96" To="1" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Accent button -->
+    <Style x:Key="AccentButton" TargetType="Button"
+           BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Background" Value="{StaticResource SecondaryHueMidBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                <Setter Property="Background" Value="#E68200"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Success button -->
+    <Style x:Key="SuccessButton" TargetType="Button"
+           BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                <Setter Property="Background" Value="#1B5E20"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Danger button -->
+    <Style x:Key="DangerButton" TargetType="Button"
+           BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                <Setter Property="Background" Value="#B71C1C"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Outlined button -->
+    <Style x:Key="OutlinedButton" TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Setter Property="BorderBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimaryHueLightBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Icon button -->
+    <Style x:Key="IconButton" TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignIconButton}">
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Flat button -->
+    <Style x:Key="FlatButton" TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TEXTBOX STYLES (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Filled TextBox -->
+    <Style x:Key="FilledTextBox" TargetType="TextBox"
+           BasedOn="{StaticResource MaterialDesignFilledTextBox}">
+        <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="materialDesign:HintAssist.FloatingOffset" Value="0,-16"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8,8,0,0"/>
+    </Style>
+
+    <!-- Outlined TextBox -->
+    <Style x:Key="OutlinedTextBox" TargetType="TextBox"
+           BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+        <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8"/>
+    </Style>
+
+    <!-- Search TextBox -->
+    <Style x:Key="SearchBox" TargetType="TextBox"
+           BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+        <Setter Property="materialDesign:TextFieldAssist.HasLeadingIcon" Value="True"/>
+        <Setter Property="materialDesign:TextFieldAssist.LeadingIcon" Value="Magnify"/>
+        <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="20"/>
+        <Setter Property="materialDesign:HintAssist.Hint" Value="بحث..."/>
+        <Setter Property="materialDesign:HintAssist.IsFloating" Value="False"/>
+        <Setter Property="MinWidth" Value="300"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         COMBOBOX STYLES (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Filled ComboBox -->
+    <Style x:Key="FilledComboBox" TargetType="ComboBox"
+           BasedOn="{StaticResource MaterialDesignFilledComboBox}">
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8,8,0,0"/>
+        <Setter Property="materialDesign:ComboBoxAssist.ShowSelectedItem" Value="True"/>
+    </Style>
+
+    <!-- Outlined ComboBox -->
+    <Style x:Key="OutlinedComboBox" TargetType="ComboBox"
+           BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8"/>
+        <Setter Property="materialDesign:ComboBoxAssist.ShowSelectedItem" Value="True"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         DATEPICKER STYLE (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="FilledDatePicker" TargetType="DatePicker"
+           BasedOn="{StaticResource MaterialDesignFilledDatePicker}">
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8,8,0,0"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CARD STYLES (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Elevated Card with hover animation -->
+    <Style x:Key="ElevatedCard" TargetType="materialDesign:Card"
+           BasedOn="{StaticResource MaterialDesignElevatedCard}">
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+        <Setter Property="UniformCornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="20"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.015" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.015" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp6"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Stat Card: icon + label + value -->
+    <Style x:Key="StatCard" TargetType="materialDesign:Card"
+           BasedOn="{StaticResource ElevatedCard}">
+        <Setter Property="MinWidth" Value="220"/>
+        <Setter Property="Padding" Value="20"/>
+    </Style>
+
+    <!-- StatCard DataTemplate for ContentControl -->
+    <DataTemplate x:Key="StatCardTemplate">
+        <StackPanel>
+            <Border Width="44" Height="44" CornerRadius="22"
+                    Background="{StaticResource PrimaryHueLightBrush}"
+                    HorizontalAlignment="Right">
+                <materialDesign:PackIcon Kind="{Binding IconKind}"
+                                         Width="24" Height="24"
+                                         Foreground="{StaticResource PrimaryHueMidBrush}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"/>
+            </Border>
+            <TextBlock Text="{Binding Label}" Margin="0,12,0,4"
+                       FontSize="{StaticResource SmallFontSize}"
+                       Foreground="{StaticResource TextSecondaryBrush}"/>
+            <TextBlock Text="{Binding Value}"
+                       FontSize="{StaticResource HugeFontSize}"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource PrimaryHueMidBrush}"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Form Card (outlined) -->
+    <Style x:Key="FormCard" TargetType="materialDesign:Card"
+           BasedOn="{StaticResource MaterialDesignOutlinedCard}">
+        <Setter Property="UniformCornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="24"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         DATAGRID STYLES (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Column Header style -->
+    <Style x:Key="ModernDataGridColumnHeader" TargetType="DataGridColumnHeader"
+           BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}">
+        <Setter Property="Background" Value="#F8FAFC"/>
+        <Setter Property="Foreground" Value="#5F6B7A"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="FontSize" Value="{StaticResource SmallFontSize}"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    </Style>
+
+    <!-- Row style -->
+    <Style x:Key="ModernDataGridRow" TargetType="DataGridRow"
+           BasedOn="{StaticResource MaterialDesignDataGridRow}">
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimaryHueLightBrush}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#DCEEFB"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Cell style -->
+    <Style x:Key="ModernDataGridCell" TargetType="DataGridCell"
+           BasedOn="{StaticResource MaterialDesignDataGridCell}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- DataGrid -->
+    <Style x:Key="ModernDataGrid" TargetType="DataGrid"
+           BasedOn="{StaticResource MaterialDesignDataGrid}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="RowBackground" Value="White"/>
+        <Setter Property="AlternatingRowBackground" Value="#FAFBFC"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="#F0F2F5"/>
+        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="12,8"/>
+        <Setter Property="materialDesign:DataGridAssist.ColumnHeaderPadding" Value="12,10"/>
+        <Setter Property="HeadersVisibility" Value="Column"/>
+        <Setter Property="CanUserSortColumns" Value="True"/>
+        <Setter Property="CanUserResizeColumns" Value="True"/>
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="SelectionUnit" Value="FullRow"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="ColumnHeaderStyle" Value="{StaticResource ModernDataGridColumnHeader}"/>
+        <Setter Property="RowStyle" Value="{StaticResource ModernDataGridRow}"/>
+        <Setter Property="CellStyle" Value="{StaticResource ModernDataGridCell}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         DIALOG STYLES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="ModernDialogHost" TargetType="materialDesign:DialogHost"
+           BasedOn="{StaticResource MaterialDesignEmbeddedDialogHost}">
+        <Setter Property="DialogContentUniformCornerRadius" Value="16"/>
+        <Setter Property="DialogBackground" Value="White"/>
+        <Setter Property="OverlayBackground" Value="#80000000"/>
+        <Setter Property="CloseOnClickAway" Value="True"/>
+    </Style>
+
+    <!-- Dialog content wrapper -->
+    <Style x:Key="DialogContentWrapper" TargetType="Border">
+        <Setter Property="MinWidth" Value="400"/>
+        <Setter Property="MaxWidth" Value="600"/>
+        <Setter Property="Padding" Value="24"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         From="0.95" To="1.0" Duration="0:0:0.3">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         From="0.95" To="1.0" Duration="0:0:0.3">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.3">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SIDEBAR / NAVIGATION STYLES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Sidebar ListBox -->
+    <Style x:Key="SidebarListBox" TargetType="ListBox"
+           BasedOn="{StaticResource MaterialDesignListBox}">
+        <Setter Property="Background" Value="{StaticResource SidebarBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <!-- Sidebar navigation item -->
+    <Style x:Key="SidebarItem" TargetType="ListBoxItem"
+           BasedOn="{StaticResource MaterialDesignListBoxItem}">
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="Margin" Value="8,2"/>
+        <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="Foreground" Value="#90A4AE"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="materialDesign:ListBoxItemAssist.CornerRadius" Value="8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="ItemBorder"
+                            Background="Transparent"
+                            CornerRadius="8"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Height="{TemplateBinding Height}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- Active indicator (left border bar in RTL = right side visually) -->
+                            <Border x:Name="ActiveIndicator"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Stretch"
+                                    Width="3"
+                                    CornerRadius="0,2,2,0"
+                                    Background="{StaticResource SecondaryHueMidBrush}"
+                                    Visibility="Collapsed"
+                                    Margin="-12,6,0,6"/>
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="Stretch"
+                                              Margin="4,0,0,0"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background"
+                                    Value="{StaticResource SidebarHoverBrush}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background"
+                                    Value="{StaticResource SidebarActiveBrush}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="DemiBold"/>
+                            <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Sidebar item content: Icon + Text layout -->
+    <DataTemplate x:Key="SidebarItemTemplate">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <materialDesign:PackIcon Kind="{Binding Icon}" Width="22" Height="22"
+                                     VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         STATUS BADGES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="BadgeBase" TargetType="Border">
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="PaidBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
+        <Setter Property="Background" Value="#E8F5E9"/>
+    </Style>
+
+    <Style x:Key="PartialBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
+        <Setter Property="Background" Value="#FFF8E1"/>
+    </Style>
+
+    <Style x:Key="OverdueBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
+        <Setter Property="Background" Value="#FFEBEE"/>
+    </Style>
+
+    <Style x:Key="PendingBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
+        <Setter Property="Background" Value="#F5F5F5"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FILTER BAR
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="FilterBar" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB CONTROL (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="ModernTabs" TargetType="TabControl"
+           BasedOn="{StaticResource MaterialDesignTabControl}">
+        <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="PrimaryLight"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+    </Style>
+
+    <Style x:Key="ModernTabItem" TargetType="TabItem"
+           BasedOn="{StaticResource MaterialDesignTabItem}">
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SNACKBAR STYLES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="SuccessSnackbar" TargetType="materialDesign:Snackbar"
+           BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+        <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="ErrorSnackbar" TargetType="materialDesign:Snackbar"
+           BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+        <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="WarningSnackbar" TargetType="materialDesign:Snackbar"
+           BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+        <Setter Property="Background" Value="{StaticResource WarningBrush}"/>
+        <Setter Property="Foreground" Value="#212121"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PROGRESS / LOADING OVERLAY
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="PageLoading" TargetType="Border">
+        <Setter Property="Background" Value="#CCFFFFFF"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.3">
+                            <DoubleAnimation.EasingFunction>
+                                <QuadraticEase EasingMode="EaseOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Loading overlay DataTemplate -->
+    <DataTemplate x:Key="LoadingOverlayTemplate">
+        <Border Style="{StaticResource PageLoading}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True"
+                             Value="0"
+                             Width="48" Height="48"/>
+                <TextBlock Text="جاري التحميل..."
+                           Margin="0,16,0,0"
+                           FontSize="{StaticResource NormalFontSize}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SCROLLBAR / SCROLLVIEWER
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Thin scrollbar thumb -->
+    <Style x:Key="ThinScrollBarThumb" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="ThumbBorder"
+                            CornerRadius="3"
+                            Background="#C0C0C0"
+                            Width="6"
+                            Opacity="0.6"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="#909090"/>
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="1"/>
+                            <Setter TargetName="ThumbBorder" Property="Width" Value="8"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="#707070"/>
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="1"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Vertical ScrollBar -->
+    <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Width" Value="10"/>
+        <Setter Property="MinWidth" Value="10"/>
+        <Setter Property="Opacity" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid>
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ThinScrollBarThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="Height" Value="10"/>
+                <Setter Property="MinHeight" Value="10"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ScrollViewer that shows thin scrollbars on hover -->
+    <Style x:Key="ThinScrollViewer" TargetType="ScrollViewer"
+           BasedOn="{StaticResource {x:Type ScrollViewer}}">
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Style.Resources>
+            <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
+        </Style.Resources>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(ScrollViewer.VerticalScrollBarVisibility)"
+                                             Duration="0:0:0"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TOOLTIP (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="ModernToolTip" TargetType="ToolTip"
+           BasedOn="{StaticResource MaterialDesignToolTip}">
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+        <Setter Property="Background" Value="#333333"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontSize" Value="{StaticResource SmallFontSize}"/>
+    </Style>
+
+    <!-- Apply globally -->
+    <Style TargetType="ToolTip" BasedOn="{StaticResource ModernToolTip}"/>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         EMPTY STATE
+    ══════════════════════════════════════════════════════════════ -->
+
+    <DataTemplate x:Key="EmptyState">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="0,48">
+            <materialDesign:PackIcon Kind="DatabaseOff"
+                                     Width="64" Height="64"
+                                     Foreground="#E0E0E0"
+                                     HorizontalAlignment="Center"/>
+            <TextBlock Text="لا توجد بيانات"
+                       FontSize="{StaticResource MediumFontSize}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="EmptyStateWithAction">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="0,48">
+            <materialDesign:PackIcon Kind="DatabaseOff"
+                                     Width="64" Height="64"
+                                     Foreground="#E0E0E0"
+                                     HorizontalAlignment="Center"/>
+            <TextBlock Text="لا توجد بيانات"
+                       FontSize="{StaticResource MediumFontSize}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0"/>
+            <Button Content="إضافة جديد"
+                    Style="{StaticResource OutlinedButton}"
+                    HorizontalAlignment="Center"
+                    Margin="0,16,0,0"
+                    Command="{Binding AddCommand}"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SECTION HEADER (reusable)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="SectionHeader" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource LargeFontSize}"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryHueDarkBrush}"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+    </Style>
+
+    <Style x:Key="SectionSubHeader" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource MediumFontSize}"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="Foreground" Value="#424242"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SEPARATOR STYLE
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="SubtleSeparator" TargetType="Separator">
+        <Setter Property="Background" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="Margin" Value="0,12"/>
+        <Setter Property="Height" Value="1"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PASSWORDBOX STYLE (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="FilledPasswordBox" TargetType="PasswordBox"
+           BasedOn="{StaticResource MaterialDesignFilledPasswordBox}">
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8,8,0,0"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="Padding" Value="12,10"/>
+    </Style>
+
+    <Style x:Key="OutlinedPasswordBox" TargetType="PasswordBox"
+           BasedOn="{StaticResource MaterialDesignOutlinedPasswordBox}">
+        <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.85"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CHECKBOX / TOGGLEBUTTON (BasedOn MaterialDesign)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="PrimaryCheckBox" TargetType="CheckBox"
+           BasedOn="{StaticResource MaterialDesignCheckBox}">
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+    </Style>
+
+    <Style x:Key="PrimaryToggle" TargetType="ToggleButton"
+           BasedOn="{StaticResource MaterialDesignSwitchToggleButton}">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TABLE ACTION BUTTON STYLES  (pill-shaped icon+label chips)
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Base for all table-row action buttons: rounded pill with icon -->
+    <Style x:Key="TableActionBase" TargetType="Button">
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Margin" Value="3,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="BorderThickness" Value="1.4"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="14"/>
+        <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="False"/>
+        <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp0"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="14"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.06" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.06" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="ButtonBase.Click">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         From="0.92" To="1" Duration="0:0:0.12">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         From="0.92" To="1" Duration="0:0:0.12">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Edit action: blue outlined pill -->
+    <Style x:Key="TableEditButton" TargetType="Button" BasedOn="{StaticResource TableActionBase}">
+        <Setter Property="Background" Value="#EBF4FF"/>
+        <Setter Property="BorderBrush" Value="#90CAF9"/>
+        <Setter Property="Foreground" Value="#1565C0"/>
+        <Setter Property="ToolTip" Value="تعديل"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#D4E8FC"/>
+                <Setter Property="BorderBrush" Value="#1565C0"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Delete action: red outlined pill -->
+    <Style x:Key="TableDeleteButton" TargetType="Button" BasedOn="{StaticResource TableActionBase}">
+        <Setter Property="Background" Value="#FFF0F0"/>
+        <Setter Property="BorderBrush" Value="#EF9A9A"/>
+        <Setter Property="Foreground" Value="#C62828"/>
+        <Setter Property="ToolTip" Value="حذف"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#FDDEDE"/>
+                <Setter Property="BorderBrush" Value="#C62828"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- View / Details action: teal outlined pill -->
+    <Style x:Key="TableViewButton" TargetType="Button" BasedOn="{StaticResource TableActionBase}">
+        <Setter Property="Background" Value="#E6F7F4"/>
+        <Setter Property="BorderBrush" Value="#80CBC4"/>
+        <Setter Property="Foreground" Value="#00695C"/>
+        <Setter Property="ToolTip" Value="عرض"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#CCF0EA"/>
+                <Setter Property="BorderBrush" Value="#00695C"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Generic / secondary action: grey outlined pill -->
+    <Style x:Key="TableSecondaryButton" TargetType="Button" BasedOn="{StaticResource TableActionBase}">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="BorderBrush" Value="#BDBDBD"/>
+        <Setter Property="Foreground" Value="#616161"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#EEEEEE"/>
+                <Setter Property="BorderBrush" Value="#757575"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ENHANCED GRADIENT BRUSHES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1565C0" Offset="0"/>
+        <GradientStop Color="#1E88E5" Offset="0.5"/>
+        <GradientStop Color="#42A5F5" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF8F00" Offset="0"/>
+        <GradientStop Color="#FFA726" Offset="0.5"/>
+        <GradientStop Color="#FFB74D" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="SuccessGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#2E7D32" Offset="0"/>
+        <GradientStop Color="#43A047" Offset="0.5"/>
+        <GradientStop Color="#66BB6A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="DangerGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#C62828" Offset="0"/>
+        <GradientStop Color="#E53935" Offset="0.5"/>
+        <GradientStop Color="#EF5350" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="SidebarGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0A1628" Offset="0"/>
+        <GradientStop Color="#0D1B2A" Offset="0.3"/>
+        <GradientStop Color="#122640" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         GLASSMORPHISM CARD
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="GlassCard" TargetType="Border">
+        <Setter Property="Background" Value="#EEFFFFFF"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="24"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.08" Color="#000000"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         GRADIENT ICON CIRCLE
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="GradientIconCircle" TargetType="Border">
+        <Setter Property="Width" Value="56"/>
+        <Setter Property="Height" Value="56"/>
+        <Setter Property="CornerRadius" Value="28"/>
+        <Setter Property="Background" Value="{StaticResource PrimaryGradientBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.2" Color="#1565C0"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         BEAUTIFUL EXIT DIALOG STYLES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="ExitDialogButton" TargetType="Button">
+        <Setter Property="Height" Value="52"/>
+        <Setter Property="MinWidth" Value="160"/>
+        <Setter Property="Padding" Value="24,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="12"
+                            Padding="{TemplateBinding Padding}"
+                            Effect="{TemplateBinding Effect}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.04" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.04" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.15">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         BACKUP VIEW STYLES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="BackupOptionCard" TargetType="Border">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="20"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#000000"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.12" Color="#1565C0"/>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.02" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.02" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.2">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ENHANCED SIDEBAR GRADIENT
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="GradientSidebar" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SidebarGradientBrush}"/>
+    </Style>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         MODERN TOP BAR WITH SUBTLE SHADOW
+    ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="ModernTopBar" TargetType="Border">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="Height" Value="64"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="1" Opacity="0.06" Color="#000000" Direction="270"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

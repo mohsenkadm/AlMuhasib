@@ -1,0 +1,200 @@
+﻿<UserControl x:Class="AlMuhasib.UI.Views.CustomersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══ TOP: Action Bar ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="إدارة العملاء" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddDialogCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="AccountPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إضافة عميل"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ExportToExcelCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanExport}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تصدير Excel"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+
+                    <TextBox md:HintAssist.Hint="بحث..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="220" Margin="16,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+
+        <!-- ═══ BOTTOM: Data Grid ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                    <Grid>
+                        <TextBlock Text="قائمة العملاء" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="White" Opacity="0.8">
+                            <Run Text="الإجمالي: "/><Run Text="{Binding TotalCount, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Customers}"
+                          SelectedItem="{Binding SelectedCustomer}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"/>
+                        <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="160"/>
+                        <DataGridTextColumn Header="رقم الملف" Binding="{Binding FileNumber}" Width="100"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="160"/>
+                        <DataGridTextColumn Header="تاريخ الإنشاء" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd}" Width="110"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="180">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2">
+                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableEditButton}" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="PencilOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                <TextBlock Text="تعديل" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableDeleteButton}" IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="DeleteOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                <TextBlock Text="حذف" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Pagination -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8">
+                    <Button Content="⏮" Command="{Binding FirstPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
+                    <Button Content="◀" Command="{Binding PreviousPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
+                    <TextBlock VerticalAlignment="Center" Margin="8,0">
+                        <Run Text="{Binding CurrentPage, Mode=OneWay}"/><Run Text=" / "/><Run Text="{Binding TotalPages, Mode=OneWay}"/>
+                    </TextBlock>
+                    <Button Content="▶" Command="{Binding NextPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
+                    <Button Content="⏭" Command="{Binding LastPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+
+        <!-- ═══ Add/Edit Dialog ═══ -->
+        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="420" MaxWidth="500">
+                    <StackPanel>
+                        <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+
+                        <TextBox md:HintAssist.Hint="اسم العميل *"
+                                 Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                        <TextBox md:HintAssist.Hint="رقم الهاتف"
+                                 Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                        <TextBox md:HintAssist.Hint="العنوان"
+                                 Text="{Binding EditAddress, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                        <TextBox md:HintAssist.Hint="رقم الملف"
+                                 Text="{Binding EditFileNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                        <TextBox md:HintAssist.Hint="ملاحظات"
+                                 Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"/>
+
+                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                            <Button Content="حفظ" Command="{Binding SaveCustomerCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}"
+                                    Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- ═══ Delete Confirmation Dialog ═══ -->
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="360">
+                    <StackPanel>
+                        <TextBlock Text="تأكيد الحذف" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16">
+                            <Run Text="هل أنت متأكد من حذف العميل "/>
+                            <Run Text="{Binding CustomerToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}"
+                                    Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

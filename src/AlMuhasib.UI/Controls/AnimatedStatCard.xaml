@@ -1,0 +1,80 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.AnimatedStatCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             FlowDirection="RightToLeft"
+             x:Name="Root">
+
+    <UserControl.Resources>
+        <CubicEase x:Key="CubicEaseOut" EasingMode="EaseOut" />
+    </UserControl.Resources>
+
+    <materialDesign:Card Style="{StaticResource StatCard}">
+        <materialDesign:Card.RenderTransform>
+            <TranslateTransform x:Name="SlideTransform" Y="20" />
+        </materialDesign:Card.RenderTransform>
+        <materialDesign:Card.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="SlideTransform"
+                                         Storyboard.TargetProperty="Y"
+                                         From="20" To="0" Duration="0:0:0.4"
+                                         EasingFunction="{StaticResource CubicEaseOut}" />
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4"
+                                         EasingFunction="{StaticResource CubicEaseOut}" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </materialDesign:Card.Triggers>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Icon Circle -->
+            <Border Grid.Column="0"
+                    Width="52" Height="52" CornerRadius="26"
+                    Background="{Binding IconBackground, ElementName=Root}"
+                    VerticalAlignment="Top" Margin="0,0,0,0">
+                <materialDesign:PackIcon Kind="{Binding Icon, ElementName=Root}"
+                                         Width="26" Height="26"
+                                         Foreground="{Binding IconForeground, ElementName=Root}"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+
+            <!-- Text Content -->
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title, ElementName=Root}"
+                           FontSize="12" Foreground="#9E9E9E" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock x:Name="ValueText"
+                               Text="{Binding DisplayValue, ElementName=Root}"
+                               FontSize="24" FontWeight="Bold"
+                               Foreground="{Binding ValueForeground, ElementName=Root}" />
+                    <TextBlock Text="{Binding Suffix, ElementName=Root}"
+                               FontSize="14" FontWeight="Normal"
+                               Foreground="#757575"
+                               VerticalAlignment="Bottom"
+                               Margin="6,0,0,4"
+                               Visibility="{Binding Suffix, ElementName=Root,
+                                   Converter={StaticResource NullToCollapsedConverter}}" />
+                </StackPanel>
+
+                <!-- Comparison -->
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0"
+                            Visibility="{Binding ComparisonLabel, ElementName=Root,
+                                Converter={StaticResource NullToCollapsedConverter}}">
+                    <TextBlock x:Name="ComparisonArrow"
+                               FontSize="12" FontWeight="Bold" Margin="0,0,4,0" />
+                    <TextBlock x:Name="ComparisonText"
+                               FontSize="11" Foreground="#9E9E9E" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </materialDesign:Card>
+</UserControl>

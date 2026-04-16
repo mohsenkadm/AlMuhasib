@@ -1,0 +1,308 @@
+using System.Collections.ObjectModel;
+using System.Windows;
+using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using AlMuhasib.UI.Controls;
+
+namespace AlMuhasib.UI.ViewModels;
+
+public partial class SuppliersViewModel : ViewModelBase
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IExportService _exportService;
+    private readonly ICurrentUserService _currentUserService;
+
+    public ObservableCollection<Supplier> Suppliers { get; } = [];
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    private int _pageSize = 20;
+
+    [ObservableProperty]
+    private int _totalCount;
+
+    [ObservableProperty]
+    private int _totalPages;
+
+    [ObservableProperty]
+    private Supplier? _selectedSupplier;
+
+    // Dialog state
+    [ObservableProperty]
+    private bool _isDialogOpen;
+
+    [ObservableProperty]
+    private bool _isEditMode;
+
+    [ObservableProperty]
+    private string _dialogTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _editName = string.Empty;
+
+    [ObservableProperty]
+    private string _editPhone = string.Empty;
+
+    [ObservableProperty]
+    private string _editAddress = string.Empty;
+
+    [ObservableProperty]
+    private string _editNotes = string.Empty;
+
+    [ObservableProperty]
+    private string _dialogError = string.Empty;
+
+    // Delete confirmation
+    [ObservableProperty]
+    private bool _isDeleteDialogOpen;
+
+    [ObservableProperty]
+    private Supplier? _supplierToDelete;
+
+    private int? _editingSupplierId;
+    private System.Timers.Timer? _debounceTimer;
+
+    public SuppliersViewModel(
+        IUnitOfWork unitOfWork,
+        IExportService exportService,
+        ICurrentUserService currentUserService)
+    {
+        _unitOfWork = unitOfWork;
+        _exportService = exportService;
+        _currentUserService = currentUserService;
+        PageTitle = "الموردون";
+    }
+
+    public override async Task InitializeAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            LoadPermissions(_currentUserService, "Suppliers");
+            await LoadSuppliersAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        var filter = string.IsNullOrWhiteSpace(SearchText)
+            ? null
+            : SearchText.Trim();
+
+        var (items, totalCount) = await _unitOfWork.Suppliers.GetPagedAsync(
+            CurrentPage, PageSize,
+            filter is null ? null : s => s.Name.Contains(filter) || (s.Phone != null && s.Phone.Contains(filter)),
+            q => q.OrderByDescending(s => s.CreatedAt));
+
+        TotalCount = totalCount;
+        TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
+        if (TotalPages == 0) TotalPages = 1;
+
+        Suppliers.Clear();
+        foreach (var s in items)
+            Suppliers.Add(s);
+    }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        _debounceTimer?.Stop();
+        _debounceTimer?.Dispose();
+        _debounceTimer = new System.Timers.Timer(400);
+        _debounceTimer.Elapsed += async (_, _) =>
+        {
+            _debounceTimer?.Stop();
+            CurrentPage = 1;
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
+                await LoadSuppliersAsync();
+            });
+        };
+        _debounceTimer.AutoReset = false;
+        _debounceTimer.Start();
+    }
+
+    [RelayCommand]
+    private async Task FirstPage() { CurrentPage = 1; await LoadSuppliersAsync(); }
+
+    [RelayCommand]
+    private async Task PreviousPage() { if (CurrentPage > 1) { CurrentPage--; await LoadSuppliersAsync(); } }
+
+    [RelayCommand]
+    private async Task NextPage() { if (CurrentPage < TotalPages) { CurrentPage++; await LoadSuppliersAsync(); } }
+
+    [RelayCommand]
+    private async Task LastPage() { CurrentPage = TotalPages; await LoadSuppliersAsync(); }
+
+    [RelayCommand]
+    private async Task Refresh()
+    {
+        CurrentPage = 1;
+        SearchText = string.Empty;
+        await LoadSuppliersAsync();
+    }
+
+    [RelayCommand]
+    private void OpenAddDialog()
+    {
+        _editingSupplierId = null;
+        IsEditMode = false;
+        DialogTitle = "إضافة مورد جديد";
+        EditName = string.Empty;
+        EditPhone = string.Empty;
+        EditAddress = string.Empty;
+        EditNotes = string.Empty;
+        DialogError = string.Empty;
+        IsDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void OpenEditDialog(Supplier supplier)
+    {
+        if (supplier is null) return;
+        _editingSupplierId = supplier.Id;
+        IsEditMode = true;
+        DialogTitle = "تعديل بيانات المورد";
+        EditName = supplier.Name;
+        EditPhone = supplier.Phone ?? string.Empty;
+        EditAddress = supplier.Address ?? string.Empty;
+        EditNotes = supplier.Notes ?? string.Empty;
+        DialogError = string.Empty;
+        IsDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task SaveSupplier()
+    {
+        if (string.IsNullOrWhiteSpace(EditName))
+        {
+            DialogError = "اسم المورد مطلوب";
+            return;
+        }
+
+        DialogError = string.Empty;
+
+        try
+        {
+            if (IsEditMode && _editingSupplierId.HasValue)
+            {
+                var supplier = await _unitOfWork.Suppliers.GetByIdAsync(_editingSupplierId.Value);
+                if (supplier is null) return;
+
+                supplier.Name = EditName.Trim();
+                supplier.Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
+                supplier.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
+                supplier.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                supplier.UpdatedAt = DateTime.UtcNow;
+                supplier.UpdatedBy = _currentUserService.Username;
+
+                _unitOfWork.Suppliers.Update(supplier);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            else
+            {
+                var supplier = new Supplier
+                {
+                    Name = EditName.Trim(),
+                    Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim(),
+                    Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
+                    Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
+                    CreatedBy = _currentUserService.Username
+                };
+
+                await _unitOfWork.Suppliers.AddAsync(supplier);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            IsDialogOpen = false;
+            await LoadSuppliersAsync();
+        }
+        catch (Exception ex)
+        {
+            DialogError = $"حدث خطأ: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void CancelDialog() => IsDialogOpen = false;
+
+    [RelayCommand]
+    private void ConfirmDelete(Supplier supplier)
+    {
+        if (supplier is null) return;
+        SupplierToDelete = supplier;
+        IsDeleteDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ExecuteDelete()
+    {
+        if (SupplierToDelete is null) return;
+        try
+        {
+            _unitOfWork.Suppliers.SoftDelete(SupplierToDelete, _currentUserService.Username);
+            await _unitOfWork.SaveChangesAsync();
+            IsDeleteDialogOpen = false;
+            SupplierToDelete = null;
+            await LoadSuppliersAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الحذف: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CancelDelete()
+    {
+        IsDeleteDialogOpen = false;
+        SupplierToDelete = null;
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var (allItems, _) = await _unitOfWork.Suppliers.GetPagedAsync(1, int.MaxValue);
+            var exportData = allItems.Select(s => new
+            {
+                الاسم = s.Name,
+                الهاتف = s.Phone ?? "",
+                العنوان = s.Address ?? "",
+                ملاحظات = s.Notes ?? "",
+                تاريخ_الإنشاء = s.CreatedAt.ToString("yyyy/MM/dd")
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"الموردون_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "الموردون");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+}

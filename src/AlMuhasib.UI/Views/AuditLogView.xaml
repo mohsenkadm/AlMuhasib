@@ -1,0 +1,330 @@
+﻿<UserControl x:Class="AlMuhasib.UI.Views.AuditLogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- FILTER BAR -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="12" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <DatePicker Grid.Column="0" Width="140" Margin="0,0,8,0"
+                            md:HintAssist.Hint="من تاريخ"
+                            Style="{StaticResource FilledDatePicker}"
+                            SelectedDate="{Binding DateFrom}"/>
+
+                <DatePicker Grid.Column="1" Width="140" Margin="0,0,8,0"
+                            md:HintAssist.Hint="إلى تاريخ"
+                            Style="{StaticResource FilledDatePicker}"
+                            SelectedDate="{Binding DateTo}"/>
+
+                <ComboBox Grid.Column="2" Width="160" Margin="0,0,8,0"
+                          md:HintAssist.Hint="المستخدم"
+                          Style="{StaticResource FilledComboBox}"
+                          ItemsSource="{Binding Users}"
+                          SelectedItem="{Binding SelectedUser}"
+                          IsEditable="True"/>
+
+                <ComboBox Grid.Column="3" Width="130" Margin="0,0,8,0"
+                          md:HintAssist.Hint="الإجراء"
+                          Style="{StaticResource FilledComboBox}"
+                          ItemsSource="{Binding Actions}"
+                          SelectedItem="{Binding SelectedAction}"
+                          IsEditable="True"/>
+
+                <ComboBox Grid.Column="4" Width="160" Margin="0,0,8,0"
+                          md:HintAssist.Hint="الجدول"
+                          Style="{StaticResource FilledComboBox}"
+                          ItemsSource="{Binding EntityNames}"
+                          SelectedItem="{Binding SelectedEntity}"
+                          IsEditable="True"/>
+
+                <Button Grid.Column="6"
+                        Command="{Binding SearchCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8"
+                        Margin="0,0,4,0">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Magnify" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="بحث"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="7"
+                        Command="{Binding ExportToExcelCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8"
+                        Background="#388E3C">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="FileExcel" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
+                        <TextBlock Text="تصدير Excel" Foreground="White"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </md:Card>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- DATA GRID + DETAILS PANEL -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Table -->
+            <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="0" Padding="0" md:ElevationAssist.Elevation="Dp2">
+                <DataGrid ItemsSource="{Binding Rows}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserReorderColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#E0E0E0">
+                    <DataGrid.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick"
+                                      Command="{Binding ShowDetailsCommand}"
+                                      CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                    </DataGrid.InputBindings>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="التاريخ" Width="150"
+                                            Binding="{Binding Timestamp, StringFormat='{}{0:yyyy/MM/dd HH:mm}'}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding" Value="8,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="المستخدم" Width="140"
+                                            Binding="{Binding Username}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding" Value="8,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTemplateColumn Header="الإجراء" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E3F2FD"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ActionDisplay}" Value="إضافة">
+                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ActionDisplay}" Value="تعديل">
+                                                        <Setter Property="Background" Value="#FFF3E0"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ActionDisplay}" Value="حذف">
+                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding ActionDisplay}" FontWeight="SemiBold" FontSize="12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ActionDisplay}" Value="إضافة">
+                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding ActionDisplay}" Value="تعديل">
+                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding ActionDisplay}" Value="حذف">
+                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="الجدول" Width="140"
+                                            Binding="{Binding EntityName}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding" Value="8,0"/>
+                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="المعرف" Width="70"
+                                            Binding="{Binding EntityId}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTemplateColumn Header="التفاصيل" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource IconButton}"
+                                            ToolTip="عرض التفاصيل"
+                                            Width="32" Height="32">
+                                        <md:PackIcon Kind="EyeOutline" Width="18" Height="18"/>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </md:Card>
+
+            <!-- DETAILS SIDE PANEL -->
+            <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="1" Width="400" Padding="16"
+                     md:ElevationAssist.Elevation="Dp3" Margin="16,0,0,0"
+                     Visibility="{Binding IsDetailsOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <TextBlock Text="تفاصيل العملية" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button HorizontalAlignment="Left"
+                                Command="{Binding CloseDetailsCommand}"
+                                Style="{StaticResource IconButton}"
+                                Width="30" Height="30">
+                            <md:PackIcon Kind="Close" Width="18" Height="18"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Info -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                        <TextBlock Margin="0,0,0,4">
+                            <Run Text="المستخدم: " FontWeight="SemiBold"/>
+                            <Run Text="{Binding SelectedRow.Username, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,0,0,4">
+                            <Run Text="الإجراء: " FontWeight="SemiBold"/>
+                            <Run Text="{Binding SelectedRow.ActionDisplay, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,0,0,4">
+                            <Run Text="الجدول: " FontWeight="SemiBold"/>
+                            <Run Text="{Binding SelectedRow.EntityName, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock>
+                            <Run Text="التاريخ: " FontWeight="SemiBold"/>
+                            <Run Text="{Binding SelectedRow.Timestamp, Mode=OneWay, StringFormat='{}{0:yyyy/MM/dd HH:mm:ss}'}"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Old / New Values -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Old Values -->
+                            <TextBlock Text="القيم القديمة" FontWeight="Bold" FontSize="13"
+                                       Foreground="#C62828" Margin="0,0,0,4"/>
+                            <Border Background="#FFF8F8" CornerRadius="6" Padding="10" Margin="0,0,0,12"
+                                    BorderBrush="#FFCDD2" BorderThickness="1">
+                                <TextBlock Text="{Binding DetailsOldValues}"
+                                           FontFamily="Consolas" FontSize="12"
+                                           TextWrapping="Wrap"
+                                           FlowDirection="LeftToRight"/>
+                            </Border>
+
+                            <!-- New Values -->
+                            <TextBlock Text="القيم الجديدة" FontWeight="Bold" FontSize="13"
+                                       Foreground="#2E7D32" Margin="0,0,0,4"/>
+                            <Border Background="#F8FFF8" CornerRadius="6" Padding="10"
+                                    BorderBrush="#C8E6C9" BorderThickness="1">
+                                <TextBlock Text="{Binding DetailsNewValues}"
+                                           FontFamily="Consolas" FontSize="12"
+                                           TextWrapping="Wrap"
+                                           FlowDirection="LeftToRight"/>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </md:Card>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- PAGING BAR -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="8,6" md:ElevationAssist.Elevation="Dp2" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" VerticalAlignment="Center">
+                    <Run Text="الإجمالي: "/>
+                    <Run Text="{Binding TotalCount, Mode=OneWay}" FontWeight="Bold"/>
+                    <Run Text=" سجل"/>
+                </TextBlock>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Command="{Binding PreviousPageCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTip="الصفحة السابقة"
+                            Width="36" Height="36">
+                        <md:PackIcon Kind="ChevronRight" Width="20" Height="20"/>
+                    </Button>
+
+                    <TextBlock VerticalAlignment="Center" Margin="8,0">
+                        <Run Text="صفحة "/>
+                        <Run Text="{Binding CurrentPage, Mode=OneWay}" FontWeight="Bold"/>
+                        <Run Text=" من "/>
+                        <Run Text="{Binding TotalPages, Mode=OneWay}" FontWeight="Bold"/>
+                    </TextBlock>
+
+                    <Button Command="{Binding NextPageCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTip="الصفحة التالية"
+                            Width="36" Height="36">
+                        <md:PackIcon Kind="ChevronLeft" Width="20" Height="20"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+    </Grid>
+</UserControl>

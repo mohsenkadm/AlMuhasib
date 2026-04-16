@@ -1,0 +1,225 @@
+﻿<UserControl x:Class="AlMuhasib.UI.Views.CapitalAdjustmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Summary cards -->
+            <RowDefinition Height="Auto"/>  <!-- Action bar -->
+            <RowDefinition Height="*"/>     <!-- History table -->
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- SUMMARY CARDS -->
+        <!-- ═══════════════════════════════════════════ -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <!-- Initial Capital -->
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,12,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
+                <StackPanel>
+                    <TextBlock Text="رأس المال الأولي" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="{Binding InitialCapital, StringFormat=N0}" FontSize="22" FontWeight="Bold"
+                               Foreground="#1565C0" Margin="0,4,0,0"/>
+                </StackPanel>
+            </md:Card>
+
+            <!-- Adjustments -->
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,12,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
+                <StackPanel>
+                    <TextBlock Text="إجمالي التسويات" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="{Binding TotalAdjustments, StringFormat=N0}" FontSize="22" FontWeight="Bold"
+                               Foreground="#E65100" Margin="0,4,0,0"/>
+                </StackPanel>
+            </md:Card>
+
+            <!-- Current Capital -->
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
+                <StackPanel>
+                    <TextBlock Text="رأس المال الحالي" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="{Binding CurrentCapital, StringFormat=N0}" FontSize="22" FontWeight="Bold"
+                               Foreground="#2E7D32" Margin="0,4,0,0"/>
+                </StackPanel>
+            </md:Card>
+        </StackPanel>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- ACTION BAR + ADJUSTMENT FORM -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="16" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Buttons -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <Button Command="{Binding ShowFormCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تسوية جديدة"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ExportToExcelCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            Background="#388E3C">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileExcel" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
+                            <TextBlock Text="تصدير Excel" Foreground="White"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Adjustment Form (collapsible) -->
+                <Border Grid.Row="1" Margin="0,12,0,0"
+                        Visibility="{Binding IsFormVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Background="#FAFAFA" CornerRadius="8" Padding="16"
+                        BorderBrush="#E0E0E0" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 md:HintAssist.Hint="المبلغ"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Text="{Binding AdjustmentAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                 Margin="0,0,8,0"/>
+
+                        <DatePicker Grid.Column="1"
+                                    md:HintAssist.Hint="التاريخ"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    SelectedDate="{Binding AdjustmentDate}"
+                                    Margin="0,0,8,0"/>
+
+                        <TextBox Grid.Column="2"
+                                 md:HintAssist.Hint="الملاحظات (اختياري)"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Text="{Binding AdjustmentNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0"/>
+
+                        <Button Grid.Column="3"
+                                Command="{Binding SaveAdjustmentCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                md:ButtonAssist.CornerRadius="8"
+                                Margin="0,0,4,0"
+                                Content="حفظ" MinWidth="80"/>
+
+                        <Button Grid.Column="4"
+                                Command="{Binding HideFormCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                md:ButtonAssist.CornerRadius="8"
+                                Content="إلغاء" MinWidth="70"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </md:Card>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- HISTORY TABLE -->
+        <!-- ═══════════════════════════════════════════ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <DataGrid ItemsSource="{Binding Entries}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False" CanUserDeleteRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      Style="{StaticResource ModernDataGrid}"
+                      SelectionMode="Single"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E0E0E0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="التاريخ" Width="130"
+                                        Binding="{Binding Date, StringFormat='{}{0:yyyy/MM/dd}'}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTemplateColumn Header="النوع" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TypeDisplay}" Value="رأس مال جديد">
+                                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TypeDisplay}" Value="تسوية">
+                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding TypeDisplay}" FontWeight="SemiBold" FontSize="12">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#1565C0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TypeDisplay}" Value="رأس مال جديد">
+                                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TypeDisplay}" Value="تسوية">
+                                                        <Setter Property="Foreground" Value="#E65100"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="المبلغ" Width="150"
+                                        Binding="{Binding Amount, StringFormat=N0}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="الملاحظات" Width="*"
+                                        Binding="{Binding Notes}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="المنشئ" Width="120"
+                                        Binding="{Binding CreatedBy}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="#757575"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </md:Card>
+    </Grid>
+</UserControl>

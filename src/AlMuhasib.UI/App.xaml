@@ -1,0 +1,39 @@
+﻿<Application x:Class="AlMuhasib.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:AlMuhasib.UI"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Blue" SecondaryColor="Amber" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
+                <!-- Custom theme overrides MUST come AFTER MaterialDesign defaults -->
+                <ResourceDictionary Source="/Styles/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <converters:PaymentMethodConverter x:Key="PaymentMethodConverter" />
+            <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter" />
+            <converters:NotNullToBooleanConverter x:Key="NotNullToBooleanConverter" />
+
+            <!-- Legacy aliases (kept for backward compatibility with existing views) -->
+            <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />
+            <SolidColorBrush x:Key="SidebarForeground" Color="#ECEFF1" />
+            <SolidColorBrush x:Key="SidebarHover" Color="#1B2A3D" />
+            <SolidColorBrush x:Key="SidebarSelected" Color="#1565C0" />
+            <SolidColorBrush x:Key="TopBarBackground" Color="White" />
+            <SolidColorBrush x:Key="ContentBackground" Color="#F5F7FA" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF8F00" />
+
+            <!-- Arabic Font -->
+            <FontFamily x:Key="ArabicFont">Segoe UI, Tahoma, Arial</FontFamily>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

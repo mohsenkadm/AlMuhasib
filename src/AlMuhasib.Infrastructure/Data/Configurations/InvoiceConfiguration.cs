@@ -1,0 +1,60 @@
+using AlMuhasib.Core.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace AlMuhasib.Infrastructure.Data.Configurations;
+
+public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
+{
+    public void Configure(EntityTypeBuilder<Invoice> builder)
+    {
+        builder.ToTable("Invoices");
+
+        builder.Property(i => i.InvoiceNumber)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(i => i.InvoiceType)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(i => i.PaymentMethod)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(i => i.RoundingType)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(i => i.TotalAmount).HasPrecision(18, 2);
+        builder.Property(i => i.DiscountAmount).HasPrecision(18, 2);
+        builder.Property(i => i.NetAmount).HasPrecision(18, 2);
+        builder.Property(i => i.RoundingAmount).HasPrecision(18, 2);
+
+        builder.Property(i => i.Notes).HasMaxLength(1000);
+
+        builder.HasOne(i => i.Customer)
+            .WithMany(c => c.Invoices)
+            .HasForeignKey(i => i.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(i => i.Supplier)
+            .WithMany(s => s.Invoices)
+            .HasForeignKey(i => i.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(i => i.Warehouse)
+            .WithMany()
+            .HasForeignKey(i => i.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(i => i.CashBox)
+            .WithMany()
+            .HasForeignKey(i => i.CashBoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(i => i.InvoiceNumber).IsUnique();
+        builder.HasIndex(i => i.Date);
+        builder.HasIndex(i => i.InvoiceType);
+    }
+}

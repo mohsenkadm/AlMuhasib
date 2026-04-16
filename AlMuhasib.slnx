@@ -1,3 +1,8 @@
 <Solution>
-  <Project Path="AlMuhasib.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/AlMuhasib.UI/AlMuhasib.UI.csproj" />
+    <Project Path="src/AlMuhasib.Core/AlMuhasib.Core.csproj" />
+    <Project Path="src/AlMuhasib.Infrastructure/AlMuhasib.Infrastructure.csproj" />
+    <Project Path="src/AlMuhasib.Shared/AlMuhasib.Shared.csproj" />
+  </Folder>
 </Solution>
