@@ -312,7 +312,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 CustomerId = customerId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = SelectedPaymentMethod,
-                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : 0,
+                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
                 CreditDueDate = IsCreditPayment ? CreditDueDate : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()

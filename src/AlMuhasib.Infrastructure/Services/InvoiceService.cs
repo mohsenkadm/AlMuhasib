@@ -50,6 +50,20 @@ public class InvoiceService : IInvoiceService
                 : RoundingType.RoundDown;
             invoice.NetAmount = netAmount + roundingAmount;
 
+            // Initialize credit payment tracking
+            if (invoice.PaymentMethod == PaymentMethod.Credit)
+            {
+                invoice.PaidAmount = 0;
+                invoice.RemainingAmount = invoice.NetAmount;
+                invoice.IsCreditPaid = false;
+            }
+            else
+            {
+                invoice.PaidAmount = invoice.NetAmount;
+                invoice.RemainingAmount = 0;
+                invoice.IsCreditPaid = true;
+            }
+
             invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(context, invoice.InvoiceType);
 
             await context.Invoices.AddAsync(invoice);
@@ -104,9 +118,9 @@ public class InvoiceService : IInvoiceService
                 await context.SaveChangesAsync();
             }
 
-            if (invoice.PaymentMethod == PaymentMethod.Cash)
+            if (invoice.PaymentMethod == PaymentMethod.Cash && invoice.CashBoxId.HasValue)
             {
-                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId);
+                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
                     if (invoice.InvoiceType == InvoiceType.Purchase)
@@ -245,9 +259,9 @@ public class InvoiceService : IInvoiceService
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
-            if (invoice.PaymentMethod == PaymentMethod.Cash)
+            if (invoice.PaymentMethod == PaymentMethod.Cash && invoice.CashBoxId.HasValue)
             {
-                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId);
+                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
                     if (invoice.InvoiceType == InvoiceType.Purchase)
@@ -301,6 +315,75 @@ public class InvoiceService : IInvoiceService
                     EntityName = "Invoice",
                     EntityId = invoice.Id,
                     OldValues = $"رقم الفاتورة: {invoice.InvoiceNumber}, المبلغ: {invoice.NetAmount}, النوع: {invoice.InvoiceType}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task PayCreditInvoiceAsync(int invoiceId, decimal amount, int cashBoxId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var username = _currentUserService.Username;
+            var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId)
+                ?? throw new InvalidOperationException("الفاتورة غير موجودة");
+
+            if (invoice.PaymentMethod != PaymentMethod.Credit)
+                throw new InvalidOperationException("هذه الفاتورة ليست آجلة");
+
+            if (invoice.IsCreditPaid)
+                throw new InvalidOperationException("تم تسديد هذه الفاتورة بالكامل مسبقاً");
+
+            if (amount <= 0)
+                throw new InvalidOperationException("مبلغ الدفع يجب أن يكون أكبر من صفر");
+
+            if (amount > invoice.RemainingAmount)
+                throw new InvalidOperationException($"مبلغ الدفع ({amount:N0}) أكبر من المتبقي ({invoice.RemainingAmount:N0})");
+
+            invoice.PaidAmount += amount;
+            invoice.RemainingAmount = invoice.NetAmount - invoice.PaidAmount;
+            invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
+            invoice.CashBoxId = cashBoxId;
+            invoice.UpdatedBy = username;
+            invoice.UpdatedAt = DateTime.UtcNow;
+
+            // Update CashBox balance
+            var cashBox = await context.CashBoxes.FindAsync(cashBoxId);
+            if (cashBox is not null)
+            {
+                if (invoice.InvoiceType == InvoiceType.Purchase)
+                    cashBox.Balance -= amount;
+                else
+                    cashBox.Balance += amount;
+
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Edit,
+                    EntityName = "Invoice",
+                    EntityId = invoice.Id,
+                    NewValues = $"تسديد فاتورة آجلة: {amount:N0} د.ع, المتبقي: {invoice.RemainingAmount:N0}",
                     Timestamp = DateTime.UtcNow,
                     CreatedBy = username,
                     CreatedAt = DateTime.UtcNow

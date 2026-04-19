@@ -64,7 +64,10 @@ public class ReportService : IReportService
                 TotalAmount = i.TotalAmount,
                 Discount = i.DiscountAmount,
                 NetAmount = i.NetAmount,
-                CreditDueDate = i.CreditDueDate
+                CreditDueDate = i.CreditDueDate,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
+                IsCreditPaid = i.IsCreditPaid
             }).ToList()
         };
     }
@@ -117,7 +120,10 @@ public class ReportService : IReportService
                 },
                 TotalAmount = i.TotalAmount,
                 Discount = i.DiscountAmount,
-                NetAmount = i.NetAmount
+                NetAmount = i.NetAmount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
+                IsCreditPaid = i.IsCreditPaid
             }).ToList()
         };
     }

@@ -19,4 +19,9 @@ public interface IInvoiceService
     decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType);
 
     Task DeleteInvoiceAsync(int id);
+
+    /// <summary>
+    /// Pays a credit invoice (partial or full). Updates CashBox balance.
+    /// </summary>
+    Task PayCreditInvoiceAsync(int invoiceId, decimal amount, int cashBoxId);
 }

@@ -42,7 +42,7 @@
 
                     <Button Command="{Binding OpenResetPasswordCommand}"
                             Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8">
+                            md:ButtonAssist.CornerRadius="8" >
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="LockReset" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="إعادة كلمة المرور"/>
@@ -135,7 +135,8 @@
 
                     <ComboBox md:HintAssist.Hint="الدور"
                               Style="{StaticResource FilledComboBox}"
-                              SelectedItem="{Binding FormRole}"
+                              SelectedValue="{Binding FormRole}"
+                              SelectedValuePath="Tag"
                               Margin="0,0,0,16">
                         <ComboBoxItem Content="مدير" Tag="{x:Static enums:UserRole.Admin}"/>
                         <ComboBoxItem Content="مستخدم" Tag="{x:Static enums:UserRole.User}"/>

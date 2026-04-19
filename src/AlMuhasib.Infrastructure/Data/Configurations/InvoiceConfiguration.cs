@@ -30,6 +30,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.DiscountAmount).HasPrecision(18, 2);
         builder.Property(i => i.NetAmount).HasPrecision(18, 2);
         builder.Property(i => i.RoundingAmount).HasPrecision(18, 2);
+        builder.Property(i => i.PaidAmount).HasPrecision(18, 2);
+        builder.Property(i => i.RemainingAmount).HasPrecision(18, 2);
 
         builder.Property(i => i.Notes).HasMaxLength(1000);
 
@@ -51,6 +53,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasOne(i => i.CashBox)
             .WithMany()
             .HasForeignKey(i => i.CashBoxId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(i => i.InvoiceNumber).IsUnique();

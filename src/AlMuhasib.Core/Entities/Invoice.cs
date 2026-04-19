@@ -16,17 +16,23 @@ public class Invoice : BaseEntity
     public decimal NetAmount { get; set; }
     public decimal RoundingAmount { get; set; }
     public RoundingType RoundingType { get; set; }
-    public int CashBoxId { get; set; }
+    public int? CashBoxId { get; set; }
     public DateTime Date { get; set; }
     /// <summary>تاريخ استحقاق التسديد — يُعبأ فقط عند الدفع الآجل</summary>
     public DateTime? CreditDueDate { get; set; }
     public string? Notes { get; set; }
+    /// <summary>المبلغ المدفوع من فاتورة آجلة</summary>
+    public decimal PaidAmount { get; set; }
+    /// <summary>المبلغ المتبقي من فاتورة آجلة</summary>
+    public decimal RemainingAmount { get; set; }
+    /// <summary>هل تم تسديد الفاتورة الآجلة بالكامل</summary>
+    public bool IsCreditPaid { get; set; }
 
     // Navigation
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
-    public CashBox CashBox { get; set; } = null!;
+    public CashBox? CashBox { get; set; }
     public ICollection<InvoiceItem> Items { get; set; } = [];
     public ICollection<InstallmentPlan> InstallmentPlans { get; set; } = [];
 }

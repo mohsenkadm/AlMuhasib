@@ -207,8 +207,9 @@
         <Setter Property="Background" Value="{StaticResource PrimaryHueMidBrush}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16,8"/>
-        <Setter Property="FontSize" Value="{StaticResource MediumFontSize}"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Padding" Value="16,10"/>
+        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
         <Setter Property="FontWeight" Value="DemiBold"/>
         <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -287,7 +288,8 @@
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}"/>
         <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Padding" Value="16,10"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
         <Style.Triggers>

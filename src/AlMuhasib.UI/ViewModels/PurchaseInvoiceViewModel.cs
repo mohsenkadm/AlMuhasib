@@ -264,7 +264,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 SupplierId = supplierId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
-                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : 0,
+                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };

@@ -72,6 +72,10 @@ public class SalesReportRow
     public decimal NetAmount { get; set; }
     /// <summary>تاريخ استحقاق الدفع الآجل — فارغ للنقدي والأقساط</summary>
     public DateTime? CreditDueDate { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public bool IsCreditPaid { get; set; }
+    public bool IsCredit => PaymentMethod == "آجل";
 }
 
 public class DailyAmountPoint
@@ -106,6 +110,10 @@ public class PurchasesReportRow
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal NetAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public bool IsCreditPaid { get; set; }
+    public bool IsCredit => PaymentMethod == "آجل";
 }
 
 public class NameAmountPoint
