@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
@@ -313,4 +314,165 @@ public partial class CustomersViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
         }
     }
+
+    // ══════════════════════════════════════════════════════
+    // ATTACHMENTS
+    // ══════════════════════════════════════════════════════
+    [ObservableProperty]
+    private bool _isAttachmentsDialogOpen;
+
+    [ObservableProperty]
+    private Customer? _attachmentsCustomer;
+
+    public ObservableCollection<CustomerAttachment> Attachments { get; } = [];
+
+    private static string AttachmentsBaseFolder =>
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Attachments", "Customers");
+
+    [RelayCommand]
+    private async Task OpenAttachments(Customer? customer)
+    {
+        if (customer is null) return;
+        AttachmentsCustomer = customer;
+        await LoadAttachmentsAsync(customer.Id);
+        IsAttachmentsDialogOpen = true;
+    }
+
+    private async Task LoadAttachmentsAsync(int customerId)
+    {
+        Attachments.Clear();
+        var items = await _unitOfWork.CustomerAttachments.FindAsync(a => a.CustomerId == customerId);
+        foreach (var a in items)
+            Attachments.Add(a);
+    }
+
+    [RelayCommand]
+    private async Task AddAttachmentFromFile()
+    {
+        if (AttachmentsCustomer is null) return;
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "صور ومستندات|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.pdf;*.doc;*.docx;*.xls;*.xlsx|كل الملفات|*.*",
+            Multiselect = true,
+            Title = "اختر المرفقات"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            var customerFolder = Path.Combine(AttachmentsBaseFolder, AttachmentsCustomer.Id.ToString());
+            Directory.CreateDirectory(customerFolder);
+
+            foreach (var filePath in dialog.FileNames)
+            {
+                var fileName = Path.GetFileName(filePath);
+                var uniqueName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{fileName}";
+                var destPath = Path.Combine(customerFolder, uniqueName);
+
+                File.Copy(filePath, destPath, overwrite: true);
+
+                var attachment = new CustomerAttachment
+                {
+                    CustomerId = AttachmentsCustomer.Id,
+                    FileName = fileName,
+                    FilePath = destPath,
+                    CreatedBy = _currentUserService.Username
+                };
+                await _unitOfWork.CustomerAttachments.AddAsync(attachment);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            await LoadAttachmentsAsync(AttachmentsCustomer.Id);
+            BeautifulMessageDialog.ShowSuccess($"تم إرفاق {dialog.FileNames.Length} ملف بنجاح");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"خطأ أثناء الإرفاق: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddAttachmentFromScanner()
+    {
+        try
+        {
+            if (AttachmentsCustomer is null) return;
+
+            // Use WIA COM via late binding (dynamic) to avoid COM reference issues
+            dynamic wiaDialog = Activator.CreateInstance(Type.GetTypeFromProgID("WIA.CommonDialog")!)!;
+            dynamic? image = wiaDialog.ShowAcquireImage();
+
+            if (image is null) return;
+
+            var customerFolder = Path.Combine(AttachmentsBaseFolder, AttachmentsCustomer.Id.ToString());
+            Directory.CreateDirectory(customerFolder);
+
+            var fileName = $"scan_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            var destPath = Path.Combine(customerFolder, fileName);
+            image.SaveFile(destPath);
+
+            var attachment = new CustomerAttachment
+            {
+                CustomerId = AttachmentsCustomer.Id,
+                FileName = fileName,
+                FilePath = destPath,
+                CreatedBy = _currentUserService.Username
+            };
+            await _unitOfWork.CustomerAttachments.AddAsync(attachment);
+            await _unitOfWork.SaveChangesAsync();
+            await LoadAttachmentsAsync(AttachmentsCustomer.Id);
+            BeautifulMessageDialog.ShowSuccess("تم المسح الضوئي والإرفاق بنجاح");
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            BeautifulMessageDialog.ShowWarning("لم يتم العثور على ماسح ضوئي متصل أو تم إلغاء العملية");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"خطأ أثناء المسح الضوئي: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenAttachmentFile(CustomerAttachment? attachment)
+    {
+        if (attachment is null || !File.Exists(attachment.FilePath)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = attachment.FilePath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"لا يمكن فتح الملف: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteAttachment(CustomerAttachment? attachment)
+    {
+        if (attachment is null || AttachmentsCustomer is null) return;
+        try
+        {
+            _unitOfWork.CustomerAttachments.SoftDelete(attachment, _currentUserService.Username);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (File.Exists(attachment.FilePath))
+                File.Delete(attachment.FilePath);
+
+            await LoadAttachmentsAsync(AttachmentsCustomer.Id);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"خطأ أثناء حذف المرفق: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CloseAttachments() => IsAttachmentsDialogOpen = false;
 }

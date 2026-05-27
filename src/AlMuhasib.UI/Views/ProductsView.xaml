@@ -130,20 +130,27 @@
             <!-- ═══════════════════════════════════════════ -->
             <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1"
                                  UniformCornerRadius="12"
-                                 Padding="0"
-                                 materialDesign:ElevationAssist.Elevation="Dp1">
+                                 Padding="8,8,8,4"
+                                 materialDesign:ElevationAssist.Elevation="Dp2">
                 <DataGrid ItemsSource="{Binding Products}"
-                          SelectedItem="{Binding SelectedProduct}"
-                          RowHeight="44">
+                          SelectedItem="{Binding SelectedProduct}">
 
                     <DataGrid.Columns>
                         <!-- # Row Number -->
-                        <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="#" Width="56" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Id}" 
-                                               HorizontalAlignment="Center"
-                                               Foreground="#9E9E9E" />
+                                    <Border Background="#F0F4F8"
+                                            CornerRadius="8"
+                                            Padding="6,3"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Id}"
+                                                   HorizontalAlignment="Center"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#78909C"/>
+                                    </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -151,8 +158,15 @@
                         <!-- Name -->
                         <DataGridTextColumn Header="اسم المنتج"
                                             Binding="{Binding Name}"
-                                            Width="2*"
-                                            FontWeight="Medium" />
+                                            Width="2*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="#263238"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
 
                         <!-- Category -->
                         <DataGridTextColumn Header="التصنيف"
@@ -184,21 +198,26 @@
                         </DataGridTextColumn>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="180" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2">
-                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableEditButton}" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="PencilOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                                <TextBlock Text="تعديل" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableDeleteButton}" IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="DeleteOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                                <TextBlock Text="حذف" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>
@@ -206,12 +225,11 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
 
-                    <!-- Empty state -->
                     <DataGrid.Style>
                         <Style TargetType="DataGrid" BasedOn="{StaticResource ModernDataGrid}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Products.Count}" Value="0">
-                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Setter Property="Visibility" Value="Collapsed"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

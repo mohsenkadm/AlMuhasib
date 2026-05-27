@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.OverdueReportView"
+<UserControl x:Class="AlMuhasib.UI.Views.OverdueReportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -42,9 +42,9 @@
                         Title="إجمالي المتأخر"
                         TextValue="{Binding TotalOverdueAmount}"
                         Icon="CashRemove"
-                        IconBackground="#FFF3E0"
-                        IconForeground="#E65100"
-                        ValueForeground="#E65100"/>
+                        IconBackground="{DynamicResource HighlightLightBrush}"
+                        IconForeground="{DynamicResource HighlightBrush}"
+                        ValueForeground="{DynamicResource HighlightBrush}"/>
                     <controls:AnimatedStatCard
                         Title="أكثر عميل تأخراً"
                         TextValue="{Binding TopOverdueCustomer}"

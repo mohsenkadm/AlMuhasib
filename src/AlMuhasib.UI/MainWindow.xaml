@@ -6,14 +6,19 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:AlMuhasib.UI"
         xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+        xmlns:models="clr-namespace:AlMuhasib.UI.Models"
         xmlns:views="clr-namespace:AlMuhasib.UI.Views"
+        xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+        xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
         mc:Ignorable="d"
+        behaviors:ScrollViewerMouseWheel.IsEnabled="True"
         d:DataContext="{d:DesignInstance vm:MainWindowViewModel, IsDesignTimeCreatable=False}"
         Title="المحاسب - AlMuhasib"
         Height="768" Width="1366"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         FlowDirection="RightToLeft"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -23,25 +28,234 @@
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{DynamicResource AppFont}">
 
+    <Window.Resources>
+        <Storyboard x:Key="TabContentFadeIn">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.28">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                             From="12" To="0" Duration="0:0:0.32">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </Window.Resources>
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="48"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
     <Grid>
-        <Grid.ColumnDefinitions>
-            <!-- Sidebar -->
-            <ColumnDefinition Width="Auto" />
-            <!-- Main Content -->
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- CUSTOM TITLE BAR (full width)                -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                x:Name="AppTitleBar"
+                Style="{StaticResource AppTitleBar}"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="10,0,14,0" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Window controls (physical left) -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            FlowDirection="LeftToRight"
+                            VerticalAlignment="Center"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="BtnMinimize"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            ToolTip="تصغير"
+                            Click="MinimizeButton_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16" />
+                    </Button>
+                    <Button x:Name="BtnMaximize"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            ToolTip="تكبير"
+                            Click="MaximizeButton_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon x:Name="MaximizeIcon" Kind="WindowMaximize" Width="16" Height="16" />
+                    </Button>
+                    <Button Style="{StaticResource TitleBarCloseButton}"
+                            ToolTip="إغلاق"
+                            Command="{Binding RequestExitCommand}"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16" />
+                    </Button>
+                </StackPanel>
+
+                <!-- Sidebar toggle + page title -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="10,0,0,0"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Command="{Binding ToggleSidebarCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTip="طي/فتح القائمة"
+                            Width="38" Height="38">
+                        <materialDesign:PackIcon Kind="Menu" Width="22" Height="22" />
+                    </Button>
+                    <TextBlock Text="{Binding PageTitle}"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Margin="10,0,0,0"
+                               Foreground="{DynamicResource MaterialDesignBody}" />
+                </StackPanel>
+
+                <!-- Animated date & time pills -->
+                <StackPanel Grid.Column="3"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            FlowDirection="LeftToRight"
+                            WindowChrome.IsHitTestVisibleInChrome="False">
+                    <Border Style="{StaticResource TitleBarDatePill}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CalendarStar"
+                                                     Width="16" Height="16"
+                                                     Foreground="#1565C0"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0">
+                                <materialDesign:PackIcon.RenderTransform>
+                                    <RotateTransform x:Name="HijriIconRotate" Angle="0" />
+                                </materialDesign:PackIcon.RenderTransform>
+                                <materialDesign:PackIcon.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                 From="0" To="360" Duration="0:0:12"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </materialDesign:PackIcon.Triggers>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="{Binding CurrentHijriDate, Mode=OneWay}"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="#37474F"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TitleBarDatePill}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CalendarToday"
+                                                     Width="16" Height="16"
+                                                     Foreground="#00897B"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding CurrentGregorianDate, Mode=OneWay}"
+                                       FontSize="12" FontWeight="Medium"
+                                       Foreground="#37474F"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TitleBarDatePill}"
+                            Background="#E8F5E9"
+                            BorderBrush="#C8E6C9">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ClockOutline"
+                                                     Width="16" Height="16"
+                                                     Foreground="#2E7D32"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0">
+                                <materialDesign:PackIcon.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="1" To="0.45" Duration="0:0:1"
+                                                                 AutoReverse="True"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </materialDesign:PackIcon.Triggers>
+                            </materialDesign:PackIcon>
+                            <TextBlock x:Name="ClockText"
+                                       Text="{Binding CurrentTime, Mode=OneWay}"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="#1B5E20"
+                                       VerticalAlignment="Center"
+                                       FontFamily="{DynamicResource AppFont}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentTime}" Value="{x:Null}">
+                                                <Setter Property="Opacity" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Accent shimmer line -->
+                <Border Grid.Column="0" Grid.ColumnSpan="5"
+                        VerticalAlignment="Bottom" Height="2" IsHitTestVisible="False"
+                        Opacity="0.85">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                            <GradientStop Color="#001565C0" Offset="0"/>
+                            <GradientStop Color="#801565C0" Offset="0.35"/>
+                            <GradientStop Color="#801E88E5" Offset="0.65"/>
+                            <GradientStop Color="#001E88E5" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="0.5" To="1" Duration="0:0:2.5"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Border.Triggers>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Body: sidebar + main -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
         <!-- ═══════════════════════════════════════════ -->
         <!-- SIDEBAR (RIGHT side in RTL)                  -->
         <!-- ═══════════════════════════════════════════ -->
         <Border Grid.Column="0"
                 Background="{DynamicResource SidebarGradientBrush}"
+                BorderBrush="#18FFFFFF"
+                BorderThickness="1,0,0,0"
                 CornerRadius="0"
                 Effect="{x:Null}">
             <Border.Width>
                 <Binding Path="IsSidebarExpanded">
                     <Binding.Converter>
-                        <local:BoolToWidthConverter ExpandedWidth="260" CollapsedWidth="72" />
+                        <local:BoolToWidthConverter ExpandedWidth="280" CollapsedWidth="76" />
                     </Binding.Converter>
                 </Binding>
             </Border.Width>
@@ -49,66 +263,202 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />  <!-- Logo/Brand -->
+                    <RowDefinition Height="Auto" />  <!-- Search -->
                     <RowDefinition Height="*" />      <!-- Nav Items -->
                     <RowDefinition Height="Auto" />   <!-- User Section -->
                 </Grid.RowDefinitions>
 
                 <!-- BRAND / LOGO -->
-                <Border Grid.Row="0" Padding="16,20,16,16">
+                <Border Grid.Row="0" Padding="14,18,14,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <materialDesign:PackIcon Grid.Column="0"
-                                                 Kind="CalculatorVariant"
-                                                 Width="36" Height="36"
-                                                 Foreground="{DynamicResource AccentBrush}"
-                                                 VerticalAlignment="Center" />
+                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1565C0" Offset="0"/>
+                                    <GradientStop Color="#1E88E5" Offset="0.55"/>
+                                    <GradientStop Color="#42A5F5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1565C0" BlurRadius="14" ShadowDepth="0" Opacity="0.35"/>
+                            </Border.Effect>
+                            <materialDesign:PackIcon Kind="CalculatorVariant"
+                                                     Width="26" Height="26"
+                                                     Foreground="White"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                        </Border>
 
                         <StackPanel Grid.Column="1"
                                     Margin="12,0,0,0"
                                     VerticalAlignment="Center"
                                     Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="المحاسب"
-                                       FontSize="22"
+                                       FontSize="20"
                                        FontWeight="Bold"
                                        Foreground="White" />
                             <TextBlock Text="نظام المحاسبة المتكامل"
-                                       FontSize="10"
-                                       Foreground="{DynamicResource SidebarForeground}"
-                                       Opacity="0.7"
-                                       Margin="0,2,0,0" />
+                                       FontSize="10.5"
+                                       Foreground="#90A4AE"
+                                       Margin="0,3,0,0" />
                         </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Command="{Binding ToggleSearchCommand}"
+                                ToolTip="بحث في القوائم"
+                                Style="{StaticResource SidebarHeaderIconButton}"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20"/>
+                        </Button>
+
+                        <Button Grid.Column="0" Grid.ColumnSpan="3"
+                                Command="{Binding ToggleSearchCommand}"
+                                ToolTip="بحث"
+                                Style="{StaticResource SidebarHeaderIconButton}"
+                                Width="40" Height="40"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <materialDesign:PackIcon Kind="Magnify" Width="22" Height="22"/>
+                        </Button>
                     </Grid>
                 </Border>
 
-                <Separator Grid.Row="0"
-                           VerticalAlignment="Bottom"
-                           Background="#FFFFFF"
-                           Opacity="0.12"
-                           Margin="16,0" />
+                <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1"
+                        Background="#14FFFFFF" Margin="14,0"/>
+
+                <!-- SIDEBAR SEARCH (animated) -->
+                <Border x:Name="SidebarSearchPanel"
+                        Grid.Row="1"
+                        Padding="12,0,12,8"
+                        ClipToBounds="True"
+                        MaxHeight="0"
+                        Opacity="0"
+                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSearchOpen}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="MaxHeight"
+                                                                 To="56" Duration="0:0:0.28">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 To="1" Duration="0:0:0.22"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="MaxHeight"
+                                                                 To="0" Duration="0:0:0.2">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 To="0" Duration="0:0:0.15"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <Grid>
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource SidebarSearchTextBox}"/>
+
+                        <Popup Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=SidebarSearchPanel}"
+                               StaysOpen="False"
+                               AllowsTransparency="True"
+                               IsOpen="{Binding HasSearchResults}"
+                               PopupAnimation="Fade"
+                               HorizontalOffset="0"
+                               VerticalOffset="6">
+                            <Border Background="#FAFCFE"
+                                    BorderBrush="#D5E3F0"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Padding="6"
+                                    MinWidth="228"
+                                    MaxWidth="280"
+                                    MaxHeight="300">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.14" Color="#0D1B2A"/>
+                                </Border.Effect>
+                                <ListBox ItemsSource="{Binding SearchResults}"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.SelectSearchResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource SidebarSearchResultButton}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0"
+                                                            Width="32" Height="32"
+                                                            CornerRadius="8"
+                                                            Background="#E3F2FD"
+                                                            Margin="0,0,10,0"
+                                                            VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                                 Width="18" Height="18"
+                                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                                                                 HorizontalAlignment="Center"
+                                                                                 VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Title}"
+                                                               FontSize="13"
+                                                               FontWeight="Medium"
+                                                               Foreground="#263238"
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </Border>
 
                 <!-- NAVIGATION MENU -->
-                <ScrollViewer Grid.Row="1"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              Padding="8,8">
+                <ScrollViewer Grid.Row="2"
+                              Style="{StaticResource ThinScrollViewer}"
+                              Padding="4,6,4,8">
                     <ItemsControl ItemsSource="{Binding MenuItems}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
 
                                     <!-- Regular menu item (non-group) -->
-                                    <Button Command="{Binding DataContext.SelectMenuItemCommand, 
+                                    <Button Command="{Binding DataContext.SelectMenuItemCommand,
                                                 RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}"
-                                            Cursor="Hand"
-                                            Height="44"
-                                            Margin="0,2"
-                                            HorizontalContentAlignment="Stretch"
-                                            Padding="0">
+                                            Style="{StaticResource SidebarNavMenuButton}">
                                         <Button.Visibility>
                                             <Binding Path="IsGroupHeader">
                                                 <Binding.Converter>
@@ -116,54 +466,6 @@
                                                 </Binding.Converter>
                                             </Binding>
                                         </Button.Visibility>
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border x:Name="Bd"
-                                                                    CornerRadius="8"
-                                                                    Padding="12,0"
-                                                                    Background="Transparent">
-                                                                <Grid>
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="Auto" />
-                                                                        <ColumnDefinition Width="*" />
-                                                                    </Grid.ColumnDefinitions>
-
-                                                                    <materialDesign:PackIcon Grid.Column="0"
-                                                                                             Kind="{Binding Icon}"
-                                                                                             Width="22" Height="22"
-                                                                                             VerticalAlignment="Center"
-                                                                                             Foreground="{DynamicResource SidebarForeground}" />
-
-                                                                    <TextBlock Grid.Column="1"
-                                                                               Text="{Binding Title}"
-                                                                               VerticalAlignment="Center"
-                                                                               Margin="14,0,0,0"
-                                                                               FontSize="13.5"
-                                                                               FontWeight="Medium"
-                                                                               Foreground="{DynamicResource SidebarForeground}"
-                                                                               Visibility="{Binding DataContext.IsSidebarExpanded,
-                                                                                   RelativeSource={RelativeSource AncestorType=Window},
-                                                                                   Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                                </Grid>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                    <Setter TargetName="Bd" Property="Background"
-                                                                            Value="{DynamicResource SidebarSelected}" />
-                                                                </DataTrigger>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="Bd" Property="Background"
-                                                                            Value="{DynamicResource SidebarHover}" />
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
                                     </Button>
 
                                     <!-- Group header (expandable) -->
@@ -171,143 +473,19 @@
                                         <Button Command="{Binding DataContext.SelectMenuItemCommand,
                                                     RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}"
-                                                Cursor="Hand"
-                                                Height="44"
-                                                Margin="0,2"
-                                                HorizontalContentAlignment="Stretch"
-                                                Padding="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border x:Name="Bd"
-                                                                        CornerRadius="8"
-                                                                        Padding="12,0"
-                                                                        Background="Transparent">
-                                                                    <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="Auto" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                            <ColumnDefinition Width="Auto" />
-                                                                        </Grid.ColumnDefinitions>
-
-                                                                        <materialDesign:PackIcon Grid.Column="0"
-                                                                                                 Kind="{Binding Icon}"
-                                                                                                 Width="22" Height="22"
-                                                                                                 VerticalAlignment="Center"
-                                                                                                 Foreground="{DynamicResource SidebarForeground}" />
-
-                                                                        <TextBlock Grid.Column="1"
-                                                                                   Text="{Binding Title}"
-                                                                                   VerticalAlignment="Center"
-                                                                                   Margin="14,0,0,0"
-                                                                                   FontSize="13.5"
-                                                                                   FontWeight="Medium"
-                                                                                   Foreground="{DynamicResource SidebarForeground}"
-                                                                                   Visibility="{Binding DataContext.IsSidebarExpanded,
-                                                                                       RelativeSource={RelativeSource AncestorType=Window},
-                                                                                       Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-                                                                        <materialDesign:PackIcon Grid.Column="2"
-                                                                                                 Width="18" Height="18"
-                                                                                                 VerticalAlignment="Center"
-                                                                                                 Foreground="{DynamicResource SidebarForeground}"
-                                                                                                 Opacity="0.6"
-                                                                                                 Visibility="{Binding DataContext.IsSidebarExpanded,
-                                                                                                     RelativeSource={RelativeSource AncestorType=Window},
-                                                                                                     Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                                            <materialDesign:PackIcon.Style>
-                                                                                <Style TargetType="materialDesign:PackIcon">
-                                                                                    <Setter Property="Kind" Value="ChevronDown" />
-                                                                                    <Style.Triggers>
-                                                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                                                                            <Setter Property="Kind" Value="ChevronUp" />
-                                                                                        </DataTrigger>
-                                                                                    </Style.Triggers>
-                                                                                </Style>
-                                                                            </materialDesign:PackIcon.Style>
-                                                                        </materialDesign:PackIcon>
-                                                                    </Grid>
-                                                                </Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter TargetName="Bd" Property="Background"
-                                                                                Value="{DynamicResource SidebarHover}" />
-                                                                    </Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
+                                                Style="{StaticResource SidebarNavGroupButton}"/>
 
                                         <!-- Children (sub-items) -->
                                         <ItemsControl ItemsSource="{Binding Children}"
                                                       Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                      Margin="20,0,0,0">
+                                                      Margin="8,2,0,4">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Button Command="{Binding DataContext.SelectMenuItemCommand,
                                                                 RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"
-                                                            Cursor="Hand"
-                                                            Height="38"
-                                                            Margin="0,1"
-                                                            HorizontalContentAlignment="Stretch"
-                                                            Padding="0"
-                                                            Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Button.Style>
-                                                            <Style TargetType="Button">
-                                                                <Setter Property="Template">
-                                                                    <Setter.Value>
-                                                                        <ControlTemplate TargetType="Button">
-                                                                            <Border x:Name="Bd"
-                                                                                    CornerRadius="6"
-                                                                                    Padding="10,0"
-                                                                                    Background="Transparent">
-                                                                                <Grid>
-                                                                                    <Grid.ColumnDefinitions>
-                                                                                        <ColumnDefinition Width="Auto" />
-                                                                                        <ColumnDefinition Width="*" />
-                                                                                    </Grid.ColumnDefinitions>
-
-                                                                                    <materialDesign:PackIcon Grid.Column="0"
-                                                                                                             Kind="{Binding Icon}"
-                                                                                                             Width="18" Height="18"
-                                                                                                             VerticalAlignment="Center"
-                                                                                                             Foreground="{DynamicResource SidebarForeground}"
-                                                                                                             Opacity="0.8" />
-
-                                                                                    <TextBlock Grid.Column="1"
-                                                                                               Text="{Binding Title}"
-                                                                                               VerticalAlignment="Center"
-                                                                                               Margin="10,0,0,0"
-                                                                                               FontSize="12.5"
-                                                                                               Foreground="{DynamicResource SidebarForeground}"
-                                                                                               Opacity="0.9"
-                                                                                               Visibility="{Binding DataContext.IsSidebarExpanded,
-                                                                                                   RelativeSource={RelativeSource AncestorType=Window},
-                                                                                                   Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                                                </Grid>
-                                                                            </Border>
-                                                                            <ControlTemplate.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                                    <Setter TargetName="Bd" Property="Background"
-                                                                                            Value="{DynamicResource SidebarSelected}" />
-                                                                                </DataTrigger>
-                                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter TargetName="Bd" Property="Background"
-                                                                                            Value="{DynamicResource SidebarHover}" />
-                                                                                </Trigger>
-                                                                            </ControlTemplate.Triggers>
-                                                                        </ControlTemplate>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </Style>
-                                                        </Button.Style>
-                                                    </Button>
+                                                            Style="{StaticResource SidebarNavChildButton}"
+                                                            Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
@@ -319,25 +497,25 @@
                 </ScrollViewer>
 
                 <!-- USER SECTION (bottom) -->
-                <Border Grid.Row="2" Padding="12,12">
-                    <Grid>
-                        <Separator VerticalAlignment="Top"
-                                   Background="#FFFFFF"
-                                   Opacity="0.12"
-                                   Margin="4,-12,4,0" />
-
-                        <Grid Margin="0,8,0,0">
+                <Border Grid.Row="3" Padding="10,8,10,14">
+                    <Border CornerRadius="14" Padding="10,10"
+                            Background="#12FFFFFF"
+                            BorderBrush="#20FFFFFF"
+                            BorderThickness="1">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- User Avatar -->
-                            <Border Grid.Column="0"
-                                    Width="38" Height="38"
-                                    CornerRadius="19"
-                                    Background="{DynamicResource SidebarSelected}">
+                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="12">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1565C0" Offset="0"/>
+                                        <GradientStop Color="#1976D2" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
                                 <materialDesign:PackIcon Kind="Account"
                                                          Width="22" Height="22"
                                                          HorizontalAlignment="Center"
@@ -345,29 +523,30 @@
                                                          Foreground="White" />
                             </Border>
 
-                            <!-- Username -->
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding LoggedInUsername}"
-                                       FontSize="13"
-                                       FontWeight="Medium"
-                                       Foreground="White"
-                                       VerticalAlignment="Center"
-                                       Margin="10,0,0,0"
-                                       TextTrimming="CharacterEllipsis"
-                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <StackPanel Grid.Column="1"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding LoggedInUsername}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="مسجّل الدخول"
+                                           FontSize="10"
+                                           Foreground="#78909C"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
 
-                            <!-- Logout Button -->
                             <Button Grid.Column="2"
                                     Command="{Binding LogoutCommand}"
                                     ToolTip="تسجيل الخروج"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="{DynamicResource SidebarForeground}"
-                                    Width="36" Height="36"
+                                    Style="{StaticResource SidebarHeaderIconButton}"
                                     Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <materialDesign:PackIcon Kind="Logout" Width="20" Height="20" />
+                                <materialDesign:PackIcon Kind="Logout" Width="20" Height="20"/>
                             </Button>
                         </Grid>
-                    </Grid>
+                    </Border>
                 </Border>
             </Grid>
         </Border>
@@ -377,78 +556,92 @@
         <!-- ═══════════════════════════════════════════ -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />  <!-- Top Bar -->
-                <RowDefinition Height="*" />      <!-- Content -->
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- TOP BAR -->
-            <Border Grid.Row="0"
-                    Style="{StaticResource ModernTopBar}">
-                <Grid VerticalAlignment="Center">
+            <!-- Chrome-style tab strip -->
+            <Border Grid.Row="0" Style="{StaticResource ChromeTabStrip}">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />  <!-- Toggle -->
-                        <ColumnDefinition Width="Auto" />  <!-- Page Title -->
-                        <ColumnDefinition Width="*" />     <!-- Spacer -->
-                        <ColumnDefinition Width="Auto" />  <!-- Search -->
-                        <ColumnDefinition Width="Auto" />  <!-- Date -->
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
-                    <!-- Sidebar Toggle -->
-                    <Button Grid.Column="0"
-                            Command="{Binding ToggleSidebarCommand}"
-                            Style="{StaticResource IconButton}"
-                            ToolTip="طي/فتح القائمة"
-                            Foreground="{DynamicResource MaterialDesignBody}"
-                            Width="40" Height="40">
-                        <materialDesign:PackIcon Kind="Menu" Width="24" Height="24" />
-                    </Button>
-
-                    <!-- Page Title -->
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding PageTitle}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"
-                               Margin="12,0,0,0"
-                               Foreground="{DynamicResource MaterialDesignBody}" />
-
-                    <!-- Search Box -->
-                    <TextBox Grid.Column="3"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource SearchBox}"
-                             Margin="8,0"
-                             MinWidth="280"
-                             VerticalAlignment="Center" />
-
-                    <!-- Date & Time -->
-                    <StackPanel Grid.Column="4"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Margin="8,0,4,0">
-                        <materialDesign:PackIcon Kind="CalendarToday"
-                                                 Width="18" Height="18"
-                                                 VerticalAlignment="Center"
-                                                 Foreground="#757575"
-                                                 Margin="0,0,6,0" />
-                        <TextBlock VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Foreground="#616161">
-                            <Run Text="{Binding CurrentHijriDate, Mode=OneWay}" />
-                            <Run Text=" | " />
-                            <Run Text="{Binding CurrentGregorianDate, Mode=OneWay}" />
-                            <Run Text=" | " />
-                            <Run Text="{Binding CurrentTime, Mode=OneWay}" />
-                        </TextBlock>
-                    </StackPanel>
+                    <ListBox Grid.Column="0"
+                             ItemsSource="{Binding OpenTabs}"
+                             SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                             Style="{StaticResource ChromeTabListBox}"
+                             ItemContainerStyle="{StaticResource ChromeTabListBoxItem}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             HorizontalContentAlignment="Left"
+                             VirtualizingPanel.IsVirtualizing="False">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:DocumentTab}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                 Width="16" Height="16"
+                                                                 Foreground="#1565C0"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#37474F"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="128"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource ChromeTabCloseButton}"
+                                            Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Visibility="{Binding CanClose, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            ToolTip="إغلاق التبويب"
+                                            PreviewMouseLeftButtonDown="ChromeTabClose_PreviewMouseLeftButtonDown"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Border Grid.Column="1"
+                            Background="#D0DCE8"
+                            CornerRadius="8"
+                            Padding="8,4"
+                            Margin="8,2,4,4"
+                            VerticalAlignment="Center">
+                        <TextBlock FontSize="11"
+                                   Foreground="#546E7A"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding OpenTabs.Count, Mode=OneWay, StringFormat={}{0}/8}"/>
+                    </Border>
                 </Grid>
             </Border>
 
             <!-- CONTENT AREA -->
-            <Border Grid.Row="1"
+            <Grid Grid.Row="1">
+            <Border x:Name="TabContentHost"
                     Background="{DynamicResource BackgroundBrush}"
-                    Padding="24,20">
+                    Padding="24,16,24,20"
+                    RenderTransformOrigin="0.5,0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="0"/>
+                </Border.RenderTransform>
                 <Grid>
-                    <ContentControl Content="{Binding CurrentViewModel}">
+                    <ContentControl Content="{Binding CurrentViewModel}"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch">
                     <ContentControl.Resources>
                         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
                             <views:DashboardView />
@@ -483,6 +676,12 @@
                         <DataTemplate DataType="{x:Type vm:WarehousesViewModel}">
                             <views:WarehousesView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningStockViewModel}">
+                            <views:OpeningStockView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:StockAdjustmentViewModel}">
+                            <views:StockAdjustmentView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:VouchersViewModel}">
                             <views:VouchersView />
                         </DataTemplate>
@@ -491,6 +690,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InvestorsViewModel}">
                             <views:InvestorsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningInvestorsViewModel}">
+                            <views:OpeningInvestorsView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SalesReportViewModel}">
                             <views:SalesReportView />
@@ -558,23 +760,174 @@
                         <DataTemplate DataType="{x:Type vm:BackupRestoreViewModel}">
                             <views:BackupRestoreView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PrintLayoutSettingsViewModel}">
+                            <views:PrintLayoutSettingsView />
+                        </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>
 
-                <!-- Permission Snackbar -->
-                <materialDesign:Snackbar x:Name="MainSnackbar"
-                                         MessageQueue="{Binding SnackbarQueue}"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Bottom"
-                                         Margin="0,0,0,16" />
+                <!-- Toast alerts (يسار الشاشة — مكدسة) -->
+                <controls:ToastHost x:Name="AppToastHost"
+                                    Panel.ZIndex="500"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="20,12,0,0"/>
                 </Grid>
             </Border>
-        </Grid>
+
+            <!-- Quick assist dim overlay -->
+            <Border Background="#33000000"
+                    Visibility="{Binding IsQuickAssistOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Panel.ZIndex="90"
+                    MouseLeftButtonDown="QuickAssistBackdrop_Click">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsQuickAssistOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+
+            <!-- Quick Assist FAB (bottom-left) -->
+            <Grid HorizontalAlignment="Left"
+                  VerticalAlignment="Bottom"
+                  Margin="24,0,0,24"
+                  Panel.ZIndex="100">
+                <StackPanel VerticalAlignment="Bottom"
+                            HorizontalAlignment="Left"
+                            Panel.ZIndex="1">
+                    <!-- Action buttons panel -->
+                    <Border x:Name="QuickAssistPanel"
+                            Background="White"
+                            CornerRadius="16"
+                            Padding="10"
+                            Margin="0,0,0,12"
+                            MinWidth="220"
+                            Visibility="{Binding IsQuickAssistOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            RenderTransformOrigin="0.5,1">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.18" Color="#1565C0"/>
+                        </Border.Effect>
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsQuickAssistOpen}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                     From="0.7" To="1" Duration="0:0:0.28">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <BackEase EasingMode="EaseOut" Amplitude="0.35"/>
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0" To="1" Duration="0:0:0.22"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <TextBlock Text="أدوات مساعدة"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="#1565C0"
+                                       Margin="4,2,4,10"/>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenPrintSettingsCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="PrinterSettings" Width="18" Height="18"
+                                                                 Foreground="#1565C0"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="إعدادات الطباعة" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenCalculatorCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#FFF3E0" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="Calculator" Width="18" Height="18"
+                                                                 Foreground="#EF6C00"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="حاسبة ويندوز" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenOnScreenKeyboardCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#F3E5F5" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="Keyboard" Width="18" Height="18"
+                                                                 Foreground="#7B1FA2"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="لوحة المفاتيح" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding GoToDashboardCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="ViewDashboard" Width="18" Height="18"
+                                                                 Foreground="#2E7D32"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="لوحة التحكم" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding GoToBackupCommand}"
+                                    Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#ECEFF1" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="DatabaseExport" Width="18" Height="18"
+                                                                 Foreground="#455A64"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- FAB -->
+                    <Button Style="{StaticResource QuickAssistFab}"
+                            Command="{Binding ToggleQuickAssistCommand}"
+                            ToolTip="أدوات مساعدة وسريعة">
+                        <materialDesign:PackIcon Kind="Tools"
+                                                 Width="28" Height="28"
+                                                 Foreground="White"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+            </Grid><!-- end content row -->
+
+        </Grid><!-- end main column -->
+
+        </Grid><!-- end body grid -->
 
         <!-- ═══════════════════════════════════════════ -->
         <!-- EXIT DIALOG OVERLAY                          -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.ColumnSpan="2"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsExitDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1000">
 
@@ -663,6 +1016,13 @@
                                        Foreground="#CCFFFFFF"
                                        HorizontalAlignment="Center"
                                        Margin="0,6,0,0"/>
+                            <TextBlock Text="عند «نسخ احتياطي ثم خروج» ستختار مكان الحفظ (مثلاً سطح المكتب أو قرص D)"
+                                       FontSize="11"
+                                       Foreground="#B3FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       Margin="0,8,16,0"/>
                         </StackPanel>
                     </Border>
 
@@ -674,7 +1034,24 @@
                                          IsIndeterminate="True" Height="4" Margin="0,0,0,8"/>
                             <TextBlock Text="{Binding ExitBackupStatus}"
                                        FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"
-                                       HorizontalAlignment="Center"/>
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"/>
+                            <TextBlock Text="{Binding ExitBackupPath}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource PrimaryHueMidBrush}"
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       Margin="0,6,0,0"
+                                       Visibility="{Binding ExitBackupPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                            <Button Command="{Binding OpenExitBackupFolderCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,8,0,0"
+                                    Visibility="{Binding ExitBackupPath, Converter={StaticResource NullToCollapsedConverter}}">
+                                <TextBlock Text="فتح مجلد النسخة" FontSize="12"/>
+                            </Button>
                         </StackPanel>
                     </Border>
 

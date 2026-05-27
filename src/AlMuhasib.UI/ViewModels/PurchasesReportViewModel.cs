@@ -115,29 +115,7 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             var invoice = await _invoiceService.GetByIdWithDetailsAsync(row.InvoiceId);
             if (invoice is null) { BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة"); return; }
 
-            var details = $"رقم الفاتورة: {invoice.InvoiceNumber}\n" +
-                          $"التاريخ: {invoice.Date:yyyy/MM/dd}\n" +
-                          $"المورد: {invoice.Supplier?.Name ?? "—"}\n" +
-                          $"المخزن: {invoice.Warehouse?.Name ?? "—"}\n" +
-                          $"طريقة الدفع: {row.PaymentMethod}\n" +
-                          $"المبلغ الكلي: {invoice.NetAmount:N0} د.ع\n";
-
-            if (invoice.PaymentMethod == PaymentMethod.Credit)
-            {
-                details += $"المدفوع: {invoice.PaidAmount:N0} د.ع\n" +
-                           $"المتبقي: {invoice.RemainingAmount:N0} د.ع\n" +
-                           $"الحالة: {(invoice.IsCreditPaid ? "مسددة" : "غير مسددة")}\n";
-            }
-
-            if (invoice.Items.Count > 0)
-            {
-                details += "\n── المواد ──\n";
-                int n = 1;
-                foreach (var item in invoice.Items)
-                    details += $"{n++}. {item.ItemName} × {item.Quantity:N0} = {item.TotalPrice:N0} د.ع\n";
-            }
-
-            BeautifulMessageDialog.ShowInfo(details);
+            InvoiceDetailDialog.Show(invoice, row.PaymentMethod);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
     }
@@ -231,8 +209,13 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المشتريات.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي" };
-        var rows = _allRows.Select(r => new object[] { r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod, r.TotalAmount, r.Discount, r.NetAmount }).ToList();
+        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
+        var rows = _allRows.Select(r => new object[]
+        {
+            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
+            r.TotalAmount, r.Discount, r.NetAmount, r.PaidAmount, r.RemainingAmount
+        }).ToList();
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
         _exportService.ExportToExcel(dlg.FileName, "المشتريات", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -240,8 +223,14 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي" };
-        var rows = _allRows.Select(r => new object[] { r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod, r.TotalAmount, r.Discount, r.NetAmount }).ToList();
+        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
+        var rows = _allRows.Select(r => new object[]
+        {
+            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
+            r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
+            r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0")
+        }).ToList();
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
         _exportService.PrintTable("تقرير المشتريات", cols, rows);
     }
 }

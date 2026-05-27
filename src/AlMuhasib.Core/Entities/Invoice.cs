@@ -14,6 +14,10 @@ public class Invoice : BaseEntity
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal NetAmount { get; set; }
+    /// <summary>نسبة الشركة (مثلاً 0.08 = 8%)</summary>
+    public decimal CompanyFeePercentage { get; set; }
+    /// <summary>مبلغ نسبة الشركة</summary>
+    public decimal CompanyFeeAmount { get; set; }
     public decimal RoundingAmount { get; set; }
     public RoundingType RoundingType { get; set; }
     public int? CashBoxId { get; set; }

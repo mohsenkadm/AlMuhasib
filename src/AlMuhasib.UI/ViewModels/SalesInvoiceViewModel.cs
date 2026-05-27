@@ -5,6 +5,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -65,6 +66,14 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     public ObservableCollection<InvoiceItemRow> Items { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
 
+    public ProductPickerViewModel ProductPicker { get; }
+
+    [ObservableProperty]
+    private bool _isProductPickerOpen;
+
+    [ObservableProperty]
+    private string _barcodeInput = string.Empty;
+
     // ── Footer / Totals ────────────────────────────────────
     [ObservableProperty]
     private decimal _subtotal;
@@ -74,6 +83,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _grandTotal;
+
+    [ObservableProperty]
+    private int _totalItemCount;
+
+    [ObservableProperty]
+    private decimal _totalQuantity;
 
     [ObservableProperty]
     private string _notes = string.Empty;
@@ -110,8 +125,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
         PageTitle = "فاتورة مبيعات";
 
+        ProductPicker = new ProductPickerViewModel(_unitOfWork);
+        ProductPicker.Confirmed += OnProductPickerConfirmed;
+        ProductPicker.Cancelled += () => IsProductPickerOpen = false;
+
         Items.CollectionChanged += OnItemsCollectionChanged;
     }
+
+    public override bool HasUnsavedChanges =>
+        !IsSaved && Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0);
 
     partial void OnSelectedPaymentMethodChanged(PaymentMethod value)
     {
@@ -208,17 +230,117 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private void AddRow()
     {
         var row = new InvoiceItemRow();
-        row.TotalChanged += RecalculateTotals;
+        WireItemRow(row);
         Items.Add(row);
+    }
+
+    [RelayCommand]
+    private async Task OpenProductPickerAsync()
+    {
+        try
+        {
+            await ProductPicker.InitializeAsync(SelectedWarehouse?.Id, InvoicePickerMode.Sale);
+            ProductPicker.SeedFromInvoiceItems(Items);
+            IsProductPickerOpen = true;
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر فتح اختيار المنتجات:\n{ex.Message}");
+        }
+    }
+
+    private void OnProductPickerConfirmed()
+    {
+        InvoiceProductMergeHelper.Merge(
+            ProductPicker.BuildResults(),
+            Items,
+            WireItemRow,
+            UnwireItemRow);
+
+        RecalculateTotals();
+        IsProductPickerOpen = false;
+    }
+
+    private void WireItemRow(InvoiceItemRow row)
+    {
+        row.TotalChanged += RecalculateTotals;
+        row.ProductChanged += OnProductChanged;
+    }
+
+    private void UnwireItemRow(InvoiceItemRow row)
+    {
+        row.TotalChanged -= RecalculateTotals;
+        row.ProductChanged -= OnProductChanged;
+    }
+
+    [RelayCommand]
+    private void ProcessBarcode()
+    {
+        if (!InvoiceBarcodeHelper.TryAddByBarcode(
+                BarcodeInput,
+                Products,
+                Items,
+                WireItemRow,
+                UnwireItemRow,
+                row => OnProductChanged(row),
+                out var error))
+        {
+            BeautifulMessageDialog.ShowWarning(error);
+            return;
+        }
+
+        BarcodeInput = string.Empty;
+        RecalculateTotals();
+    }
+
+    [RelayCommand]
+    private void IncreaseRowQuantity(InvoiceItemRow? row)
+    {
+        if (row is null) return;
+        row.Quantity += 1;
+        RecalculateTotals();
+    }
+
+    [RelayCommand]
+    private void DecreaseRowQuantity(InvoiceItemRow? row)
+    {
+        if (row is null || row.Quantity <= 1) return;
+        row.Quantity -= 1;
+        RecalculateTotals();
     }
 
     [RelayCommand]
     private void RemoveRow(InvoiceItemRow? row)
     {
         if (row is null) return;
-        row.TotalChanged -= RecalculateTotals;
+        UnwireItemRow(row);
         Items.Remove(row);
         RecalculateTotals();
+    }
+
+    private async void OnProductChanged(InvoiceItemRow row)
+    {
+        if (row.ProductId is null) { row.StockInfo = string.Empty; row.AvailableStock = 0; return; }
+
+        try
+        {
+            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
+            var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
+            var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
+
+            var lines = stocks
+                .Where(s => s.Quantity != 0)
+                .Select(s => $"{warehouseDict.GetValueOrDefault(s.WarehouseId, "مخزن")}: {s.Quantity:N0}")
+                .ToList();
+
+            row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
+
+            if (SelectedWarehouse is not null)
+                row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == SelectedWarehouse.Id)?.Quantity ?? 0;
+            else
+                row.AvailableStock = stocks.Sum(s => s.Quantity);
+        }
+        catch { row.StockInfo = string.Empty; }
     }
 
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -226,15 +348,41 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         RecalculateTotals();
     }
 
+    private bool _isManualGrandTotal;
+    private bool _isRecalculating;
+
+    partial void OnGrandTotalChanged(decimal value)
+    {
+        if (!_isRecalculating)
+            _isManualGrandTotal = true;
+    }
+
     private void RecalculateTotals()
     {
         decimal sub = 0m;
+        int itemCount = 0;
+        decimal totalQty = 0m;
         foreach (var item in Items)
+        {
             sub += item.TotalPrice;
+            if (!string.IsNullOrWhiteSpace(item.ItemName))
+            {
+                itemCount++;
+                totalQty += item.Quantity;
+            }
+        }
 
         Subtotal = sub;
+        TotalItemCount = itemCount;
+        TotalQuantity = totalQty;
         RoundingAmount = _invoiceService.CalculateRounding(sub, InvoiceType.Sale);
-        GrandTotal = sub + RoundingAmount; // RoundingAmount is negative for sales
+
+        if (!_isManualGrandTotal)
+        {
+            _isRecalculating = true;
+            GrandTotal = sub + RoundingAmount;
+            _isRecalculating = false;
+        }
     }
 
     // ── Save ───────────────────────────────────────────────
@@ -275,13 +423,29 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         }
 
         var validItems = Items
-            .Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0 && i.UnitPrice > 0)
+            .Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0 && (i.UnitPrice > 0 || i.TotalPrice > 0))
             .ToList();
 
         if (validItems.Count == 0)
         {
             ErrorMessage = "يجب إضافة عنصر واحد على الأقل بالكمية والسعر";
             return;
+        }
+
+        // Stock validation for items with known products
+        if (SelectedWarehouse is not null)
+        {
+            foreach (var item in validItems.Where(i => i.ProductId.HasValue))
+            {
+                var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
+                    s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
+                var available = stocks.FirstOrDefault()?.Quantity ?? 0;
+                if (item.Quantity > available)
+                {
+                    ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
+                    return;
+                }
+            }
         }
 
         IsBusy = true;
@@ -412,13 +576,88 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         SelectedPaymentMethod = PaymentMethod.Cash;
         CreditDueDate = null;
         InvoiceDate = DateTime.Now;
+        _isManualGrandTotal = false;
 
-        foreach (var item in Items)
-            item.TotalChanged -= RecalculateTotals;
+        foreach (var item in Items.ToList())
+            UnwireItemRow(item);
         Items.Clear();
         AddRow();
 
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
+    }
+
+    // ══════════════════════════════════════════════════════
+    // QUICK ADD CUSTOMER
+    // ══════════════════════════════════════════════════════
+    [ObservableProperty]
+    private bool _isQuickAddCustomerOpen;
+
+    [ObservableProperty]
+    private string _quickCustomerName = string.Empty;
+
+    [ObservableProperty]
+    private string _quickCustomerPhone = string.Empty;
+
+    [ObservableProperty]
+    private string _quickCustomerAddress = string.Empty;
+
+    [ObservableProperty]
+    private string _quickCustomerError = string.Empty;
+
+    [RelayCommand]
+    private void OpenQuickAddCustomer()
+    {
+        QuickCustomerName = string.Empty;
+        QuickCustomerPhone = string.Empty;
+        QuickCustomerAddress = string.Empty;
+        QuickCustomerError = string.Empty;
+        IsQuickAddCustomerOpen = true;
+    }
+
+    [RelayCommand]
+    private void CancelQuickAddCustomer() => IsQuickAddCustomerOpen = false;
+
+    [RelayCommand]
+    private async Task SaveQuickCustomer()
+    {
+        if (string.IsNullOrWhiteSpace(QuickCustomerName))
+        {
+            QuickCustomerError = "اسم العميل مطلوب";
+            return;
+        }
+
+        try
+        {
+            var newCustomer = new Customer
+            {
+                Name = QuickCustomerName.Trim(),
+                Phone = string.IsNullOrWhiteSpace(QuickCustomerPhone) ? null : QuickCustomerPhone.Trim(),
+                Address = string.IsNullOrWhiteSpace(QuickCustomerAddress) ? null : QuickCustomerAddress.Trim(),
+                CreatedBy = _currentUserService.Username,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Customers.AddAsync(newCustomer);
+            await _unitOfWork.SaveChangesAsync();
+
+            var customers = await _unitOfWork.Customers.GetAllAsync();
+            Customers.Clear();
+            FilteredCustomers.Clear();
+            foreach (var c in customers)
+            {
+                Customers.Add(c);
+                FilteredCustomers.Add(c);
+            }
+
+            SelectedCustomer = Customers.FirstOrDefault(c => c.Id == newCustomer.Id);
+            IsQuickAddCustomerOpen = false;
+
+            BeautifulMessageDialog.ShowSuccess($"تم إضافة العميل '{newCustomer.Name}' بنجاح");
+        }
+        catch (Exception ex)
+        {
+            QuickCustomerError = $"خطأ: {ex.Message}";
+        }
     }
 }

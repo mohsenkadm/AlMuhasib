@@ -15,6 +15,12 @@ public partial class LoginWindow : Window
         DataContext = _viewModel;
 
         _viewModel.LoginSucceeded += OnLoginSucceeded;
+        Loaded += OnWindowLoaded;
+    }
+
+    private void OnWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnWindowLoaded;
         UsernameBox.Focus();
     }
 

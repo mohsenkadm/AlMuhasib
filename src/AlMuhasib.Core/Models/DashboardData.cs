@@ -16,6 +16,11 @@ public class DashboardData
     public List<RecentTransaction> RecentTransactions { get; set; } = [];
     public List<UpcomingInstallment> UpcomingInstallments { get; set; } = [];
 
+    // Additional statistics
+    public decimal InvestorBalance { get; set; }
+    public decimal UnpaidInstallmentsBalance { get; set; }
+    public decimal CustomerCreditBalance { get; set; }
+
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
     public decimal BankBalance { get; set; }

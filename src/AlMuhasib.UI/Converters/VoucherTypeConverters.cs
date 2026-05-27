@@ -42,7 +42,7 @@ public class VoucherTypeToBrushConverter : IValueConverter
                 VoucherType.Receipt => new SolidColorBrush(Color.FromRgb(0x43, 0xA0, 0x47)),     // Green
                 VoucherType.Payment => new SolidColorBrush(Color.FromRgb(0xE5, 0x39, 0x35)),     // Red
                 VoucherType.BankReceipt => new SolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)), // Blue
-                VoucherType.InvestorDeposit => new SolidColorBrush(Color.FromRgb(0xFF, 0x8F, 0x00)),  // Amber
+                VoucherType.InvestorDeposit => new SolidColorBrush(Color.FromRgb(0x00, 0xAC, 0xC1)),  // Cyan accent
                 VoucherType.InvestorWithdrawal => new SolidColorBrush(Color.FromRgb(0x6A, 0x1B, 0x9A)), // Purple
                 VoucherType.DebtReceipt => new SolidColorBrush(Color.FromRgb(0x00, 0x83, 0x8F)),  // Teal
                 _ => new SolidColorBrush(Colors.Gray)

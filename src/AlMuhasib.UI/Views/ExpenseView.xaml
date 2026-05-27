@@ -271,9 +271,13 @@
                 <!-- Header bar -->
                 <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
                     <Grid>
-                        <TextBlock Text="سجل المصاريف" FontSize="15" FontWeight="Bold"
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="سجل المصاريف" FontSize="15" FontWeight="Bold"
                                    Foreground="White" VerticalAlignment="Center"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button Command="{Binding ExportExpensesCommand}"
                                     ToolTip="تصدير Excel"
                                     Style="{StaticResource FlatButton}"

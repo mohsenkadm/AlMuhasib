@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -13,6 +14,9 @@ public class ReportService : IReportService
 
     public ReportService(IDbContextFactory<AppDbContext> contextFactory) => _contextFactory = contextFactory;
 
+    /// <summary>Normalize "to" date to include the entire day (start of next day).</summary>
+    private static DateTime? EndOfDay(DateTime? to) => to?.Date.AddDays(1);
+
     // ══════════════════════════════════════════════════════════════
     // SALES
     // ══════════════════════════════════════════════════════════════
@@ -23,10 +27,11 @@ public class ReportService : IReportService
         var query = context.Invoices
             .Include(i => i.Customer)
             .Include(i => i.Warehouse)
+            .Include(i => i.InstallmentPlans)
             .Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
-        if (to.HasValue) query = query.Where(i => i.Date <= to.Value);
+        if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
         if (customerId.HasValue) query = query.Where(i => i.CustomerId == customerId.Value);
         if (method.HasValue) query = query.Where(i => i.PaymentMethod == method.Value);
         if (warehouseId.HasValue) query = query.Where(i => i.WarehouseId == warehouseId.Value);
@@ -34,10 +39,24 @@ public class ReportService : IReportService
         var invoices = await query.OrderByDescending(i => i.Date).ToListAsync();
 
         var todaySales = invoices.Where(i => i.Date.Date == DateTime.Today).Sum(i => i.NetAmount);
+        decimal ResolveCompanyFee(Invoice i)
+        {
+            if (i.InvoiceType != InvoiceType.Installment)
+                return 0;
+
+            var plan = i.InstallmentPlans.FirstOrDefault();
+            if (plan is null || !CompanyFeeHelper.AppliesTo(plan.InstallmentType))
+                return 0;
+
+            return plan.CompanyFeeAmount > 0
+                ? plan.CompanyFeeAmount
+                : CompanyFeeHelper.CalculateAmount(i.NetAmount);
+        }
 
         return new SalesReportResult
         {
             TotalSales = invoices.Sum(i => i.NetAmount),
+            TotalCompanyFees = invoices.Sum(ResolveCompanyFee),
             CashSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(i => i.NetAmount),
             CreditSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Credit).Sum(i => i.NetAmount),
             InstallmentSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Installment).Sum(i => i.NetAmount),
@@ -64,6 +83,7 @@ public class ReportService : IReportService
                 TotalAmount = i.TotalAmount,
                 Discount = i.DiscountAmount,
                 NetAmount = i.NetAmount,
+                CompanyFeeAmount = ResolveCompanyFee(i),
                 CreditDueDate = i.CreditDueDate,
                 PaidAmount = i.PaidAmount,
                 RemainingAmount = i.RemainingAmount,
@@ -85,7 +105,7 @@ public class ReportService : IReportService
             .Where(i => i.InvoiceType == InvoiceType.Purchase);
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
-        if (to.HasValue) query = query.Where(i => i.Date <= to.Value);
+        if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
         if (supplierId.HasValue) query = query.Where(i => i.SupplierId == supplierId.Value);
         if (warehouseId.HasValue) query = query.Where(i => i.WarehouseId == warehouseId.Value);
         if (method.HasValue) query = query.Where(i => i.PaymentMethod == method.Value);
@@ -136,28 +156,28 @@ public class ReportService : IReportService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var salesQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
-        var purchQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.Purchase);
         var expQ = context.Expenses.AsQueryable();
         var bankQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.BankReceipt);
         var distQ = context.ProfitDistributions.AsQueryable();
 
-        if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); purchQ = purchQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); bankQ = bankQ.Where(v => v.Date >= from.Value); distQ = distQ.Where(p => p.Date >= from.Value); }
-        if (to.HasValue) { salesQ = salesQ.Where(i => i.Date <= to.Value); purchQ = purchQ.Where(i => i.Date <= to.Value); expQ = expQ.Where(e => e.Date <= to.Value); bankQ = bankQ.Where(v => v.Date <= to.Value); distQ = distQ.Where(p => p.Date <= to.Value); }
+        if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); bankQ = bankQ.Where(v => v.Date >= from.Value); distQ = distQ.Where(p => p.Date >= from.Value); }
+        if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); bankQ = bankQ.Where(v => v.Date < EndOfDay(to)); distQ = distQ.Where(p => p.Date < EndOfDay(to)); }
 
         var totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-        var totalPurchases = await purchQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var cogs = await CalculateCogsAsync(context, from, EndOfDay(to));
         var totalExpenses = await expQ.SumAsync(e => (decimal?)e.Amount) ?? 0;
         var totalBankFees = await bankQ.SumAsync(v => (decimal?)v.BankFees) ?? 0;
         var distributed = await distQ.SumAsync(p => (decimal?)p.DistributedAmount) ?? 0;
-        var grossProfit = totalSales - totalPurchases;
-        var netProfit = grossProfit - totalExpenses - totalBankFees - distributed;
+        var grossProfit = totalSales - cogs;
+        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, to);
+        var netProfit = grossProfit - totalExpenses - totalBankFees - distributed + profitOpening;
 
         return new ProfitReportResult
         {
-            TotalSales = totalSales, TotalPurchases = totalPurchases, GrossProfit = grossProfit,
+            TotalSales = totalSales, TotalPurchases = cogs, GrossProfit = grossProfit,
             TotalExpenses = totalExpenses, TotalBankFees = totalBankFees,
             DistributedProfits = distributed, NetProfit = netProfit,
-            ProfitMargin = totalSales > 0 ? Math.Round(netProfit / totalSales * 100, 1) : 0
+            ProfitMargin = totalSales > 0 ? Math.Round(grossProfit / totalSales * 100, 1) : 0
         };
     }
 
@@ -172,11 +192,6 @@ public class ReportService : IReportService
             .GroupBy(i => new { i.Date.Year, i.Date.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => i.NetAmount) }).ToListAsync();
 
-        var purchases = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date >= f && i.Date <= t)
-            .GroupBy(i => new { i.Date.Year, i.Date.Month })
-            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => i.NetAmount) }).ToListAsync();
-
         var expenses = await context.Expenses
             .Where(e => e.Date >= f && e.Date <= t)
             .GroupBy(e => new { e.Date.Year, e.Date.Month })
@@ -185,8 +200,10 @@ public class ReportService : IReportService
         var result = new List<MonthlyProfitRow>();
         for (var d = new DateTime(f.Year, f.Month, 1); d <= t; d = d.AddMonths(1))
         {
+            var monthFrom = new DateTime(d.Year, d.Month, 1);
+            var monthToExclusive = monthFrom.AddMonths(1);
             var s = sales.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month)?.Amount ?? 0;
-            var p = purchases.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month)?.Amount ?? 0;
+            var p = await CalculateCogsAsync(context, monthFrom, monthToExclusive);
             var e = expenses.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month)?.Amount ?? 0;
             var gross = s - p;
             var net = gross - e;
@@ -195,10 +212,59 @@ public class ReportService : IReportService
                 Month = $"{d.Year}/{d.Month:D2}",
                 Sales = s, Purchases = p, GrossProfit = gross,
                 Expenses = e, NetProfit = net,
-                ProfitMargin = s > 0 ? Math.Round(net / s * 100, 1) : 0
+                ProfitMargin = s > 0 ? Math.Round(gross / s * 100, 1) : 0
             });
         }
         return result;
+    }
+
+    private static async Task<decimal> CalculateCogsAsync(AppDbContext context, DateTime? fromInclusive, DateTime? toExclusive)
+    {
+        var soldItemsQuery = context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+
+        if (fromInclusive.HasValue)
+            soldItemsQuery = soldItemsQuery.Where(ii => ii.Invoice!.Date >= fromInclusive.Value);
+        if (toExclusive.HasValue)
+            soldItemsQuery = soldItemsQuery.Where(ii => ii.Invoice!.Date < toExclusive.Value);
+
+        var soldItems = await soldItemsQuery.ToListAsync();
+        if (soldItems.Count == 0)
+            return 0;
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+
+        var purchaseItemsQuery = context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && productIds.Contains(ii.ProductId.Value)
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Purchase);
+
+        if (toExclusive.HasValue)
+            purchaseItemsQuery = purchaseItemsQuery.Where(ii => ii.Invoice!.Date < toExclusive.Value);
+
+        var purchaseItems = await purchaseItemsQuery.ToListAsync();
+        var purchasesByProduct = purchaseItems
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        decimal cogs = 0;
+        foreach (var sold in soldItems)
+        {
+            var productId = sold.ProductId!.Value;
+            var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
+            var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
+            cogs += Math.Round(sold.Quantity * avgCost, 0);
+        }
+
+        return cogs;
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -217,7 +283,7 @@ public class ReportService : IReportService
         {
             var insts = plan.Installments.Where(i => !i.IsDeleted).ToList();
             if (from.HasValue) insts = insts.Where(i => i.DueDate >= from.Value).ToList();
-            if (to.HasValue) insts = insts.Where(i => i.DueDate <= to.Value).ToList();
+            if (to.HasValue) insts = insts.Where(i => i.DueDate < EndOfDay(to)).ToList();
             if (insts.Count == 0) continue;
 
             var total = insts.Sum(i => i.Amount);
@@ -254,10 +320,10 @@ public class ReportService : IReportService
             Rows = rows,
             StatusChart =
             [
-                new() { Name = "\u0645\u0633\u062f\u062f", Amount = paidInsts.Count() },
-                new() { Name = "\u062c\u0632\u0626\u064a", Amount = allInsts.Count(i => i.Status == InstallmentStatus.PartiallyPaid) },
-                new() { Name = "\u0645\u0639\u0644\u0642", Amount = allInsts.Count(i => i.Status == InstallmentStatus.Pending) },
-                new() { Name = "\u0645\u062a\u0623\u062e\u0631", Amount = overdueInsts.Count() }
+                new() { Name = "مسدد", Amount = paidInsts.Count() },
+                new() { Name = "جزئي", Amount = allInsts.Count(i => i.Status == InstallmentStatus.PartiallyPaid) },
+                new() { Name = "معلق", Amount = allInsts.Count(i => i.Status == InstallmentStatus.Pending) },
+                new() { Name = "متأخر", Amount = overdueInsts.Count() }
             ],
             MonthlyCollectionChart = allInsts.Where(i => i.PaymentDate.HasValue)
                 .GroupBy(i => new DateTime(i.PaymentDate!.Value.Year, i.PaymentDate.Value.Month, 1))
@@ -311,7 +377,7 @@ public class ReportService : IReportService
             .Where(i => i.Status == InstallmentStatus.Paid);
 
         if (from.HasValue) query = query.Where(i => i.PaymentDate >= from.Value);
-        if (to.HasValue) query = query.Where(i => i.PaymentDate <= to.Value);
+        if (to.HasValue) query = query.Where(i => i.PaymentDate < EndOfDay(to));
         if (customerId.HasValue) query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
         if (cashBoxId.HasValue) query = query.Where(i => i.CashBoxId == cashBoxId.Value);
 
@@ -347,7 +413,7 @@ public class ReportService : IReportService
             .Where(i => i.Status != InstallmentStatus.Paid);
 
         if (from.HasValue) query = query.Where(i => i.DueDate >= from.Value);
-        if (to.HasValue) query = query.Where(i => i.DueDate <= to.Value);
+        if (to.HasValue) query = query.Where(i => i.DueDate < EndOfDay(to));
         if (customerId.HasValue) query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
 
         var insts = await query.OrderBy(i => i.DueDate).ToListAsync();
@@ -465,14 +531,14 @@ public class ReportService : IReportService
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         (i.PaymentMethod == PaymentMethod.Credit || i.PaymentMethod == PaymentMethod.Installment));
         if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
-        if (to.HasValue) invQ = invQ.Where(i => i.Date <= to.Value);
+        if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
         foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
             rows.Add(new CustomerStatementRow { Date = inv.Date, Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 \u0645\u0628\u064a\u0639\u0627\u062a {inv.InvoiceNumber}", Debit = inv.NetAmount });
 
         var vQ = context.Vouchers
             .Where(v => v.CustomerId == customerId && (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt));
         if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
-        if (to.HasValue) vQ = vQ.Where(v => v.Date <= to.Value);
+        if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
         foreach (var v in await vQ.OrderBy(v => v.Date).ToListAsync())
             rows.Add(new CustomerStatementRow { Date = v.Date, Description = v.VoucherType == VoucherType.Receipt ? $"\u0633\u0646\u062f \u0642\u0628\u0636 {v.VoucherNumber}" : $"\u0633\u0646\u062f \u062a\u0633\u062f\u064a\u062f \u062f\u064a\u0646 {v.VoucherNumber}", Credit = v.Amount });
 
@@ -481,7 +547,7 @@ public class ReportService : IReportService
         {
             var instQ = context.Installments.Where(i => planIds.Contains(i.InstallmentPlanId) && i.PaidAmount > 0);
             if (from.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
-            if (to.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) <= to.Value);
+            if (to.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) < EndOfDay(to));
             foreach (var inst in await instQ.OrderBy(i => i.PaymentDate).ToListAsync())
                 rows.Add(new CustomerStatementRow { Date = inst.PaymentDate ?? inst.DueDate, Description = "\u062f\u0641\u0639\u0629 \u0642\u0633\u0637", Credit = inst.PaidAmount });
         }
@@ -513,13 +579,13 @@ public class ReportService : IReportService
         var invQ = context.Invoices
             .Where(i => i.SupplierId == supplierId && i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Credit);
         if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
-        if (to.HasValue) invQ = invQ.Where(i => i.Date <= to.Value);
+        if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
         foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
             rows.Add(new SupplierStatementRow { Date = inv.Date, Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 \u0645\u0634\u062a\u0631\u064a\u0627\u062a {inv.InvoiceNumber}", Credit = inv.NetAmount });
 
         var vQ = context.Vouchers.Where(v => v.CustomerId == supplierId && v.VoucherType == VoucherType.Payment);
         if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
-        if (to.HasValue) vQ = vQ.Where(v => v.Date <= to.Value);
+        if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
         foreach (var v in await vQ.OrderBy(v => v.Date).ToListAsync())
             rows.Add(new SupplierStatementRow { Date = v.Date, Description = $"\u0633\u0646\u062f \u0635\u0631\u0641 {v.VoucherNumber}", Debit = v.Amount });
 
@@ -545,7 +611,7 @@ public class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox).AsQueryable();
         if (from.HasValue) query = query.Where(e => e.Date >= from.Value);
-        if (to.HasValue) query = query.Where(e => e.Date <= to.Value);
+        if (to.HasValue) query = query.Where(e => e.Date < EndOfDay(to));
         if (expenseTypeId.HasValue) query = query.Where(e => e.ExpenseTypeId == expenseTypeId.Value);
         if (cashBoxId.HasValue) query = query.Where(e => e.CashBoxId == cashBoxId.Value);
 
@@ -586,18 +652,18 @@ public class ReportService : IReportService
         var salesQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
         var expQ = context.Expenses.Include(e => e.ExpenseType).AsQueryable();
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); }
-        if (to.HasValue) { salesQ = salesQ.Where(i => i.Date <= to.Value); expQ = expQ.Where(e => e.Date <= to.Value); }
+        if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); }
 
         var totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
 
         var instQ = context.Installments.Where(i => i.PaidAmount > 0);
         if (from.HasValue) instQ = instQ.Where(i => i.PaymentDate >= from.Value);
-        if (to.HasValue) instQ = instQ.Where(i => i.PaymentDate <= to.Value);
+        if (to.HasValue) instQ = instQ.Where(i => i.PaymentDate < EndOfDay(to));
         var instCollections = await instQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0;
 
         var recQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
         if (from.HasValue) recQ = recQ.Where(v => v.Date >= from.Value);
-        if (to.HasValue) recQ = recQ.Where(v => v.Date <= to.Value);
+        if (to.HasValue) recQ = recQ.Where(v => v.Date < EndOfDay(to));
         var receipts = await recQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var totalIncome = totalSales + instCollections + receipts;
@@ -658,10 +724,9 @@ public class ReportService : IReportService
         var result = new List<WarehouseStockRow>();
         foreach (var s in stocks)
         {
-            decimal avgCost = 0;
             var pi = await context.InvoiceItems.Include(ii => ii.Invoice)
                 .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase).ToListAsync();
-            if (pi.Count > 0) { var tc = pi.Sum(ii => ii.TotalPrice); var tq = pi.Sum(ii => ii.Quantity); if (tq > 0) avgCost = tc / tq; }
+            var avgCost = ProductCostHelper.ComputeAverageUnitCost(pi, s.OpeningQuantity, s.UnitCost);
 
             result.Add(new WarehouseStockRow
             {
@@ -727,7 +792,7 @@ public class ReportService : IReportService
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.PaymentMethod == PaymentMethod.Cash);
         if (cashBoxId.HasValue) salesQ = salesQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) salesQ = salesQ.Where(i => i.Date >= from.Value);
-        if (to.HasValue) salesQ = salesQ.Where(i => i.Date <= to.Value);
+        if (to.HasValue) salesQ = salesQ.Where(i => i.Date < EndOfDay(to));
         foreach (var inv in await salesQ.ToListAsync())
             rows.Add(new CashFlowRow { Date = inv.Date, Type = "\u0645\u0628\u064a\u0639\u0627\u062a", Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 {inv.InvoiceNumber}", Incoming = inv.NetAmount, AccountName = inv.CashBox?.Name ?? "\u2014" });
 
@@ -735,14 +800,14 @@ public class ReportService : IReportService
             .Where(i => i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Cash);
         if (cashBoxId.HasValue) purchQ = purchQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) purchQ = purchQ.Where(i => i.Date >= from.Value);
-        if (to.HasValue) purchQ = purchQ.Where(i => i.Date <= to.Value);
+        if (to.HasValue) purchQ = purchQ.Where(i => i.Date < EndOfDay(to));
         foreach (var inv in await purchQ.ToListAsync())
             rows.Add(new CashFlowRow { Date = inv.Date, Type = "\u0645\u0634\u062a\u0631\u064a\u0627\u062a", Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 {inv.InvoiceNumber}", Outgoing = inv.NetAmount, AccountName = inv.CashBox?.Name ?? "\u2014" });
 
         var vouchQ = context.Vouchers.Include(v => v.CashBox).AsQueryable();
         if (cashBoxId.HasValue) vouchQ = vouchQ.Where(v => v.CashBoxId == cashBoxId.Value);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
-        if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date <= to.Value);
+        if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
         foreach (var v in await vouchQ.ToListAsync())
         {
             bool isIncoming = v.VoucherType is VoucherType.Receipt or VoucherType.DebtReceipt or VoucherType.InvestorDeposit or VoucherType.BankReceipt;
@@ -760,7 +825,7 @@ public class ReportService : IReportService
         var expQ = context.Expenses.Include(e => e.CashBox).AsQueryable();
         if (cashBoxId.HasValue) expQ = expQ.Where(e => e.CashBoxId == cashBoxId.Value);
         if (from.HasValue) expQ = expQ.Where(e => e.Date >= from.Value);
-        if (to.HasValue) expQ = expQ.Where(e => e.Date <= to.Value);
+        if (to.HasValue) expQ = expQ.Where(e => e.Date < EndOfDay(to));
         foreach (var e in await expQ.ToListAsync())
             rows.Add(new CashFlowRow { Date = e.Date, Type = "\u0645\u0635\u0631\u0648\u0641", Description = e.ExpenseType?.Name ?? "\u0645\u0635\u0631\u0648\u0641", Outgoing = e.Amount, AccountName = e.CashBox?.Name ?? "\u2014" });
 
@@ -819,7 +884,8 @@ public class ReportService : IReportService
             .Where(p => p.Date <= endOfDay)
             .SumAsync(p => p.DistributedAmount);
 
-        decimal accumulatedProfits = totalSales - totalPurchases - totalExpenses - totalBankFees - distributedProfits;
+        decimal profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
+        decimal accumulatedProfits = totalSales - totalPurchases - totalExpenses - totalBankFees - distributedProfits + profitOpening;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
         // LIABILITIES
@@ -878,13 +944,9 @@ public class ReportService : IReportService
                              ii.Invoice!.InvoiceType == InvoiceType.Purchase)
                 .ToListAsync();
 
-            if (purchaseItems.Count > 0)
-            {
-                decimal totalCost = purchaseItems.Sum(ii => ii.TotalPrice);
-                decimal totalQty = purchaseItems.Sum(ii => ii.Quantity);
-                decimal avgCost = totalQty > 0 ? totalCost / totalQty : 0;
+            var avgCost = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
+            if (avgCost > 0)
                 inventoryValue += Math.Round(s.Quantity * avgCost, 0);
-            }
         }
 
         decimal installmentReceivables = await context.Installments

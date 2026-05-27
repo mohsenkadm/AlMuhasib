@@ -31,6 +31,21 @@ public class NavigationService : INavigationService
 
     public void NavigateTo(Type viewModelType)
     {
+        // Check if the current view model has unsaved changes
+        if (CurrentViewModel?.HasUnsavedChanges == true)
+        {
+            var result = System.Windows.MessageBox.Show(
+                "يوجد فاتورة لم يتم حفظها. هل تريد المغادرة بدون حفظ؟",
+                "تحذير - بيانات غير محفوظة",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning,
+                System.Windows.MessageBoxResult.No,
+                System.Windows.MessageBoxOptions.RightAlign | System.Windows.MessageBoxOptions.RtlReading);
+
+            if (result == System.Windows.MessageBoxResult.No)
+                return;
+        }
+
         // Dispose the scope that is falling off (two navigations back)
         _previousScope?.Dispose();
 
@@ -84,6 +99,8 @@ public class NavigationService : INavigationService
 
         CurrentViewModel = _previousViewModel;
         _previousViewModel = null;
-        CurrentViewModelChanged?.Invoke(CurrentViewModel);
+        if (CurrentViewModel is not null)
+            _ = SafeInitializeAsync(CurrentViewModel);
+        CurrentViewModelChanged?.Invoke(CurrentViewModel!);
     }
 }

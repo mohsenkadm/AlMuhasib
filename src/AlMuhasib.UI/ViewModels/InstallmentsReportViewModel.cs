@@ -70,7 +70,10 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
 
             if (result.StatusChart.Count > 0)
             {
-                StatusSeries = result.StatusChart.Select((s, i) => (ISeries)ChartThemeConfig.Pie(s.Amount, s.Name, i)).ToArray();
+                StatusSeries = result.StatusChart
+                    .Where(s => s.Amount > 0)
+                    .Select(s => (ISeries)ChartThemeConfig.Pie(s.Amount, s.Name, StatusPieColorIndex(s.Name)))
+                    .ToArray();
             }
 
             if (result.MonthlyCollectionChart.Count > 0)
@@ -108,4 +111,14 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
         var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.InstallmentCount, r.Status }).ToList();
         _exportService.PrintTable("ملخص الأقساط", cols, rows);
     }
+
+    /// <summary>ألوان ثابتة لكل حالة (مسدد=أخضر، متأخر=أحمر) لتطابق المفتاح مع القطعة في RTL.</summary>
+    private static int StatusPieColorIndex(string statusName) => statusName switch
+    {
+        "مسدد" => 2,
+        "جزئي" => 4,
+        "معلق" => 0,
+        "متأخر" => 3,
+        _ => 1
+    };
 }

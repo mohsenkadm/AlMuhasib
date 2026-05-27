@@ -43,6 +43,8 @@ public class AppDbContext : DbContext
     public DbSet<ProfitDistributionDetail> ProfitDistributionDetails => Set<ProfitDistributionDetail>();
     public DbSet<CapitalEntry> CapitalEntries => Set<CapitalEntry>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<CustomerAttachment> CustomerAttachments => Set<CustomerAttachment>();
+    public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

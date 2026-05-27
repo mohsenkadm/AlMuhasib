@@ -31,18 +31,8 @@
                           Style="{StaticResource FilledComboBox}"
                           ItemsSource="{Binding Users}"
                           SelectedItem="{Binding SelectedUser}"
-                          IsEditable="True">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock>
-                                <Run Text="{Binding FullName, Mode=OneWay}"/>
-                                <Run Text=" (" Foreground="#9E9E9E"/>
-                                <Run Text="{Binding Username, Mode=OneWay}" Foreground="#9E9E9E"/>
-                                <Run Text=")" Foreground="#9E9E9E"/>
-                            </TextBlock>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                          DisplayMemberPath="DisplayName"
+                          IsEditable="False"/>
 
                 <Button Grid.Column="2"
                         Command="{Binding SelectAllCommand}"

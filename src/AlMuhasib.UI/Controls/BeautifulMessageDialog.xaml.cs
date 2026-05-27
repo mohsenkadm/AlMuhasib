@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using AlMuhasib.UI.Services;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AlMuhasib.UI.Controls;
 
@@ -32,22 +34,74 @@ public partial class BeautifulMessageDialog : Window
 
     public static void ShowInfo(string message, string title = "معلومة")
     {
+        if (TryShowToast(MessageDialogType.Info, message, title))
+            return;
+
         Show(message, title, MessageDialogType.Info, false);
     }
 
     public static void ShowSuccess(string message, string title = "نجاح")
     {
+        if (TryShowToast(MessageDialogType.Success, message, title))
+            return;
+
         Show(message, title, MessageDialogType.Success, false);
     }
 
     public static void ShowWarning(string message, string title = "تنبيه")
     {
+        if (TryShowToast(MessageDialogType.Warning, message, title))
+            return;
+
         Show(message, title, MessageDialogType.Warning, false);
     }
 
     public static void ShowError(string message, string title = "خطأ")
     {
+        if (TryShowToast(MessageDialogType.Error, message, title))
+            return;
+
         Show(message, title, MessageDialogType.Error, false);
+    }
+
+    private static bool TryShowToast(MessageDialogType type, string message, string title)
+    {
+        var toast = ResolveToastService();
+        if (toast is null)
+            return false;
+
+        var displayTitle = title;
+        switch (type)
+        {
+            case MessageDialogType.Info:
+                if (displayTitle == "معلومة") displayTitle = null;
+                toast.ShowInfo(message, displayTitle);
+                break;
+            case MessageDialogType.Success:
+                if (displayTitle == "نجاح") displayTitle = null;
+                toast.ShowSuccess(message, displayTitle);
+                break;
+            case MessageDialogType.Warning:
+                if (displayTitle == "تنبيه") displayTitle = null;
+                toast.ShowWarning(message, displayTitle);
+                break;
+            case MessageDialogType.Error:
+                if (displayTitle == "خطأ") displayTitle = null;
+                toast.ShowError(message, displayTitle);
+                break;
+            default:
+                return false;
+        }
+
+        return true;
+    }
+
+    private static IToastNotificationService? ResolveToastService()
+    {
+        if (Application.Current is not App app)
+            return null;
+
+        return app.Services.GetService<IToastNotificationService>();
     }
 
     public static bool ShowConfirm(string message, string title = "تأكيد")
@@ -85,7 +139,7 @@ public partial class BeautifulMessageDialog : Window
                 dialog.DialogIcon.Kind = PackIconKind.CheckCircleOutline;
                 break;
             case MessageDialogType.Warning:
-                dialog.HeaderBorder.Background = CreateGradient("#E65100", "#F57C00", "#FB8C00");
+                dialog.HeaderBorder.Background = CreateGradient("#5E35B1", "#7E57C2", "#9575CD");
                 dialog.IconCircle.Background = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF));
                 dialog.DialogIcon.Kind = PackIconKind.AlertOutline;
                 break;

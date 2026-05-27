@@ -41,6 +41,7 @@ public partial class PermissionsViewModel : ViewModelBase
     [
         ("Dashboard", "لوحة التحكم"),
         ("Products", "المنتجات"),
+        ("Categories", "تصنيفات المنتجات"),
         ("Customers", "العملاء"),
         ("Suppliers", "الموردون"),
         ("PurchaseInvoice", "فاتورة مشتريات"),
@@ -51,7 +52,10 @@ public partial class PermissionsViewModel : ViewModelBase
         ("Expenses", "المصاريف"),
         ("CashAndBank", "القاصات والمصرف"),
         ("Investors", "المستثمرون"),
+        ("OpeningInvestors", "أرصدة المستثمرين الافتتاحية"),
         ("Warehouses", "المخازن"),
+        ("OpeningStock", "الأرصدة الافتتاحية"),
+        ("StockAdjustment", "تسوية مخزنية"),
         ("Reports", "التقارير"),
         ("BalanceSheet", "موازنة يومية"),
     ];

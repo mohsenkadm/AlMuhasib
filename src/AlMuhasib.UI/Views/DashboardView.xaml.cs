@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using AlMuhasib.UI.ViewModels;
-
 namespace AlMuhasib.UI.Views;
 
 public partial class DashboardView : UserControl

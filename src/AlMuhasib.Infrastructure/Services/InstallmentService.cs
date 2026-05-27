@@ -1,4 +1,6 @@
-﻿using AlMuhasib.Core.Entities;
+﻿using AlMuhasib.Core;
+using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -19,34 +21,49 @@ public class InstallmentService : IInstallmentService
     }
 
     public async Task<InstallmentPlan> CreatePlanAsync(int invoiceId, int customerId, string? fileNumber,
-        decimal totalAmount, int numberOfInstallments, DateTime startDate)
+        decimal totalAmount, int numberOfInstallments, DateTime startDate,
+        InstallmentType installmentType = InstallmentType.Manual)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
             var username = _currentUserService.Username;
+            var (companyFeePercentage, companyFeeAmount) =
+                CompanyFeeHelper.ResolveForInstallment(totalAmount, installmentType);
+
+            var invoice = await context.Invoices.FindAsync(invoiceId);
+            if (invoice is not null)
+            {
+                invoice.CompanyFeePercentage = companyFeePercentage;
+                invoice.CompanyFeeAmount = companyFeeAmount;
+                invoice.UpdatedBy = username;
+                invoice.UpdatedAt = DateTime.UtcNow;
+            }
             var plan = new InstallmentPlan
             {
                 InvoiceId = invoiceId, CustomerId = customerId, FileNumber = fileNumber,
                 TotalAmount = totalAmount, NumberOfInstallments = numberOfInstallments,
-                InstallmentAmount = Math.Ceiling(totalAmount / numberOfInstallments),
-                StartDate = startDate, CreatedBy = username, CreatedAt = DateTime.UtcNow
+                InstallmentAmount = Math.Floor(totalAmount / numberOfInstallments),
+                StartDate = startDate, InstallmentType = installmentType,
+                CompanyFeePercentage = companyFeePercentage,
+                CompanyFeeAmount = companyFeeAmount,
+                CreatedBy = username, CreatedAt = DateTime.UtcNow
             };
             await context.InstallmentPlans.AddAsync(plan);
             await context.SaveChangesAsync();
 
-            decimal remaining = totalAmount;
             for (int i = 0; i < numberOfInstallments; i++)
             {
-                decimal amount = (i < numberOfInstallments - 1) ? plan.InstallmentAmount : remaining;
+                decimal amount = (i < numberOfInstallments - 1)
+                    ? plan.InstallmentAmount
+                    : totalAmount - (plan.InstallmentAmount * (numberOfInstallments - 1));
                 await context.Installments.AddAsync(new Installment
                 {
                     InstallmentPlanId = plan.Id, DueDate = startDate.AddMonths(i),
                     Amount = amount, PaidAmount = 0, RemainingAmount = amount,
                     Status = InstallmentStatus.Pending, CreatedBy = username, CreatedAt = DateTime.UtcNow
                 });
-                remaining -= amount;
             }
             await context.SaveChangesAsync();
 
@@ -134,6 +151,56 @@ public class InstallmentService : IInstallmentService
             await transaction.CommitAsync();
         }
         catch { await transaction.RollbackAsync(); throw; }
+    }
+
+    public async Task<BulkPayInstallmentsResult> PayInstallmentsBatchAsync(IReadOnlyList<int> installmentIds, int cashBoxId)
+    {
+        if (installmentIds is null || installmentIds.Count == 0)
+            throw new InvalidOperationException("لم يتم اختيار أي قسط للتسديد");
+
+        var distinctIds = installmentIds.Distinct().ToList();
+        var errors = new List<string>();
+        var paidCount = 0;
+        decimal totalPaid = 0;
+
+        foreach (var id in distinctIds)
+        {
+            try
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                var installment = await context.Installments
+                    .Include(i => i.InstallmentPlan)
+                    .FirstOrDefaultAsync(i => i.Id == id);
+
+                if (installment is null)
+                {
+                    errors.Add($"القسط رقم {id} غير موجود");
+                    continue;
+                }
+
+                if (installment.RemainingAmount <= 0)
+                {
+                    errors.Add($"القسط رقم {id} مسدد مسبقاً أو لا يوجد مبلغ متبقي");
+                    continue;
+                }
+
+                var amount = installment.RemainingAmount;
+                await PayInstallmentAsync(id, amount, cashBoxId);
+                paidCount++;
+                totalPaid += amount;
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"قسط {id}: {ex.Message}");
+            }
+        }
+
+        return new BulkPayInstallmentsResult
+        {
+            PaidCount = paidCount,
+            TotalPaid = totalPaid,
+            Errors = errors
+        };
     }
 
     public async Task CancelPaymentAsync(int installmentId)
@@ -234,7 +301,7 @@ public class InstallmentService : IInstallmentService
 
     public async Task<(IEnumerable<InstallmentPlan> Items, int TotalCount)> GetPagedPlansAsync(
         int page, int pageSize, string? searchTerm = null, InstallmentStatus? statusFilter = null,
-        DateTime? fromDate = null, DateTime? toDate = null)
+        DateTime? fromDate = null, DateTime? toDate = null, InstallmentType? installmentType = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.InstallmentPlans
@@ -248,7 +315,8 @@ public class InstallmentService : IInstallmentService
         }
         if (statusFilter.HasValue) query = query.Where(p => p.Installments.Any(i => i.Status == statusFilter.Value));
         if (fromDate.HasValue) query = query.Where(p => p.StartDate >= fromDate.Value);
-        if (toDate.HasValue) query = query.Where(p => p.StartDate <= toDate.Value);
+        if (toDate.HasValue) query = query.Where(p => p.StartDate < toDate.Value.Date.AddDays(1));
+        if (installmentType.HasValue) query = query.Where(p => p.InstallmentType == installmentType.Value);
 
         var totalCount = await query.CountAsync();
         var items = await query.OrderByDescending(p => p.CreatedAt)

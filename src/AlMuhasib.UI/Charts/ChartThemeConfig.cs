@@ -14,29 +14,42 @@ public static class ChartThemeConfig
 {
     // ── Color Palette ───────────────────────────────────────
     public static readonly SKColor PrimaryBlue   = SKColor.Parse("#1565C0");
-    public static readonly SKColor AccentAmber   = SKColor.Parse("#FF8F00");
+    public static readonly SKColor AccentCyan    = SKColor.Parse("#00ACC1");
     public static readonly SKColor SuccessGreen  = SKColor.Parse("#2E7D32");
     public static readonly SKColor DangerRed     = SKColor.Parse("#C62828");
     public static readonly SKColor Purple        = SKColor.Parse("#6A1B9A");
     public static readonly SKColor Teal          = SKColor.Parse("#00838F");
-    public static readonly SKColor DeepOrange    = SKColor.Parse("#E65100");
+    public static readonly SKColor DeepIndigo     = SKColor.Parse("#7E57C2");
     public static readonly SKColor Indigo        = SKColor.Parse("#283593");
     public static readonly SKColor LightGreen    = SKColor.Parse("#558B2F");
     public static readonly SKColor Pink          = SKColor.Parse("#AD1457");
 
     public static readonly SKColor[] Palette =
     [
-        PrimaryBlue, AccentAmber, SuccessGreen, DangerRed, Purple,
-        Teal, DeepOrange, Indigo, LightGreen, Pink
+        PrimaryBlue, AccentCyan, SuccessGreen, DangerRed, Purple,
+        Teal, DeepIndigo, Indigo, LightGreen, Pink
     ];
 
     // ── Shared constants ────────────────────────────────────
     public static readonly SKColor GridLineColor  = SKColor.Parse("#F0F0F0");
     public static readonly SKColor LabelColor     = SKColor.Parse("#757575");
     public static readonly SKColor TooltipBg      = SKColors.White;
-    public const string FontFamily = "Segoe UI";
+    public const string FontFamily = "Segoe UI, Tahoma, Arial";
     public const float LabelSize   = 11f;
     public const float LegendSize  = 12f;
+
+    public static SKTypeface ArabicTypeface { get; } =
+        SKTypeface.FromFamilyName("Segoe UI")
+        ?? SKTypeface.FromFamilyName("Tahoma")
+        ?? SKTypeface.Default;
+
+    public static SolidColorPaint CreateLabelPaint(SKColor? color = null) => new(color ?? LabelColor)
+    {
+        SKTypeface = ArabicTypeface
+    };
+
+    public static string FormatAmount(double value, string? suffix = "د.ع") =>
+        suffix is null ? value.ToString("N0") : $"{value:N0} {suffix}";
 
     public static void Apply()
     {
@@ -66,17 +79,19 @@ public static class ChartThemeConfig
     {
         Labels = labels,
         TextSize = LabelSize,
-        LabelsPaint = new SolidColorPaint(LabelColor) { SKTypeface = SKTypeface.FromFamilyName(FontFamily) },
+        LabelsPaint = CreateLabelPaint(),
         SeparatorsPaint = new SolidColorPaint { Color = GridLineColor, StrokeThickness = 1 },
-        LabelsRotation = rotation
+        LabelsRotation = rotation,
+        IsInverted = false,
+        Padding = new LiveChartsCore.Drawing.Padding(6)
     };
 
     /// <summary>Creates a styled Y-axis with IQD currency formatter.</summary>
     public static Axis CreateYAxis(string? suffix = "د.ع") => new()
     {
-        Labeler = v => suffix is not null ? $"{v:N0} {suffix}" : $"{v:N0}",
+        Labeler = v => FormatAmount(v, suffix),
         TextSize = LabelSize,
-        LabelsPaint = new SolidColorPaint(LabelColor) { SKTypeface = SKTypeface.FromFamilyName(FontFamily) },
+        LabelsPaint = CreateLabelPaint(),
         SeparatorsPaint = new SolidColorPaint { Color = GridLineColor, StrokeThickness = 1 },
         MinLimit = 0
     };
@@ -123,7 +138,9 @@ public static class ChartThemeConfig
         InnerRadius = isDoughnut ? 60 : 0,
         HoverPushout = 3,
         AnimationsSpeed = TimeSpan.FromMilliseconds(800),
-        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut
+        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut,
+        DataLabelsSize = 0,
+        DataLabelsPaint = null
     };
 
     /// <summary>

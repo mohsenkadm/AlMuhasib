@@ -6,22 +6,26 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class InvestorsViewModel : ViewModelBase
+public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
 {
     private readonly IInvestorService _investorService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IInvestorRefreshService _investorRefresh;
 
-    public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService, ICurrentUserService currentUserService)
+    public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService,
+        ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh)
     {
         _investorService = investorService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _investorRefresh = investorRefresh;
         PageTitle = "المستثمرون";
     }
 
@@ -69,18 +73,23 @@ public partial class InvestorsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            int? focusId;
             if (IsEditing)
             {
                 await _investorService.UpdateInvestorAsync(_editingInvestorId, FormName.Trim(),
                     string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage);
+                focusId = _editingInvestorId;
             }
             else
             {
-                await _investorService.AddInvestorAsync(FormName.Trim(),
+                var created = await _investorService.AddInvestorAsync(FormName.Trim(),
                     string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage);
+                focusId = created.Id;
             }
             ResetForm();
-            await LoadInvestorsAsync();
+            await RefreshInvestorsAsync();
+            _investorRefresh.NotifyChanged();
+            SelectInvestorInLists(focusId);
         }
         catch (Exception ex)
         {
@@ -193,8 +202,7 @@ public partial class InvestorsViewModel : ViewModelBase
             DepositDate = DateTime.Now;
 
             await LoadRecentDepositsAsync();
-            await LoadInvestorsAsync();
-            await LoadInvestorsListAsync();
+            await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
         }
         catch (Exception ex)
@@ -268,8 +276,7 @@ public partial class InvestorsViewModel : ViewModelBase
             WithdrawInvestor = null;
 
             await LoadRecentWithdrawalsAsync();
-            await LoadInvestorsAsync();
-            await LoadInvestorsListAsync();
+            await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
         }
         catch (Exception ex)
@@ -365,7 +372,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             TotalToDistribute = 0;
             DistributableProfits = await _investorService.GetDistributableProfitsAsync();
 
-            await LoadInvestorsAsync();
+            await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
         }
         catch (Exception ex)
@@ -484,14 +491,30 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         {
             LoadPermissions(_currentUserService, "Investors");
 
-            await LoadInvestorsAsync();
-            await LoadInvestorsListAsync();
+            await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
             await LoadRecentDepositsAsync();
             await LoadRecentWithdrawalsAsync();
             DistributableProfits = await _investorService.GetDistributableProfitsAsync();
         }
         finally { IsBusy = false; }
+    }
+
+    public async Task RefreshInvestorsAsync()
+    {
+        await LoadInvestorsAsync();
+        await LoadInvestorsListAsync();
+    }
+
+    private void SelectInvestorInLists(int? investorId)
+    {
+        if (investorId is not int id) return;
+        var investor = InvestorsList.FirstOrDefault(i => i.Id == id);
+        if (investor is null) return;
+        SelectedInvestor = Investors.FirstOrDefault(i => i.Id == id);
+        DepositInvestor = investor;
+        WithdrawInvestor = investor;
+        StatementInvestor = investor;
     }
 
     private async Task LoadInvestorsAsync()

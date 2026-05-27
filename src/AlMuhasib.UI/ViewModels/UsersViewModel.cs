@@ -227,4 +227,12 @@ public class UserRow
     public string RoleDisplay { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public string StatusDisplay { get; set; } = string.Empty;
+
+    /// <summary>عرض في القوائم المنسدلة (الصلاحيات، المستخدمون، ...)</summary>
+    public string DisplayName =>
+        string.IsNullOrWhiteSpace(FullName)
+            ? $"{Username} — {RoleDisplay}"
+            : $"{FullName} ({Username})";
+
+    public override string ToString() => DisplayName;
 }

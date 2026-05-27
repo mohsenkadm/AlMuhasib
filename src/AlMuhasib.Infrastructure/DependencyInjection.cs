@@ -31,7 +31,9 @@ public static class DependencyInjection
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAccountingValidationService, AccountingValidationService>();
-        services.AddScoped<IBackupService, BackupService>();
+        services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddSingleton<IDatabaseMigrationService, DatabaseMigrationService>();
+        services.AddSingleton<IBackupService, BackupService>();
 
         return services;
     }

@@ -5,22 +5,29 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    public const int MaxOpenTabs = 8;
+
     private readonly INavigationService _navigationService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly CurrentUserService _currentUserService;
     private readonly IAuthService _authService;
     private readonly IBackupService _backupService;
-
-    public SnackbarMessageQueue SnackbarQueue { get; } = new(TimeSpan.FromSeconds(3));
+    private readonly IInvestorRefreshService _investorRefresh;
+    private readonly IToastNotificationService _toast;
+    private bool _investorsLookupDirty;
 
     /// <summary>
     /// Raised when the user requests logout. App subscribes to restart the login flow.
@@ -54,6 +61,24 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _searchText = string.Empty;
 
+    [ObservableProperty]
+    private bool _isSearchOpen;
+
+    [ObservableProperty]
+    private bool _hasSearchResults;
+
+    [ObservableProperty]
+    private bool _isQuickAssistOpen;
+
+    [ObservableProperty]
+    private DocumentTab? _selectedTab;
+
+    [ObservableProperty]
+    private int _tabContentGeneration;
+
+    public ObservableCollection<DocumentTab> OpenTabs { get; } = [];
+    public ObservableCollection<NavigationMenuItem> SearchResults { get; } = [];
+
     // ── Exit Dialog ──
     [ObservableProperty]
     private bool _isExitDialogOpen;
@@ -64,18 +89,27 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _exitBackupStatus = string.Empty;
 
+    [ObservableProperty]
+    private string _exitBackupPath = string.Empty;
+
     public bool IsExitConfirmed { get; set; }
 
     public ObservableCollection<NavigationMenuItem> MenuItems { get; } = [];
 
-    public MainWindowViewModel(INavigationService navigationService, CurrentUserService currentUserService, IAuthService authService, IBackupService backupService)
+    public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
+        CurrentUserService currentUserService, IAuthService authService,
+        IBackupService backupService, IInvestorRefreshService investorRefresh,
+        IToastNotificationService toast)
     {
         _navigationService = navigationService;
+        _serviceProvider = serviceProvider;
         _currentUserService = currentUserService;
         _authService = authService;
         _backupService = backupService;
+        _investorRefresh = investorRefresh;
+        _toast = toast;
 
-        _navigationService.CurrentViewModelChanged += OnNavigationViewModelChanged;
+        _investorRefresh.InvestorsChanged += (_, _) => _investorsLookupDirty = true;
 
         InitializeMenu();
         UpdateDateTime();
@@ -177,10 +211,31 @@ public partial class MainWindowViewModel : ObservableObject
         });
         MenuItems.Add(new NavigationMenuItem
         {
+            Title = "أرصدة المستثمرين الافتتاحية",
+            Icon = PackIconKind.AccountCashOutline,
+            ViewModelType = typeof(OpeningInvestorsViewModel),
+            ScreenName = "OpeningInvestors"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
             Title = "المخازن",
             Icon = PackIconKind.Warehouse,
             ViewModelType = typeof(WarehousesViewModel),
             ScreenName = "Warehouses"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "الأرصدة الافتتاحية",
+            Icon = PackIconKind.PackageVariantClosedPlus,
+            ViewModelType = typeof(OpeningStockViewModel),
+            ScreenName = "OpeningStock"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "تسوية مخزنية",
+            Icon = PackIconKind.TuneVerticalVariant,
+            ViewModelType = typeof(StockAdjustmentViewModel),
+            ScreenName = "StockAdjustment"
         });
         var reportsGroup = new NavigationMenuItem
         {
@@ -236,6 +291,13 @@ public partial class MainWindowViewModel : ObservableObject
         });
         MenuItems.Add(new NavigationMenuItem
         {
+            Title = "إعدادات الطباعة",
+            Icon = PackIconKind.PrinterSettings,
+            ViewModelType = typeof(PrintLayoutSettingsViewModel),
+            ScreenName = "Backup"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
             Title = "النسخ الاحتياطي",
             Icon = PackIconKind.DatabaseCog,
             ViewModelType = typeof(BackupRestoreViewModel),
@@ -248,6 +310,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     private bool _suppressNavigation;
+    private bool _isTabSwitchInternal;
 
     partial void OnSelectedMenuItemChanged(NavigationMenuItem? value)
     {
@@ -287,7 +350,7 @@ public partial class MainWindowViewModel : ObservableObject
             && item.ScreenName != "Dashboard"
             && !_currentUserService.CanView(item.ScreenName))
         {
-            SnackbarQueue.Enqueue("ليس لديك صلاحية للوصول إلى هذه الشاشة");
+            _toast.ShowWarning("ليس لديك صلاحية للوصول إلى هذه الشاشة");
             return;
         }
 
@@ -302,8 +365,174 @@ public partial class MainWindowViewModel : ObservableObject
         PageTitle = item.Title;
 
         if (item.ViewModelType is not null)
+            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon);
+    }
+
+    /// <summary>Opens a tab for startup, wizard, or external callers.</summary>
+    public async Task OpenTabAsync(Type viewModelType, string title, PackIconKind icon, bool activateIfExists = true)
+    {
+        if (activateIfExists)
         {
-            _navigationService.NavigateTo(item.ViewModelType);
+            var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == viewModelType);
+            if (existing is not null)
+            {
+                ActivateTab(existing);
+                return;
+            }
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح شاشة جديدة.");
+            return;
+        }
+
+        var scope = _serviceProvider.CreateScope();
+        try
+        {
+            var viewModel = (ViewModelBase)scope.ServiceProvider.GetRequiredService(viewModelType);
+
+            var tab = new DocumentTab
+            {
+                Title = title,
+                Icon = icon,
+                ViewModelType = viewModelType,
+                ViewModel = viewModel,
+                Scope = scope
+            };
+
+            OpenTabs.Add(tab);
+            ActivateTab(tab);
+            UpdateTabCloseStates();
+
+            await SafeInitializeTabAsync(viewModel);
+        }
+        catch
+        {
+            scope.Dispose();
+            throw;
+        }
+    }
+
+    partial void OnSelectedTabChanged(DocumentTab? value)
+    {
+        if (_isTabSwitchInternal || value is null)
+            return;
+
+        ApplyActiveTabState(value);
+    }
+
+    private void ActivateTab(DocumentTab tab)
+    {
+        _isTabSwitchInternal = true;
+        SelectedTab = tab;
+        _isTabSwitchInternal = false;
+        ApplyActiveTabState(tab);
+    }
+
+    private void ApplyActiveTabState(DocumentTab tab)
+    {
+        foreach (var t in OpenTabs)
+            t.IsSelected = t == tab;
+
+        CurrentViewModel = tab.ViewModel;
+        PageTitle = tab.Title;
+        TabContentGeneration++;
+        OnTabViewModelActivated(tab.ViewModel);
+    }
+
+    private void OnTabViewModelActivated(ViewModelBase viewModel)
+    {
+        if (_investorsLookupDirty && viewModel is IInvestorLookupHost host)
+        {
+            _investorsLookupDirty = false;
+            _ = RefreshInvestorsLookupSafeAsync(host);
+        }
+    }
+
+    [RelayCommand]
+    private void SelectTab(DocumentTab? tab)
+    {
+        if (tab is null || tab == SelectedTab)
+            return;
+
+        ActivateTab(tab);
+    }
+
+    [RelayCommand]
+    private void CloseTab(DocumentTab? tab)
+    {
+        if (tab is null || !tab.CanClose)
+            return;
+
+        if (tab.ViewModel.HasUnsavedChanges)
+        {
+            var result = MessageBox.Show(
+                "يوجد تغييرات غير محفوظة. هل تريد إغلاق التبويب بدون حفظ؟",
+                "إغلاق التبويب",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No,
+                MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
+
+            if (result == MessageBoxResult.No)
+                return;
+        }
+
+        var index = OpenTabs.IndexOf(tab);
+        var wasSelected = SelectedTab == tab;
+
+        OpenTabs.Remove(tab);
+        tab.Dispose();
+
+        if (OpenTabs.Count == 0)
+        {
+            _ = OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+            return;
+        }
+
+        if (wasSelected && OpenTabs.Count > 0)
+        {
+            var nextIndex = Math.Min(index, OpenTabs.Count - 1);
+            ActivateTab(OpenTabs[nextIndex]);
+        }
+
+        UpdateTabCloseStates();
+    }
+
+    private void UpdateTabCloseStates()
+    {
+        var onlyDashboard = OpenTabs.Count == 1
+                            && OpenTabs[0].ViewModelType == typeof(DashboardViewModel);
+
+        foreach (var tab in OpenTabs)
+            tab.CanClose = !onlyDashboard;
+    }
+
+    /// <summary>Closes and disposes all tabs (logout).</summary>
+    public void CloseAllTabs()
+    {
+        foreach (var tab in OpenTabs.ToList())
+        {
+            OpenTabs.Remove(tab);
+            tab.Dispose();
+        }
+
+        SelectedTab = null;
+        CurrentViewModel = null;
+    }
+
+    private static async Task SafeInitializeTabAsync(ViewModelBase viewModel)
+    {
+        try
+        {
+            await viewModel.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Tabs] InitializeAsync failed for {viewModel.GetType().Name}: {ex}");
+            BeautifulMessageDialog.ShowError(
+                $"خطأ في تحميل الشاشة:\n\n{ex.InnerException?.Message ?? ex.Message}");
         }
     }
 
@@ -334,10 +563,16 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void OnNavigationViewModelChanged(ViewModelBase viewModel)
+    private static async Task RefreshInvestorsLookupSafeAsync(IInvestorLookupHost host)
     {
-        CurrentViewModel = viewModel;
-        PageTitle = viewModel.PageTitle;
+        try
+        {
+            await host.RefreshInvestorsAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Investors] Refresh lookup failed: {ex}");
+        }
     }
 
     private void UpdateDateTime()
@@ -364,7 +599,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void StartClock()
     {
-        _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => UpdateDateTime();
         _clockTimer.Start();
     }
@@ -376,15 +611,178 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ToggleSearch()
+    {
+        if (!IsSearchOpen && !IsSidebarExpanded)
+            IsSidebarExpanded = true;
+
+        IsSearchOpen = !IsSearchOpen;
+        if (!IsSearchOpen)
+        {
+            SearchText = string.Empty;
+            SearchResults.Clear();
+            HasSearchResults = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseSearch()
+    {
+        if (!IsSearchOpen) return;
+        IsSearchOpen = false;
+        SearchText = string.Empty;
+        SearchResults.Clear();
+        HasSearchResults = false;
+    }
+
+    [RelayCommand]
+    private void SelectSearchResult(NavigationMenuItem? item)
+    {
+        if (item is null) return;
+        IsSearchOpen = false;
+        SearchText = string.Empty;
+        SearchResults.Clear();
+        HasSearchResults = false;
+        SelectedMenuItem = item;
+    }
+
+    partial void OnSearchTextChanged(string value) => UpdateSearchResults();
+
+    partial void OnIsSearchOpenChanged(bool value)
+    {
+        if (value)
+            UpdateSearchResults();
+        else
+            HasSearchResults = false;
+    }
+
+    private void UpdateSearchResults()
+    {
+        SearchResults.Clear();
+        HasSearchResults = false;
+
+        var term = SearchText?.Trim();
+        if (string.IsNullOrEmpty(term) || term.Length < 1)
+            return;
+
+        foreach (var item in GetSearchableMenuItems())
+        {
+            if (item.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
+                SearchResults.Add(item);
+        }
+
+        HasSearchResults = IsSearchOpen && SearchResults.Count > 0;
+    }
+
+    private IEnumerable<NavigationMenuItem> GetSearchableMenuItems()
+    {
+        foreach (var item in MenuItems)
+        {
+            if (item.IsVisible && !item.IsGroupHeader && item.ViewModelType is not null)
+                yield return item;
+
+            foreach (var child in item.Children)
+            {
+                if (child.IsVisible && child.ViewModelType is not null)
+                    yield return child;
+            }
+        }
+    }
+
+    [RelayCommand]
     private void ToggleSidebar()
     {
         IsSidebarExpanded = !IsSidebarExpanded;
     }
 
     [RelayCommand]
+    private void ToggleQuickAssist() => IsQuickAssistOpen = !IsQuickAssistOpen;
+
+    [RelayCommand]
+    private void CloseQuickAssist() => IsQuickAssistOpen = false;
+
+    [RelayCommand]
+    private async Task OpenPrintSettings()
+    {
+        IsQuickAssistOpen = false;
+        await OpenTabAsync(typeof(PrintLayoutSettingsViewModel), "إعدادات الطباعة", PackIconKind.PrinterSettings);
+    }
+
+    [RelayCommand]
+    private void OpenCalculator()
+    {
+        IsQuickAssistOpen = false;
+        try
+        {
+            Process.Start(new ProcessStartInfo("calc.exe") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر فتح الحاسبة:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenOnScreenKeyboard()
+    {
+        IsQuickAssistOpen = false;
+        try
+        {
+            var osk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "osk.exe");
+            Process.Start(new ProcessStartInfo(osk) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر فتح لوحة المفاتيح:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async void GoToDashboard()
+    {
+        IsQuickAssistOpen = false;
+        await OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard);
+        var dashboard = MenuItems.FirstOrDefault(m => m.ViewModelType == typeof(DashboardViewModel));
+        if (dashboard is not null)
+        {
+            _suppressNavigation = true;
+            SelectedMenuItem = dashboard;
+            _suppressNavigation = false;
+        }
+    }
+
+    [RelayCommand]
+    private async void GoToBackup()
+    {
+        IsQuickAssistOpen = false;
+        var backup = FlattenMenuItems().FirstOrDefault(m => m.ViewModelType == typeof(BackupRestoreViewModel));
+        if (backup is not null)
+        {
+            _suppressNavigation = true;
+            SelectedMenuItem = backup;
+            _suppressNavigation = false;
+            await OpenTabAsync(backup.ViewModelType!, backup.Title, backup.Icon);
+        }
+    }
+
+    [RelayCommand]
+    private void RequestExit() => IsExitDialogOpen = true;
+
+    private IEnumerable<NavigationMenuItem> FlattenMenuItems()
+    {
+        foreach (var item in MenuItems)
+        {
+            yield return item;
+            foreach (var child in item.Children)
+                yield return child;
+        }
+    }
+
+    [RelayCommand]
     private void Logout()
     {
         StopClock();
+        CloseAllTabs();
         _currentUserService.Clear();
         LogoutRequested?.Invoke();
     }
@@ -401,47 +799,77 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void NavigateBack()
     {
-        if (_navigationService.CanGoBack)
-            _navigationService.GoBack();
+        if (SelectedTab is null || OpenTabs.Count < 2)
+            return;
+
+        var index = OpenTabs.IndexOf(SelectedTab);
+        if (index > 0)
+            ActivateTab(OpenTabs[index - 1]);
     }
 
     // ── Exit Dialog Commands ──
 
     [RelayCommand]
-    private void ExitApplication()
-    {
-        IsExitDialogOpen = false;
-        IsExitConfirmed = true;
-        StopClock();
-        Application.Current.MainWindow?.Close();
-    }
+    private void ExitApplication() => CompleteApplicationExit();
 
     [RelayCommand]
     private async Task ExitWithBackup()
     {
+        ExitBackupPath = string.Empty;
+        ExitBackupStatus = string.Empty;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "اختر مكان حفظ النسخة الاحتياطية",
+            Filter = "ملف النسخ الاحتياطي (*.bak)|*.bak",
+            FileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak",
+            InitialDirectory = GetBackupDialogInitialDirectory(),
+            AddExtension = true,
+            DefaultExt = ".bak",
+            OverwritePrompt = true
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
         IsExitBackupInProgress = true;
         ExitBackupStatus = "جاري إنشاء النسخة الاحتياطية...";
 
         try
         {
-            var defaultDir = _backupService.GetDefaultBackupDirectory();
-            var fileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-            var fullPath = Path.Combine(defaultDir, fileName);
+            var fullPath = dialog.FileName;
             await _backupService.BackupDatabaseAsync(fullPath);
 
-            ExitBackupStatus = "تم إنشاء النسخة بنجاح!";
-            await Task.Delay(800);
+            ExitBackupPath = fullPath;
+            ExitBackupStatus = "تم إنشاء النسخة بنجاح! سيتم إغلاق البرنامج...";
+            OpenBackupInExplorer(fullPath);
 
-            IsExitDialogOpen = false;
-            IsExitConfirmed = true;
-            StopClock();
-            Application.Current.MainWindow?.Close();
+            await Task.Delay(1200);
+            CompleteApplicationExit();
         }
         catch (Exception ex)
         {
-            ExitBackupStatus = $"فشل: {ex.Message}";
+            ExitBackupStatus = $"فشل إنشاء النسخة:\n{ex.Message}";
             IsExitBackupInProgress = false;
+            Controls.BeautifulMessageDialog.ShowError($"فشل النسخ الاحتياطي:\n\n{ex.Message}");
         }
+    }
+
+    [RelayCommand]
+    private void OpenExitBackupFolder()
+    {
+        if (!string.IsNullOrWhiteSpace(ExitBackupPath) && File.Exists(ExitBackupPath))
+            OpenBackupInExplorer(ExitBackupPath);
+    }
+
+    private static string GetBackupDialogInitialDirectory()
+    {
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (Directory.Exists(desktop))
+            return desktop;
+
+        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        return Directory.Exists(documents) ? documents : @"D:\";
     }
 
     [RelayCommand]
@@ -450,5 +878,35 @@ public partial class MainWindowViewModel : ObservableObject
         IsExitDialogOpen = false;
         IsExitBackupInProgress = false;
         ExitBackupStatus = string.Empty;
+        ExitBackupPath = string.Empty;
+    }
+
+    private void CompleteApplicationExit()
+    {
+        IsExitDialogOpen = false;
+        IsExitBackupInProgress = false;
+        IsExitConfirmed = true;
+        StopClock();
+        Application.Current.Shutdown();
+    }
+
+    private static void OpenBackupInExplorer(string fullPath)
+    {
+        try
+        {
+            var explorerPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "explorer.exe");
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = explorerPath,
+                Arguments = $"/select,\"{fullPath}\"",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Backup] Could not open explorer: {ex}");
+        }
     }
 }

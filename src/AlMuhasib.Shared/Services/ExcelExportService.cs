@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Interfaces.Services;
 using ClosedXML.Excel;
 
@@ -114,6 +115,8 @@ public class ExcelExportService : IExportService
             PagePadding = new Thickness(40)
         };
 
+        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
+
         // Title
         doc.Blocks.Add(new Paragraph(new Run(title))
         {
@@ -193,31 +196,38 @@ public class ExcelExportService : IExportService
             Margin = new Thickness(0, 12, 0, 0)
         });
 
-        var paginator = ((IDocumentPaginatorSource)doc).DocumentPaginator;
-        var printDialog = new PrintDialog();
-        if (printDialog.ShowDialog() == true)
-        {
-            paginator.PageSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
-            printDialog.PrintDocument(paginator, title);
-        }
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+
+        DocumentPrintHelper.PrintWithPreview(doc, title);
     }
 
     public void PrintInvoice(InvoicePrintModel m)
     {
+        if (m.Schedule is { Count: > 0 } && m.Title.Contains("أقساط"))
+        {
+            PrintInstallmentInvoiceLikeReference(m);
+            return;
+        }
+
         // ── A4 page dimensions (96 DPI) ──
         const double A4Width = 793.7;   // 210mm
         const double A4Height = 1122.5; // 297mm
+        var compactScheduleMode = m.Schedule is { Count: >= 14 };
 
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12,
+            FontSize = compactScheduleMode ? 10 : 11,
             FlowDirection = FlowDirection.RightToLeft,
             PageWidth = A4Width,
             PageHeight = A4Height,
-            PagePadding = new Thickness(50, 40, 50, 40),
+            PagePadding = compactScheduleMode
+                ? new Thickness(22, 14, 22, 14)
+                : new Thickness(32, 24, 32, 24),
             ColumnWidth = A4Width // single column
         };
+
+        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
         var primaryColor = Color.FromRgb(0x15, 0x65, 0xC0);
         var primaryBrush = new SolidColorBrush(primaryColor);
@@ -237,12 +247,12 @@ public class ExcelExportService : IExportService
         var headerRow = new TableRow { Background = primaryBrush };
         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(m.Title))
         {
-            FontSize = 24,
+            FontSize = compactScheduleMode ? 19 : 24,
             FontWeight = FontWeights.Bold,
             Foreground = Brushes.White,
             TextAlignment = TextAlignment.Center
         })
-        { Padding = new Thickness(0, 14, 0, 14) });
+        { Padding = compactScheduleMode ? new Thickness(0, 8, 0, 8) : new Thickness(0, 14, 0, 14) });
         headerGroup.Rows.Add(headerRow);
         headerTable.RowGroups.Add(headerGroup);
         doc.Blocks.Add(headerTable);
@@ -260,7 +270,11 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         // INVOICE INFO — Two columns side by side
         // ═══════════════════════════════════════════════
-        var infoTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 16, 0, 16) };
+        var infoTable = new Table
+        {
+            CellSpacing = 0,
+            Margin = compactScheduleMode ? new Thickness(0, 6, 0, 6) : new Thickness(0, 10, 0, 10)
+        };
         infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -273,7 +287,8 @@ public class ExcelExportService : IExportService
             var leftPara = new Paragraph();
             leftPara.Inlines.Add(new Run(leftLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
             leftPara.Inlines.Add(new Run(leftVal));
-            r.Cells.Add(new TableCell(leftPara) { Padding = new Thickness(8, 5, 8, 5) });
+            var infoPadding = compactScheduleMode ? new Thickness(5, 2, 5, 2) : new Thickness(8, 5, 8, 5);
+            r.Cells.Add(new TableCell(leftPara) { Padding = infoPadding });
 
             // Right cell
             if (rightLabel != null && rightVal != null)
@@ -281,11 +296,11 @@ public class ExcelExportService : IExportService
                 var rightPara = new Paragraph();
                 rightPara.Inlines.Add(new Run(rightLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
                 rightPara.Inlines.Add(new Run(rightVal));
-                r.Cells.Add(new TableCell(rightPara) { Padding = new Thickness(8, 5, 8, 5) });
+                r.Cells.Add(new TableCell(rightPara) { Padding = infoPadding });
             }
             else
             {
-                r.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = new Thickness(8, 5, 8, 5) });
+                r.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = infoPadding });
             }
             infoGroup.Rows.Add(r);
         }
@@ -312,7 +327,9 @@ public class ExcelExportService : IExportService
         // ITEMS TABLE
         // ═══════════════════════════════════════════════
         var itemsTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
-        var colWidths = new[] { 45.0, 250.0, 80.0, 110.0, 120.0 };
+        var colWidths = compactScheduleMode
+            ? new[] { 32.0, 205.0, 62.0, 90.0, 105.0 }
+            : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 };
         foreach (var w in colWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
 
@@ -329,7 +346,7 @@ public class ExcelExportService : IExportService
                 FontSize = 12
             })
             {
-                Padding = new Thickness(6, 8, 6, 8),
+                Padding = compactScheduleMode ? new Thickness(4, 4, 4, 4) : new Thickness(5, 6, 5, 6),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)),
                 BorderThickness = new Thickness(0, 0, 1, 0)
             });
@@ -354,7 +371,7 @@ public class ExcelExportService : IExportService
                     FontWeight = bold ? FontWeights.Bold : FontWeights.Normal
                 })
                 {
-                    Padding = new Thickness(6, 6, 6, 6),
+                    Padding = compactScheduleMode ? new Thickness(4, 2, 4, 2) : new Thickness(5, 4, 5, 4),
                     BorderBrush = borderBrush,
                     BorderThickness = new Thickness(0, 0, 0, 1)
                 });
@@ -373,7 +390,11 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         // TOTALS SECTION — right-aligned box
         // ═══════════════════════════════════════════════
-        var totalsTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 12, 0, 0) };
+        var totalsTable = new Table
+        {
+            CellSpacing = 0,
+            Margin = compactScheduleMode ? new Thickness(0, 4, 0, 0) : new Thickness(0, 8, 0, 0)
+        };
         totalsTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         totalsTable.Columns.Add(new TableColumn { Width = new GridLength(200) });
         totalsTable.Columns.Add(new TableColumn { Width = new GridLength(160) });
@@ -416,6 +437,8 @@ public class ExcelExportService : IExportService
         if (m.RoundingAmount != 0)
             AddTotalRow("التقريب", m.RoundingAmount);
         AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
+        if (m.CompanyFeeAmount is > 0)
+            AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);
 
         totalsTable.RowGroups.Add(totalsGroup);
         doc.Blocks.Add(totalsTable);
@@ -425,7 +448,11 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         if (m.Schedule is { Count: > 0 })
         {
-            doc.Blocks.Add(new Paragraph(new Run(" ")) { FontSize = 6, Margin = new Thickness(0) });
+            doc.Blocks.Add(new Paragraph(new Run(" "))
+            {
+                FontSize = compactScheduleMode ? 1 : 4,
+                Margin = new Thickness(0)
+            });
 
             // Schedule header
             var schedTitleTable = new Table { CellSpacing = 0 };
@@ -434,16 +461,20 @@ public class ExcelExportService : IExportService
             var schedTitleRow = new TableRow { Background = new SolidColorBrush(accentColor) };
             schedTitleRow.Cells.Add(new TableCell(new Paragraph(new Run($"جدول الأقساط — {m.NumberOfInstallments} قسط — مبلغ القسط: {m.InstallmentAmount:N0} د.ع"))
             {
-                FontSize = 13, FontWeight = FontWeights.Bold,
+                FontSize = compactScheduleMode ? 10 : 11,
+                FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White, TextAlignment = TextAlignment.Center
             })
-            { Padding = new Thickness(0, 8, 0, 8) });
+            { Padding = compactScheduleMode ? new Thickness(0, 3, 0, 3) : new Thickness(0, 5, 0, 5) });
             schedTitleGroup.Rows.Add(schedTitleRow);
             schedTitleTable.RowGroups.Add(schedTitleGroup);
             doc.Blocks.Add(schedTitleTable);
 
             var schedTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
-            foreach (var w in new[] { 70.0, 200.0, 160.0 })
+            var schedWidths = compactScheduleMode
+                ? new[] { 46.0, 132.0, 110.0 }
+                : new[] { 56.0, 150.0, 120.0 };
+            foreach (var w in schedWidths)
                 schedTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
 
             var schedHeader = new TableRowGroup();
@@ -455,7 +486,7 @@ public class ExcelExportService : IExportService
                     Foreground = Brushes.White, FontWeight = FontWeights.Bold,
                     TextAlignment = TextAlignment.Center
                 })
-                { Padding = new Thickness(6, 6, 6, 6) });
+                { Padding = compactScheduleMode ? new Thickness(4, 2, 4, 2) : new Thickness(5, 4, 5, 4) });
             }
             schedHeader.Rows.Add(schedHeaderRow);
             schedTable.RowGroups.Add(schedHeader);
@@ -468,8 +499,16 @@ public class ExcelExportService : IExportService
                 if (a) sr.Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xF8, 0xE1));
                 a = !a;
                 foreach (var val in new[] { s.Number.ToString(), s.DueDate.ToString("yyyy/MM/dd"), s.Amount.ToString("N0") + " د.ع" })
-                    sr.Cells.Add(new TableCell(new Paragraph(new Run(val)) { TextAlignment = TextAlignment.Center })
-                    { Padding = new Thickness(6, 5, 6, 5), BorderBrush = borderBrush, BorderThickness = new Thickness(0, 0, 0, 1) });
+                    sr.Cells.Add(new TableCell(new Paragraph(new Run(val))
+                    {
+                        TextAlignment = TextAlignment.Center,
+                        FontSize = compactScheduleMode ? 10 : 11
+                    })
+                    {
+                        Padding = compactScheduleMode ? new Thickness(4, 1, 4, 1) : new Thickness(5, 3, 5, 3),
+                        BorderBrush = borderBrush,
+                        BorderThickness = new Thickness(0, 0, 0, 1)
+                    });
                 schedData.Rows.Add(sr);
             }
             schedTable.RowGroups.Add(schedData);
@@ -479,7 +518,11 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         // SIGNATURE AREA
         // ═══════════════════════════════════════════════
-        var sigTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 30, 0, 0) };
+        var sigTable = new Table
+        {
+            CellSpacing = 0,
+            Margin = compactScheduleMode ? new Thickness(0, 4, 0, 0) : new Thickness(0, 12, 0, 0)
+        };
         sigTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         sigTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         var sigGroup = new TableRowGroup();
@@ -497,32 +540,216 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         // FOOTER
         // ═══════════════════════════════════════════════
-        doc.Blocks.Add(new Paragraph(new Run("")) { FontSize = 4, Margin = new Thickness(0, 8, 0, 0) });
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
 
-        // Footer line
-        var footerLine = new Table { CellSpacing = 0 };
-        footerLine.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        var footerLineGroup = new TableRowGroup();
-        var footerLineRow = new TableRow { Background = borderBrush };
-        footerLineRow.Cells.Add(new TableCell(new Paragraph(new Run(" ")) { FontSize = 1 }) { Padding = new Thickness(0, 1, 0, 1) });
-        footerLineGroup.Rows.Add(footerLineRow);
-        footerLine.RowGroups.Add(footerLineGroup);
-        doc.Blocks.Add(footerLine);
+        DocumentPrintHelper.PrintWithPreview(doc, m.Title, new Size(A4Width, A4Height));
+    }
 
-        doc.Blocks.Add(new Paragraph(new Run($"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}"))
+    private void PrintInstallmentInvoiceLikeReference(InvoicePrintModel m)
+    {
+        const double A4Width = 793.7;
+        const double A4Height = 1122.5;
+        var branding = PrintBrandingProvider.Current;
+        var customerPhone = string.IsNullOrWhiteSpace(branding.PhonePrimary) ? "—" : branding.PhonePrimary;
+        var companyAddress = string.IsNullOrWhiteSpace(branding.Address) ? "—" : branding.Address;
+
+        var doc = new FlowDocument
         {
-            FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0x9E, 0x9E, 0x9E)),
+            FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
+            FontSize = 9.6,
+            FlowDirection = FlowDirection.RightToLeft,
+            PageWidth = A4Width,
+            PageHeight = A4Height,
+            PagePadding = new Thickness(14, 8, 14, 10),
+            ColumnWidth = A4Width
+        };
+
+        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
+
+        // Boxed title similar to reference
+        var titleTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 4) };
+        titleTable.Columns.Add(new TableColumn { Width = new GridLength(230) });
+        var titleGroup = new TableRowGroup();
+        var titleRow = new TableRow();
+        titleRow.Cells.Add(new TableCell(new Paragraph(new Run("جدول الأقساط"))
+        {
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 6, 0, 0)
+            FontWeight = FontWeights.Bold,
+            FontSize = 16
+        })
+        {
+            BorderBrush = Brushes.Gray,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(8, 3, 8, 3)
+        });
+        titleGroup.Rows.Add(titleRow);
+        titleTable.RowGroups.Add(titleGroup);
+        doc.Blocks.Add(titleTable);
+
+        // Meta line close to reference style
+        doc.Blocks.Add(new Paragraph
+        {
+            Margin = new Thickness(0, 0, 0, 4),
+            Inlines =
+            {
+                new Run($"اسم العميل: {m.PartyName}") { FontWeight = FontWeights.SemiBold },
+                new Run("    |    "),
+                new Run($"الهاتف: {customerPhone}"),
+                new Run("    |    "),
+                new Run($"العنوان: {companyAddress}"),
+                new Run("    |    "),
+                new Run($"رقم الفاتورة: {m.InvoiceNumber}")
+            }
         });
 
-        // ── Print with A4 page size ──
-        var paginator = ((IDocumentPaginatorSource)doc).DocumentPaginator;
-        var dlg = new PrintDialog();
-        if (dlg.ShowDialog() == true)
+        // Installments table (main section)
+        var schedTable = new Table { CellSpacing = 0, BorderBrush = Brushes.Gray, BorderThickness = new Thickness(1) };
+        foreach (var w in new[] { 26.0, 72.0, 58.0, 56.0, 56.0, 56.0, 56.0, 58.0, 54.0, 48.0 })
+            schedTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
+
+        var schedHeader = new TableRowGroup();
+        var schedHeaderRow = new TableRow { Background = new SolidColorBrush(Color.FromRgb(0xE6, 0xE6, 0xE6)) };
+        foreach (var col in new[] { "ت", "تاريخ الاستحقاق", "مبلغ القسط", "مبلغ التأمين", "مبلغ الخصم", "المسدد", "الباقي", "تاريخ التسديد", "الحالة", "التأخير" })
         {
-            paginator.PageSize = new Size(A4Width, A4Height);
-            dlg.PrintDocument(paginator, m.Title);
+            schedHeaderRow.Cells.Add(new TableCell(new Paragraph(new Run(col))
+            {
+                TextAlignment = TextAlignment.Center,
+                FontWeight = FontWeights.Bold,
+                FontSize = 8.6
+            })
+            {
+                Padding = new Thickness(3, 1, 3, 1),
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(0, 0, 1, 1)
+            });
         }
+        schedHeader.Rows.Add(schedHeaderRow);
+        schedTable.RowGroups.Add(schedHeader);
+
+        var schedData = new TableRowGroup();
+        foreach (var s in m.Schedule!)
+        {
+            var remaining = s.Amount;
+            var values = new[]
+            {
+                s.Number.ToString(),
+                s.DueDate.ToString("yyyy/MM/dd"),
+                s.Amount.ToString("N0"),
+                "0",
+                "0",
+                "0",
+                remaining.ToString("N0"),
+                "",
+                "معلق",
+                ""
+            };
+
+            var row = new TableRow();
+            foreach (var val in values)
+            {
+                row.Cells.Add(new TableCell(new Paragraph(new Run(val))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 8.8
+                })
+                {
+                    Padding = new Thickness(3, 0.8, 3, 0.8),
+                    BorderBrush = Brushes.LightGray,
+                    BorderThickness = new Thickness(0, 0, 1, 1)
+                });
+            }
+            schedData.Rows.Add(row);
+        }
+        schedTable.RowGroups.Add(schedData);
+        doc.Blocks.Add(schedTable);
+
+        // Items title
+        doc.Blocks.Add(new Paragraph(new Run("تفاصيل القائمة"))
+        {
+            FontSize = 14,
+            FontWeight = FontWeights.Bold,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 6, 0, 3)
+        });
+
+        // Items table
+        var itemsTable = new Table { CellSpacing = 0, BorderBrush = Brushes.Gray, BorderThickness = new Thickness(1) };
+        foreach (var w in new[] { 250.0, 58.0, 64.0, 95.0, 112.0 })
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
+
+        var itemsHeader = new TableRowGroup();
+        var itemsHeaderRow = new TableRow { Background = new SolidColorBrush(Color.FromRgb(0xE6, 0xE6, 0xE6)) };
+        foreach (var col in new[] { "اسم المنتج", "العدد", "الوحدة", "السعر", "الإجمالي" })
+        {
+            itemsHeaderRow.Cells.Add(new TableCell(new Paragraph(new Run(col))
+            {
+                TextAlignment = TextAlignment.Center,
+                FontWeight = FontWeights.Bold,
+                FontSize = 8.8
+            })
+            {
+                Padding = new Thickness(3, 1, 3, 1),
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(0, 0, 1, 1)
+            });
+        }
+        itemsHeader.Rows.Add(itemsHeaderRow);
+        itemsTable.RowGroups.Add(itemsHeader);
+
+        var itemsData = new TableRowGroup();
+        foreach (var i in m.Items)
+        {
+            var row = new TableRow();
+            foreach (var val in new[] { i.ItemName, i.Quantity.ToString("N0"), "قطعة", i.UnitPrice.ToString("N0"), i.TotalPrice.ToString("N0") })
+            {
+                row.Cells.Add(new TableCell(new Paragraph(new Run(val))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 8.8
+                })
+                {
+                    Padding = new Thickness(3, 0.8, 3, 0.8),
+                    BorderBrush = Brushes.LightGray,
+                    BorderThickness = new Thickness(0, 0, 1, 1)
+                });
+            }
+            itemsData.Rows.Add(row);
+        }
+        itemsTable.RowGroups.Add(itemsData);
+        doc.Blocks.Add(itemsTable);
+
+        // Totals row
+        var totals = new Table { CellSpacing = 0, Margin = new Thickness(0, 4, 0, 0), BorderBrush = Brushes.Gray, BorderThickness = new Thickness(1) };
+        foreach (var w in new[] { 122.0, 104.0, 104.0, 104.0, 104.0, 58.0 })
+            totals.Columns.Add(new TableColumn { Width = new GridLength(w) });
+        var totalsGroup = new TableRowGroup();
+        var totalsHeader = new TableRow { Background = new SolidColorBrush(Color.FromRgb(0xE6, 0xE6, 0xE6)) };
+        foreach (var col in new[] { "إجمالي الباقي", "إجمالي المسدد", "إجمالي الخصم", "إجمالي المبلغ", "الإجمالي", "" })
+        {
+            totalsHeader.Cells.Add(new TableCell(new Paragraph(new Run(col))
+            {
+                TextAlignment = TextAlignment.Center,
+                FontWeight = FontWeights.Bold,
+                FontSize = 8.6
+            }) { Padding = new Thickness(3, 1, 3, 1), BorderBrush = Brushes.Gray, BorderThickness = new Thickness(0, 0, 1, 1) });
+        }
+        totalsGroup.Rows.Add(totalsHeader);
+
+        var totalsRow = new TableRow();
+        foreach (var val in new[] { m.GrandTotal.ToString("N0"), "0", "0", m.GrandTotal.ToString("N0"), "دينار", "" })
+        {
+            totalsRow.Cells.Add(new TableCell(new Paragraph(new Run(val))
+            {
+                TextAlignment = TextAlignment.Center,
+                FontWeight = FontWeights.Bold,
+                FontSize = 9
+            }) { Padding = new Thickness(3, 2, 3, 2), BorderBrush = Brushes.LightGray, BorderThickness = new Thickness(0, 0, 1, 0) });
+        }
+        totalsGroup.Rows.Add(totalsRow);
+        totals.RowGroups.Add(totalsGroup);
+        doc.Blocks.Add(totals);
+
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+        DocumentPrintHelper.PrintWithPreview(doc, m.Title, new Size(A4Width, A4Height));
     }
 }

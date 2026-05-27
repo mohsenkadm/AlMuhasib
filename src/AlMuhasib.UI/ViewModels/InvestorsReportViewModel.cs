@@ -9,10 +9,11 @@ using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class InvestorsReportViewModel : ReportViewModelBase
+public partial class InvestorsReportViewModel : ReportViewModelBase, IInvestorLookupHost
 {
     [ObservableProperty] private string _totalInvestments = "0";
     [ObservableProperty] private string _totalDistributed = "0";
@@ -36,8 +37,21 @@ public partial class InvestorsReportViewModel : ReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
-        foreach (var i in await _unitOfWork.Investors.GetAllAsync()) Investors.Add(i);
+        await RefreshInvestorsAsync();
         await LoadDataAsync();
+    }
+
+    public async Task RefreshInvestorsAsync()
+    {
+        var selectedId = SelectedInvestorId;
+        Investors.Clear();
+        foreach (var i in await _unitOfWork.Investors.GetAllAsync())
+            Investors.Add(i);
+        if (selectedId is int id && Investors.Any(i => i.Id == id))
+            SelectedInvestorId = id;
+        else if (SelectedInvestorId is int stale && Investors.All(i => i.Id != stale))
+            SelectedInvestorId = null;
+        await Task.CompletedTask;
     }
 
     [RelayCommand]

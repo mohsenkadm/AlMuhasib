@@ -27,7 +27,7 @@ public class InvestorService : IInvestorService
     public async Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var investor = new Investor { Name = name, Phone = phone, ProfitPercentage = profitPercentage, TotalDeposit = 0 };
+        var investor = new Investor { Name = name, Phone = phone, ProfitPercentage = profitPercentage, TotalDeposit = 0, OpeningBalance = 0 };
         await context.Investors.AddAsync(investor);
         await context.SaveChangesAsync();
         return investor;
@@ -39,6 +39,73 @@ public class InvestorService : IInvestorService
         var investor = await context.Investors.FindAsync(id) ?? throw new InvalidOperationException("المستثمر غير موجود");
         investor.Name = name; investor.Phone = phone; investor.ProfitPercentage = profitPercentage;
         await context.SaveChangesAsync();
+    }
+
+    public async Task SaveOpeningBalancesAsync(IEnumerable<InvestorOpeningBalanceItem> items)
+    {
+        var list = items.ToList();
+        if (list.Count == 0) return;
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var username = _currentUserService.Username ?? "system";
+            foreach (var item in list)
+            {
+                var investor = await context.Investors.FindAsync(item.InvestorId);
+                if (investor is null) continue;
+
+                var nameChanged = investor.Name != item.Name.Trim();
+                var phoneChanged = investor.Phone != item.Phone;
+                var pctChanged = investor.ProfitPercentage != item.ProfitPercentage;
+                var openingChanged = investor.OpeningBalance != item.OpeningBalance;
+
+                if (!nameChanged && !phoneChanged && !pctChanged && !openingChanged)
+                    continue;
+
+                investor.Name = item.Name.Trim();
+                investor.Phone = string.IsNullOrWhiteSpace(item.Phone) ? null : item.Phone.Trim();
+                investor.ProfitPercentage = item.ProfitPercentage;
+
+                if (openingChanged)
+                {
+                    investor.OpeningBalance = item.OpeningBalance;
+                    await RecalculateTotalDepositAsync(context, investor);
+
+                    var existingOpeningTx = await context.InvestorTransactions
+                        .FirstOrDefaultAsync(t => t.InvestorId == investor.Id && t.Type == InvestorTransactionType.OpeningBalance);
+
+                    if (existingOpeningTx is not null)
+                    {
+                        existingOpeningTx.Amount = item.OpeningBalance;
+                        existingOpeningTx.Notes = "رصيد افتتاحي للمستثمر";
+                        existingOpeningTx.UpdatedBy = username;
+                        existingOpeningTx.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else if (item.OpeningBalance > 0)
+                    {
+                        await context.InvestorTransactions.AddAsync(new InvestorTransaction
+                        {
+                            InvestorId = investor.Id,
+                            Type = InvestorTransactionType.OpeningBalance,
+                            Amount = item.OpeningBalance,
+                            Date = DateTime.Today,
+                            Notes = "رصيد افتتاحي للمستثمر",
+                            CreatedBy = username,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                investor.UpdatedBy = username;
+                investor.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch { await transaction.RollbackAsync(); throw; }
     }
 
     public async Task DepositAsync(int investorId, decimal amount, DateTime date, int cashBoxId, string? notes)
@@ -102,18 +169,24 @@ public class InvestorService : IInvestorService
         var totalPurchases = await context.Invoices.Where(i => i.InvoiceType == InvoiceType.Purchase).SumAsync(i => (decimal?)i.NetAmount ?? 0);
         var totalExpenses = await context.Expenses.SumAsync(e => (decimal?)e.Amount ?? 0);
         var alreadyDistributed = await context.ProfitDistributions.SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
-        return totalSales - totalPurchases - totalExpenses - alreadyDistributed;
+        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
+        return totalSales - totalPurchases - totalExpenses - alreadyDistributed + profitOpening;
     }
 
     public async Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var cutoffDate = distributionDate.AddDays(-15);
-        var eligibleDeposits = await context.InvestorTransactions.Where(t => t.InvestorId == investorId && t.Type == InvestorTransactionType.Deposit && t.Date <= cutoffDate).SumAsync(t => (decimal?)t.Amount ?? 0);
-        var totalWithdrawals = await context.InvestorTransactions.Where(t => t.InvestorId == investorId && t.Type == InvestorTransactionType.Withdrawal && t.Date <= distributionDate).SumAsync(t => (decimal?)t.Amount ?? 0);
-        var eligible = eligibleDeposits - totalWithdrawals;
         var investor = await context.Investors.FindAsync(investorId);
         if (investor is null) return 0;
+
+        var eligibleDeposits = investor.OpeningBalance + await context.InvestorTransactions
+            .Where(t => t.InvestorId == investorId && t.Type == InvestorTransactionType.Deposit && t.Date <= cutoffDate)
+            .SumAsync(t => (decimal?)t.Amount ?? 0);
+        var totalWithdrawals = await context.InvestorTransactions
+            .Where(t => t.InvestorId == investorId && t.Type == InvestorTransactionType.Withdrawal && t.Date <= distributionDate)
+            .SumAsync(t => (decimal?)t.Amount ?? 0);
+        var eligible = eligibleDeposits - totalWithdrawals;
         return Math.Max(0, Math.Min(eligible, investor.TotalDeposit));
     }
 
@@ -173,6 +246,17 @@ public class InvestorService : IInvestorService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.ProfitDistributionDetails.Where(d => d.InvestorId == investorId).SumAsync(d => (decimal?)d.Amount ?? 0);
+    }
+
+    private static async Task RecalculateTotalDepositAsync(AppDbContext context, Investor investor)
+    {
+        var deposits = await context.InvestorTransactions
+            .Where(t => t.InvestorId == investor.Id && t.Type == InvestorTransactionType.Deposit)
+            .SumAsync(t => (decimal?)t.Amount ?? 0);
+        var withdrawals = await context.InvestorTransactions
+            .Where(t => t.InvestorId == investor.Id && t.Type == InvestorTransactionType.Withdrawal)
+            .SumAsync(t => (decimal?)t.Amount ?? 0);
+        investor.TotalDeposit = investor.OpeningBalance + deposits - withdrawals;
     }
 
     private async Task CreateAuditLogAsync(AppDbContext context, string entityName, int entityId, string description)

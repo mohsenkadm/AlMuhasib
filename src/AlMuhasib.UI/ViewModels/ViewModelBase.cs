@@ -37,4 +37,9 @@ public abstract partial class ViewModelBase : ObservableObject
     }
 
     public virtual Task InitializeAsync() => Task.CompletedTask;
+
+    /// <summary>
+    /// Override to indicate there are unsaved changes that should prompt the user before navigating away.
+    /// </summary>
+    public virtual bool HasUnsavedChanges => false;
 }

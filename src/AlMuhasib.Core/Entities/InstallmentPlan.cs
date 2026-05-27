@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>خطة الأقساط</summary>
@@ -10,6 +12,11 @@ public class InstallmentPlan : BaseEntity
     public int NumberOfInstallments { get; set; }
     public decimal InstallmentAmount { get; set; }
     public DateTime StartDate { get; set; }
+    public InstallmentType InstallmentType { get; set; } = InstallmentType.Manual;
+    /// <summary>نسبة الشركة (مثلاً 0.08 = 8%)</summary>
+    public decimal CompanyFeePercentage { get; set; }
+    /// <summary>مبلغ نسبة الشركة</summary>
+    public decimal CompanyFeeAmount { get; set; }
 
     // Navigation
     public Invoice Invoice { get; set; } = null!;

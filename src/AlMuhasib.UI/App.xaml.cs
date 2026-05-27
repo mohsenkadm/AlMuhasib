@@ -7,8 +7,10 @@ using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
+using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,9 @@ namespace AlMuhasib.UI;
 
 public partial class App : Application
 {
+    private static readonly string LogFilePath =
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
+
     private readonly ServiceProvider _serviceProvider;
     public IServiceProvider Services => _serviceProvider;
     private bool _isLoggingOut;
@@ -28,16 +33,68 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        _serviceProvider = services.BuildServiceProvider();
+        try
+        {
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            _serviceProvider = services.BuildServiceProvider();
+        }
+        catch (Exception ex)
+        {
+            // Constructor failure: WPF resources/MaterialDesign may not be loaded yet,
+            // so fall back to the native Win32 MessageBox + a log file.
+            ShowFatalError("فشل تهيئة التطبيق", ex);
+            Environment.Exit(1);
+            throw; // unreachable, but keeps compiler happy about _serviceProvider
+        }
+    }
+
+    private static void LogException(string context, Exception ex)
+    {
+        try
+        {
+            var entry =
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {context}{Environment.NewLine}" +
+                $"{ex}{Environment.NewLine}" +
+                new string('-', 80) + Environment.NewLine;
+            File.AppendAllText(LogFilePath, entry);
+        }
+        catch
+        {
+            // ignore logging failures
+        }
+    }
+
+    private static void ShowFatalError(string title, Exception ex)
+    {
+        LogException(title, ex);
+
+        var message =
+            $"{title}:\n\n" +
+            $"{ex.GetType().Name}: {ex.Message}\n\n" +
+            (ex.InnerException is { } inner ? $"السبب الداخلي: {inner.Message}\n\n" : string.Empty) +
+            $"تم حفظ التفاصيل في:\n{LogFilePath}";
+
+        // Use native MessageBox – does not depend on any WPF resources/themes.
+        System.Windows.MessageBox.Show(
+            message,
+            "AlMuhasib - خطأ",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Error);
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"[DispatcherUnhandled] {e.Exception}");
-        BeautifulMessageDialog.ShowError(
-            $"حدث خطأ غير متوقع:\n\n{e.Exception.Message}\n\n{e.Exception.InnerException?.Message}");
+        LogException("DispatcherUnhandledException", e.Exception);
+        try
+        {
+            BeautifulMessageDialog.ShowError(
+                $"حدث خطأ غير متوقع:\n\n{e.Exception.Message}\n\n{e.Exception.InnerException?.Message}");
+        }
+        catch
+        {
+            ShowFatalError("حدث خطأ غير متوقع", e.Exception);
+        }
         e.Handled = true;
     }
 
@@ -45,20 +102,25 @@ public partial class App : Application
     {
         if (e.ExceptionObject is Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[AppDomainUnhandled] {ex}");
-            BeautifulMessageDialog.ShowError(
-                $"حدث خطأ فادح:\n\n{ex.Message}\n\n{ex.InnerException?.Message}");
+            ShowFatalError("حدث خطأ فادح", ex);
         }
     }
 
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"[UnobservedTask] {e.Exception}");
+        LogException("UnobservedTaskException", e.Exception);
         e.SetObserved();
         Current?.Dispatcher.BeginInvoke(() =>
         {
-            BeautifulMessageDialog.ShowWarning(
-                $"حدث خطأ في مهمة خلفية:\n\n{e.Exception.InnerException?.Message ?? e.Exception.Message}");
+            try
+            {
+                BeautifulMessageDialog.ShowWarning(
+                    $"حدث خطأ في مهمة خلفية:\n\n{e.Exception.InnerException?.Message ?? e.Exception.Message}");
+            }
+            catch
+            {
+                ShowFatalError("حدث خطأ في مهمة خلفية", e.Exception);
+            }
         });
     }
 
@@ -80,6 +142,8 @@ public partial class App : Application
         services.AddSingleton<CurrentUserService>(currentUserService);
         services.AddSingleton<ICurrentUserService>(currentUserService);
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
+        services.AddSingleton<IToastNotificationService, ToastNotificationService>();
 
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
@@ -97,9 +161,12 @@ public partial class App : Application
         services.AddTransient<InstallmentsViewModel>();
         services.AddTransient<CashBankViewModel>();
         services.AddTransient<WarehousesViewModel>();
+        services.AddTransient<OpeningStockViewModel>();
+        services.AddTransient<StockAdjustmentViewModel>();
         services.AddTransient<VouchersViewModel>();
         services.AddTransient<ExpenseViewModel>();
         services.AddTransient<InvestorsViewModel>();
+        services.AddTransient<OpeningInvestorsViewModel>();
         services.AddTransient<SalesReportViewModel>();
         services.AddTransient<PurchasesReportViewModel>();
         services.AddTransient<ProfitReportViewModel>();
@@ -122,6 +189,7 @@ public partial class App : Application
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<CapitalAdjustmentViewModel>();
         services.AddTransient<BackupRestoreViewModel>();
+        services.AddTransient<PrintLayoutSettingsViewModel>();
         services.AddSingleton<MainWindowViewModel>();
 
         // Views
@@ -131,37 +199,111 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
-        base.OnStartup(e);
+        SplashWindow? splash = null;
 
         try
         {
-            // Apply LiveCharts2 global theme
-            ChartThemeConfig.Apply();
+            base.OnStartup(e);
+
+            PrintPreferences.Load();
+
+            splash = new SplashWindow();
+            splash.Show();
+            splash.SetProgress(0.08);
+
+            var minimumDisplay = Task.Delay(TimeSpan.FromMilliseconds(2600));
+            Exception? startupError = null;
+
+            var loadTask = RunStartupLoadAsync(splash, ex => startupError = ex);
+
+            await Task.WhenAll(minimumDisplay, loadTask);
+
+            if (startupError is not null)
+            {
+                await splash.CloseAnimatedAsync();
+                ShowFatalError("خطأ في الاتصال بقاعدة البيانات", startupError);
+                Shutdown();
+                return;
+            }
+
+            splash.SetProgress(1);
+            await splash.CloseAnimatedAsync();
+            splash = null;
+
+            await ShowLoginAndMainWindowAsync();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[Startup] ChartTheme error: {ex}");
-        }
+            if (splash is not null)
+            {
+                try { splash.Close(); } catch { /* ignore */ }
+            }
 
-        // Apply pending migrations and seed admin account
-        try
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await db.Database.MigrateAsync();
-
-            var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-            await authService.EnsureAdminAccountAsync();
-        }
-        catch (Exception ex)
-        {
-            BeautifulMessageDialog.ShowError(
-                $"خطأ في الاتصال بقاعدة البيانات:\n\n{ex.InnerException?.Message ?? ex.Message}");
+            ShowFatalError("فشل بدء تشغيل التطبيق", ex);
             Shutdown();
-            return;
         }
+    }
 
-        await ShowLoginAndMainWindowAsync();
+    private async Task RunStartupLoadAsync(SplashWindow splash, Action<Exception> onError)
+    {
+        try
+        {
+            splash.SetStatus("جاري تهيئة الواجهة...");
+            splash.SetProgress(0.2);
+            await Task.Yield();
+
+            try
+            {
+                ChartThemeConfig.Apply();
+            }
+            catch (Exception ex)
+            {
+                LogException("ChartTheme", ex);
+            }
+
+            splash.SetStatus("جاري الاتصال بقاعدة البيانات...");
+            splash.SetProgress(0.45);
+
+            await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var migrationService = scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
+
+                var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
+                if (pendingMigrations.Count > 0)
+                {
+                    splash.SetStatus(
+                        pendingMigrations.Count == 1
+                            ? "جاري تطبيق تحديث قاعدة البيانات..."
+                            : $"جاري تطبيق {pendingMigrations.Count} تحديثات على قاعدة البيانات...");
+                    splash.SetProgress(0.52);
+
+                    var applied = await migrationService.ApplyPendingMigrationsAsync();
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                }
+
+                splash.SetStatus("جاري تهيئة الحسابات والإعدادات...");
+                splash.SetProgress(0.62);
+
+                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+                await authService.EnsureAdminAccountAsync();
+
+                var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();
+                await brandingService.RefreshProviderAsync();
+            });
+
+            splash.SetStatus("جاري إعداد النظام...");
+            splash.SetProgress(0.85);
+            await Task.Delay(200);
+
+            splash.SetStatus("اكتمل التحميل");
+            splash.SetProgress(0.95);
+        }
+        catch (Exception ex)
+        {
+            onError(ex);
+        }
     }
 
     /// <summary>
@@ -223,10 +365,10 @@ public partial class App : Application
                 $"خطأ في تحميل الصلاحيات:\n\n{ex.InnerException?.Message ?? ex.Message}");
         }
 
-        var nav = _serviceProvider.GetRequiredService<INavigationService>();
-
         try
         {
+            mainVm.CloseAllTabs();
+
             // Check if initial setup is needed (no capital entries exist)
             bool needsSetup = false;
             try
@@ -242,18 +384,20 @@ public partial class App : Application
 
             if (needsSetup)
             {
-                // Show setup wizard first
-                nav.NavigateTo<SetupWizardViewModel>();
-                var wizardVm = (SetupWizardViewModel)mainVm.CurrentViewModel!;
-                wizardVm.SetupCompleted += () =>
+                await mainVm.OpenTabAsync(typeof(SetupWizardViewModel), "إعداد النظام", PackIconKind.CogOutline, activateIfExists: false);
+                if (mainVm.CurrentViewModel is SetupWizardViewModel wizardVm)
                 {
-                    nav.NavigateTo<DashboardViewModel>();
-                    mainVm.SyncSelectedMenuItem();
-                };
+                    wizardVm.SetupCompleted += async () =>
+                    {
+                        mainVm.CloseAllTabs();
+                        await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+                        mainVm.SyncSelectedMenuItem();
+                    };
+                }
             }
             else
             {
-                nav.NavigateTo<DashboardViewModel>();
+                await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
                 mainVm.SyncSelectedMenuItem();
             }
         }
@@ -263,8 +407,11 @@ public partial class App : Application
             BeautifulMessageDialog.ShowWarning(
                 $"خطأ في التنقل إلى لوحة التحكم:\n\n{ex.InnerException?.Message ?? ex.Message}");
 
-            // Last resort: try to navigate to dashboard anyway
-            try { nav.NavigateTo<DashboardViewModel>(); } catch { }
+            try
+            {
+                await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+            }
+            catch { }
         }
     }
 

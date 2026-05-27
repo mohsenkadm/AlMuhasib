@@ -28,6 +28,8 @@ public interface IUnitOfWork : IDisposable
     IRepository<ProfitDistributionDetail> ProfitDistributionDetails { get; }
     IRepository<CapitalEntry> CapitalEntries { get; }
     IRepository<AuditLog> AuditLogs { get; }
+    IRepository<CustomerAttachment> CustomerAttachments { get; }
+    IRepository<PrintBrandingSettings> PrintBrandingSettings { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

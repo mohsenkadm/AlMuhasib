@@ -280,13 +280,9 @@ public class AccountingValidationService : IAccountingValidationService
                 .Where(ii => ii.ProductId == s.ProductId &&
                              ii.Invoice!.InvoiceType == InvoiceType.Purchase)
                 .ToListAsync();
-            if (purchaseItems.Count > 0)
-            {
-                var totalCost = purchaseItems.Sum(ii => ii.TotalPrice);
-                var totalQty = purchaseItems.Sum(ii => ii.Quantity);
-                var avgCost = totalQty > 0 ? totalCost / totalQty : 0;
+            var avgCost = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
+            if (avgCost > 0)
                 inventory += Math.Round(s.Quantity * avgCost, 0);
-            }
         }
 
         var installmentReceivables = await context.Installments
@@ -296,7 +292,8 @@ public class AccountingValidationService : IAccountingValidationService
         var totalAssets = cashBoxes + banks + customerDebts + inventory + installmentReceivables;
 
         var capital = await context.CapitalEntries
-            .Where(c => c.Date <= date)
+            .Where(c => c.Date <= date &&
+                        (c.Type == CapitalEntryType.Initial || c.Type == CapitalEntryType.Adjustment))
             .SumAsync(c => (decimal?)c.Amount) ?? 0;
 
         var totalSales = await context.Invoices
@@ -313,7 +310,8 @@ public class AccountingValidationService : IAccountingValidationService
             .SumAsync(v => (decimal?)v.BankFees) ?? 0;
         var distributed = await context.ProfitDistributions
             .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
-        var accumulatedProfits = totalSales - totalPurchases - totalExpenses - bankFees - distributed;
+        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, date);
+        var accumulatedProfits = totalSales - totalPurchases - totalExpenses - bankFees - distributed + profitOpening;
 
         var totalEquity = capital + accumulatedProfits;
 

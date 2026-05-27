@@ -37,6 +37,7 @@ public class InvoicePrintModel
     // Installment extras
     public int? NumberOfInstallments { get; set; }
     public decimal? InstallmentAmount { get; set; }
+    public decimal? CompanyFeeAmount { get; set; }
     public List<InstallmentPrintRow>? Schedule { get; set; }
     public string? FileNumber { get; set; }
 }

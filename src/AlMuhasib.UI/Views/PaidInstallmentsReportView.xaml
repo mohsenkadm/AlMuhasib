@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.PaidInstallmentsReportView"
+<UserControl x:Class="AlMuhasib.UI.Views.PaidInstallmentsReportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -49,9 +49,9 @@
                         Title="أعلى دفعة"
                         TextValue="{Binding MaxPaid}"
                         Icon="CashPlus"
-                        IconBackground="#FFF8E1"
-                        IconForeground="#FF8F00"
-                        ValueForeground="#FF8F00"/>
+                        IconBackground="{DynamicResource AccentLightBrush}"
+                        IconForeground="{DynamicResource AccentBrush}"
+                        ValueForeground="{DynamicResource AccentBrush}"/>
                     <controls:AnimatedStatCard
                         Title="متوسط أيام الدفع"
                         TextValue="{Binding AveragePaymentDays}"

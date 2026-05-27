@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.AuditLogView"
+<UserControl x:Class="AlMuhasib.UI.Views.AuditLogView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -143,7 +143,7 @@
                                                         <Setter Property="Background" Value="#E8F5E9"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="تعديل">
-                                                        <Setter Property="Background" Value="#FFF3E0"/>
+                                                        <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="حذف">
                                                         <Setter Property="Background" Value="#FFEBEE"/>
@@ -160,7 +160,7 @@
                                                             <Setter Property="Foreground" Value="#2E7D32"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding ActionDisplay}" Value="تعديل">
-                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource HighlightBrush}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding ActionDisplay}" Value="حذف">
                                                             <Setter Property="Foreground" Value="#C62828"/>

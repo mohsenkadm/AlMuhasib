@@ -83,9 +83,16 @@ public class AuthService : IAuthService
     public async Task EnsureAdminAccountAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var adminExists = await context.Users.AnyAsync(u => u.Username == "admin");
-        if (adminExists)
+        var existingAdmin = await context.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+        if (existingAdmin is not null)
+        {
+            if (string.IsNullOrWhiteSpace(existingAdmin.FullName))
+            {
+                existingAdmin.FullName = "مدير النظام";
+                await context.SaveChangesAsync();
+            }
             return;
+        }
 
         var admin = new User
         {

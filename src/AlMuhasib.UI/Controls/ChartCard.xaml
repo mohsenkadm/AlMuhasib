@@ -61,10 +61,10 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ═══ Chart Content ═══ -->
-            <ContentPresenter Grid.Row="1"
-                              Content="{Binding ChartContent, ElementName=Root}"
-                              MinHeight="250" />
+            <!-- ═══ Chart Content (LTR canvas — avoids mirrored labels in RTL pages) ═══ -->
+            <Border Grid.Row="1" FlowDirection="LeftToRight" MinHeight="250">
+                <ContentPresenter Content="{Binding ChartContent, ElementName=Root}" />
+            </Border>
 
             <!-- ═══ Empty State ═══ -->
             <StackPanel Grid.Row="2" HorizontalAlignment="Center"

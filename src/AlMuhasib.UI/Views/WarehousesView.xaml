@@ -71,8 +71,13 @@
 
                 <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
                     <Grid>
-                        <TextBlock Text="قائمة المخازن" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="White" Opacity="0.8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="قائمة المخازن" FontSize="15" FontWeight="Bold" Foreground="White"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="White" Opacity="0.8">
                             <Run Text="الإجمالي: "/><Run Text="{Binding TotalCount, Mode=OneWay}"/>
                         </TextBlock>
                     </Grid>
@@ -91,21 +96,18 @@
                         <DataGridTextColumn Header="اسم المخزن" Binding="{Binding Name}" Width="*"/>
                         <DataGridTextColumn Header="الموقع" Binding="{Binding Location}" Width="*"/>
                         <DataGridTextColumn Header="تاريخ الإنشاء" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd}" Width="130"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="180">
+                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2">
-                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableEditButton}" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="PencilOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                                <TextBlock Text="تعديل" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}" IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableDeleteButton}" IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="DeleteOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                                <TextBlock Text="حذف" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}" IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>

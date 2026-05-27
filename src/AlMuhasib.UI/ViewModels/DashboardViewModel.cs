@@ -3,12 +3,12 @@ using System.Windows;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Charts;
 using LiveChartsCore;
-using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
 using MaterialDesignThemes.Wpf;
-using SkiaSharp;
 using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -16,6 +16,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class DashboardViewModel : ViewModelBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly MainWindowViewModel _mainWindow;
+    private bool _initialized;
 
     // ── Snackbar ───────────────────────────────────────────
     public SnackbarMessageQueue SnackbarQueue { get; } = new(TimeSpan.FromSeconds(3));
@@ -36,6 +38,15 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _overdueInstallmentsCount;
+
+    [ObservableProperty]
+    private decimal _investorBalance;
+
+    [ObservableProperty]
+    private decimal _unpaidInstallmentsBalance;
+
+    [ObservableProperty]
+    private decimal _customerCreditBalance;
 
     // ── Charts ─────────────────────────────────────────────
     [ObservableProperty]
@@ -63,17 +74,36 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalInventoryValue;
 
-    public DashboardViewModel(IDashboardService dashboardService)
+    public DashboardViewModel(IDashboardService dashboardService, MainWindowViewModel mainWindow)
     {
         _dashboardService = dashboardService;
+        _mainWindow = mainWindow;
         PageTitle = "لوحة التحكم";
+        IsBusy = true;
+        IsLoaded = false;
     }
+
+    [RelayCommand]
+    private async Task OpenSalesInvoiceAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
+
+    [RelayCommand]
+    private async Task OpenPurchaseInvoiceAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown);
+
+    [RelayCommand]
+    private async Task OpenInstallmentInvoiceAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock);
 
     public override async Task InitializeAsync()
     {
-        if (IsBusy) return;
+        if (_initialized) return;
+
         IsBusy = true;
         IsLoaded = false;
+
+        // Allow the skeleton shimmer to render before loading data.
+        await Task.Yield();
 
         try
         {
@@ -87,6 +117,9 @@ public partial class DashboardViewModel : ViewModelBase
                 TodayPurchases = data.TodayPurchases;
                 NetProfit = data.NetProfit;
                 OverdueInstallmentsCount = data.OverdueInstallmentsCount;
+                InvestorBalance = data.InvestorBalance;
+                UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
+                CustomerCreditBalance = data.CustomerCreditBalance;
 
                 // Sales chart
                 BuildSalesChart(data.SalesLast30Days);
@@ -108,6 +141,7 @@ public partial class DashboardViewModel : ViewModelBase
                 TotalInventoryValue = data.TotalInventoryValue;
 
                 IsLoaded = true;
+                _initialized = true;
             });
         }
         catch (Exception ex)
@@ -120,7 +154,8 @@ public partial class DashboardViewModel : ViewModelBase
                 SnackbarQueue.Enqueue($"⚠ خطأ في تحميل لوحة التحكم: {innerMsg}");
                 BeautifulMessageDialog.ShowError(
                     $"خطأ في تحميل لوحة التحكم:\n\n{innerMsg}\n\n{ex.StackTrace}");
-                IsLoaded = true; // Show UI even on error, with default/zero values
+                IsLoaded = true;
+                _initialized = true;
             });
         }
         finally
@@ -131,63 +166,27 @@ public partial class DashboardViewModel : ViewModelBase
 
     private void BuildSalesChart(List<DailySalesPoint> points)
     {
-        var values = points.Select(p => new DateTimePoint(p.Date, (double)p.Amount)).ToArray();
+        if (points.Count == 0)
+        {
+            SalesSeries = [];
+            SalesXAxes = [ChartThemeConfig.CreateXAxis([])];
+            SalesYAxes = [ChartThemeConfig.CreateYAxis()];
+            return;
+        }
 
-        SalesSeries =
-        [
-            new LineSeries<DateTimePoint>
-            {
-                Values = values,
-                Fill = new SolidColorPaint(SKColor.Parse("#1A237E").WithAlpha(30)),
-                Stroke = new SolidColorPaint(SKColor.Parse("#1A237E"), 2.5f),
-                GeometryFill = new SolidColorPaint(SKColor.Parse("#1A237E")),
-                GeometryStroke = new SolidColorPaint(SKColor.Parse("#FFFFFF"), 2),
-                GeometrySize = 8,
-                LineSmoothness = 0.3
-            }
-        ];
+        var amounts = points.Select(p => p.Amount).ToArray();
+        var labels = points.Select(p => p.Date.ToString("MM/dd")).ToArray();
 
-        SalesXAxes =
-        [
-            new Axis
-            {
-                Labeler = v => v >= DateTime.MinValue.Ticks && v <= DateTime.MaxValue.Ticks
-                    ? new DateTime((long)v).ToString("MM/dd")
-                    : string.Empty,
-                UnitWidth = TimeSpan.FromDays(1).Ticks,
-                MinStep = TimeSpan.FromDays(5).Ticks,
-                TextSize = 11,
-                LabelsPaint = new SolidColorPaint(SKColor.Parse("#757575"))
-            }
-        ];
-
-        SalesYAxes =
-        [
-            new Axis
-            {
-                Labeler = v => v.ToString("N0"),
-                TextSize = 11,
-                LabelsPaint = new SolidColorPaint(SKColor.Parse("#757575"))
-            }
-        ];
+        SalesSeries = [ChartThemeConfig.Line(amounts, "المبيعات", 0)];
+        SalesXAxes = [ChartThemeConfig.CreateXAxis(labels, points.Count > 10 ? -35 : 0)];
+        SalesYAxes = [ChartThemeConfig.CreateYAxis()];
     }
 
     private void BuildExpenseChart(List<ExpenseCategoryShare> shares)
     {
-        var colors = new[]
-        {
-            "#1A237E", "#283593", "#3949AB", "#5C6BC0",
-            "#7986CB", "#9FA8DA", "#C5CAE9", "#E8EAF6"
-        };
-
-        ExpenseSeries = shares.Select((s, i) => new PieSeries<double>
-        {
-            Values = [(double)s.Amount],
-            Name = s.Category,
-            Fill = new SolidColorPaint(SKColor.Parse(colors[i % colors.Length])),
-            DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Outer,
-            DataLabelsPaint = new SolidColorPaint(SKColor.Parse("#424242")),
-            DataLabelsSize = 11
-        } as ISeries).ToArray();
+        ExpenseSeries = shares.Count == 0
+            ? []
+            : ChartThemeConfig.PieFromNameAmount(
+                shares.Select(s => new NameAmountPoint { Name = s.Category, Amount = s.Amount }).ToList());
     }
 }

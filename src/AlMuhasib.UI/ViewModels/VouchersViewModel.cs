@@ -7,10 +7,11 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class VouchersViewModel : ViewModelBase
+public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
 {
     private readonly ICashBankService _cashBankService;
     private readonly IUnitOfWork _unitOfWork;
@@ -149,13 +150,22 @@ public partial class VouchersViewModel : ViewModelBase
         foreach (var c in customers)
             Customers.Add(c);
 
+        await RefreshInvestorsAsync();
+
+        if (CashBoxes.Count > 0)
+            SelectedCashBox = CashBoxes[0];
+    }
+
+    public async Task RefreshInvestorsAsync()
+    {
+        var selectedId = SelectedInvestor?.Id;
         var investors = await _unitOfWork.Investors.GetAllAsync();
         Investors.Clear();
         foreach (var inv in investors)
             Investors.Add(inv);
-
-        if (CashBoxes.Count > 0)
-            SelectedCashBox = CashBoxes[0];
+        if (selectedId is int id)
+            SelectedInvestor = Investors.FirstOrDefault(i => i.Id == id);
+        await Task.CompletedTask;
     }
 
     // ══════════════════════════════════════════════════════

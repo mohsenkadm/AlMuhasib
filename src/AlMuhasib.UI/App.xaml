@@ -8,7 +8,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Blue" SecondaryColor="Amber" />
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Blue" SecondaryColor="Blue" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
                 <!-- Custom theme overrides MUST come AFTER MaterialDesign defaults -->
                 <ResourceDictionary Source="/Styles/Theme.xaml" />
@@ -21,15 +21,24 @@
             <converters:PaymentMethodConverter x:Key="PaymentMethodConverter" />
             <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter" />
             <converters:NotNullToBooleanConverter x:Key="NotNullToBooleanConverter" />
+            <converters:InstallmentTypeConverter x:Key="InstallmentTypeConverter" />
+            <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />
             <SolidColorBrush x:Key="SidebarForeground" Color="#ECEFF1" />
-            <SolidColorBrush x:Key="SidebarHover" Color="#1B2A3D" />
-            <SolidColorBrush x:Key="SidebarSelected" Color="#1565C0" />
+            <SolidColorBrush x:Key="SidebarHover" Color="#1A2F4A" />
+            <SolidColorBrush x:Key="SidebarSelected" Color="#1A4D82" />
             <SolidColorBrush x:Key="TopBarBackground" Color="White" />
             <SolidColorBrush x:Key="ContentBackground" Color="#F5F7FA" />
-            <SolidColorBrush x:Key="AccentBrush" Color="#FF8F00" />
+            <Color x:Key="AccentColor">#00ACC1</Color>
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+            <SolidColorBrush x:Key="AccentLightBrush" Color="#E0F7FA" />
+            <SolidColorBrush x:Key="AccentDarkBrush" Color="#00838F" />
+            <!-- بديل الأصفر/البرتقالي — بنفسجي ناعم -->
+            <SolidColorBrush x:Key="HighlightLightBrush" Color="#EDE7F6" />
+            <SolidColorBrush x:Key="HighlightBrush" Color="#7E57C2" />
+            <SolidColorBrush x:Key="HighlightBorderBrush" Color="#D1C4E9" />
 
             <!-- Arabic Font -->
             <FontFamily x:Key="ArabicFont">Segoe UI, Tahoma, Arial</FontFamily>

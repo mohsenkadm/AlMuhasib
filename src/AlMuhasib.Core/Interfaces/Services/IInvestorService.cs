@@ -10,6 +10,9 @@ public interface IInvestorService
     Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage);
     Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage);
 
+    /// <summary>حفظ الأرصدة الافتتاحية للمستثمرين (لا تؤثر على القاصة)</summary>
+    Task SaveOpeningBalancesAsync(IEnumerable<InvestorOpeningBalanceItem> items);
+
     // ── Deposit / Withdrawal ──
     Task DepositAsync(int investorId, decimal amount, DateTime date, int cashBoxId, string? notes);
     Task WithdrawAsync(int investorId, decimal amount, DateTime date, int cashBoxId, string? notes);
@@ -40,4 +43,13 @@ public class ProfitPreviewItem
     public decimal ProfitPercentage { get; set; }
     public decimal ProfitAmount { get; set; }
     public bool IsIncluded { get; set; } = true;
+}
+
+public class InvestorOpeningBalanceItem
+{
+    public int InvestorId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public decimal ProfitPercentage { get; set; }
+    public decimal OpeningBalance { get; set; }
 }

@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AlMuhasib.UI.Models;
@@ -22,16 +23,62 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private decimal _totalPrice;
 
-    partial void OnQuantityChanged(decimal value) => RecalcTotal();
-    partial void OnUnitPriceChanged(decimal value) => RecalcTotal();
+    [ObservableProperty]
+    private Product? _selectedProduct;
+
+    /// <summary>معلومات الرصيد في المخازن</summary>
+    [ObservableProperty]
+    private string _stockInfo = string.Empty;
+
+    /// <summary>إجمالي الرصيد المتاح في المخزن المحدد</summary>
+    [ObservableProperty]
+    private decimal _availableStock;
+
+    private bool _isManualTotal;
+
+    partial void OnSelectedProductChanged(Product? value)
+    {
+        if (value is not null)
+        {
+            ProductId = value.Id;
+            ItemName = value.Name;
+        }
+        ProductChanged?.Invoke(this);
+    }
+
+    partial void OnQuantityChanged(decimal value)
+    {
+        _isManualTotal = false;
+        RecalcTotal();
+    }
+
+    partial void OnUnitPriceChanged(decimal value)
+    {
+        _isManualTotal = false;
+        RecalcTotal();
+    }
+
+    partial void OnTotalPriceChanged(decimal oldValue, decimal newValue)
+    {
+        // If user manually edited the total (not from RecalcTotal), mark as manual
+        if (!_isRecalculating)
+            _isManualTotal = true;
+        TotalChanged?.Invoke();
+    }
+
+    private bool _isRecalculating;
 
     private void RecalcTotal()
     {
+        if (_isManualTotal) return;
+        _isRecalculating = true;
         TotalPrice = Quantity * UnitPrice;
+        _isRecalculating = false;
     }
 
     /// <summary>Event raised when TotalPrice changes so the parent VM can recalculate.</summary>
     public event Action? TotalChanged;
 
-    partial void OnTotalPriceChanged(decimal value) => TotalChanged?.Invoke();
+    /// <summary>Event raised when the selected product changes so the parent VM can load stock info.</summary>
+    public event Action<InvoiceItemRow>? ProductChanged;
 }

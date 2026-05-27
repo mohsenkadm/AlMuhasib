@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.SupplierStatementView"
+<UserControl x:Class="AlMuhasib.UI.Views.SupplierStatementView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -56,9 +56,9 @@
                         Title="الرصيد"
                         TextValue="{Binding Balance}"
                         Icon="ScaleBalance"
-                        IconBackground="#FFF8E1"
-                        IconForeground="#FF8F00"
-                        ValueForeground="#FF8F00"/>
+                        IconBackground="{DynamicResource AccentLightBrush}"
+                        IconForeground="{DynamicResource AccentBrush}"
+                        ValueForeground="{DynamicResource AccentBrush}"/>
                 </UniformGrid>
 
                 <!-- ═══ Filter Bar ═══ -->

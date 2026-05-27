@@ -55,6 +55,7 @@ public class SalesReportResult
     public int InvoiceCount { get; set; }
     public decimal AverageInvoice { get; set; }
     public decimal TodaySales { get; set; }
+    public decimal TotalCompanyFees { get; set; }
     public List<SalesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
 }
@@ -70,6 +71,7 @@ public class SalesReportRow
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal NetAmount { get; set; }
+    public decimal CompanyFeeAmount { get; set; }
     /// <summary>تاريخ استحقاق الدفع الآجل — فارغ للنقدي والأقساط</summary>
     public DateTime? CreditDueDate { get; set; }
     public decimal PaidAmount { get; set; }

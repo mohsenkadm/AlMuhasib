@@ -1,0 +1,315 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.ProductPickerOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core"
+             x:Name="Root">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <Style x:Key="QtyCircleButton" TargetType="Button">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="15" Background="#ECEFF1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CFD8DC"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="QtyPlusButton" TargetType="Button" BasedOn="{StaticResource QtyCircleButton}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="15" Background="#1565C0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="White"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#0D47A1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Popup x:Name="WindowPopup"
+           AllowsTransparency="True"
+           StaysOpen="True"
+           PopupAnimation="Fade"
+           Opened="WindowPopup_Opened">
+        <Grid x:Name="FullScreenHost" Background="#77000000">
+            <materialDesign:Card x:Name="DialogCard"
+                               MaxWidth="920" Width="920"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               UniformCornerRadius="16" Padding="0"
+                               materialDesign:ElevationAssist.Elevation="Dp16"
+                               RenderTransformOrigin="0.5,0.5">
+                <materialDesign:Card.RenderTransform>
+                    <ScaleTransform ScaleX="0.94" ScaleY="0.94"/>
+                </materialDesign:Card.RenderTransform>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="18,14">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#0D47A1" Offset="0"/>
+                                <GradientStop Color="#1976D2" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="42" Height="42" CornerRadius="12" Background="#33FFFFFF" Margin="0,0,10,0">
+                                    <materialDesign:PackIcon Kind="CartPlus" Width="22" Height="22" Foreground="White"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="اختيار المنتجات" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="اضغط على المنتج أو استخدم + / −" FontSize="11" Foreground="#E3F2FD"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Button Command="{Binding CancelCommand}"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Width="34" Height="34" Cursor="Hand" Background="#33FFFFFF" BorderThickness="0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="17">
+                                            <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Foreground="White"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Body -->
+                    <Grid Grid.Row="1" MinHeight="320">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="190"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="#F4F7FB" BorderBrush="#E2EAF3" BorderThickness="0,0,1,0">
+                            <DockPanel Margin="10,10,8,10">
+                                <TextBlock DockPanel.Dock="Top" Text="الأصناف" FontWeight="SemiBold" Foreground="#546E7A" Margin="0,0,0,8"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <StackPanel>
+                                        <Button Content="الكل" Command="{Binding SelectAllCategoriesCommand}"
+                                                Margin="0,0,0,6" Padding="10,8" Cursor="Hand"
+                                                Background="White" BorderBrush="#E0E7EF" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                        BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsAllCategoriesSelected}" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                                                    </DataTrigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+                                                 BorderThickness="0" Background="Transparent">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter Property="Padding" Value="0"/>
+                                                    <Setter Property="Margin" Value="0,0,0,6"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListBoxItem">
+                                                                <Border x:Name="Bd" CornerRadius="8" Padding="10,8"
+                                                                        Background="White" BorderBrush="#E0E7EF" BorderThickness="1" Cursor="Hand">
+                                                                    <ContentPresenter/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type entities:Category}">
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" Foreground="#37474F"/>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+
+                        <Grid Grid.Column="1" Margin="12,10,12,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBox Grid.Row="0"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="بحث بالاسم أو الباركود"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     materialDesign:TextFieldAssist.HasLeadingIcon="True"
+                                     materialDesign:TextFieldAssist.LeadingIcon="Magnify"
+                                     Style="{StaticResource FilledTextBox}"
+                                     MinHeight="48" Height="48"
+                                     FontSize="14"
+                                     Padding="12,10"
+                                     VerticalContentAlignment="Center"
+                                     Margin="0,0,0,10"/>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding DisplayProducts}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ProductPickerDisplayItem}">
+                                            <Border Width="178" Margin="0,0,8,8" CornerRadius="10"
+                                                    BorderBrush="#E2EAF3" BorderThickness="1" Background="White" Padding="10,8"
+                                                    Cursor="Hand" MouseLeftButtonUp="ProductCard_MouseLeftButtonUp">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#90CAF9"/>
+                                                                <Setter Property="Background" Value="#F8FBFF"/>
+                                                            </Trigger>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#1565C0"/>
+                                                                <Setter Property="Background" Value="#F3F9FF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="#263238" TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Name}"/>
+                                                    <TextBlock Grid.Row="1" FontSize="10" Foreground="#90A4AE" Margin="0,4,0,6"
+                                                               Text="{Binding CategoryName}"/>
+                                                    <Grid Grid.Row="2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="−" Style="{StaticResource QtyCircleButton}"
+                                                                Command="{Binding DataContext.RemoveProductCommand, ElementName=Root}"
+                                                                CommandParameter="{Binding}"/>
+                                                        <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="8"
+                                                                Margin="4,0" MinWidth="32" Padding="6,2"
+                                                                HorizontalAlignment="Center">
+                                                            <TextBlock Text="{Binding Quantity, StringFormat=N0}"
+                                                                       FontWeight="Bold" Foreground="#1565C0"
+                                                                       HorizontalAlignment="Center" FontSize="13"/>
+                                                        </Border>
+                                                        <Button Grid.Column="2" Content="+" Style="{StaticResource QtyPlusButton}"
+                                                                Command="{Binding DataContext.AddProductCommand, ElementName=Root}"
+                                                                CommandParameter="{Binding}"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Footer -->
+                    <Border Grid.Row="2" Background="#FAFBFD" BorderBrush="#E8EEF5" BorderThickness="0,1,0,0"
+                            CornerRadius="0,0,16,16" Padding="14,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#EEF4FC" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="BasketOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
+                                    <TextBlock FontSize="12" Foreground="#37474F" VerticalAlignment="Center">
+                                        <Run Text="منتجات:" FontWeight="SemiBold"/>
+                                        <Run Text="{Binding SelectedProductCount, Mode=OneWay}"/>
+                                        <Run Text="   كمية:" FontWeight="SemiBold"/>
+                                        <Run Text="{Binding SelectedTotalQuantity, StringFormat=N0, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="مسح" Command="{Binding ClearSelectionCommand}"
+                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
+                                <Button Content="إلغاء" Command="{Binding CancelCommand}"
+                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
+                                <Button Command="{Binding ConfirmCommand}" Style="{StaticResource AccentButton}"
+                                        Height="36" Padding="18,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Check" Width="16" Height="16" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إضافة للفاتورة" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+    </Popup>
+</UserControl>

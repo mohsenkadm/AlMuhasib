@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.InvestorsView"
+<UserControl x:Class="AlMuhasib.UI.Views.InvestorsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -398,7 +398,7 @@
 
                         <!-- Max withdrawal info -->
                         <TextBlock Grid.Row="3" Text="{Binding WithdrawMaxInfo}"
-                                   FontSize="13" Foreground="#F57C00" FontWeight="SemiBold"
+                                   FontSize="13" Foreground="#7E57C2" FontWeight="SemiBold"
                                    Margin="0,0,0,12">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -426,7 +426,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#E65100" Padding="16,10">
+                        <Border Grid.Row="0" Background="{DynamicResource HighlightBrush}" Padding="16,10">
                             <TextBlock Text="آخر عمليات السحب" FontSize="15" FontWeight="Bold" Foreground="White"/>
                         </Border>
                         <DataGrid Grid.Row="1" ItemsSource="{Binding RecentWithdrawals}"

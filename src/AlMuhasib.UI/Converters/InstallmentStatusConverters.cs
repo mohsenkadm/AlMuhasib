@@ -17,7 +17,7 @@ public class InstallmentStatusToBrushConverter : IValueConverter
             return status switch
             {
                 InstallmentStatus.Paid => new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)),       // green
-                InstallmentStatus.PartiallyPaid => new SolidColorBrush(Color.FromRgb(0xF5, 0x7F, 0x17)), // amber
+                InstallmentStatus.PartiallyPaid => new SolidColorBrush(Color.FromRgb(0x00, 0xAC, 0xC1)), // cyan accent
                 InstallmentStatus.Overdue => new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),      // red
                 InstallmentStatus.Pending => new SolidColorBrush(Color.FromRgb(0x75, 0x75, 0x75)),      // grey
                 _ => new SolidColorBrush(Color.FromRgb(0x42, 0x42, 0x42))

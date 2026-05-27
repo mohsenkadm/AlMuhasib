@@ -6,6 +6,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -399,10 +400,12 @@ public partial class ProductsViewModel : ViewModelBase
             {
                 FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
                 FlowDirection = FlowDirection.RightToLeft,
-                PageWidth = 793, // A4 width in px at 96 DPI
+                PageWidth = 793,
                 PagePadding = new Thickness(50),
                 ColumnWidth = double.MaxValue
             };
+
+            PrintBrandingFlowDocumentHelper.PrependBrandingHeader(document);
 
             // Title
             var title = new System.Windows.Documents.Paragraph(
@@ -491,14 +494,9 @@ public partial class ProductsViewModel : ViewModelBase
             };
             document.Blocks.Add(totalParagraph);
 
-            // Print
-            var printDialog = new System.Windows.Controls.PrintDialog();
-            if (printDialog.ShowDialog() == true)
-            {
-                var paginator = ((System.Windows.Documents.IDocumentPaginatorSource)document).DocumentPaginator;
-                paginator.PageSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
-                printDialog.PrintDocument(paginator, "طباعة المنتجات");
-            }
+            PrintBrandingFlowDocumentHelper.AppendBrandingFooter(document, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+
+            DocumentPrintHelper.PrintWithPreview(document, "طباعة المنتجات");
         }
         catch (Exception ex)
         {

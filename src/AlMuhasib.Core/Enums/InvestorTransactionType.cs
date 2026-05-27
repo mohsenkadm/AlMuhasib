@@ -4,5 +4,6 @@ public enum InvestorTransactionType
 {
     Deposit,
     Withdrawal,
-    ProfitDistribution
+    ProfitDistribution,
+    OpeningBalance
 }

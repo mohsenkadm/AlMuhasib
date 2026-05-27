@@ -20,6 +20,9 @@ public class InvestorConfiguration : IEntityTypeConfiguration<Investor>
         builder.Property(i => i.TotalDeposit)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.OpeningBalance)
+            .HasPrecision(18, 2);
+
         builder.Property(i => i.ProfitPercentage)
             .HasPrecision(5, 2);
 

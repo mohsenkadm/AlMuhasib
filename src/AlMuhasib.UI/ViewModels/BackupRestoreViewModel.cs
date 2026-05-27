@@ -3,7 +3,6 @@ using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -37,6 +36,8 @@ public partial class BackupRestoreViewModel : ViewModelBase
     [ObservableProperty]
     private string _selectedRestoreFile = string.Empty;
 
+    public bool CanOpenLastBackup => !string.IsNullOrWhiteSpace(LastBackupPath) && File.Exists(LastBackupPath);
+
     public BackupRestoreViewModel(IBackupService backupService, ICurrentUserService currentUserService)
     {
         _backupService = backupService;
@@ -45,69 +46,48 @@ public partial class BackupRestoreViewModel : ViewModelBase
         LoadPermissions(currentUserService, "Backup");
     }
 
+    partial void OnLastBackupPathChanged(string value) => OnPropertyChanged(nameof(CanOpenLastBackup));
+
+    /// <summary>اختيار مكان الحفظ يدوياً (موصى به).</summary>
     [RelayCommand]
     private async Task BackupToFolder()
     {
-        var dialog = new SaveFileDialog
-        {
-            Title = "حفظ النسخة الاحتياطية",
-            Filter = "Backup Files (*.bak)|*.bak",
-            FileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak",
-            InitialDirectory = _backupService.GetDefaultBackupDirectory()
-        };
-
+        var dialog = CreateBackupSaveDialog();
         if (dialog.ShowDialog() != true) return;
-
         await PerformBackup(dialog.FileName);
     }
 
+    /// <summary>حفظ تلقائي على سطح المكتب (بدون ضغط — متوافق مع SQL Express).</summary>
     [RelayCommand]
-    private async Task BackupToDefaultFolder()
+    private async Task BackupToDesktop()
     {
-        var defaultDir = _backupService.GetDefaultBackupDirectory();
-        var fileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-        var fullPath = Path.Combine(defaultDir, fileName);
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (!Directory.Exists(desktop))
+        {
+            SetError("تعذر الوصول إلى سطح المكتب. استخدم «حفظ في مجلد» واختر مساراً آخر.");
+            return;
+        }
 
+        var fullPath = Path.Combine(desktop, $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak");
         await PerformBackup(fullPath);
     }
 
     [RelayCommand]
     private async Task BackupAndShare()
     {
-        // First backup to temp location
-        var tempDir = Path.Combine(Path.GetTempPath(), "AlMuhasib_Backup");
-        if (!Directory.Exists(tempDir))
-            Directory.CreateDirectory(tempDir);
+        var dialog = CreateBackupSaveDialog();
+        if (dialog.ShowDialog() != true) return;
 
-        var fileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-        var fullPath = Path.Combine(tempDir, fileName);
-
-        var success = await PerformBackup(fullPath);
+        var success = await PerformBackup(dialog.FileName);
         if (!success) return;
 
-        // Open Windows share dialog
-        try
-        {
-            var explorerPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = explorerPath,
-                Arguments = $"/select,\"{fullPath}\"",
-                UseShellExecute = false
-            });
-
-            StatusMessage = "تم فتح مجلد النسخة الاحتياطية. يمكنك مشاركة الملف من هنا.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"تم إنشاء النسخة بنجاح في: {fullPath}\n(لم يتم فتح المجلد: {ex.Message})";
-        }
+        OpenBackupInExplorer(dialog.FileName);
+        StatusMessage = "تم إنشاء النسخة. يمكنك نسخ الملف أو مشاركته من المجلد الذي فُتح.";
     }
 
     [RelayCommand]
     private async Task BackupToOneDrive()
     {
-        // Find OneDrive folder
         var oneDrivePath = Environment.GetEnvironmentVariable("OneDrive")
             ?? Environment.GetEnvironmentVariable("OneDriveConsumer")
             ?? Environment.GetEnvironmentVariable("OneDriveCommercial");
@@ -119,13 +99,17 @@ public partial class BackupRestoreViewModel : ViewModelBase
         }
 
         var backupDir = Path.Combine(oneDrivePath, "AlMuhasib_Backups");
-        if (!Directory.Exists(backupDir))
-            Directory.CreateDirectory(backupDir);
+        Directory.CreateDirectory(backupDir);
 
-        var fileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-        var fullPath = Path.Combine(backupDir, fileName);
-
+        var fullPath = Path.Combine(backupDir, $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak");
         await PerformBackup(fullPath);
+    }
+
+    [RelayCommand]
+    private void OpenLastBackupFolder()
+    {
+        if (CanOpenLastBackup)
+            OpenBackupInExplorer(LastBackupPath);
     }
 
     [RelayCommand]
@@ -134,14 +118,12 @@ public partial class BackupRestoreViewModel : ViewModelBase
         var dialog = new OpenFileDialog
         {
             Title = "اختر ملف النسخة الاحتياطية",
-            Filter = "Backup Files (*.bak)|*.bak|All Files (*.*)|*.*",
-            InitialDirectory = _backupService.GetDefaultBackupDirectory()
+            Filter = "ملف النسخ الاحتياطي (*.bak)|*.bak|All Files (*.*)|*.*",
+            InitialDirectory = GetBackupDialogInitialDirectory()
         };
 
         if (dialog.ShowDialog() == true)
-        {
             SelectedRestoreFile = dialog.FileName;
-        }
     }
 
     [RelayCommand]
@@ -159,10 +141,10 @@ public partial class BackupRestoreViewModel : ViewModelBase
             return;
         }
 
-var confirmed = BeautifulMessageDialog.ShowConfirm(
-                "هل أنت متأكد من استعادة قاعدة البيانات؟\n\nسيتم استبدال جميع البيانات الحالية بالبيانات من النسخة الاحتياطية.\nسيتم إعادة تشغيل البرنامج بعد الاستعادة.");
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
+            "هل أنت متأكد من استعادة قاعدة البيانات؟\n\nسيتم استبدال جميع البيانات الحالية بالبيانات من النسخة الاحتياطية.\nسيتم إعادة تشغيل البرنامج بعد الاستعادة.");
 
-            if (!confirmed) return;
+        if (!confirmed) return;
 
         ResetStatus();
         IsOperationInProgress = true;
@@ -176,7 +158,6 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             ProgressValue = 100;
             SetSuccess("تمت الاستعادة بنجاح! سيتم إعادة تشغيل البرنامج الآن...");
 
-            // Restart the application
             await Task.Delay(1500);
             RestartApplication();
         }
@@ -204,6 +185,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             ProgressValue = 100;
             LastBackupPath = resultPath;
             SetSuccess($"تم إنشاء النسخة الاحتياطية بنجاح!\n{resultPath}");
+            OpenBackupInExplorer(resultPath);
             return true;
         }
         catch (Exception ex)
@@ -214,6 +196,44 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         finally
         {
             IsOperationInProgress = false;
+        }
+    }
+
+    private static SaveFileDialog CreateBackupSaveDialog() => new()
+    {
+        Title = "حفظ النسخة الاحتياطية",
+        Filter = "ملف النسخ الاحتياطي (*.bak)|*.bak",
+        FileName = $"AlMuhasib_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak",
+        InitialDirectory = GetBackupDialogInitialDirectory(),
+        AddExtension = true,
+        DefaultExt = "bak",
+        OverwritePrompt = true
+    };
+
+    private static string GetBackupDialogInitialDirectory()
+    {
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (Directory.Exists(desktop))
+            return desktop;
+
+        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        return Directory.Exists(documents) ? documents : @"D:\";
+    }
+
+    private static void OpenBackupInExplorer(string fullPath)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{fullPath}\"",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Backup] Could not open explorer: {ex}");
         }
     }
 

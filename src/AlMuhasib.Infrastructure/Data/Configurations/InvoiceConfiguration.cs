@@ -29,6 +29,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.TotalAmount).HasPrecision(18, 2);
         builder.Property(i => i.DiscountAmount).HasPrecision(18, 2);
         builder.Property(i => i.NetAmount).HasPrecision(18, 2);
+        builder.Property(i => i.CompanyFeePercentage).HasPrecision(5, 4);
+        builder.Property(i => i.CompanyFeeAmount).HasPrecision(18, 2);
         builder.Property(i => i.RoundingAmount).HasPrecision(18, 2);
         builder.Property(i => i.PaidAmount).HasPrecision(18, 2);
         builder.Property(i => i.RemainingAmount).HasPrecision(18, 2);

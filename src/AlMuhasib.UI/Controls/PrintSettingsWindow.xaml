@@ -1,0 +1,73 @@
+<Window x:Class="AlMuhasib.UI.Controls.PrintSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="إعدادات الطباعة"
+        Height="420" Width="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FlowDirection="RightToLeft"
+        FontFamily="{DynamicResource AppFont}">
+
+    <Border CornerRadius="16" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="32" ShadowDepth="0" Opacity="0.22" Color="#000000"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="24,20" CornerRadius="16,16,0,0"
+                    Background="{StaticResource PrimaryGradientBrush}">
+                <StackPanel>
+                    <materialDesign:PackIcon Kind="PrinterSettings" Width="36" Height="36"
+                                             Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="إعدادات الطباعة"
+                               FontSize="20" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    <TextBlock Text="تُطبَّق على الطباعة والمعاينة داخل البرنامج"
+                               FontSize="11" Foreground="#CCFFFFFF"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="1" Margin="24,20,24,8">
+                <TextBlock Text="الطابعة الافتراضية" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ComboBox x:Name="PrinterCombo" Height="40" Margin="0,0,0,16"/>
+
+                <TextBlock Text="حجم الورق" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ComboBox x:Name="PaperSizeCombo" Height="40" Margin="0,0,0,16">
+                    <ComboBoxItem Content="A4" IsSelected="True"/>
+                    <ComboBoxItem Content="Letter"/>
+                </ComboBox>
+
+                <CheckBox x:Name="PreviewCheckBox"
+                          Content="إظهار معاينة قبل الطباعة"
+                          IsChecked="True"
+                          Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <Border Grid.Row="2" Padding="20,0,20,20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="إلغاء" Height="44"
+                            Style="{StaticResource OutlinedButton}"
+                            Click="Cancel_Click"/>
+                    <Button Grid.Column="2" Content="حفظ" Height="44"
+                            Style="{StaticResource PrimaryButton}"
+                            Click="Save_Click"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

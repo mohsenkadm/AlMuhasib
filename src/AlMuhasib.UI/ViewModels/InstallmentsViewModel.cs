@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -39,6 +40,16 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _plansTotalCount;
+
+    [ObservableProperty]
+    private InstallmentType? _selectedInstallmentTypeFilter;
+
+    public List<InstallmentTypeFilterItem> InstallmentTypeFilters { get; } =
+    [
+        new(null, "الكل"),
+        new(InstallmentType.Manual, "يدوي"),
+        new(InstallmentType.Platform, "بيع منصة"),
+    ];
 
     private const int PlansPageSize = 20;
 
@@ -84,6 +95,19 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isPaymentSuccess;
+
+    // ── Bulk payment (جميع تبويبات التسديد) ───────────────
+    public ObservableCollection<Installment> BulkSelectedInstallments { get; } = [];
+
+    public int BulkSelectedCount => BulkSelectedInstallments.Count;
+
+    public decimal BulkSelectedTotalRemaining =>
+        BulkSelectedInstallments.Sum(i => i.RemainingAmount);
+
+    public bool HasBulkSelection => BulkSelectedCount > 0;
+
+    [ObservableProperty]
+    private string _bulkPayMessage = string.Empty;
 
     // ══════════════════════════════════════════════════════
     // TAB 3: DETAILED (كشف أقساط تفصيلي)
@@ -190,7 +214,133 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     partial void OnSelectedTabIndexChanged(int value)
     {
+        ClearBulkSelection();
         _ = OnTabChangedAsync(value);
+    }
+
+    public static bool CanBulkPay(Installment installment) =>
+        installment.RemainingAmount > 0 && installment.Status != InstallmentStatus.Paid;
+
+    public void SetBulkSelection(IEnumerable<Installment> installments)
+    {
+        BulkSelectedInstallments.Clear();
+        foreach (var inst in installments.Where(CanBulkPay))
+            BulkSelectedInstallments.Add(inst);
+        OnPropertyChanged(nameof(BulkSelectedCount));
+        OnPropertyChanged(nameof(BulkSelectedTotalRemaining));
+        OnPropertyChanged(nameof(HasBulkSelection));
+    }
+
+    [RelayCommand]
+    private void ClearBulkSelection()
+    {
+        BulkSelectedInstallments.Clear();
+        BulkPayMessage = string.Empty;
+        OnPropertyChanged(nameof(BulkSelectedCount));
+        OnPropertyChanged(nameof(BulkSelectedTotalRemaining));
+        OnPropertyChanged(nameof(HasBulkSelection));
+    }
+
+    [RelayCommand]
+    private async Task PaySelectedInstallmentsAsync()
+    {
+        BulkPayMessage = string.Empty;
+        ErrorMessage = string.Empty;
+
+        if (BulkSelectedInstallments.Count == 0)
+        {
+            BulkPayMessage = "يرجى اختيار قسط واحد على الأقل من الجدول (Ctrl+نقر أو السحب لتحديد عدة صفوف)";
+            return;
+        }
+
+        if (PaymentCashBox is null)
+        {
+            BulkPayMessage = "يرجى اختيار الصندوق";
+            return;
+        }
+
+        var notPayable = BulkSelectedInstallments.Where(i => !CanBulkPay(i)).ToList();
+        if (notPayable.Count > 0)
+        {
+            BulkPayMessage = $"لا يمكن تسديد {notPayable.Count} قسط/أقساط (مسددة مسبقاً أو بدون مبلغ متبقي)";
+            return;
+        }
+
+        var total = BulkSelectedTotalRemaining;
+        var count = BulkSelectedCount;
+        var preview = string.Join("\n", BulkSelectedInstallments.Take(8).Select(i =>
+            $"• {i.InstallmentPlan?.Customer?.Name ?? "—"} — {i.RemainingAmount:N0} د.ع ({i.DueDate:yyyy/MM/dd})"));
+        if (count > 8)
+            preview += $"\n... و {count - 8} قسط/أقساط أخرى";
+
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
+            $"تسديد جماعي لـ {count} قسط/أقساط\n" +
+            $"الإجمالي: {total:N0} د.ع\n" +
+            $"الصندوق: {PaymentCashBox.Name}\n\n" +
+            preview +
+            "\n\nهل تريد المتابعة؟");
+
+        if (!confirmed) return;
+
+        try
+        {
+            IsBusy = true;
+            var ids = BulkSelectedInstallments.Select(i => i.Id).ToList();
+            var result = await _installmentService.PayInstallmentsBatchAsync(ids, PaymentCashBox.Id);
+
+            if (result.PaidCount > 0)
+            {
+                await RefreshAfterBulkPayAsync();
+                ClearBulkSelection();
+
+                if (result.AllSucceeded)
+                {
+                    BeautifulMessageDialog.ShowSuccess(
+                        $"تم تسديد {result.PaidCount} قسط/أقساط بإجمالي {result.TotalPaid:N0} د.ع");
+                }
+                else
+                {
+                    var errText = string.Join("\n", result.Errors.Take(5));
+                    if (result.Errors.Count > 5)
+                        errText += $"\n... و {result.Errors.Count - 5} أخطاء أخرى";
+                    BeautifulMessageDialog.ShowWarning(
+                        $"تم تسديد {result.PaidCount} من {ids.Count} (إجمالي {result.TotalPaid:N0} د.ع)\n\n{errText}");
+                }
+            }
+            else
+            {
+                BulkPayMessage = result.Errors.Count > 0
+                    ? string.Join("؛ ", result.Errors.Take(3))
+                    : "لم يتم تسديد أي قسط";
+            }
+        }
+        catch (Exception ex)
+        {
+            BulkPayMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RefreshAfterBulkPayAsync()
+    {
+        await RefreshSummaryAsync();
+        await LoadOverdueAsync();
+
+        switch (SelectedTabIndex)
+        {
+            case 2:
+                await LoadPlanInstallmentsAsync(PaymentSelectedPlan);
+                break;
+            case 3:
+                await LoadDetailedInstallmentsAsync(DetailedSelectedPlan);
+                break;
+            case 5:
+                await LoadUnpaidAsync();
+                break;
+        }
     }
 
     private async Task OnTabChangedAsync(int tabIndex)
@@ -221,7 +371,8 @@ public partial class InstallmentsViewModel : ViewModelBase
     {
         var (items, totalCount) = await _installmentService.GetPagedPlansAsync(
             PlansCurrentPage, PlansPageSize,
-            string.IsNullOrWhiteSpace(PlansSearchText) ? null : PlansSearchText.Trim());
+            string.IsNullOrWhiteSpace(PlansSearchText) ? null : PlansSearchText.Trim(),
+            installmentType: SelectedInstallmentTypeFilter);
 
         AllPlans.Clear();
         foreach (var p in items)
@@ -229,6 +380,12 @@ public partial class InstallmentsViewModel : ViewModelBase
 
         PlansTotalCount = totalCount;
         PlansTotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PlansPageSize));
+    }
+
+    partial void OnSelectedInstallmentTypeFilterChanged(InstallmentType? value)
+    {
+        PlansCurrentPage = 1;
+        _ = LoadAllPlansAsync();
     }
 
     [RelayCommand]
@@ -343,8 +500,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             IsBusy = true;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxes[0].Id);
+            var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
+            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
             await LoadOverdueAsync();
+            await RefreshSummaryAsync();
             BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
         }
         catch (Exception ex)
@@ -739,7 +898,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             IsBusy = true;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxes[0].Id);
+            var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
+            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
             await LoadUnpaidAsync();
             await RefreshSummaryAsync();
             BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
@@ -808,7 +968,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             IsBusy = true;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxes[0].Id);
+            var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
+            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
             await LoadDetailedInstallmentsAsync(DetailedSelectedPlan);
             await RefreshSummaryAsync();
             BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
@@ -901,4 +1062,9 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             // Silently ignore summary errors
         }
     }
+}
+
+public record InstallmentTypeFilterItem(InstallmentType? Value, string Label)
+{
+    public override string ToString() => Label;
 }

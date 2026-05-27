@@ -39,9 +39,10 @@
                                    FontSize="{StaticResource HugeFontSize}"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource PrimaryHueDarkBrush}"/>
-                        <TextBlock Text="حماية بياناتك من خلال إنشاء نسخ احتياطية واستعادتها بسهولة"
+                        <TextBlock Text="حماية بياناتك — اختر مكان الحفظ (سطح المكتب أو قرص D). متوافق مع SQL Server Express."
                                    FontSize="{StaticResource NormalFontSize}"
                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -105,6 +106,16 @@
                                          Visibility="{Binding IsOperationInProgress, Converter={StaticResource BooleanToVisibilityConverter}}"
                                          Style="{StaticResource MaterialDesignLinearProgressBar}"
                                          materialDesign:TransitionAssist.DisableTransitions="True"/>
+                            <Button Command="{Binding OpenLastBackupFolderCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,8,0,0"
+                                    Visibility="{Binding CanOpenLastBackup, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderOpen" Width="16" Height="16" Margin="0,0,6,0"/>
+                                    <TextBlock Text="فتح موقع آخر نسخة" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -144,9 +155,9 @@
                             </Button>
                         </Border>
 
-                        <!-- Quick Backup (Default Folder) -->
+                        <!-- Quick Backup to Desktop -->
                         <Border Style="{StaticResource BackupOptionCard}" Width="260">
-                            <Button Command="{Binding BackupToDefaultFolderCommand}"
+                            <Button Command="{Binding BackupToDesktopCommand}"
                                     IsEnabled="{Binding IsOperationInProgress, Converter={StaticResource InverseBooleanConverter}}"
                                     Cursor="Hand" Background="Transparent" BorderThickness="0"
                                     HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
@@ -160,7 +171,7 @@
                                     </Border>
                                     <TextBlock Text="نسخ سريع" FontSize="15" FontWeight="DemiBold"
                                                HorizontalAlignment="Center" Margin="0,12,0,4"/>
-                                    <TextBlock Text="حفظ في المجلد الافتراضي"
+                                    <TextBlock Text="حفظ على سطح المكتب مباشرة"
                                                FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" TextAlignment="Center"/>
                                 </StackPanel>
@@ -199,14 +210,14 @@
                                     Padding="0" Height="Auto">
                                 <StackPanel HorizontalAlignment="Center">
                                     <Border Width="52" Height="52" CornerRadius="26"
-                                            Background="#FFF3E0" HorizontalAlignment="Center">
+                                            Background="{DynamicResource HighlightLightBrush}" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="ShareVariant" Width="26" Height="26"
-                                                                 Foreground="#E65100"
+                                                                 Foreground="{DynamicResource HighlightBrush}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="مشاركة النسخة" FontSize="15" FontWeight="DemiBold"
+                                    <TextBlock Text="نسخ ثم فتح المجلد" FontSize="15" FontWeight="DemiBold"
                                                HorizontalAlignment="Center" Margin="0,12,0,4"/>
-                                    <TextBlock Text="إنشاء ومشاركة عبر أي تطبيق"
+                                    <TextBlock Text="اختر المسار ثم افتح المجلد للمشاركة"
                                                FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" TextAlignment="Center"/>
                                 </StackPanel>
@@ -231,9 +242,9 @@
                             </Grid.ColumnDefinitions>
 
                             <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                                    Background="#FFF3E0" Margin="0,0,14,0" VerticalAlignment="Top">
+                                    Background="{DynamicResource HighlightLightBrush}" Margin="0,0,14,0" VerticalAlignment="Top">
                                 <materialDesign:PackIcon Kind="DatabaseImport" Width="24" Height="24"
-                                                         Foreground="#E65100"
+                                                         Foreground="{DynamicResource HighlightBrush}"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
 
@@ -279,15 +290,15 @@
                         </Grid>
 
                         <!-- Warning -->
-                        <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
-                                BorderBrush="#FFE082" BorderThickness="1">
+                        <Border Background="{DynamicResource AccentLightBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
+                                BorderBrush="{DynamicResource HighlightBorderBrush}" BorderThickness="1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <materialDesign:PackIcon Kind="AlertOutline" Width="20" Height="20"
-                                                         Foreground="#F57F17" VerticalAlignment="Center"
+                                                         Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"
                                                          Margin="0,0,10,0"/>
                                 <TextBlock Grid.Column="1" TextWrapping="Wrap" FontSize="12.5"
                                            Foreground="#5D4037">
@@ -305,7 +316,7 @@
                                 Padding="28,0">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource AccentButton}">
-                                    <Setter Property="Background" Value="#E65100"/>
+                                    <Setter Property="Background" Value="{DynamicResource HighlightBrush}"/>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter Property="Background" Value="#BF360C"/>

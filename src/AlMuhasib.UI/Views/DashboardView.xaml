@@ -7,10 +7,14 @@
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=False}"
-             Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
+             behaviors:ScrollViewerMouseWheel.IsEnabled="True"
+             Background="#F0F4F8"
+             FlowDirection="RightToLeft"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -19,23 +23,29 @@
 
         <!-- ─── Color Palette ─────────────────────────────── -->
         <Color x:Key="PrimaryColor">#1565C0</Color>
-        <Color x:Key="AccentColor">#FF8F00</Color>
+        <Color x:Key="AccentColor">#00ACC1</Color>
         <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
 
-        <!-- ─── Shimmer loading animation brush ───────────── -->
-        <LinearGradientBrush x:Key="ShimmerBrush" StartPoint="0,0.5" EndPoint="1,0.5">
-            <GradientStop Color="#EEEEEE" Offset="0" />
-            <GradientStop Color="#E0E0E0" Offset="0.5" />
-            <GradientStop Color="#EEEEEE" Offset="1" />
-        </LinearGradientBrush>
+        <!-- ─── Shimmer sweep storyboard ──────────────────── -->
+        <Storyboard x:Key="SkeletonShimmerStoryboard" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="ShimmerWave"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                             From="-160" To="520" Duration="0:0:1.35">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseInOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
 
         <!-- ─── Summary card with hover scale + elevation ─── -->
         <Style x:Key="SummaryCard" TargetType="materialDesign:Card">
-            <Setter Property="UniformCornerRadius" Value="16" />
-            <Setter Property="Padding" Value="22,20" />
+            <Setter Property="UniformCornerRadius" Value="14" />
+            <Setter Property="Padding" Value="18,16" />
             <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
             <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#E8EEF5" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
             <Setter Property="RenderTransform">
@@ -107,53 +117,227 @@
             <Setter Property="Margin" Value="0,0,0,14" />
         </Style>
 
-        <!-- ─── Skeleton placeholder rectangle ────────────── -->
-        <Style x:Key="SkeletonRect" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource ShimmerBrush}" />
-            <Setter Property="CornerRadius" Value="8" />
+        <!-- ─── Skeleton placeholder with moving shimmer ─── -->
+        <Style x:Key="SkeletonRect" TargetType="ContentControl">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid ClipToBounds="True">
+                            <Border Background="#E4EAF2" CornerRadius="8" />
+                            <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
+                                       VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#00FFFFFF" Offset="0" />
+                                        <GradientStop Color="#44FFFFFF" Offset="0.42" />
+                                        <GradientStop Color="#99FFFFFF" Offset="0.5" />
+                                        <GradientStop Color="#44FFFFFF" Offset="0.58" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="-160" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                <BeginStoryboard Storyboard="{StaticResource SkeletonShimmerStoryboard}" />
+                            </EventTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- ─── Staggered fade-in storyboard ─────────────── -->
-        <Storyboard x:Key="FadeInRow0">
-            <DoubleAnimation Storyboard.TargetName="Row0" Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="Row0" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="30" To="0" Duration="0:0:0.5" BeginTime="0:0:0">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-        <Storyboard x:Key="FadeInRow1">
-            <DoubleAnimation Storyboard.TargetName="Row1" Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.15">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="Row1" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="30" To="0" Duration="0:0:0.5" BeginTime="0:0:0.15">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-        <Storyboard x:Key="FadeInRow2">
-            <DoubleAnimation Storyboard.TargetName="Row2" Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.3">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="Row2" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="30" To="0" Duration="0:0:0.5" BeginTime="0:0:0.3">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-        <Storyboard x:Key="FadeInRow3">
-            <DoubleAnimation Storyboard.TargetName="Row3" Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.45">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="Row3" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="30" To="0" Duration="0:0:0.5" BeginTime="0:0:0.45">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
+        <Style x:Key="SkeletonRound" TargetType="ContentControl" BasedOn="{StaticResource SkeletonRect}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid ClipToBounds="True">
+                            <Ellipse Fill="#E4EAF2" />
+                            <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
+                                       VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#00FFFFFF" Offset="0" />
+                                        <GradientStop Color="#44FFFFFF" Offset="0.42" />
+                                        <GradientStop Color="#99FFFFFF" Offset="0.5" />
+                                        <GradientStop Color="#44FFFFFF" Offset="0.58" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="-160" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                <BeginStoryboard Storyboard="{StaticResource SkeletonShimmerStoryboard}" />
+                            </EventTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ─── Quick action button ───────────────────────── -->
+        <Style x:Key="DashboardQuickAction" TargetType="Button">
+            <Setter Property="Height" Value="88"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <materialDesign:Card x:Name="Card" UniformCornerRadius="14" Padding="14,12"
+                                             materialDesign:ElevationAssist.Elevation="Dp2"
+                                             Background="{TemplateBinding Background}"
+                                             RenderTransformOrigin="0.5,0.5">
+                            <materialDesign:Card.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </materialDesign:Card.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                        </materialDesign:Card>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp8"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1.03" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1.03" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ─── Row reveal (no TargetName — valid inside Style.Triggers) ─── -->
+        <Style x:Key="DashboardReveal0" TargetType="FrameworkElement">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value><TranslateTransform Y="22" /></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.45">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.45">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DashboardReveal1" TargetType="FrameworkElement" BasedOn="{StaticResource DashboardReveal0}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.45" BeginTime="0:0:0.08">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.45" BeginTime="0:0:0.08">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DashboardReveal2" TargetType="FrameworkElement" BasedOn="{StaticResource DashboardReveal0}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.45" BeginTime="0:0:0.16">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.45" BeginTime="0:0:0.16">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DashboardReveal3" TargetType="FrameworkElement" BasedOn="{StaticResource DashboardReveal0}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.45" BeginTime="0:0:0.24">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.45" BeginTime="0:0:0.24">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DashboardReveal4" TargetType="FrameworkElement" BasedOn="{StaticResource DashboardReveal0}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.45" BeginTime="0:0:0.32">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.45" BeginTime="0:0:0.32">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -173,33 +357,33 @@
                 <materialDesign:Card UniformCornerRadius="16" Padding="22,20" Margin="0,0,10,0"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
                     </StackPanel>
                 </materialDesign:Card>
                 <materialDesign:Card UniformCornerRadius="16" Padding="22,20" Margin="5,0,5,0"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
                     </StackPanel>
                 </materialDesign:Card>
                 <materialDesign:Card UniformCornerRadius="16" Padding="22,20" Margin="5,0,5,0"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
                     </StackPanel>
                 </materialDesign:Card>
                 <materialDesign:Card UniformCornerRadius="16" Padding="22,20" Margin="10,0,0,0"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Width="50" Height="50" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="12" Width="120" Margin="0,12,0,6" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="20" Width="90" HorizontalAlignment="Right" />
                     </StackPanel>
                 </materialDesign:Card>
             </UniformGrid>
@@ -214,15 +398,15 @@
                 <materialDesign:Card Grid.Column="0" UniformCornerRadius="16" Padding="22,18"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Height="16" Width="180" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="260" Margin="0,14,0,0" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="16" Width="180" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="260" Margin="0,14,0,0" />
                     </StackPanel>
                 </materialDesign:Card>
                 <materialDesign:Card Grid.Column="2" UniformCornerRadius="16" Padding="22,18"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="260" Margin="0,14,0,0" CornerRadius="130" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRound}" Height="260" Margin="0,14,0,0" />
                     </StackPanel>
                 </materialDesign:Card>
             </Grid>
@@ -237,63 +421,170 @@
                 <materialDesign:Card Grid.Column="0" UniformCornerRadius="16" Padding="22,18"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,14,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,14,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" />
                     </StackPanel>
                 </materialDesign:Card>
                 <materialDesign:Card Grid.Column="2" UniformCornerRadius="16" Padding="22,18"
                                      materialDesign:ElevationAssist.Elevation="Dp1" Background="White">
                     <StackPanel>
-                        <Border Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,14,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
-                        <Border Style="{StaticResource SkeletonRect}" Height="14" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="16" Width="140" HorizontalAlignment="Right" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,14,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" Margin="0,0,0,6" />
+                        <ContentControl Style="{StaticResource SkeletonRect}" Height="14" />
                     </StackPanel>
                 </materialDesign:Card>
             </Grid>
 
-            <!-- Shimmer pulse animation -->
-            <Grid.Triggers>
-                <EventTrigger RoutedEvent="Loaded">
-                    <BeginStoryboard>
-                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                             From="1" To="0.5" Duration="0:0:0.8" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Grid.Triggers>
         </Grid>
 
         <!-- ═══════════════════════════════════════════════════ -->
         <!-- MAIN CONTENT (shown after loading)                 -->
         <!-- ═══════════════════════════════════════════════════ -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="DashboardScroll"
+                      VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0"
                       Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVis}}">
-            <Grid Margin="0,0,0,16">
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer" BasedOn="{StaticResource ThinScrollViewer}">
+                    <Setter Property="Opacity" Value="0"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLoaded}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.35">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
+            <Grid x:Name="DashboardContent" Margin="0,0,0,16">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
+                <!-- Welcome header -->
+                <materialDesign:Card Grid.Row="0" UniformCornerRadius="16" Padding="0"
+                                     Margin="0,0,0,18"
+                                     materialDesign:ElevationAssist.Elevation="Dp3"
+                                     BorderBrush="#D6E4F5" BorderThickness="1">
+                    <Grid>
+                        <Border CornerRadius="16" Opacity="0.95">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1565C0" Offset="0"/>
+                                    <GradientStop Color="#1E88E5" Offset="0.55"/>
+                                    <GradientStop Color="#42A5F5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Grid Margin="22,18">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <materialDesign:PackIcon Kind="ViewDashboard" Width="26" Height="26"
+                                                                 Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="لوحة التحكم"
+                                                   FontSize="22" FontWeight="Bold" Foreground="White"
+                                                   Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="نظرة شاملة على أداء عملك اليوم"
+                                               FontSize="13" Foreground="#E3F2FD"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="#26FFFFFF" CornerRadius="12"
+                                        Padding="14,10" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="20" Height="20"
+                                                                 Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="مؤشرات محدّثة لحظياً"
+                                                   FontSize="12" Foreground="White"
+                                                   Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Quick actions -->
+                            <UniformGrid Grid.Row="1" Columns="3" Margin="0,18,0,0">
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenSalesInvoiceCommand}"
+                                        Background="#E8F5E9" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#2E7D32" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="CashRegister" Width="24" Height="24"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14" Foreground="#1B5E20"/>
+                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11" Foreground="#558B2F" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenPurchaseInvoiceCommand}"
+                                        Background="#FFF3E0" Margin="4,0,4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#EF6C00" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="CartArrowDown" Width="24" Height="24"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14" Foreground="#E65100"/>
+                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11" Foreground="#F57C00" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenInstallmentInvoiceCommand}"
+                                        Background="#E3F2FD" Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#1565C0" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="CalendarClock" Width="24" Height="24"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14" Foreground="#0D47A1"/>
+                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11" Foreground="#1976D2" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </UniformGrid>
+                        </Grid>
+                    </Grid>
+                </materialDesign:Card>
+
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 1: SUMMARY CARDS (staggered entrance)  -->
                 <!-- ═══════════════════════════════════════════ -->
-                <UniformGrid x:Name="Row0" Grid.Row="0" Columns="4" Margin="0,0,0,20"
-                             Opacity="0" RenderTransformOrigin="0.5,0.5">
-                    <UniformGrid.RenderTransform>
-                        <TranslateTransform />
-                    </UniformGrid.RenderTransform>
+                <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16"
+                             Style="{StaticResource DashboardReveal0}">
 
                     <!-- Today's Sales -->
                     <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="0,0,10,0">
@@ -328,18 +619,18 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#FFF3E0">
+                                    Background="{DynamicResource HighlightLightBrush}">
                                 <materialDesign:PackIcon Kind="CartArrowDown"
                                                          Width="28" Height="28"
                                                          HorizontalAlignment="Center"
                                                          VerticalAlignment="Center"
-                                                         Foreground="#E65100" />
+                                                         Foreground="{DynamicResource HighlightBrush}" />
                             </Border>
                             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="إجمالي المشتريات اليوم"
                                            FontSize="12" Foreground="#9E9E9E" />
                                 <TextBlock Text="{Binding TodayPurchases, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="#E65100"
+                                           FontSize="22" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
                         </Grid>
@@ -399,14 +690,90 @@
                     </materialDesign:Card>
                 </UniformGrid>
 
+                <!-- Additional Statistics Row -->
+                <UniformGrid Grid.Row="2" Columns="3" Margin="0,0,0,16"
+                             Style="{StaticResource DashboardReveal1}">
+                    <!-- Investor Balance -->
+                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
+                                    Background="#E8EAF6">
+                                <materialDesign:PackIcon Kind="TrendingUp"
+                                                         Width="28" Height="28"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="#283593" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="رصيد المستثمرين"
+                                           FontSize="12" Foreground="#9E9E9E" />
+                                <TextBlock Text="{Binding InvestorBalance, Converter={StaticResource CurrencyFormat}}"
+                                           FontSize="22" FontWeight="Bold" Foreground="#283593"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <!-- Unpaid Installments Balance -->
+                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="5,0,5,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
+                                    Background="{DynamicResource HighlightLightBrush}">
+                                <materialDesign:PackIcon Kind="CalendarMultipleCheck"
+                                                         Width="28" Height="28"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="{DynamicResource HighlightBrush}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="رصيد الأقساط غير المسددة"
+                                           FontSize="12" Foreground="#9E9E9E" />
+                                <TextBlock Text="{Binding UnpaidInstallmentsBalance, Converter={StaticResource CurrencyFormat}}"
+                                           FontSize="22" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <!-- Customer Credit Balance -->
+                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="10,0,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
+                                    Background="#FCE4EC">
+                                <materialDesign:PackIcon Kind="AccountCash"
+                                                         Width="28" Height="28"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="#AD1457" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="رصيد الآجل للعملاء"
+                                           FontSize="12" Foreground="#9E9E9E" />
+                                <TextBlock Text="{Binding CustomerCreditBalance, Converter={StaticResource CurrencyFormat}}"
+                                           FontSize="22" FontWeight="Bold" Foreground="#AD1457"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                </UniformGrid>
+
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 2: CHARTS                              -->
                 <!-- ═══════════════════════════════════════════ -->
-                <Grid x:Name="Row1" Grid.Row="1" Margin="0,0,0,20"
-                      Opacity="0" RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <TranslateTransform />
-                    </Grid.RenderTransform>
+                <Grid Grid.Row="3" Margin="0,0,0,16"
+                      Style="{StaticResource DashboardReveal2}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*" />
                         <ColumnDefinition Width="16" />
@@ -429,12 +796,13 @@
                                            Style="{StaticResource SectionHeader}"
                                            Margin="8,0,0,0" />
                             </StackPanel>
-                            <lvc:CartesianChart Grid.Row="1"
-                                                Series="{Binding SalesSeries}"
-                                                XAxes="{Binding SalesXAxes}"
-                                                YAxes="{Binding SalesYAxes}"
-                                                TooltipPosition="Top"
-                                                AnimationsSpeed="00:00:00.500" />
+                            <Border Grid.Row="1" FlowDirection="LeftToRight">
+                                <lvc:CartesianChart Series="{Binding SalesSeries}"
+                                                    XAxes="{Binding SalesXAxes}"
+                                                    YAxes="{Binding SalesYAxes}"
+                                                    TooltipPosition="Top"
+                                                    AnimationsSpeed="00:00:00.500" />
+                            </Border>
                         </Grid>
                     </materialDesign:Card>
 
@@ -454,9 +822,11 @@
                                            Style="{StaticResource SectionHeader}"
                                            Margin="8,0,0,0" />
                             </StackPanel>
-                            <lvc:PieChart Grid.Row="1"
-                                          Series="{Binding ExpenseSeries}"
-                                          AnimationsSpeed="00:00:00.500" />
+                            <Border Grid.Row="1" FlowDirection="LeftToRight">
+                                <lvc:PieChart Series="{Binding ExpenseSeries}"
+                                              LegendPosition="Bottom"
+                                              AnimationsSpeed="00:00:00.500" />
+                            </Border>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -464,11 +834,8 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 3: TABLES                              -->
                 <!-- ═══════════════════════════════════════════ -->
-                <Grid x:Name="Row2" Grid.Row="2" Margin="0,0,0,20"
-                      Opacity="0" RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <TranslateTransform />
-                    </Grid.RenderTransform>
+                <Grid Grid.Row="4" Margin="0,0,0,16"
+                      Style="{StaticResource DashboardReveal3}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
@@ -553,7 +920,7 @@
                                                             <Setter Property="Background" Value="#E8F5E9" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding DaysRemaining, Converter={x:Static converters:LessThanConverter.Instance}}" Value="True">
-                                                                    <Setter Property="Background" Value="#FFF3E0" />
+                                                                    <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -575,11 +942,8 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 4: BOTTOM SUMMARY                      -->
                 <!-- ═══════════════════════════════════════════ -->
-                <Grid x:Name="Row3" Grid.Row="3"
-                      Opacity="0" RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <TranslateTransform />
-                    </Grid.RenderTransform>
+                <Grid Grid.Row="5"
+                      Style="{StaticResource DashboardReveal4}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
@@ -602,7 +966,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10"
-                                        Background="#FFF8E1">
+                                        Background="{DynamicResource AccentLightBrush}">
                                     <materialDesign:PackIcon Kind="SafeSquareOutline"
                                                              Width="22" Height="22"
                                                              HorizontalAlignment="Center"

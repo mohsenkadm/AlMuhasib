@@ -64,7 +64,8 @@ public class DashboardService : IDashboardService
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
             var distributedProfits = await context.ProfitDistributions
                 .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
-            data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits;
+            var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
+            data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
         }
         catch (Exception ex)
         {
@@ -79,6 +80,41 @@ public class DashboardService : IDashboardService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard OverdueInstallments error: {ex.Message}");
+        }
+
+        // ── Investor balance (total deposits) ──────────────────
+        try
+        {
+            data.InvestorBalance = await context.Investors
+                .SumAsync(i => (decimal?)i.TotalDeposit) ?? 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dashboard InvestorBalance error: {ex.Message}");
+        }
+
+        // ── Unpaid installments balance ────────────────────────
+        try
+        {
+            data.UnpaidInstallmentsBalance = await context.Installments
+                .Where(i => i.Status != InstallmentStatus.Paid)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dashboard UnpaidInstallmentsBalance error: {ex.Message}");
+        }
+
+        // ── Customer credit balance (آجل) ─────────────────────
+        try
+        {
+            data.CustomerCreditBalance = await context.Invoices
+                .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dashboard CustomerCreditBalance error: {ex.Message}");
         }
 
         // ── Sales last 30 days ─────────────────────────────────
@@ -253,18 +289,18 @@ public class DashboardService : IDashboardService
             if (stockValues.Count > 0)
             {
                 var productIds = stockValues.Select(s => s.ProductId).ToList();
-                var avgPrices = await context.InvoiceItems
-                    .Where(ii => ii.ProductId.HasValue
-                        && productIds.Contains(ii.ProductId.Value)
-                        && ii.Invoice.InvoiceType == InvoiceType.Purchase)
-                    .GroupBy(ii => ii.ProductId!.Value)
-                    .Select(g => new { ProductId = g.Key, AvgPrice = g.Average(ii => ii.UnitPrice) })
+                var allStocks = await context.WarehouseStocks
+                    .Where(ws => productIds.Contains(ws.ProductId))
                     .ToListAsync();
+                var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
 
                 data.TotalInventoryValue = stockValues.Sum(s =>
                 {
-                    var price = avgPrices.FirstOrDefault(p => p.ProductId == s.ProductId);
-                    return s.TotalQty * (price?.AvgPrice ?? 0);
+                    var avg = ProductCostHelper.ComputeAverageUnitCostForProduct(
+                        purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [],
+                        allStocks,
+                        s.ProductId);
+                    return s.TotalQty * avg;
                 });
             }
         }
