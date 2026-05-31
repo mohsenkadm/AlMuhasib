@@ -24,7 +24,47 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => UpdateMaximizeIcon();
         Loaded += OnFirstLoaded;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        PreviewKeyDown += OnPreviewKeyDown;
         UpdateMaximizeIcon();
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            _viewModel.OpenGlobalSearchCommand.Execute(null);
+            if (GlobalSearchOverlay.Visibility == Visibility.Visible)
+                GlobalSearchOverlay.FocusSearch();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && _viewModel.IsGlobalSearchOpen)
+        {
+            _viewModel.CloseGlobalSearchCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F1)
+        {
+            _viewModel.ToggleKeyboardShortcutsHelpCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F2 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            _ = _viewModel.QuickNewSaleCommand.ExecuteAsync(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F3 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            _viewModel.OpenGlobalSearchCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     private void OnFirstLoaded(object sender, RoutedEventArgs e)
@@ -36,6 +76,9 @@ public partial class MainWindow : Window
         {
             var toast = app.Services.GetRequiredService<IToastNotificationService>();
             toast.AttachHost(AppToastHost);
+
+            var theme = app.Services.GetRequiredService<ThemeService>();
+            theme.ApplyFromPreferences();
         }
     }
 
@@ -105,6 +148,12 @@ public partial class MainWindow : Window
 
     private void QuickAssistBackdrop_Click(object sender, MouseButtonEventArgs e) =>
         _viewModel.IsQuickAssistOpen = false;
+
+    private void SmartAssistantBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.IsSmartAssistantOpen = false;
+
+    private void SmartAssistantClose_Click(object sender, RoutedEventArgs e) =>
+        _viewModel.IsSmartAssistantOpen = false;
 
     private void ChromeTabClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

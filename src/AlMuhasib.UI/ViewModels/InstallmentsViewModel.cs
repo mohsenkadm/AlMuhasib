@@ -5,6 +5,8 @@ using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -49,6 +51,7 @@ public partial class InstallmentsViewModel : ViewModelBase
         new(null, "الكل"),
         new(InstallmentType.Manual, "يدوي"),
         new(InstallmentType.Platform, "بيع منصة"),
+        new(InstallmentType.OpeningBalance, "رصيد افتتاحي"),
     ];
 
     private const int PlansPageSize = 20;
@@ -159,6 +162,13 @@ public partial class InstallmentsViewModel : ViewModelBase
     private string _unpaidSearchText = string.Empty;
 
     private const int UnpaidPageSize = 20;
+
+    public InstallmentGridTotals PlansFooter { get; } = new();
+    public InstallmentGridTotals OverdueFooter { get; } = new();
+    public InstallmentGridTotals PaymentFooter { get; } = new();
+    public InstallmentGridTotals DetailedFooter { get; } = new();
+    public InstallmentGridTotals PaidFooter { get; } = new();
+    public InstallmentGridTotals UnpaidFooter { get; } = new();
 
     // ── Shared ─────────────────────────────────────────────
     [ObservableProperty]
@@ -380,6 +390,16 @@ public partial class InstallmentsViewModel : ViewModelBase
 
         PlansTotalCount = totalCount;
         PlansTotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PlansPageSize));
+        await RefreshPlansFooterAsync();
+    }
+
+    private async Task RefreshPlansFooterAsync()
+    {
+        var (all, count) = await _installmentService.GetPagedPlansAsync(
+            1, int.MaxValue,
+            string.IsNullOrWhiteSpace(PlansSearchText) ? null : PlansSearchText.Trim(),
+            installmentType: SelectedInstallmentTypeFilter);
+        PlansFooter.SetFromPlans(all, $"إجمالي نتائج البحث ({count:N0} خطة)");
     }
 
     partial void OnSelectedInstallmentTypeFilterChanged(InstallmentType? value)
@@ -459,7 +479,8 @@ public partial class InstallmentsViewModel : ViewModelBase
                 p.NumberOfInstallments,
                 p.InstallmentAmount.ToString("N0"),
                 p.StartDate.ToString("yyyy/MM/dd")
-            }).ToList());
+            }).ToList(),
+            PlansFooter.ToPrintSummary());
     }
 
     // ══════════════════════════════════════════════════════
@@ -474,6 +495,24 @@ public partial class InstallmentsViewModel : ViewModelBase
         foreach (var i in overdue)
             OverdueInstallments.Add(i);
         OverdueCount = OverdueInstallments.Count;
+        OverdueFooter.SetFromInstallments(OverdueInstallments, "إجمالي الأقساط المتأخرة");
+    }
+
+    [RelayCommand]
+    private void PrintOverdue()
+    {
+        if (OverdueInstallments.Count == 0) return;
+        _exportService.PrintTable("كشف الأقساط المتأخرة",
+            new[] { "العميل", "تاريخ الاستحقاق", "المبلغ", "المدفوع", "المتبقي" },
+            OverdueInstallments.Select(i => new object[]
+            {
+                i.InstallmentPlan?.Customer?.Name ?? "",
+                i.DueDate.ToString("yyyy/MM/dd"),
+                i.Amount.ToString("N0"),
+                i.PaidAmount.ToString("N0"),
+                i.RemainingAmount.ToString("N0")
+            }).ToList(),
+            OverdueFooter.ToPrintSummary());
     }
 
     [RelayCommand]
@@ -560,11 +599,18 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         PaymentSelectedInstallment = null;
         PaymentAmount = 0;
 
-        if (plan is null) return;
+        if (plan is null)
+        {
+            PaymentFooter.Clear();
+            return;
+        }
 
         try
         {
-            var installments = await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id);
+            var installments = (await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id)).ToList();
+            PaymentFooter.SetFromInstallments(installments,
+                $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}");
+
             foreach (var inst in installments.Where(i => i.Status != InstallmentStatus.Paid))
                 PlanInstallments.Add(inst);
         }
@@ -655,6 +701,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     private async Task LoadDetailedInstallmentsAsync(InstallmentPlan? plan)
     {
         DetailedInstallments.Clear();
+        DetailedFooter.Clear();
         if (plan is null) return;
 
         try
@@ -662,6 +709,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             var installments = await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id);
             foreach (var inst in installments)
                 DetailedInstallments.Add(inst);
+            DetailedFooter.SetFromInstallments(installments,
+                plan is not null
+                    ? $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}"
+                    : string.Empty);
         }
         catch (Exception ex)
         {
@@ -686,6 +737,11 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         PaidTotalCount = totalCount;
         PaidTotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PaidPageSize));
+
+        var search = string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim();
+        var (allItems, allCount) = await _installmentService.GetPagedInstallmentsAsync(
+            1, int.MaxValue, InstallmentStatus.Paid, searchTerm: search);
+        PaidFooter.SetFromInstallments(allItems, $"إجمالي الأقساط المسددة ({allCount:N0})");
     }
 
     [RelayCommand]
@@ -755,7 +811,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
                 i.Amount.ToString("N0"),
                 i.PaidAmount.ToString("N0"),
                 i.PaymentDate?.ToString("yyyy/MM/dd") ?? ""
-            }).ToList());
+            }).ToList(),
+            PaidFooter.ToPrintSummary());
     }
 
     // ══════════════════════════════════════════════════════
@@ -790,6 +847,13 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         UnpaidTotalCount = pendingResult.TotalCount + overdueResult.TotalCount + partialResult.TotalCount;
         UnpaidTotalPages = Math.Max(1, (int)Math.Ceiling(UnpaidTotalCount / (double)UnpaidPageSize));
+
+        var search = string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim();
+        var allOverdue = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Overdue, searchTerm: search);
+        var allPartial = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.PartiallyPaid, searchTerm: search);
+        var allPending = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Pending, searchTerm: search);
+        var allUnpaid = allOverdue.Items.Concat(allPartial.Items).Concat(allPending.Items).ToList();
+        UnpaidFooter.SetFromInstallments(allUnpaid, $"إجمالي الأقساط غير المسددة ({UnpaidTotalCount:N0})");
     }
 
     [RelayCommand]
@@ -859,7 +923,26 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
                 i.DueDate.ToString("yyyy/MM/dd"),
                 i.Amount.ToString("N0"),
                 i.RemainingAmount.ToString("N0")
-            }).ToList());
+            }).ToList(),
+            UnpaidFooter.ToPrintSummary());
+    }
+
+    [RelayCommand]
+    private void PrintDetailed()
+    {
+        if (DetailedInstallments.Count == 0) return;
+        _exportService.PrintTable("كشف الأقساط التفصيلي",
+            new[] { "تاريخ الاستحقاق", "المبلغ", "المدفوع", "المتبقي", "الحالة", "تاريخ التسديد" },
+            DetailedInstallments.Select(i => new object[]
+            {
+                i.DueDate.ToString("yyyy/MM/dd"),
+                i.Amount.ToString("N0"),
+                i.PaidAmount.ToString("N0"),
+                i.RemainingAmount.ToString("N0"),
+                StatusToArabic(i.Status),
+                i.PaymentDate?.ToString("yyyy/MM/dd") ?? ""
+            }).ToList(),
+            DetailedFooter.ToPrintSummary());
     }
 
     private static string StatusToArabic(InstallmentStatus status) => status switch

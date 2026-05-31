@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
+using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.Core.Interfaces.Services;
@@ -10,14 +11,24 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using MaterialDesignThemes.Wpf;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly ISmartAlertService _smartAlertService;
     private readonly MainWindowViewModel _mainWindow;
     private bool _initialized;
+    private List<DailySalesPoint>? _cachedSalesPoints;
+    private List<ExpenseCategoryShare>? _cachedExpenseShares;
+
+    public ObservableCollection<SmartAlert> SmartAlerts { get; } = [];
+    public ObservableCollection<DailyTaskItem> DailyTasks { get; } = [];
+
+    [ObservableProperty]
+    private int _dailyTaskCount;
 
     // ── Snackbar ───────────────────────────────────────────
     public SnackbarMessageQueue SnackbarQueue { get; } = new(TimeSpan.FromSeconds(3));
@@ -74,13 +85,18 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalInventoryValue;
 
-    public DashboardViewModel(IDashboardService dashboardService, MainWindowViewModel mainWindow)
+    public DashboardViewModel(IDashboardService dashboardService, ISmartAlertService smartAlertService,
+        MainWindowViewModel mainWindow, IUserPreferencesService userPreferences)
     {
         _dashboardService = dashboardService;
+        _smartAlertService = smartAlertService;
         _mainWindow = mainWindow;
+        _userPreferences = userPreferences;
         PageTitle = "لوحة التحكم";
         IsBusy = true;
         IsLoaded = false;
+        ApplyDashboardProfile();
+        ThemeChartRefresh.Register(RefreshChartsOnlyAsync);
     }
 
     [RelayCommand]
@@ -95,6 +111,17 @@ public partial class DashboardViewModel : ViewModelBase
     private async Task OpenInstallmentInvoiceAsync() =>
         await _mainWindow.OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock);
 
+    [RelayCommand]
+    private async Task ExecuteDailyTaskAsync(DailyTaskItem? task)
+    {
+        if (task is null) return;
+        await _mainWindow.ExecuteDailyTaskAsync(task.Action);
+    }
+
+    [RelayCommand]
+    private async Task OpenInstallmentsFromAlertAsync() =>
+        await _mainWindow.QuickInstallmentsCommand.ExecuteAsync(null);
+
     public override async Task InitializeAsync()
     {
         if (_initialized) return;
@@ -108,6 +135,7 @@ public partial class DashboardViewModel : ViewModelBase
         try
         {
             var data = await Task.Run(() => _dashboardService.GetDashboardDataAsync());
+            var alertSummary = await _smartAlertService.GetSummaryAsync();
 
             // Must update UI-bound properties on the dispatcher thread
             Application.Current.Dispatcher.Invoke(() =>
@@ -121,11 +149,10 @@ public partial class DashboardViewModel : ViewModelBase
                 UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
                 CustomerCreditBalance = data.CustomerCreditBalance;
 
-                // Sales chart
-                BuildSalesChart(data.SalesLast30Days);
-
-                // Expense pie chart
-                BuildExpenseChart(data.ExpenseDistribution);
+                _cachedSalesPoints = data.SalesLast30Days;
+                _cachedExpenseShares = data.ExpenseDistribution;
+                BuildSalesChart(_cachedSalesPoints);
+                BuildExpenseChart(_cachedExpenseShares);
 
                 // Tables
                 RecentTransactions.Clear();
@@ -139,6 +166,15 @@ public partial class DashboardViewModel : ViewModelBase
                 foreach (var c in data.CashBoxes) CashBoxes.Add(c);
                 BankBalance = data.BankBalance;
                 TotalInventoryValue = data.TotalInventoryValue;
+
+                SmartAlerts.Clear();
+                foreach (var a in alertSummary.Alerts)
+                    SmartAlerts.Add(a);
+
+                DailyTasks.Clear();
+                foreach (var t in alertSummary.DailyTasks)
+                    DailyTasks.Add(t);
+                DailyTaskCount = alertSummary.TotalTaskCount;
 
                 IsLoaded = true;
                 _initialized = true;
@@ -162,6 +198,19 @@ public partial class DashboardViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private Task RefreshChartsOnlyAsync()
+    {
+        if (!_initialized) return Task.CompletedTask;
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_cachedSalesPoints is not null)
+                BuildSalesChart(_cachedSalesPoints);
+            if (_cachedExpenseShares is not null)
+                BuildExpenseChart(_cachedExpenseShares);
+        });
+        return Task.CompletedTask;
     }
 
     private void BuildSalesChart(List<DailySalesPoint> points)

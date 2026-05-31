@@ -1,4 +1,5 @@
-﻿using AlMuhasib.Core.Entities;
+﻿using AlMuhasib.Core;
+using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -165,7 +166,8 @@ public class InvestorService : IInvestorService
     public async Task<decimal> GetDistributableProfitsAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var totalSales = await context.Invoices.Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment).SumAsync(i => (decimal?)i.NetAmount ?? 0);
+        var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .SumAsync(i => (decimal?)i.NetAmount ?? 0);
         var totalPurchases = await context.Invoices.Where(i => i.InvoiceType == InvoiceType.Purchase).SumAsync(i => (decimal?)i.NetAmount ?? 0);
         var totalExpenses = await context.Expenses.SumAsync(e => (decimal?)e.Amount ?? 0);
         var alreadyDistributed = await context.ProfitDistributions.SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);

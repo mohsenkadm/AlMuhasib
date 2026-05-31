@@ -32,7 +32,10 @@ public partial class CashFlowReportViewModel : ReportViewModelBase
     public CashFlowReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "التدفق النقدي"; }
+    {
+        PageTitle = "التدفق النقدي";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

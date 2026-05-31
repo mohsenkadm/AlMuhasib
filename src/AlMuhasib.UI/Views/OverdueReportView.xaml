@@ -8,6 +8,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:OverdueReportViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
@@ -86,6 +87,11 @@
                     </StackPanel>
                 </Border>
 
+                <controls:ReportBulkInstallmentPayBar DataContext="{Binding}"/>
+
+                <TextBlock Text="انقر مرتين لعرض الفاتورة (أقساط أو آجل) — حدّد أقساط غير مسددة للتسديد الجماعي"
+                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0"/>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -97,8 +103,10 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <DataGrid ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
-                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300">
+                        <DataGrid x:Name="OverdueGrid" ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" MinHeight="300"
+                                  SelectionChanged="OverdueGrid_SelectionChanged"
+                                  behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenInvoiceDetailFromReportRowCommand}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
                                 <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"/>

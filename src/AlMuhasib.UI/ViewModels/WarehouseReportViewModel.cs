@@ -31,7 +31,10 @@ public partial class WarehouseReportViewModel : ReportViewModelBase
     public WarehouseReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "تقرير المخازن"; }
+    {
+        PageTitle = "تقرير المخازن";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

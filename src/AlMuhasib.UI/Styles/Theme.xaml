@@ -41,6 +41,38 @@
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#1B2A3D"/>
     <SolidColorBrush x:Key="SubtleBorderBrush" Color="#E8EDF2"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
+    <SolidColorBrush x:Key="HintForegroundBrush" Color="#9E9E9E"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#E8EEF5"/>
+    <SolidColorBrush x:Key="MutedIconBackgroundBrush" Color="#ECEFF1"/>
+    <SolidColorBrush x:Key="ChartEmptyIconBrush" Color="#BDBDBD"/>
+    <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="#FAFCFE"/>
+    <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="#D5E3F0"/>
+    <SolidColorBrush x:Key="SearchResultHoverBrush" Color="#E8F4FD"/>
+    <SolidColorBrush x:Key="SearchResultTitleBrush" Color="#263238"/>
+    <SolidColorBrush x:Key="SearchResultSubtitleBrush" Color="#757575"/>
+
+    <LinearGradientBrush x:Key="ChromeTabStripBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#EEF3F9" Offset="0"/>
+        <GradientStop Color="#E3EBF4" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="ChromeTabInactiveBrush" Color="#D5E0EC"/>
+    <SolidColorBrush x:Key="ChromeTabInactiveBorderBrush" Color="#B8C9DB"/>
+    <SolidColorBrush x:Key="ChromeTabHoverBrush" Color="#EBF4FC"/>
+    <SolidColorBrush x:Key="ChromeTabSelectedBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ChromeTabSelectedBorderBrush" Color="#90CAF9"/>
+    <SolidColorBrush x:Key="ChromeTabForegroundBrush" Color="#37474F"/>
+    <SolidColorBrush x:Key="ChromeTabSelectedForegroundBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DataGridRowBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DataGridRowAltBrush" Color="#F7F9FC"/>
+    <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#E8F4FD"/>
+    <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#D6EBFC"/>
+    <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#EEF3F8"/>
+    <SolidColorBrush x:Key="DataGridHeaderHoverBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="DataGridHeaderForegroundBrush" Color="#37474F"/>
+    <SolidColorBrush x:Key="DataGridCellForegroundBrush" Color="#263238"/>
+    <SolidColorBrush x:Key="DataGridGridLineBrush" Color="#ECEFF1"/>
 
     <!-- ══════════════════════════════════════════════════════════════
          FONT RESOURCES
@@ -178,7 +210,7 @@
 
     <Style x:Key="PageStyle" TargetType="UserControl">
         <Setter Property="FlowDirection" Value="RightToLeft"/>
-        <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
         <Setter Property="UseLayoutRounding" Value="True"/>
@@ -477,7 +509,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E8F4FD"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SearchResultHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#D6EBFA"/>
@@ -753,13 +785,18 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <!-- Elevated Card with hover animation -->
+    <!-- بطاقات بدون Style صريح (مثل حاويات الجداول في التقارير) -->
+    <Style TargetType="materialDesign:Card" BasedOn="{StaticResource MaterialDesignElevatedCard}">
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    </Style>
+
     <Style x:Key="ElevatedCard" TargetType="materialDesign:Card"
            BasedOn="{StaticResource MaterialDesignElevatedCard}">
         <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
         <Setter Property="UniformCornerRadius" Value="12"/>
         <Setter Property="Padding" Value="20"/>
         <Setter Property="Margin" Value="8"/>
-        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="RenderTransform">
             <Setter.Value>
@@ -820,21 +857,21 @@
     <DataTemplate x:Key="StatCardTemplate">
         <StackPanel>
             <Border Width="44" Height="44" CornerRadius="22"
-                    Background="{StaticResource PrimaryHueLightBrush}"
+                    Background="{DynamicResource PrimaryHueLightBrush}"
                     HorizontalAlignment="Right">
                 <materialDesign:PackIcon Kind="{Binding IconKind}"
                                          Width="24" Height="24"
-                                         Foreground="{StaticResource PrimaryHueMidBrush}"
+                                         Foreground="{DynamicResource PrimaryHueMidBrush}"
                                          HorizontalAlignment="Center"
                                          VerticalAlignment="Center"/>
             </Border>
             <TextBlock Text="{Binding Label}" Margin="0,12,0,4"
-                       FontSize="{StaticResource SmallFontSize}"
-                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                       FontSize="{DynamicResource SmallFontSize}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
             <TextBlock Text="{Binding Value}"
-                       FontSize="{StaticResource HugeFontSize}"
+                       FontSize="{DynamicResource HugeFontSize}"
                        FontWeight="Bold"
-                       Foreground="{StaticResource PrimaryHueMidBrush}"/>
+                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
         </StackPanel>
     </DataTemplate>
 
@@ -844,7 +881,7 @@
         <Setter Property="UniformCornerRadius" Value="12"/>
         <Setter Property="Padding" Value="24"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
-        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
     </Style>
 
@@ -856,22 +893,15 @@
     <Style x:Key="ModernDataGridColumnHeader" TargetType="DataGridColumnHeader"
            BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}">
         <Setter Property="Height" Value="50"/>
-        <Setter Property="Foreground" Value="#37474F"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridHeaderForegroundBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="16,0"/>
-        <Setter Property="BorderBrush" Value="#E2E8F0"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="SeparatorBrush" Value="Transparent"/>
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FAFCFE" Offset="0"/>
-                    <GradientStop Color="#EEF3F8" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{DynamicResource DataGridHeaderBackgroundBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">
@@ -901,7 +931,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="HeaderBd" Property="Background" Value="#E3F2FD"/>
+                            <Setter TargetName="HeaderBd" Property="Background" Value="{DynamicResource DataGridHeaderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="SortDirection" Value="Ascending">
                             <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
@@ -926,19 +956,19 @@
         <Setter Property="MinHeight" Value="52"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="8,0"/>
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource DataGridRowBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Style.Triggers>
             <Trigger Property="AlternationIndex" Value="1">
-                <Setter Property="Background" Value="#F7F9FC"/>
+                <Setter Property="Background" Value="{DynamicResource DataGridRowAltBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#E8F4FD"/>
+                <Setter Property="Background" Value="{DynamicResource DataGridRowHoverBrush}"/>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="#D6EBFC"/>
+                <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBrush}"/>
                 <Setter Property="BorderBrush" Value="#64B5F6"/>
                 <Setter Property="BorderThickness" Value="3,0,0,0"/>
             </Trigger>
@@ -947,7 +977,7 @@
                     <Condition Property="IsSelected" Value="True"/>
                     <Condition Property="IsMouseOver" Value="True"/>
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="#C5E1FA"/>
+                <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBrush}"/>
             </MultiTrigger>
         </Style.Triggers>
     </Style>
@@ -960,11 +990,11 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Foreground" Value="#263238"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="#1565C0"/>
+                <Setter Property="Foreground" Value="{DynamicResource ChromeTabSelectedForegroundBrush}"/>
                 <Setter Property="FontWeight" Value="Medium"/>
             </Trigger>
         </Style.Triggers>
@@ -973,12 +1003,12 @@
     <!-- DataGrid -->
     <Style x:Key="ModernDataGrid" TargetType="DataGrid"
            BasedOn="{StaticResource MaterialDesignDataGrid}">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource DataGridBackgroundBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="RowBackground" Value="White"/>
-        <Setter Property="AlternatingRowBackground" Value="#F7F9FC"/>
+        <Setter Property="RowBackground" Value="{DynamicResource DataGridRowBrush}"/>
+        <Setter Property="AlternatingRowBackground" Value="{DynamicResource DataGridRowAltBrush}"/>
         <Setter Property="AlternationCount" Value="2"/>
-        <Setter Property="HorizontalGridLinesBrush" Value="#ECEFF1"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
         <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
         <Setter Property="GridLinesVisibility" Value="Horizontal"/>
         <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="16,10"/>
@@ -1330,7 +1360,7 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="FilterBar" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="CornerRadius" Value="12"/>
         <Setter Property="Padding" Value="16"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
@@ -1938,6 +1968,11 @@
         <Setter Property="BorderBrush" Value="#EF9A9A"/>
         <Setter Property="Foreground" Value="#C62828"/>
         <Setter Property="ToolTip" Value="حذف"/>
+        <Setter Property="Content">
+            <Setter.Value>
+                <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#FFCDD2"/>
@@ -2009,15 +2044,8 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="ChromeTabStrip" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#EEF3F9" Offset="0"/>
-                    <GradientStop Color="#E3EBF4" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="#CFD9E6"/>
+        <Setter Property="Background" Value="{DynamicResource ChromeTabStripBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="Padding" Value="8,6,8,0"/>
     </Style>
@@ -2063,29 +2091,29 @@
                             MinHeight="36"
                             Padding="14,7,10,7"
                             CornerRadius="10,10,0,0"
-                            Background="#D5E0EC"
-                            BorderBrush="#B8C9DB"
+                            Background="{DynamicResource ChromeTabInactiveBrush}"
+                            BorderBrush="{DynamicResource ChromeTabInactiveBorderBrush}"
                             BorderThickness="1,1,1,0"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabBd" Property="Background" Value="White"/>
-                            <Setter TargetName="TabBd" Property="BorderBrush" Value="#90CAF9"/>
+                            <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource ChromeTabSelectedBrush}"/>
+                            <Setter TargetName="TabBd" Property="BorderBrush" Value="{DynamicResource ChromeTabSelectedBorderBrush}"/>
                             <Setter TargetName="TabBd" Property="BorderThickness" Value="1,1,1,0"/>
                             <Setter TargetName="TabBd" Property="Margin" Value="0,0,0,-1"/>
                             <Setter Property="Panel.ZIndex" Value="4"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="TabBd" Property="Background" Value="#EBF4FC"/>
+                            <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource ChromeTabHoverBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="TabBd" Property="Background" Value="#F8FBFF"/>
+                            <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource ChromeTabSelectedBrush}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2120,6 +2148,71 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#EF9A9A"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- تثبيت التبويب — يعرض محتوى الزر (أيقونة دبوس) وليس X -->
+    <Style x:Key="ChromeTabPinButton" TargetType="Button">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="MinWidth" Value="28"/>
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="Margin" Value="2,0,0,0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="#90A4AE"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                            <Setter Property="Foreground" Value="#1565C0"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- إغلاق اللوحات الجانبية (مساعد ذكي، حوارات) -->
+    <Style x:Key="PanelCloseButton" TargetType="Button" BasedOn="{StaticResource ChromeTabCloseButton}">
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="MinWidth" Value="36"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="ToolTip" Value="إغلاق"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="18"
+                            BorderBrush="#E0E0E0" BorderThickness="1">
+                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                 Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#FFEBEE"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#EF9A9A"/>
+                            <Setter Property="Foreground" Value="#C62828"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#FFCDD2"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2355,20 +2448,14 @@
          CUSTOM TITLE BAR & QUICK ASSIST
     ══════════════════════════════════════════════════════════════ -->
 
+    <SolidColorBrush x:Key="AppTitleBarBackground" Color="#FAFCFF"/>
+
     <Style x:Key="AppTitleBar" TargetType="Border">
         <Setter Property="Height" Value="48"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="BorderBrush" Value="#E8EEF5"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#FAFCFF" Offset="0"/>
-                    <GradientStop Color="#FFFFFF" Offset="0.45"/>
-                    <GradientStop Color="#F4F8FC" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{DynamicResource AppTitleBarBackground}"/>
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.08" Color="#1565C0" Direction="270"/>

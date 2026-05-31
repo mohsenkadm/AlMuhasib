@@ -35,6 +35,7 @@ public partial class InstallmentDetailReportViewModel : ReportViewModelBase
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         PageTitle = "تفاصيل الأقساط";
+        RegisterThemeChartReload(LoadDataAsync);
     }
 
     public override async Task InitializeAsync()

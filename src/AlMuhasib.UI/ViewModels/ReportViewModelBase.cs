@@ -76,6 +76,10 @@ public abstract partial class ReportViewModelBase : ViewModelBase
 
     protected static string FormatCurrency(decimal value)
         => $"{value:N0} د.ع";
+
+    /// <summary>Re-runs chart data load when the user toggles dark/light theme.</summary>
+    protected void RegisterThemeChartReload(Func<Task> reload)
+        => ThemeChartRefresh.Register(reload);
 }
 
 public record PaymentMethodItem(PaymentMethod? Value, string Label)

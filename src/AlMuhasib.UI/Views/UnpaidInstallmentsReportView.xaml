@@ -8,6 +8,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:UnpaidInstallmentsReportViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
@@ -80,6 +81,11 @@
                     </StackPanel>
                 </Border>
 
+                <controls:ReportBulkInstallmentPayBar DataContext="{Binding}"/>
+
+                <TextBlock Text="انقر مرتين على صف لعرض فاتورة الأقساط والتفاصيل — حدّد عدة صفوف (Ctrl+نقر) للتسديد الجماعي"
+                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -91,8 +97,10 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <DataGrid ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
-                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300">
+                        <DataGrid x:Name="InstallmentsGrid" ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" MinHeight="300"
+                                  SelectionChanged="InstallmentsGrid_SelectionChanged"
+                                  behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenInvoiceDetailFromReportRowCommand}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
                                 <DataGridTextColumn Header="رقم الخطة" Binding="{Binding PlanNumber}" Width="120"/>

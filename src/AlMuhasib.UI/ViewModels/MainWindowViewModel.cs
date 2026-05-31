@@ -8,6 +8,8 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
+using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
@@ -19,6 +21,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     public const int MaxOpenTabs = 8;
+    public const int MaxPinnedTabs = 6;
 
     private readonly INavigationService _navigationService;
     private readonly IServiceProvider _serviceProvider;
@@ -27,6 +30,11 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IBackupService _backupService;
     private readonly IInvestorRefreshService _investorRefresh;
     private readonly IToastNotificationService _toast;
+    private readonly IGlobalSearchService _globalSearchService;
+    private readonly IUserPreferencesService _userPreferences;
+    private readonly ThemeService _themeService;
+    private readonly IRecentActivityService _recentActivity;
+    private readonly IAuditLogService _auditLogService;
     private bool _investorsLookupDirty;
 
     /// <summary>
@@ -99,7 +107,13 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
         CurrentUserService currentUserService, IAuthService authService,
         IBackupService backupService, IInvestorRefreshService investorRefresh,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IGlobalSearchService globalSearchService,
+        IUserPreferencesService userPreferences,
+        ThemeService themeService,
+        IRecentActivityService recentActivity,
+        IAuditLogService auditLogService,
+        ISmartAlertService smartAlertService)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -108,12 +122,86 @@ public partial class MainWindowViewModel : ObservableObject
         _backupService = backupService;
         _investorRefresh = investorRefresh;
         _toast = toast;
+        _globalSearchService = globalSearchService;
+        _userPreferences = userPreferences;
+        _themeService = themeService;
+        _recentActivity = recentActivity;
+        _auditLogService = auditLogService;
+        _smartAlertService = smartAlertService;
 
         _investorRefresh.InvestorsChanged += (_, _) => _investorsLookupDirty = true;
 
         InitializeMenu();
+        _themeService.ApplyFromPreferences();
+        ApplyMenuVisibilityFromPreferences();
+        LoadWorkspaceProfile();
         UpdateDateTime();
         StartClock();
+        _ = RefreshRecentActivitiesAsync();
+
+        InvoiceNavigationBridge.CopyToSalesInvoiceAsync = CopyToSalesInvoiceAsync;
+        InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync = CopyToPurchaseInvoiceAsync;
+        InvoiceNavigationBridge.ReturnSalesInvoiceAsync = ReturnSalesInvoiceAsync;
+    }
+
+    private async Task CopyToSalesInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
+        {
+            ActivateTab(existing);
+            await salesVm.CopyFromInvoiceAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة جديدة.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingSalesCopyInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister, activateIfExists: false);
+    }
+
+    private async Task CopyToPurchaseInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
+        {
+            ActivateTab(existing);
+            await purchaseVm.CopyFromInvoiceAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة جديدة.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown, activateIfExists: false);
+    }
+
+    private async Task ReturnSalesInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
+        {
+            ActivateTab(existing);
+            await salesVm.LoadAsReturnFromInvoiceAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة جديدة.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(SalesInvoiceViewModel), "مرتجع مبيعات", PackIconKind.KeyboardReturn, activateIfExists: false);
     }
 
     private void InitializeMenu()
@@ -169,6 +257,13 @@ public partial class MainWindowViewModel : ObservableObject
         });
         MenuItems.Add(new NavigationMenuItem
         {
+            Title = "بيع سريع (POS)",
+            Icon = PackIconKind.PointOfSale,
+            ViewModelType = typeof(PosQuickSaleViewModel),
+            ScreenName = "SaleInvoice"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
             Title = "فاتورة أقساط",
             Icon = PackIconKind.CalendarClock,
             ViewModelType = typeof(InstallmentInvoiceViewModel),
@@ -180,6 +275,13 @@ public partial class MainWindowViewModel : ObservableObject
             Icon = PackIconKind.CalendarMultipleCheck,
             ViewModelType = typeof(InstallmentsViewModel),
             ScreenName = "Installments"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "أرصدة الأقساط الافتتاحية",
+            Icon = PackIconKind.History,
+            ViewModelType = typeof(OpeningInstallmentBalanceViewModel),
+            ScreenName = "OpeningInstallments"
         });
         MenuItems.Add(new NavigationMenuItem
         {
@@ -247,16 +349,24 @@ public partial class MainWindowViewModel : ObservableObject
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المبيعات", Icon = PackIconKind.CashRegister, ViewModelType = typeof(SalesReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المشتريات", Icon = PackIconKind.CartArrowDown, ViewModelType = typeof(PurchasesReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير الأرباح", Icon = PackIconKind.TrendingUp, ViewModelType = typeof(ProfitReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "أفضل المنتجات", Icon = PackIconKind.StarCircle, ViewModelType = typeof(TopProductsReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "هامش ربح المنتجات", Icon = PackIconKind.ChartPie, ViewModelType = typeof(ProductProfitMarginReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "أعمار ذمم الأقساط", Icon = PackIconKind.TimelineClock, ViewModelType = typeof(InstallmentAgingReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص الأقساط", Icon = PackIconKind.CalendarMultipleCheck, ViewModelType = typeof(InstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تفاصيل الأقساط", Icon = PackIconKind.CalendarClock, ViewModelType = typeof(InstallmentDetailReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط المسددة", Icon = PackIconKind.CheckCircle, ViewModelType = typeof(PaidInstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط غير المسددة", Icon = PackIconKind.AlertCircle, ViewModelType = typeof(UnpaidInstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط المتأخرة", Icon = PackIconKind.ClockAlert, ViewModelType = typeof(OverdueReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص العملاء", Icon = PackIconKind.AccountMultiple, ViewModelType = typeof(CustomersOverviewReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص الموردين", Icon = PackIconKind.TruckDelivery, ViewModelType = typeof(SuppliersOverviewReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "مقارنة الأرباح", Icon = PackIconKind.Compare, ViewModelType = typeof(ProfitComparisonReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "حركة المنتجات", Icon = PackIconKind.SwapVertical, ViewModelType = typeof(ProductMovementReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "كشف حساب عميل", Icon = PackIconKind.AccountCash, ViewModelType = typeof(CustomerStatementViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "كشف حساب مورد", Icon = PackIconKind.Factory, ViewModelType = typeof(SupplierStatementViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المصاريف", Icon = PackIconKind.CashMinus, ViewModelType = typeof(ExpensesReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "الواردات والمصروفات", Icon = PackIconKind.SwapHorizontal, ViewModelType = typeof(IncomeExpenseReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المخازن", Icon = PackIconKind.Warehouse, ViewModelType = typeof(WarehouseReportViewModel), ScreenName = "Reports", IsSubItem = true });
+        reportsGroup.Children.Add(new NavigationMenuItem { Title = "صحة المخزون", Icon = PackIconKind.PackageVariant, ViewModelType = typeof(StockHealthReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المستثمرين", Icon = PackIconKind.AccountGroup, ViewModelType = typeof(InvestorsReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "التدفق النقدي", Icon = PackIconKind.ChartTimelineVariantShimmer, ViewModelType = typeof(CashFlowReportViewModel), ScreenName = "Reports", IsSubItem = true });
         reportsGroup.Children.Add(new NavigationMenuItem { Title = "موازنة يومية", Icon = PackIconKind.ScaleBalance, ViewModelType = typeof(BalanceSheetViewModel), ScreenName = "BalanceSheet", IsSubItem = true });
@@ -404,6 +514,12 @@ public partial class MainWindowViewModel : ObservableObject
             OpenTabs.Add(tab);
             ActivateTab(tab);
             UpdateTabCloseStates();
+            UpdateTabPinStates();
+
+            var screenName = FlattenMenuItems()
+                .FirstOrDefault(m => m.ViewModelType == viewModelType)?.ScreenName
+                ?? viewModelType.Name;
+            _recentActivity.Record($"فتح: {title}", screenName, screenName, viewModelType);
 
             await SafeInitializeTabAsync(viewModel);
         }
@@ -498,7 +614,76 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         UpdateTabCloseStates();
+        UpdateTabPinStates();
     }
+
+    /// <summary>يفتح لوحة التحكم ثم التبويبات المثبتة المحفوظة في التفضيلات.</summary>
+    public async Task OpenInitialSessionTabsAsync()
+    {
+        await OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+
+        foreach (var key in _userPreferences.Current.PinnedMenuScreens)
+        {
+            if (OpenTabs.Count >= MaxOpenTabs)
+                break;
+
+            var menu = FindMenuItemByPreferenceKey(key);
+            if (menu?.ViewModelType is null || menu.ViewModelType == typeof(DashboardViewModel))
+                continue;
+            if (!menu.IsVisible || !CanMenuBeShownByPermissions(menu))
+                continue;
+
+            await OpenTabAsync(menu.ViewModelType, menu.Title, menu.Icon, activateIfExists: false);
+        }
+
+        UpdateTabPinStates();
+        ActivateTab(OpenTabs[0]);
+        SyncSelectedMenuItem();
+    }
+
+    [RelayCommand]
+    private void TogglePinTab(DocumentTab? tab)
+    {
+        tab ??= SelectedTab;
+        if (tab is null || tab.ViewModelType == typeof(DashboardViewModel))
+        {
+            _toast.ShowWarning("لا يمكن تثبيت لوحة التحكم");
+            return;
+        }
+
+        var key = tab.ViewModelType.Name;
+        var pinned = _userPreferences.Current.PinnedMenuScreens.ToList();
+
+        if (pinned.Contains(key))
+        {
+            pinned.Remove(key);
+            _userPreferences.Update(p => p.PinnedMenuScreens = pinned);
+            UpdateTabPinStates();
+            _toast.ShowInfo("تم إلغاء تثبيت التبويب");
+            return;
+        }
+
+        if (pinned.Count >= MaxPinnedTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxPinnedTabs} تبويبات مثبتة");
+            return;
+        }
+
+        pinned.Add(key);
+        _userPreferences.Update(p => p.PinnedMenuScreens = pinned);
+        UpdateTabPinStates();
+        _toast.ShowSuccess("سيتم فتح هذا التبويب تلقائياً عند تشغيل النظام");
+    }
+
+    private void UpdateTabPinStates()
+    {
+        var pinned = _userPreferences.Current.PinnedMenuScreens;
+        foreach (var tab in OpenTabs)
+            tab.IsPinned = pinned.Contains(tab.ViewModelType.Name);
+    }
+
+    private NavigationMenuItem? FindMenuItemByPreferenceKey(string key) =>
+        FlattenMenuItems().FirstOrDefault(m => GetMenuPreferenceKey(m) == key);
 
     private void UpdateTabCloseStates()
     {
@@ -561,6 +746,8 @@ public partial class MainWindowViewModel : ObservableObject
             foreach (var child in item.Children)
                 child.IsVisible = _currentUserService.CanView(child.ScreenName);
         }
+
+        ApplyMenuVisibilityFromPreferences();
     }
 
     private static async Task RefreshInvestorsLookupSafeAsync(IInvestorLookupHost host)

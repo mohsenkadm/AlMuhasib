@@ -7,6 +7,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
@@ -102,12 +103,18 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IExportService exportService)
+        IExportService exportService,
+        IInvoiceTemplateService templateService,
+        IInvoiceDraftService draftService,
+        IInvoiceQueueService queueService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _exportService = exportService;
+        _templateService = templateService;
+        _draftService = draftService;
+        _queueService = queueService;
 
         PageTitle = "فاتورة مشتريات";
 
@@ -164,11 +171,72 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
 
             // Start with one empty row
             AddRow();
+
+            if (InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId is int pendingCopyId)
+            {
+                InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId = null;
+                await CopyFromInvoiceAsync(pendingCopyId);
+            }
+            else
+            {
+                TryRestoreDraft();
+                ApplyDefaultSupplierIfAny();
+            }
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    public async Task CopyFromInvoiceAsync(int invoiceId)
+    {
+        var invoice = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
+        if (invoice is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر تحميل الفاتورة للنسخ");
+            return;
+        }
+
+        IsSaved = false;
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
+        InvoiceDate = DateTime.Now;
+        Notes = string.IsNullOrWhiteSpace(invoice.Notes) ? string.Empty : $"{invoice.Notes} (نسخة)";
+
+        if (invoice.SupplierId.HasValue)
+        {
+            SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == invoice.SupplierId);
+            if (SelectedSupplier is not null)
+                SupplierSearchText = SelectedSupplier.Name;
+        }
+
+        if (invoice.WarehouseId > 0)
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId);
+
+        IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
+
+        foreach (var row in Items.ToList())
+            UnwireItemRow(row);
+        Items.Clear();
+
+        foreach (var item in invoice.Items)
+        {
+            var row = new InvoiceItemRow
+            {
+                ProductId = item.ProductId,
+                ItemName = item.ItemName,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice
+            };
+            WireItemRow(row);
+            Items.Add(row);
+        }
+
+        if (!Items.Any())
+            AddRow();
+
+        RecalculateTotals();
+        BeautifulMessageDialog.ShowSuccess($"تم نسخ {invoice.Items.Count} بند من الفاتورة {invoice.InvoiceNumber}");
     }
 
     // ── Supplier search ────────────────────────────────────
@@ -287,6 +355,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RecalculateTotals();
+        ScheduleDraftSave();
     }
 
     private bool _isManualGrandTotal;
@@ -412,6 +481,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             _savedItems = invoiceItems;
             IsSaved = true;
             InvoiceNumber = invoice.InvoiceNumber;
+            _draftService.ClearDraft(DraftKey);
 
             BeautifulMessageDialog.ShowSuccess(
                 $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع");
@@ -479,6 +549,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
 
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
+        ApplyDefaultSupplierIfAny();
     }
 
     // ══════════════════════════════════════════════════════

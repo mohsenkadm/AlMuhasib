@@ -48,6 +48,7 @@ public partial class PermissionsViewModel : ViewModelBase
         ("SaleInvoice", "فاتورة مبيعات"),
         ("InstallmentInvoice", "فاتورة أقساط"),
         ("Installments", "الأقساط"),
+        ("OpeningInstallments", "أرصدة الأقساط الافتتاحية"),
         ("Vouchers", "السندات"),
         ("Expenses", "المصاريف"),
         ("CashAndBank", "القاصات والمصرف"),

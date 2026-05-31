@@ -23,6 +23,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,6 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AlMuhasib.Updater\AlMuhasib.Updater.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="..\AlMuhasib.Core\AlMuhasib.Core.csproj" />
     <ProjectReference Include="..\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj" />
     <ProjectReference Include="..\AlMuhasib.Shared\AlMuhasib.Shared.csproj" />
@@ -40,5 +45,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="CopyUpdaterExecutable" AfterTargets="Build" DependsOnTargets="ResolveProjectReferences">
+    <PropertyGroup>
+      <UpdaterOutputPath>$(MSBuildProjectDirectory)\..\AlMuhasib.Updater\bin\$(Configuration)\net10.0\</UpdaterOutputPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.exe" />
+      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.dll" />
+      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.runtimeconfig.json" Condition="Exists('$(UpdaterOutputPath)AlMuhasib.Updater.runtimeconfig.json')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(UpdaterFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

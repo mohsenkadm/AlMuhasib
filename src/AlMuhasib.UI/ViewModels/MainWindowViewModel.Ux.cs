@@ -1,0 +1,391 @@
+using System.Collections.ObjectModel;
+using System.Windows.Threading;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models.Ux;
+using AlMuhasib.UI.Models;
+using AlMuhasib.UI.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
+
+namespace AlMuhasib.UI.ViewModels;
+
+public partial class MainWindowViewModel
+{
+    private DispatcherTimer? _globalSearchDebounce;
+    private CancellationTokenSource? _globalSearchCts;
+
+    [ObservableProperty]
+    private bool _isGlobalSearchOpen;
+
+    [ObservableProperty]
+    private string _globalSearchQuery = string.Empty;
+
+    [ObservableProperty]
+    private bool _isGlobalSearchBusy;
+
+    [ObservableProperty]
+    private bool _showKeyboardShortcutsHelp;
+
+    [ObservableProperty]
+    private bool _isRecentActivityOpen;
+
+    [ObservableProperty]
+    private bool _hasRecentActivities;
+
+    [ObservableProperty]
+    private bool _isMenuCustomizerOpen;
+
+    public ObservableCollection<GlobalSearchResultItem> GlobalSearchResults { get; } = [];
+
+    public ObservableCollection<RecentActivityEntry> RecentActivities { get; } = [];
+    public ObservableCollection<MenuVisibilityOption> MenuVisibilityOptions { get; } = [];
+
+    public void ApplyMenuVisibilityFromPreferences()
+    {
+        var hidden = _userPreferences.Current.HiddenMenuScreens;
+        foreach (var item in FlattenMenuItems())
+        {
+            if (!IsCustomizableMenuItem(item))
+                continue;
+
+            var key = GetMenuPreferenceKey(item);
+            var canShow = CanMenuBeShownByPermissions(item);
+            item.IsVisible = canShow && !hidden.Contains(key);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleMenuCustomizer()
+    {
+        IsQuickAssistOpen = false;
+        IsSmartAssistantOpen = false;
+        IsMenuCustomizerOpen = !IsMenuCustomizerOpen;
+        if (IsMenuCustomizerOpen)
+            BuildMenuVisibilityOptions();
+    }
+
+    [RelayCommand]
+    private void SaveMenuCustomization()
+    {
+        var hidden = MenuVisibilityOptions
+            .Where(x => !x.IsVisible)
+            .Select(x => x.PreferenceKey)
+            .Distinct()
+            .ToList();
+
+        var pinned = MenuVisibilityOptions
+            .Where(x => x.IsVisible && x.IsPinned)
+            .Select(x => x.PreferenceKey)
+            .Distinct()
+            .Take(MaxPinnedTabs)
+            .ToList();
+
+        _userPreferences.Update(p =>
+        {
+            p.HiddenMenuScreens = hidden;
+            p.PinnedMenuScreens = pinned;
+        });
+        ApplyMenuVisibilityFromPreferences();
+        UpdateTabPinStates();
+        IsMenuCustomizerOpen = false;
+        _toast.ShowSuccess("تم حفظ تخصيص القائمة والتبويبات المثبتة");
+    }
+
+    [RelayCommand]
+    private void ResetMenuCustomization()
+    {
+        _userPreferences.Update(p =>
+        {
+            p.HiddenMenuScreens = [];
+            p.PinnedMenuScreens = [];
+        });
+        ApplyMenuVisibilityFromPreferences();
+        BuildMenuVisibilityOptions();
+        UpdateTabPinStates();
+        _toast.ShowSuccess("تمت استعادة القائمة والتبويبات الافتراضية");
+    }
+
+    private void BuildMenuVisibilityOptions()
+    {
+        MenuVisibilityOptions.Clear();
+        foreach (var item in FlattenMenuItems())
+        {
+            if (!IsCustomizableMenuItem(item))
+                continue;
+            if (!CanMenuBeShownByPermissions(item))
+                continue;
+
+            var key = GetMenuPreferenceKey(item);
+            MenuVisibilityOptions.Add(new MenuVisibilityOption
+            {
+                MenuItem = item,
+                PreferenceKey = key,
+                Title = item.Title,
+                Icon = item.Icon,
+                IsVisible = item.IsVisible,
+                IsPinned = _userPreferences.Current.PinnedMenuScreens.Contains(key)
+            });
+        }
+    }
+
+    private static bool IsCustomizableMenuItem(NavigationMenuItem item) =>
+        !item.IsGroupHeader
+        && item.ViewModelType is not null
+        && item.ScreenName != "Dashboard";
+
+    private static string GetMenuPreferenceKey(NavigationMenuItem item) =>
+        item.ViewModelType?.Name ?? item.ScreenName;
+
+    private bool CanMenuBeShownByPermissions(NavigationMenuItem item)
+    {
+        if (item.ScreenName is "Users" or "Permissions" or "AuditLog" or "Capital" or "Backup")
+            return _currentUserService.IsAdmin;
+
+        if (item.ScreenName == "Dashboard")
+            return true;
+
+        return _currentUserService.CanView(item.ScreenName);
+    }
+
+    [RelayCommand]
+    private void OpenGlobalSearch()
+    {
+        IsGlobalSearchOpen = true;
+        _ = RefreshGlobalSearchAsync();
+    }
+
+    [RelayCommand]
+    private void CloseGlobalSearch()
+    {
+        IsGlobalSearchOpen = false;
+        GlobalSearchQuery = string.Empty;
+        GlobalSearchResults.Clear();
+    }
+
+    partial void OnGlobalSearchQueryChanged(string value)
+    {
+        _globalSearchDebounce ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(280) };
+        _globalSearchDebounce.Stop();
+        _globalSearchDebounce.Tick -= GlobalSearchDebounce_Tick;
+        _globalSearchDebounce.Tick += GlobalSearchDebounce_Tick;
+        _globalSearchDebounce.Start();
+    }
+
+    private void GlobalSearchDebounce_Tick(object? sender, EventArgs e)
+    {
+        _globalSearchDebounce?.Stop();
+        _ = RefreshGlobalSearchAsync();
+    }
+
+    private async Task RefreshGlobalSearchAsync()
+    {
+        GlobalSearchResults.Clear();
+        var term = GlobalSearchQuery?.Trim() ?? string.Empty;
+
+        foreach (var menu in GetSearchableMenuItems())
+        {
+            if (menu.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
+                GlobalSearchResults.Add(GlobalSearchResultItem.FromMenu(menu));
+        }
+
+        if (term.Length < 2)
+            return;
+
+        _globalSearchCts?.Cancel();
+        _globalSearchCts = new CancellationTokenSource();
+        var token = _globalSearchCts.Token;
+
+        try
+        {
+            IsGlobalSearchBusy = true;
+            var hits = await _globalSearchService.SearchAsync(term, 25, token);
+            foreach (var hit in hits)
+                GlobalSearchResults.Add(GlobalSearchResultItem.FromHit(hit));
+        }
+        catch (OperationCanceledException) { }
+        catch
+        {
+            // silent — menu results still shown
+        }
+        finally
+        {
+            IsGlobalSearchBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SelectGlobalSearchResult(GlobalSearchResultItem? item)
+    {
+        if (item is null) return;
+        CloseGlobalSearch();
+
+        if (item.MenuItem is not null)
+        {
+            SelectedMenuItem = item.MenuItem;
+            return;
+        }
+
+        if (item.EntityHit is null) return;
+
+        var screen = item.EntityHit.ScreenName ?? string.Empty;
+        var menu = FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screen);
+        if (menu is not null)
+            SelectedMenuItem = menu;
+        else
+            await NavigateByScreenNameAsync(screen);
+    }
+
+    private async Task NavigateByScreenNameAsync(string screenName)
+    {
+        var (type, title, icon) = screenName switch
+        {
+            "SaleInvoice" => (typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister),
+            "PurchaseInvoice" => (typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown),
+            "Customers" => (typeof(CustomersViewModel), "العملاء", PackIconKind.AccountGroup),
+            "Suppliers" => (typeof(SuppliersViewModel), "الموردون", PackIconKind.Factory),
+            "Products" => (typeof(ProductsViewModel), "المنتجات", PackIconKind.PackageVariantClosed),
+            "Vouchers" => (typeof(VouchersViewModel), "السندات", PackIconKind.FileDocument),
+            "Installments" => (typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock),
+            _ => (null, null, PackIconKind.None)
+        };
+
+        if (type is not null && title is not null)
+            await OpenTabAsync(type, title, icon);
+    }
+
+    [RelayCommand]
+    private async Task QuickNewSaleAsync() =>
+        await OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
+
+    [RelayCommand]
+    private async Task QuickPosSaleAsync() =>
+        await OpenTabAsync(typeof(PosQuickSaleViewModel), "بيع سريع (POS)", PackIconKind.PointOfSale);
+
+    [RelayCommand]
+    private async Task QuickSalesReturnAsync()
+    {
+        await OpenTabAsync(typeof(SalesReportViewModel), "تقرير المبيعات", PackIconKind.ChartLine);
+        _toast.ShowInfo("اختر الفاتورة من الجدول واضغط زر «مرتجع» لإنشاء فاتورة مرتجع");
+    }
+
+    [RelayCommand]
+    private async Task QuickNewPurchaseAsync() =>
+        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown);
+
+    [RelayCommand]
+    private async Task QuickReceiptVoucherAsync() =>
+        await OpenVouchersAsync(VoucherType.Receipt);
+
+    [RelayCommand]
+    private async Task QuickPaymentVoucherAsync() =>
+        await OpenVouchersAsync(VoucherType.Payment);
+
+    [RelayCommand]
+    private async Task QuickInstallmentsAsync() =>
+        await OpenTabAsync(typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock);
+
+    [RelayCommand]
+    private async Task QuickInstallmentInvoiceAsync() =>
+        await OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock);
+
+    private async Task OpenVouchersAsync(VoucherType type)
+    {
+        VouchersViewModel.PendingInitialType = type;
+        await OpenTabAsync(typeof(VouchersViewModel), "السندات", PackIconKind.FileDocument);
+    }
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        _themeService.ToggleTheme();
+        _toast.ShowSuccess(_userPreferences.Current.IsDarkTheme ? "تم تفعيل الوضع الليلي" : "تم تفعيل الوضع النهاري");
+    }
+
+    [RelayCommand]
+    private void IncreaseFontSize() => _themeService.SetFontScale(_userPreferences.Current.FontScale + 0.05);
+
+    [RelayCommand]
+    private void DecreaseFontSize() => _themeService.SetFontScale(_userPreferences.Current.FontScale - 0.05);
+
+    [RelayCommand]
+    private void ToggleKeyboardShortcutsHelp() =>
+        ShowKeyboardShortcutsHelp = !ShowKeyboardShortcutsHelp;
+
+    [RelayCommand]
+    private async Task ToggleRecentActivityAsync()
+    {
+        IsRecentActivityOpen = !IsRecentActivityOpen;
+        if (IsRecentActivityOpen)
+            await RefreshRecentActivitiesAsync();
+    }
+
+    public async Task RefreshRecentActivitiesAsync()
+    {
+        if (_recentActivity.Count == 0)
+            await SeedRecentActivitiesFromAuditAsync();
+
+        RecentActivities.Clear();
+        foreach (var entry in _recentActivity.GetRecent(20))
+            RecentActivities.Add(entry);
+
+        HasRecentActivities = RecentActivities.Count > 0;
+    }
+
+    private async Task SeedRecentActivitiesFromAuditAsync()
+    {
+        try
+        {
+            var result = await _auditLogService.QueryAsync(page: 1, pageSize: 25);
+            var entries = result.Rows
+                .OrderBy(r => r.Timestamp)
+                .Select(r => new RecentActivityEntry(
+                    r.Timestamp,
+                    $"{r.ActionDisplay} — {r.EntityName}",
+                    $"المعرف {r.EntityId} · {r.Username}",
+                    r.EntityName,
+                    null));
+
+            _recentActivity.SeedIfEmpty(entries);
+        }
+        catch
+        {
+            // لا تعطل الواجهة إذا تعذّر تحميل السجل
+        }
+    }
+
+    public void RecordActivity(string title, string detail, string screenName, Type? viewModelType = null) =>
+        _recentActivity.Record(title, detail, screenName, viewModelType);
+
+    public async Task ExecuteDailyTaskAsync(SmartAlertAction action)
+    {
+        switch (action)
+        {
+            case SmartAlertAction.OpenInstallments:
+                await QuickInstallmentsAsync();
+                break;
+            case SmartAlertAction.OpenOverdueReport:
+                await OpenTabAsync(typeof(OverdueReportViewModel), "الأقساط المتأخرة", PackIconKind.ClockAlert);
+                break;
+            case SmartAlertAction.OpenUnpaidSales:
+                await OpenTabAsync(typeof(SalesReportViewModel), "تقرير المبيعات", PackIconKind.ChartLine);
+                break;
+            case SmartAlertAction.OpenUnpaidPurchases:
+                await OpenTabAsync(typeof(PurchasesReportViewModel), "تقرير المشتريات", PackIconKind.ChartBar);
+                break;
+            case SmartAlertAction.OpenProducts:
+                await OpenTabAsync(typeof(ProductsViewModel), "المنتجات", PackIconKind.PackageVariantClosed);
+                break;
+            case SmartAlertAction.OpenWarehouseReport:
+                await OpenTabAsync(typeof(WarehouseReportViewModel), "تقرير المخازن", PackIconKind.Warehouse);
+                break;
+            case SmartAlertAction.OpenStockHealthReport:
+                await OpenTabAsync(typeof(StockHealthReportViewModel), "صحة المخزون", PackIconKind.PackageVariant);
+                break;
+            case SmartAlertAction.OpenVouchers:
+                await OpenVouchersAsync(VoucherType.Receipt);
+                break;
+        }
+    }
+}

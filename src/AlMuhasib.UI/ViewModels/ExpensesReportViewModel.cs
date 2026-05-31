@@ -35,7 +35,10 @@ public partial class ExpensesReportViewModel : ReportViewModelBase
     public ExpensesReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "تقرير المصاريف"; }
+    {
+        PageTitle = "تقرير المصاريف";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

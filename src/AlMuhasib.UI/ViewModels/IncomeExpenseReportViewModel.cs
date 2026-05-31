@@ -28,7 +28,10 @@ public partial class IncomeExpenseReportViewModel : ReportViewModelBase
     public IncomeExpenseReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "الواردات والمصروفات"; }
+    {
+        PageTitle = "الواردات والمصروفات";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

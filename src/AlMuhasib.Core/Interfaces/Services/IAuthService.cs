@@ -10,6 +10,9 @@ public interface IAuthService
     Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
     Task EnsureAdminAccountAsync();
 
+    /// <summary>Active admin accounts shown on the login screen.</summary>
+    Task<IReadOnlyList<User>> GetActiveAdminUsersAsync();
+
     // User management
     Task<IEnumerable<User>> GetAllUsersAsync();
     Task<User> CreateUserAsync(string username, string password, string fullName, Core.Enums.UserRole role);

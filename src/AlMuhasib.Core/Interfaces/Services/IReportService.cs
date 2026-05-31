@@ -40,6 +40,40 @@ public interface IReportService
 
     // Balance Sheet
     Task<BalanceSheetResult> GetBalanceSheetAsync(DateTime date);
+
+    // Products & collections (Phase 2)
+    Task<TopProductsReportResult> GetTopProductsReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, int topCount = 30, bool sortByRevenueDescending = true);
+
+    Task<ProductProfitMarginReportResult> GetProductProfitMarginReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId);
+
+    Task<InstallmentAgingReportResult> GetInstallmentAgingReportAsync(DateTime asOfDate, int? customerId);
+
+    Task<CustomersOverviewReportResult> GetCustomersOverviewReportAsync(DateTime? from, DateTime? to);
+
+    Task<SuppliersOverviewReportResult> GetSuppliersOverviewReportAsync(DateTime? from, DateTime? to);
+
+    Task<ProfitComparisonResult> GetProfitComparisonAsync(DateTime? from, DateTime? to);
+
+    Task<ProductMovementReportResult> GetProductMovementReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, int? productId);
+
+    Task<StockHealthReportResult> GetStockHealthReportAsync(
+        int? warehouseId, decimal lowStockThreshold, int deadStockDays, StockHealthFilter filter = StockHealthFilter.All);
+}
+
+public enum StockHealthFilter
+{
+    All,
+    LowStockOnly,
+    DeadStockOnly
+}
+
+public enum StockHealthStatus
+{
+    LowStock,
+    DeadStock
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -235,6 +269,8 @@ public class UnpaidInstallmentsResult
 
 public class UnpaidInstallmentRow
 {
+    public int InstallmentId { get; set; }
+    public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string PlanNumber { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }
@@ -256,13 +292,15 @@ public class OverdueResult
 
 public class OverdueRow
 {
+    public int InstallmentId { get; set; }
+    public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string PlanNumber { get; set; } = string.Empty;
     public decimal OverdueAmount { get; set; }
     public int OverdueDays { get; set; }
     public DateTime? LastPaymentDate { get; set; }
-    public int InstallmentId { get; set; }
+    public DateTime DueDate { get; set; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -466,4 +504,177 @@ public class BalanceSheetBankRow
 {
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOP PRODUCTS & PROFIT MARGIN
+// ══════════════════════════════════════════════════════════════
+
+public class TopProductsReportResult
+{
+    public decimal TotalRevenue { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public int ProductCount { get; set; }
+    public List<TopProductRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> Chart { get; set; } = [];
+}
+
+public class TopProductRow
+{
+    public int Rank { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal QuantitySold { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class ProductProfitMarginReportResult
+{
+    public decimal TotalRevenue { get; set; }
+    public decimal TotalCost { get; set; }
+    public decimal TotalGrossProfit { get; set; }
+    public decimal AverageMarginPercent { get; set; }
+    public List<ProductProfitMarginRow> Rows { get; set; } = [];
+}
+
+public class ProductProfitMarginRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal QuantitySold { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal Cost { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal MarginPercent { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INSTALLMENT AGING
+// ══════════════════════════════════════════════════════════════
+
+public class InstallmentAgingReportResult
+{
+    public decimal TotalOutstanding { get; set; }
+    public int InstallmentCount { get; set; }
+    public int CustomerCount { get; set; }
+    public List<InstallmentAgingBucketSummary> Buckets { get; set; } = [];
+    public List<InstallmentAgingRow> Rows { get; set; } = [];
+}
+
+public class InstallmentAgingBucketSummary
+{
+    public string BucketName { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public class InstallmentAgingRow
+{
+    public int InstallmentId { get; set; }
+    public int InvoiceId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string PlanNumber { get; set; } = string.Empty;
+    public DateTime DueDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int DaysOverdue { get; set; }
+    public string AgingBucket { get; set; } = string.Empty;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOMERS OVERVIEW
+// ══════════════════════════════════════════════════════════════
+
+public class CustomersOverviewReportResult
+{
+    public decimal TotalSales { get; set; }
+    public decimal TotalCollected { get; set; }
+    public decimal TotalOutstanding { get; set; }
+    public int CustomerCount { get; set; }
+    public List<CustomerOverviewRow> Rows { get; set; } = [];
+}
+
+public class CustomerOverviewRow
+{
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal SalesAmount { get; set; }
+    public decimal CollectedAmount { get; set; }
+    public decimal OutstandingBalance { get; set; }
+}
+
+public class SuppliersOverviewReportResult
+{
+    public decimal TotalPurchases { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal TotalOutstanding { get; set; }
+    public int SupplierCount { get; set; }
+    public List<SupplierOverviewRow> Rows { get; set; } = [];
+}
+
+public class SupplierOverviewRow
+{
+    public int SupplierId { get; set; }
+    public string SupplierName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal PurchaseAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal OutstandingBalance { get; set; }
+}
+
+public class ProfitComparisonResult
+{
+    public DateTime CurrentFrom { get; set; }
+    public DateTime CurrentTo { get; set; }
+    public DateTime PreviousFrom { get; set; }
+    public DateTime PreviousTo { get; set; }
+    public ProfitReportResult Current { get; set; } = new();
+    public ProfitReportResult Previous { get; set; } = new();
+    public decimal SalesChangePercent { get; set; }
+    public decimal GrossProfitChangePercent { get; set; }
+    public decimal NetProfitChangePercent { get; set; }
+}
+
+public class ProductMovementReportResult
+{
+    public decimal TotalQuantityIn { get; set; }
+    public decimal TotalQuantityOut { get; set; }
+    public int ProductCount { get; set; }
+    public List<ProductMovementRow> Rows { get; set; } = [];
+}
+
+public class ProductMovementRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal QuantityIn { get; set; }
+    public decimal QuantityOut { get; set; }
+    public decimal NetQuantity => QuantityIn - QuantityOut;
+}
+
+public class StockHealthReportResult
+{
+    public int LowStockCount { get; set; }
+    public int DeadStockCount { get; set; }
+    public decimal TotalDeadStockValue { get; set; }
+    public List<StockHealthRow> Rows { get; set; } = [];
+}
+
+public class StockHealthRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal AverageCost { get; set; }
+    public decimal StockValue { get; set; }
+    public StockHealthStatus Status { get; set; }
+    public int? DaysSinceLastSale { get; set; }
+    public DateTime? LastSaleDate { get; set; }
+    public string StatusDisplay => Status == StockHealthStatus.DeadStock ? "راكد" : "منخفض";
 }

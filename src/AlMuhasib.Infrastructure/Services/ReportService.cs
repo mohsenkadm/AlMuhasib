@@ -155,7 +155,7 @@ public class ReportService : IReportService
     public async Task<ProfitReportResult> GetProfitReportAsync(DateTime? from, DateTime? to)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var salesQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
+        var salesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
         var expQ = context.Expenses.AsQueryable();
         var bankQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.BankReceipt);
         var distQ = context.ProfitDistributions.AsQueryable();
@@ -184,37 +184,54 @@ public class ReportService : IReportService
     public async Task<List<MonthlyProfitRow>> GetMonthlyProfitAsync(DateTime? from, DateTime? to)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var f = from ?? DateTime.Today.AddMonths(-12);
-        var t = to ?? DateTime.Today;
+        var rangeStart = (from ?? DateTime.Today.AddMonths(-12)).Date;
+        var rangeEndExclusive = EndOfDay(to ?? DateTime.Today);
+        if (!rangeEndExclusive.HasValue)
+            return [];
 
-        var sales = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.Date >= f && i.Date <= t)
-            .GroupBy(i => new { i.Date.Year, i.Date.Month })
-            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => i.NetAmount) }).ToListAsync();
+        if (rangeEndExclusive.Value <= rangeStart)
+            return [];
 
-        var expenses = await context.Expenses
-            .Where(e => e.Date >= f && e.Date <= t)
-            .GroupBy(e => new { e.Date.Year, e.Date.Month })
-            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(e => e.Amount) }).ToListAsync();
-
+        var lastMonthStart = new DateTime((to ?? DateTime.Today).Year, (to ?? DateTime.Today).Month, 1);
         var result = new List<MonthlyProfitRow>();
-        for (var d = new DateTime(f.Year, f.Month, 1); d <= t; d = d.AddMonths(1))
+
+        for (var cursor = new DateTime(rangeStart.Year, rangeStart.Month, 1);
+             cursor <= lastMonthStart;
+             cursor = cursor.AddMonths(1))
         {
-            var monthFrom = new DateTime(d.Year, d.Month, 1);
-            var monthToExclusive = monthFrom.AddMonths(1);
-            var s = sales.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month)?.Amount ?? 0;
-            var p = await CalculateCogsAsync(context, monthFrom, monthToExclusive);
-            var e = expenses.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month)?.Amount ?? 0;
-            var gross = s - p;
-            var net = gross - e;
+            var monthStart = cursor;
+            var monthEndExclusive = monthStart.AddMonths(1);
+            var effectiveFrom = rangeStart > monthStart ? rangeStart : monthStart;
+            var effectiveToExclusive = rangeEndExclusive.Value < monthEndExclusive
+                ? rangeEndExclusive.Value
+                : monthEndExclusive;
+
+            if (effectiveFrom >= effectiveToExclusive)
+                continue;
+
+            var sales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date >= effectiveFrom && i.Date < effectiveToExclusive)
+                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+
+            var purchases = await CalculateCogsAsync(context, effectiveFrom, effectiveToExclusive);
+            var expenses = await context.Expenses
+                .Where(e => e.Date >= effectiveFrom && e.Date < effectiveToExclusive)
+                .SumAsync(e => (decimal?)e.Amount) ?? 0;
+
+            var gross = sales - purchases;
+            var net = gross - expenses;
             result.Add(new MonthlyProfitRow
             {
-                Month = $"{d.Year}/{d.Month:D2}",
-                Sales = s, Purchases = p, GrossProfit = gross,
-                Expenses = e, NetProfit = net,
-                ProfitMargin = s > 0 ? Math.Round(gross / s * 100, 1) : 0
+                Month = $"{cursor.Year}/{cursor.Month:D2}",
+                Sales = sales,
+                Purchases = purchases,
+                GrossProfit = gross,
+                Expenses = expenses,
+                NetProfit = net,
+                ProfitMargin = sales > 0 ? Math.Round(gross / sales * 100, 1) : 0
             });
         }
+
         return result;
     }
 
@@ -427,6 +444,8 @@ public class ReportService : IReportService
             OldestOverdueDays = insts.Where(i => i.DueDate < today).Select(i => (today - i.DueDate).Days).DefaultIfEmpty(0).Max(),
             Rows = insts.Select(i => new UnpaidInstallmentRow
             {
+                InstallmentId = i.Id,
+                InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
                 CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
                 PlanNumber = i.InstallmentPlanId.ToString(),
                 DueDate = i.DueDate, Amount = i.Amount, RemainingAmount = i.RemainingAmount,
@@ -455,13 +474,15 @@ public class ReportService : IReportService
 
         var rows = insts.Select(i => new OverdueRow
         {
+            InstallmentId = i.Id,
+            InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
             CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
             Phone = i.InstallmentPlan?.Customer?.Phone ?? "\u2014",
             PlanNumber = i.InstallmentPlanId.ToString(),
             OverdueAmount = i.RemainingAmount,
             OverdueDays = (asOfDate - i.DueDate).Days,
             LastPaymentDate = i.PaymentDate,
-            InstallmentId = i.Id
+            DueDate = i.DueDate
         }).ToList();
 
         // ── 2. Overdue credit invoices (آجل) ──────────────────────
@@ -480,13 +501,15 @@ public class ReportService : IReportService
 
         var creditRows = creditInvoices.Select(i => new OverdueRow
         {
+            InstallmentId = 0,
+            InvoiceId = i.Id,
             CustomerName = i.Customer?.Name ?? "\u2014",
             Phone = i.Customer?.Phone ?? "\u2014",
             PlanNumber = i.InvoiceNumber,
-            OverdueAmount = i.NetAmount,
+            OverdueAmount = i.RemainingAmount > 0 ? i.RemainingAmount : i.NetAmount,
             OverdueDays = (asOfDate.Date - i.CreditDueDate!.Value.Date).Days,
             LastPaymentDate = null,
-            InstallmentId = 0
+            DueDate = i.CreditDueDate!.Value
         }).ToList();
 
         rows.AddRange(creditRows);
@@ -649,7 +672,7 @@ public class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var rows = new List<IncomeExpenseRow>();
 
-        var salesQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
+        var salesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
         var expQ = context.Expenses.Include(e => e.ExpenseType).AsQueryable();
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); }
         if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); }
@@ -979,4 +1002,475 @@ public class ReportService : IReportService
             IsBalanced = Math.Abs(difference) < 1m
         };
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // TOP PRODUCTS & PROFIT MARGIN
+    // ══════════════════════════════════════════════════════════════
+
+    public async Task<TopProductsReportResult> GetTopProductsReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, int topCount = 30, bool sortByRevenueDescending = true)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.InvoiceItems
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var items = await query.ToListAsync();
+        var grouped = items
+            .GroupBy(ii => ii.ProductId!.Value)
+            .Select(g => new TopProductRow
+            {
+                ProductId = g.Key,
+                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                QuantitySold = g.Sum(x => x.Quantity),
+                Revenue = g.Sum(x => x.TotalPrice)
+            })
+            .ToList();
+
+        var ordered = sortByRevenueDescending
+            ? grouped.OrderByDescending(r => r.Revenue).ThenByDescending(r => r.QuantitySold)
+            : grouped.OrderBy(r => r.Revenue).ThenBy(r => r.QuantitySold);
+
+        var top = ordered.Take(Math.Max(1, topCount)).ToList();
+        var totalRevenue = grouped.Sum(r => r.Revenue);
+
+        for (var i = 0; i < top.Count; i++)
+        {
+            top[i].Rank = i + 1;
+            top[i].SharePercent = totalRevenue > 0 ? Math.Round(top[i].Revenue / totalRevenue * 100, 1) : 0;
+        }
+
+        return new TopProductsReportResult
+        {
+            TotalRevenue = totalRevenue,
+            TotalQuantity = grouped.Sum(r => r.QuantitySold),
+            ProductCount = grouped.Count,
+            Rows = top,
+            Chart = top.Take(10).Select(r => new NameAmountPoint { Name = r.ProductName, Amount = r.Revenue }).ToList()
+        };
+    }
+
+    public async Task<ProductProfitMarginReportResult> GetProductProfitMarginReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.InvoiceItems
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var soldItems = await query.ToListAsync();
+        if (soldItems.Count == 0)
+        {
+            return new ProductProfitMarginReportResult();
+        }
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+
+        var rows = new List<ProductProfitMarginRow>();
+        foreach (var g in soldItems.GroupBy(ii => ii.ProductId!.Value))
+        {
+            var revenue = g.Sum(x => x.TotalPrice);
+            var qty = g.Sum(x => x.Quantity);
+            var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(g.Key) ?? [], stocks, g.Key);
+            var cost = Math.Round(qty * avgCost, 0);
+            var profit = revenue - cost;
+            rows.Add(new ProductProfitMarginRow
+            {
+                ProductId = g.Key,
+                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                QuantitySold = qty,
+                Revenue = revenue,
+                Cost = cost,
+                GrossProfit = profit,
+                MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 1) : 0
+            });
+        }
+
+        rows = rows.OrderByDescending(r => r.GrossProfit).ToList();
+        var totalRevenue = rows.Sum(r => r.Revenue);
+        var totalCost = rows.Sum(r => r.Cost);
+        var totalProfit = rows.Sum(r => r.GrossProfit);
+
+        return new ProductProfitMarginReportResult
+        {
+            TotalRevenue = totalRevenue,
+            TotalCost = totalCost,
+            TotalGrossProfit = totalProfit,
+            AverageMarginPercent = totalRevenue > 0 ? Math.Round(totalProfit / totalRevenue * 100, 1) : 0,
+            Rows = rows
+        };
+    }
+
+    public async Task<InstallmentAgingReportResult> GetInstallmentAgingReportAsync(DateTime asOfDate, int? customerId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.Installments
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
+            .Where(i => i.Status != InstallmentStatus.Paid && i.RemainingAmount > 0);
+
+        if (customerId.HasValue)
+            query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
+
+        var insts = await query.OrderBy(i => i.DueDate).ToListAsync();
+        var asOf = asOfDate.Date;
+
+        static string ResolveBucket(DateTime dueDate, DateTime asOfDate)
+        {
+            if (dueDate.Date >= asOfDate)
+                return "غير مستحق";
+
+            var days = (asOfDate - dueDate.Date).Days;
+            return days switch
+            {
+                <= 30 => "1-30 يوم",
+                <= 60 => "31-60 يوم",
+                <= 90 => "61-90 يوم",
+                _ => "+90 يوم"
+            };
+        }
+
+        var rows = insts.Select(i =>
+        {
+            var days = i.DueDate.Date < asOf ? (asOf - i.DueDate.Date).Days : 0;
+            return new InstallmentAgingRow
+            {
+                InstallmentId = i.Id,
+                InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
+                CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
+                Phone = i.InstallmentPlan?.Customer?.Phone ?? "\u2014",
+                PlanNumber = i.InstallmentPlanId.ToString(),
+                DueDate = i.DueDate,
+                Amount = i.Amount,
+                RemainingAmount = i.RemainingAmount,
+                DaysOverdue = days,
+                AgingBucket = ResolveBucket(i.DueDate.Date, asOf)
+            };
+        }).OrderByDescending(r => r.DaysOverdue).ThenBy(r => r.DueDate).ToList();
+
+        var bucketOrder = new[] { "غير مستحق", "1-30 يوم", "31-60 يوم", "61-90 يوم", "+90 يوم" };
+        var buckets = bucketOrder.Select(name => new InstallmentAgingBucketSummary
+        {
+            BucketName = name,
+            Count = rows.Count(r => r.AgingBucket == name),
+            Amount = rows.Where(r => r.AgingBucket == name).Sum(r => r.RemainingAmount)
+        }).ToList();
+
+        return new InstallmentAgingReportResult
+        {
+            TotalOutstanding = rows.Sum(r => r.RemainingAmount),
+            InstallmentCount = rows.Count,
+            CustomerCount = rows.Select(r => r.CustomerName).Distinct().Count(),
+            Buckets = buckets,
+            Rows = rows
+        };
+    }
+
+    public async Task<CustomersOverviewReportResult> GetCustomersOverviewReportAsync(DateTime? from, DateTime? to)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var customers = await context.Customers.AsNoTracking().OrderBy(c => c.Name).ToListAsync();
+        var rows = new List<CustomerOverviewRow>();
+
+        foreach (var customer in customers)
+        {
+            var invQ = context.Invoices.AsNoTracking()
+                .Where(i => i.CustomerId == customer.Id &&
+                            (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
+            if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
+            if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
+
+            var invoices = await invQ.ToListAsync();
+            var invoiceCount = invoices.Count;
+            var salesAmount = invoices.Sum(i => i.NetAmount);
+
+            var voucherQ = context.Vouchers.AsNoTracking()
+                .Where(v => v.CustomerId == customer.Id &&
+                            (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt));
+            if (from.HasValue) voucherQ = voucherQ.Where(v => v.Date >= from.Value);
+            if (to.HasValue) voucherQ = voucherQ.Where(v => v.Date < EndOfDay(to));
+            var collected = await voucherQ.SumAsync(v => (decimal?)v.Amount) ?? 0m;
+
+            var planIds = await context.InstallmentPlans.AsNoTracking()
+                .Where(p => p.CustomerId == customer.Id)
+                .Select(p => p.Id)
+                .ToListAsync();
+            if (planIds.Count > 0)
+            {
+                var instQ = context.Installments.AsNoTracking()
+                    .Where(i => planIds.Contains(i.InstallmentPlanId) && i.PaidAmount > 0);
+                if (from.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
+                if (to.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) < EndOfDay(to));
+                collected += await instQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0m;
+            }
+
+            var outstanding = await context.Invoices.AsNoTracking()
+                .Where(i => i.CustomerId == customer.Id && i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
+            if (invoiceCount == 0 && collected == 0 && outstanding == 0)
+                continue;
+
+            rows.Add(new CustomerOverviewRow
+            {
+                CustomerId = customer.Id,
+                CustomerName = customer.Name,
+                Phone = customer.Phone ?? "—",
+                InvoiceCount = invoiceCount,
+                SalesAmount = salesAmount,
+                CollectedAmount = collected,
+                OutstandingBalance = outstanding
+            });
+        }
+
+        return new CustomersOverviewReportResult
+        {
+            TotalSales = rows.Sum(r => r.SalesAmount),
+            TotalCollected = rows.Sum(r => r.CollectedAmount),
+            TotalOutstanding = rows.Sum(r => r.OutstandingBalance),
+            CustomerCount = rows.Count,
+            Rows = rows.OrderByDescending(r => r.OutstandingBalance).ThenByDescending(r => r.SalesAmount).ToList()
+        };
+    }
+
+    public async Task<SuppliersOverviewReportResult> GetSuppliersOverviewReportAsync(DateTime? from, DateTime? to)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var suppliers = await context.Suppliers.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        var rows = new List<SupplierOverviewRow>();
+
+        foreach (var supplier in suppliers)
+        {
+            var invQ = context.Invoices.AsNoTracking()
+                .Where(i => i.SupplierId == supplier.Id && i.InvoiceType == InvoiceType.Purchase);
+            if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
+            if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
+
+            var invoices = await invQ.ToListAsync();
+            var invoiceCount = invoices.Count;
+            var purchaseAmount = invoices.Sum(i => i.NetAmount);
+
+            var voucherQ = context.Vouchers.AsNoTracking()
+                .Where(v => v.CustomerId == supplier.Id && v.VoucherType == VoucherType.Payment);
+            if (from.HasValue) voucherQ = voucherQ.Where(v => v.Date >= from.Value);
+            if (to.HasValue) voucherQ = voucherQ.Where(v => v.Date < EndOfDay(to));
+            var paid = await voucherQ.SumAsync(v => (decimal?)v.Amount) ?? 0m;
+
+            paid += invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(i => i.NetAmount);
+
+            var outstanding = await context.Invoices.AsNoTracking()
+                .Where(i => i.SupplierId == supplier.Id && i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
+            if (invoiceCount == 0 && paid == 0 && outstanding == 0)
+                continue;
+
+            rows.Add(new SupplierOverviewRow
+            {
+                SupplierId = supplier.Id,
+                SupplierName = supplier.Name,
+                Phone = supplier.Phone ?? "—",
+                InvoiceCount = invoiceCount,
+                PurchaseAmount = purchaseAmount,
+                PaidAmount = paid,
+                OutstandingBalance = outstanding
+            });
+        }
+
+        return new SuppliersOverviewReportResult
+        {
+            TotalPurchases = rows.Sum(r => r.PurchaseAmount),
+            TotalPaid = rows.Sum(r => r.PaidAmount),
+            TotalOutstanding = rows.Sum(r => r.OutstandingBalance),
+            SupplierCount = rows.Count,
+            Rows = rows.OrderByDescending(r => r.OutstandingBalance).ThenByDescending(r => r.PurchaseAmount).ToList()
+        };
+    }
+
+    public async Task<ProfitComparisonResult> GetProfitComparisonAsync(DateTime? from, DateTime? to)
+    {
+        var currentTo = to?.Date ?? DateTime.Today;
+        var currentFrom = from?.Date ?? currentTo.AddMonths(-1);
+        if (currentFrom > currentTo)
+            (currentFrom, currentTo) = (currentTo, currentFrom);
+
+        var spanDays = Math.Max(1, (currentTo - currentFrom).Days + 1);
+        var previousTo = currentFrom.AddDays(-1);
+        var previousFrom = previousTo.AddDays(-(spanDays - 1));
+
+        var current = await GetProfitReportAsync(currentFrom, currentTo);
+        var previous = await GetProfitReportAsync(previousFrom, previousTo);
+
+        return new ProfitComparisonResult
+        {
+            CurrentFrom = currentFrom,
+            CurrentTo = currentTo,
+            PreviousFrom = previousFrom,
+            PreviousTo = previousTo,
+            Current = current,
+            Previous = previous,
+            SalesChangePercent = PercentChange(previous.TotalSales, current.TotalSales),
+            GrossProfitChangePercent = PercentChange(previous.GrossProfit, current.GrossProfit),
+            NetProfitChangePercent = PercentChange(previous.NetProfit, current.NetProfit)
+        };
+    }
+
+    public async Task<ProductMovementReportResult> GetProductMovementReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, int? productId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var itemsQ = context.InvoiceItems.AsNoTracking()
+            .Where(ii => ii.ProductId != null);
+
+        if (productId.HasValue)
+            itemsQ = itemsQ.Where(ii => ii.ProductId == productId);
+
+        var query =
+            from ii in itemsQ
+            join inv in context.Invoices.AsNoTracking() on ii.InvoiceId equals inv.Id
+            where inv.InvoiceType == InvoiceType.Purchase
+                  || inv.InvoiceType == InvoiceType.Sale
+                  || inv.InvoiceType == InvoiceType.Installment
+            select new { ii, inv };
+
+        if (from.HasValue)
+            query = query.Where(x => x.inv.Date >= from.Value);
+        if (to.HasValue)
+            query = query.Where(x => x.inv.Date < EndOfDay(to));
+        if (warehouseId.HasValue)
+            query = query.Where(x => x.inv.WarehouseId == warehouseId);
+
+        var raw = await query.ToListAsync();
+
+        var grouped = raw
+            .GroupBy(x => x.ii.ProductId!.Value)
+            .Select(g =>
+            {
+                var name = g.Select(x => x.ii.ItemName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)) ?? $"#{g.Key}";
+                decimal qtyIn = g.Where(x => x.inv.InvoiceType == InvoiceType.Purchase).Sum(x => x.ii.Quantity);
+                decimal qtyOut = g.Where(x => x.inv.InvoiceType != InvoiceType.Purchase).Sum(x => x.ii.Quantity);
+                return new ProductMovementRow
+                {
+                    ProductId = g.Key,
+                    ProductName = name,
+                    QuantityIn = qtyIn,
+                    QuantityOut = qtyOut
+                };
+            })
+            .Where(r => r.QuantityIn != 0 || r.QuantityOut != 0)
+            .OrderByDescending(r => r.QuantityOut + r.QuantityIn)
+            .ToList();
+
+        return new ProductMovementReportResult
+        {
+            TotalQuantityIn = grouped.Sum(r => r.QuantityIn),
+            TotalQuantityOut = grouped.Sum(r => r.QuantityOut),
+            ProductCount = grouped.Count,
+            Rows = grouped
+        };
+    }
+
+    public async Task<StockHealthReportResult> GetStockHealthReportAsync(
+        int? warehouseId, decimal lowStockThreshold, int deadStockDays, StockHealthFilter filter = StockHealthFilter.All)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var threshold = Math.Max(0, lowStockThreshold);
+        var deadDays = Math.Max(1, deadStockDays);
+        var asOf = DateTime.Today;
+        var deadCutoff = asOf.AddDays(-deadDays);
+
+        var stockQ = context.WarehouseStocks.AsNoTracking()
+            .Include(ws => ws.Product)
+            .Include(ws => ws.Warehouse)
+            .Where(ws => ws.Quantity > 0);
+        if (warehouseId.HasValue)
+            stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
+
+        var stocks = await stockQ.ToListAsync();
+
+        var lastSaleByProduct = await (
+            from ii in context.InvoiceItems.AsNoTracking()
+            join inv in context.Invoices.AsNoTracking() on ii.InvoiceId equals inv.Id
+            where ii.ProductId != null &&
+                  (inv.InvoiceType == InvoiceType.Sale || inv.InvoiceType == InvoiceType.Installment)
+            group inv.Date by ii.ProductId into g
+            select new { ProductId = g.Key!.Value, LastSale = g.Max(d => d) }
+        ).ToDictionaryAsync(x => x.ProductId, x => x.LastSale);
+
+        var rows = new List<StockHealthRow>();
+        foreach (var s in stocks)
+        {
+            var productId = s.ProductId;
+            lastSaleByProduct.TryGetValue(productId, out var lastSale);
+            var isDead = !lastSaleByProduct.ContainsKey(productId) || lastSale < deadCutoff;
+            var isLow = s.Quantity <= threshold;
+
+            if (!isDead && !isLow)
+                continue;
+
+            var status = isDead ? StockHealthStatus.DeadStock : StockHealthStatus.LowStock;
+            if (filter == StockHealthFilter.LowStockOnly && status != StockHealthStatus.LowStock)
+                continue;
+            if (filter == StockHealthFilter.DeadStockOnly && status != StockHealthStatus.DeadStock)
+                continue;
+
+            var pi = await context.InvoiceItems.AsNoTracking()
+                .Include(ii => ii.Invoice)
+                .Where(ii => ii.ProductId == productId && ii.Invoice!.InvoiceType == InvoiceType.Purchase)
+                .ToListAsync();
+            var avgCost = ProductCostHelper.ComputeAverageUnitCost(pi, s.OpeningQuantity, s.UnitCost);
+            var stockValue = Math.Round(s.Quantity * avgCost, 0);
+
+            int? daysSince = lastSaleByProduct.ContainsKey(productId)
+                ? Math.Max(0, (asOf - lastSale).Days)
+                : null;
+
+            rows.Add(new StockHealthRow
+            {
+                ProductId = productId,
+                ProductName = s.Product?.Name ?? "—",
+                WarehouseName = s.Warehouse?.Name ?? "—",
+                Quantity = s.Quantity,
+                AverageCost = Math.Round(avgCost, 0),
+                StockValue = stockValue,
+                Status = status,
+                LastSaleDate = lastSaleByProduct.ContainsKey(productId) ? lastSale : null,
+                DaysSinceLastSale = daysSince
+            });
+        }
+
+        var deadRows = rows.Where(r => r.Status == StockHealthStatus.DeadStock).ToList();
+        return new StockHealthReportResult
+        {
+            LowStockCount = rows.Count(r => r.Status == StockHealthStatus.LowStock),
+            DeadStockCount = deadRows.Count,
+            TotalDeadStockValue = deadRows.Sum(r => r.StockValue),
+            Rows = rows.OrderByDescending(r => r.Status == StockHealthStatus.DeadStock)
+                .ThenByDescending(r => r.StockValue)
+                .ThenBy(r => r.ProductName)
+                .ToList()
+        };
+    }
+
+    private static decimal PercentChange(decimal previous, decimal current) =>
+        previous == 0 ? (current == 0 ? 0 : 100) : Math.Round((current - previous) / previous * 100, 1);
 }

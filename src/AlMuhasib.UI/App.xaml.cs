@@ -14,6 +14,7 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AlMuhasib.Core.Models.Updates;
 
 namespace AlMuhasib.UI;
 
@@ -134,6 +135,10 @@ public partial class App : Application
 
         services.AddSingleton<IConfiguration>(configuration);
 
+        services.Configure<AppUpdateOptions>(configuration.GetSection(AppUpdateOptions.SectionName));
+        services.AddHttpClient();
+        services.AddSingleton<IAppUpdateService, AppUpdateService>();
+
         // Infrastructure (EF Core + Repositories + AuthService)
         services.AddInfrastructure(configuration);
 
@@ -144,9 +149,17 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
+        services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<ThemeService>();
+        services.AddSingleton<IInvoiceDraftService, InvoiceDraftService>();
+        services.AddSingleton<IInvoiceTemplateService, InvoiceTemplateService>();
+        services.AddSingleton<IInvoiceQueueService, InvoiceQueueService>();
+        services.AddSingleton<IRecentActivityService, RecentActivityService>();
+        services.AddSingleton<IFavoriteProductsService, FavoriteProductsService>();
 
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
+        services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
 
         // ViewModels
         services.AddTransient<LoginViewModel>();
@@ -157,8 +170,10 @@ public partial class App : Application
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
         services.AddTransient<SalesInvoiceViewModel>();
+        services.AddTransient<PosQuickSaleViewModel>();
         services.AddTransient<InstallmentInvoiceViewModel>();
         services.AddTransient<InstallmentsViewModel>();
+        services.AddTransient<OpeningInstallmentBalanceViewModel>();
         services.AddTransient<CashBankViewModel>();
         services.AddTransient<WarehousesViewModel>();
         services.AddTransient<OpeningStockViewModel>();
@@ -183,6 +198,14 @@ public partial class App : Application
         services.AddTransient<InvestorsReportViewModel>();
         services.AddTransient<CashFlowReportViewModel>();
         services.AddTransient<BalanceSheetViewModel>();
+        services.AddTransient<TopProductsReportViewModel>();
+        services.AddTransient<ProductProfitMarginReportViewModel>();
+        services.AddTransient<InstallmentAgingReportViewModel>();
+        services.AddTransient<CustomersOverviewReportViewModel>();
+        services.AddTransient<SuppliersOverviewReportViewModel>();
+        services.AddTransient<ProfitComparisonReportViewModel>();
+        services.AddTransient<ProductMovementReportViewModel>();
+        services.AddTransient<StockHealthReportViewModel>();
         services.AddTransient<UsersViewModel>();
         services.AddTransient<PermissionsViewModel>();
         services.AddTransient<AuditLogViewModel>();
@@ -218,6 +241,16 @@ public partial class App : Application
 
             await Task.WhenAll(minimumDisplay, loadTask);
 
+            if (startupError is UpdateShutdownException)
+            {
+                if (splash is not null)
+                {
+                    try { await splash.CloseAnimatedAsync(); } catch { /* ignore */ }
+                }
+                Shutdown();
+                return;
+            }
+
             if (startupError is not null)
             {
                 await splash.CloseAnimatedAsync();
@@ -248,6 +281,19 @@ public partial class App : Application
     {
         try
         {
+            splash.SetStatus("جاري التحقق من التحديثات...");
+            splash.SetProgress(0.12);
+            await Task.Yield();
+
+            var updateApplied = await AppUpdateCoordinator.TryStartupUpdateAsync(
+                _serviceProvider,
+                splash.SetStatus);
+            if (updateApplied)
+            {
+                onError(new UpdateShutdownException());
+                return;
+            }
+
             splash.SetStatus("جاري تهيئة الواجهة...");
             splash.SetProgress(0.2);
             await Task.Yield();
@@ -305,6 +351,8 @@ public partial class App : Application
             onError(ex);
         }
     }
+
+    private sealed class UpdateShutdownException : Exception;
 
     /// <summary>
     /// Shows the login dialog. On success, creates and shows the main window
@@ -390,15 +438,15 @@ public partial class App : Application
                     wizardVm.SetupCompleted += async () =>
                     {
                         mainVm.CloseAllTabs();
-                        await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
-                        mainVm.SyncSelectedMenuItem();
+                        await mainVm.OpenInitialSessionTabsAsync();
+                        mainVm.TryStartFeatureTour();
                     };
                 }
             }
             else
             {
-                await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
-                mainVm.SyncSelectedMenuItem();
+                await mainVm.OpenInitialSessionTabsAsync();
+                mainVm.TryStartFeatureTour();
             }
         }
         catch (Exception ex)
@@ -409,7 +457,7 @@ public partial class App : Application
 
             try
             {
-                await mainVm.OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+                await mainVm.OpenInitialSessionTabsAsync();
             }
             catch { }
         }

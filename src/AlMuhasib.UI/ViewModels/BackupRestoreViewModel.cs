@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -14,6 +15,7 @@ public partial class BackupRestoreViewModel : ViewModelBase
 {
     private readonly IBackupService _backupService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppUpdateService _appUpdateService;
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -38,12 +40,52 @@ public partial class BackupRestoreViewModel : ViewModelBase
 
     public bool CanOpenLastBackup => !string.IsNullOrWhiteSpace(LastBackupPath) && File.Exists(LastBackupPath);
 
-    public BackupRestoreViewModel(IBackupService backupService, ICurrentUserService currentUserService)
+    public string InstalledVersion => _appUpdateService.GetCurrentVersion().ToString(3);
+
+    public BackupRestoreViewModel(
+        IBackupService backupService,
+        ICurrentUserService currentUserService,
+        IAppUpdateService appUpdateService)
     {
         _backupService = backupService;
         _currentUserService = currentUserService;
+        _appUpdateService = appUpdateService;
         PageTitle = "النسخ الاحتياطي والاستعادة";
         LoadPermissions(currentUserService, "Backup");
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (Application.Current is not App app)
+            return;
+
+        IsOperationInProgress = true;
+        StatusMessage = "جاري التحقق من التحديثات...";
+        IsSuccess = false;
+        IsError = false;
+
+        try
+        {
+            var shouldExit = await AppUpdateCoordinator.CheckAndApplyManuallyAsync(app.Services);
+            if (shouldExit)
+            {
+                Application.Current.Shutdown();
+                return;
+            }
+
+            StatusMessage = "اكتمل التحقق من التحديثات.";
+            IsSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+            IsError = true;
+        }
+        finally
+        {
+            IsOperationInProgress = false;
+        }
     }
 
     partial void OnLastBackupPathChanged(string value) => OnPropertyChanged(nameof(CanOpenLastBackup));

@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              mc:Ignorable="d"
@@ -33,7 +34,7 @@
         <Border Grid.Row="0" Margin="0,0,0,16">
             <UniformGrid Rows="1" Columns="6">
                 <!-- Total Plans -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -46,14 +47,14 @@
                                 </Border.Background>
                                 <materialDesign:PackIcon Kind="FileDocumentMultiple" Width="20" Height="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="إجمالي الخطط" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="إجمالي الخطط" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryTotalPlans}" FontSize="22" FontWeight="Bold" Foreground="#424242"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Total Amount -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -66,63 +67,63 @@
                                 </Border.Background>
                                 <materialDesign:PackIcon Kind="CurrencyUsd" Width="20" Height="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="المبلغ الكلي" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="المبلغ الكلي" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryTotalAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="#1A237E"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Paid Amount -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="CheckCircle" Width="20" Height="20" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="المبلغ المسدد" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="المبلغ المسدد" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryPaidAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="#2E7D32"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Remaining Amount -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource HighlightLightBrush}" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="CashMinus" Width="20" Height="20" Foreground="{DynamicResource HighlightBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="المبلغ المتبقي" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="المبلغ المتبقي" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryRemainingAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Paid Count -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="CashCheck" Width="20" Height="20" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="أقساط مسددة" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="أقساط مسددة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryPaidCount}" FontSize="22" FontWeight="Bold" Foreground="#2E7D32"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Overdue Count -->
-                <Border Background="White" CornerRadius="12" Margin="4" Padding="16,12"
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
                         BorderBrush="#E0E0E0" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#FFEBEE" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="AlertCircle" Width="20" Height="20" Foreground="#C62828" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="أقساط متأخرة" FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                            <TextBlock Text="أقساط متأخرة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding SummaryOverdueCount}" FontSize="22" FontWeight="Bold" Foreground="#C62828"/>
                     </StackPanel>
@@ -291,6 +292,8 @@
                     <!-- Plans DataGrid -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
+                        <DockPanel>
+                        <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PlansFooter}"/>
                         <DataGrid ItemsSource="{Binding AllPlans}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -301,7 +304,7 @@
                                   HorizontalGridLinesBrush="#F0F0F0"
                                   RowHeight="44"
                                   FontSize="13"
-                                  Background="White"
+                                  Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
                                   materialDesign:DataGridAssist.CellPadding="12 6">
@@ -365,6 +368,7 @@
                                 </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        </DockPanel>
                     </materialDesign:Card>
 
                     <!-- Pagination -->
@@ -430,6 +434,14 @@
                                     Height="30"
                                     Margin="16,0,0,0"
                                     FontSize="12" />
+                            <Button Command="{Binding PrintOverdueCommand}"
+                                    ToolTip="طباعة"
+                                    Style="{StaticResource IconButton}"
+                                    Foreground="#1565C0"
+                                    Width="32" Height="32"
+                                    Margin="8,0,0,0">
+                                <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
+                            </Button>
                         </StackPanel>
                     </materialDesign:Card>
 
@@ -439,7 +451,7 @@
                         <DockPanel>
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط (Ctrl+نقر) ثم استخدم «تسديد المحدد» في الأسفل"
-                                   FontSize="11" Foreground="#757575" Margin="12,8,12,4" />
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
 
                         <DataGrid x:Name="OverdueInstallmentsGrid"
                                   DockPanel.Dock="Top"
@@ -454,7 +466,7 @@
                                   HorizontalGridLinesBrush="#FFCDD2"
                                   RowHeight="48"
                                   FontSize="13"
-                                  Background="White"
+                                  Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
                                   materialDesign:DataGridAssist.CellPadding="12 6">
@@ -510,6 +522,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding OverdueFooter}"/>
                         </DockPanel>
                     </materialDesign:Card>
                 </Grid>
@@ -587,7 +600,7 @@
                                           RowHeight="40"
                                           MaxHeight="200"
                                           FontSize="12"
-                                          Background="White"
+                                          Background="{DynamicResource CardBrush}"
                                           BorderThickness="0"
                                           materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
                                           materialDesign:DataGridAssist.CellPadding="10 4">
@@ -613,11 +626,12 @@
 
                                 <TextBlock Grid.Row="0" FontSize="14" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,10">
                                     <Run Text="تفاصيل الأقساط" />
-                                    <Run Text=" — حدّد عدة صفوف للتسديد الجماعي" FontSize="11" Foreground="#757575" FontWeight="Normal" />
+                                    <Run Text=" — حدّد عدة صفوف للتسديد الجماعي" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Normal" />
                                 </TextBlock>
 
+                                <DockPanel Grid.Row="1">
+                                <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaymentFooter}"/>
                                 <DataGrid x:Name="PlanInstallmentsGrid"
-                                          Grid.Row="1"
                                           ItemsSource="{Binding PlanInstallments}"
                                           SelectedItem="{Binding PaymentSelectedInstallment}"
                                           AutoGenerateColumns="False"
@@ -631,7 +645,7 @@
                                           RowHeight="40"
                                           MaxHeight="260"
                                           FontSize="12"
-                                          Background="White"
+                                          Background="{DynamicResource CardBrush}"
                                           BorderThickness="0"
                                           materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
                                           materialDesign:DataGridAssist.CellPadding="10 4">
@@ -660,6 +674,7 @@
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                </DockPanel>
                             </Grid>
                         </materialDesign:Card>
 
@@ -759,6 +774,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <ComboBox Grid.Column="0"
@@ -782,7 +798,17 @@
                                     Height="36"
                                     Padding="16,0"
                                     materialDesign:ButtonAssist.CornerRadius="8"
-                                    FontSize="13" />
+                                    FontSize="13"
+                                    Margin="0,0,8,0" />
+
+                            <Button Grid.Column="2"
+                                    Command="{Binding PrintDetailedCommand}"
+                                    ToolTip="طباعة"
+                                    Style="{StaticResource IconButton}"
+                                    Foreground="#1565C0"
+                                    Width="36" Height="36">
+                                <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
+                            </Button>
                         </Grid>
                     </materialDesign:Card>
 
@@ -810,7 +836,7 @@
                                       RowHeight="40"
                                       MaxHeight="180"
                                       FontSize="12"
-                                      Background="White"
+                                      Background="{DynamicResource CardBrush}"
                                       BorderThickness="0"
                                       materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
                                       materialDesign:DataGridAssist.CellPadding="10 4">
@@ -831,7 +857,7 @@
                         <DockPanel>
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط غير مسددة (Ctrl+نقر) للتسديد الجماعي"
-                                   FontSize="11" Foreground="#757575" Margin="12,8,12,4" />
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
 
                         <DataGrid x:Name="DetailedInstallmentsGrid"
                                   ItemsSource="{Binding DetailedInstallments}"
@@ -845,7 +871,7 @@
                                   HorizontalGridLinesBrush="#F0F0F0"
                                   RowHeight="44"
                                   FontSize="13"
-                                  Background="White"
+                                  Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
                                   materialDesign:DataGridAssist.CellPadding="12 6">
@@ -930,6 +956,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding DetailedFooter}"/>
                         </DockPanel>
                     </materialDesign:Card>
                 </Grid>
@@ -1006,6 +1033,8 @@
                     <!-- Paid DataGrid -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
+                        <DockPanel>
+                        <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaidFooter}"/>
                         <DataGrid ItemsSource="{Binding PaidInstallments}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -1016,7 +1045,7 @@
                                   HorizontalGridLinesBrush="#C8E6C9"
                                   RowHeight="44"
                                   FontSize="13"
-                                  Background="White"
+                                  Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
                                   materialDesign:DataGridAssist.CellPadding="12 6">
@@ -1070,6 +1099,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        </DockPanel>
                     </materialDesign:Card>
 
                     <!-- Pagination -->
@@ -1169,7 +1199,7 @@
                         <DockPanel>
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط (Ctrl+نقر) ثم استخدم «تسديد المحدد» في الأسفل"
-                                   FontSize="11" Foreground="#757575" Margin="12,8,12,4" />
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
                         <DataGrid x:Name="UnpaidInstallmentsGrid"
                                   ItemsSource="{Binding UnpaidInstallments}"
                                   AutoGenerateColumns="False"
@@ -1182,7 +1212,7 @@
                                   HorizontalGridLinesBrush="#F0F0F0"
                                   RowHeight="44"
                                   FontSize="13"
-                                  Background="White"
+                                  Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
                                   materialDesign:DataGridAssist.CellPadding="12 6">
@@ -1248,6 +1278,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding UnpaidFooter}"/>
                         </DockPanel>
                     </materialDesign:Card>
 
@@ -1284,7 +1315,7 @@
                              Value="0" />
                 <TextBlock Text="جاري التحميل..."
                            FontSize="13"
-                           Foreground="#757575"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
             </StackPanel>

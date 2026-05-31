@@ -9,6 +9,8 @@ public interface IInstallmentService
     Task<InstallmentPlan> CreatePlanAsync(int invoiceId, int customerId, string? fileNumber,
         decimal totalAmount, int numberOfInstallments, DateTime startDate,
         InstallmentType installmentType = InstallmentType.Manual);
+    Task<InstallmentPlan> CreateOpeningBalancePlanAsync(OpeningInstallmentBalanceRequest request);
+    Task<OpeningInstallmentBatchResult> CreateOpeningBalancePlansBatchAsync(IReadOnlyList<OpeningInstallmentBalanceRequest> requests);
     Task<InstallmentPlan?> GetPlanByIdAsync(int id);
     Task<IEnumerable<InstallmentPlan>> GetPlansByCustomerAsync(int customerId);
     Task PayInstallmentAsync(int installmentId, decimal amount, int cashBoxId);

@@ -1,0 +1,316 @@
+<UserControl x:Class="AlMuhasib.UI.Views.OpeningInstallmentBalanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:OpeningInstallmentBalanceViewModel}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+            <StackPanel>
+
+                <!-- HEADER -->
+                <Border CornerRadius="14" Margin="0,0,0,16" Padding="24,18">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#0D47A1" Offset="0"/>
+                            <GradientStop Color="#1565C0" Offset="0.5"/>
+                            <GradientStop Color="#42A5F5" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="12"
+                                Background="#FFFFFF22" Margin="0,0,16,0" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="History" Width="28" Height="28"
+                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="أرصدة الأقساط الافتتاحية" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="إدخال فواتير الأقساط السابقة قبل تشغيل النظام — المسدد سابقاً رصيد قديم ولا يُحسب ضمن الأرباح، والتسديدات المستقبلية من شاشة الأقساط"
+                                       FontSize="13" Foreground="#BBDEFB" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <TabControl SelectedIndex="{Binding SelectedTabIndex}" Style="{StaticResource MaterialDesignFilledTabControl}">
+                    <!-- MANUAL TAB -->
+                    <TabItem Header="إدخال يدوي">
+                        <StackPanel Margin="0,12,0,0">
+
+                            <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                                                 Padding="20" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <Border Background="#E3F2FD" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="InformationOutline" Foreground="#1565C0" Width="20" Height="20" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                                            <TextBlock TextWrapping="Wrap" Foreground="#0D47A1" FontSize="13"
+                                                       Text="اختر الزبون، أدخل المبلغ الكلي وعدد الأقساط وكم منها مسدّد سابقاً. لا حاجة لإدخال منتجات — هذا رصيد افتتاحي على ذمة الزبون."/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Customer -->
+                                        <Grid Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox ItemsSource="{Binding FilteredCustomers}"
+                                                      SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="Name"
+                                                      Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True" StaysOpenOnEdit="True"
+                                                      materialDesign:HintAssist.Hint="الزبون"
+                                                      materialDesign:HintAssist.IsFloating="True"
+                                                      Style="{StaticResource FilledComboBox}" FontSize="14"/>
+                                            <Button Grid.Column="1" Command="{Binding OpenQuickAddCustomerCommand}"
+                                                    Style="{StaticResource IconButton}" ToolTip="إضافة زبون جديد"
+                                                    Width="40" Height="40" Margin="6,0,0,0">
+                                                <materialDesign:PackIcon Kind="AccountPlus" Width="22" Height="22"/>
+                                            </Button>
+                                        </Grid>
+
+                                        <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
+                                                 Text="{Binding FileNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="رقم الملف (اختياري)"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+
+                                        <TextBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,12"
+                                                 Text="{Binding TotalAmount, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="المبلغ الكلي"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+
+                                        <TextBox Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
+                                                 Text="{Binding NumberOfInstallments, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="عدد الأقساط الكلي"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+
+                                        <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
+                                                 Text="{Binding PaidInstallmentsCount, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="عدد الأقساط المسددة سابقاً"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+
+                                        <DatePicker Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"
+                                                    SelectedDate="{Binding StartDate}"
+                                                    materialDesign:HintAssist.Hint="تاريخ أول قسط"
+                                                    materialDesign:HintAssist.IsFloating="True"
+                                                    Style="{StaticResource FilledDatePicker}" FontSize="14"/>
+
+                                        <TextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                                                 Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="ملاحظات"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}" FontSize="14"
+                                                 AcceptsReturn="True" MinHeight="56" TextWrapping="Wrap"/>
+                                    </Grid>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <!-- Summary cards -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="#E8F5E9" CornerRadius="10" Padding="14" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="مسدد سابقاً" FontSize="12" Foreground="#2E7D32"/>
+                                        <TextBlock Text="{Binding PaidPreviewTotal, StringFormat={}{0:N0} د.ع}" FontSize="18" FontWeight="Bold" Foreground="#1B5E20"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Background="#FFF3E0" CornerRadius="10" Padding="14" Margin="4,0">
+                                    <StackPanel>
+                                        <TextBlock Text="متبقي على الزبون" FontSize="12" Foreground="#EF6C00"/>
+                                        <TextBlock Text="{Binding UnpaidPreviewTotal, StringFormat={}{0:N0} د.ع}" FontSize="18" FontWeight="Bold" Foreground="#E65100"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Background="#E3F2FD" CornerRadius="10" Padding="14" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="إجمالي العقد" FontSize="12" Foreground="#1565C0"/>
+                                        <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0} د.ع}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Schedule preview -->
+                            <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="0" Margin="0,0,0,16">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="#E3F2FD" CornerRadius="12,12,0,0" Padding="16,10">
+                                        <TextBlock Text="معاينة جدول الأقساط" FontSize="15" FontWeight="SemiBold" Foreground="#0D47A1"/>
+                                    </Border>
+                                    <DataGrid Grid.Row="1" ItemsSource="{Binding SchedulePreview}"
+                                              AutoGenerateColumns="False" IsReadOnly="True"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                              RowHeight="42" MinHeight="180" MaxHeight="320" FontSize="13">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="50"/>
+                                            <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="130"/>
+                                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat={}{0:N0}}" Width="120"/>
+                                            <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="*"/>
+                                        </DataGrid.Columns>
+                                        <DataGrid.RowStyle>
+                                            <Style TargetType="DataGridRow">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPaid}" Value="True">
+                                                        <Setter Property="Background" Value="#F1F8E9"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.RowStyle>
+                                    </DataGrid>
+                                </Grid>
+                            </materialDesign:Card>
+
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" FontSize="13"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
+
+                            <Button Command="{Binding SaveManualCommand}" HorizontalAlignment="Left"
+                                    Style="{StaticResource AccentButton}" Height="44" Padding="24,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentSave" Width="20" Height="20" VerticalAlignment="Center"/>
+                                    <TextBlock Text="حفظ الرصيد الافتتاحي" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </TabItem>
+
+                    <!-- EXCEL TAB -->
+                    <TabItem Header="استيراد Excel">
+                        <StackPanel Margin="0,12,0,0">
+                            <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="20" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="خطوات الاستيراد" FontWeight="SemiBold" Foreground="#F57F17" Margin="0,0,0,6"/>
+                                            <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#795548"
+                                                       Text="1) نزّل القالب  →  2) املأ ورقة «البيانات» (يوجد أمثلة وتعليمات)  →  3) ارفع الملف  →  4) راجع المعاينة  →  5) استورد"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Command="{Binding DownloadTemplateCommand}" Margin="0,0,12,0"
+                                                Style="{StaticResource OutlinedButton}" Height="40" Padding="16,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Download" Width="18" Height="18" VerticalAlignment="Center"/>
+                                                <TextBlock Text="تنزيل قالب Excel" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding PickImportFileCommand}"
+                                                Style="{StaticResource AccentButton}" Height="40" Padding="16,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="FileUpload" Width="18" Height="18" VerticalAlignment="Center"/>
+                                                <TextBlock Text="اختيار ملف Excel" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding ImportStatusMessage}" Margin="0,12,0,0"
+                                               FontSize="13" Foreground="#37474F" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="0" Margin="0,0,0,16"
+                                                 Visibility="{Binding HasImportRows, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="#E8EAF6" CornerRadius="12,12,0,0" Padding="16,10">
+                                        <Grid>
+                                            <TextBlock Text="معاينة الاستيراد" FontSize="15" FontWeight="SemiBold" Foreground="#283593" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding ImportValidCount, StringFormat=صالح: {0}}" Margin="0,0,16,0" Foreground="#2E7D32"/>
+                                                <TextBlock Text="{Binding ImportInvalidCount, StringFormat=يحتاج تصحيح: {0}}" Foreground="#C62828"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <DataGrid Grid.Row="1" ItemsSource="{Binding ImportRows}"
+                                              AutoGenerateColumns="False" IsReadOnly="True"
+                                              CanUserAddRows="False" HeadersVisibility="Column"
+                                              RowHeight="44" MinHeight="160" MaxHeight="360" FontSize="12">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="سطر" Binding="{Binding RowNumber}" Width="50"/>
+                                            <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="140"/>
+                                            <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat={}{0:N0}}" Width="100"/>
+                                            <DataGridTextColumn Header="الأقساط" Binding="{Binding NumberOfInstallments}" Width="70"/>
+                                            <DataGridTextColumn Header="مسدد" Binding="{Binding PaidInstallmentsCount}" Width="60"/>
+                                            <DataGridTextColumn Header="أول قسط" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                                            <DataGridTextColumn Header="أخطاء" Binding="{Binding ErrorsText}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </materialDesign:Card>
+
+                            <Button Command="{Binding ImportCommand}" HorizontalAlignment="Left"
+                                    Style="{StaticResource AccentButton}" Height="44" Padding="24,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="DatabaseImport" Width="20" Height="20" VerticalAlignment="Center"/>
+                                    <TextBlock Text="استيراد إلى النظام" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Quick add customer overlay -->
+        <Border Background="#80000000" Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}">
+            <materialDesign:Card Width="420" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                 UniformCornerRadius="14" Padding="24">
+                <StackPanel>
+                    <TextBlock Text="إضافة زبون جديد" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <TextBox Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="اسم الزبون" materialDesign:HintAssist.IsFloating="True"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="الهاتف (اختياري)" materialDesign:HintAssist.IsFloating="True"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#C62828" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Command="{Binding SaveQuickCustomerCommand}" Content="حفظ" Style="{StaticResource AccentButton}" Margin="0,0,8,0"/>
+                        <Button Command="{Binding CancelQuickAddCustomerCommand}" Content="إلغاء" Style="{StaticResource OutlinedButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Border>
+    </Grid>
+</UserControl>

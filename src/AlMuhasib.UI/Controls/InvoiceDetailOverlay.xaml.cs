@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -9,78 +8,127 @@ namespace AlMuhasib.UI.Controls;
 
 public partial class InvoiceDetailOverlay : UserControl
 {
-  private Popup? _popup;
+    private Window? _hostWindow;
+    private Window? _ownerWindow;
 
-  public InvoiceDetailOverlay()
-  {
-    InitializeComponent();
-  }
-
-  public void ShowCentered()
-  {
-    var window = Window.GetWindow(this) ?? Application.Current.MainWindow;
-    if (window is null)
-      return;
-
-    _popup = new Popup
+    public InvoiceDetailOverlay()
     {
-      AllowsTransparency = true,
-      StaysOpen = true,
-      PlacementTarget = window,
-      Placement = PlacementMode.Relative,
-      Child = this
-    };
+        InitializeComponent();
+    }
 
-    _popup.Opened += (_, _) =>
+    public void ShowCentered()
     {
-      RootHost.Width = window.ActualWidth;
-      RootHost.Height = window.ActualHeight;
-      DialogCard.Width = Math.Min(920, window.ActualWidth - 48);
-      DialogCard.MaxHeight = Math.Max(560, window.ActualHeight * 0.88);
+        _ownerWindow = Window.GetWindow(this) ?? Application.Current.MainWindow;
+        if (_ownerWindow is null)
+            return;
 
-      Backdrop.Opacity = 0;
-      DialogCard.Opacity = 0;
-      if (DialogCard.RenderTransform is ScaleTransform scale)
-        scale.ScaleX = scale.ScaleY = 0.92;
+        _hostWindow = new Window
+        {
+            Owner = _ownerWindow,
+            WindowStyle = WindowStyle.None,
+            AllowsTransparency = true,
+            Background = Brushes.Transparent,
+            ShowInTaskbar = false,
+            ResizeMode = ResizeMode.NoResize,
+            FlowDirection = FlowDirection.RightToLeft,
+            Content = this
+        };
 
-      Backdrop.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
-      DialogCard.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
-      {
-        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-      });
+        _hostWindow.SourceInitialized += HostWindow_SourceInitialized;
+        _ownerWindow.LocationChanged += OwnerWindow_BoundsChanged;
+        _ownerWindow.SizeChanged += OwnerWindow_BoundsChanged;
+        _ownerWindow.StateChanged += OwnerWindow_BoundsChanged;
 
-      var grow = new DoubleAnimation(0.92, 1, TimeSpan.FromMilliseconds(320))
-      {
-        EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.28 }
-      };
-      if (DialogCard.RenderTransform is ScaleTransform st)
-      {
-        st.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
-        st.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
-      }
-    };
+        Loaded += Overlay_Loaded;
+        _hostWindow.ShowDialog();
 
-    _popup.IsOpen = true;
-  }
+        _ownerWindow.LocationChanged -= OwnerWindow_BoundsChanged;
+        _ownerWindow.SizeChanged -= OwnerWindow_BoundsChanged;
+        _ownerWindow.StateChanged -= OwnerWindow_BoundsChanged;
+        _hostWindow.SourceInitialized -= HostWindow_SourceInitialized;
+        Loaded -= Overlay_Loaded;
+        _hostWindow = null;
+        _ownerWindow = null;
+    }
 
-  private void Close()
-  {
-    if (_popup is null || !_popup.IsOpen)
-      return;
+    private void HostWindow_SourceInitialized(object? sender, EventArgs e)
+        => SyncToOwnerBounds();
 
-    var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180))
+    private void OwnerWindow_BoundsChanged(object? sender, EventArgs e)
+        => SyncToOwnerBounds();
+
+    private void Overlay_Loaded(object sender, RoutedEventArgs e)
     {
-      EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-    };
-    fade.Completed += (_, _) => _popup.IsOpen = false;
-    Backdrop.BeginAnimation(OpacityProperty, fade);
-  }
+        SyncToOwnerBounds();
+        PlayOpenAnimation();
+    }
 
-  private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+    private void SyncToOwnerBounds()
+    {
+        if (_hostWindow is null || _ownerWindow is null)
+            return;
 
-  private void Backdrop_MouseDown(object sender, MouseButtonEventArgs e)
-  {
-    if (e.OriginalSource == Backdrop)
-      Close();
-  }
+        var topLeft = _ownerWindow.PointToScreen(new Point(0, 0));
+        var width = Math.Max(400, _ownerWindow.ActualWidth);
+        var height = Math.Max(300, _ownerWindow.ActualHeight);
+
+        _hostWindow.Left = topLeft.X;
+        _hostWindow.Top = topLeft.Y;
+        _hostWindow.Width = width;
+        _hostWindow.Height = height;
+
+        Width = width;
+        Height = height;
+        RootHost.Width = width;
+        RootHost.Height = height;
+
+        DialogCard.Width = Math.Min(920, width - 48);
+        DialogCard.MaxHeight = Math.Max(420, height - 48);
+    }
+
+    private void PlayOpenAnimation()
+    {
+        Backdrop.Opacity = 0;
+        DialogCard.Opacity = 0;
+        if (DialogCard.RenderTransform is ScaleTransform scale)
+            scale.ScaleX = scale.ScaleY = 0.92;
+
+        Backdrop.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+        DialogCard.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+
+        var grow = new DoubleAnimation(0.92, 1, TimeSpan.FromMilliseconds(320))
+        {
+            EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.28 }
+        };
+        if (DialogCard.RenderTransform is ScaleTransform st)
+        {
+            st.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            st.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+        }
+    }
+
+    private void Close()
+    {
+        if (_hostWindow is null)
+            return;
+
+        var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        fade.Completed += (_, _) => _hostWindow.Close();
+        Backdrop.BeginAnimation(OpacityProperty, fade);
+        DialogCard.BeginAnimation(OpacityProperty, fade);
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Backdrop_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource == Backdrop)
+            Close();
+    }
 }

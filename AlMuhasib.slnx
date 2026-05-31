@@ -4,5 +4,6 @@
     <Project Path="src/AlMuhasib.Core/AlMuhasib.Core.csproj" />
     <Project Path="src/AlMuhasib.Infrastructure/AlMuhasib.Infrastructure.csproj" />
     <Project Path="src/AlMuhasib.Shared/AlMuhasib.Shared.csproj" />
+    <Project Path="src/AlMuhasib.Updater/AlMuhasib.Updater.csproj" />
   </Folder>
 </Solution>

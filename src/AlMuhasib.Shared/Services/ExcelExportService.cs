@@ -105,7 +105,7 @@ public class ExcelExportService : IExportService
         workbook.SaveAs(filePath);
     }
 
-    public void PrintTable(string title, string[] columns, IList<object[]> rows)
+    public void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null)
     {
         var doc = new FlowDocument
         {
@@ -189,12 +189,26 @@ public class ExcelExportService : IExportService
         table.RowGroups.Add(dataGroup);
         doc.Blocks.Add(table);
 
-        // Footer
-        doc.Blocks.Add(new Paragraph(new Run($"إجمالي السجلات: {rows.Count}"))
+        if (summaryLines is { Count: > 0 })
         {
-            FontSize = 11,
-            Margin = new Thickness(0, 12, 0, 0)
-        });
+            foreach (var line in summaryLines)
+            {
+                doc.Blocks.Add(new Paragraph(new Run(line))
+                {
+                    FontSize = 12,
+                    FontWeight = FontWeights.SemiBold,
+                    Margin = new Thickness(0, 8, 0, 0)
+                });
+            }
+        }
+        else
+        {
+            doc.Blocks.Add(new Paragraph(new Run($"إجمالي السجلات: {rows.Count}"))
+            {
+                FontSize = 11,
+                Margin = new Thickness(0, 12, 0, 0)
+            });
+        }
 
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
 

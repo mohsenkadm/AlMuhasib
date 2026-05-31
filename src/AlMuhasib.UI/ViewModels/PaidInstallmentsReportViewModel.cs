@@ -35,7 +35,10 @@ public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
     public PaidInstallmentsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "الأقساط المسددة"; }
+    {
+        PageTitle = "الأقساط المسددة";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

@@ -80,6 +80,17 @@ public class AuthService : IAuthService
         return true;
     }
 
+    public async Task<IReadOnlyList<User>> GetActiveAdminUsersAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Users
+            .AsNoTracking()
+            .Where(u => !u.IsDeleted && u.IsActive && u.Role == UserRole.Admin)
+            .OrderBy(u => u.FullName)
+            .ThenBy(u => u.Username)
+            .ToListAsync();
+    }
+
     public async Task EnsureAdminAccountAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();

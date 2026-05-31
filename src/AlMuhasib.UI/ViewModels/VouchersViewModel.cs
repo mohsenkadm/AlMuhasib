@@ -13,6 +13,9 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
 {
+    /// <summary>يُعيَّن من شريط الإجراءات السريع قبل فتح الشاشة.</summary>
+    public static VoucherType? PendingInitialType { get; set; }
+
     private readonly ICashBankService _cashBankService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
@@ -123,6 +126,13 @@ public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
             LoadPermissions(_currentUserService, "Vouchers");
 
             await LoadLookupsAsync();
+
+            if (PendingInitialType.HasValue)
+            {
+                SelectedVoucherType = PendingInitialType.Value;
+                PendingInitialType = null;
+            }
+
             UpdateFieldVisibility(SelectedVoucherType);
             await GenerateVoucherNumberAsync();
             await LoadVouchersAsync();

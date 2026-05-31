@@ -34,6 +34,9 @@ public static class DependencyInjection
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
         services.AddSingleton<IDatabaseMigrationService, DatabaseMigrationService>();
         services.AddSingleton<IBackupService, BackupService>();
+        services.AddScoped<IGlobalSearchService, GlobalSearchService>();
+        services.AddScoped<ISmartAlertService, SmartAlertService>();
+        services.AddScoped<IDemoDataService, DemoDataService>();
 
         return services;
     }

@@ -53,7 +53,7 @@
                       UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
-    <Grid>
+    <Grid x:Name="RootLayoutGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -391,48 +391,60 @@
                                PopupAnimation="Fade"
                                HorizontalOffset="0"
                                VerticalOffset="6">
-                            <Border Background="#FAFCFE"
-                                    BorderBrush="#D5E3F0"
+                            <Border Background="{DynamicResource SearchPanelBackgroundBrush}"
+                                    BorderBrush="{DynamicResource SearchPanelBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12"
-                                    Padding="6"
-                                    MinWidth="228"
-                                    MaxWidth="280"
-                                    MaxHeight="300">
+                                    Padding="8"
+                                    MinWidth="260"
+                                    MaxWidth="340"
+                                    MaxHeight="360">
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.14" Color="#0D1B2A"/>
                                 </Border.Effect>
                                 <ListBox ItemsSource="{Binding SearchResults}"
                                          BorderThickness="0"
                                          Background="Transparent"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         VirtualizingPanel.IsVirtualizing="False">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="MinHeight" Value="48" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Button Command="{Binding DataContext.SelectSearchResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"
-                                                    Style="{StaticResource SidebarSearchResultButton}">
+                                                    Style="{StaticResource SidebarSearchResultButton}"
+                                                    MinHeight="44"
+                                                    HorizontalContentAlignment="Stretch">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
                                                     <Border Grid.Column="0"
-                                                            Width="32" Height="32"
+                                                            Width="36" Height="36"
                                                             CornerRadius="8"
-                                                            Background="#E3F2FD"
+                                                            Background="{DynamicResource PrimaryHueLightBrush}"
                                                             Margin="0,0,10,0"
-                                                            VerticalAlignment="Center">
+                                                            VerticalAlignment="Top">
                                                         <materialDesign:PackIcon Kind="{Binding Icon}"
-                                                                                 Width="18" Height="18"
+                                                                                 Width="20" Height="20"
                                                                                  Foreground="{DynamicResource PrimaryHueMidBrush}"
                                                                                  HorizontalAlignment="Center"
                                                                                  VerticalAlignment="Center"/>
                                                     </Border>
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding Title}"
-                                                               FontSize="13"
-                                                               FontWeight="Medium"
-                                                               Foreground="#263238"
+                                                               FontSize="14"
+                                                               LineHeight="20"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource SearchResultTitleBrush}"
                                                                TextWrapping="Wrap"
                                                                VerticalAlignment="Center"/>
                                                 </Grid>
@@ -557,6 +569,7 @@
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -587,24 +600,45 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0"
                                                 Orientation="Horizontal"
                                                 VerticalAlignment="Center">
                                         <materialDesign:PackIcon Kind="{Binding Icon}"
                                                                  Width="16" Height="16"
-                                                                 Foreground="#1565C0"
+                                                                 Foreground="{DynamicResource ChromeTabSelectedForegroundBrush}"
                                                                  VerticalAlignment="Center"
                                                                  Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding Title}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
-                                                   Foreground="#37474F"
+                                                   Foreground="{DynamicResource ChromeTabForegroundBrush}"
                                                    TextTrimming="CharacterEllipsis"
                                                    MaxWidth="128"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Grid.Column="1"
+                                            Style="{StaticResource ChromeTabPinButton}"
+                                            Command="{Binding DataContext.TogglePinTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="تثبيت التبويب (يفتح تلقائياً عند التشغيل)">
+                                        <materialDesign:PackIcon Width="16" Height="16">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Kind" Value="PinOutline"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource ChromeTabForegroundBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                                            <Setter Property="Kind" Value="Pin"/>
+                                                            <Setter Property="Foreground" Value="#1565C0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                    </Button>
+                                    <Button Grid.Column="2"
                                             Style="{StaticResource ChromeTabCloseButton}"
                                             Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}"
@@ -616,21 +650,173 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <Border Grid.Column="1"
-                            Background="#D0DCE8"
+                            Background="{DynamicResource ChromeTabInactiveBrush}"
                             CornerRadius="8"
                             Padding="8,4"
                             Margin="8,2,4,4"
                             VerticalAlignment="Center">
                         <TextBlock FontSize="11"
-                                   Foreground="#546E7A"
+                                   Foreground="{DynamicResource ChromeTabForegroundBrush}"
                                    VerticalAlignment="Center"
                                    Text="{Binding OpenTabs.Count, Mode=OneWay, StringFormat={}{0}/8}"/>
                     </Border>
                 </Grid>
             </Border>
 
+            <!-- شريط الإجراءات السريع -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding QuickPosSaleCommand}"
+                                Visibility="{Binding ShowQuickPos, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="شاشة كاشير — بيع نقدي سريع">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="PointOfSale" Width="18" Height="18" VerticalAlignment="Center" Foreground="#1565C0"/>
+                                <TextBlock Text="POS" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickNewSaleCommand}"
+                                Visibility="{Binding ShowQuickSale, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashRegister" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="بيع جديد" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickNewPurchaseCommand}"
+                                Visibility="{Binding ShowQuickPurchase, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CartArrowDown" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="شراء" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickReceiptVoucherCommand}"
+                                Visibility="{Binding ShowQuickReceipt, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#2E7D32" />
+                                <TextBlock Text="قبض" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickPaymentVoucherCommand}"
+                                Visibility="{Binding ShowQuickPayment, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashMinus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#C62828" />
+                                <TextBlock Text="صرف" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickInstallmentsCommand}"
+                                Visibility="{Binding ShowQuickInstallments, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CalendarClock" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="تسديد أقساط" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickInstallmentInvoiceCommand}"
+                                Visibility="{Binding ShowQuickInstallmentInvoice, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileDocument" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="فاتورة أقساط" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickSalesReturnCommand}"
+                                Visibility="{Binding ShowQuickReturn, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="مرتجع من تقرير المبيعات">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="KeyboardReturn" Width="18" Height="18" VerticalAlignment="Center" Foreground="#C62828"/>
+                                <TextBlock Text="مرتجع" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Rectangle Width="1" Height="24" Fill="#E0E0E0" Margin="4,0,10,0" />
+                        <Button Command="{Binding ToggleSmartAssistantCommand}"
+                                Visibility="{Binding ShowQuickAssistant, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="المساعد الذكي — تنبيهات ومهام">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="RobotOutline" Width="18" Height="18" VerticalAlignment="Center" Foreground="#6A1B9A"/>
+                                <TextBlock Text="المساعد" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding OpenGlobalSearchCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="بحث شامل (Ctrl+K)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="بحث Ctrl+K" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ToggleRecentActivityCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="آخر العمليات">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="History" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="آخر العمليات" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding TogglePinTabCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="تثبيت التبويب الحالي">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Pin" Width="18" Height="18" VerticalAlignment="Center" />
+                                <TextBlock Text="تثبيت" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ToggleThemeCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="10,0" Margin="0,0,4,0"
+                                ToolTip="وضع ليلي / نهاري">
+                            <materialDesign:PackIcon Kind="ThemeLightDark" Width="18" Height="18" />
+                        </Button>
+                        <Button Command="{Binding IncreaseFontSizeCommand}"
+                                Style="{StaticResource IconButton}" Width="34" Height="34"
+                                ToolTip="تكبير الخط">
+                            <materialDesign:PackIcon Kind="FormatFontSizeIncrease" Width="18" Height="18" />
+                        </Button>
+                        <Button Command="{Binding DecreaseFontSizeCommand}"
+                                Style="{StaticResource IconButton}" Width="34" Height="34"
+                                ToolTip="تصغير الخط">
+                            <materialDesign:PackIcon Kind="FormatFontSizeDecrease" Width="18" Height="18" />
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
             <!-- CONTENT AREA -->
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="2">
             <Border x:Name="TabContentHost"
                     Background="{DynamicResource BackgroundBrush}"
                     Padding="24,16,24,20"
@@ -664,11 +850,17 @@
                         <DataTemplate DataType="{x:Type vm:SalesInvoiceViewModel}">
                             <views:SalesInvoiceView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PosQuickSaleViewModel}">
+                            <views:PosQuickSaleView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InstallmentInvoiceViewModel}">
                             <views:InstallmentInvoiceView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InstallmentsViewModel}">
                             <views:InstallmentsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningInstallmentBalanceViewModel}">
+                            <views:OpeningInstallmentBalanceView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CashBankViewModel}">
                             <views:CashBankView />
@@ -702,6 +894,30 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProfitReportViewModel}">
                             <views:ProfitReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:TopProductsReportViewModel}">
+                            <views:TopProductsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductProfitMarginReportViewModel}">
+                            <views:ProductProfitMarginReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InstallmentAgingReportViewModel}">
+                            <views:InstallmentAgingReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CustomersOverviewReportViewModel}">
+                            <views:CustomersOverviewReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SuppliersOverviewReportViewModel}">
+                            <views:SuppliersOverviewReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProfitComparisonReportViewModel}">
+                            <views:ProfitComparisonReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductMovementReportViewModel}">
+                            <views:ProductMovementReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:StockHealthReportViewModel}">
+                            <views:StockHealthReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InstallmentsReportViewModel}">
                             <views:InstallmentsReportView />
@@ -903,6 +1119,62 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding RestartFeatureTourCommand}"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E0F7FA" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="MapMarkerPath" Width="18" Height="18"
+                                                                 Foreground="#00838F"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="جولة التعريف" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock Text="ملف العمل"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="#455A64"
+                                       Margin="4,12,4,6"/>
+                            <TextBlock Text="{Binding WorkspaceProfileDisplay, StringFormat='الحالي: {0}'}"
+                                       FontSize="11" Foreground="#78909C" Margin="4,0,4,8"/>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding SeedDemoDataCommand}"
+                                    Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#FFFDE7" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="DatabasePlus" Width="18" Height="18"
+                                                                 Foreground="#F9A825"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="بيانات تجريبية" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <UniformGrid Columns="3" Margin="0,0,0,4">
+                                <Button Style="{StaticResource QuickAssistActionButton}"
+                                        Command="{Binding SetWorkspaceProfileFullCommand}"
+                                        Margin="2" Padding="6,4" FontSize="11"
+                                        Content="كامل"/>
+                                <Button Style="{StaticResource QuickAssistActionButton}"
+                                        Command="{Binding SetWorkspaceProfileCashierCommand}"
+                                        Margin="2" Padding="6,4" FontSize="11"
+                                        Content="كاشير"/>
+                                <Button Style="{StaticResource QuickAssistActionButton}"
+                                        Command="{Binding SetWorkspaceProfileAccountantCommand}"
+                                        Margin="2" Padding="6,4" FontSize="11"
+                                        Content="محاسب"/>
+                            </UniformGrid>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding ToggleMenuCustomizerCommand}"
+                                    Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8EAF6" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="Tune" Width="18" Height="18"
+                                                                 Foreground="#3949AB"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="تخصيص القائمة" VerticalAlignment="Center" FontWeight="Medium"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -1130,5 +1402,331 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- جولة التعريف بالميزات -->
+        <Grid Visibility="{Binding IsFeatureTourOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Grid.RowSpan="2" Panel.ZIndex="2100">
+            <Border Background="#99000000"/>
+            <materialDesign:Card HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 MinWidth="400" MaxWidth="480" Padding="28,24"
+                                 UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp12">
+                <StackPanel>
+                    <materialDesign:PackIcon Kind="InformationOutline" Width="40" Height="40"
+                                             Foreground="#1565C0" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding CurrentFeatureTourStep.Title}"
+                               FontSize="20" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding CurrentFeatureTourStep.Description}"
+                               FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
+                    <TextBlock Text="{Binding FeatureTourProgressText}"
+                               FontSize="12" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Command="{Binding FeatureTourBackCommand}"
+                                Style="{StaticResource FlatButton}" Content="السابق"
+                                Visibility="{Binding CanFeatureTourGoBack, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Button Grid.Column="1" Command="{Binding SkipFeatureTourCommand}"
+                                Style="{StaticResource FlatButton}" Content="تخطي"
+                                HorizontalAlignment="Center"/>
+                        <Button Grid.Column="2" Command="{Binding FeatureTourNextCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                    <Setter Property="Padding" Value="20,8"/>
+                                    <Setter Property="Content" Value="التالي"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFeatureTourLastStep}" Value="True">
+                                            <Setter Property="Content" Value="إنهاء"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <!-- المساعد الذكي -->
+        <Grid Visibility="{Binding IsSmartAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Grid.RowSpan="2" Panel.ZIndex="2050">
+            <Border Background="#66000000" MouseLeftButtonDown="SmartAssistantBackdrop_Click"/>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="400"
+                    Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1,0,0,0"
+                    Padding="16,20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="-2" Opacity="0.15"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="المساعد الذكي" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock Text="تنبيهات ومهام مقترحة ليومك" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Command="{Binding CloseSmartAssistantCommand}"
+                                Click="SmartAssistantClose_Click"
+                                Style="{StaticResource PanelCloseButton}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center"
+                                ToolTip="إغلاق المساعد"/>
+                    </Grid>
+                    <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="3" Margin="0,0,0,8"
+                                 Visibility="{Binding IsSmartAssistantLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="التنبيهات" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ItemsControl ItemsSource="{Binding AssistantAlerts}" Margin="0,0,0,12">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="8"
+                                                Background="{DynamicResource BackgroundBrush}"
+                                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
+                                                Cursor="Hand">
+                                            <Border.InputBindings>
+                                                <MouseBinding MouseAction="LeftClick"
+                                                              Command="{Binding DataContext.ExecuteAssistantAlertCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              CommandParameter="{Binding}"/>
+                                            </Border.InputBindings>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"/>
+                                                <TextBlock Text="{Binding Message}" FontSize="12" Margin="0,2,0,0"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="مهام اليوم" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ItemsControl ItemsSource="{Binding AssistantTasks}" Margin="0,0,0,12">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.ExecuteAssistantTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                HorizontalContentAlignment="Stretch"
+                                                Margin="0,0,0,6" Padding="10,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Right"/>
+                                                </StackPanel>
+                                                <materialDesign:PackIcon Grid.Column="1" Kind="ChevronLeft" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="نصائح" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ItemsControl ItemsSource="{Binding AssistantTips}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Text="{Binding ., StringFormat='• {0}', Mode=OneWay}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Command="{Binding RefreshSmartAssistantCommand}" Style="{StaticResource OutlinedButton}"
+                                Content="تحديث" Margin="0,0,8,0"/>
+                        <Button Command="{Binding QuickOpenPosCommand}" Style="{StaticResource PrimaryButton}"
+                                Content="فتح POS" Padding="16,8"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- بحث شامل Ctrl+K -->
+        <controls:GlobalSearchOverlay x:Name="GlobalSearchOverlay"
+                                      Grid.RowSpan="2"
+                                      Panel.ZIndex="2000"
+                                      Visibility="{Binding IsGlobalSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <!-- آخر العمليات -->
+        <Popup x:Name="RecentActivityPopup"
+               IsOpen="{Binding IsRecentActivityOpen}"
+               Placement="Center"
+               PlacementTarget="{Binding ElementName=RootLayoutGrid}"
+               DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               Grid.RowSpan="2"
+               Panel.ZIndex="1990">
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
+                    MinWidth="380" MaxWidth="520" MinHeight="200" MaxHeight="440"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.2" />
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" MinHeight="120" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="آخر العمليات" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"
+                               Foreground="{DynamicResource SearchResultTitleBrush}" />
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding RecentActivities}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="8,6" Margin="0,2" CornerRadius="8"
+                                        Background="{DynamicResource BackgroundBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SearchResultTitleBrush}" />
+                                        <TextBlock Text="{Binding Detail}" FontSize="12" Margin="0,3,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SearchResultSubtitleBrush}" />
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:yyyy/MM/dd HH:mm}'}"
+                                                   FontSize="11" Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock Grid.Row="1"
+                               Text="لا توجد عمليات مسجّلة بعد.&#x0a;افتح شاشات أو نفّذ حركات (فواتير، تسديدات...) لتظهر هنا."
+                               FontSize="13"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="16">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasRecentActivities}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Popup>
+
+        <!-- تخصيص القائمة -->
+        <Popup IsOpen="{Binding IsMenuCustomizerOpen}"
+               Placement="Center"
+               PlacementTarget="{Binding ElementName=RootLayoutGrid}"
+               DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               Grid.RowSpan="2"
+               Panel.ZIndex="1985">
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
+                    MinWidth="380" MaxWidth="520" MinHeight="280" MaxHeight="520"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="تخصيص القائمة" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource SearchResultTitleBrush}"/>
+                        <TextBlock Text="حدّد الشاشات الظاهرة في القائمة، وثبّت حتى 6 شاشات تُفتح تلقائياً عند تشغيل النظام."
+                                   Margin="0,4,0,10"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding MenuVisibilityOptions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource BackgroundBrush}"
+                                            BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Margin="0,0,0,8"
+                                            Padding="10,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsVisible}"
+                                                      Content="إظهار"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,12,0"/>
+                                            <CheckBox Grid.Column="1"
+                                                      IsChecked="{Binding IsPinned}"
+                                                      IsEnabled="{Binding IsVisible}"
+                                                      Content="تثبيت"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                         Width="18" Height="18"
+                                                                         Foreground="{DynamicResource ChromeTabSelectedForegroundBrush}"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding Title}"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="13"
+                                                           Foreground="{DynamicResource SearchResultTitleBrush}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <Button Command="{Binding SaveMenuCustomizationCommand}"
+                                Style="{StaticResource PrimaryButton}" Margin="0,0,8,0">
+                            <TextBlock Text="حفظ"/>
+                        </Button>
+                        <Button Command="{Binding ResetMenuCustomizationCommand}"
+                                Style="{StaticResource OutlinedButton}">
+                            <TextBlock Text="إعادة ضبط"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Popup>
     </Grid>
 </Window>

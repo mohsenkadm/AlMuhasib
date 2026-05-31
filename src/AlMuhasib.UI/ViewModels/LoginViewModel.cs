@@ -1,5 +1,6 @@
-using System.Windows;
+using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,8 +12,15 @@ public partial class LoginViewModel : ObservableObject
     private readonly IAuthService _authService;
     private readonly CurrentUserService _currentUserService;
 
+    public ObservableCollection<LoginAdminOption> AdminUsers { get; } = [];
+
     [ObservableProperty]
-    private string _username = string.Empty;
+    [NotifyPropertyChangedFor(nameof(IsSelectingAdmin))]
+    [NotifyPropertyChangedFor(nameof(IsEnteringPassword))]
+    private LoginStep _currentStep = LoginStep.SelectAdmin;
+
+    [ObservableProperty]
+    private LoginAdminOption? _selectedAdmin;
 
     [ObservableProperty]
     private string _password = string.Empty;
@@ -24,20 +32,86 @@ public partial class LoginViewModel : ObservableObject
     private bool _isLoading;
 
     [ObservableProperty]
+    private bool _isLoadingAdmins;
+
+    [ObservableProperty]
     private string _errorMessage = string.Empty;
 
     [ObservableProperty]
     private bool _hasError;
 
-    /// <summary>
-    /// Raised when login succeeds. The Window subscribes to close itself.
-    /// </summary>
+    [ObservableProperty]
+    private bool _hasAdmins;
+
+    public bool IsSelectingAdmin => CurrentStep == LoginStep.SelectAdmin;
+    public bool IsEnteringPassword => CurrentStep == LoginStep.EnterPassword;
+
     public event Action? LoginSucceeded;
+    public event Action? StepChanged;
 
     public LoginViewModel(IAuthService authService, CurrentUserService currentUserService)
     {
         _authService = authService;
         _currentUserService = currentUserService;
+    }
+
+    public async Task LoadAdminsAsync()
+    {
+        IsLoadingAdmins = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var admins = await _authService.GetActiveAdminUsersAsync();
+            AdminUsers.Clear();
+
+            var index = 0;
+            foreach (var admin in admins)
+                AdminUsers.Add(LoginAdminOption.FromUser(admin, index++));
+
+            HasAdmins = AdminUsers.Count > 0;
+            if (!HasAdmins)
+            {
+                ShowError("لا يوجد حساب مدير نشط. يرجى مراجعة إعدادات المستخدمين.");
+                return;
+            }
+
+            CurrentStep = LoginStep.SelectAdmin;
+            SelectedAdmin = null;
+            Password = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            ShowError($"تعذر تحميل حسابات المديرين: {ex.Message}");
+        }
+        finally
+        {
+            IsLoadingAdmins = false;
+        }
+    }
+
+    [RelayCommand]
+    private void SelectAdmin(LoginAdminOption? admin)
+    {
+        if (admin is null) return;
+
+        SelectedAdmin = admin;
+        Password = string.Empty;
+        HasError = false;
+        ErrorMessage = string.Empty;
+        CurrentStep = LoginStep.EnterPassword;
+        StepChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private void BackToAdminSelection()
+    {
+        Password = string.Empty;
+        HasError = false;
+        ErrorMessage = string.Empty;
+        CurrentStep = LoginStep.SelectAdmin;
+        StepChanged?.Invoke();
     }
 
     [RelayCommand]
@@ -46,9 +120,17 @@ public partial class LoginViewModel : ObservableObject
         HasError = false;
         ErrorMessage = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        if (SelectedAdmin is null)
         {
-            ShowError("يرجى إدخال اسم المستخدم وكلمة المرور");
+            ShowError("يرجى اختيار حساب المدير أولاً");
+            CurrentStep = LoginStep.SelectAdmin;
+            StepChanged?.Invoke();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            ShowError("يرجى إدخال كلمة المرور");
             return;
         }
 
@@ -56,7 +138,7 @@ public partial class LoginViewModel : ObservableObject
 
         try
         {
-            var result = await _authService.LoginAsync(Username.Trim(), Password);
+            var result = await _authService.LoginAsync(SelectedAdmin.Username, Password);
 
             if (!result.Success)
             {
@@ -64,16 +146,9 @@ public partial class LoginViewModel : ObservableObject
                 return;
             }
 
-            // Store the authenticated user in the singleton service
             _currentUserService.Username = result.User!.Username;
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
-
-            // TODO: Handle MustChangePassword — navigate to password change dialog
-            if (result.MustChangePassword)
-            {
-                // For now, just log in; force-change can be added later
-            }
 
             LoginSucceeded?.Invoke();
         }
@@ -86,6 +161,8 @@ public partial class LoginViewModel : ObservableObject
             IsLoading = false;
         }
     }
+
+    partial void OnCurrentStepChanged(LoginStep value) => StepChanged?.Invoke();
 
     private void ShowError(string message)
     {

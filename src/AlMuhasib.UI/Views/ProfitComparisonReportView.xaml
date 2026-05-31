@@ -1,0 +1,50 @@
+<UserControl x:Class="AlMuhasib.UI.Views.ProfitComparisonReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:ProfitComparisonReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+            <TextBlock Text="مقارنة الأرباح" FontSize="24" FontWeight="Bold" Margin="0,0,0,8"/>
+            <TextBlock Text="مقارنة الفترة المحددة بالفترة السابقة بنفس المدة"
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
+
+            <Border Style="{StaticResource FilterBar}" Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal">
+                    <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
+                    <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
+                    <Button Content="تحديث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding PeriodLabel}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBlock Text="{Binding PreviousPeriodLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
+
+            <UniformGrid Columns="3" Margin="0,0,0,12">
+                <controls:AnimatedStatCard Title="المبيعات (الحالية)" TextValue="{Binding CurrentSales}" Icon="CashRegister" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                <controls:AnimatedStatCard Title="المبيعات (السابقة)" TextValue="{Binding PreviousSales}" Icon="History" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding SalesChange}" Icon="TrendingUp" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+            </UniformGrid>
+
+            <UniformGrid Columns="3" Margin="0,0,0,12">
+                <controls:AnimatedStatCard Title="إجمالي الربح (الحالي)" TextValue="{Binding CurrentGrossProfit}" Icon="ChartLine" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                <controls:AnimatedStatCard Title="إجمالي الربح (السابق)" TextValue="{Binding PreviousGrossProfit}" Icon="ChartLineVariant" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding GrossProfitChange}" Icon="Percent" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+            </UniformGrid>
+
+            <UniformGrid Columns="3">
+                <controls:AnimatedStatCard Title="صافي الربح (الحالي)" TextValue="{Binding CurrentNetProfit}" Icon="CurrencyUsd" IconBackground="#E8F5E9" IconForeground="#1B5E20" ValueForeground="#1B5E20"/>
+                <controls:AnimatedStatCard Title="صافي الربح (السابق)" TextValue="{Binding PreviousNetProfit}" Icon="CurrencyUsd" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding NetProfitChange}" Icon="ArrowUpDown" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+            </UniformGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

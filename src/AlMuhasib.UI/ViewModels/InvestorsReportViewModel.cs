@@ -32,7 +32,10 @@ public partial class InvestorsReportViewModel : ReportViewModelBase, IInvestorLo
     public InvestorsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "تقرير المستثمرين"; }
+    {
+        PageTitle = "تقرير المستثمرين";
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {

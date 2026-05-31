@@ -354,4 +354,194 @@ public class InstallmentService : IInstallmentService
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return (items, totalCount);
     }
+
+    public async Task<InstallmentPlan> CreateOpeningBalancePlanAsync(OpeningInstallmentBalanceRequest request)
+    {
+        ValidateOpeningBalanceRequest(request);
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var username = _currentUserService.Username;
+            var customerId = await ResolveCustomerIdAsync(context, request, username);
+            var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
+                ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
+
+            var invoiceNumber = await GenerateInstallmentInvoiceNumberAsync(context);
+            var notePrefix = "رصيد افتتاحي — أقساط سابقة";
+            var notes = string.IsNullOrWhiteSpace(request.Notes)
+                ? notePrefix
+                : $"{notePrefix} | {request.Notes.Trim()}";
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                InvoiceType = InvoiceType.Installment,
+                CustomerId = customerId,
+                WarehouseId = warehouse.Id,
+                PaymentMethod = PaymentMethod.Installment,
+                TotalAmount = request.TotalAmount,
+                DiscountAmount = 0,
+                NetAmount = request.TotalAmount,
+                RoundingAmount = 0,
+                RoundingType = RoundingType.RoundDown,
+                PaidAmount = request.TotalAmount,
+                RemainingAmount = 0,
+                IsCreditPaid = true,
+                Date = request.StartDate.Date,
+                Notes = notes,
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            };
+            await context.Invoices.AddAsync(invoice);
+            await context.SaveChangesAsync();
+
+            var installmentAmount = Math.Floor(request.TotalAmount / request.NumberOfInstallments);
+            var plan = new InstallmentPlan
+            {
+                InvoiceId = invoice.Id,
+                CustomerId = customerId,
+                FileNumber = string.IsNullOrWhiteSpace(request.FileNumber) ? null : request.FileNumber.Trim(),
+                TotalAmount = request.TotalAmount,
+                NumberOfInstallments = request.NumberOfInstallments,
+                InstallmentAmount = installmentAmount,
+                StartDate = request.StartDate.Date,
+                InstallmentType = InstallmentType.OpeningBalance,
+                CompanyFeePercentage = 0,
+                CompanyFeeAmount = 0,
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            };
+            await context.InstallmentPlans.AddAsync(plan);
+            await context.SaveChangesAsync();
+
+            var today = DateTime.Today;
+            for (var i = 0; i < request.NumberOfInstallments; i++)
+            {
+                var amount = i < request.NumberOfInstallments - 1
+                    ? installmentAmount
+                    : request.TotalAmount - (installmentAmount * (request.NumberOfInstallments - 1));
+                var dueDate = request.StartDate.Date.AddMonths(i);
+                var isPaid = i < request.PaidInstallmentsCount;
+
+                await context.Installments.AddAsync(new Installment
+                {
+                    InstallmentPlanId = plan.Id,
+                    DueDate = dueDate,
+                    Amount = amount,
+                    PaidAmount = isPaid ? amount : 0,
+                    RemainingAmount = isPaid ? 0 : amount,
+                    Status = isPaid
+                        ? InstallmentStatus.Paid
+                        : dueDate < today ? InstallmentStatus.Overdue : InstallmentStatus.Pending,
+                    PaymentDate = isPaid ? dueDate : null,
+                    CashBoxId = null,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Add,
+                    EntityName = "InstallmentPlan",
+                    EntityId = plan.Id,
+                    NewValues = $"رصيد افتتاحي: {request.NumberOfInstallments} قسط ({request.PaidInstallmentsCount} مسدد), المبلغ: {request.TotalAmount:N0}, العميل: {customerId}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+            return plan;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<OpeningInstallmentBatchResult> CreateOpeningBalancePlansBatchAsync(
+        IReadOnlyList<OpeningInstallmentBalanceRequest> requests)
+    {
+        var result = new OpeningInstallmentBatchResult();
+        if (requests is null || requests.Count == 0)
+        {
+            result.Errors.Add("لا توجد بيانات للاستيراد");
+            return result;
+        }
+
+        for (var index = 0; index < requests.Count; index++)
+        {
+            var request = requests[index];
+            try
+            {
+                ValidateOpeningBalanceRequest(request);
+                await CreateOpeningBalancePlanAsync(request);
+                result.SuccessCount++;
+            }
+            catch (Exception ex)
+            {
+                result.FailedCount++;
+                var label = request.CustomerName ?? request.CustomerId?.ToString() ?? $"سطر {index + 1}";
+                result.Errors.Add($"{label}: {ex.Message}");
+            }
+        }
+
+        return result;
+    }
+
+    private static void ValidateOpeningBalanceRequest(OpeningInstallmentBalanceRequest request)
+    {
+        if (request.TotalAmount <= 0)
+            throw new InvalidOperationException("المبلغ الكلي يجب أن يكون أكبر من صفر");
+        if (request.NumberOfInstallments <= 0)
+            throw new InvalidOperationException("عدد الأقساط يجب أن يكون أكبر من صفر");
+        if (request.PaidInstallmentsCount < 0)
+            throw new InvalidOperationException("عدد الأقساط المسددة لا يمكن أن يكون سالباً");
+        if (request.PaidInstallmentsCount > request.NumberOfInstallments)
+            throw new InvalidOperationException("عدد الأقساط المسددة لا يمكن أن يتجاوز إجمالي الأقساط");
+        if (request.CustomerId is null && string.IsNullOrWhiteSpace(request.CustomerName))
+            throw new InvalidOperationException("يجب اختيار زبون أو إدخال اسمه");
+    }
+
+    private static async Task<int> ResolveCustomerIdAsync(
+        AppDbContext context, OpeningInstallmentBalanceRequest request, string username)
+    {
+        if (request.CustomerId is int existingId)
+        {
+            var exists = await context.Customers.AnyAsync(c => c.Id == existingId);
+            if (!exists)
+                throw new InvalidOperationException("الزبون المحدد غير موجود");
+            return existingId;
+        }
+
+        var name = request.CustomerName!.Trim();
+        var matched = await context.Customers
+            .FirstOrDefaultAsync(c => c.Name == name);
+        if (matched is not null)
+            return matched.Id;
+
+        var newCustomer = new Customer
+        {
+            Name = name,
+            FileNumber = string.IsNullOrWhiteSpace(request.FileNumber) ? null : request.FileNumber.Trim(),
+            CreatedBy = username,
+            CreatedAt = DateTime.UtcNow
+        };
+        await context.Customers.AddAsync(newCustomer);
+        await context.SaveChangesAsync();
+        return newCustomer.Id;
+    }
+
+    private static Task<string> GenerateInstallmentInvoiceNumberAsync(AppDbContext context)
+        => InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Installment);
 }

@@ -32,14 +32,25 @@ public partial class OverdueReportViewModel : ReportViewModelBase
     public ObservableCollection<OverdueRow> Rows { get; } = [];
 
     public OverdueReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IInvoiceService invoiceService, IInstallmentService installmentService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "تقرير المتأخرات"; }
+    {
+        PageTitle = "تقرير المتأخرات";
+        InitReportActionServices(invoiceService, installmentService);
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
         foreach (var c in await _unitOfWork.Customers.GetAllAsync()) Customers.Add(c);
+        await LoadBulkPayCashBoxesAsync();
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterBulkInstallmentPayAsync()
+    {
         await LoadDataAsync();
     }
 

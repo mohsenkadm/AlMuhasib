@@ -49,7 +49,7 @@
             <!-- Text Content -->
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Title, ElementName=Root}"
-                           FontSize="12" Foreground="#9E9E9E" />
+                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
 
                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                     <TextBlock x:Name="ValueText"
@@ -58,7 +58,7 @@
                                Foreground="{Binding ValueForeground, ElementName=Root}" />
                     <TextBlock Text="{Binding Suffix, ElementName=Root}"
                                FontSize="14" FontWeight="Normal"
-                               Foreground="#757575"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Bottom"
                                Margin="6,0,0,4"
                                Visibility="{Binding Suffix, ElementName=Root,
@@ -72,7 +72,7 @@
                     <TextBlock x:Name="ComparisonArrow"
                                FontSize="12" FontWeight="Bold" Margin="0,0,4,0" />
                     <TextBlock x:Name="ComparisonText"
-                               FontSize="11" Foreground="#9E9E9E" />
+                               FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" />
                 </StackPanel>
             </StackPanel>
         </Grid>

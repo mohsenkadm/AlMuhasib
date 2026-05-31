@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows;
+using System.Windows.Threading;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -21,6 +22,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
+    private readonly IInvoiceDraftService _draftService;
+    private readonly IRecentActivityService _recentActivity;
+    private DispatcherTimer? _draftSaveTimer;
+    private const string DraftKey = "sales-invoice";
 
     // saved invoice reference for printing
     private Invoice? _savedInvoice;
@@ -98,6 +103,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private string _errorMessage = string.Empty;
 
     [ObservableProperty]
+    private bool _isReturnMode;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
     [NotifyPropertyChangedFor(nameof(CanPrint))]
     private bool _isSaved;
@@ -115,13 +123,21 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
-        IExportService exportService)
+        IExportService exportService,
+        IInvoiceDraftService draftService,
+        IRecentActivityService recentActivity,
+        IInvoiceTemplateService templateService,
+        IInvoiceQueueService queueService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
+        _draftService = draftService;
+        _recentActivity = recentActivity;
+        _templateService = templateService;
+        _queueService = queueService;
 
         PageTitle = "فاتورة مبيعات";
 
@@ -130,6 +146,68 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
+    }
+
+    private void ScheduleDraftSave()
+    {
+        if (IsSaved) return;
+        _draftSaveTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _draftSaveTimer.Stop();
+        _draftSaveTimer.Tick -= OnDraftSaveTick;
+        _draftSaveTimer.Tick += OnDraftSaveTick;
+        _draftSaveTimer.Start();
+    }
+
+    private void OnDraftSaveTick(object? sender, EventArgs e)
+    {
+        _draftSaveTimer?.Stop();
+        if (IsSaved || !Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName))) return;
+        _draftService.SaveDraft(DraftKey, BuildDraft());
+    }
+
+    private SalesInvoiceDraft BuildDraft() => new()
+    {
+        InvoiceNumber = InvoiceNumber,
+        InvoiceDate = InvoiceDate,
+        CustomerId = SelectedCustomer?.Id,
+        WarehouseId = SelectedWarehouse?.Id,
+        PaymentMethod = SelectedPaymentMethod,
+        CreditDueDate = CreditDueDate,
+        CashBoxId = SelectedCashBox?.Id,
+        Notes = Notes,
+        Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName)).Select(i => new SalesInvoiceDraftLine
+        {
+            ProductId = i.ProductId ?? 0,
+            ProductName = i.ItemName,
+            Quantity = i.Quantity,
+            UnitPrice = i.UnitPrice
+        }).ToList()
+    };
+
+    private void ApplyDraft(SalesInvoiceDraft draft)
+    {
+        InvoiceDate = draft.InvoiceDate;
+        SelectedPaymentMethod = draft.PaymentMethod;
+        CreditDueDate = draft.CreditDueDate;
+        Notes = draft.Notes ?? string.Empty;
+        if (draft.CustomerId.HasValue)
+            SelectedCustomer = Customers.FirstOrDefault(c => c.Id == draft.CustomerId);
+        if (draft.WarehouseId.HasValue)
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == draft.WarehouseId);
+        if (draft.CashBoxId.HasValue)
+            SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == draft.CashBoxId);
+        Items.Clear();
+        foreach (var line in draft.Lines)
+        {
+            Items.Add(new InvoiceItemRow
+            {
+                ProductId = line.ProductId > 0 ? line.ProductId : null,
+                ItemName = line.ProductName,
+                Quantity = line.Quantity,
+                UnitPrice = line.UnitPrice
+            });
+        }
+        RecalculateTotals();
     }
 
     public override bool HasUnsavedChanges =>
@@ -187,11 +265,107 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 Products.Add(p);
 
             AddRow();
+
+            if (InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId is int pendingReturnId)
+            {
+                InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = null;
+                await LoadAsReturnFromInvoiceAsync(pendingReturnId);
+            }
+            else if (InvoiceNavigationBridge.PendingSalesCopyInvoiceId is int pendingCopyId)
+            {
+                InvoiceNavigationBridge.PendingSalesCopyInvoiceId = null;
+                await CopyFromInvoiceAsync(pendingCopyId);
+            }
+            else if (_draftService.HasDraft(DraftKey))
+            {
+                var savedAt = _draftService.GetDraftSavedAt(DraftKey);
+                var when = savedAt.HasValue ? savedAt.Value.ToString("yyyy/MM/dd HH:mm") : "";
+                if (BeautifulMessageDialog.ShowConfirm(
+                        $"يوجد مسودة فاتورة مبيعات محفوظة ({when}).\nهل تريد استعادتها؟"))
+                {
+                    var draft = _draftService.LoadDraft<SalesInvoiceDraft>(DraftKey);
+                    if (draft is not null)
+                        ApplyDraft(draft);
+                }
+            }
+
+            ApplyDefaultCustomerIfAny();
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    public async Task CopyFromInvoiceAsync(int invoiceId)
+    {
+        var invoice = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
+        if (invoice is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر تحميل الفاتورة للنسخ");
+            return;
+        }
+
+        IsSaved = false;
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
+        InvoiceDate = DateTime.Now;
+        Notes = string.IsNullOrWhiteSpace(invoice.Notes) ? string.Empty : $"{invoice.Notes} (نسخة)";
+
+        if (invoice.CustomerId.HasValue)
+        {
+            SelectedCustomer = Customers.FirstOrDefault(c => c.Id == invoice.CustomerId);
+            if (SelectedCustomer is not null)
+                CustomerSearchText = SelectedCustomer.Name;
+        }
+
+        if (invoice.WarehouseId > 0)
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId);
+
+        SelectedPaymentMethod = invoice.PaymentMethod == PaymentMethod.Installment
+            ? PaymentMethod.Cash
+            : invoice.PaymentMethod;
+
+        if (SelectedPaymentMethod == PaymentMethod.Credit)
+            CreditDueDate = invoice.CreditDueDate ?? DateTime.Today.AddMonths(1);
+
+        foreach (var row in Items.ToList())
+            UnwireItemRow(row);
+        Items.Clear();
+
+        foreach (var item in invoice.Items)
+        {
+            var row = new InvoiceItemRow
+            {
+                ProductId = item.ProductId,
+                ItemName = item.ItemName,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice
+            };
+            WireItemRow(row);
+            Items.Add(row);
+        }
+
+        if (!Items.Any())
+            AddRow();
+
+        RecalculateTotals();
+        BeautifulMessageDialog.ShowSuccess($"تم نسخ {invoice.Items.Count} بند من الفاتورة {invoice.InvoiceNumber}");
+    }
+
+    public async Task LoadAsReturnFromInvoiceAsync(int invoiceId)
+    {
+        var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
+        var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
+        await CopyFromInvoiceAsync(invoiceId);
+        IsReturnMode = true;
+        SelectedPaymentMethod = PaymentMethod.Cash;
+        Notes = $"مرتجع مبيعات — مرجع {refNumber}";
+
+        foreach (var row in Items.Where(i => i.Quantity != 0).ToList())
+            row.Quantity = -Math.Abs(row.Quantity);
+
+        RecalculateTotals();
+        BeautifulMessageDialog.ShowInfo("وضع المرتجع: الكميات سالبة لإرجاع البضاعة للمخزن. راجع ثم احفظ.");
     }
 
     // ── Customer search ────────────────────────────────────
@@ -346,6 +520,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RecalculateTotals();
+        ScheduleDraftSave();
     }
 
     private bool _isManualGrandTotal;
@@ -423,7 +598,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         }
 
         var validItems = Items
-            .Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0 && (i.UnitPrice > 0 || i.TotalPrice > 0))
+            .Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0
+                        && (i.UnitPrice > 0 || i.TotalPrice != 0))
             .ToList();
 
         if (validItems.Count == 0)
@@ -440,9 +616,16 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                     s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
                 var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-                if (item.Quantity > available)
+                var qty = Math.Abs(item.Quantity);
+                if (!IsReturnMode && item.Quantity > available)
                 {
                     ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
+                    return;
+                }
+
+                if (IsReturnMode && qty > available)
+                {
+                    ErrorMessage = $"كمية المرتجع من '{item.ItemName}' ({qty:N0}) تتجاوز ما يمكن إرجاعه للمخزن ({available:N0})";
                     return;
                 }
             }
@@ -510,8 +693,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             IsSaved = true;
             InvoiceNumber = invoice.InvoiceNumber;
 
+            _draftService.ClearDraft(DraftKey);
+            _recentActivity.Record(
+                "فاتورة مبيعات",
+                $"{invoice.InvoiceNumber} — {invoice.NetAmount:N0} د.ع",
+                "SaleInvoice",
+                typeof(SalesInvoiceViewModel));
+
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع");
+                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع\n\nيمكنك الطباعة الآن من زر «طباعة».");
 
             PrintInvoice();
         }
@@ -585,6 +775,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
+        ApplyDefaultCustomerIfAny();
     }
 
     // ══════════════════════════════════════════════════════

@@ -12,7 +12,7 @@ public interface IExportService
     void ExportToExcel(string filePath, string sheetName, string[] columns, IList<object[]> rows);
 
     /// <summary>Prints tabular data using a FlowDocument with custom title and columns.</summary>
-    void PrintTable(string title, string[] columns, IList<object[]> rows);
+    void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null);
 
     /// <summary>Prints a formatted invoice document.</summary>
     void PrintInvoice(InvoicePrintModel model);

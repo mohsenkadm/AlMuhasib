@@ -34,6 +34,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         PageTitle = "تقرير الأرباح";
+        RegisterThemeChartReload(LoadDataAsync);
     }
 
     public override async Task InitializeAsync()
@@ -69,6 +70,12 @@ public partial class ProfitReportViewModel : ReportViewModelBase
                 ];
                 MonthlyXAxes = [ChartThemeConfig.CreateXAxis(monthly.Select(m => m.Month).ToArray(), -45)];
                 MonthlyYAxes = [ChartThemeConfig.CreateYAxis()];
+            }
+            else
+            {
+                MonthlySeries = [];
+                MonthlyXAxes = [];
+                MonthlyYAxes = [];
             }
 
             _allRows = monthly;

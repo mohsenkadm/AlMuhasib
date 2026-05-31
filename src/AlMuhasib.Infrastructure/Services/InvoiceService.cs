@@ -217,22 +217,8 @@ public class InvoiceService : IInvoiceService
         return await GenerateInvoiceNumberAsync(context, type);
     }
 
-    private static async Task<string> GenerateInvoiceNumberAsync(AppDbContext context, InvoiceType type)
-    {
-        var prefix = type switch
-        {
-            InvoiceType.Purchase => "PUR",
-            InvoiceType.Sale => "SAL",
-            InvoiceType.Installment => "INS",
-            _ => "INV"
-        };
-
-        var year = DateTime.Now.Year;
-        var count = await context.Invoices.CountAsync(
-            i => i.InvoiceType == type && i.CreatedAt.Year == year);
-
-        return $"{prefix}-{year}-{(count + 1):D5}";
-    }
+    private static Task<string> GenerateInvoiceNumberAsync(AppDbContext context, InvoiceType type)
+        => InvoiceNumberHelper.GenerateNextAsync(context, type);
 
     public decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType)
     {

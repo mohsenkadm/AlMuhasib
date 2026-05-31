@@ -133,7 +133,10 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
-        IExportService exportService)
+        IExportService exportService,
+        IInvoiceTemplateService templateService,
+        IInvoiceDraftService draftService,
+        IInvoiceQueueService queueService)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -141,6 +144,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
+        _templateService = templateService;
+        _draftService = draftService;
+        _queueService = queueService;
 
         PageTitle = "فاتورة أقساط";
 
@@ -195,6 +201,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
             AddRow();
             GenerateSchedulePreview();
+            TryRestoreDraft();
+            ApplyDefaultInstallmentCustomerIfAny();
         }
         finally
         {
@@ -378,6 +386,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RecalculateTotals();
+        ScheduleDraftSave();
     }
 
     private bool _isManualGrandTotal;
@@ -548,6 +557,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
             IsSaved = true;
             InvoiceNumber = savedInvoice.InvoiceNumber;
+            _draftService.ClearDraft(DraftKey);
 
             _savedInvoice = savedInvoice;
             _savedItems = invoiceItems;
@@ -642,6 +652,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Installment);
+        ApplyDefaultInstallmentCustomerIfAny();
+        GenerateSchedulePreview();
     }
 
     // ══════════════════════════════════════════════════════

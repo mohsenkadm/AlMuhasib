@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -54,8 +55,7 @@ public class DashboardService : IDashboardService
         // Net profit = total sales - total purchases - total expenses - distributed profits (all-time)
         try
         {
-            var totalSales = await context.Invoices
-                .Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
+            var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
             var totalPurchases = await context.Invoices
                 .Where(i => i.InvoiceType == InvoiceType.Purchase)

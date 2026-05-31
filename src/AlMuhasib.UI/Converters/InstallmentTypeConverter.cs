@@ -12,6 +12,7 @@ public class InstallmentTypeConverter : IValueConverter
         {
             InstallmentType.Manual => "يدوي",
             InstallmentType.Platform => "بيع منصة",
+            InstallmentType.OpeningBalance => "رصيد افتتاحي",
             _ => "—"
         } : "—";
     }

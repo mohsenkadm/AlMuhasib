@@ -5,9 +5,7 @@
              FlowDirection="RightToLeft"
              x:Name="Root">
 
-    <materialDesign:Card materialDesign:ElevationAssist.Elevation="Dp2"
-                         UniformCornerRadius="12"
-                         Padding="20"
+    <materialDesign:Card Style="{StaticResource ElevatedCard}"
                          Margin="0,0,0,16">
         <materialDesign:Card.RenderTransform>
             <ScaleTransform ScaleX="1" ScaleY="1" />
@@ -32,7 +30,7 @@
                                FontSize="16" FontWeight="Bold"
                                Foreground="{DynamicResource MaterialDesignBody}" />
                     <TextBlock Text="{Binding Subtitle, ElementName=Root}"
-                               FontSize="11" Foreground="#9E9E9E"
+                               FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"
                                Margin="0,2,0,0"
                                Visibility="{Binding Subtitle, ElementName=Root, 
                                    Converter={StaticResource NullToCollapsedConverter}}" />
@@ -74,9 +72,9 @@
                 <materialDesign:PackIcon Kind="ChartBoxOutline"
                                          Width="48" Height="48"
                                          HorizontalAlignment="Center"
-                                         Foreground="#BDBDBD" />
+                                         Foreground="{DynamicResource ChartEmptyIconBrush}" />
                 <TextBlock Text="لا توجد بيانات كافية"
-                           FontSize="13" Foreground="#9E9E9E"
+                           FontSize="13" Foreground="{DynamicResource HintForegroundBrush}"
                            HorizontalAlignment="Center" Margin="0,8,0,0" />
             </StackPanel>
         </Grid>

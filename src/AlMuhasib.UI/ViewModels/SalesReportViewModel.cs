@@ -10,6 +10,7 @@ using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -57,6 +58,8 @@ public partial class SalesReportViewModel : ReportViewModelBase
     {
         _invoiceService = invoiceService;
         PageTitle = "تقرير المبيعات";
+        InitReportActionServices(invoiceService);
+        RegisterThemeChartReload(LoadDataAsync);
     }
 
     public override async Task InitializeAsync()
@@ -181,6 +184,54 @@ public partial class SalesReportViewModel : ReportViewModelBase
             _exportService.PrintInvoice(model);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    [RelayCommand]
+    private async Task ReturnInvoice(SalesReportRow? row)
+    {
+        if (row is null) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"إنشاء فاتورة مرتجع من الفاتورة {row.InvoiceNumber}؟\nستُعاد الكميات إلى المخزن بكميات سالبة."))
+            return;
+
+        if (InvoiceNavigationBridge.ReturnSalesInvoiceAsync is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة المرتجع");
+            return;
+        }
+
+        try
+        {
+            await InvoiceNavigationBridge.ReturnSalesInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task CopyInvoice(SalesReportRow? row)
+    {
+        if (row is null) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"نسخ بنود الفاتورة {row.InvoiceNumber} إلى فاتورة مبيعات جديدة؟\nسيتم إنشاء رقم فاتورة جديد دون حفظ تلقائي."))
+            return;
+
+        if (InvoiceNavigationBridge.CopyToSalesInvoiceAsync is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة فاتورة المبيعات");
+            return;
+        }
+
+        try
+        {
+            await InvoiceNavigationBridge.CopyToSalesInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     [RelayCommand]

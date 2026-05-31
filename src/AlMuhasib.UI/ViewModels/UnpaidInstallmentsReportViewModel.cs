@@ -28,14 +28,25 @@ public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
     public ObservableCollection<UnpaidInstallmentRow> Rows { get; } = [];
 
     public UnpaidInstallmentsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IInvoiceService invoiceService, IInstallmentService installmentService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "الأقساط غير المسددة"; }
+    {
+        PageTitle = "الأقساط غير المسددة";
+        InitReportActionServices(invoiceService, installmentService);
+        RegisterThemeChartReload(LoadDataAsync);
+    }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
         foreach (var c in await _unitOfWork.Customers.GetAllAsync()) Customers.Add(c);
+        await LoadBulkPayCashBoxesAsync();
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterBulkInstallmentPayAsync()
+    {
         await LoadDataAsync();
     }
 

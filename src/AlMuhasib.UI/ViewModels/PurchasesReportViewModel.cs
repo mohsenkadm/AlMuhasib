@@ -10,6 +10,7 @@ using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -50,6 +51,8 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     {
         _invoiceService = invoiceService;
         PageTitle = "تقرير المشتريات";
+        InitReportActionServices(invoiceService);
+        RegisterThemeChartReload(LoadDataAsync);
     }
 
     public override async Task InitializeAsync()
@@ -154,6 +157,30 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             _exportService.PrintInvoice(model);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    [RelayCommand]
+    private async Task CopyInvoice(PurchasesReportRow? row)
+    {
+        if (row is null) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"نسخ بنود الفاتورة {row.InvoiceNumber} إلى فاتورة مشتريات جديدة؟\nسيتم إنشاء رقم فاتورة جديد دون حفظ تلقائي."))
+            return;
+
+        if (InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة فاتورة المشتريات");
+            return;
+        }
+
+        try
+        {
+            await InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     [RelayCommand]

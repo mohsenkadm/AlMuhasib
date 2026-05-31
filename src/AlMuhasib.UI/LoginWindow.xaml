@@ -5,11 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+        xmlns:models="clr-namespace:AlMuhasib.UI.Models"
         xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:LoginViewModel, IsDesignTimeCreatable=False}"
         Title="تسجيل الدخول - المحاسب"
-        Height="700" Width="500"
+        Height="640" Width="920"
+        MinHeight="580" MinWidth="780"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -19,30 +21,29 @@
         FontFamily="{DynamicResource ArabicFont}">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
         <Style x:Key="PasswordToggleButton" TargetType="ToggleButton">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="18">
-                            <materialDesign:PackIcon x:Name="Icon"
-                                                     Kind="EyeOff"
-                                                     Width="20" Height="20"
+                            <materialDesign:PackIcon x:Name="Icon" Kind="EyeOff" Width="20" Height="20"
                                                      Foreground="#90A4AE"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center" />
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#ECEFF1" />
+                                <Setter TargetName="Bd" Property="Background" Value="#ECEFF1"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Icon" Property="Kind" Value="Eye" />
-                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0" />
+                                <Setter TargetName="Icon" Property="Kind" Value="Eye"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -51,26 +52,26 @@
         </Style>
 
         <Style x:Key="LoginPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-            <Setter Property="Height" Value="50" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12" />
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12"/>
             <Setter Property="Background">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#0D47A1" Offset="0" />
-                        <GradientStop Color="#1565C0" Offset="0.5" />
-                        <GradientStop Color="#42A5F5" Offset="1" />
+                        <GradientStop Color="#0D47A1" Offset="0"/>
+                        <GradientStop Color="#1565C0" Offset="0.5"/>
+                        <GradientStop Color="#42A5F5" Offset="1"/>
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="RenderTransform">
                 <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
@@ -78,401 +79,395 @@
                     <Setter Property="Background">
                         <Setter.Value>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#1565C0" Offset="0" />
-                                <GradientStop Color="#1E88E5" Offset="0.5" />
-                                <GradientStop Color="#64B5F6" Offset="1" />
+                                <GradientStop Color="#1565C0" Offset="0"/>
+                                <GradientStop Color="#1E88E5" Offset="0.5"/>
+                                <GradientStop Color="#64B5F6" Offset="1"/>
                             </LinearGradientBrush>
                         </Setter.Value>
                     </Setter>
-                    <Trigger.EnterActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.02" Duration="0:0:0.18">
-                                    <DoubleAnimation.EasingFunction>
-                                        <CubicEase EasingMode="EaseOut" />
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.02" Duration="0:0:0.18">
-                                    <DoubleAnimation.EasingFunction>
-                                        <CubicEase EasingMode="EaseOut" />
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </Trigger.EnterActions>
-                    <Trigger.ExitActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1" Duration="0:0:0.18" />
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1" Duration="0:0:0.18" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </Trigger.ExitActions>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.65" />
+                    <Setter Property="Opacity" Value="0.65"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- ─── Entrance animations ─── -->
+        <Style x:Key="AdminCardButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="148"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Card" CornerRadius="18" Padding="16,18"
+                                Background="White"
+                                BorderBrush="#E3EDF7" BorderThickness="1.5"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.08" Color="#1565C0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="BorderBrush" Value="#90CAF9"/>
+                                <Setter TargetName="Card" Property="Background" Value="#F5FAFF"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1.04" Duration="0:0:0.18">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1.04" Duration="0:0:0.18">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Card" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="AdminCardTemplate" DataType="{x:Type models:LoginAdminOption}">
+            <Button Style="{StaticResource AdminCardButton}"
+                    Command="{Binding DataContext.SelectAdminCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}">
+                <StackPanel HorizontalAlignment="Center">
+                    <Grid Width="78" Height="78" Margin="0,0,0,12">
+                        <Ellipse Width="78" Height="78" Stroke="#E8F4FD" StrokeThickness="2"/>
+                        <Ellipse Width="68" Height="68" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="{Binding AvatarColorStart}" Offset="0"/>
+                                    <GradientStop Color="{Binding AvatarColorEnd}" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock Text="{Binding Initials}" FontSize="22" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <TextBlock Text="{Binding FullName}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="#1A237E" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="120"/>
+                    <TextBlock Text="مدير النظام" FontSize="11" Foreground="#78909C"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Button>
+        </DataTemplate>
+
         <Storyboard x:Key="WindowEntrance">
-            <DoubleAnimation Storyboard.TargetName="RootCard"
-                             Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5">
+            <DoubleAnimation Storyboard.TargetName="RootCard" Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.45">
                 <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
+                    <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="CardScale"
                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                             From="0.94" To="1" Duration="0:0:0.55">
+                             From="0.92" To="1" Duration="0:0:0.5">
                 <DoubleAnimation.EasingFunction>
-                    <BackEase EasingMode="EaseOut" Amplitude="0.3" />
+                    <BackEase EasingMode="EaseOut" Amplitude="0.28"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="CardScale"
                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                             From="0.94" To="1" Duration="0:0:0.55">
+                             From="0.92" To="1" Duration="0:0:0.5">
                 <DoubleAnimation.EasingFunction>
-                    <BackEase EasingMode="EaseOut" Amplitude="0.3" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Key="BrandEntrance">
-            <DoubleAnimation Storyboard.TargetName="BrandPanel"
-                             Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.45" BeginTime="0:0:0.12">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="BrandPanel"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="16" To="0" Duration="0:0:0.45" BeginTime="0:0:0.12">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Key="FormEntrance">
-            <DoubleAnimation Storyboard.TargetName="FormPanel"
-                             Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.22">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="FormPanel"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="28" To="0" Duration="0:0:0.5" BeginTime="0:0:0.22">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Key="LogoPulse" RepeatBehavior="Forever" AutoReverse="True">
-            <DoubleAnimation Storyboard.TargetName="LogoRing"
-                             Storyboard.TargetProperty="Opacity"
-                             From="0.4" To="0.9" Duration="0:0:1.6">
-                <DoubleAnimation.EasingFunction>
-                    <SineEase EasingMode="EaseInOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="LogoIcon"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                             From="1" To="1.05" Duration="0:0:1.6">
-                <DoubleAnimation.EasingFunction>
-                    <SineEase EasingMode="EaseInOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="LogoIcon"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                             From="1" To="1.05" Duration="0:0:1.6">
-                <DoubleAnimation.EasingFunction>
-                    <SineEase EasingMode="EaseInOut" />
+                    <BackEase EasingMode="EaseOut" Amplitude="0.28"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
     </Window.Resources>
 
-    <Border x:Name="RootCard" Opacity="0" CornerRadius="22" Background="Transparent">
+    <Border x:Name="RootCard" Opacity="0" CornerRadius="24" Background="Transparent">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="50" ShadowDepth="0" Opacity="0.35" Color="#0D47A1" />
+            <DropShadowEffect BlurRadius="48" ShadowDepth="0" Opacity="0.28" Color="#0D47A1"/>
         </Border.Effect>
 
         <Grid x:Name="CardScale" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform>
-                <ScaleTransform ScaleX="0.94" ScaleY="0.94" />
+                <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
             </Grid.RenderTransform>
 
-            <Border CornerRadius="22" ClipToBounds="True" Background="White">
+            <Border CornerRadius="24" ClipToBounds="True" Background="White">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="220" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- ═══ HEADER ═══ -->
-                    <Grid Grid.Row="0" ClipToBounds="True">
-                        <Border CornerRadius="22,22,0,0">
+                    <!-- ═══ Brand panel ═══ -->
+                    <Grid Grid.Column="0" ClipToBounds="True">
+                        <Border CornerRadius="0,24,24,0">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#0A1628" Offset="0" />
-                                    <GradientStop Color="#0D2847" Offset="0.4" />
-                                    <GradientStop Color="#1565C0" Offset="1" />
+                                    <GradientStop Color="#0A1628" Offset="0"/>
+                                    <GradientStop Color="#0D2847" Offset="0.45"/>
+                                    <GradientStop Color="#1565C0" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
                         </Border>
 
-                        <Ellipse Width="200" Height="200" Fill="#304DD0E1" Opacity="0.2"
-                                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-70,-60,0,0" />
-                        <Ellipse Width="160" Height="160" Fill="#403F51B5" Opacity="0.25"
-                                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-50,-40" />
+                        <Ellipse Width="220" Height="220" Fill="#304DD0E1" Opacity="0.18"
+                                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-80,-70,0,0"/>
+                        <Ellipse Width="180" Height="180" Fill="#403F51B5" Opacity="0.22"
+                                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-60,-50"/>
 
-                        <Button HorizontalAlignment="Left" VerticalAlignment="Top"
-                                Margin="14,14,0,0"
-                                Style="{StaticResource IconButton}"
-                                Foreground="White" Opacity="0.75"
-                                Width="36" Height="36"
-                                Click="CloseButton_Click"
-                                ToolTip="إغلاق">
-                            <Border Background="#22FFFFFF" CornerRadius="18" Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="Close" Width="18" Height="18"
-                                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                        </Button>
-
-                        <StackPanel x:Name="BrandPanel" Opacity="0"
-                                    VerticalAlignment="Center" HorizontalAlignment="Center"
-                                    RenderTransformOrigin="0.5,0.5">
-                            <StackPanel.RenderTransform>
-                                <TranslateTransform Y="16" />
-                            </StackPanel.RenderTransform>
-
-                            <Grid Width="88" Height="88" Margin="0,0,0,14">
-                                <Ellipse x:Name="LogoRing" Width="88" Height="88"
-                                         Stroke="#55FFFFFF" StrokeThickness="1.5"
-                                         StrokeDashArray="3 5" Opacity="0.5" />
-                                <Border Width="64" Height="64" CornerRadius="32"
-                                        Background="#28FFFFFF"
-                                        BorderBrush="#44FFFFFF" BorderThickness="1"
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="28">
+                            <Grid Width="92" Height="92" Margin="0,0,0,18">
+                                <Ellipse Width="92" Height="92" Stroke="#55FFFFFF" StrokeThickness="1.5"
+                                         StrokeDashArray="4 6" Opacity="0.55"/>
+                                <Border Width="68" Height="68" CornerRadius="34"
+                                        Background="#28FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1"
                                         HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon x:Name="LogoIcon"
-                                                             Kind="CalculatorVariant"
-                                                             Width="34" Height="34"
+                                    <materialDesign:PackIcon Kind="CalculatorVariant" Width="36" Height="36"
                                                              Foreground="#80DEEA"
-                                                             HorizontalAlignment="Center"
-                                                             VerticalAlignment="Center"
-                                                             RenderTransformOrigin="0.5,0.5">
-                                        <materialDesign:PackIcon.RenderTransform>
-                                            <ScaleTransform />
-                                        </materialDesign:PackIcon.RenderTransform>
-                                    </materialDesign:PackIcon>
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
 
                             <TextBlock Text="{x:Static helpers:AppInfo.AppNameAr}"
-                                       FontSize="24" FontWeight="Bold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center" />
-
+                                       FontSize="26" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" TextAlignment="Center"/>
                             <TextBlock Text="{x:Static helpers:AppInfo.AppNameEn}"
-                                       FontSize="13" FontWeight="SemiBold"
-                                       Foreground="#B3E5FC" Opacity="0.9"
-                                       HorizontalAlignment="Center" Margin="0,4,0,0" />
-
-                            <Border Background="#1FFFFFFF" CornerRadius="14"
-                                    Padding="12,4" Margin="0,10,0,0"
+                                       FontSize="13" Foreground="#B3E5FC" Opacity="0.92"
+                                       HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                            <Border Background="#1FFFFFFF" CornerRadius="14" Padding="12,5" Margin="0,14,0,0"
                                     HorizontalAlignment="Center">
                                 <TextBlock Text="{x:Static helpers:AppInfo.VersionLabel}"
-                                           FontSize="11" Foreground="#E1F5FE" />
+                                           FontSize="11" Foreground="#E1F5FE"/>
                             </Border>
+
+                            <TextBlock Text="اختر حساب المدير ثم أكمل تسجيل الدخول بكلمة المرور"
+                                       FontSize="12.5" Foreground="#B0BEC5" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="0,28,0,0" MaxWidth="260" LineHeight="20"/>
                         </StackPanel>
                     </Grid>
 
-                    <!-- ═══ FORM ═══ -->
-                    <Border Grid.Row="1" Background="#FAFBFD" CornerRadius="0,0,22,22">
-                        <StackPanel x:Name="FormPanel" Opacity="0"
-                                    VerticalAlignment="Center"
-                                    Margin="36,24,36,28"
-                                    RenderTransformOrigin="0.5,0.5">
-                            <StackPanel.RenderTransform>
-                                <TranslateTransform Y="28" />
-                            </StackPanel.RenderTransform>
+                    <!-- ═══ Login content ═══ -->
+                    <Grid Grid.Column="1" Background="#FAFBFD">
+                        <Button HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Margin="16,16,0,0" Style="{StaticResource IconButton}"
+                                Foreground="#78909C" Width="36" Height="36"
+                                Click="CloseButton_Click" ToolTip="إغلاق">
+                            <Border Background="#ECEFF1" CornerRadius="18" Width="36" Height="36">
+                                <materialDesign:PackIcon Kind="Close" Width="18" Height="18"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Button>
 
-                            <TextBlock Text="مرحباً بعودتك"
-                                       FontSize="22" FontWeight="Bold"
-                                       Foreground="#1A237E"
-                                       Margin="0,0,0,4" />
-                            <TextBlock Text="سجّل دخولك للمتابعة إلى لوحة التحكم"
-                                       FontSize="13" Foreground="#78909C"
-                                       Margin="0,0,0,22" />
-
-                            <!-- Error -->
-                            <Border CornerRadius="10"
-                                    Background="#FFEBEE"
-                                    BorderBrush="#FFCDD2" BorderThickness="1"
-                                    Padding="12,10"
-                                    Margin="0,0,0,16"
-                                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasError}" Value="True">
-                                                <DataTrigger.EnterActions>
-                                                    <BeginStoryboard>
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                             From="0" To="1" Duration="0:0:0.25" />
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </DataTrigger.EnterActions>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                        <Grid Margin="40,36,40,32">
+                            <!-- Error banner -->
+                            <Border VerticalAlignment="Top" CornerRadius="10"
+                                    Background="#FFEBEE" BorderBrush="#FFCDD2" BorderThickness="1"
+                                    Padding="12,10" Panel.ZIndex="10"
+                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <materialDesign:PackIcon Grid.Column="0"
-                                                             Kind="AlertCircleOutline"
-                                                             Width="20" Height="20"
-                                                             Foreground="#D32F2F"
-                                                             VerticalAlignment="Center"
-                                                             Margin="0,0,8,0" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding ErrorMessage}"
-                                               Foreground="#C62828"
-                                               FontSize="12.5"
-                                               VerticalAlignment="Center"
-                                               TextWrapping="Wrap" />
+                                    <materialDesign:PackIcon Kind="AlertCircleOutline" Width="20" Height="20"
+                                                             Foreground="#D32F2F" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}"
+                                               Foreground="#C62828" FontSize="12.5" TextWrapping="Wrap"/>
                                 </Grid>
                             </Border>
 
-                            <TextBox x:Name="UsernameBox"
-                                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="اسم المستخدم"
-                                     materialDesign:HintAssist.FloatingScale="0.85"
-                                     materialDesign:TextFieldAssist.HasLeadingIcon="True"
-                                     materialDesign:TextFieldAssist.LeadingIcon="Account"
-                                     materialDesign:HintAssist.IsFloating="True"
-                                     Style="{StaticResource OutlinedTextBox}"
-                                     FontSize="14"
-                                     Margin="0,0,0,16"
-                                     FlowDirection="RightToLeft" />
+                            <!-- Step 1: Select admin -->
+                            <Grid x:Name="AdminStepPanel"
+                                  Visibility="{Binding IsSelectingAdmin, Converter={StaticResource BoolToVis}}">
+                                <Grid.RenderTransform>
+                                    <TranslateTransform X="0"/>
+                                </Grid.RenderTransform>
 
-                            <Grid Margin="0,0,0,10">
-                                <PasswordBox x:Name="PasswordBoxHidden"
-                                             materialDesign:HintAssist.Hint="كلمة المرور"
-                                             materialDesign:HintAssist.FloatingScale="0.85"
-                                             materialDesign:TextFieldAssist.HasLeadingIcon="True"
-                                             materialDesign:TextFieldAssist.LeadingIcon="Lock"
-                                             materialDesign:HintAssist.IsFloating="True"
-                                             Style="{StaticResource OutlinedPasswordBox}"
-                                             FontSize="14"
-                                             FlowDirection="RightToLeft"
-                                             Padding="48,10,12,10"
-                                             PasswordChanged="PasswordBox_PasswordChanged" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="من يقوم بتسجيل الدخول؟"
+                                               FontSize="24" FontWeight="Bold" Foreground="#1A237E"/>
+                                    <TextBlock Text="اختر حساب المدير للمتابعة"
+                                               FontSize="13" Foreground="#78909C" Margin="0,6,0,24"/>
 
-                                <TextBox x:Name="PasswordBoxVisible"
-                                         Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="كلمة المرور"
-                                         materialDesign:HintAssist.FloatingScale="0.85"
-                                         materialDesign:TextFieldAssist.HasLeadingIcon="True"
-                                         materialDesign:TextFieldAssist.LeadingIcon="Lock"
-                                         materialDesign:HintAssist.IsFloating="True"
-                                         Style="{StaticResource OutlinedTextBox}"
-                                         FontSize="14"
-                                         FlowDirection="RightToLeft"
-                                         Padding="48,10,12,10"
-                                         Visibility="Collapsed" />
+                                    <Border CornerRadius="16" Background="White" Padding="16,20"
+                                            BorderBrush="#E8EEF5" BorderThickness="1" MinHeight="220">
+                                        <Grid>
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        Visibility="{Binding IsLoadingAdmins, Converter={StaticResource BoolToVis}}">
+                                                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                             IsIndeterminate="True" Width="36" Height="36"/>
+                                                <TextBlock Text="جاري تحميل حسابات المديرين..."
+                                                           Foreground="#78909C" FontSize="13"
+                                                           HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                                            </StackPanel>
 
-                                <ToggleButton x:Name="PasswordToggle"
-                                              Style="{StaticResource PasswordToggleButton}"
-                                              HorizontalAlignment="Left"
-                                              VerticalAlignment="Center"
-                                              Margin="10,0,0,0"
-                                              Panel.ZIndex="2"
-                                              Checked="PasswordToggle_Changed"
-                                              Unchecked="PasswordToggle_Changed" />
+                                            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                          VerticalScrollBarVisibility="Disabled"
+                                                          Visibility="{Binding IsLoadingAdmins, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                                <ItemsControl ItemsSource="{Binding AdminUsers}"
+                                                              ItemTemplate="{StaticResource AdminCardTemplate}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </Border>
+
+                                    <TextBlock Text="اضغط على بطاقة المدير للمتابعة"
+                                               FontSize="12" Foreground="#90A4AE"
+                                               HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                                </StackPanel>
                             </Grid>
 
-                            <CheckBox Content="تذكرني"
-                                      IsChecked="{Binding RememberMe}"
-                                      FontSize="13"
-                                      Margin="0,6,0,22"
-                                      Foreground="#546E7A" />
+                            <!-- Step 2: Password -->
+                            <Grid x:Name="PasswordStepPanel" Opacity="0"
+                                  Visibility="{Binding IsEnteringPassword, Converter={StaticResource BoolToVis}}">
+                                <Grid.RenderTransform>
+                                    <TranslateTransform X="40"/>
+                                </Grid.RenderTransform>
 
-                            <Button Command="{Binding LoginCommand}"
-                                    Style="{StaticResource LoginPrimaryButton}"
-                                    IsDefault="True">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Center"
-                                                Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                        <materialDesign:PackIcon Kind="Login" Width="20" Height="20"
-                                                                 VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <TextBlock Text="تسجيل الدخول"
-                                                   VerticalAlignment="Center" />
+                                <StackPanel VerticalAlignment="Center" MaxWidth="420">
+                                    <Button Command="{Binding BackToAdminSelectionCommand}"
+                                            Style="{StaticResource FlatButton}" HorizontalAlignment="Right"
+                                            Margin="0,0,0,16" Padding="8,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"
+                                                                     VerticalAlignment="Center"/>
+                                            <TextBlock Text="اختيار مدير آخر" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
+                                        <Grid Width="96" Height="96" Margin="0,0,0,14">
+                                            <Ellipse Width="96" Height="96" Stroke="#BBDEFB" StrokeThickness="2"/>
+                                            <Ellipse Width="84" Height="84" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Ellipse.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="{Binding SelectedAdmin.AvatarColorStart}" Offset="0"/>
+                                                        <GradientStop Color="{Binding SelectedAdmin.AvatarColorEnd}" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                            <TextBlock Text="{Binding SelectedAdmin.Initials}" FontSize="28" FontWeight="Bold"
+                                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock Text="{Binding SelectedAdmin.FullName}"
+                                                   FontSize="20" FontWeight="Bold" Foreground="#1A237E"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="أدخل كلمة المرور للمتابعة"
+                                                   FontSize="13" Foreground="#78909C"
+                                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
                                     </StackPanel>
 
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Center"
-                                                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                                     IsIndeterminate="True"
-                                                     Width="22" Height="22"
-                                                     Foreground="White" />
-                                        <TextBlock Text="جاري التحقق..."
-                                                   Foreground="White"
-                                                   Margin="10,0,0,0"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="14" />
-                                    </StackPanel>
-                                </Grid>
-                            </Button>
+                                    <Grid Margin="0,0,0,10">
+                                        <PasswordBox x:Name="PasswordBoxHidden"
+                                                     materialDesign:HintAssist.Hint="كلمة المرور"
+                                                     materialDesign:HintAssist.FloatingScale="0.85"
+                                                     materialDesign:TextFieldAssist.HasLeadingIcon="True"
+                                                     materialDesign:TextFieldAssist.LeadingIcon="Lock"
+                                                     materialDesign:HintAssist.IsFloating="True"
+                                                     Style="{StaticResource OutlinedPasswordBox}"
+                                                     FontSize="14" FlowDirection="RightToLeft"
+                                                     Padding="48,10,12,10"
+                                                     PasswordChanged="PasswordBox_PasswordChanged"/>
 
-                            <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Center"
-                                        Margin="0,22,0,0" Opacity="0.85">
-                                <materialDesign:PackIcon Kind="ShieldCheck"
-                                                         Width="14" Height="14"
-                                                         Foreground="#90A4AE"
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,6,0" />
-                                <TextBlock FontSize="10" Foreground="#90A4AE">
-                                    <Run Text="© 2026 " />
-                                    <Run Text="{x:Static helpers:AppInfo.AppNameAr}" />
-                                    <Run Text=" — جميع الحقوق محفوظة" />
-                                </TextBlock>
-                            </StackPanel>
+                                        <TextBox x:Name="PasswordBoxVisible"
+                                                 Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="كلمة المرور"
+                                                 materialDesign:HintAssist.FloatingScale="0.85"
+                                                 materialDesign:TextFieldAssist.HasLeadingIcon="True"
+                                                 materialDesign:TextFieldAssist.LeadingIcon="Lock"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource OutlinedTextBox}"
+                                                 FontSize="14" FlowDirection="RightToLeft"
+                                                 Padding="48,10,12,10" Visibility="Collapsed"/>
+
+                                        <ToggleButton x:Name="PasswordToggle"
+                                                      Style="{StaticResource PasswordToggleButton}"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                      Margin="10,0,0,0" Panel.ZIndex="2"
+                                                      Checked="PasswordToggle_Changed"
+                                                      Unchecked="PasswordToggle_Changed"/>
+                                    </Grid>
+
+                                    <CheckBox Content="تذكرني" IsChecked="{Binding RememberMe}"
+                                              FontSize="13" Margin="0,6,0,22" Foreground="#546E7A"/>
+
+                                    <Button Command="{Binding LoginCommand}"
+                                            Style="{StaticResource LoginPrimaryButton}" IsDefault="True">
+                                        <Grid>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                        Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                                <materialDesign:PackIcon Kind="Login" Width="20" Height="20"
+                                                                         VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Text="تسجيل الدخول" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                                                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                             IsIndeterminate="True" Width="22" Height="22" Foreground="White"/>
+                                                <TextBlock Text="جاري التحقق..." Foreground="White"
+                                                           Margin="10,0,0,0" VerticalAlignment="Center" FontSize="14"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                    VerticalAlignment="Bottom" Margin="0,0,0,16" Opacity="0.85">
+                            <materialDesign:PackIcon Kind="ShieldCheck" Width="14" Height="14"
+                                                     Foreground="#90A4AE" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock FontSize="10" Foreground="#90A4AE">
+                                <Run Text="© 2026 "/>
+                                <Run Text="{x:Static helpers:AppInfo.AppNameAr}"/>
+                                <Run Text=" — جميع الحقوق محفوظة"/>
+                            </TextBlock>
                         </StackPanel>
-                    </Border>
+                    </Grid>
                 </Grid>
             </Border>
 
             <Grid.Triggers>
                 <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard Storyboard="{StaticResource WindowEntrance}" />
-                </EventTrigger>
-                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard Storyboard="{StaticResource BrandEntrance}" />
-                </EventTrigger>
-                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard Storyboard="{StaticResource FormEntrance}" />
-                </EventTrigger>
-                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard Storyboard="{StaticResource LogoPulse}" />
+                    <BeginStoryboard Storyboard="{StaticResource WindowEntrance}"/>
                 </EventTrigger>
             </Grid.Triggers>
         </Grid>

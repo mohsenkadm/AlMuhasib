@@ -2,7 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             Background="Transparent"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
@@ -14,11 +17,11 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid x:Name="RootHost">
+    <Grid x:Name="RootHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Border x:Name="Backdrop" Background="#99000000" MouseDown="Backdrop_MouseDown"/>
 
         <materialDesign:Card x:Name="DialogCard"
-                             MaxWidth="920" Width="920"
+                             MaxWidth="920" MinWidth="320"
                              HorizontalAlignment="Center" VerticalAlignment="Center"
                              UniformCornerRadius="18" Padding="0"
                              materialDesign:ElevationAssist.Elevation="Dp16"
@@ -27,10 +30,10 @@
                 <ScaleTransform ScaleX="1" ScaleY="1"/>
             </materialDesign:Card.RenderTransform>
 
-            <Grid MaxHeight="780">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*" MinHeight="120"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 

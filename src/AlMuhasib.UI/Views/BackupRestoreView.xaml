@@ -16,6 +16,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- ═══════════════════════════════════════════ -->
@@ -334,6 +335,38 @@
                     </StackPanel>
                 </materialDesign:Card>
             </Border>
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- ONLINE UPDATES                              -->
+            <!-- ═══════════════════════════════════════════ -->
+            <materialDesign:Card Grid.Row="4" Style="{StaticResource ElevatedCard}" Margin="0,8,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource GradientIconCircle}" Width="40" Height="40" Margin="0,0,12,0">
+                            <materialDesign:PackIcon Kind="CloudDownload" Width="22" Height="22" Foreground="White"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="تحديث النظام عبر الإنترنت" FontSize="16" FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryHueDarkBrush}"/>
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0">
+                                <Run Text="الإصدار المثبت:"/>
+                                <Run Text="{Binding InstalledVersion, Mode=OneWay}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                    <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"
+                               Text="يتم فحص التحديثات تلقائياً عند التشغيل (عند توفر الإنترنت). عند التحديث يُحفظ ملف الإعدادات ويُطبَّق تحديث قاعدة البيانات تلقائياً عند إعادة الفتح."/>
+                    <Button Command="{Binding CheckForUpdatesCommand}"
+                            IsEnabled="{Binding IsOperationInProgress, Converter={StaticResource InverseBooleanConverter}}"
+                            Style="{StaticResource PrimaryButton}" Height="44" Padding="24,0" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Update" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="التحقق من التحديثات الآن" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </materialDesign:Card>
         </Grid>
     </ScrollViewer>
 </UserControl>

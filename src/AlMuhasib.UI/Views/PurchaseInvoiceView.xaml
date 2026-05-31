@@ -466,6 +466,46 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Command="{Binding OpenTemplatePickerCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FileDocumentMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="قوالب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding OpenSaveTemplateDialogCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSaveSettings" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="حفظ قالب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding AddToQueueCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="PlaylistPlus" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إضافة للانتظار" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding OpenQueuePickerCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="PlaylistPlay" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="قائمة الانتظار" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding SetDefaultSupplierFromInvoiceCommand}" Style="{StaticResource FlatButton}"
+                                        Height="40" Padding="12,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="AccountStar" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="مورد افتراضي" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Command="{Binding NewInvoiceCommand}" Style="{StaticResource FlatButton}"
                                         Height="40" Padding="16,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
@@ -517,6 +557,139 @@
         <controls:ProductPickerOverlay Panel.ZIndex="120"
                                        DataContext="{Binding ProductPicker}"
                                        IsOpen="{Binding DataContext.IsProductPickerOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+        <Grid Visibility="{Binding IsTemplatePickerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="130">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="20" MinWidth="400" MaxWidth="520" MaxHeight="480"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="14" materialDesign:ElevationAssist.Elevation="Dp8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="قوالب فاتورة المشتريات" FontSize="17" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <ListBox Grid.Row="1" ItemsSource="{Binding SavedTemplates}" BorderThickness="0" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="8"
+                                        Background="{DynamicResource BackgroundBrush}"
+                                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                                            <TextBlock Text="{Binding LineCountText}" FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Command="{Binding DataContext.LoadTemplateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource PrimaryButton}"
+                                                    Height="32" Padding="12,0" Margin="0,0,6,0" Content="تحميل"/>
+                                            <Button Command="{Binding DataContext.DeleteTemplateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Row="2" Command="{Binding CloseTemplatePickerCommand}" Style="{StaticResource FlatButton}"
+                            HorizontalAlignment="Left" Margin="0,12,0,0" Content="إغلاق"/>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+
+        <Grid Visibility="{Binding IsSaveTemplateDialogOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="135">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="360" MaxWidth="420"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="14" materialDesign:ElevationAssist.Elevation="Dp8">
+                <StackPanel>
+                    <TextBlock Text="حفظ كقالب" FontSize="17" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم القالب"
+                             Text="{Binding NewTemplateName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Command="{Binding ConfirmSaveTemplateCommand}" Style="{StaticResource PrimaryButton}"
+                                Content="حفظ" Padding="20,8" Margin="0,0,8,0"/>
+                        <Button Command="{Binding CloseSaveTemplateDialogCommand}" Style="{StaticResource FlatButton}" Content="إلغاء"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <Grid Visibility="{Binding IsQueuePickerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="136">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="20" MinWidth="400" MaxWidth="540" MaxHeight="500"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="14" materialDesign:ElevationAssist.Elevation="Dp8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="قائمة انتظار فواتير المشتريات" FontSize="17" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <Grid Grid.Row="1" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Style="{StaticResource FilledTextBox}"
+                                 materialDesign:HintAssist.Hint="بحث في قائمة الانتظار"
+                                 Text="{Binding QueueSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0"/>
+                        <ToggleButton Grid.Column="1"
+                                      Style="{StaticResource PrimaryToggle}"
+                                      IsChecked="{Binding QueueSortNewestFirst}"
+                                      Padding="10,6"
+                                      Content="الأحدث أولاً"/>
+                    </Grid>
+                    <ListBox Grid.Row="2" ItemsSource="{Binding QueueItems}" BorderThickness="0" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="8"
+                                        Background="{DynamicResource BackgroundBrush}"
+                                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                                            <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0">
+                                                <Run Text="{Binding SavedAtText}"/>
+                                                <Run Text="  •  "/>
+                                                <Run Text="{Binding LineCountText}"/>
+                                                <Run Text="  •  "/>
+                                                <Run Text="{Binding TotalAmountText}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Command="{Binding DataContext.LoadFromQueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource PrimaryButton}"
+                                                    Height="32" Padding="12,0" Margin="0,0,6,0" Content="متابعة"/>
+                                            <Button Command="{Binding DataContext.DeleteFromQueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}" ToolTip="حذف"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Row="3" Command="{Binding CloseQueuePickerCommand}" Style="{StaticResource FlatButton}"
+                            HorizontalAlignment="Left" Margin="0,12,0,0" Content="إغلاق"/>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
 
         <!-- QUICK ADD SUPPLIER DIALOG                      -->
         <!-- ═══════════════════════════════════════════ -->

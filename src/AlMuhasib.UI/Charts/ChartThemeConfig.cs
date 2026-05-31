@@ -30,10 +30,19 @@ public static class ChartThemeConfig
         Teal, DeepIndigo, Indigo, LightGreen, Pink
     ];
 
-    // ── Shared constants ────────────────────────────────────
-    public static readonly SKColor GridLineColor  = SKColor.Parse("#F0F0F0");
-    public static readonly SKColor LabelColor     = SKColor.Parse("#757575");
-    public static readonly SKColor TooltipBg      = SKColors.White;
+    // ── Theme-aware chart chrome (updated via ApplyTheme) ───
+    public static SKColor GridLineColor { get; private set; } = SKColor.Parse("#F0F0F0");
+    public static SKColor LabelColor { get; private set; } = SKColor.Parse("#757575");
+    public static SKColor TooltipBg { get; private set; } = SKColors.White;
+    public static SKColor GeometryFillColor { get; private set; } = SKColors.White;
+
+    public static void ApplyTheme(bool isDark)
+    {
+        GridLineColor = SKColor.Parse(isDark ? "#2D3544" : "#F0F0F0");
+        LabelColor = SKColor.Parse(isDark ? "#B0BEC5" : "#757575");
+        TooltipBg = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
+        GeometryFillColor = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
+    }
     public const string FontFamily = "Segoe UI, Tahoma, Arial";
     public const float LabelSize   = 11f;
     public const float LegendSize  = 12f;
@@ -120,7 +129,7 @@ public static class ChartThemeConfig
         Name = name,
         Stroke = PaletteStrokePaint(colorIndex, 3f),
         GeometryStroke = PaletteStrokePaint(colorIndex, 2f),
-        GeometryFill = new SolidColorPaint(SKColors.White),
+        GeometryFill = new SolidColorPaint(GeometryFillColor),
         GeometrySize = 8,
         Fill = PalettePaint(colorIndex, (byte)50),
         LineSmoothness = 0.65,

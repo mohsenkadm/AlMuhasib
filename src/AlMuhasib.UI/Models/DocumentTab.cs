@@ -22,6 +22,9 @@ public partial class DocumentTab : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _canClose = true;
 
+    [ObservableProperty]
+    private bool _isPinned;
+
     public Type ViewModelType { get; init; } = null!;
     public ViewModelBase ViewModel { get; init; } = null!;
     public IServiceScope Scope { get; init; } = null!;
