@@ -4,8 +4,8 @@ param(
     [string] $Version,
 
     [string] $OutputDir = ".\publish\release",
-    [string] $GitHubRepo = "mohsenkadm/almahasib",
-    [string] $GitBranch = "main",
+    [string] $GitHubRepo = "mohsenkadm/AlMuhasib",
+    [string] $GitBranch = "master",
     [string] $ReleaseNotes = "تحديث جديد",
     [switch] $Mandatory,
     [switch] $CopyManifestToRepoRoot
