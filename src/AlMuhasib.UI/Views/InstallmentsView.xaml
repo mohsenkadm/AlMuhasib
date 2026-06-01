@@ -131,9 +131,9 @@
             </UniformGrid>
         </Border>
 
+        <StackPanel Grid.Row="2">
         <!-- شريط التسديد الجماعي (يظهر عند تحديد أقساط من أي تبويب) -->
-        <Border Grid.Row="2"
-                Margin="0,12,0,0"
+        <Border Margin="0,12,0,0"
                 Padding="16,12"
                 CornerRadius="12"
                 Background="#E3F2FD"
@@ -196,6 +196,26 @@
                         VerticalAlignment="Center" />
             </Grid>
         </Border>
+
+        <Border Margin="0,8,0,0"
+                Padding="12,10"
+                CornerRadius="10"
+                Background="#E8F5E9"
+                BorderBrush="#A5D6A7"
+                BorderThickness="1"
+                Visibility="{Binding CanSendWhatsAppReceipt, Converter={StaticResource BoolToVis}}">
+            <Button Command="{Binding SendPaymentReceiptWhatsAppCommand}"
+                    Style="{StaticResource OutlinedButton}"
+                    Height="40"
+                    HorizontalAlignment="Stretch"
+                    materialDesign:ButtonAssist.CornerRadius="10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Whatsapp" Width="22" Height="22" Foreground="#25D366" VerticalAlignment="Center"/>
+                    <TextBlock Text="إرسال إيصال التسديد (PDF) عبر واتساب" Margin="10,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Border>
+        </StackPanel>
 
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}"
                     materialDesign:ColorZoneAssist.Mode="PrimaryLight"
@@ -745,6 +765,19 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
+
+                        <Button Command="{Binding SendPaymentReceiptWhatsAppCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="42"
+                                Margin="0,0,0,12"
+                                HorizontalAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="10"
+                                Visibility="{Binding CanSendWhatsAppReceipt, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Whatsapp" Width="20" Height="20" Foreground="#25D366" VerticalAlignment="Center"/>
+                                <TextBlock Text="إرسال إيصال واتساب (PDF)" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

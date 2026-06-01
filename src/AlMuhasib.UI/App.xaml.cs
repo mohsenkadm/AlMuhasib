@@ -159,6 +159,7 @@ public partial class App : Application
 
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
+        services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
 
         // ViewModels

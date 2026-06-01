@@ -23,6 +23,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -121,11 +122,17 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
-    [NotifyPropertyChangedFor(nameof(CanPrint))]
+    [NotifyPropertyChangedFor(nameof(CanPrintSavedInvoice))]
     private bool _isSaved;
 
     public bool CanSave => !IsSaved;
-    public bool CanPrint => IsSaved;
+    public bool CanPrintSavedInvoice => IsSaved;
+
+    partial void OnIsSavedChanged(bool value)
+    {
+        PrintInvoiceCommand.NotifyCanExecuteChanged();
+        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+    }
 
     public InstallmentInvoiceViewModel(
         IInvoiceService invoiceService,
@@ -134,6 +141,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
         IInvoiceTemplateService templateService,
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService)
@@ -144,6 +152,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _templateService = templateService;
         _draftService = draftService;
         _queueService = queueService;
@@ -572,7 +581,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 successMsg += $"نسبة الشركة (8%): {plan.CompanyFeeAmount:N0} د.ع\n";
             successMsg +=
                 $"عدد الأقساط: {NumberOfInstallments}\n" +
-                $"مبلغ القسط: {plan.InstallmentAmount:N0} د.ع";
+                $"مبلغ القسط: {plan.InstallmentAmount:N0} د.ع\n\n" +
+                "يمكنك الطباعة أو الإرسال عبر واتساب.";
             BeautifulMessageDialog.ShowSuccess(successMsg);
 
             PrintInvoice();
@@ -588,11 +598,29 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     }
 
     // ── Print ──────────────────────────────────────────────
-    [RelayCommand(CanExecute = nameof(CanPrint))]
+    [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
     private void PrintInvoice()
     {
         if (_savedInvoice is null) return;
-        var model = new InvoicePrintModel
+        _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
+    private void SendInvoiceWhatsApp()
+    {
+        if (_savedInvoice is null) return;
+        _whatsAppShare.ShareInvoice(
+            BuildSavedInvoicePrintModel(),
+            SelectedCustomer?.Phone,
+            SelectedCustomer?.Name ?? CustomerSearchText);
+    }
+
+    private InvoicePrintModel BuildSavedInvoicePrintModel()
+    {
+        if (_savedInvoice is null)
+            throw new InvalidOperationException("لا توجد فاتورة محفوظة");
+
+        return new InvoicePrintModel
         {
             Title = "فاتورة أقساط",
             InvoiceNumber = _savedInvoice.InvoiceNumber,
@@ -624,7 +652,6 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 Amount = s.Amount
             }).ToList()
         };
-        _exportService.PrintInvoice(model);
     }
 
     // ── New invoice (reset) ────────────────────────────────

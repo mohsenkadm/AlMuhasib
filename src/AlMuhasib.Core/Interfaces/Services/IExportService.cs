@@ -16,6 +16,12 @@ public interface IExportService
 
     /// <summary>Prints a formatted invoice document.</summary>
     void PrintInvoice(InvoicePrintModel model);
+
+    /// <summary>Exports invoice to a PDF file and returns the full path.</summary>
+    string ExportInvoiceToPdf(InvoicePrintModel model);
+
+    /// <summary>Exports installment payment receipt to PDF and returns the full path.</summary>
+    string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model);
 }
 
 /// <summary>Data passed to PrintInvoice.</summary>
@@ -56,4 +62,28 @@ public class InstallmentPrintRow
     public int Number { get; set; }
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
+}
+
+/// <summary>إيصال تسديد قسط (فردي أو جماعي) للطباعة/واتساب.</summary>
+public class InstallmentPaymentReceiptPrintModel
+{
+    public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerPhone { get; set; }
+    public string? FileNumber { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime PaymentDate { get; set; } = DateTime.Now;
+    public string? CashBoxName { get; set; }
+    public string? Notes { get; set; }
+    public List<InstallmentPaymentReceiptLine> Lines { get; set; } = [];
+    public decimal TotalPaid { get; set; }
+    public decimal? PlanRemainingTotal { get; set; }
+}
+
+public class InstallmentPaymentReceiptLine
+{
+    public int SequenceNumber { get; set; }
+    public DateTime DueDate { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAfter { get; set; }
+    public string StatusText { get; set; } = string.Empty;
 }

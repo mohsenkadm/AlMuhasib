@@ -766,4 +766,43 @@ public class ExcelExportService : IExportService
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
         DocumentPrintHelper.PrintWithPreview(doc, m.Title, new Size(A4Width, A4Height));
     }
+
+    public string ExportInvoiceToPdf(InvoicePrintModel model)
+    {
+        var bytes = InvoicePdfGenerator.GenerateInvoice(model);
+        return SavePdfToWhatsAppFolder(bytes, SanitizeFileName($"فاتورة_{model.InvoiceNumber}"));
+    }
+
+    public string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model)
+    {
+        var bytes = InvoicePdfGenerator.GeneratePaymentReceipt(model);
+        var name = string.IsNullOrWhiteSpace(model.InvoiceNumber)
+            ? $"إيصال_تسديد_{model.PaymentDate:yyyyMMdd_HHmm}"
+            : $"إيصال_{model.InvoiceNumber}_{model.PaymentDate:yyyyMMdd_HHmm}";
+        return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
+    }
+
+    private static string SavePdfToWhatsAppFolder(byte[] pdfBytes, string baseFileName)
+    {
+        var folder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "AlMuhasib",
+            "WhatsApp");
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, $"{baseFileName}.pdf");
+        if (File.Exists(path))
+        {
+            var stamp = DateTime.Now.ToString("HHmmss");
+            path = Path.Combine(folder, $"{baseFileName}_{stamp}.pdf");
+        }
+        File.WriteAllBytes(path, pdfBytes);
+        return path;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        foreach (var c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name.Trim();
+    }
 }

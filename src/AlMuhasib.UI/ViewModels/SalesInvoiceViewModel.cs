@@ -22,6 +22,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IInvoiceDraftService _draftService;
     private readonly IRecentActivityService _recentActivity;
     private DispatcherTimer? _draftSaveTimer;
@@ -107,11 +108,19 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
-    [NotifyPropertyChangedFor(nameof(CanPrint))]
+    [NotifyPropertyChangedFor(nameof(CanPrintSavedInvoice))]
     private bool _isSaved;
 
     public bool CanSave => !IsSaved;
-    public bool CanPrint => IsSaved;
+
+    /// <summary>فاتورة محفوظة وجاهزة للطباعة/واتساب (منفصل عن صلاحية CanPrint في ViewModelBase).</summary>
+    public bool CanPrintSavedInvoice => IsSaved;
+
+    partial void OnIsSavedChanged(bool value)
+    {
+        PrintInvoiceCommand.NotifyCanExecuteChanged();
+        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+    }
 
     // Helpers for payment visibility
     public bool IsCashPayment => SelectedPaymentMethod == PaymentMethod.Cash;
@@ -124,6 +133,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
         IInvoiceDraftService draftService,
         IRecentActivityService recentActivity,
         IInvoiceTemplateService templateService,
@@ -134,6 +144,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _draftService = draftService;
         _recentActivity = recentActivity;
         _templateService = templateService;
@@ -701,7 +712,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 typeof(SalesInvoiceViewModel));
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع\n\nيمكنك الطباعة الآن من زر «طباعة».");
+                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
             PrintInvoice();
         }
@@ -716,11 +727,29 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     }
 
     // ── Print ──────────────────────────────────────────────
-    [RelayCommand(CanExecute = nameof(CanPrint))]
+    [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
     private void PrintInvoice()
     {
         if (_savedInvoice is null) return;
-        var model = new InvoicePrintModel
+        _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
+    private void SendInvoiceWhatsApp()
+    {
+        if (_savedInvoice is null) return;
+        _whatsAppShare.ShareInvoice(
+            BuildSavedInvoicePrintModel(),
+            SelectedCustomer?.Phone,
+            SelectedCustomer?.Name ?? CustomerSearchText);
+    }
+
+    private InvoicePrintModel BuildSavedInvoicePrintModel()
+    {
+        if (_savedInvoice is null)
+            throw new InvalidOperationException("لا توجد فاتورة محفوظة");
+
+        return new InvoicePrintModel
         {
             Title = "فاتورة مبيعات",
             InvoiceNumber = _savedInvoice.InvoiceNumber,
@@ -749,7 +778,6 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 TotalPrice = item.TotalPrice
             }).ToList()
         };
-        _exportService.PrintInvoice(model);
     }
 
     // ── New invoice (reset) ────────────────────────────────

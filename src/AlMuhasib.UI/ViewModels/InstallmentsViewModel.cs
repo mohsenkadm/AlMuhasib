@@ -21,6 +21,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
 
     // ── Tab selection ──────────────────────────────────────
     [ObservableProperty]
@@ -178,12 +179,14 @@ public partial class InstallmentsViewModel : ViewModelBase
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IExportService exportService)
+        IExportService exportService,
+        IWhatsAppShareService whatsAppShare)
     {
         _installmentService = installmentService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
 
         PageTitle = "الأقساط";
     }
@@ -295,18 +298,21 @@ public partial class InstallmentsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
-            var ids = BulkSelectedInstallments.Select(i => i.Id).ToList();
+            var paidSnapshot = BulkSelectedInstallments.ToList();
+            var ids = paidSnapshot.Select(i => i.Id).ToList();
             var result = await _installmentService.PayInstallmentsBatchAsync(ids, PaymentCashBox.Id);
 
             if (result.PaidCount > 0)
             {
                 await RefreshAfterBulkPayAsync();
+                StageWhatsAppReceipt(BuildBulkPaymentReceipt(
+                    paidSnapshot, result.TotalPaid, PaymentCashBox?.Name));
                 ClearBulkSelection();
 
                 if (result.AllSucceeded)
                 {
                     BeautifulMessageDialog.ShowSuccess(
-                        $"تم تسديد {result.PaidCount} قسط/أقساط بإجمالي {result.TotalPaid:N0} د.ع");
+                        $"تم تسديد {result.PaidCount} قسط/أقساط بإجمالي {result.TotalPaid:N0} د.ع\n\nيمكنك إرسال إيصال PDF عبر واتساب.");
                 }
                 else
                 {
@@ -540,10 +546,14 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         {
             IsBusy = true;
             var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
+            var paid = installment.RemainingAmount;
+            var remainingAfter = 0m;
+            await _installmentService.PayInstallmentAsync(installment.Id, paid, cashBoxId);
+            StageWhatsAppReceipt(BuildSinglePaymentReceipt(
+                installment, paid, remainingAfter, PaymentCashBox?.Name ?? cashBoxes.First(c => c.Id == cashBoxId).Name));
             await LoadOverdueAsync();
             await RefreshSummaryAsync();
-            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
+            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح — يمكنك إرسال الإيصال عبر واتساب.");
         }
         catch (Exception ex)
         {
@@ -590,6 +600,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
     partial void OnPaymentSelectedPlanChanged(InstallmentPlan? value)
     {
+        ClearWhatsAppReceiptOption();
         _ = LoadPlanInstallmentsAsync(value);
     }
 
@@ -622,6 +633,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
     partial void OnPaymentSelectedInstallmentChanged(Installment? value)
     {
+        ClearWhatsAppReceiptOption();
         if (value is not null)
             PaymentAmount = value.RemainingAmount;
         else
@@ -655,13 +667,15 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             IsBusy = true;
-            await _installmentService.PayInstallmentAsync(
-                PaymentSelectedInstallment.Id, PaymentAmount, PaymentCashBox.Id);
+            var inst = PaymentSelectedInstallment;
+            var paid = PaymentAmount;
+            var remainingAfter = inst.RemainingAmount - paid;
+            await _installmentService.PayInstallmentAsync(inst.Id, paid, PaymentCashBox.Id);
 
             IsPaymentSuccess = true;
-            PaymentMessage = $"تم تسديد {PaymentAmount:N0} د.ع بنجاح";
+            PaymentMessage = $"تم تسديد {paid:N0} د.ع بنجاح";
+            StageWhatsAppReceipt(BuildSinglePaymentReceipt(inst, paid, remainingAfter, PaymentCashBox.Name));
 
-            // Refresh the plan installments
             await LoadPlanInstallmentsAsync(PaymentSelectedPlan);
         }
         catch (Exception ex)
@@ -982,10 +996,13 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         {
             IsBusy = true;
             var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
+            var paid = installment.RemainingAmount;
+            await _installmentService.PayInstallmentAsync(installment.Id, paid, cashBoxId);
+            StageWhatsAppReceipt(BuildSinglePaymentReceipt(
+                installment, paid, 0, PaymentCashBox?.Name ?? cashBoxes.First(c => c.Id == cashBoxId).Name));
             await LoadUnpaidAsync();
             await RefreshSummaryAsync();
-            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
+            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح — يمكنك إرسال الإيصال عبر واتساب.");
         }
         catch (Exception ex)
         {
@@ -1052,10 +1069,13 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         {
             IsBusy = true;
             var cashBoxId = PaymentCashBox?.Id ?? cashBoxes[0].Id;
-            await _installmentService.PayInstallmentAsync(installment.Id, installment.RemainingAmount, cashBoxId);
+            var paid = installment.RemainingAmount;
+            await _installmentService.PayInstallmentAsync(installment.Id, paid, cashBoxId);
+            StageWhatsAppReceipt(BuildSinglePaymentReceipt(
+                installment, paid, 0, PaymentCashBox?.Name ?? cashBoxes.First(c => c.Id == cashBoxId).Name));
             await LoadDetailedInstallmentsAsync(DetailedSelectedPlan);
             await RefreshSummaryAsync();
-            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح");
+            BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح — يمكنك إرسال الإيصال عبر واتساب.");
         }
         catch (Exception ex)
         {
