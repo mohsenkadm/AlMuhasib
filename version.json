@@ -1,10 +1,10 @@
 ﻿{
-  "version": "1.4.1",
+  "version": "1.4.2",
   "releaseDate": "2026-06-03",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.4.1/AlMuhasib-1.4.1.zip",
-  "sha256": "FE056CBBC538EDF31C45A15795EF20FBCAF316C10BC7D62B1A3B0F86A3678A2B",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.4.2/AlMuhasib-1.4.2.zip",
+  "sha256": "9C017A123D18CB4AE207DFA86D59B0407CE313CA75CE8E2B98A84E40E5811FB0",
   "sizeBytes": 77946065,
-  "releaseNotes": "إصلاح التحديث التلقائي — إعادة تشغيل البرنامج بعد التنزيل",
-  "isMandatory": true,
+  "releaseNotes": "اختبار التحديث التلقائي — تحقق من ظهور الإصدار 1.4.2 في شاشة تسجيل الدخول",
+  "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }
