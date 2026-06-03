@@ -134,23 +134,57 @@ public sealed class AppUpdateService : IAppUpdateService
         await VerifySha256Async(packagePath, manifest.Sha256, cancellationToken);
 
         var installDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var updaterPath = Path.Combine(installDir, "AlMuhasib.Updater.exe");
-        if (!File.Exists(updaterPath))
-            throw new FileNotFoundException("لم يتم العثور على AlMuhasib.Updater.exe بجانب التطبيق.", updaterPath);
+        var updaterExe = Path.Combine(installDir, "AlMuhasib.Updater.exe");
+        if (!File.Exists(updaterExe))
+            throw new FileNotFoundException("لم يتم العثور على AlMuhasib.Updater.exe بجانب التطبيق.", updaterExe);
 
+        progress?.Report("جاري تطبيق التحديث وإعادة التشغيل...");
+
+        var launcher = PrepareUpdaterLauncher(installDir, updaterExe);
         var pid = Process.GetCurrentProcess().Id;
         var args =
             $"--install-dir \"{installDir}\" --package \"{packagePath}\" --pid {pid} --main AlMuhasib.exe";
 
-        progress?.Report("جاري تطبيق التحديث وإعادة التشغيل...");
-
-        Process.Start(new ProcessStartInfo
+        var started = Process.Start(new ProcessStartInfo
         {
-            FileName = updaterPath,
+            FileName = launcher,
             Arguments = args,
             WorkingDirectory = installDir,
-            UseShellExecute = true
+            UseShellExecute = false,
+            CreateNoWindow = true
         });
+
+        if (started is null)
+            throw new InvalidOperationException("تعذّر تشغيل برنامج التحديث (AlMuhasib.Updater.exe).");
+    }
+
+    /// <summary>
+    /// Runs the updater from a temp copy so it can replace AlMuhasib.Updater.exe in the install folder.
+    /// </summary>
+    private static string PrepareUpdaterLauncher(string installDir, string updaterExe)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "AlMuhasib", "updater-launcher");
+        Directory.CreateDirectory(tempDir);
+
+        var copiedAny = false;
+        foreach (var file in Directory.EnumerateFiles(installDir, "AlMuhasib.Updater.*"))
+        {
+            var name = Path.GetFileName(file);
+            File.Copy(file, Path.Combine(tempDir, name), overwrite: true);
+            copiedAny = true;
+        }
+
+        if (!copiedAny)
+            throw new FileNotFoundException("ملفات برنامج التحديث غير مكتملة في مجلد التثبيت.", updaterExe);
+
+        var launcherExe = Path.Combine(tempDir, "AlMuhasib.Updater.exe");
+        var launcherDll = Path.Combine(tempDir, "AlMuhasib.Updater.dll");
+        if (!File.Exists(launcherExe))
+            throw new FileNotFoundException("لم يتم العثور على AlMuhasib.Updater.exe.", launcherExe);
+        if (!File.Exists(launcherDll))
+            throw new FileNotFoundException("ملف AlMuhasib.Updater.dll مفقود — أعد تثبيت البرنامج أو حدّث يدوياً.", launcherDll);
+
+        return launcherExe;
     }
 
     private async Task DownloadFileAsync(

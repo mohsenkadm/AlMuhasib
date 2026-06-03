@@ -9,9 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <NoWarn>NU1701</NoWarn>
-    <Version>1.4.0</Version>
-    <AssemblyVersion>1.4.0.0</AssemblyVersion>
-    <FileVersion>1.4.0.0</FileVersion>
+    <Version>1.4.1</Version>
+    <AssemblyVersion>1.4.1.0</AssemblyVersion>
+    <FileVersion>1.4.1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -50,12 +50,23 @@
     <PropertyGroup>
       <UpdaterOutputPath>$(MSBuildProjectDirectory)\..\AlMuhasib.Updater\bin\$(Configuration)\net10.0\</UpdaterOutputPath>
     </PropertyGroup>
+    <MSBuild Projects="..\AlMuhasib.Updater\AlMuhasib.Updater.csproj" Properties="Configuration=$(Configuration)" Targets="Build" Condition="!Exists('$(UpdaterOutputPath)AlMuhasib.Updater.dll')" />
     <ItemGroup>
-      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.exe" />
-      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.dll" />
-      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.runtimeconfig.json" Condition="Exists('$(UpdaterOutputPath)AlMuhasib.Updater.runtimeconfig.json')" />
+      <UpdaterFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.*" />
     </ItemGroup>
     <Copy SourceFiles="@(UpdaterFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- dotnet publish uses PublishDir — the Build OutputPath copy above does not always land in the release zip -->
+  <Target Name="IncludeUpdaterInPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <UpdaterOutputPath>$(MSBuildProjectDirectory)\..\AlMuhasib.Updater\bin\$(Configuration)\net10.0\</UpdaterOutputPath>
+    </PropertyGroup>
+    <MSBuild Projects="..\AlMuhasib.Updater\AlMuhasib.Updater.csproj" Properties="Configuration=$(Configuration)" Targets="Build" Condition="!Exists('$(UpdaterOutputPath)AlMuhasib.Updater.dll')" />
+    <ItemGroup>
+      <UpdaterPublishFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(UpdaterPublishFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
   </Target>
 
 </Project>

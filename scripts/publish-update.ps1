@@ -35,6 +35,18 @@ dotnet publish $uiProject -c Release -o $publishDir `
 
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
+$requiredUpdaterFiles = @(
+    "AlMuhasib.Updater.exe",
+    "AlMuhasib.Updater.dll",
+    "AlMuhasib.Updater.runtimeconfig.json"
+)
+foreach ($file in $requiredUpdaterFiles) {
+    $path = Join-Path $publishDir $file
+    if (-not (Test-Path $path)) {
+        throw "Publish output is missing required updater file: $file"
+    }
+}
+
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
 

@@ -113,14 +113,12 @@ public static class AppUpdateCoordinator
 
             await updateService.ApplyUpdateAsync(manifest, progress);
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                progressWindow?.Close();
-                BeautifulMessageDialog.ShowInfo(
-                    "سيتم إغلاق البرنامج وتطبيق التحديث.\nعند إعادة التشغيل سيتم تطبيق تحديثات قاعدة البيانات تلقائياً إن وُجدت.",
-                    "تحديث النظام");
-            });
+            await Application.Current.Dispatcher.InvokeAsync(() => progressWindow?.Close());
 
+            // Release WPF handles before the updater replaces binaries.
+            Application.Current.Shutdown();
+            await Task.Delay(800);
+            Environment.Exit(0);
             return true;
         }
         catch (Exception ex)
