@@ -1,10 +1,10 @@
 ﻿{
-  "version": "1.4.0",
+  "version": "1.4.1",
   "releaseDate": "2026-06-03",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.4.0/AlMuhasib-1.4.0.zip",
-  "sha256": "A46DF50D73F9D6057C80290759D3DB35D42BAC4296D92F4DB96DEC9CF65E4BF9",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.4.1/AlMuhasib-1.4.1.zip",
+  "sha256": "FE056CBBC538EDF31C45A15795EF20FBCAF316C10BC7D62B1A3B0F86A3678A2B",
   "sizeBytes": 77946065,
-  "releaseNotes": "الأرصدة الافتتاحية: سعر الوحدة والإجمالي الكلي مع حساب تلقائي",
-  "isMandatory": false,
+  "releaseNotes": "إصلاح التحديث التلقائي — إعادة تشغيل البرنامج بعد التنزيل",
+  "isMandatory": true,
   "minSupportedVersion": "1.0.0"
 }
