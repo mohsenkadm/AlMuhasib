@@ -491,15 +491,16 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0"
-                               Text="أدخل الأرصدة الافتتاحية مع كلفة الشراء (اختياري — يمكن إضافتها لاحقاً من القائمة)"
+                               Text="أدخل الكمية مع سعر الوحدة (يُحسب الإجمالي) أو الكمية مع الإجمالي الكلي (يُحسب سعر الوحدة) — اختياري"
                                FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,16"
                                Foreground="#616161" TextWrapping="Wrap" TextAlignment="Center"/>
 
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="120"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0"
@@ -513,11 +514,16 @@
                                  Text="{Binding NewProductQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                  Margin="0,0,8,0"/>
                         <TextBox Grid.Column="2"
-                                 md:HintAssist.Hint="كلفة الشراء"
+                                 md:HintAssist.Hint="سعر الوحدة"
                                  Style="{StaticResource FilledTextBox}"
                                  Text="{Binding NewProductUnitCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                  Margin="0,0,8,0"/>
-                        <Button Grid.Column="3"
+                        <TextBox Grid.Column="3"
+                                 md:HintAssist.Hint="الإجمالي الكلي"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Text="{Binding NewProductTotalCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="4"
                                 Command="{Binding AddOpeningStockItemCommand}"
                                 Style="{StaticResource PrimaryButton}"
                                 md:ButtonAssist.CornerRadius="8"
@@ -539,7 +545,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"/>
                             <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N0}" Width="100"/>
-                            <DataGridTextColumn Header="كلفة الشراء" Binding="{Binding UnitCost, StringFormat=N0}" Width="130"/>
+                            <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitCost, StringFormat=N0}" Width="120"/>
+                            <DataGridTextColumn Header="الإجمالي الكلي" Binding="{Binding TotalCost, StringFormat=N0}" Width="130"/>
                             <DataGridTemplateColumn Header="" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

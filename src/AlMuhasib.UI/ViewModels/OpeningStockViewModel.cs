@@ -128,9 +128,18 @@ public partial class OpeningStockViewModel : ViewModelBase
             return;
         }
 
+        if (validRows.Any(r => r.Quantity > 0 && r.UnitCost <= 0 && r.TotalCost <= 0))
+        {
+            ErrorMessage = "يرجى إدخال سعر الوحدة أو الإجمالي الكلي لكل منتج له رصيد افتتاحي";
+            return;
+        }
+
+        foreach (var row in validRows.Where(r => r.UnitCost <= 0 && r.TotalCost > 0 && r.Quantity > 0))
+            row.UnitCost = row.TotalCost / row.Quantity;
+
         if (validRows.Any(r => r.UnitCost <= 0))
         {
-            ErrorMessage = "يرجى إدخال كلفة الشراء لكل منتج له رصيد افتتاحي";
+            ErrorMessage = "يرجى إدخال سعر الوحدة أو الإجمالي الكلي لكل منتج له رصيد افتتاحي";
             return;
         }
 
@@ -187,4 +196,47 @@ public partial class OpeningStockRow : ObservableObject
     [ObservableProperty] private string _productName = string.Empty;
     [ObservableProperty] private decimal _quantity;
     [ObservableProperty] private decimal _unitCost;
+    [ObservableProperty] private decimal _totalCost;
+
+    private bool _isManualTotal;
+    private bool _isRecalculating;
+
+    partial void OnQuantityChanged(decimal value)
+    {
+        if (_isRecalculating) return;
+        if (_isManualTotal)
+            RecalcUnitCost();
+        else
+            RecalcTotal();
+    }
+
+    partial void OnUnitCostChanged(decimal value)
+    {
+        if (_isRecalculating) return;
+        _isManualTotal = false;
+        RecalcTotal();
+    }
+
+    partial void OnTotalCostChanged(decimal oldValue, decimal newValue)
+    {
+        if (_isRecalculating) return;
+        _isManualTotal = true;
+        RecalcUnitCost();
+    }
+
+    private void RecalcTotal()
+    {
+        if (_isManualTotal) return;
+        _isRecalculating = true;
+        TotalCost = Quantity * UnitCost;
+        _isRecalculating = false;
+    }
+
+    private void RecalcUnitCost()
+    {
+        if (Quantity <= 0) return;
+        _isRecalculating = true;
+        UnitCost = TotalCost / Quantity;
+        _isRecalculating = false;
+    }
 }

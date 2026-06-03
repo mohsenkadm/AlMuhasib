@@ -47,8 +47,8 @@
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="الأرصدة الافتتاحية للمنتجات"
                                        FontSize="22" FontWeight="Bold" Foreground="White" />
-                            <TextBlock Text="إدخال الكمية وكلفة الشراء لكل منتج لحساب متوسط الكلفة في المبيعات والأقساط"
-                                       FontSize="13" Foreground="#C8E6C9" Margin="0,4,0,0" />
+                            <TextBlock Text="أدخل الكمية مع سعر الوحدة (يُحسب الإجمالي) أو الكمية مع الإجمالي الكلي (يُحسب سعر الوحدة)"
+                                       FontSize="13" Foreground="#C8E6C9" Margin="0,4,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -165,7 +165,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Unit Cost -->
-                                <DataGridTemplateColumn Header="كلفة الشراء" Width="160">
+                                <DataGridTemplateColumn Header="سعر الوحدة" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding UnitCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
@@ -175,6 +175,23 @@
                                                      HorizontalContentAlignment="Center"
                                                      FontSize="14"
                                                      Foreground="#1565C0"
+                                                     Padding="4"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Total Cost -->
+                                <DataGridTemplateColumn Header="الإجمالي الكلي" Width="160">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding TotalCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                                     BorderThickness="0"
+                                                     Background="Transparent"
+                                                     HorizontalContentAlignment="Center"
+                                                     FontSize="14"
+                                                     FontWeight="SemiBold"
+                                                     Foreground="#E65100"
                                                      Padding="4"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>

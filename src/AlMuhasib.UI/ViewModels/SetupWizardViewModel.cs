@@ -156,6 +156,48 @@ public partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private string _newProductName = string.Empty;
     [ObservableProperty] private decimal _newProductQuantity;
     [ObservableProperty] private decimal _newProductUnitCost;
+    [ObservableProperty] private decimal _newProductTotalCost;
+
+    private bool _newProductManualTotal;
+    private bool _syncingNewProduct;
+
+    partial void OnNewProductQuantityChanged(decimal value)
+    {
+        if (_syncingNewProduct) return;
+        if (_newProductManualTotal)
+            SyncNewProductUnitCostFromTotal();
+        else
+            SyncNewProductTotalFromUnitCost();
+    }
+
+    partial void OnNewProductUnitCostChanged(decimal value)
+    {
+        if (_syncingNewProduct) return;
+        _newProductManualTotal = false;
+        SyncNewProductTotalFromUnitCost();
+    }
+
+    partial void OnNewProductTotalCostChanged(decimal value)
+    {
+        if (_syncingNewProduct) return;
+        _newProductManualTotal = true;
+        SyncNewProductUnitCostFromTotal();
+    }
+
+    private void SyncNewProductTotalFromUnitCost()
+    {
+        _syncingNewProduct = true;
+        NewProductTotalCost = NewProductQuantity * NewProductUnitCost;
+        _syncingNewProduct = false;
+    }
+
+    private void SyncNewProductUnitCostFromTotal()
+    {
+        if (NewProductQuantity <= 0) return;
+        _syncingNewProduct = true;
+        NewProductUnitCost = NewProductTotalCost / NewProductQuantity;
+        _syncingNewProduct = false;
+    }
 
     [RelayCommand]
     private void AddOpeningStockItem()
@@ -167,21 +209,27 @@ public partial class SetupWizardViewModel : ViewModelBase
             BeautifulMessageDialog.ShowWarning("يرجى إدخال كمية أكبر من صفر");
             return;
         }
-        if (NewProductUnitCost <= 0)
+        if (NewProductUnitCost <= 0 && NewProductTotalCost <= 0)
         {
-            BeautifulMessageDialog.ShowWarning("يرجى إدخال كلفة الشراء للمنتج");
+            BeautifulMessageDialog.ShowWarning("يرجى إدخال سعر الوحدة أو الإجمالي الكلي");
             return;
         }
+
+        var unitCost = NewProductUnitCost;
+        if (unitCost <= 0 && NewProductTotalCost > 0)
+            unitCost = NewProductTotalCost / NewProductQuantity;
 
         OpeningStockItems.Add(new SetupOpeningStockRow
         {
             ProductName = name,
             Quantity = NewProductQuantity,
-            UnitCost = NewProductUnitCost
+            UnitCost = unitCost
         });
         NewProductName = string.Empty;
         NewProductQuantity = 0;
         NewProductUnitCost = 0;
+        NewProductTotalCost = 0;
+        _newProductManualTotal = false;
     }
 
     [RelayCommand]
@@ -234,9 +282,9 @@ public partial class SetupWizardViewModel : ViewModelBase
             return;
         }
         if (CurrentStep == 4 && OpeningStockItems.Count > 0 &&
-            OpeningStockItems.Any(i => i.UnitCost <= 0 || i.Quantity <= 0))
+            OpeningStockItems.Any(i => (i.UnitCost <= 0 && i.TotalCost <= 0) || i.Quantity <= 0))
         {
-            BeautifulMessageDialog.ShowWarning("تأكد من إدخال الكمية وكلفة الشراء لكل منتج");
+            BeautifulMessageDialog.ShowWarning("تأكد من إدخال الكمية مع سعر الوحدة أو الإجمالي الكلي لكل منتج");
             return;
         }
 
@@ -403,6 +451,49 @@ public partial class SetupOpeningStockRow : ObservableObject
     [ObservableProperty] private string _productName = string.Empty;
     [ObservableProperty] private decimal _quantity;
     [ObservableProperty] private decimal _unitCost;
+    [ObservableProperty] private decimal _totalCost;
+
+    private bool _isManualTotal;
+    private bool _isRecalculating;
+
+    partial void OnQuantityChanged(decimal value)
+    {
+        if (_isRecalculating) return;
+        if (_isManualTotal)
+            RecalcUnitCost();
+        else
+            RecalcTotal();
+    }
+
+    partial void OnUnitCostChanged(decimal value)
+    {
+        if (_isRecalculating) return;
+        _isManualTotal = false;
+        RecalcTotal();
+    }
+
+    partial void OnTotalCostChanged(decimal oldValue, decimal newValue)
+    {
+        if (_isRecalculating) return;
+        _isManualTotal = true;
+        RecalcUnitCost();
+    }
+
+    private void RecalcTotal()
+    {
+        if (_isManualTotal) return;
+        _isRecalculating = true;
+        TotalCost = Quantity * UnitCost;
+        _isRecalculating = false;
+    }
+
+    private void RecalcUnitCost()
+    {
+        if (Quantity <= 0) return;
+        _isRecalculating = true;
+        UnitCost = TotalCost / Quantity;
+        _isRecalculating = false;
+    }
 }
 
 public partial class ExpenseTypeRow : ObservableObject
