@@ -712,7 +712,7 @@
                                          Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                          materialDesign:HintAssist.Hint="مبلغ التسديد"
                                          materialDesign:HintAssist.IsFloating="True"
-                                         Style="{StaticResource FilledTextBox}"
+                                         Style="{StaticResource NumericTextBox}"
                                          FontSize="16"
                                          FontWeight="Bold"
                                          Foreground="#2E7D32"

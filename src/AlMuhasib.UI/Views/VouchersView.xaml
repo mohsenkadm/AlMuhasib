@@ -95,14 +95,14 @@
                     <TextBox Grid.Column="0"
                              Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="المبلغ"
-                             Style="{StaticResource FilledTextBox}"
+                             Style="{StaticResource NumericTextBox}"
                              FontSize="15" FontWeight="Bold" />
 
                     <!-- Bank Fees (shown for BankReceipt only) -->
                     <TextBox Grid.Column="2"
                              Text="{Binding BankFees, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="عمولة المصرف"
-                             Style="{StaticResource FilledTextBox}"
+                             Style="{StaticResource NumericTextBox}"
                              FontSize="13"
                              Visibility="{Binding ShowBankFeesField, Converter={StaticResource BoolToVis}}" />
 

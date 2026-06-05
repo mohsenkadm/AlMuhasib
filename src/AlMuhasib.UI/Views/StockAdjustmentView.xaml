@@ -155,14 +155,10 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding NewQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
+                                                     Style="{StaticResource NumericCellTextBox}"
                                                      FontSize="14"
                                                      FontWeight="Bold"
-                                                     Foreground="#E65100"
-                                                     Padding="4"/>
+                                                     Foreground="#E65100"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

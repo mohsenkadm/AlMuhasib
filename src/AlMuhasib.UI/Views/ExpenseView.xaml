@@ -139,7 +139,7 @@
                         <TextBox Grid.Column="2"
                                  md:HintAssist.Hint="المبلغ"
                                  Text="{Binding FormAmount, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FilledTextBox}"/>
+                                 Style="{StaticResource NumericTextBox}"/>
 
                         <DatePicker Grid.Column="4"
                                     md:HintAssist.Hint="التاريخ"

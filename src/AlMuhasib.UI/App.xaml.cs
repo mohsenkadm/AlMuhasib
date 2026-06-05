@@ -10,6 +10,7 @@ using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
+using AlMuhasib.UI.Windows;
 using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -160,6 +161,7 @@ public partial class App : Application
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
+        services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
 
         // ViewModels
@@ -214,11 +216,13 @@ public partial class App : Application
         services.AddTransient<CapitalAdjustmentViewModel>();
         services.AddTransient<BackupRestoreViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
+        services.AddTransient<HelpVideosViewModel>();
         services.AddSingleton<MainWindowViewModel>();
 
         // Views
         services.AddTransient<LoginWindow>();
         services.AddTransient<MainWindow>();
+        services.AddTransient<HelpVideosWindow>();
     }
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -302,6 +306,7 @@ public partial class App : Application
             try
             {
                 ChartThemeConfig.Apply();
+                ChartThemeHooks.Initialize();
             }
             catch (Exception ex)
             {

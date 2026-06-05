@@ -67,12 +67,7 @@ public partial class BackupRestoreViewModel : ViewModelBase
 
         try
         {
-            var shouldExit = await AppUpdateCoordinator.CheckAndApplyManuallyAsync(app.Services);
-            if (shouldExit)
-            {
-                Application.Current.Shutdown();
-                return;
-            }
+            await AppUpdateCoordinator.CheckAndApplyManuallyAsync(app.Services);
 
             StatusMessage = "اكتمل التحقق من التحديثات.";
             IsSuccess = true;

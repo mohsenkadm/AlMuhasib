@@ -35,6 +35,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ThemeService _themeService;
     private readonly IRecentActivityService _recentActivity;
     private readonly IAuditLogService _auditLogService;
+    private readonly IHelpSupportService _helpSupport;
     private bool _investorsLookupDirty;
 
     /// <summary>
@@ -113,7 +114,8 @@ public partial class MainWindowViewModel : ObservableObject
         ThemeService themeService,
         IRecentActivityService recentActivity,
         IAuditLogService auditLogService,
-        ISmartAlertService smartAlertService)
+        ISmartAlertService smartAlertService,
+        IHelpSupportService helpSupport)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -128,6 +130,7 @@ public partial class MainWindowViewModel : ObservableObject
         _recentActivity = recentActivity;
         _auditLogService = auditLogService;
         _smartAlertService = smartAlertService;
+        _helpSupport = helpSupport;
 
         _investorRefresh.InvestorsChanged += (_, _) => _investorsLookupDirty = true;
 
@@ -887,6 +890,16 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void CloseQuickAssist() => IsQuickAssistOpen = false;
+
+    [RelayCommand]
+    private void OpenHelpWhatsApp() => _helpSupport.OpenWhatsAppSupport();
+
+    [RelayCommand]
+    private void OpenHelpVideos()
+    {
+        IsQuickAssistOpen = false;
+        _helpSupport.ShowVideosWindow(Application.Current.MainWindow);
+    }
 
     [RelayCommand]
     private async Task OpenPrintSettings()

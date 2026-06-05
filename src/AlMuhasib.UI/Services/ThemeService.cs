@@ -89,6 +89,13 @@ public sealed class ThemeService
         SetBrush(res, "DataGridCellForegroundBrush", isDark ? "#ECEFF1" : "#263238");
         SetBrush(res, "DataGridGridLineBrush", isDark ? "#2D3544" : "#ECEFF1");
 
+        ApplyTableActionBrushes(res, isDark);
+        ApplyPanelChromeBrushes(res, isDark);
+
+        SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
+        SetBrush(res, "HighlightLightBrush", isDark ? "#2A2540" : "#EDE7F6");
+        SetBrush(res, "HighlightBorderBrush", isDark ? "#5E35B1" : "#D1C4E9");
+
         res["NormalFontSize"] = 14.0 * fontScale;
         res["SmallFontSize"] = 12.0 * fontScale;
         res["LargeFontSize"] = 16.0 * fontScale;
@@ -116,5 +123,83 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E3EBF4")!, 1));
         }
         return brush;
+    }
+
+    private static void ApplyTableActionBrushes(ResourceDictionary res, bool isDark)
+    {
+        if (isDark)
+        {
+            SetBrush(res, "TableEditIconBackgroundBrush", "#1E3A5F");
+            SetBrush(res, "TableEditIconBorderBrush", "#42A5F6");
+            SetBrush(res, "TableEditIconForegroundBrush", "#90CAF9");
+            SetBrush(res, "TableEditIconHoverBackgroundBrush", "#254775");
+
+            SetBrush(res, "TableDeleteIconBackgroundBrush", "#3D2226");
+            SetBrush(res, "TableDeleteIconBorderBrush", "#EF5350");
+            SetBrush(res, "TableDeleteIconForegroundBrush", "#FFAB91");
+            SetBrush(res, "TableDeleteIconHoverBackgroundBrush", "#4D2A30");
+
+            SetBrush(res, "TableViewIconBackgroundBrush", "#1A3D38");
+            SetBrush(res, "TableViewIconBorderBrush", "#4DB6AC");
+            SetBrush(res, "TableViewIconForegroundBrush", "#80CBC4");
+            SetBrush(res, "TableViewIconHoverBackgroundBrush", "#234A45");
+
+            SetBrush(res, "TablePrintIconBackgroundBrush", "#3D2E1A");
+            SetBrush(res, "TablePrintIconBorderBrush", "#FFB74D");
+            SetBrush(res, "TablePrintIconForegroundBrush", "#FFCC80");
+            SetBrush(res, "TablePrintIconHoverBackgroundBrush", "#4A3820");
+
+            SetBrush(res, "TableSecondaryIconBackgroundBrush", "#2A3344");
+            SetBrush(res, "TableSecondaryIconBorderBrush", "#78909C");
+            SetBrush(res, "TableSecondaryIconForegroundBrush", "#B0BEC5");
+            SetBrush(res, "TableSecondaryIconHoverBackgroundBrush", "#323D52");
+
+            SetBrush(res, "TableAttachIconBackgroundBrush", "#2E1A3D");
+            SetBrush(res, "TableAttachIconBorderBrush", "#BA68C8");
+            SetBrush(res, "TableAttachIconForegroundBrush", "#CE93D8");
+            SetBrush(res, "TableAttachIconHoverBackgroundBrush", "#3A224D");
+        }
+        else
+        {
+            SetBrush(res, "TableEditIconBackgroundBrush", "#E3F2FD");
+            SetBrush(res, "TableEditIconBorderBrush", "#90CAF9");
+            SetBrush(res, "TableEditIconForegroundBrush", "#1565C0");
+            SetBrush(res, "TableEditIconHoverBackgroundBrush", "#BBDEFB");
+
+            SetBrush(res, "TableDeleteIconBackgroundBrush", "#FFEBEE");
+            SetBrush(res, "TableDeleteIconBorderBrush", "#EF9A9A");
+            SetBrush(res, "TableDeleteIconForegroundBrush", "#C62828");
+            SetBrush(res, "TableDeleteIconHoverBackgroundBrush", "#FFCDD2");
+
+            SetBrush(res, "TableViewIconBackgroundBrush", "#E0F2F1");
+            SetBrush(res, "TableViewIconBorderBrush", "#80CBC4");
+            SetBrush(res, "TableViewIconForegroundBrush", "#00695C");
+            SetBrush(res, "TableViewIconHoverBackgroundBrush", "#B2DFDB");
+
+            SetBrush(res, "TablePrintIconBackgroundBrush", "#FFF3E0");
+            SetBrush(res, "TablePrintIconBorderBrush", "#FFCC80");
+            SetBrush(res, "TablePrintIconForegroundBrush", "#EF6C00");
+            SetBrush(res, "TablePrintIconHoverBackgroundBrush", "#FFE0B2");
+
+            SetBrush(res, "TableSecondaryIconBackgroundBrush", "#ECEFF1");
+            SetBrush(res, "TableSecondaryIconBorderBrush", "#B0BEC5");
+            SetBrush(res, "TableSecondaryIconForegroundBrush", "#455A64");
+            SetBrush(res, "TableSecondaryIconHoverBackgroundBrush", "#CFD8DC");
+
+            SetBrush(res, "TableAttachIconBackgroundBrush", "#F3E5F5");
+            SetBrush(res, "TableAttachIconBorderBrush", "#CE93D8");
+            SetBrush(res, "TableAttachIconForegroundBrush", "#7B1FA2");
+            SetBrush(res, "TableAttachIconHoverBackgroundBrush", "#E1BEE7");
+        }
+    }
+
+    private static void ApplyPanelChromeBrushes(ResourceDictionary res, bool isDark)
+    {
+        SetBrush(res, "PanelCloseForegroundBrush", "#90A4AE");
+        SetBrush(res, "PanelCloseBorderBrush", isDark ? "#3D4A5C" : "#E0E0E0");
+        SetBrush(res, "PanelCloseHoverBackgroundBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "PanelCloseHoverBorderBrush", isDark ? "#EF5350" : "#EF9A9A");
+        SetBrush(res, "PanelCloseHoverForegroundBrush", "#C62828");
+        SetBrush(res, "PanelClosePressedBackgroundBrush", isDark ? "#4D2A30" : "#FFCDD2");
     }
 }

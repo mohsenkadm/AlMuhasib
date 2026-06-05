@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:CashBankViewModel}"
              Style="{StaticResource PageStyle}"
@@ -116,7 +117,9 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12"
@@ -127,11 +130,46 @@
                                 </TextBlock>
                             </Border>
 
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding CashBoxTransactions}"
+                            <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="8,8,8,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="160"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             materialDesign:HintAssist.Hint="بحث (النوع، المرجع، الوصف)"
+                                             Text="{Binding CashBoxSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"
+                                             FontSize="13"/>
+                                    <DatePicker Grid.Column="2"
+                                                materialDesign:HintAssist.Hint="من تاريخ"
+                                                SelectedDate="{Binding CashBoxFromDate}"
+                                                Style="{StaticResource FilledDatePicker}"/>
+                                    <DatePicker Grid.Column="4"
+                                                materialDesign:HintAssist.Hint="إلى تاريخ"
+                                                SelectedDate="{Binding CashBoxToDate}"
+                                                Style="{StaticResource FilledDatePicker}"/>
+                                    <Button Grid.Column="6"
+                                            Command="{Binding ClearCashBoxFiltersCommand}"
+                                            ToolTip="مسح الفلاتر"
+                                            Style="{StaticResource FlatButton}">
+                                        <materialDesign:PackIcon Kind="FilterRemoveOutline"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid Grid.Row="2" ItemsSource="{Binding CashBoxTransactions}"
+                                      Style="{StaticResource ModernDataGrid}"
                                       AutoGenerateColumns="False" IsReadOnly="True"
                                       CanUserSortColumns="True" CanUserReorderColumns="False"
                                       materialDesign:DataGridAssist.CellPadding="10 6"
-                                      HeadersVisibility="Column" FontSize="13" Margin="8">
+                                      HeadersVisibility="Column" FontSize="13" Margin="8,8,8,0"
+                                      MinHeight="220">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110" />
                                     <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="120" />
@@ -155,6 +193,41 @@
                                     <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
+
+                            <Border Grid.Row="3" Background="#F8FAFC" Padding="10,10,10,12"
+                                    BorderBrush="#E3EDF7" BorderThickness="0,1,0,0"
+                                    CornerRadius="0,0,12,12" Margin="0,8,0,0">
+                                <UniformGrid Columns="4">
+                                    <controls:AnimatedStatCard Title="عدد الحركات"
+                                                                 Value="{Binding CashBoxFilteredCount}"
+                                                                 Icon="FormatListNumbered"
+                                                                 IconBackground="#E3F2FD"
+                                                                 IconForeground="#1565C0"
+                                                                 ValueForeground="#1565C0"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="إجمالي الدائن"
+                                                                 Value="{Binding CashBoxFilteredCredit}"
+                                                                 Icon="CashPlus"
+                                                                 IconBackground="#E8F5E9"
+                                                                 IconForeground="#2E7D32"
+                                                                 ValueForeground="#2E7D32"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="إجمالي المدين"
+                                                                 Value="{Binding CashBoxFilteredDebit}"
+                                                                 Icon="CashMinus"
+                                                                 IconBackground="#FFEBEE"
+                                                                 IconForeground="#C62828"
+                                                                 ValueForeground="#C62828"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="الصافي"
+                                                                 Value="{Binding CashBoxFilteredNet}"
+                                                                 Icon="ScaleBalance"
+                                                                 IconBackground="#FFF8E1"
+                                                                 IconForeground="#F9A825"
+                                                                 ValueForeground="#F57F17"
+                                                                 Margin="4,0"/>
+                                </UniformGrid>
+                            </Border>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -259,7 +332,9 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Background="#1565C0" Padding="16,12"
@@ -270,11 +345,46 @@
                                 </TextBlock>
                             </Border>
 
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding BankTransactions}"
+                            <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="8,8,8,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="160"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             materialDesign:HintAssist.Hint="بحث (النوع، المرجع، الوصف)"
+                                             Text="{Binding BankSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"
+                                             FontSize="13"/>
+                                    <DatePicker Grid.Column="2"
+                                                materialDesign:HintAssist.Hint="من تاريخ"
+                                                SelectedDate="{Binding BankFromDate}"
+                                                Style="{StaticResource FilledDatePicker}"/>
+                                    <DatePicker Grid.Column="4"
+                                                materialDesign:HintAssist.Hint="إلى تاريخ"
+                                                SelectedDate="{Binding BankToDate}"
+                                                Style="{StaticResource FilledDatePicker}"/>
+                                    <Button Grid.Column="6"
+                                            Command="{Binding ClearBankFiltersCommand}"
+                                            ToolTip="مسح الفلاتر"
+                                            Style="{StaticResource FlatButton}">
+                                        <materialDesign:PackIcon Kind="FilterRemoveOutline"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid Grid.Row="2" ItemsSource="{Binding BankTransactions}"
+                                      Style="{StaticResource ModernDataGrid}"
                                       AutoGenerateColumns="False" IsReadOnly="True"
                                       CanUserSortColumns="True" CanUserReorderColumns="False"
                                       materialDesign:DataGridAssist.CellPadding="10 6"
-                                      HeadersVisibility="Column" FontSize="13" Margin="8">
+                                      HeadersVisibility="Column" FontSize="13" Margin="8,8,8,0"
+                                      MinHeight="220">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110" />
                                     <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="120" />
@@ -298,6 +408,41 @@
                                     <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
+
+                            <Border Grid.Row="3" Background="#F8FAFC" Padding="10,10,10,12"
+                                    BorderBrush="#E3EDF7" BorderThickness="0,1,0,0"
+                                    CornerRadius="0,0,12,12" Margin="0,8,0,0">
+                                <UniformGrid Columns="4">
+                                    <controls:AnimatedStatCard Title="عدد الحركات"
+                                                                 Value="{Binding BankFilteredCount}"
+                                                                 Icon="FormatListNumbered"
+                                                                 IconBackground="#E3F2FD"
+                                                                 IconForeground="#1565C0"
+                                                                 ValueForeground="#1565C0"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="إجمالي الدائن"
+                                                                 Value="{Binding BankFilteredCredit}"
+                                                                 Icon="CashPlus"
+                                                                 IconBackground="#E8F5E9"
+                                                                 IconForeground="#2E7D32"
+                                                                 ValueForeground="#2E7D32"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="إجمالي المدين"
+                                                                 Value="{Binding BankFilteredDebit}"
+                                                                 Icon="CashMinus"
+                                                                 IconBackground="#FFEBEE"
+                                                                 IconForeground="#C62828"
+                                                                 ValueForeground="#C62828"
+                                                                 Margin="4,0"/>
+                                    <controls:AnimatedStatCard Title="الصافي"
+                                                                 Value="{Binding BankFilteredNet}"
+                                                                 Icon="ScaleBalance"
+                                                                 IconBackground="#FFF8E1"
+                                                                 IconForeground="#F9A825"
+                                                                 ValueForeground="#F57F17"
+                                                                 Margin="4,0"/>
+                                </UniformGrid>
+                            </Border>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -443,7 +588,7 @@
                                 <TextBox Grid.Column="0"
                                          Text="{Binding TransferAmount, UpdateSourceTrigger=PropertyChanged}"
                                          materialDesign:HintAssist.Hint="المبلغ"
-                                         Style="{StaticResource FilledTextBox}"
+                                         Style="{StaticResource NumericTextBox}"
                                          FontSize="14" FontWeight="Bold" />
 
                                 <TextBox Grid.Column="2"

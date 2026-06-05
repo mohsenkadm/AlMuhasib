@@ -155,7 +155,7 @@
                     <TextBlock Margin="0,0,0,12" Foreground="#C62828">
                         <Run Text="المتبقي: "/><Run Text="{Binding PaymentTargetRow.RemainingAmount, StringFormat=N0, Mode=OneWay}" FontWeight="Bold"/><Run Text=" د.ع"/>
                     </TextBlock>
-                    <TextBox materialDesign:HintAssist.Hint="مبلغ التسديد" Style="{StaticResource FilledTextBox}"
+                    <TextBox materialDesign:HintAssist.Hint="مبلغ التسديد" Style="{StaticResource NumericTextBox}"
                              Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
                     <ComboBox ItemsSource="{Binding CashBoxes}" SelectedItem="{Binding PaymentCashBox}" DisplayMemberPath="Name"
                               Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="القاصة" Margin="0,0,0,16"/>

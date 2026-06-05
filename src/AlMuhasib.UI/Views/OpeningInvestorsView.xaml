@@ -87,9 +87,9 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBox Text="{Binding OpeningBalance, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                 BorderThickness="0" Background="Transparent"
-                                                 HorizontalContentAlignment="Center" FontWeight="Bold"
-                                                 Foreground="#6A1B9A" Padding="4"/>
+                                                 Style="{StaticResource NumericCellTextBox}"
+                                                 FontWeight="Bold"
+                                                 Foreground="#6A1B9A"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

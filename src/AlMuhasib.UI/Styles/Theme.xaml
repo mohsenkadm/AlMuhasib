@@ -52,6 +52,38 @@
     <SolidColorBrush x:Key="SearchResultTitleBrush" Color="#263238"/>
     <SolidColorBrush x:Key="SearchResultSubtitleBrush" Color="#757575"/>
 
+    <!-- Table action + panel close (runtime overrides via ThemeService) -->
+    <SolidColorBrush x:Key="TableEditIconBackgroundBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="TableEditIconBorderBrush" Color="#90CAF9"/>
+    <SolidColorBrush x:Key="TableEditIconForegroundBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="TableEditIconHoverBackgroundBrush" Color="#BBDEFB"/>
+    <SolidColorBrush x:Key="TableDeleteIconBackgroundBrush" Color="#FFEBEE"/>
+    <SolidColorBrush x:Key="TableDeleteIconBorderBrush" Color="#EF9A9A"/>
+    <SolidColorBrush x:Key="TableDeleteIconForegroundBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="TableDeleteIconHoverBackgroundBrush" Color="#FFCDD2"/>
+    <SolidColorBrush x:Key="TableViewIconBackgroundBrush" Color="#E0F2F1"/>
+    <SolidColorBrush x:Key="TableViewIconBorderBrush" Color="#80CBC4"/>
+    <SolidColorBrush x:Key="TableViewIconForegroundBrush" Color="#00695C"/>
+    <SolidColorBrush x:Key="TableViewIconHoverBackgroundBrush" Color="#B2DFDB"/>
+    <SolidColorBrush x:Key="TablePrintIconBackgroundBrush" Color="#FFF3E0"/>
+    <SolidColorBrush x:Key="TablePrintIconBorderBrush" Color="#FFCC80"/>
+    <SolidColorBrush x:Key="TablePrintIconForegroundBrush" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="TablePrintIconHoverBackgroundBrush" Color="#FFE0B2"/>
+    <SolidColorBrush x:Key="TableSecondaryIconBackgroundBrush" Color="#ECEFF1"/>
+    <SolidColorBrush x:Key="TableSecondaryIconBorderBrush" Color="#B0BEC5"/>
+    <SolidColorBrush x:Key="TableSecondaryIconForegroundBrush" Color="#455A64"/>
+    <SolidColorBrush x:Key="TableSecondaryIconHoverBackgroundBrush" Color="#CFD8DC"/>
+    <SolidColorBrush x:Key="TableAttachIconBackgroundBrush" Color="#F3E5F5"/>
+    <SolidColorBrush x:Key="TableAttachIconBorderBrush" Color="#CE93D8"/>
+    <SolidColorBrush x:Key="TableAttachIconForegroundBrush" Color="#7B1FA2"/>
+    <SolidColorBrush x:Key="TableAttachIconHoverBackgroundBrush" Color="#E1BEE7"/>
+    <SolidColorBrush x:Key="PanelCloseForegroundBrush" Color="#90A4AE"/>
+    <SolidColorBrush x:Key="PanelCloseBorderBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="PanelCloseHoverBackgroundBrush" Color="#FFEBEE"/>
+    <SolidColorBrush x:Key="PanelCloseHoverBorderBrush" Color="#EF9A9A"/>
+    <SolidColorBrush x:Key="PanelCloseHoverForegroundBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="PanelClosePressedBackgroundBrush" Color="#FFCDD2"/>
+
     <LinearGradientBrush x:Key="ChromeTabStripBackground" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#EEF3F9" Offset="0"/>
         <GradientStop Color="#E3EBF4" Offset="1"/>
@@ -396,6 +428,21 @@
         <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
         <Setter Property="Padding" Value="12,10"/>
         <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8,8,0,0"/>
+    </Style>
+
+    <!-- Amount / quantity fields: select-all on focus and replace default zero when typing -->
+    <Style x:Key="NumericTextBox" TargetType="TextBox" BasedOn="{StaticResource FilledTextBox}">
+        <Setter Property="behaviors:NumericTextBoxBehavior.IsEnabled" Value="True"/>
+    </Style>
+
+    <Style x:Key="NumericCellTextBox" TargetType="TextBox">
+        <Setter Property="behaviors:NumericTextBoxBehavior.IsEnabled" Value="True"/>
+        <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="4"/>
     </Style>
 
     <!-- Outlined TextBox -->
@@ -1114,10 +1161,9 @@
                     CommandParameter="{Binding}" ToolTip="نقصان"/>
             <Border Grid.Column="1" MinWidth="52" Margin="6,0" CornerRadius="8" Background="#F0F4F8" Padding="2,0" VerticalAlignment="Center">
                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                         BorderThickness="0" Background="Transparent"
-                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                         FontSize="13" FontWeight="SemiBold" Foreground="#263238" Padding="4,4"/>
+                         Style="{StaticResource NumericCellTextBox}"
+                         VerticalContentAlignment="Center"
+                         FontWeight="SemiBold" Foreground="#263238" Padding="4,4"/>
             </Border>
             <Button Grid.Column="2" Content="+" Style="{StaticResource InvoiceQtyPlusButton}"
                     Command="{Binding DataContext.IncreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -1533,6 +1579,94 @@
         </Style.Resources>
     </Style>
 
+    <!-- Slim horizontal scrollbar — tabs strip & quick actions -->
+    <Style x:Key="ModernHorizontalScrollBarThumb" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="ThumbBorder"
+                            Height="3"
+                            CornerRadius="1.5"
+                            Margin="0,0,0,1"
+                            Opacity="0.72">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Color="#64B5F6" Offset="0"/>
+                                <GradientStop Color="#1565C0" Offset="0.55"/>
+                                <GradientStop Color="#0D47A1" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="4" ShadowDepth="0" Opacity="0.18" Color="#1565C0"/>
+                        </Border.Effect>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Height" Value="4"/>
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="1"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Height" Value="4"/>
+                            <Setter TargetName="ThumbBorder" Property="Opacity" Value="1"/>
+                            <Setter TargetName="ThumbBorder" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#42A5F5" Offset="0"/>
+                                        <GradientStop Color="#0D47A1" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModernHorizontalScrollBar" TargetType="ScrollBar">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Height" Value="6"/>
+        <Setter Property="MinHeight" Value="6"/>
+        <Setter Property="Opacity" Value="0.42"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Border Height="1"
+                                VerticalAlignment="Bottom"
+                                Margin="6,0,6,0"
+                                CornerRadius="0.5"
+                                Background="#DCE4EC"
+                                Opacity="0.55"/>
+                        <Track x:Name="PART_Track" Margin="6,0,6,0">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ModernHorizontalScrollBarThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Opacity" Value="1"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ModernHorizontalScrollViewer" TargetType="ScrollViewer"
+           BasedOn="{StaticResource {x:Type ScrollViewer}}">
+        <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="PanningMode" Value="HorizontalOnly"/>
+        <Style.Resources>
+            <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernHorizontalScrollBar}"/>
+        </Style.Resources>
+    </Style>
+
     <!-- ══════════════════════════════════════════════════════════════
          TOOLTIP (BasedOn MaterialDesign)
     ══════════════════════════════════════════════════════════════ -->
@@ -1595,14 +1729,14 @@
     <Style x:Key="SectionHeader" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource LargeFontSize}"/>
         <Setter Property="FontWeight" Value="DemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource PrimaryHueDarkBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
     </Style>
 
     <Style x:Key="SectionSubHeader" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource MediumFontSize}"/>
         <Setter Property="FontWeight" Value="DemiBold"/>
-        <Setter Property="Foreground" Value="#424242"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
@@ -1951,22 +2085,22 @@
     </Style>
 
     <Style x:Key="TableEditIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#E3F2FD"/>
-        <Setter Property="BorderBrush" Value="#90CAF9"/>
-        <Setter Property="Foreground" Value="#1565C0"/>
+        <Setter Property="Background" Value="{DynamicResource TableEditIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableEditIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableEditIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="تعديل"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#BBDEFB"/>
-                <Setter Property="BorderBrush" Value="#1565C0"/>
+                <Setter Property="Background" Value="{DynamicResource TableEditIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableEditIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="TableDeleteIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#FFEBEE"/>
-        <Setter Property="BorderBrush" Value="#EF9A9A"/>
-        <Setter Property="Foreground" Value="#C62828"/>
+        <Setter Property="Background" Value="{DynamicResource TableDeleteIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableDeleteIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableDeleteIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="حذف"/>
         <Setter Property="Content">
             <Setter.Value>
@@ -1975,60 +2109,60 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#FFCDD2"/>
-                <Setter Property="BorderBrush" Value="#C62828"/>
+                <Setter Property="Background" Value="{DynamicResource TableDeleteIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableDeleteIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="TableViewIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#E0F2F1"/>
-        <Setter Property="BorderBrush" Value="#80CBC4"/>
-        <Setter Property="Foreground" Value="#00695C"/>
+        <Setter Property="Background" Value="{DynamicResource TableViewIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableViewIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableViewIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="عرض التفاصيل"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#B2DFDB"/>
-                <Setter Property="BorderBrush" Value="#00695C"/>
+                <Setter Property="Background" Value="{DynamicResource TableViewIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableViewIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="TablePrintIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#FFF3E0"/>
-        <Setter Property="BorderBrush" Value="#FFCC80"/>
-        <Setter Property="Foreground" Value="#EF6C00"/>
+        <Setter Property="Background" Value="{DynamicResource TablePrintIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TablePrintIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TablePrintIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="طباعة"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#FFE0B2"/>
-                <Setter Property="BorderBrush" Value="#EF6C00"/>
+                <Setter Property="Background" Value="{DynamicResource TablePrintIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TablePrintIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="TableSecondaryIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#ECEFF1"/>
-        <Setter Property="BorderBrush" Value="#B0BEC5"/>
-        <Setter Property="Foreground" Value="#455A64"/>
+        <Setter Property="Background" Value="{DynamicResource TableSecondaryIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableSecondaryIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableSecondaryIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="تسديد"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#CFD8DC"/>
-                <Setter Property="BorderBrush" Value="#455A64"/>
+                <Setter Property="Background" Value="{DynamicResource TableSecondaryIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableSecondaryIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="TableAttachIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#F3E5F5"/>
-        <Setter Property="BorderBrush" Value="#CE93D8"/>
-        <Setter Property="Foreground" Value="#7B1FA2"/>
+        <Setter Property="Background" Value="{DynamicResource TableAttachIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableAttachIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableAttachIconForegroundBrush}"/>
         <Setter Property="ToolTip" Value="المرفقات"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#E1BEE7"/>
-                <Setter Property="BorderBrush" Value="#7B1FA2"/>
+                <Setter Property="Background" Value="{DynamicResource TableAttachIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableAttachIconForegroundBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -2047,7 +2181,7 @@
         <Setter Property="Background" Value="{DynamicResource ChromeTabStripBackground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        <Setter Property="Padding" Value="8,6,8,0"/>
+        <Setter Property="Padding" Value="8,6,8,2"/>
     </Style>
 
     <Style x:Key="ChromeTabListBox" TargetType="ListBox">
@@ -2061,9 +2195,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBox">
-                    <ScrollViewer Focusable="False"
-                                  HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                                  VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                    <ScrollViewer Style="{StaticResource ModernHorizontalScrollViewer}"
+                                  Focusable="False"
                                   CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                                   Padding="{TemplateBinding Padding}">
                         <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
@@ -2195,24 +2328,26 @@
         <Setter Property="MinWidth" Value="36"/>
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="Margin" Value="0"/>
+        <Setter Property="Panel.ZIndex" Value="10"/>
+        <Setter Property="Foreground" Value="{DynamicResource PanelCloseForegroundBrush}"/>
         <Setter Property="ToolTip" Value="إغلاق"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="18"
-                            BorderBrush="#E0E0E0" BorderThickness="1">
+                            BorderBrush="{DynamicResource PanelCloseBorderBrush}" BorderThickness="1">
                         <materialDesign:PackIcon Kind="Close" Width="20" Height="20"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
                                                  Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#FFEBEE"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#EF9A9A"/>
-                            <Setter Property="Foreground" Value="#C62828"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelCloseHoverBackgroundBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PanelCloseHoverBorderBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PanelCloseHoverForegroundBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#FFCDD2"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelClosePressedBackgroundBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2541,16 +2676,16 @@
     </Style>
 
     <Style x:Key="QuickAssistFab" TargetType="Button">
-        <Setter Property="Width" Value="64"/>
-        <Setter Property="Height" Value="64"/>
+        <Setter Property="Width" Value="46"/>
+        <Setter Property="Height" Value="46"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="ClipToBounds" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid x:Name="FabRoot" Width="64" Height="64" ClipToBounds="False">
-                        <Ellipse x:Name="Glow" Width="76" Height="76" Opacity="0.4"
+                    <Grid x:Name="FabRoot" Width="46" Height="46" ClipToBounds="False">
+                        <Ellipse x:Name="Glow" Width="54" Height="54" Opacity="0.35"
                                  HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Ellipse.Fill>
                                 <RadialGradientBrush>
@@ -2560,8 +2695,8 @@
                             </Ellipse.Fill>
                         </Ellipse>
                         <!-- Circle shell -->
-                        <Border x:Name="FabRing" Width="56" Height="56"
-                                CornerRadius="28"
+                        <Border x:Name="FabRing" Width="40" Height="40"
+                                CornerRadius="20"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>

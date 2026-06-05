@@ -19,4 +19,5 @@ public sealed class InvoiceQueueItem
     public string SavedAtText => SavedAt.ToString("yyyy/MM/dd HH:mm");
     public string LineCountText => $"{LineCount:N0} بند";
     public string TotalAmountText => $"{TotalAmount:N0} د.ع";
+    public string SummaryText => $"{SavedAtText}  •  {LineCountText}  •  {TotalAmountText}";
 }

@@ -93,7 +93,7 @@
 
                         <TextBox Grid.Column="0"
                                  md:HintAssist.Hint="المبلغ"
-                                 Style="{StaticResource FilledTextBox}"
+                                 Style="{StaticResource NumericTextBox}"
                                  Text="{Binding AdjustmentAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                  Margin="0,0,8,0"/>
 

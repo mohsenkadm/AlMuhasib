@@ -49,10 +49,18 @@ public partial class InstallmentInvoiceViewModel
     [RelayCommand]
     private void OpenQueuePicker()
     {
-        QueueSearchText = string.Empty;
-        QueueSortNewestFirst = true;
-        RefreshQueueItems();
-        IsQueuePickerOpen = true;
+        try
+        {
+            QueueSearchText = string.Empty;
+            QueueSortNewestFirst = true;
+            RefreshQueueItems();
+            IsQueuePickerOpen = true;
+        }
+        catch (Exception ex)
+        {
+            IsQueuePickerOpen = false;
+            BeautifulMessageDialog.ShowError($"تعذر فتح قائمة الانتظار:\n{ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -96,7 +104,7 @@ public partial class InstallmentInvoiceViewModel
         if (!string.IsNullOrWhiteSpace(QueueSearchText))
         {
             var term = QueueSearchText.Trim();
-            items = items.Where(x => x.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+            items = items.Where(x => (x.Name ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
         items = QueueSortNewestFirst

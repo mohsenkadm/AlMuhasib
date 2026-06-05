@@ -210,6 +210,36 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Help: videos + WhatsApp support -->
+                <StackPanel Grid.Column="4"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Command="{Binding OpenHelpVideosCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="34" Padding="10,0" Margin="0,0,6,0"
+                            materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                            ToolTip="دليل الفيديوهات التعريفية">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
+                                                     VerticalAlignment="Center" Foreground="#1565C0"/>
+                            <TextBlock Text="الفيديوهات" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenHelpWhatsAppCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="34" Padding="10,0"
+                            materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                            ToolTip="تواصل مع الدعم عبر واتساب">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"
+                                                     VerticalAlignment="Center" Foreground="#25D366"/>
+                            <TextBlock Text="الدعم" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
                 <!-- Accent shimmer line -->
                 <Border Grid.Column="0" Grid.ColumnSpan="5"
                         VerticalAlignment="Bottom" Height="2" IsHitTestVisible="False"
@@ -585,8 +615,6 @@
                              SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
                              Style="{StaticResource ChromeTabListBox}"
                              ItemContainerStyle="{StaticResource ChromeTabListBoxItem}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
                              HorizontalContentAlignment="Left"
                              VirtualizingPanel.IsVirtualizing="False">
                         <ListBox.ItemsPanel>
@@ -668,8 +696,8 @@
                     Background="{DynamicResource CardBrush}"
                     BorderBrush="{DynamicResource SubtleBorderBrush}"
                     BorderThickness="0,0,0,1"
-                    Padding="12,8">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    Padding="12,8,12,4">
+                <ScrollViewer Style="{StaticResource ModernHorizontalScrollViewer}">
                     <StackPanel Orientation="Horizontal">
                         <Button Command="{Binding QuickPosSaleCommand}"
                                 Visibility="{Binding ShowQuickPos, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -1015,10 +1043,10 @@
                 </Border.Style>
             </Border>
 
-            <!-- Quick Assist FAB (bottom-left) -->
-            <Grid HorizontalAlignment="Left"
+            <!-- Quick Assist FAB (bottom-right — away from invoice action buttons on the left) -->
+            <Grid HorizontalAlignment="Right"
                   VerticalAlignment="Bottom"
-                  Margin="24,0,0,24"
+                  Margin="0,0,20,68"
                   Panel.ZIndex="100">
                 <StackPanel VerticalAlignment="Bottom"
                             HorizontalAlignment="Left"
@@ -1133,6 +1161,30 @@
                                     <TextBlock Text="جولة التعريف" VerticalAlignment="Center" FontWeight="Medium"/>
                                 </StackPanel>
                             </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenHelpVideosCommand}"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
+                                                                 Foreground="#1565C0"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="فيديوهات تعريفية" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenHelpWhatsAppCommand}"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"
+                                                                 Foreground="#25D366"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="دعم واتساب" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
                             <TextBlock Text="ملف العمل"
                                        FontSize="12" FontWeight="SemiBold"
                                        Foreground="#455A64"
@@ -1185,7 +1237,7 @@
                             Command="{Binding ToggleQuickAssistCommand}"
                             ToolTip="أدوات مساعدة وسريعة">
                         <materialDesign:PackIcon Kind="Tools"
-                                                 Width="28" Height="28"
+                                                 Width="20" Height="20"
                                                  Foreground="White"/>
                     </Button>
                 </StackPanel>
@@ -1452,13 +1504,15 @@
         </Grid>
 
         <!-- المساعد الذكي -->
-        <Grid Visibility="{Binding IsSmartAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
-              Grid.RowSpan="2" Panel.ZIndex="2050">
+        <Grid Grid.Row="1" Grid.RowSpan="1"
+              Visibility="{Binding IsSmartAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="2050">
             <Border Background="#66000000" MouseLeftButtonDown="SmartAssistantBackdrop_Click"/>
             <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="400"
                     Background="{DynamicResource CardBrush}"
                     BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1,0,0,0"
-                    Padding="16,20">
+                    Padding="16,20"
+                    Panel.ZIndex="1">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" ShadowDepth="-2" Opacity="0.15"/>
                 </Border.Effect>
@@ -1475,7 +1529,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="المساعد الذكي" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock Text="المساعد الذكي" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="تنبيهات ومهام مقترحة ليومك" FontSize="12"
                                        Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"
                                        TextWrapping="Wrap"/>
@@ -1486,13 +1541,15 @@
                                 Style="{StaticResource PanelCloseButton}"
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Center"
+                                WindowChrome.IsHitTestVisibleInChrome="True"
                                 ToolTip="إغلاق المساعد"/>
                     </Grid>
                     <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="3" Margin="0,0,0,8"
                                  Visibility="{Binding IsSmartAssistantLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <TextBlock Text="التنبيهات" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="التنبيهات" FontWeight="SemiBold" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <ItemsControl ItemsSource="{Binding AssistantAlerts}" Margin="0,0,0,12">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -1514,7 +1571,8 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Text="مهام اليوم" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="مهام اليوم" FontWeight="SemiBold" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <ItemsControl ItemsSource="{Binding AssistantTasks}" Margin="0,0,0,12">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -1539,7 +1597,8 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Text="نصائح" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="نصائح" FontWeight="SemiBold" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <ItemsControl ItemsSource="{Binding AssistantTips}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>

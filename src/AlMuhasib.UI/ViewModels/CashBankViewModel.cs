@@ -50,6 +50,30 @@ public partial class CashBankViewModel : ViewModelBase
 
     public ObservableCollection<AccountTransactionRow> CashBoxTransactions { get; } = [];
 
+    [ObservableProperty]
+    private string _cashBoxSearchText = string.Empty;
+
+    [ObservableProperty]
+    private DateTime? _cashBoxFromDate;
+
+    [ObservableProperty]
+    private DateTime? _cashBoxToDate;
+
+    [ObservableProperty]
+    private int _cashBoxFilteredCount;
+
+    [ObservableProperty]
+    private decimal _cashBoxFilteredCredit;
+
+    [ObservableProperty]
+    private decimal _cashBoxFilteredDebit;
+
+    [ObservableProperty]
+    private decimal _cashBoxFilteredNet;
+
+    private readonly List<AccountTransactionRow> _allCashBoxTransactions = [];
+    private bool _isClearingCashBoxFilters;
+
     // ══════════════════════════════════════════════════════
     // TAB 1: BANKS (المصارف)
     // ══════════════════════════════════════════════════════
@@ -71,6 +95,30 @@ public partial class CashBankViewModel : ViewModelBase
     private bool _isAddBankVisible;
 
     public ObservableCollection<AccountTransactionRow> BankTransactions { get; } = [];
+
+    [ObservableProperty]
+    private string _bankSearchText = string.Empty;
+
+    [ObservableProperty]
+    private DateTime? _bankFromDate;
+
+    [ObservableProperty]
+    private DateTime? _bankToDate;
+
+    [ObservableProperty]
+    private int _bankFilteredCount;
+
+    [ObservableProperty]
+    private decimal _bankFilteredCredit;
+
+    [ObservableProperty]
+    private decimal _bankFilteredDebit;
+
+    [ObservableProperty]
+    private decimal _bankFilteredNet;
+
+    private readonly List<AccountTransactionRow> _allBankTransactions = [];
+    private bool _isClearingBankFilters;
 
     // ══════════════════════════════════════════════════════
     // TAB 2: TRANSFERS (التحويلات)
@@ -187,11 +235,51 @@ public partial class CashBankViewModel : ViewModelBase
         if (value is not null)
             _ = LoadCashBoxTransactionsAsync(value.Id);
         else
+        {
+            _allCashBoxTransactions.Clear();
             CashBoxTransactions.Clear();
+            ResetCashBoxStats();
+        }
+    }
+
+    partial void OnCashBoxSearchTextChanged(string value)
+    {
+        if (!_isClearingCashBoxFilters)
+            ApplyCashBoxFilters();
+    }
+
+    partial void OnCashBoxFromDateChanged(DateTime? value)
+    {
+        if (!_isClearingCashBoxFilters)
+            ApplyCashBoxFilters();
+    }
+
+    partial void OnCashBoxToDateChanged(DateTime? value)
+    {
+        if (!_isClearingCashBoxFilters)
+            ApplyCashBoxFilters();
+    }
+
+    [RelayCommand]
+    private void ClearCashBoxFilters()
+    {
+        _isClearingCashBoxFilters = true;
+        CashBoxSearchText = string.Empty;
+        CashBoxFromDate = null;
+        CashBoxToDate = null;
+        _isClearingCashBoxFilters = false;
+        ApplyCashBoxFilters();
     }
 
     private async Task LoadCashBoxTransactionsAsync(int cashBoxId)
     {
+        _isClearingCashBoxFilters = true;
+        CashBoxSearchText = string.Empty;
+        CashBoxFromDate = null;
+        CashBoxToDate = null;
+        _isClearingCashBoxFilters = false;
+
+        _allCashBoxTransactions.Clear();
         CashBoxTransactions.Clear();
 
         try
@@ -205,7 +293,7 @@ public partial class CashBankViewModel : ViewModelBase
                 decimal credit = isIncome ? (v.VoucherType == VoucherType.BankReceipt ? v.Amount - v.BankFees : v.Amount) : 0;
                 decimal debit = !isIncome ? v.Amount : 0;
 
-                CashBoxTransactions.Add(new AccountTransactionRow
+                _allCashBoxTransactions.Add(new AccountTransactionRow
                 {
                     Date = v.Date,
                     Type = GetVoucherTypeName(v.VoucherType),
@@ -220,7 +308,7 @@ public partial class CashBankViewModel : ViewModelBase
             foreach (var t in transfers)
             {
                 bool isIncoming = t.ToType == TransferAccountType.CashBox && t.ToId == cashBoxId;
-                CashBoxTransactions.Add(new AccountTransactionRow
+                _allCashBoxTransactions.Add(new AccountTransactionRow
                 {
                     Date = t.Date,
                     Type = "تحويل",
@@ -230,11 +318,52 @@ public partial class CashBankViewModel : ViewModelBase
                     Reference = $"TRF-{t.Id:D4}"
                 });
             }
+
+            _allCashBoxTransactions.Sort((a, b) => b.Date.CompareTo(a.Date));
+            ApplyCashBoxFilters();
         }
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"خطأ في تحميل الحركات: {ex.Message}");
         }
+    }
+
+    private void ApplyCashBoxFilters()
+    {
+        IEnumerable<AccountTransactionRow> query = _allCashBoxTransactions;
+
+        if (CashBoxFromDate.HasValue)
+            query = query.Where(t => t.Date.Date >= CashBoxFromDate.Value.Date);
+
+        if (CashBoxToDate.HasValue)
+            query = query.Where(t => t.Date.Date <= CashBoxToDate.Value.Date);
+
+        if (!string.IsNullOrWhiteSpace(CashBoxSearchText))
+        {
+            var term = CashBoxSearchText.Trim();
+            query = query.Where(t =>
+                t.Type.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.Reference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (t.Description ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var list = query.ToList();
+        CashBoxTransactions.Clear();
+        foreach (var item in list)
+            CashBoxTransactions.Add(item);
+
+        CashBoxFilteredCount = list.Count;
+        CashBoxFilteredCredit = list.Sum(t => t.Credit);
+        CashBoxFilteredDebit = list.Sum(t => t.Debit);
+        CashBoxFilteredNet = CashBoxFilteredCredit - CashBoxFilteredDebit;
+    }
+
+    private void ResetCashBoxStats()
+    {
+        CashBoxFilteredCount = 0;
+        CashBoxFilteredCredit = 0;
+        CashBoxFilteredDebit = 0;
+        CashBoxFilteredNet = 0;
     }
 
     // ══════════════════════════════════════════════════════
@@ -291,11 +420,51 @@ public partial class CashBankViewModel : ViewModelBase
         if (value is not null)
             _ = LoadBankTransactionsAsync(value.Id);
         else
+        {
+            _allBankTransactions.Clear();
             BankTransactions.Clear();
+            ResetBankStats();
+        }
+    }
+
+    partial void OnBankSearchTextChanged(string value)
+    {
+        if (!_isClearingBankFilters)
+            ApplyBankFilters();
+    }
+
+    partial void OnBankFromDateChanged(DateTime? value)
+    {
+        if (!_isClearingBankFilters)
+            ApplyBankFilters();
+    }
+
+    partial void OnBankToDateChanged(DateTime? value)
+    {
+        if (!_isClearingBankFilters)
+            ApplyBankFilters();
+    }
+
+    [RelayCommand]
+    private void ClearBankFilters()
+    {
+        _isClearingBankFilters = true;
+        BankSearchText = string.Empty;
+        BankFromDate = null;
+        BankToDate = null;
+        _isClearingBankFilters = false;
+        ApplyBankFilters();
     }
 
     private async Task LoadBankTransactionsAsync(int bankAccountId)
     {
+        _isClearingBankFilters = true;
+        BankSearchText = string.Empty;
+        BankFromDate = null;
+        BankToDate = null;
+        _isClearingBankFilters = false;
+
+        _allBankTransactions.Clear();
         BankTransactions.Clear();
 
         try
@@ -303,7 +472,7 @@ public partial class CashBankViewModel : ViewModelBase
             var vouchers = await _cashBankService.GetVouchersByBankAsync(bankAccountId);
             foreach (var v in vouchers)
             {
-                BankTransactions.Add(new AccountTransactionRow
+                _allBankTransactions.Add(new AccountTransactionRow
                 {
                     Date = v.Date,
                     Type = GetVoucherTypeName(v.VoucherType),
@@ -318,7 +487,7 @@ public partial class CashBankViewModel : ViewModelBase
             foreach (var t in transfers)
             {
                 bool isIncoming = t.ToType == TransferAccountType.Bank && t.ToId == bankAccountId;
-                BankTransactions.Add(new AccountTransactionRow
+                _allBankTransactions.Add(new AccountTransactionRow
                 {
                     Date = t.Date,
                     Type = "تحويل",
@@ -328,11 +497,52 @@ public partial class CashBankViewModel : ViewModelBase
                     Reference = $"TRF-{t.Id:D4}"
                 });
             }
+
+            _allBankTransactions.Sort((a, b) => b.Date.CompareTo(a.Date));
+            ApplyBankFilters();
         }
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"خطأ في تحميل الحركات: {ex.Message}");
         }
+    }
+
+    private void ApplyBankFilters()
+    {
+        IEnumerable<AccountTransactionRow> query = _allBankTransactions;
+
+        if (BankFromDate.HasValue)
+            query = query.Where(t => t.Date.Date >= BankFromDate.Value.Date);
+
+        if (BankToDate.HasValue)
+            query = query.Where(t => t.Date.Date <= BankToDate.Value.Date);
+
+        if (!string.IsNullOrWhiteSpace(BankSearchText))
+        {
+            var term = BankSearchText.Trim();
+            query = query.Where(t =>
+                t.Type.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.Reference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (t.Description ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var list = query.ToList();
+        BankTransactions.Clear();
+        foreach (var item in list)
+            BankTransactions.Add(item);
+
+        BankFilteredCount = list.Count;
+        BankFilteredCredit = list.Sum(t => t.Credit);
+        BankFilteredDebit = list.Sum(t => t.Debit);
+        BankFilteredNet = BankFilteredCredit - BankFilteredDebit;
+    }
+
+    private void ResetBankStats()
+    {
+        BankFilteredCount = 0;
+        BankFilteredCredit = 0;
+        BankFilteredDebit = 0;
+        BankFilteredNet = 0;
     }
 
     // ══════════════════════════════════════════════════════

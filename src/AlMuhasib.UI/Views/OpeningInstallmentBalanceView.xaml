@@ -104,19 +104,19 @@
                                                  Text="{Binding TotalAmount, UpdateSourceTrigger=PropertyChanged}"
                                                  materialDesign:HintAssist.Hint="المبلغ الكلي"
                                                  materialDesign:HintAssist.IsFloating="True"
-                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+                                                 Style="{StaticResource NumericTextBox}" FontSize="14"/>
 
                                         <TextBox Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
                                                  Text="{Binding NumberOfInstallments, UpdateSourceTrigger=PropertyChanged}"
                                                  materialDesign:HintAssist.Hint="عدد الأقساط الكلي"
                                                  materialDesign:HintAssist.IsFloating="True"
-                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+                                                 Style="{StaticResource NumericTextBox}" FontSize="14"/>
 
                                         <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
                                                  Text="{Binding PaidInstallmentsCount, UpdateSourceTrigger=PropertyChanged}"
                                                  materialDesign:HintAssist.Hint="عدد الأقساط المسددة سابقاً"
                                                  materialDesign:HintAssist.IsFloating="True"
-                                                 Style="{StaticResource FilledTextBox}" FontSize="14"/>
+                                                 Style="{StaticResource NumericTextBox}" FontSize="14"/>
 
                                         <DatePicker Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"
                                                     SelectedDate="{Binding StartDate}"

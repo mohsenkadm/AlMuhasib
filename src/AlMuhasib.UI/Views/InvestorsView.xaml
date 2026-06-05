@@ -238,7 +238,7 @@
                                       Style="{StaticResource FilledComboBox}"/>
                             <TextBox Grid.Column="2" md:HintAssist.Hint="المبلغ"
                                      Text="{Binding DepositAmount, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}"/>
+                                     Style="{StaticResource NumericTextBox}"/>
                             <DatePicker Grid.Column="4" md:HintAssist.Hint="تاريخ العملية"
                                         SelectedDate="{Binding DepositDate}"
                                         Style="{StaticResource FilledDatePicker}"/>
@@ -373,7 +373,7 @@
                                       Style="{StaticResource FilledComboBox}"/>
                             <TextBox Grid.Column="2" md:HintAssist.Hint="المبلغ"
                                      Text="{Binding WithdrawAmount, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}"/>
+                                     Style="{StaticResource NumericTextBox}"/>
                             <DatePicker Grid.Column="4" md:HintAssist.Hint="التاريخ"
                                         SelectedDate="{Binding WithdrawDate}"
                                         Style="{StaticResource FilledDatePicker}"/>

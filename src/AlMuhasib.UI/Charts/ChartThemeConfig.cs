@@ -36,12 +36,30 @@ public static class ChartThemeConfig
     public static SKColor TooltipBg { get; private set; } = SKColors.White;
     public static SKColor GeometryFillColor { get; private set; } = SKColors.White;
 
+    public static SolidColorPaint TooltipBackgroundPaint { get; private set; } = new(SKColors.White);
+    public static SolidColorPaint TooltipTextPaint { get; private set; } = new(SKColor.Parse("#212121"));
+    public static SolidColorPaint LegendTextPaint { get; private set; } = new(SKColor.Parse("#757575"));
+
+    private static bool _isDark;
+
     public static void ApplyTheme(bool isDark)
     {
+        _isDark = isDark;
         GridLineColor = SKColor.Parse(isDark ? "#2D3544" : "#F0F0F0");
         LabelColor = SKColor.Parse(isDark ? "#B0BEC5" : "#757575");
         TooltipBg = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
         GeometryFillColor = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
+        EnsurePaints();
+    }
+
+    public static void EnsurePaints()
+    {
+        TooltipBackgroundPaint = new SolidColorPaint(TooltipBg);
+        TooltipTextPaint = new SolidColorPaint(SKColor.Parse(_isDark ? "#ECEFF1" : "#212121"))
+        {
+            SKTypeface = ArabicTypeface
+        };
+        LegendTextPaint = CreateLabelPaint();
     }
     public const string FontFamily = "Segoe UI, Tahoma, Arial";
     public const float LabelSize   = 11f;

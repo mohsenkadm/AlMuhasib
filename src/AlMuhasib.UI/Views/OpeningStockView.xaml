@@ -152,14 +152,10 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
+                                                     Style="{StaticResource NumericCellTextBox}"
                                                      FontSize="14"
                                                      FontWeight="Bold"
-                                                     Foreground="#2E7D32"
-                                                     Padding="4"/>
+                                                     Foreground="#2E7D32"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -169,13 +165,9 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding UnitCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
+                                                     Style="{StaticResource NumericCellTextBox}"
                                                      FontSize="14"
-                                                     Foreground="#1565C0"
-                                                     Padding="4"/>
+                                                     Foreground="#1565C0"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -185,14 +177,10 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding TotalCost, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
+                                                     Style="{StaticResource NumericCellTextBox}"
                                                      FontSize="14"
                                                      FontWeight="SemiBold"
-                                                     Foreground="#E65100"
-                                                     Padding="4"/>
+                                                     Foreground="#E65100"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

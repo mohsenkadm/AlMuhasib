@@ -236,12 +236,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
-                                                     FontSize="13"
-                                                     Padding="4" />
+                                                     Style="{StaticResource NumericCellTextBox}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -250,14 +245,9 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding TotalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"
-                                                     HorizontalContentAlignment="Center"
-                                                     FontSize="13"
+                                                     Style="{StaticResource NumericCellTextBox}"
                                                      FontWeight="SemiBold"
-                                                     Foreground="{DynamicResource HighlightBrush}"
-                                                     Padding="4" />
+                                                     Foreground="{DynamicResource HighlightBrush}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -722,11 +712,11 @@
                                  materialDesign:HintAssist.Hint="بحث في قائمة الانتظار"
                                  Text="{Binding QueueSearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,8,0"/>
-                        <ToggleButton Grid.Column="1"
-                                      Style="{StaticResource PrimaryToggle}"
-                                      IsChecked="{Binding QueueSortNewestFirst}"
-                                      Padding="10,6"
-                                      Content="الأحدث أولاً"/>
+                        <CheckBox Grid.Column="1"
+                                  Style="{StaticResource PrimaryCheckBox}"
+                                  Content="الأحدث أولاً"
+                                  IsChecked="{Binding QueueSortNewestFirst}"
+                                  VerticalAlignment="Center"/>
                     </Grid>
                     <ListBox Grid.Row="2" ItemsSource="{Binding QueueItems}" BorderThickness="0" Background="Transparent">
                         <ListBox.ItemTemplate>
@@ -741,13 +731,8 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
-                                            <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0">
-                                                <Run Text="{Binding SavedAtText}"/>
-                                                <Run Text="  •  "/>
-                                                <Run Text="{Binding LineCountText}"/>
-                                                <Run Text="  •  "/>
-                                                <Run Text="{Binding TotalAmountText}"/>
-                                            </TextBlock>
+                                            <TextBlock Text="{Binding SummaryText, Mode=OneWay}" FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                                             <Button Command="{Binding DataContext.LoadFromQueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
