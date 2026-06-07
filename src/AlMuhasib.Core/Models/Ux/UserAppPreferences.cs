@@ -33,4 +33,7 @@ public class UserAppPreferences
 
     /// <summary>ملف العمل لتبسيط الشريط السريع.</summary>
     public WorkspaceProfile WorkspaceProfile { get; set; } = WorkspaceProfile.Full;
+
+    /// <summary>تفعيل أصوات التفاعل (حفظ، حذف، تنبيه، إلخ).</summary>
+    public bool SoundEnabled { get; set; } = true;
 }

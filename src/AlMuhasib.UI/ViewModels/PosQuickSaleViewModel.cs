@@ -20,6 +20,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IUserPreferencesService _userPreferences;
     private readonly IRecentActivityService _recentActivity;
     private readonly IFavoriteProductsService _favoriteProducts;
+    private readonly ISoundService _sound;
 
     private List<Product> _allProducts = [];
     private Dictionary<int, decimal> _suggestedPrices = [];
@@ -44,10 +45,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
         IRecentActivityService recentActivity,
-        IFavoriteProductsService favoriteProducts)
+        IFavoriteProductsService favoriteProducts,
+        ISoundService sound)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
+        _sound = sound;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
         _recentActivity = recentActivity;
@@ -126,6 +129,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
         if (barcodeMatch is not null)
         {
+            _sound.Play(SoundEffect.Scan);
             AddOrIncrementProduct(barcodeMatch);
             SearchText = string.Empty;
             return;

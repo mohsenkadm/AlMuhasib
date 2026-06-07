@@ -823,6 +823,23 @@
                                 <TextBlock Text="تثبيت" Margin="6,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
+                        <Button Command="{Binding ToggleSoundCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="10,0" Margin="0,0,4,0"
+                                ToolTip="تفعيل / إيقاف الأصوات">
+                            <materialDesign:PackIcon Width="18" Height="18">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="VolumeHigh" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSoundEnabled}" Value="False">
+                                                <Setter Property="Kind" Value="VolumeOff" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
                         <Button Command="{Binding ToggleThemeCommand}"
                                 Style="{StaticResource OutlinedButton}"
                                 Height="34" Padding="10,0" Margin="0,0,4,0"

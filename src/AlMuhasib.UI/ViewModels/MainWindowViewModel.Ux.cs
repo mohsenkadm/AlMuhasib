@@ -296,6 +296,21 @@ public partial class MainWindowViewModel
         await OpenTabAsync(typeof(VouchersViewModel), "السندات", PackIconKind.FileDocument);
     }
 
+    [ObservableProperty]
+    private bool _isSoundEnabled = true;
+
+    [RelayCommand]
+    private void ToggleSound()
+    {
+        IsSoundEnabled = !IsSoundEnabled;
+        _sound.SetEnabled(IsSoundEnabled);
+
+        if (IsSoundEnabled)
+            _toast.ShowSuccess("تم تفعيل الأصوات");
+        else
+            _toast.ShowInfo("تم إيقاف الأصوات");
+    }
+
     [RelayCommand]
     private void ToggleTheme()
     {

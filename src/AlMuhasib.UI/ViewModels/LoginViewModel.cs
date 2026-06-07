@@ -11,6 +11,7 @@ public partial class LoginViewModel : ObservableObject
 {
     private readonly IAuthService _authService;
     private readonly CurrentUserService _currentUserService;
+    private readonly ISoundService _sound;
 
     public ObservableCollection<LoginAdminOption> AdminUsers { get; } = [];
 
@@ -49,10 +50,11 @@ public partial class LoginViewModel : ObservableObject
     public event Action? LoginSucceeded;
     public event Action? StepChanged;
 
-    public LoginViewModel(IAuthService authService, CurrentUserService currentUserService)
+    public LoginViewModel(IAuthService authService, CurrentUserService currentUserService, ISoundService sound)
     {
         _authService = authService;
         _currentUserService = currentUserService;
+        _sound = sound;
     }
 
     public async Task LoadAdminsAsync()
@@ -142,6 +144,7 @@ public partial class LoginViewModel : ObservableObject
 
             if (!result.Success)
             {
+                _sound.Play(SoundEffect.Error);
                 ShowError(result.ErrorMessage);
                 return;
             }
@@ -150,6 +153,7 @@ public partial class LoginViewModel : ObservableObject
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
 
+            _sound.Play(SoundEffect.Login);
             LoginSucceeded?.Invoke();
         }
         catch (Exception ex)

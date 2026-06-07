@@ -106,6 +106,7 @@ public partial class BeautifulMessageDialog : Window
 
     public static bool ShowConfirm(string message, string title = "تأكيد")
     {
+        ResolveSoundService()?.Play(SoundEffect.Confirm);
         return Show(message, title, MessageDialogType.Confirm, true);
     }
 
@@ -122,6 +123,14 @@ public partial class BeautifulMessageDialog : Window
 
         dialog.ShowDialog();
         return dialog.ResultYes;
+    }
+
+    private static ISoundService? ResolveSoundService()
+    {
+        if (Application.Current is not App app)
+            return null;
+
+        return app.Services.GetService<ISoundService>();
     }
 
     private static void ApplyTheme(BeautifulMessageDialog dialog, MessageDialogType type)
@@ -173,11 +182,24 @@ public partial class BeautifulMessageDialog : Window
         if (isConfirm)
         {
             var yesBtn = CreateButton("نعم", "#1565C0", "#0D47A1", PackIconKind.Check, true);
-            yesBtn.Click += (_, _) => { dialog.ResultYes = true; dialog.Close(); };
+            yesBtn.Click += (_, _) =>
+            {
+                ResolveSoundService()?.Play(
+                    dialog.TitleText.Text.Contains("حذف", StringComparison.OrdinalIgnoreCase)
+                        ? SoundEffect.Delete
+                        : SoundEffect.Verify);
+                dialog.ResultYes = true;
+                dialog.Close();
+            };
 
             var noBtn = CreateButton("لا", "#F5F5F5", "#E0E0E0", PackIconKind.Close, false);
             noBtn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#616161"));
-            noBtn.Click += (_, _) => { dialog.ResultYes = false; dialog.Close(); };
+            noBtn.Click += (_, _) =>
+            {
+                ResolveSoundService()?.Play(SoundEffect.Cancel);
+                dialog.ResultYes = false;
+                dialog.Close();
+            };
 
             dialog.ButtonPanel.Children.Add(yesBtn);
             dialog.ButtonPanel.Children.Add(noBtn);

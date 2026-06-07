@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IBackupService _backupService;
     private readonly IInvestorRefreshService _investorRefresh;
     private readonly IToastNotificationService _toast;
+    private readonly ISoundService _sound;
     private readonly IGlobalSearchService _globalSearchService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly ThemeService _themeService;
@@ -109,6 +110,7 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentUserService currentUserService, IAuthService authService,
         IBackupService backupService, IInvestorRefreshService investorRefresh,
         IToastNotificationService toast,
+        ISoundService sound,
         IGlobalSearchService globalSearchService,
         IUserPreferencesService userPreferences,
         ThemeService themeService,
@@ -124,9 +126,11 @@ public partial class MainWindowViewModel : ObservableObject
         _backupService = backupService;
         _investorRefresh = investorRefresh;
         _toast = toast;
+        _sound = sound;
         _globalSearchService = globalSearchService;
         _userPreferences = userPreferences;
         _themeService = themeService;
+        _isSoundEnabled = _userPreferences.Current.SoundEnabled;
         _recentActivity = recentActivity;
         _auditLogService = auditLogService;
         _smartAlertService = smartAlertService;

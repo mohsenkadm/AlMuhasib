@@ -11,7 +11,10 @@ public sealed class ToastNotificationService : IToastNotificationService
     private const int LoadingMs = 380;
     private const int DefaultDisplayMs = 3400;
 
+    private readonly ISoundService _sound;
     private ToastHost? _host;
+
+    public ToastNotificationService(ISoundService sound) => _sound = sound;
 
     public void AttachHost(ToastHost host) => _host = host;
 
@@ -40,11 +43,11 @@ public sealed class ToastNotificationService : IToastNotificationService
         {
             await operation().ConfigureAwait(false);
             await TransitionAsync(toast, ToastDisplayState.Success, successMessage ?? loadingMessage,
-                title ?? "تم بنجاح").ConfigureAwait(false);
+                title ?? "تم بنجاح", SoundEffect.Save).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            await TransitionAsync(toast, ToastDisplayState.Error, ex.Message, "خطأ").ConfigureAwait(false);
+            await TransitionAsync(toast, ToastDisplayState.Error, ex.Message, "خطأ", SoundEffect.Error).ConfigureAwait(false);
         }
 
         await DismissAsync(toast).ConfigureAwait(false);
@@ -55,7 +58,8 @@ public sealed class ToastNotificationService : IToastNotificationService
         var toast = CreateToast(ToastDisplayState.Loading, message, title ?? DefaultTitle(finalState));
         Push(toast);
         await Task.Delay(LoadingMs).ConfigureAwait(false);
-        await TransitionAsync(toast, finalState, message, title ?? DefaultTitle(finalState)).ConfigureAwait(false);
+        await TransitionAsync(toast, finalState, message, title ?? DefaultTitle(finalState),
+            SoundForState(finalState)).ConfigureAwait(false);
         await DismissAsync(toast).ConfigureAwait(false);
     }
 
@@ -63,8 +67,12 @@ public sealed class ToastNotificationService : IToastNotificationService
         ToastNotification toast,
         ToastDisplayState state,
         string message,
-        string title)
+        string title,
+        SoundEffect? sound = null)
     {
+        if (sound is SoundEffect effect)
+            _sound.Play(effect);
+
         await RunOnUiAsync(() =>
         {
             toast.State = state;
@@ -73,6 +81,15 @@ public sealed class ToastNotificationService : IToastNotificationService
             toast.DismissProgress = 1;
         }).ConfigureAwait(false);
     }
+
+    private static SoundEffect? SoundForState(ToastDisplayState state) => state switch
+    {
+        ToastDisplayState.Success => SoundEffect.Success,
+        ToastDisplayState.Error => SoundEffect.Error,
+        ToastDisplayState.Warning => SoundEffect.Warning,
+        ToastDisplayState.Info => SoundEffect.Info,
+        _ => null
+    };
 
     private async Task DismissAsync(ToastNotification toast, int displayMs = DefaultDisplayMs)
     {

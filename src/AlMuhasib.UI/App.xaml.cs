@@ -149,8 +149,9 @@ public partial class App : Application
         services.AddSingleton<ICurrentUserService>(currentUserService);
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
-        services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<ISoundService, SoundService>();
+        services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<ThemeService>();
         services.AddSingleton<IInvoiceDraftService, InvoiceDraftService>();
         services.AddSingleton<IInvoiceTemplateService, InvoiceTemplateService>();
