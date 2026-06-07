@@ -1,10 +1,10 @@
 ﻿{
-  "version": "1.5.0",
-  "releaseDate": "2026-06-05",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.5.0/AlMuhasib-1.5.0.zip",
-  "sha256": "C6146CF052214F7DD27AAC226953DB813FAA526EFE894143D60E038B22294001",
-  "sizeBytes": 77975289,
-  "releaseNotes": "تحسينات الواجهة، قائمة الانتظار، وإدخال الأرقام",
-  "isMandatory": false,
-  "minSupportedVersion": "1.0.0"
+    "version":  "1.6.0",
+    "releaseDate":  "2026-06-07",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.6.0/AlMuhasib-1.6.0.zip",
+    "sha256":  "A57F310B01A1D7161F27D7242A425B30FCFB6653C95AECC8F8111DE1A8EE2DA3",
+    "sizeBytes":  78696076,
+    "releaseNotes":  "دليل الفيديوهات ودعم واتساب، تحسين السكرول، إصلاح الوضع الليلي للمخططات والجداول، إصلاح المساعد الذكي وتشغيل يوتيوب",
+    "isMandatory":  false,
+    "minSupportedVersion":  "1.0.0"
 }
