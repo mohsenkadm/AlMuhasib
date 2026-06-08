@@ -1,0 +1,334 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.TasksPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
+             Width="420"
+             MaxHeight="560">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <Style x:Key="TaskCard" TargetType="Border">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform X="0"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F5F9FF"/>
+                    <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                    <Setter Property="Opacity" Value="0.72"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource CardBrush}"
+            CornerRadius="16"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
+            BorderThickness="1"
+            RenderTransformOrigin="0.5,0">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="6" Opacity="0.22" Color="#1565C0"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="16,14">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1565C0" Offset="0"/>
+                        <GradientStop Color="#42A5F5" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="22" Height="22"
+                                                     Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="مهامي" FontSize="17" FontWeight="Bold"
+                                       Foreground="White" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="مهامك المُسندة إليك — أضف مهمة جديدة من الأسفل"
+                                   FontSize="11.5" Foreground="#E3F2FD" Margin="30,3,0,0"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="10"
+                            Padding="10,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock FontSize="11.5" Foreground="White">
+                            <Run Text="معلّقة: "/>
+                            <Run Text="{Binding PendingTaskCount}" FontWeight="Bold"/>
+                        </TextBlock>
+                    </Border>
+                    <Button Grid.Column="2"
+                            Command="{Binding CloseTasksPanelCommand}"
+                            Style="{StaticResource PanelCloseButton}"
+                            Foreground="White" Background="#33FFFFFF"/>
+                </Grid>
+            </Border>
+
+            <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="3"
+                         Visibility="{Binding IsTasksLoading, Converter={StaticResource BoolVis}}"/>
+
+            <!-- Tasks list first -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="14,10,14,8">
+                <StackPanel>
+                    <WrapPanel Margin="0,0,0,10">
+                        <Button Command="{Binding SetTaskFilterCommand}" CommandParameter="{x:Static vm:TaskFilterMode.All}"
+                                Style="{StaticResource TaskFilterChip}" Content="الكل" Margin="0,0,6,6"/>
+                        <Button Command="{Binding SetTaskFilterCommand}" CommandParameter="{x:Static vm:TaskFilterMode.Pending}"
+                                Style="{StaticResource TaskFilterChip}" Content="قيد الانتظار" Margin="0,0,6,6"/>
+                        <Button Command="{Binding SetTaskFilterCommand}" CommandParameter="{x:Static vm:TaskFilterMode.InProgress}"
+                                Style="{StaticResource TaskFilterChip}" Content="قيد التنفيذ" Margin="0,0,6,6"/>
+                        <Button Command="{Binding SetTaskFilterCommand}" CommandParameter="{x:Static vm:TaskFilterMode.Completed}"
+                                Style="{StaticResource TaskFilterChip}" Content="مكتملة" Margin="0,0,6,6"/>
+                    </WrapPanel>
+
+                    <ItemsControl ItemsSource="{Binding FilteredTasks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:UserTaskItem}">
+                                <Border Style="{StaticResource TaskCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0"
+                                                Command="{Binding DataContext.ToggleTaskStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource IconButton}"
+                                                Width="34" Height="34" Margin="0,0,6,0"
+                                                ToolTip="تبديل الحالة">
+                                            <materialDesign:PackIcon Width="22" Height="22" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Kind" Value="CheckboxBlankCircleOutline"/>
+                                                        <Setter Property="Foreground" Value="#90A4AE"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                <Setter Property="Kind" Value="CheckboxMarkedCircle"/>
+                                                                <Setter Property="Foreground" Value="#43A047"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+                                        </Button>
+                                        <StackPanel Grid.Column="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Title}"
+                                                           FontWeight="SemiBold" FontSize="13"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                    <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                                                    <Setter Property="Foreground" Value="#90A4AE"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Border Grid.Column="1" CornerRadius="8" Padding="8,3" Margin="6,0,0,0"
+                                                        Background="{Binding StatusBackground}">
+                                                    <TextBlock Text="{Binding StatusLabel}" FontSize="10.5" FontWeight="Bold"
+                                                               Foreground="{Binding StatusColor}"/>
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Details}" FontSize="12" Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Details}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Details}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                <materialDesign:PackIcon Kind="CalendarOutline" Width="14" Height="14"
+                                                                         Foreground="#78909C" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding DueDateDisplay}" FontSize="11"
+                                                           Foreground="#78909C" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                                <Border Background="#FFEBEE" CornerRadius="6" Padding="6,2" Margin="8,0,0,0"
+                                                        Visibility="{Binding IsOverdue, Converter={StaticResource BoolVis}}">
+                                                    <TextBlock Text="متأخرة" FontSize="10" FontWeight="Bold" Foreground="#C62828"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                                        Visibility="{Binding IsAssignedByOther, Converter={StaticResource BoolVis}}">
+                                                <materialDesign:PackIcon Kind="AccountArrowRight" Width="13" Height="13"
+                                                                         Foreground="#7E57C2" VerticalAlignment="Center"/>
+                                                <TextBlock FontSize="10.5" Foreground="#7E57C2" Margin="4,0,0,0" VerticalAlignment="Center">
+                                                    <Run Text="أسندها: "/>
+                                                    <Run Text="{Binding AssignedByDisplayName}" FontWeight="SemiBold"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <Button Grid.Column="2"
+                                                Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource IconButton}"
+                                                Width="32" Height="32" Opacity="0.6"
+                                                ToolTip="حذف">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" Foreground="#E53935"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12"
+                            Padding="24,20" Margin="0,8,0,0"
+                            Visibility="{Binding HasFilteredTasks, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="40" Height="40"
+                                                     Foreground="#90A4AE" HorizontalAlignment="Center"/>
+                            <TextBlock Text="لا توجد مهام حالياً"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Add task button / form -->
+            <Border Grid.Row="3"
+                    Background="{DynamicResource BackgroundBrush}"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="14,10">
+                <StackPanel>
+                    <Button Command="{Binding ShowTaskAddFormCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            Padding="12,8" HorizontalAlignment="Stretch"
+                            Visibility="{Binding IsTaskAddFormOpen, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="PlusCircleOutline" Width="18" Height="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="إضافة مهمة" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <StackPanel Visibility="{Binding IsTaskAddFormOpen, Converter={StaticResource BoolVis}}">
+                        <TextBox Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="عنوان المهمة *"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 Margin="0,0,0,8"/>
+                        <TextBox Text="{Binding NewTaskDetails, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="التفاصيل (اختياري)"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="52" MaxHeight="80"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Margin="0,0,0,8"/>
+                        <ComboBox ItemsSource="{Binding TaskAssignees}"
+                                  SelectedItem="{Binding SelectedTaskAssignee}"
+                                  DisplayMemberPath="DisplayName"
+                                  materialDesign:HintAssist.Hint="إسناد إلى"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                  Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <DatePicker Grid.Column="0"
+                                        SelectedDate="{Binding NewTaskDueDate}"
+                                        materialDesign:HintAssist.Hint="تاريخ الاستحقاق"
+                                        Style="{StaticResource MaterialDesignOutlinedDatePicker}"/>
+                            <ComboBox Grid.Column="2"
+                                      SelectedItem="{Binding NewTaskStatus}"
+                                      materialDesign:HintAssist.Hint="الحالة"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource UserTaskStatusLabelConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                                <enums:UserTaskStatus>Pending</enums:UserTaskStatus>
+                                <enums:UserTaskStatus>InProgress</enums:UserTaskStatus>
+                                <enums:UserTaskStatus>Completed</enums:UserTaskStatus>
+                            </ComboBox>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"
+                                    Command="{Binding CancelTaskAddFormCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Padding="10,8">
+                                <TextBlock Text="إلغاء"/>
+                            </Button>
+                            <Button Grid.Column="2"
+                                    Command="{Binding AddTaskCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Padding="10,8">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Check" Width="18" Height="18" VerticalAlignment="Center"/>
+                                    <TextBlock Text="حفظ المهمة" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="4" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                    BorderThickness="0,1,0,0" Padding="12,10" CornerRadius="0,0,16,16"
+                    Background="{DynamicResource BackgroundBrush}">
+                <Button Command="{Binding RefreshTasksCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        HorizontalAlignment="Stretch" Padding="10,8">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" VerticalAlignment="Center"/>
+                        <TextBlock Text="تحديث المهام" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

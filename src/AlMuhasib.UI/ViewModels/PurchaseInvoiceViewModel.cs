@@ -182,6 +182,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 TryRestoreDraft();
                 ApplyDefaultSupplierIfAny();
             }
+
+            TryOpenPendingQueuePicker();
         }
         finally
         {

@@ -301,6 +301,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             }
 
             ApplyDefaultCustomerIfAny();
+            TryOpenPendingQueuePicker();
         }
         finally
         {

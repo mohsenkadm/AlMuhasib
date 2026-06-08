@@ -23,6 +23,8 @@
             <converters:NotNullToBooleanConverter x:Key="NotNullToBooleanConverter" />
             <converters:InstallmentTypeConverter x:Key="InstallmentTypeConverter" />
             <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+            <converters:UserTaskStatusLabelConverter x:Key="UserTaskStatusLabelConverter" />
+            <converters:IdEqualsMultiConverter x:Key="IdEqualsMultiConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />

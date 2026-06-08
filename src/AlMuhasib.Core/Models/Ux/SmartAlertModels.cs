@@ -17,7 +17,10 @@ public enum SmartAlertAction
     OpenProducts,
     OpenWarehouseReport,
     OpenStockHealthReport,
-    OpenVouchers
+    OpenVouchers,
+    OpenSalesInvoiceQueue,
+    OpenPurchaseInvoiceQueue,
+    OpenInstallmentInvoiceQueue
 }
 
 public class SmartAlert

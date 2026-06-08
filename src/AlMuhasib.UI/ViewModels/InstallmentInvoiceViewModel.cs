@@ -212,6 +212,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             GenerateSchedulePreview();
             TryRestoreDraft();
             ApplyDefaultInstallmentCustomerIfAny();
+            TryOpenPendingQueuePicker();
         }
         finally
         {

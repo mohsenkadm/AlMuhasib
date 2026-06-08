@@ -37,6 +37,8 @@ public static class DependencyInjection
         services.AddScoped<IGlobalSearchService, GlobalSearchService>();
         services.AddScoped<ISmartAlertService, SmartAlertService>();
         services.AddScoped<IDemoDataService, DemoDataService>();
+        services.AddScoped<IUserTaskService, UserTaskService>();
+        services.AddScoped<IUserNoteService, UserNoteService>();
 
         return services;
     }

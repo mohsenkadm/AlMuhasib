@@ -45,6 +45,8 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<AuditLog>? _auditLogs;
     private IRepository<CustomerAttachment>? _customerAttachments;
     private IRepository<PrintBrandingSettings>? _printBrandingSettings;
+    private IRepository<UserTask>? _userTasks;
+    private IRepository<UserNote>? _userNotes;
 
     public IRepository<User> Users => _users ??= new Repository<User>(_contextFactory, GetActiveContext);
     public IRepository<Permission> Permissions => _permissions ??= new Repository<Permission>(_contextFactory, GetActiveContext);
@@ -72,6 +74,8 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<AuditLog> AuditLogs => _auditLogs ??= new Repository<AuditLog>(_contextFactory, GetActiveContext);
     public IRepository<CustomerAttachment> CustomerAttachments => _customerAttachments ??= new Repository<CustomerAttachment>(_contextFactory, GetActiveContext);
     public IRepository<PrintBrandingSettings> PrintBrandingSettings => _printBrandingSettings ??= new Repository<PrintBrandingSettings>(_contextFactory, GetActiveContext);
+    public IRepository<UserTask> UserTasks => _userTasks ??= new Repository<UserTask>(_contextFactory, GetActiveContext);
+    public IRepository<UserNote> UserNotes => _userNotes ??= new Repository<UserNote>(_contextFactory, GetActiveContext);
 
     public async Task<int> SaveChangesAsync()
     {

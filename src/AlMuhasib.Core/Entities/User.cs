@@ -14,4 +14,6 @@ public class User : BaseEntity
 
     // Navigation
     public ICollection<Permission> Permissions { get; set; } = [];
+    public ICollection<UserTask> Tasks { get; set; } = [];
+    public ICollection<UserNote> Notes { get; set; } = [];
 }

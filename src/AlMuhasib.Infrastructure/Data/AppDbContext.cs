@@ -45,6 +45,8 @@ public class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<CustomerAttachment> CustomerAttachments => Set<CustomerAttachment>();
     public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
+    public DbSet<UserTask> UserTasks => Set<UserTask>();
+    public DbSet<UserNote> UserNotes => Set<UserNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

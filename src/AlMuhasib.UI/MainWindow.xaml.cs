@@ -39,6 +39,27 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key == Key.Escape && _viewModel.IsTasksPanelOpen)
+        {
+            _viewModel.CloseTasksPanelCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && _viewModel.IsNotesPanelOpen)
+        {
+            _ = _viewModel.CloseNotesPanelCommand.ExecuteAsync(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && _viewModel.IsNotificationPanelOpen)
+        {
+            _viewModel.CloseNotificationPanelCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && _viewModel.IsGlobalSearchOpen)
         {
             _viewModel.CloseGlobalSearchCommand.Execute(null);
@@ -154,6 +175,15 @@ public partial class MainWindow : Window
 
     private void SmartAssistantClose_Click(object sender, RoutedEventArgs e) =>
         _viewModel.IsSmartAssistantOpen = false;
+
+    private void NotificationBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.IsNotificationPanelOpen = false;
+
+    private void TasksBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.IsTasksPanelOpen = false;
+
+    private void NotesBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _ = _viewModel.CloseNotesPanelCommand.ExecuteAsync(null);
 
     private void ChromeTabClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

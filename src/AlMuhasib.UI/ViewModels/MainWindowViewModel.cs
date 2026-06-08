@@ -117,7 +117,10 @@ public partial class MainWindowViewModel : ObservableObject
         IRecentActivityService recentActivity,
         IAuditLogService auditLogService,
         ISmartAlertService smartAlertService,
-        IHelpSupportService helpSupport)
+        IHelpSupportService helpSupport,
+        INotificationCenterService notificationCenter,
+        IUserTaskService userTaskService,
+        IUserNoteService userNoteService)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -135,6 +138,9 @@ public partial class MainWindowViewModel : ObservableObject
         _auditLogService = auditLogService;
         _smartAlertService = smartAlertService;
         _helpSupport = helpSupport;
+        _notificationCenter = notificationCenter;
+        _userTaskService = userTaskService;
+        _userNoteService = userNoteService;
 
         _investorRefresh.InvestorsChanged += (_, _) => _investorsLookupDirty = true;
 
@@ -987,6 +993,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         StopClock();
         CloseAllTabs();
+        ResetPersonalWorkspaceSession();
         _currentUserService.Clear();
         LogoutRequested?.Invoke();
     }
@@ -998,6 +1005,9 @@ public partial class MainWindowViewModel : ObservableObject
     {
         UpdateDateTime();
         StartClock();
+        ResetNotificationSession();
+        ResetPersonalWorkspaceSession();
+        _ = InitializePersonalWorkspaceAsync();
     }
 
     [RelayCommand]

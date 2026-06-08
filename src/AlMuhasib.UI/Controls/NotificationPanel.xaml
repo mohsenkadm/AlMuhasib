@@ -1,0 +1,249 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.NotificationPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             xmlns:ux="clr-namespace:AlMuhasib.Core.Models.Ux;assembly=AlMuhasib.Core"
+             Width="400"
+             MaxHeight="520">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <Style x:Key="NotificationCard" TargetType="Border">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F5F9FF"/>
+                    <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource CardBrush}"
+            CornerRadius="16"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
+            BorderThickness="1"
+            Padding="0"
+            RenderTransformOrigin="0.5,0">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="6" Opacity="0.22" Color="#1565C0"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header gradient -->
+            <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="16,14">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1565C0" Offset="0"/>
+                        <GradientStop Color="#42A5F5" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="BellRing" Width="22" Height="22"
+                                                     Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="الإشعارات" FontSize="17" FontWeight="Bold"
+                                       Foreground="White" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="تنبيهات النظام والمهام التي تحتاج متابعة"
+                                   FontSize="11.5" Foreground="#E3F2FD" Margin="30,3,0,0"/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Command="{Binding MarkAllNotificationsReadCommand}"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Foreground="White" FontSize="11" Padding="8,4" Margin="0,0,4,0"
+                            Content="قراءة الكل"
+                            ToolTip="تعليم جميع الإشعارات كمقروءة"/>
+                    <Button Grid.Column="2"
+                            Command="{Binding CloseNotificationPanelCommand}"
+                            Style="{StaticResource PanelCloseButton}"
+                            Foreground="White" Background="#33FFFFFF"
+                            ToolTip="إغلاق"/>
+                </Grid>
+            </Border>
+
+            <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="3"
+                         Visibility="{Binding IsNotificationCenterLoading, Converter={StaticResource BoolVis}}"/>
+
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="14,12,14,8">
+                <StackPanel>
+                    <!-- Unread section -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="غير مقروءة" FontWeight="Bold" FontSize="13"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Border Grid.Column="1" Background="#FFEBEE" CornerRadius="10"
+                                Padding="8,2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding UnreadNotificationCount}"
+                                       FontSize="11" FontWeight="Bold" Foreground="#C62828"/>
+                        </Border>
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding UnreadNotifications}" Margin="0,0,0,14">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:AppNotificationItem}">
+                                <Border Style="{StaticResource NotificationCard}">
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.OpenNotificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Margin="0,0,10,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Critical}">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Warning}">
+                                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <materialDesign:PackIcon Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Kind" Value="InformationOutline"/>
+                                                        <Setter Property="Foreground" Value="#1565C0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Critical}">
+                                                                <Setter Property="Kind" Value="AlertOctagon"/>
+                                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Warning}">
+                                                                <Setter Property="Kind" Value="AlertCircleOutline"/>
+                                                                <Setter Property="Foreground" Value="#EF6C00"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+                                        </Border>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding Message}" FontSize="12" Margin="0,3,0,0"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding TimeAgoText}" FontSize="10.5" Margin="0,4,0,0"
+                                                       Foreground="#90A4AE"/>
+                                        </StackPanel>
+                                        <Ellipse Grid.Column="2" Width="8" Height="8" Fill="#E53935"
+                                                 VerticalAlignment="Top" Margin="6,4,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12"
+                            Padding="20,16" Margin="0,0,0,14"
+                            Visibility="{Binding HasUnreadNotifications, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CheckCircleOutline" Width="36" Height="36"
+                                                     Foreground="#43A047" HorizontalAlignment="Center"/>
+                            <TextBlock Text="لا توجد إشعارات غير مقروءة" FontSize="13" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Read section -->
+                    <TextBlock Text="مقروءة" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <ItemsControl ItemsSource="{Binding ReadNotifications}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:AppNotificationItem}">
+                                <Border Style="{StaticResource NotificationCard}" Opacity="0.82">
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.OpenNotificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                                                Background="#ECEFF1" Margin="0,0,10,0">
+                                            <materialDesign:PackIcon Kind="Check" Width="18" Height="18"
+                                                                     Foreground="#78909C"
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <TextBlock Text="{Binding Message}" FontSize="11.5" Margin="0,2,0,0"
+                                                       Foreground="#90A4AE" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="لا توجد إشعارات مقروءة بعد"
+                               FontSize="12" Foreground="#B0BEC5" HorizontalAlignment="Center"
+                               Margin="0,8,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ReadNotifications.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="3" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                    BorderThickness="0,1,0,0" Padding="12,10" CornerRadius="0,0,16,16"
+                    Background="{DynamicResource BackgroundBrush}">
+                <Button Command="{Binding ReloadNotificationsPanelCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        HorizontalAlignment="Stretch" Padding="10,8">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" VerticalAlignment="Center"/>
+                        <TextBlock Text="تحديث الإشعارات" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

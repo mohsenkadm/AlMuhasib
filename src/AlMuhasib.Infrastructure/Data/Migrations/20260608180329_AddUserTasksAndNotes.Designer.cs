@@ -4,6 +4,7 @@ using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlMuhasib.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608180329_AddUserTasksAndNotes")]
+    partial class AddUserTasksAndNotes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1639,9 +1642,6 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AssignedByUserId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1687,11 +1687,14 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("UserId1")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
 
-                    b.HasIndex("AssignedByUserId", "IsDeleted");
+                    b.HasIndex("UserId1");
 
                     b.HasIndex("UserId", "IsDeleted");
 
@@ -2104,19 +2107,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.UserTask", b =>
                 {
-                    b.HasOne("AlMuhasib.Core.Entities.User", "AssignedByUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("AlMuhasib.Core.Entities.User", "User")
-                        .WithMany("Tasks")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("AssignedByUser");
+                    b.HasOne("AlMuhasib.Core.Entities.User", null)
+                        .WithMany("Tasks")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("User");
                 });

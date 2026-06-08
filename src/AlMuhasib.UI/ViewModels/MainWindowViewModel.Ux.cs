@@ -152,6 +152,9 @@ public partial class MainWindowViewModel
     [RelayCommand]
     private void OpenGlobalSearch()
     {
+        IsTasksPanelOpen = false;
+        IsNotesPanelOpen = false;
+        IsNotificationPanelOpen = false;
         IsGlobalSearchOpen = true;
         _ = RefreshGlobalSearchAsync();
     }
@@ -400,6 +403,64 @@ public partial class MainWindowViewModel
                 break;
             case SmartAlertAction.OpenVouchers:
                 await OpenVouchersAsync(VoucherType.Receipt);
+                break;
+            case SmartAlertAction.OpenSalesInvoiceQueue:
+                await OpenInvoiceQueueAsync(InvoiceQueueKind.Sales);
+                break;
+            case SmartAlertAction.OpenPurchaseInvoiceQueue:
+                await OpenInvoiceQueueAsync(InvoiceQueueKind.Purchase);
+                break;
+            case SmartAlertAction.OpenInstallmentInvoiceQueue:
+                await OpenInvoiceQueueAsync(InvoiceQueueKind.Installment);
+                break;
+        }
+    }
+
+    private async Task OpenInvoiceQueueAsync(InvoiceQueueKind kind)
+    {
+        Type vmType = kind switch
+        {
+            InvoiceQueueKind.Sales => typeof(SalesInvoiceViewModel),
+            InvoiceQueueKind.Purchase => typeof(PurchaseInvoiceViewModel),
+            InvoiceQueueKind.Installment => typeof(InstallmentInvoiceViewModel),
+            _ => typeof(SalesInvoiceViewModel)
+        };
+
+        string title = kind switch
+        {
+            InvoiceQueueKind.Sales => "فاتورة مبيعات",
+            InvoiceQueueKind.Purchase => "فاتورة مشتريات",
+            InvoiceQueueKind.Installment => "فاتورة أقساط",
+            _ => "فاتورة"
+        };
+
+        PackIconKind icon = kind switch
+        {
+            InvoiceQueueKind.Sales => PackIconKind.CashRegister,
+            InvoiceQueueKind.Purchase => PackIconKind.CartArrowDown,
+            InvoiceQueueKind.Installment => PackIconKind.CalendarClock,
+            _ => PackIconKind.FileDocumentOutline
+        };
+
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == vmType);
+        if (existing is null)
+        {
+            InvoiceNavigationBridge.PendingOpenQueueKind = kind;
+            await OpenTabAsync(vmType, title, icon);
+            return;
+        }
+
+        ActivateTab(existing);
+        switch (existing.ViewModel)
+        {
+            case SalesInvoiceViewModel sales:
+                sales.OpenQueuePickerFromExternal();
+                break;
+            case PurchaseInvoiceViewModel purchase:
+                purchase.OpenQueuePickerFromExternal();
+                break;
+            case InstallmentInvoiceViewModel installment:
+                installment.OpenQueuePickerFromExternal();
                 break;
         }
     }

@@ -51,6 +51,35 @@
             </Setter>
         </Style>
 
+        <Style x:Key="OskButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="ToolTip" Value="لوحة المفاتيح على الشاشة"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="18">
+                            <materialDesign:PackIcon Kind="KeyboardOutline" Width="20" Height="20"
+                                                     Foreground="#90A4AE"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                <Setter Property="Foreground" Value="#1565C0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="LoginPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
             <Setter Property="Height" Value="50"/>
             <Setter Property="FontSize" Value="16"/>
@@ -404,7 +433,7 @@
                                                      materialDesign:HintAssist.IsFloating="True"
                                                      Style="{StaticResource OutlinedPasswordBox}"
                                                      FontSize="14" FlowDirection="RightToLeft"
-                                                     Padding="48,10,12,10"
+                                                     Padding="48,10,48,10"
                                                      PasswordChanged="PasswordBox_PasswordChanged"/>
 
                                         <TextBox x:Name="PasswordBoxVisible"
@@ -416,7 +445,7 @@
                                                  materialDesign:HintAssist.IsFloating="True"
                                                  Style="{StaticResource OutlinedTextBox}"
                                                  FontSize="14" FlowDirection="RightToLeft"
-                                                 Padding="48,10,12,10" Visibility="Collapsed"/>
+                                                 Padding="48,10,48,10" Visibility="Collapsed"/>
 
                                         <ToggleButton x:Name="PasswordToggle"
                                                       Style="{StaticResource PasswordToggleButton}"
@@ -424,6 +453,12 @@
                                                       Margin="10,0,0,0" Panel.ZIndex="2"
                                                       Checked="PasswordToggle_Changed"
                                                       Unchecked="PasswordToggle_Changed"/>
+
+                                        <Button Style="{StaticResource OskButton}"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                Margin="0,0,10,0" Panel.ZIndex="2"
+                                                Click="OpenOskButton_Click"
+                                                ToolTip="فتح لوحة المفاتيح (للأجهزة بدون كيبورد)"/>
                                     </Grid>
 
                                     <CheckBox Content="تذكرني" IsChecked="{Binding RememberMe}"

@@ -156,6 +156,7 @@ public partial class App : Application
         services.AddSingleton<IInvoiceDraftService, InvoiceDraftService>();
         services.AddSingleton<IInvoiceTemplateService, InvoiceTemplateService>();
         services.AddSingleton<IInvoiceQueueService, InvoiceQueueService>();
+        services.AddSingleton<INotificationCenterService, NotificationCenterService>();
         services.AddSingleton<IRecentActivityService, RecentActivityService>();
         services.AddSingleton<IFavoriteProductsService, FavoriteProductsService>();
 
@@ -447,6 +448,8 @@ public partial class App : Application
                         mainVm.CloseAllTabs();
                         await mainVm.OpenInitialSessionTabsAsync();
                         mainVm.TryStartFeatureTour();
+                        _ = mainVm.InitializeNotificationCenterAsync();
+                        _ = mainVm.InitializePersonalWorkspaceAsync();
                     };
                 }
             }
@@ -455,6 +458,9 @@ public partial class App : Application
                 await mainVm.OpenInitialSessionTabsAsync();
                 mainVm.TryStartFeatureTour();
             }
+
+            _ = mainVm.InitializeNotificationCenterAsync();
+            _ = mainVm.InitializePersonalWorkspaceAsync();
         }
         catch (Exception ex)
         {
@@ -465,6 +471,8 @@ public partial class App : Application
             try
             {
                 await mainVm.OpenInitialSessionTabsAsync();
+                _ = mainVm.InitializeNotificationCenterAsync();
+                _ = mainVm.InitializePersonalWorkspaceAsync();
             }
             catch { }
         }

@@ -2888,4 +2888,47 @@
         </Setter>
     </Style>
 
+    <!-- Personal workspace: task filter chips -->
+    <Style x:Key="TaskFilterChip" TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+        <Setter Property="Padding" Value="12,5"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="16"/>
+        <Setter Property="BorderBrush" Value="#CFD8DC"/>
+        <Setter Property="Background" Value="White"/>
+    </Style>
+
+    <!-- Personal workspace: notepad paper -->
+    <SolidColorBrush x:Key="NotepadPaperBrush" Color="#FFF8E1"/>
+    <SolidColorBrush x:Key="NotepadPaperBorderBrush" Color="#E0D5B7"/>
+
+    <DrawingBrush x:Key="NotepadRuledLinesBrush" TileMode="Tile" Viewport="0,0,1,28" ViewportUnits="Absolute" Viewbox="0,0,1,28" ViewboxUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <GeometryDrawing>
+                <GeometryDrawing.Geometry>
+                    <RectangleGeometry Rect="0,27,2000,1"/>
+                </GeometryDrawing.Geometry>
+                <GeometryDrawing.Pen>
+                    <Pen Brush="#E8DCC8" Thickness="1"/>
+                </GeometryDrawing.Pen>
+            </GeometryDrawing>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <Style x:Key="NotepadPaperBorder" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource NotepadPaperBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource NotepadPaperBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.18" Color="#8D6E63" Direction="315"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TaskStatusBadge" TargetType="Border">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="8,3"/>
+    </Style>
+
 </ResourceDictionary>

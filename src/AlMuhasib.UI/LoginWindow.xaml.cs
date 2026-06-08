@@ -140,6 +140,20 @@ public partial class LoginWindow : Window
         }
     }
 
+    private void OpenOskButton_Click(object sender, RoutedEventArgs e)
+    {
+        FocusActivePasswordField();
+        _viewModel.OpenOnScreenKeyboardCommand.Execute(null);
+    }
+
+    private void FocusActivePasswordField()
+    {
+        if (PasswordBoxVisible.Visibility == Visibility.Visible)
+            PasswordBoxVisible.Focus();
+        else
+            PasswordBoxHidden.Focus();
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;

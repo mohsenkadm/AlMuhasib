@@ -210,12 +210,75 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Help: videos + WhatsApp support -->
+                <!-- Tasks + Notes + Notifications + Help -->
                 <StackPanel Grid.Column="4"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0"
                             WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Command="{Binding ToggleTasksPanelCommand}"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            Width="38" Height="38" Margin="0,0,8,0"
+                            ToolTip="مهامي">
+                        <Grid Width="24" Height="24">
+                            <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="20" Height="20"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                     Foreground="#1565C0"/>
+                            <Border Width="18" Height="18" CornerRadius="9"
+                                    Background="#E53935" BorderBrush="White" BorderThickness="1.5"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-7,-9,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PendingTaskCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding PendingTaskBadgeText}"
+                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                    <Button Command="{Binding ToggleNotesPanelCommand}"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            Width="38" Height="38" Margin="0,0,8,0"
+                            ToolTip="ملاحظاتي">
+                        <materialDesign:PackIcon Kind="NotebookOutline" Width="20" Height="20"
+                                                 Foreground="#F57F17"/>
+                    </Button>
+                    <Button Command="{Binding ToggleNotificationPanelCommand}"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            Width="38" Height="38" Margin="0,0,8,0"
+                            ToolTip="الإشعارات">
+                        <Grid Width="24" Height="24">
+                            <materialDesign:PackIcon Kind="BellOutline" Width="20" Height="20"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                     Foreground="#37474F"/>
+                            <Border Width="18" Height="18" CornerRadius="9"
+                                    Background="#E53935" BorderBrush="White" BorderThickness="1.5"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-7,-9,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding UnreadNotificationCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding UnreadNotificationBadgeText}"
+                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Button>
                     <Button Command="{Binding OpenHelpVideosCommand}"
                             Style="{StaticResource OutlinedButton}"
                             Height="34" Padding="10,0" Margin="0,0,6,0"
@@ -1804,5 +1867,215 @@
                 </Grid>
             </Border>
         </Popup>
+
+        <!-- Tasks panel dropdown -->
+        <Grid Grid.RowSpan="2"
+              Panel.ZIndex="2201"
+              Visibility="{Binding IsTasksPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="#44000000" MouseLeftButtonDown="TasksBackdrop_Click"/>
+            <controls:TasksPanel x:Name="TasksPanelHost"
+                                 DataContext="{Binding}"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Margin="0,52,170,0"
+                                 Panel.ZIndex="1"
+                                 RenderTransformOrigin="0.5,0">
+                <controls:TasksPanel.RenderTransform>
+                    <TranslateTransform Y="0"/>
+                </controls:TasksPanel.RenderTransform>
+                <controls:TasksPanel.Style>
+                    <Style TargetType="controls:TasksPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTasksPanelOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             From="-16" To="0" Duration="0:0:0.32">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:TasksPanel.Style>
+            </controls:TasksPanel>
+        </Grid>
+
+        <!-- Notes panel dropdown -->
+        <Grid Grid.RowSpan="2"
+              Panel.ZIndex="2201"
+              Visibility="{Binding IsNotesPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="#44000000" MouseLeftButtonDown="NotesBackdrop_Click"/>
+            <controls:NotesPanel x:Name="NotesPanelHost"
+                                 DataContext="{Binding}"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Margin="0,52,220,0"
+                                 Panel.ZIndex="1"
+                                 RenderTransformOrigin="0.5,0">
+                <controls:NotesPanel.RenderTransform>
+                    <TranslateTransform Y="0"/>
+                </controls:NotesPanel.RenderTransform>
+                <controls:NotesPanel.Style>
+                    <Style TargetType="controls:NotesPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsNotesPanelOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             From="-16" To="0" Duration="0:0:0.32">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:NotesPanel.Style>
+            </controls:NotesPanel>
+        </Grid>
+
+        <!-- Notification Center dropdown -->
+        <Grid Grid.RowSpan="2"
+              Panel.ZIndex="2200"
+              Visibility="{Binding IsNotificationPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="#44000000" MouseLeftButtonDown="NotificationBackdrop_Click"/>
+            <controls:NotificationPanel x:Name="NotificationPanelHost"
+                                        DataContext="{Binding}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,52,14,0"
+                                        Panel.ZIndex="1"
+                                        RenderTransformOrigin="0.5,0">
+                <controls:NotificationPanel.RenderTransform>
+                    <TranslateTransform Y="0"/>
+                </controls:NotificationPanel.RenderTransform>
+                <controls:NotificationPanel.Style>
+                    <Style TargetType="controls:NotificationPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsNotificationPanelOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             From="-16" To="0" Duration="0:0:0.32">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:NotificationPanel.Style>
+            </controls:NotificationPanel>
+        </Grid>
+
+        <!-- Bottom notification reminder -->
+        <Border Grid.RowSpan="2"
+                Panel.ZIndex="2150"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,28"
+                MaxWidth="560"
+                MinWidth="320"
+                CornerRadius="14"
+                Background="White"
+                BorderBrush="#E2EAF3"
+                BorderThickness="1"
+                Visibility="{Binding IsNotificationReminderVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                RenderTransformOrigin="0.5,1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.2" Color="#1565C0"/>
+            </Border.Effect>
+            <Border.RenderTransform>
+                <TranslateTransform Y="0"/>
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsNotificationReminderVisible}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.35">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         From="24" To="0" Duration="0:0:0.38">
+                                            <DoubleAnimation.EasingFunction>
+                                                <BackEase EasingMode="EaseOut" Amplitude="0.35"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid Margin="14,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="22"
+                        Background="#FFF3E0" Margin="0,0,12,0">
+                    <materialDesign:PackIcon Kind="BellRing" Width="24" Height="24"
+                                             Foreground="#EF6C00"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding NotificationReminderTitle}"
+                               FontWeight="Bold" FontSize="13" Foreground="#263238"/>
+                    <TextBlock Text="{Binding NotificationReminderMessage}"
+                               FontSize="12" Foreground="#546E7A" TextWrapping="Wrap"
+                               Margin="0,3,0,0" MaxWidth="360"/>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Command="{Binding OpenNotificationsFromReminderCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Height="34" Padding="12,0" Margin="0,0,8,0"
+                        Content="عرض"/>
+                <Button Grid.Column="3"
+                        Command="{Binding DismissNotificationReminderCommand}"
+                        Style="{StaticResource PanelCloseButton}"
+                        ToolTip="إغلاق"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

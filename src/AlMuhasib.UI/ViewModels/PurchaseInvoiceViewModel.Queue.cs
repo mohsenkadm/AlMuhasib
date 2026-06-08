@@ -114,4 +114,15 @@ public partial class PurchaseInvoiceViewModel
         foreach (var item in items)
             QueueItems.Add(item);
     }
+
+    private void TryOpenPendingQueuePicker()
+    {
+        if (InvoiceNavigationBridge.PendingOpenQueueKind != InvoiceQueueKind.Purchase)
+            return;
+
+        InvoiceNavigationBridge.PendingOpenQueueKind = null;
+        OpenQueuePickerCommand.Execute(null);
+    }
+
+    public void OpenQueuePickerFromExternal() => OpenQueuePickerCommand.Execute(null);
 }

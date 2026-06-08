@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces.Services;
+using System.Diagnostics;
+using System.IO;
+using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -114,6 +117,20 @@ public partial class LoginViewModel : ObservableObject
         ErrorMessage = string.Empty;
         CurrentStep = LoginStep.SelectAdmin;
         StepChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private void OpenOnScreenKeyboard()
+    {
+        try
+        {
+            var osk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "osk.exe");
+            Process.Start(new ProcessStartInfo(osk) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر فتح لوحة المفاتيح:\n{ex.Message}");
+        }
     }
 
     [RelayCommand]

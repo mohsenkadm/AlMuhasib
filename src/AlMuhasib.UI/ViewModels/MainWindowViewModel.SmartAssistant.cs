@@ -33,6 +33,9 @@ public partial class MainWindowViewModel
     {
         IsMenuCustomizerOpen = false;
         IsQuickAssistOpen = false;
+        IsTasksPanelOpen = false;
+        IsNotesPanelOpen = false;
+        IsNotificationPanelOpen = false;
         IsSmartAssistantOpen = !IsSmartAssistantOpen;
         if (IsSmartAssistantOpen)
             await RefreshSmartAssistantAsync();

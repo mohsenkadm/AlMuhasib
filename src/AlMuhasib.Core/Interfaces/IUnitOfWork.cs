@@ -30,6 +30,8 @@ public interface IUnitOfWork : IDisposable
     IRepository<AuditLog> AuditLogs { get; }
     IRepository<CustomerAttachment> CustomerAttachments { get; }
     IRepository<PrintBrandingSettings> PrintBrandingSettings { get; }
+    IRepository<UserTask> UserTasks { get; }
+    IRepository<UserNote> UserNotes { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();
