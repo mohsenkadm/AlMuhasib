@@ -81,9 +81,7 @@ public class ProductService : IProductService
         var product = await context.Products.FindAsync(id);
         if (product is null) return;
 
-        product.IsDeleted = true;
-        product.DeletedAt = DateTime.UtcNow;
-        product.DeletedBy = _currentUserService.Username;
+        product.MarkSoftDeleted(_currentUserService.Username);
         await context.SaveChangesAsync();
     }
 

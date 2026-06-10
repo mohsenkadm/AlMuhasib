@@ -603,9 +603,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             return;
         }
 
-        if (IsInstallmentPayment && SelectedCustomer is null && string.IsNullOrWhiteSpace(CustomerSearchText))
+        if (IsInstallmentPayment)
         {
-            ErrorMessage = "يجب اختيار العميل لفاتورة الأقساط";
+            ErrorMessage = "لفواتير الأقساط استخدم شاشة «فاتورة أقساط» من القائمة الجانبية";
             return;
         }
 

@@ -49,9 +49,7 @@ public class ExpenseService : IExpenseService
             ?? throw new InvalidOperationException("نوع المصروف غير موجود");
         var hasExpenses = await context.Expenses.AnyAsync(e => e.ExpenseTypeId == id);
         if (hasExpenses) throw new InvalidOperationException("لا يمكن حذف نوع مصروف مرتبط بمصاريف");
-        expenseType.IsDeleted = true;
-        expenseType.DeletedAt = DateTime.UtcNow;
-        expenseType.DeletedBy = _currentUserService.Username;
+        expenseType.MarkSoftDeleted(_currentUserService.Username);
         await context.SaveChangesAsync();
     }
 

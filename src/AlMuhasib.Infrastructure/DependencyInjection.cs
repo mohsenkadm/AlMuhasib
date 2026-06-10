@@ -39,6 +39,10 @@ public static class DependencyInjection
         services.AddScoped<IDemoDataService, DemoDataService>();
         services.AddScoped<IUserTaskService, UserTaskService>();
         services.AddScoped<IUserNoteService, UserNoteService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, SyncService>();
+        services.AddHttpClient("CloudSync");
 
         return services;
     }

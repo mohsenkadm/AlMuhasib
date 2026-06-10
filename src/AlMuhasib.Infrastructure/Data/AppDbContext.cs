@@ -12,6 +12,9 @@ public class AppDbContext : DbContext
 {
     private readonly ICurrentUserService? _currentUserService;
 
+    /// <summary>يُفعّل أثناء تطبيق Pull لتجنب استبدال طوابع التحديث من السحابة.</summary>
+    public bool IsApplyingSyncPull { get; set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService? currentUserService = null)
         : base(options)
     {
@@ -47,6 +50,8 @@ public class AppDbContext : DbContext
     public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
     public DbSet<UserTask> UserTasks => Set<UserTask>();
     public DbSet<UserNote> UserNotes => Set<UserNote>();
+    public DbSet<SyncState> SyncStates => Set<SyncState>();
+    public DbSet<CloudSyncSettings> CloudSyncSettings => Set<CloudSyncSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -79,7 +84,12 @@ public class AppDbContext : DbContext
             builder.Property(nameof(BaseEntity.UpdatedBy)).HasMaxLength(100);
             builder.Property(nameof(BaseEntity.DeletedBy)).HasMaxLength(100);
             builder.HasIndex(nameof(BaseEntity.IsDeleted));
+            builder.HasIndex(nameof(BaseEntity.SyncId));
+            builder.Property(nameof(BaseEntity.RowVersion)).IsRowVersion();
         }
+
+        modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
+        modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(new Core.Entities.CloudSyncSettings { Id = Core.Entities.CloudSyncSettings.SingletonId });
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -93,6 +103,9 @@ public class AppDbContext : DbContext
         {
             // Don't audit AuditLog itself or Permission
             if (entry.Entity is AuditLog || entry.Entity is Permission)
+                continue;
+
+            if (IsApplyingSyncPull)
                 continue;
 
             switch (entry.State)

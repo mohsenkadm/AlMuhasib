@@ -218,6 +218,7 @@ public partial class App : Application
         services.AddTransient<CapitalAdjustmentViewModel>();
         services.AddTransient<BackupRestoreViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
+        services.AddTransient<CloudSyncSettingsViewModel>();
         services.AddTransient<HelpVideosViewModel>();
         services.AddSingleton<MainWindowViewModel>();
 

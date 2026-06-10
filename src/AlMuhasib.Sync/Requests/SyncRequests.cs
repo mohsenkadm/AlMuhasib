@@ -1,0 +1,41 @@
+using AlMuhasib.Sync.Dtos;
+
+namespace AlMuhasib.Sync.Requests;
+
+public sealed class SyncDataBundle
+{
+    public List<CategorySyncDto> Categories { get; set; } = [];
+    public List<ProductSyncDto> Products { get; set; } = [];
+    public List<WarehouseSyncDto> Warehouses { get; set; } = [];
+    public List<CustomerSyncDto> Customers { get; set; } = [];
+    public List<SupplierSyncDto> Suppliers { get; set; } = [];
+    public List<CashBoxSyncDto> CashBoxes { get; set; } = [];
+    public List<BankAccountSyncDto> BankAccounts { get; set; } = [];
+    public List<InvestorSyncDto> Investors { get; set; } = [];
+    public List<ExpenseTypeSyncDto> ExpenseTypes { get; set; } = [];
+    public List<PrintBrandingSettingsSyncDto> PrintBrandingSettings { get; set; } = [];
+    public List<WarehouseStockSyncDto> WarehouseStocks { get; set; } = [];
+    public List<InvoiceSyncDto> Invoices { get; set; } = [];
+    public List<InvoiceItemSyncDto> InvoiceItems { get; set; } = [];
+    public List<InstallmentPlanSyncDto> InstallmentPlans { get; set; } = [];
+    public List<InstallmentSyncDto> Installments { get; set; } = [];
+    public List<VoucherSyncDto> Vouchers { get; set; } = [];
+    public List<ExpenseSyncDto> Expenses { get; set; } = [];
+    public List<TransferSyncDto> Transfers { get; set; } = [];
+    public List<InvestorTransactionSyncDto> InvestorTransactions { get; set; } = [];
+    public List<ProfitDistributionSyncDto> ProfitDistributions { get; set; } = [];
+    public List<ProfitDistributionDetailSyncDto> ProfitDistributionDetails { get; set; } = [];
+    public List<CapitalEntrySyncDto> CapitalEntries { get; set; } = [];
+    public List<CustomerAttachmentSyncDto> CustomerAttachments { get; set; } = [];
+}
+
+public sealed class SyncPushRequest
+{
+    public SyncDataBundle Data { get; set; } = new();
+}
+
+public sealed class SyncPullRequest
+{
+    public DateTime? Since { get; set; }
+    public string? Cursor { get; set; }
+}

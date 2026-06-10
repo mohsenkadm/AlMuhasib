@@ -1,0 +1,9 @@
+﻿@page "/"
+@using AlMuhasib.Admin.Services
+@inject NavigationManager Nav
+@inject DeveloperAuthState Auth
+
+@code {
+    protected override void OnInitialized() =>
+        Nav.NavigateTo(Auth.IsAuthenticated ? "/dashboard" : "/login");
+}

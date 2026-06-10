@@ -237,6 +237,8 @@ public class InvoiceService : IInvoiceService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var invoice = await context.Invoices
             .Include(i => i.Items)
+            .Include(i => i.InstallmentPlans)
+                .ThenInclude(p => p.Installments)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (invoice is null) return;
 
@@ -279,15 +281,16 @@ public class InvoiceService : IInvoiceService
                 }
             }
 
-            invoice.IsDeleted = true;
-            invoice.DeletedAt = DateTime.UtcNow;
-            invoice.DeletedBy = username;
+            invoice.MarkSoftDeleted(username);
 
             foreach (var item in invoice.Items)
+                item.MarkSoftDeleted(username);
+
+            foreach (var plan in invoice.InstallmentPlans)
             {
-                item.IsDeleted = true;
-                item.DeletedAt = DateTime.UtcNow;
-                item.DeletedBy = username;
+                plan.MarkSoftDeleted(username);
+                foreach (var installment in plan.Installments)
+                    installment.MarkSoftDeleted(username);
             }
 
             await context.SaveChangesAsync();

@@ -1,0 +1,99 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@using AlMuhasib.Cloud.Core.Entities
+@using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Admin.Services
+@inject ITenantService TenantService
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>الرئيسية — لوحة المطور</PageTitle>
+
+@if (_ready)
+{
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">إجمالي العملاء</div>
+            <div class="stat-value primary">@_tenants.Count</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">عملاء نشطون</div>
+            <div class="stat-value accent">@_tenants.Count(t => t.IsActive)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">مزامنة مفعّلة</div>
+            <div class="stat-value accent">@_tenants.Count(t => t.IsMobileEnabled)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">تراخيص منتهية</div>
+            <div class="stat-value warning">@_tenants.Count(t => t.LicenseExpiresAt < DateTime.UtcNow)</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>آخر العملاء</h3>
+            <a href="/tenants/new" class="btn btn-primary btn-sm">＋ عميل جديد</a>
+        </div>
+        <div class="card-body" style="padding:0">
+            @if (_tenants.Count == 0)
+            {
+                <div style="padding:2rem;text-align:center;color:var(--text-muted)">
+                    لا يوجد عملاء بعد. <a href="/tenants/new">أنشئ أول عميل</a>
+                </div>
+            }
+            else
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>الشركة</th>
+                            <th>الحالة</th>
+                            <th>المزامنة</th>
+                            <th>الترخيص</th>
+                            <th>آخر مزامنة</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in _tenants.OrderByDescending(x => x.CreatedAt).Take(8))
+                        {
+                            <tr>
+                                <td><strong>@t.CompanyName</strong></td>
+                                <td>
+                                    <span class="badge @(t.IsActive ? "badge-success" : "badge-danger")">
+                                        @(t.IsActive ? "نشط" : "معطّل")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge @(t.IsMobileEnabled ? "badge-info" : "badge-warning")">
+                                        @(t.IsMobileEnabled ? "مفعّل" : "معطّل")
+                                    </span>
+                                </td>
+                                <td>@(t.LicenseExpiresAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td>@(t.LastSyncAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td><a href="/tenants/@t.Id">إدارة ←</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Tenant> _tenants = [];
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+        _tenants = await TenantService.GetAllAsync();
+        _ready = true;
+    }
+}

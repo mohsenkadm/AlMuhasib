@@ -67,6 +67,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("OldValues")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
@@ -83,6 +92,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("Timestamp");
 
@@ -132,6 +143,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -146,6 +166,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasFilter("[AccountNumber] IS NOT NULL AND [IsDeleted] = 0");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("BankAccounts", (string)null);
                 });
@@ -187,6 +209,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -204,6 +235,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("Date");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("CapitalEntries", (string)null);
                 });
@@ -243,6 +276,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -253,6 +295,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("CashBoxes", (string)null);
                 });
@@ -288,6 +332,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -302,7 +355,66 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
+                    b.HasIndex("SyncId");
+
                     b.ToTable("Categories", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.CloudSyncSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AccessTokenExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApiBaseUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("AutoSyncEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AutoSyncIntervalMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastSuccessfulSyncAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastSyncError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CloudSyncSettings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ApiBaseUrl = "",
+                            AutoSyncEnabled = false,
+                            AutoSyncIntervalMinutes = 15,
+                            Password = "",
+                            Username = ""
+                        });
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Customer", b =>
@@ -352,6 +464,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -368,6 +489,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Customers", (string)null);
                 });
@@ -415,6 +538,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -427,6 +559,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("CustomerAttachments");
                 });
@@ -474,6 +608,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -490,6 +633,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("ExpenseTypeId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Expenses", (string)null);
                 });
@@ -525,6 +670,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -538,6 +692,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("ExpenseTypes", (string)null);
                 });
@@ -592,10 +748,19 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -615,6 +780,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Installments", (string)null);
                 });
@@ -671,8 +838,17 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<int>("NumberOfInstallments")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
@@ -694,6 +870,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("InvoiceId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("InstallmentPlans", (string)null);
                 });
@@ -741,6 +919,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("TotalDeposit")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -757,6 +944,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Investors", (string)null);
                 });
@@ -801,6 +990,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -820,6 +1018,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("InvestorId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("Type");
 
@@ -919,8 +1119,17 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
@@ -952,6 +1161,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("WarehouseId");
 
@@ -999,6 +1210,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1021,6 +1241,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("InvoiceItems", (string)null);
                 });
@@ -1069,10 +1291,19 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("ScreenName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1087,6 +1318,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("UserId", "ScreenName")
                         .IsUnique();
@@ -1169,6 +1402,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<bool>("ShowFooterImage")
                         .HasColumnType("bit");
 
@@ -1181,6 +1420,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("ShowHeaderText")
                         .HasColumnType("bit");
 
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1191,6 +1433,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("PrintBrandingSettings", (string)null);
                 });
@@ -1237,6 +1481,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1255,6 +1508,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -1292,6 +1547,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("TotalProfit")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1308,6 +1572,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("Date");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("ProfitDistributions", (string)null);
                 });
@@ -1352,6 +1618,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1366,6 +1641,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProfitDistributionId");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("ProfitDistributionDetails", (string)null);
                 });
@@ -1413,6 +1690,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1426,7 +1712,28 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("Name");
 
+                    b.HasIndex("SyncId");
+
                     b.ToTable("Suppliers", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.SyncState", b =>
+                {
+                    b.Property<string>("EntityType")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LastPulledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastPushedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ServerCursor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("EntityType");
+
+                    b.ToTable("SyncStates");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Transfer", b =>
@@ -1474,6 +1781,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("ToId")
                         .HasColumnType("int");
 
@@ -1494,6 +1810,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("Date");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Transfers", (string)null);
                 });
@@ -1544,6 +1862,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1559,6 +1886,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -1600,6 +1929,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<DateTime>("LastEditedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1621,6 +1959,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("UserId1");
 
@@ -1667,10 +2007,19 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1690,6 +2039,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("AssignedByUserId", "IsDeleted");
 
@@ -1753,6 +2104,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1783,6 +2143,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("InvestorId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("VoucherNumber")
                         .IsUnique();
@@ -1827,6 +2189,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1840,6 +2211,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Warehouses", (string)null);
                 });
@@ -1881,6 +2254,15 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("UnitCost")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1900,6 +2282,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("WarehouseId", "ProductId")
                         .IsUnique();

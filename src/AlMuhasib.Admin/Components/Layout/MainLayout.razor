@@ -1,0 +1,101 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using AlMuhasib.Admin.Services
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <div class="admin-brand-logo">
+                <div class="admin-brand-icon">م</div>
+                <div>
+                    <h1>المحاسب</h1>
+                    <p>لوحة تحكم المطور</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="admin-nav">
+            <a href="/dashboard" class="@NavClass("/dashboard")">
+                <span class="admin-nav-icon">◈</span> الرئيسية
+            </a>
+            <a href="/tenants" class="@NavClass("/tenants")">
+                <span class="admin-nav-icon">◎</span> العملاء
+            </a>
+            <a href="/tenants/new" class="@NavClass("/tenants/new")">
+                <span class="admin-nav-icon">＋</span> عميل جديد
+            </a>
+            <a href="/notifications" class="@NavClass("/notifications")">
+                <span class="admin-nav-icon">✉</span> الإشعارات
+            </a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            AlMuhasib Cloud Admin
+        </div>
+    </aside>
+
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <h2>@_pageTitle</h2>
+            <div class="admin-topbar-actions">
+                @if (Auth.IsAuthenticated)
+                {
+                    <span class="admin-user-badge">👤 @Auth.Username</span>
+                    <button class="btn btn-danger btn-sm" @onclick="Logout">خروج</button>
+                }
+            </div>
+        </header>
+
+        <main class="admin-content">
+            @Body
+        </main>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    حدث خطأ غير متوقع.
+    <a href="." class="reload">إعادة تحميل</a>
+    <span class="dismiss">✕</span>
+</div>
+
+@code {
+    private string _pageTitle = "لوحة التحكم";
+
+    protected override void OnInitialized()
+    {
+        Auth.Changed += OnAuthChanged;
+        UpdateTitle();
+    }
+
+    protected override void OnParametersSet() => UpdateTitle();
+
+    private void UpdateTitle()
+    {
+        var path = new Uri(Nav.Uri).AbsolutePath;
+        _pageTitle = path switch
+        {
+            "/dashboard" => "الرئيسية",
+            "/tenants" => "عملاء النظام",
+            "/tenants/new" => "عميل جديد",
+            "/notifications" => "إرسال إشعار",
+            var p when p.StartsWith("/tenants/") => "إدارة عميل",
+            _ => "لوحة التحكم"
+        };
+    }
+
+    private string NavClass(string path)
+    {
+        var current = new Uri(Nav.Uri).AbsolutePath;
+        if (path == "/tenants" && current.StartsWith("/tenants/") && current != "/tenants/new")
+            return "";
+        return current == path ? "active" : "";
+    }
+
+    private void Logout() => Nav.NavigateTo("/auth/logout", forceLoad: true);
+
+    private void OnAuthChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Auth.Changed -= OnAuthChanged;
+}

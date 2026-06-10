@@ -1,0 +1,95 @@
+@page "/tenants"
+@rendermode InteractiveServer
+@using AlMuhasib.Cloud.Core.Entities
+@using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Admin.Services
+@inject ITenantService TenantService
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>العملاء — لوحة المطور</PageTitle>
+
+@if (_ready)
+{
+    <div class="page-header">
+        <h1>عملاء النظام</h1>
+        <div class="page-actions">
+            <a href="/tenants/new" class="btn btn-primary">＋ عميل جديد</a>
+            <a href="/notifications" class="btn btn-secondary">✉ إشعارات</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding:0">
+            @if (_tenants.Count == 0)
+            {
+                <div style="padding:3rem;text-align:center;color:var(--text-muted)">
+                    <p style="font-size:1.1rem;margin-bottom:1rem">لا يوجد عملاء مسجلون</p>
+                    <a href="/tenants/new" class="btn btn-primary">إنشاء أول عميل</a>
+                </div>
+            }
+            else
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>الشركة</th>
+                            <th>الحالة</th>
+                            <th>المزامنة</th>
+                            <th>انتهاء الترخيص</th>
+                            <th>آخر مزامنة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in _tenants)
+                        {
+                            var expired = t.LicenseExpiresAt < DateTime.UtcNow;
+                            <tr>
+                                <td><strong>@t.CompanyName</strong></td>
+                                <td>
+                                    <span class="badge @(t.IsActive ? "badge-success" : "badge-danger")">
+                                        @(t.IsActive ? "نشط" : "معطّل")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge @(t.IsMobileEnabled ? "badge-info" : "badge-warning")">
+                                        @(t.IsMobileEnabled ? "مفعّل" : "معطّل")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (expired)
+                                    {
+                                        <span class="badge badge-danger">@t.LicenseExpiresAt?.ToString("yyyy-MM-dd")</span>
+                                    }
+                                    else
+                                    {
+                                        @(t.LicenseExpiresAt?.ToString("yyyy-MM-dd") ?? "—")
+                                    }
+                                </td>
+                                <td>@(t.LastSyncAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td><a href="/tenants/@t.Id" class="btn btn-secondary btn-sm">إدارة</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Tenant> _tenants = [];
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+        _tenants = await TenantService.GetAllAsync();
+        _ready = true;
+    }
+}

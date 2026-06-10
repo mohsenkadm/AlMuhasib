@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="المحاسب — نظام محاسبة ومبيعات عربي متكامل"/>
+  <title>المحاسب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="bg-mesh" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo">
+        <span class="logo-mark">م</span>
+        <span class="logo-text" data-i18n="hero.title">المحاسب</span>
+      </a>
+      <button class="nav-toggle" aria-label="Menu">☰</button>
+      <nav class="nav-links">
+        <a href="#features" data-i18n="nav.features">المميزات</a>
+        <a href="#how" data-i18n="nav.how">كيف يعمل</a>
+        <a href="#videos" data-i18n="nav.videos">الفيديوهات</a>
+        <a href="#reports" data-i18n="nav.reports">التقارير</a>
+        <a href="#cloud" data-i18n="nav.cloud">السحابة</a>
+        <a href="#mobile-app" data-i18n="nav.mobile">التطبيق</a>
+        <a href="#download" data-i18n="nav.download">التنزيل</a>
+        <a href="#faq" data-i18n="nav.faq">الأسئلة</a>
+      </nav>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button type="button" data-lang-btn="ar" class="active">ع</button>
+          <button type="button" data-lang-btn="en">EN</button>
+        </div>
+        <a href="#" class="btn btn-whatsapp btn-sm" data-whatsapp data-i18n="support.btnShort">واتساب</a>
+        <a href="#download" class="btn btn-primary btn-sm" data-download-link data-i18n="hero.cta_download">حمّل</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="container hero-grid">
+        <div class="hero-content reveal">
+          <span class="hero-badge" id="hero-badge" data-i18n="hero.badge">إصدار جديد</span>
+          <h1><span data-i18n="hero.title">المحاسب</span></h1>
+          <p class="hero-sub" data-i18n="hero.subtitle">نظام محاسبة ومبيعات عربي</p>
+          <p class="hero-desc" data-i18n="hero.desc">فواتير، مخازن، أقساط، تقارير</p>
+          <div class="hero-cta">
+            <a href="#download" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل النظام</a>
+            <a href="#features" class="btn btn-ghost btn-lg" data-i18n="hero.cta_features">المميزات</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong data-count="20">0</strong><span data-i18n="hero.stat_modules">وحدة</span></div>
+            <div><strong data-count="25">0</strong><span data-i18n="hero.stat_reports">تقرير</span></div>
+            <div><strong>100%</strong><span data-i18n="hero.stat_offline">أوفلاين</span></div>
+          </div>
+        </div>
+        <div class="hero-visual reveal">
+          <div class="desktop-showcase float">
+            <img src="assets/desktop-dashboard.png" alt="" class="desktop-screenshot" id="desktop-screenshot" hidden/>
+            <div class="almuhasib-desktop" id="desktop-mock" aria-label="معاينة واجهة المحاسب">
+              <div class="ald-titlebar">
+                <div class="ald-win-btns"><span></span><span></span><span class="close"></span></div>
+                <span class="ald-page-title" data-i18n="desktop.pageTitle">لوحة التحكم</span>
+                <span class="ald-app-name">المحاسب — AlMuhasib</span>
+              </div>
+              <div class="ald-body">
+                <aside class="ald-sidebar">
+                  <div class="ald-logo-side">م</div>
+                  <nav class="ald-menu">
+                    <a class="active" data-i18n="desktop.menu.dashboard">لوحة التحكم</a>
+                    <a data-i18n="desktop.menu.sales">فاتورة مبيعات</a>
+                    <a data-i18n="desktop.menu.customers">العملاء</a>
+                    <a data-i18n="desktop.menu.warehouses">المخازن</a>
+                    <a data-i18n="desktop.menu.installments">الأقساط</a>
+                    <a data-i18n="desktop.menu.reports">التقارير</a>
+                  </nav>
+                </aside>
+                <div class="ald-content">
+                  <div class="ald-quick-bar">
+                    <span class="ald-pill" data-i18n="desktop.quick.sale">بيع</span>
+                    <span class="ald-pill" data-i18n="desktop.quick.purchase">شراء</span>
+                    <span class="ald-pill" data-i18n="desktop.quick.voucher">سند</span>
+                  </div>
+                  <div class="ald-cards">
+                    <div class="ald-card"><small data-i18n="desktop.stats.sales">مبيعات اليوم</small><strong>24,500</strong></div>
+                    <div class="ald-card"><small data-i18n="desktop.stats.profit">صافي الربح</small><strong>8,120</strong></div>
+                    <div class="ald-card"><small data-i18n="desktop.stats.customers">العملاء</small><strong>186</strong></div>
+                    <div class="ald-card"><small data-i18n="desktop.stats.invoices">فواتير</small><strong>42</strong></div>
+                  </div>
+                  <div class="ald-chart-area">
+                    <span class="ald-chart-label" data-i18n="desktop.chart">ملخص المبيعات — آخر 7 أيام</span>
+                    <div class="ald-bars">
+                      <div style="--h:45%"></div><div style="--h:70%"></div><div style="--h:55%"></div>
+                      <div style="--h:90%"></div><div style="--h:65%"></div><div style="--h:80%"></div><div style="--h:100%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="hero-screen-caption" data-i18n="hero.screen_caption">واجهة النظام الأوفلاين — لوحة التحكم الرئيسية</p>
+          <div class="orbit orbit-1"></div>
+          <div class="orbit orbit-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 data-i18n="features.title">المميزات</h2>
+          <p data-i18n="features.subtitle">وحدات متكاملة</p>
+        </div>
+        <div class="features-grid" id="features-grid"></div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="how">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 data-i18n="how.title">كيف يعمل</h2>
+        </div>
+        <div class="steps-row" id="how-steps"></div>
+      </div>
+    </section>
+
+    <section class="section videos-section" id="videos">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-icon-pill">▶</span>
+          <h2 data-i18n="videos.title">دليل الفيديوهات التعليمية</h2>
+          <p data-i18n="videos.subtitle">شاهد شرح كل واجهة داخل النظام — كما في التطبيق الأوفلاين</p>
+        </div>
+        <div class="videos-toolbar reveal">
+          <div class="video-search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="video-search" data-i18n-placeholder="videos.search" placeholder="بحث في الفيديوهات..."/>
+          </div>
+          <p class="video-count-label"><strong id="video-count">0</strong> <span data-i18n="videos.count">فيديو</span></p>
+        </div>
+        <div class="video-cats-scroll reveal">
+          <div class="video-cats" id="video-cats"></div>
+        </div>
+        <div class="videos-layout reveal">
+          <div class="video-player-panel">
+            <div class="player-glow" aria-hidden="true"></div>
+            <div class="player-frame">
+              <div class="video-embed-wrap" id="video-embed-wrap"></div>
+              <div class="video-placeholder" id="video-placeholder">
+                <div class="placeholder-pulse"></div>
+                <span>▶</span>
+                <p data-i18n="videos.pick">اختر فيديو من القائمة</p>
+              </div>
+            </div>
+            <div class="player-meta">
+              <h3 id="video-active-title"></h3>
+              <p id="video-active-desc"></p>
+            </div>
+          </div>
+          <div class="video-list-panel">
+            <div class="video-list" id="video-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="cloud">
+      <div class="container cloud-split reveal">
+        <div class="cloud-text">
+          <h2 data-i18n="cloud.title">مزامنة سحابية</h2>
+          <p data-i18n="cloud.desc">ربط الفروع</p>
+          <ul class="cloud-points" id="cloud-points"></ul>
+        </div>
+        <div class="cloud-visual">
+          <div class="sync-flow">
+            <div class="sync-node desktop">Desktop</div>
+            <div class="sync-arrows">⇄</div>
+            <div class="sync-node api">Cloud API</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="mobile-app">
+      <div class="container mobile-split reveal">
+        <div class="mobile-text">
+          <span class="coming-badge" data-i18n="mobile.badge">قريباً</span>
+          <h2 data-i18n="mobile.title">تطبيق جوال متصل بالـ API</h2>
+          <p data-i18n="mobile.desc">تطبيق للهاتف يتصل بـ API السحابي لجلب التقارير والكشوفات والبيانات لحظياً من أي مكان.</p>
+          <ul class="mobile-points" id="mobile-points"></ul>
+        </div>
+        <div class="phone-showcase">
+          <img src="assets/mobile-app.png" alt="" class="mobile-screenshot" id="mobile-screenshot" hidden/>
+          <div class="phone-frame" id="phone-mock">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="phone-header">
+                <span data-i18n="mobile.appName">المحاسب</span>
+                <span class="phone-api">API</span>
+              </div>
+              <div class="phone-greeting" data-i18n="mobile.greeting">مرحباً — تقاريرك جاهزة</div>
+              <div class="phone-cards">
+                <div class="phone-card"><span data-i18n="mobile.cards.sales">تقرير المبيعات</span><em>↑ 12%</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.statement">كشف حساب عميل</span><em>PDF</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.stock">رصيد المخزون</span><em>Live</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.overdue">أقساط متأخرة</span><em>3</em></div>
+              </div>
+              <div class="phone-nav">
+                <span class="on" data-i18n="mobile.nav.home">الرئيسية</span>
+                <span data-i18n="mobile.nav.reports">التقارير</span>
+                <span data-i18n="mobile.nav.data">البيانات</span>
+              </div>
+            </div>
+          </div>
+          <p class="mobile-caption" data-i18n="mobile.caption">معاينة واجهة التطبيق — قيد التطوير</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="reports">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 data-i18n="reports.title">التقارير</h2>
+        </div>
+        <div class="reports-list reveal" id="reports-list"></div>
+      </div>
+    </section>
+
+    <section class="section download-section" id="download">
+      <div class="container">
+        <div class="download-card reveal">
+          <div class="download-info">
+            <h2 data-i18n="download.title">حمّل المحاسب</h2>
+            <p data-i18n="download.desc">من GitHub</p>
+            <p class="dl-notes" id="dl-notes"></p>
+            <dl class="dl-meta">
+              <div><dt data-i18n="download.version">الإصدار</dt><dd id="dl-version">…</dd></div>
+              <div><dt data-i18n="download.size">الحجم</dt><dd id="dl-size">…</dd></div>
+              <div><dt data-i18n="download.date">التاريخ</dt><dd id="dl-date">…</dd></div>
+            </dl>
+            <p class="dl-req" data-i18n="download.req">Windows 10/11</p>
+          </div>
+          <div class="download-action">
+            <a id="dl-btn" href="#" class="btn btn-accent btn-xl" data-i18n="download.btn" download>تنزيل ZIP</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 data-i18n="faq.title">الأسئلة</h2>
+        </div>
+        <div class="faq-list" id="faq-list"></div>
+      </div>
+    </section>
+
+    <section class="section cta-section" id="contact">
+      <div class="container cta-box reveal">
+        <h2 data-i18n="contact.title">جاهز؟</h2>
+        <p data-i18n="contact.desc">نزّل مجاناً</p>
+        <div class="cta-buttons">
+          <a href="#" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل</a>
+          <a href="#" class="btn btn-whatsapp btn-lg" data-whatsapp>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            <span data-i18n="support.btn">خدمة العملاء — واتساب</span>
+          </a>
+          <a href="#" class="btn btn-ghost btn-lg" data-github data-i18n="contact.github">GitHub</a>
+        </div>
+        <p class="support-phone-line"><span data-i18n="support.phoneLabel">رقم الدعم:</span> <strong id="support-phone">07505496065</strong></p>
+      </div>
+    </section>
+  </main>
+
+  <a href="#" class="wa-float" data-whatsapp aria-label="واتساب دعم العملاء">
+    <span class="wa-float-ring"></span>
+    <span class="wa-float-ring wa-float-ring-2"></span>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    <span class="wa-float-label" data-i18n="support.float">دعم واتساب</span>
+  </a>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span data-i18n="footer.rights">حقوق</span>
+      <div class="lang-switch footer-lang">
+        <button type="button" data-lang-btn="ar" class="active">العربية</button>
+        <button type="button" data-lang-btn="en">English</button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/locales-data.js"></script>
+  <script src="js/help-videos-data.js"></script>
+  <script src="js/feature-icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/support.js"></script>
+  <script src="js/videos.js"></script>
+  <script src="js/screenshots.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+@page "/notifications"
+@rendermode InteractiveServer
+@using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Admin.Services
+@inject INotificationService NotificationService
+@inject ITenantService TenantService
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>الإشعارات — لوحة المطور</PageTitle>
+
+@if (_ready)
+{
+    <div class="page-header">
+        <h1>إرسال إشعار</h1>
+        <a href="/tenants" class="btn btn-secondary">← العملاء</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="alert @(_isError ? "alert-error" : "alert-success")">@_message</div>
+    }
+
+    <div class="card" style="max-width:640px">
+        <div class="card-header"><h3>OneSignal Push Notification</h3></div>
+        <div class="card-body">
+            <div class="form-group">
+                <label>العميل المستهدف</label>
+                <select class="form-control" @bind="_tenantId">
+                    <option value="">جميع العملاء</option>
+                    @foreach (var t in _tenants)
+                    {
+                        <option value="@t.Id">@t.CompanyName</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>عنوان الإشعار</label>
+                <input class="form-control" @bind="_title" placeholder="عنوان مختصر" />
+            </div>
+            <div class="form-group">
+                <label>نص الرسالة</label>
+                <textarea class="form-control" rows="5" @bind="_messageText" placeholder="محتوى الإشعار..."></textarea>
+            </div>
+            <button class="btn btn-primary" @onclick="SendAsync" disabled="@_busy">
+                @(_busy ? "جاري الإرسال..." : "إرسال الإشعار")
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<AlMuhasib.Cloud.Core.Entities.Tenant> _tenants = [];
+    private string _tenantId = "";
+    private string _title = "";
+    private string _messageText = "";
+    private string? _message;
+    private bool _isError;
+    private bool _busy;
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+        _tenants = await TenantService.GetAllAsync();
+        _ready = true;
+    }
+
+    private async Task SendAsync()
+    {
+        _busy = true;
+        _isError = false;
+        try
+        {
+            if (int.TryParse(_tenantId, out var tid))
+                await NotificationService.SendToTenantAsync(tid, _title, _messageText);
+            else
+                await NotificationService.SendToAllAsync(_title, _messageText);
+            _message = "تم إرسال الإشعار (إذا كان OneSignal مفعّلاً)";
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

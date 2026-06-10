@@ -155,9 +155,7 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public void SoftDelete(T entity, string deletedBy)
     {
-        entity.IsDeleted = true;
-        entity.DeletedAt = DateTime.UtcNow;
-        entity.DeletedBy = deletedBy;
+        entity.MarkSoftDeleted(deletedBy);
 
         var active = _getActiveContext();
         if (active is not null)

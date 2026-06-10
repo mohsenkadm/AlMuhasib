@@ -174,12 +174,6 @@
                                          FontSize="13"
                                          Margin="0,0,6,0" />
 
-                            <RadioButton Content="أقساط"
-                                         IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Installment}"
-                                         GroupName="PaymentMethod"
-                                         Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
-                                         Padding="12,8"
-                                         FontSize="13" />
                         </StackPanel>
 
                         <!-- CashBox (visible only for Cash) -->
@@ -204,26 +198,6 @@
                                     Foreground="#C62828"
                                     Visibility="{Binding IsCreditPayment, Converter={StaticResource BoolToVis}}" />
                     </Grid>
-                </materialDesign:Card>
-
-                <!-- Installment notice -->
-                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="10"
-                                     Padding="14,10"
-                                     Margin="0,0,0,16"
-                                     Background="{DynamicResource HighlightLightBrush}"
-                                     materialDesign:ElevationAssist.Elevation="Dp0"
-                                     Visibility="{Binding IsInstallmentPayment, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="InformationOutline"
-                                                 Width="20" Height="20"
-                                                 Foreground="#EF6C00"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,10,0" />
-                        <TextBlock Text="سيتم إنشاء جدول أقساط بعد حفظ الفاتورة"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource HighlightBrush}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
                 </materialDesign:Card>
 
                 <!-- Credit due-date notice -->

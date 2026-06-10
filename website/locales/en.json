@@ -1,0 +1,155 @@
+{
+  "meta": {
+    "title": "AlMuhasib — Complete Accounting & Sales System",
+    "description": "Professional Arabic accounting: invoices, inventory, installments, reports, and cloud sync. Fully offline."
+  },
+  "nav": {
+    "features": "Features",
+    "how": "How it works",
+    "videos": "Videos",
+    "reports": "Reports",
+    "cloud": "Cloud",
+    "mobile": "Mobile app",
+    "download": "Download",
+    "faq": "FAQ",
+    "contact": "Contact"
+  },
+  "hero": {
+    "badge": "New release available",
+    "title": "AlMuhasib",
+    "subtitle": "Arabic accounting & POS — fast, offline, built to scale",
+    "desc": "Sales & purchase invoices, POS, warehouses, installments, vouchers, 25+ reports, and cloud sync — in one desktop app.",
+    "cta_download": "Download free",
+    "cta_features": "Explore features",
+    "stat_modules": "modules",
+    "stat_reports": "reports",
+    "stat_offline": "offline",
+    "screen_caption": "Offline desktop app — main dashboard"
+  },
+  "desktop": {
+    "pageTitle": "Dashboard",
+    "menu": {
+      "dashboard": "Dashboard",
+      "sales": "Sales invoice",
+      "customers": "Customers",
+      "warehouses": "Warehouses",
+      "installments": "Installments",
+      "reports": "Reports"
+    },
+    "quick": { "sale": "Sale", "purchase": "Purchase", "voucher": "Voucher" },
+    "stats": {
+      "sales": "Today's sales",
+      "profit": "Net profit",
+      "customers": "Customers",
+      "invoices": "Invoices"
+    },
+    "chart": "Sales summary — last 7 days"
+  },
+  "mobile": {
+    "badge": "Coming soon",
+    "title": "Mobile app powered by API",
+    "desc": "A mobile app connecting to the cloud API to fetch reports, statements, and live data — anytime, anywhere.",
+    "points": [
+      "Sales, profit & inventory reports",
+      "Customer & supplier statements",
+      "Installment & overdue tracking",
+      "Secure multi-tenant API sync"
+    ],
+    "appName": "AlMuhasib",
+    "greeting": "Welcome — your reports are ready",
+    "cards": {
+      "sales": "Sales report",
+      "statement": "Customer statement",
+      "stock": "Stock balance",
+      "overdue": "Overdue installments"
+    },
+    "nav": { "home": "Home", "reports": "Reports", "data": "Data" },
+    "caption": "App UI preview — in development"
+  },
+  "support": {
+    "btn": "Customer support — WhatsApp",
+    "btnShort": "WhatsApp",
+    "float": "WhatsApp support",
+    "phoneLabel": "Support number:"
+  },
+  "videos": {
+    "title": "Video tutorials",
+    "subtitle": "Watch a walkthrough of every screen — same guide as in the offline app",
+    "search": "Search videos...",
+    "all": "All",
+    "count": "videos",
+    "pick": "Pick a video from the list",
+    "empty": "No matching videos",
+    "noLink": "YouTube link not configured yet",
+    "categories": {
+      "dashboard": "Dashboard",
+      "master-data": "Master data",
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "installments": "Installments",
+      "finance": "Finance",
+      "inventory": "Inventory",
+      "reports": "Reports",
+      "admin": "Admin & settings"
+    }
+  },
+  "features": {
+    "title": "Everything your business needs",
+    "subtitle": "Integrated modules for shops, warehouses, and SMBs",
+    "items": [
+      {"icon": "receipt", "title": "Sales & purchase invoices", "desc": "Full invoicing with discounts, credit, and returns"},
+      {"icon": "pos", "title": "Quick POS", "desc": "Cashier screen — barcode scan, instant cash sale"},
+      {"icon": "warehouse", "title": "Warehouses & stock", "desc": "Opening balances, adjustments, quantity tracking"},
+      {"icon": "installment", "title": "Installments", "desc": "Payment plans, collections, overdue reports"},
+      {"icon": "voucher", "title": "Vouchers & expenses", "desc": "Receipts, payments, transfers between cash & banks"},
+      {"icon": "investor", "title": "Investors", "desc": "Share management and profit distribution"},
+      {"icon": "chart", "title": "Reports & analytics", "desc": "25+ reports: sales, profit, statements, balance sheet"},
+      {"icon": "cloud", "title": "Cloud sync", "desc": "Connect branches via multi-tenant cloud API"},
+      {"icon": "ai", "title": "Smart assistant", "desc": "Alerts for overdue installments and low stock"},
+      {"icon": "shield", "title": "User permissions", "desc": "Fine-grained access per screen"}
+    ]
+  },
+  "how": {
+    "title": "Get started in minutes",
+    "steps": [
+      {"num": "01", "title": "Download", "desc": "ZIP from GitHub — install on Windows"},
+      {"num": "02", "title": "Set up data", "desc": "Products, customers, warehouses, opening balances"},
+      {"num": "03", "title": "Start selling", "desc": "Invoices, POS, instant reports — no internet required"}
+    ]
+  },
+  "cloud": {
+    "title": "Secure cloud sync",
+    "desc": "Connect branches to the cloud: two-way Push & Pull with per-tenant data isolation.",
+    "points": ["Full invoices with line items & installments", "Synced warehouses & stock", "Smart conflict handling", "API ready for apps & reports"]
+  },
+  "reports": {
+    "title": "Comprehensive reports",
+    "items": ["Sales & purchases", "Profit & loss", "Customer statement", "Inventory", "Overdue installments", "Daily balance sheet", "Customers overview"]
+  },
+  "download": {
+    "title": "Download AlMuhasib",
+    "desc": "Latest build from GitHub Releases — in-app auto-update",
+    "btn": "Download ZIP",
+    "version": "Version",
+    "size": "Size",
+    "date": "Release date",
+    "req": "Requirements: Windows 10/11 — .NET 10"
+  },
+  "faq": {
+    "title": "FAQ",
+    "items": [
+      {"q": "Does it work offline?", "a": "Yes. Fully offline. Internet is only needed for cloud sync and updates."},
+      {"q": "Installments support?", "a": "Yes — installment invoices, plans, overdue tracking, and dedicated reports."},
+      {"q": "How to update?", "a": "In-app update check reads version.json from GitHub."},
+      {"q": "Is data safe?", "a": "Local backup, user permissions, and audit log."}
+    ]
+  },
+  "contact": {
+    "title": "Ready to try?",
+    "desc": "Download free and test on your business",
+    "github": "GitHub repository"
+  },
+  "footer": {
+    "rights": "All rights reserved — AlMuhasib"
+  }
+}

@@ -426,6 +426,13 @@ public partial class MainWindowViewModel : ObservableObject
             ViewModelType = typeof(BackupRestoreViewModel),
             ScreenName = "Backup"
         });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "المزامنة السحابية",
+            Icon = PackIconKind.CloudSync,
+            ViewModelType = typeof(CloudSyncSettingsViewModel),
+            ScreenName = "Backup"
+        });
 
         // Mark dashboard as visually selected but do NOT navigate yet
         // Navigation happens from App.OnStartup after permissions are loaded

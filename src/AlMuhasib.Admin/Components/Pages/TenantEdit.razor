@@ -1,0 +1,220 @@
+@page "/tenants/new"
+@page "/tenants/{Id:int}"
+@rendermode InteractiveServer
+@using AlMuhasib.Cloud.Core.Entities
+@using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Admin.Services
+@inject ITenantService TenantService
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>@(Id == 0 ? "عميل جديد" : "إدارة عميل")</PageTitle>
+
+@if (_ready)
+{
+    <div class="page-header">
+        <h1>@(Id == 0 ? "إنشاء عميل جديد" : $"تعديل: {_companyName}")</h1>
+        <a href="/tenants" class="btn btn-secondary">← رجوع للقائمة</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="alert @(_isError ? "alert-error" : "alert-success")">@_message</div>
+    }
+
+    <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header"><h3>بيانات العميل</h3></div>
+        <div class="card-body">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>اسم الشركة</label>
+                    <input class="form-control" @bind="_companyName" placeholder="اسم الشركة أو المحل" />
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" @bind="_isMobileEnabled" />
+                        تفعيل المزامنة والتطبيق
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>انتهاء الترخيص</label>
+                    <input type="date" class="form-control" @bind="_licenseExpires" />
+                </div>
+            </div>
+            <button class="btn btn-primary" @onclick="SaveAsync" style="margin-top:.5rem">حفظ البيانات</button>
+        </div>
+    </div>
+
+    @if (Id > 0)
+    {
+        <div class="card">
+            <div class="card-header"><h3>حسابات التطبيق (@_accounts.Count)</h3></div>
+            <div class="card-body" style="padding:0">
+                @if (_accounts.Count > 0)
+                {
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>المستخدم</th><th>الحالة</th><th>ينتهي في</th><th>إجراء</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in _accounts)
+                            {
+                                <tr>
+                                    <td><strong>@a.Username</strong></td>
+                                    <td>
+                                        <span class="badge @(a.IsActive ? "badge-success" : "badge-danger")">
+                                            @(a.IsActive ? "فعّال" : "معطّل")
+                                        </span>
+                                    </td>
+                                    <td>@(a.ExpiresAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                    <td>
+                                        <button class="btn @(a.IsActive ? "btn-warning" : "btn-success") btn-sm"
+                                                @onclick="() => ToggleAccount(a.Id, !a.IsActive)">
+                                            @(a.IsActive ? "تعطيل" : "تفعيل")
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div style="padding:1.5rem;color:var(--text-muted);text-align:center">لا توجد حسابات بعد</div>
+                }
+            </div>
+
+            <div class="card-body" style="border-top:1px solid var(--border)">
+                <h4 style="margin:0 0 1rem;font-size:.95rem">إنشاء حساب جديد</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>اسم المستخدم</label>
+                        <input class="form-control" @bind="_newUsername" placeholder="username" />
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" class="form-control" @bind="_newPassword" />
+                    </div>
+                    <div class="form-group">
+                        <label>ينتهي في</label>
+                        <input type="date" class="form-control" @bind="_newAccountExpires" />
+                    </div>
+                </div>
+                <button class="btn btn-accent" @onclick="CreateAccountAsync">إنشاء الحساب</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header"><h3>حساب التطبيق الأول</h3></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>اسم المستخدم</label>
+                        <input class="form-control" @bind="_newUsername" placeholder="demo" />
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" class="form-control" @bind="_newPassword" />
+                    </div>
+                    <div class="form-group">
+                        <label>ينتهي في</label>
+                        <input type="date" class="form-control" @bind="_newAccountExpires" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private string _companyName = "";
+    private bool _isMobileEnabled = true;
+    private DateTime? _licenseExpires;
+    private List<TenantAccount> _accounts = [];
+    private string _newUsername = "";
+    private string _newPassword = "";
+    private DateTime? _newAccountExpires;
+    private string? _message;
+    private bool _isError;
+    private Tenant? _tenant;
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        if (Id > 0)
+        {
+            _tenant = await TenantService.GetByIdAsync(Id);
+            if (_tenant is null) return;
+            _companyName = _tenant.CompanyName;
+            _isMobileEnabled = _tenant.IsMobileEnabled;
+            _licenseExpires = _tenant.LicenseExpiresAt;
+            _accounts = await TenantService.GetAccountsAsync(Id);
+        }
+        else
+        {
+            _licenseExpires = DateTime.UtcNow.AddYears(1);
+            _newAccountExpires = DateTime.UtcNow.AddYears(1);
+        }
+
+        _ready = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isError = false;
+        try
+        {
+            if (Id == 0)
+            {
+                var tenant = await TenantService.CreateAsync(_companyName, _isMobileEnabled, _licenseExpires);
+                if (!string.IsNullOrWhiteSpace(_newUsername) && !string.IsNullOrWhiteSpace(_newPassword))
+                    await TenantService.CreateAccountAsync(tenant.Id, _newUsername, _newPassword, _newAccountExpires);
+                Nav.NavigateTo($"/tenants/{tenant.Id}");
+                return;
+            }
+
+            _tenant!.CompanyName = _companyName;
+            _tenant.IsMobileEnabled = _isMobileEnabled;
+            _tenant.LicenseExpiresAt = _licenseExpires;
+            await TenantService.UpdateAsync(_tenant);
+            _message = "تم حفظ بيانات العميل بنجاح";
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+
+    private async Task CreateAccountAsync()
+    {
+        _isError = false;
+        try
+        {
+            await TenantService.CreateAccountAsync(Id, _newUsername, _newPassword, _newAccountExpires);
+            _accounts = await TenantService.GetAccountsAsync(Id);
+            _newUsername = _newPassword = "";
+            _message = "تم إنشاء الحساب بنجاح";
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+
+    private async Task ToggleAccount(int accountId, bool active)
+    {
+        await TenantService.SetAccountActiveAsync(accountId, active);
+        _accounts = await TenantService.GetAccountsAsync(Id);
+    }
+}

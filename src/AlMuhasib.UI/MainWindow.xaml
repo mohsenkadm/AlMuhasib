@@ -1087,6 +1087,9 @@
                         <DataTemplate DataType="{x:Type vm:PrintLayoutSettingsViewModel}">
                             <views:PrintLayoutSettingsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CloudSyncSettingsViewModel}">
+                            <views:CloudSyncSettingsView />
+                        </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>
 
