@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
@@ -52,6 +54,13 @@
                         </StackPanel>
                     </Button>
 
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=CustomersGrid}"
+                                                 Margin="4,0,0,0"
+                                                 VerticalAlignment="Center"/>
+
                     <TextBox md:HintAssist.Hint="بحث..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
@@ -77,13 +86,12 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="قائمة العملاء" FontSize="15" FontWeight="Bold" Foreground="White"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="White" Opacity="0.8">
-                            <Run Text="الإجمالي: "/><Run Text="{Binding TotalCount, Mode=OneWay}"/>
-                        </TextBlock>
+                        <controls:ListViewModeToggle Grid.Column="1" OnDarkBackground="True" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
 
-                <DataGrid Grid.Row="1"
+                <Grid Grid.Row="1">
+                <DataGrid x:Name="CustomersGrid"
                           ItemsSource="{Binding Customers}"
                           SelectedItem="{Binding SelectedCustomer}"
                           AutoGenerateColumns="False"
@@ -91,15 +99,26 @@
                           CanUserAddRows="False"
                           SelectionMode="Single"
                           HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}">
+                          Style="{StaticResource ModernDataGrid}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"/>
-                        <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="160"/>
-                        <DataGridTextColumn Header="رقم الملف" Binding="{Binding FileNumber}" Width="100"/>
-                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="160"/>
-                        <DataGridTextColumn Header="تاريخ الإنشاء" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd}" Width="110"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="150" MinWidth="150">
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                        <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="160"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Address"/>
+                        <DataGridTextColumn Header="رقم الملف" Binding="{Binding FileNumber}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="160"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                        <DataGridTextColumn Header="تاريخ الإنشاء" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreatedAt"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="150" MinWidth="150"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
@@ -122,16 +141,20 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Pagination -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8">
-                    <Button Content="⏮" Command="{Binding FirstPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
-                    <Button Content="◀" Command="{Binding PreviousPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
-                    <TextBlock VerticalAlignment="Center" Margin="8,0">
-                        <Run Text="{Binding CurrentPage, Mode=OneWay}"/><Run Text=" / "/><Run Text="{Binding TotalPages, Mode=OneWay}"/>
-                    </TextBlock>
-                    <Button Content="▶" Command="{Binding NextPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
-                    <Button Content="⏭" Command="{Binding LastPageCommand}" Style="{StaticResource FlatButton}" Margin="2"/>
-                </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding Customers}"
+                                        ItemTemplate="{StaticResource CustomerCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </md:Card>
 

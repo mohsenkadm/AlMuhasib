@@ -1,4 +1,4 @@
-<UserControl x:Class="AlMuhasib.UI.Views.OverdueReportView"
+﻿<UserControl x:Class="AlMuhasib.UI.Views.OverdueReportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -82,6 +82,11 @@
                         <ComboBox ItemsSource="{Binding Customers}" SelectedValue="{Binding SelectedCustomerId}" SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="العميل" Width="160" Margin="0,0,12,0"/>
                         <TextBox Text="{Binding MinDaysOverdue, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignFilledTextBox}" materialDesign:HintAssist.Hint="أقل أيام تأخير" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
+                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                       TargetDataGrid="{Binding ElementName=OverdueGrid}"
+                                                       Margin="0,0,12,0"/>
                         <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintCommand}" Margin="0,0,8,0"/>
                         <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportToExcelCommand}"/>
                     </StackPanel>
@@ -106,32 +111,28 @@
                         <DataGrid x:Name="OverdueGrid" ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
                                   CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" MinHeight="300"
                                   SelectionChanged="OverdueGrid_SelectionChanged"
-                                  behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenInvoiceDetailFromReportRowCommand}">
+                                  behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenInvoiceDetailFromReportRowCommand}"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                  behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
-                                <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"/>
-                                <DataGridTextColumn Header="رقم الفاتورة / الخطة" Binding="{Binding PlanNumber}" Width="140"/>
-                                <DataGridTextColumn Header="المبلغ المتأخر" Binding="{Binding OverdueAmount, StringFormat=N0}" Width="130"/>
-                                <DataGridTextColumn Header="أيام التأخير" Binding="{Binding OverdueDays}" Width="100"/>
-                                <DataGridTextColumn Header="آخر دفعة" Binding="{Binding LastPaymentDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="120"/>
+                                <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                                <DataGridTextColumn Header="رقم الفاتورة / الخطة" Binding="{Binding PlanNumber}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlanNumber"/>
+                                <DataGridTextColumn Header="المبلغ المتأخر" Binding="{Binding OverdueAmount, StringFormat=N0}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OverdueAmount"/>
+                                <DataGridTextColumn Header="أيام التأخير" Binding="{Binding OverdueDays}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OverdueDays"/>
+                                <DataGridTextColumn Header="آخر دفعة" Binding="{Binding LastPaymentDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="LastPaymentDate"/>
                             </DataGrid.Columns>
                         </DataGrid>
 
                         <!-- Pagination -->
-                        <Border Grid.Row="1" Background="{StaticResource CardBrush}" CornerRadius="0,0,12,12" Padding="16,8">
-                            <Grid>
-                                <TextBlock Text="{Binding PaginationText}" VerticalAlignment="Center" FontSize="12" Foreground="#757575"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding LastPageCommand}"><materialDesign:PackIcon Kind="ChevronDoubleRight"/></Button>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding NextPageCommand}"><materialDesign:PackIcon Kind="ChevronRight"/></Button>
-                                    <TextBlock VerticalAlignment="Center" Margin="8,0">
-                                        <Run Text="{Binding CurrentPage, Mode=OneWay}"/><Run Text=" / "/><Run Text="{Binding TotalPages, Mode=OneWay}"/>
-                                    </TextBlock>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding PreviousPageCommand}"><materialDesign:PackIcon Kind="ChevronLeft"/></Button>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding FirstPageCommand}"><materialDesign:PackIcon Kind="ChevronDoubleLeft"/></Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                        <controls:PaginationBar Grid.Row="1"/>
                     </Grid>
         </materialDesign:Card>
 

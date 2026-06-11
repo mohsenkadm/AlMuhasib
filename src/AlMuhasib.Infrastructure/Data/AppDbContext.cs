@@ -52,6 +52,12 @@ public class AppDbContext : DbContext
     public DbSet<UserNote> UserNotes => Set<UserNote>();
     public DbSet<SyncState> SyncStates => Set<SyncState>();
     public DbSet<CloudSyncSettings> CloudSyncSettings => Set<CloudSyncSettings>();
+    public DbSet<WarehouseTransfer> WarehouseTransfers => Set<WarehouseTransfer>();
+    public DbSet<WarehouseTransferItem> WarehouseTransferItems => Set<WarehouseTransferItem>();
+    public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
+    public DbSet<ProductBatch> ProductBatches => Set<ProductBatch>();
+    public DbSet<ProductSerial> ProductSerials => Set<ProductSerial>();
+    public DbSet<UserLoginLog> UserLoginLogs => Set<UserLoginLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

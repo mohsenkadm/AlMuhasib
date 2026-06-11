@@ -24,6 +24,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <ComboBox Grid.Column="0" Width="280"
@@ -57,6 +58,17 @@
                 </Button>
 
                 <Button Grid.Column="4"
+                        Command="{Binding VerifyCatalogCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="DatabaseSearch" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="التحقق من التسميات"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="5"
                         Command="{Binding SavePermissionsCommand}"
                         Style="{StaticResource PrimaryButton}"
                         md:ButtonAssist.CornerRadius="8"
@@ -158,6 +170,26 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding CanExport, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource MaterialDesignCheckBox}"
+                                          HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="تعديل سعر" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding CanEditPrice, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource MaterialDesignCheckBox}"
+                                          HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="عرض فقط" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsViewOnly, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource MaterialDesignCheckBox}"
                                           HorizontalAlignment="Center"/>
                             </DataTemplate>

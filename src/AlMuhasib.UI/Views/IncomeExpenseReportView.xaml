@@ -1,4 +1,4 @@
-<UserControl x:Class="AlMuhasib.UI.Views.IncomeExpenseReportView"
+﻿<UserControl x:Class="AlMuhasib.UI.Views.IncomeExpenseReportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,6 +8,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:IncomeExpenseReportViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
@@ -74,6 +75,11 @@
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
+                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                       TargetDataGrid="{Binding ElementName=IncomeExpenseReportGrid}"
+                                                       Margin="0,0,12,0"/>
                         <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintCommand}" Margin="0,0,8,0"/>
                         <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportToExcelCommand}"/>
                     </StackPanel>
@@ -90,31 +96,26 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <DataGrid ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
-                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300">
+                        <DataGrid x:Name="IncomeExpenseReportGrid"
+                                  ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                  behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="140"/>
-                                <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="140"/>
-                                <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"/>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="140"/>
+                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Section"/>
+                                <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Type"/>
+                                <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
                             </DataGrid.Columns>
                         </DataGrid>
 
                         <!-- Pagination -->
-                        <Border Grid.Row="1" Background="{StaticResource CardBrush}" CornerRadius="0,0,12,12" Padding="16,8">
-                            <Grid>
-                                <TextBlock Text="{Binding PaginationText}" VerticalAlignment="Center" FontSize="12" Foreground="#757575"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding LastPageCommand}"><materialDesign:PackIcon Kind="ChevronDoubleRight"/></Button>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding NextPageCommand}"><materialDesign:PackIcon Kind="ChevronRight"/></Button>
-                                    <TextBlock VerticalAlignment="Center" Margin="8,0">
-                                        <Run Text="{Binding CurrentPage, Mode=OneWay}"/><Run Text=" / "/><Run Text="{Binding TotalPages, Mode=OneWay}"/>
-                                    </TextBlock>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding PreviousPageCommand}"><materialDesign:PackIcon Kind="ChevronLeft"/></Button>
-                                    <Button Style="{StaticResource IconButton}" Command="{Binding FirstPageCommand}"><materialDesign:PackIcon Kind="ChevronDoubleLeft"/></Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                        <controls:PaginationBar Grid.Row="1"/>
                     </Grid>
         </materialDesign:Card>
 

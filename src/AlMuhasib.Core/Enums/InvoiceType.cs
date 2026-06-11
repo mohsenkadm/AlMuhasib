@@ -4,5 +4,13 @@ public enum InvoiceType
 {
     Purchase,
     Sale,
-    Installment
+    Installment,
+    PurchaseReturn
+}
+
+public enum InvoiceHoldStatus
+{
+    None,
+    Held,
+    Completed
 }

@@ -1,11 +1,6 @@
-using System.Windows.Controls;
-
 namespace AlMuhasib.UI.Views;
 
-public partial class BackupRestoreView : UserControl
+public partial class BackupRestoreView
 {
-    public BackupRestoreView()
-    {
-        InitializeComponent();
-    }
+    public BackupRestoreView() => InitializeComponent();
 }

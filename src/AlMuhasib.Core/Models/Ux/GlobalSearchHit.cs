@@ -8,7 +8,9 @@ public enum GlobalSearchKind
     Product,
     SalesInvoice,
     PurchaseInvoice,
-    Voucher
+    Voucher,
+    Installment,
+    OverdueCustomer
 }
 
 public class GlobalSearchHit

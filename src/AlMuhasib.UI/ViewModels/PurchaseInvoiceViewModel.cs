@@ -172,7 +172,12 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             // Start with one empty row
             AddRow();
 
-            if (InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId is int pendingCopyId)
+            if (InvoiceNavigationBridge.PendingPurchaseEditInvoiceId is int pendingEditId)
+            {
+                InvoiceNavigationBridge.PendingPurchaseEditInvoiceId = null;
+                await LoadInvoiceForEditAsync(pendingEditId);
+            }
+            else if (InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId is int pendingCopyId)
             {
                 InvoiceNavigationBridge.PendingPurchaseCopyInvoiceId = null;
                 await CopyFromInvoiceAsync(pendingCopyId);
@@ -446,6 +451,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
 
             var invoice = new Invoice
             {
+                InvoiceNumber = InvoiceNumber,
                 InvoiceType = InvoiceType.Purchase,
                 SupplierId = supplierId,
                 WarehouseId = SelectedWarehouse.Id,
@@ -477,16 +483,25 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 });
             }
 
-            await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+            Invoice saved;
+            if (_editingInvoiceId is int editId)
+            {
+                saved = await _invoiceService.ReplaceInvoiceAsync(editId, invoice, invoiceItems);
+                ClearEditingInvoiceId();
+            }
+            else
+            {
+                saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+            }
 
-            _savedInvoice = invoice;
+            _savedInvoice = saved;
             _savedItems = invoiceItems;
             IsSaved = true;
-            InvoiceNumber = invoice.InvoiceNumber;
+            InvoiceNumber = saved.InvoiceNumber;
             _draftService.ClearDraft(DraftKey);
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {invoice.InvoiceNumber}\nالمبلغ الكلي: {invoice.NetAmount:N0} د.ع");
+                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع");
 
             PrintInvoice();
         }
@@ -535,6 +550,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private async Task NewInvoice()
     {
         IsSaved = false;
+        ClearEditingInvoiceId();
         _savedInvoice = null;
         _savedItems = [];
         ErrorMessage = string.Empty;

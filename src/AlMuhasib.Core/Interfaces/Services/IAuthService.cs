@@ -13,6 +13,9 @@ public interface IAuthService
     /// <summary>Active admin accounts shown on the login screen.</summary>
     Task<IReadOnlyList<User>> GetActiveAdminUsersAsync();
 
+    /// <summary>All active users shown on the login screen.</summary>
+    Task<IReadOnlyList<User>> GetActiveUsersAsync();
+
     // User management
     Task<IEnumerable<User>> GetAllUsersAsync();
     Task<User> CreateUserAsync(string username, string password, string fullName, Core.Enums.UserRole role);

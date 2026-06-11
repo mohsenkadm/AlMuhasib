@@ -91,6 +91,17 @@ public class AuthService : IAuthService
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<User>> GetActiveUsersAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Users
+            .AsNoTracking()
+            .Where(u => !u.IsDeleted && u.IsActive)
+            .OrderBy(u => u.FullName)
+            .ThenBy(u => u.Username)
+            .ToListAsync();
+    }
+
     public async Task EnsureAdminAccountAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();

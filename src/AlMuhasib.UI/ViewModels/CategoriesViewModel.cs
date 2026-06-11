@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -15,6 +16,7 @@ public partial class CategoriesViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
 
     public ObservableCollection<Category> Categories { get; } = [];
 
@@ -35,6 +37,9 @@ public partial class CategoriesViewModel : ViewModelBase
 
     [ObservableProperty]
     private Category? _selectedCategory;
+
+    [ObservableProperty]
+    private bool _isCardView;
 
     // Dialog state
     [ObservableProperty]
@@ -65,11 +70,14 @@ public partial class CategoriesViewModel : ViewModelBase
     public CategoriesViewModel(
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Categories);
         PageTitle = "تصنيفات المنتجات";
     }
 
@@ -94,10 +102,25 @@ public partial class CategoriesViewModel : ViewModelBase
             ? null
             : SearchText.Trim();
 
+        System.Linq.Expressions.Expression<Func<Category, bool>>? searchPredicate = filter is null
+            ? null
+            : c => c.Name.Contains(filter);
+
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+        {
+            var (allItems, _) = await _unitOfWork.Categories.GetPagedAsync(
+                1, int.MaxValue, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
+
+            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            MasterDataColumnFilterHelper.ApplyClientPagination(
+                filtered, Categories, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+            TotalCount = filteredTotal;
+            TotalPages = filteredPages;
+            return;
+        }
+
         var (items, totalCount) = await _unitOfWork.Categories.GetPagedAsync(
-            CurrentPage, PageSize,
-            filter is null ? null : c => c.Name.Contains(filter),
-            q => q.OrderByDescending(c => c.CreatedAt));
+            CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
 
         TotalCount = totalCount;
         TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
@@ -106,6 +129,12 @@ public partial class CategoriesViewModel : ViewModelBase
         Categories.Clear();
         foreach (var c in items)
             Categories.Add(c);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadCategoriesAsync();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -281,4 +310,7 @@ public partial class CategoriesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Categories, value);
 }

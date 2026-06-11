@@ -18,6 +18,18 @@ public class InstallmentPlan : BaseEntity
     /// <summary>مبلغ نسبة الشركة</summary>
     public decimal CompanyFeeAmount { get; set; }
 
+    /// <summary>اسم الضامن/الكفيل.</summary>
+    public string? GuarantorName { get; set; }
+
+    /// <summary>هاتف الضامن.</summary>
+    public string? GuarantorPhone { get; set; }
+
+    /// <summary>معرّف البائع/المستخدم المسؤول.</summary>
+    public int? SalespersonUserId { get; set; }
+
+    /// <summary>نسبة عمولة التحصيل (0-1).</summary>
+    public decimal CollectionCommissionRate { get; set; }
+
     // Navigation
     public Invoice Invoice { get; set; } = null!;
     public Customer Customer { get; set; } = null!;

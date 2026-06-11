@@ -8,6 +8,7 @@ public sealed class LoginAdminOption
     public string Username { get; init; } = string.Empty;
     public string FullName { get; init; } = string.Empty;
     public string Initials { get; init; } = "?";
+    public string RoleDisplay { get; init; } = "مستخدم";
     public Color AvatarColorStart { get; init; } = Color.FromRgb(0x15, 0x65, 0xC0);
     public Color AvatarColorEnd { get; init; } = Color.FromRgb(0x42, 0xA5, 0xF5);
 
@@ -20,6 +21,7 @@ public sealed class LoginAdminOption
             Username = user.Username,
             FullName = string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName,
             Initials = BuildInitials(user.FullName, user.Username),
+            RoleDisplay = user.Role == Core.Enums.UserRole.Admin ? "مدير" : "مستخدم",
             AvatarColorStart = start,
             AvatarColorEnd = end
         };

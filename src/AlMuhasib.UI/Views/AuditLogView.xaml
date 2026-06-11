@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
@@ -59,16 +61,22 @@
                           SelectedItem="{Binding SelectedEntity}"
                           IsEditable="True"/>
 
-                <Button Grid.Column="6"
-                        Command="{Binding SearchCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Margin="0,0,4,0">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="Magnify" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="بحث"/>
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="6" Orientation="Horizontal" Margin="0,0,4,0">
+                    <Button Command="{Binding SearchCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            Margin="0,0,4,0">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Magnify" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="بحث"/>
+                        </StackPanel>
+                    </Button>
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=AuditLogGrid}"
+                                                 VerticalAlignment="Center"/>
+                </StackPanel>
 
                 <Button Grid.Column="7"
                         Command="{Binding ExportToExcelCommand}"
@@ -94,7 +102,8 @@
 
             <!-- Table -->
             <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="0" Padding="0" md:ElevationAssist.Elevation="Dp2">
-                <DataGrid ItemsSource="{Binding Rows}"
+                <DataGrid x:Name="AuditLogGrid"
+                          ItemsSource="{Binding Rows}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
@@ -104,7 +113,10 @@
                           Style="{StaticResource ModernDataGrid}"
                           SelectionMode="Single"
                           GridLinesVisibility="Horizontal"
-                          HorizontalGridLinesBrush="#E0E0E0">
+                          HorizontalGridLinesBrush="#E0E0E0"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
                                       Command="{Binding ShowDetailsCommand}"
@@ -112,7 +124,8 @@
                     </DataGrid.InputBindings>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="التاريخ" Width="150"
-                                            Binding="{Binding Timestamp, StringFormat='{}{0:yyyy/MM/dd HH:mm}'}">
+                                            Binding="{Binding Timestamp, StringFormat='{}{0:yyyy/MM/dd HH:mm}'}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Timestamp">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -122,7 +135,8 @@
                         </DataGridTextColumn>
 
                         <DataGridTextColumn Header="المستخدم" Width="140"
-                                            Binding="{Binding Username}">
+                                            Binding="{Binding Username}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Username">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -131,7 +145,8 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTemplateColumn Header="الإجراء" Width="90">
+                        <DataGridTemplateColumn Header="الإجراء" Width="90"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
@@ -175,7 +190,8 @@
                         </DataGridTemplateColumn>
 
                         <DataGridTextColumn Header="الجدول" Width="140"
-                                            Binding="{Binding EntityName}">
+                                            Binding="{Binding EntityName}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="EntityName">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -186,7 +202,8 @@
                         </DataGridTextColumn>
 
                         <DataGridTextColumn Header="المعرف" Width="70"
-                                            Binding="{Binding EntityId}">
+                                            Binding="{Binding EntityId}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="EntityId">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -195,7 +212,8 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTemplateColumn Header="التفاصيل" Width="80">
+                        <DataGridTemplateColumn Header="التفاصيل" Width="80"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
@@ -285,46 +303,6 @@
             </md:Card>
         </Grid>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- PAGING BAR -->
-        <!-- ═══════════════════════════════════════════ -->
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="8,6" md:ElevationAssist.Elevation="Dp2" Margin="0,12,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0" VerticalAlignment="Center">
-                    <Run Text="الإجمالي: "/>
-                    <Run Text="{Binding TotalCount, Mode=OneWay}" FontWeight="Bold"/>
-                    <Run Text=" سجل"/>
-                </TextBlock>
-
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Command="{Binding PreviousPageCommand}"
-                            Style="{StaticResource IconButton}"
-                            ToolTip="الصفحة السابقة"
-                            Width="36" Height="36">
-                        <md:PackIcon Kind="ChevronRight" Width="20" Height="20"/>
-                    </Button>
-
-                    <TextBlock VerticalAlignment="Center" Margin="8,0">
-                        <Run Text="صفحة "/>
-                        <Run Text="{Binding CurrentPage, Mode=OneWay}" FontWeight="Bold"/>
-                        <Run Text=" من "/>
-                        <Run Text="{Binding TotalPages, Mode=OneWay}" FontWeight="Bold"/>
-                    </TextBlock>
-
-                    <Button Command="{Binding NextPageCommand}"
-                            Style="{StaticResource IconButton}"
-                            ToolTip="الصفحة التالية"
-                            Width="36" Height="36">
-                        <md:PackIcon Kind="ChevronLeft" Width="20" Height="20"/>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </md:Card>
+        <controls:PaginationBar Grid.Row="2" Margin="0,12,0,0"/>
     </Grid>
 </UserControl>

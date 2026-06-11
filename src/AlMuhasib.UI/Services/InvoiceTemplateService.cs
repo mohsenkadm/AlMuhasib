@@ -74,12 +74,46 @@ public sealed class InvoiceTemplateService : IInvoiceTemplateService
     {
         if (kind == InvoiceTemplateKind.Installment)
             EnsureBuiltInInstallmentTemplates();
+        if (kind == InvoiceTemplateKind.Sale)
+            EnsureBuiltInIndustryTemplates();
 
+        var flags = _preferences.Current.FeatureFlags;
         return _preferences.Current.InvoiceTemplates
             .Where(t => t.Kind == kind)
+            .Where(t => !t.IsBuiltIn || IsIndustryTemplateEnabled(t, flags))
             .OrderByDescending(t => t.IsBuiltIn)
             .ThenByDescending(t => t.SavedAt)
             .ToList();
+    }
+
+    private static bool IsIndustryTemplateEnabled(InvoiceTemplate t, BusinessFeatureFlags flags) => t.IndustryTag switch
+    {
+        "mobile" => flags.TemplateMobileShop,
+        "clothing" => flags.TemplateClothing,
+        "construction" => flags.TemplateConstruction,
+        "pharmacy" => flags.TemplatePharmacy,
+        _ => true
+    };
+
+    private void EnsureBuiltInIndustryTemplates()
+    {
+        var builtIn = new[]
+        {
+            new InvoiceTemplate { Id = "builtin-mobile", Name = "موبايلات", Kind = InvoiceTemplateKind.Sale, IndustryTag = "mobile", CustomFieldLabels = ["IMEI", "اللون"], IsBuiltIn = true, Notes = "قالب محل موبايلات" },
+            new InvoiceTemplate { Id = "builtin-clothing", Name = "ألبسة", Kind = InvoiceTemplateKind.Sale, IndustryTag = "clothing", CustomFieldLabels = ["المقاس", "اللون"], IsBuiltIn = true, Notes = "قالب محل ألبسة" },
+            new InvoiceTemplate { Id = "builtin-construction", Name = "مواد بناء", Kind = InvoiceTemplateKind.Sale, IndustryTag = "construction", CustomFieldLabels = ["الوحدة", "المواصفات"], IsBuiltIn = true, Notes = "قالب مواد بناء" },
+            new InvoiceTemplate { Id = "builtin-pharmacy", Name = "صيدلية", Kind = InvoiceTemplateKind.Sale, IndustryTag = "pharmacy", CustomFieldLabels = ["تاريخ الانتهاء", "رقم الدفعة"], IsBuiltIn = true, Notes = "قالب صيدلية" }
+        };
+        var list = _preferences.Current.InvoiceTemplates.ToList();
+        var changed = false;
+        foreach (var t in builtIn)
+        {
+            if (list.Any(x => x.Id == t.Id)) continue;
+            list.Add(CloneTemplate(t));
+            changed = true;
+        }
+        if (changed)
+            _preferences.Update(p => p.InvoiceTemplates = list);
     }
 
     public void SaveTemplate(InvoiceTemplate template)
@@ -171,6 +205,8 @@ public sealed class InvoiceTemplateService : IInvoiceTemplateService
         NumberOfInstallments = source.NumberOfInstallments,
         InstallmentStartMonthsOffset = source.InstallmentStartMonthsOffset,
         FileNumber = source.FileNumber,
+        IndustryTag = source.IndustryTag,
+        CustomFieldLabels = source.CustomFieldLabels.ToList(),
         IsBuiltIn = source.IsBuiltIn,
         SavedAt = source.SavedAt
     };

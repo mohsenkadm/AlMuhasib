@@ -36,6 +36,13 @@ public static class DependencyInjection
         services.AddSingleton<IBackupService, BackupService>();
         services.AddScoped<IGlobalSearchService, GlobalSearchService>();
         services.AddScoped<ISmartAlertService, SmartAlertService>();
+        services.AddScoped<ICollectionDashboardService, CollectionDashboardService>();
+        services.AddScoped<ICustomerStatementQuickService, CustomerStatementQuickService>();
+        services.AddScoped<ICustomerCreditService, CustomerCreditService>();
+        services.AddScoped<ILocalQueryService, LocalQueryService>();
+        services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
+        services.AddScoped<IUserLoginLogService, UserLoginLogService>();
+        services.AddScoped<IDataImportService, DataImportService>();
         services.AddScoped<IDemoDataService, DemoDataService>();
         services.AddScoped<IUserTaskService, UserTaskService>();
         services.AddScoped<IUserNoteService, UserNoteService>();

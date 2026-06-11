@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,9 +8,12 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class DashboardViewModel
 {
     private readonly IUserPreferencesService _userPreferences;
+    private readonly ICurrentUserService _currentUserService;
 
+    [ObservableProperty] private bool _showDashboardQuickSales = true;
     [ObservableProperty] private bool _showDashboardQuickPurchase = true;
     [ObservableProperty] private bool _showDashboardQuickInstallment = true;
+    [ObservableProperty] private bool _showCollectionDashboard;
     [ObservableProperty] private bool _showTodayPurchases = true;
     [ObservableProperty] private bool _showNetProfit = true;
     [ObservableProperty] private bool _showInvestorStats = true;
@@ -44,5 +48,10 @@ public partial class DashboardViewModel
                 ShowFinanceCharts = true;
                 break;
         }
+
+        ShowDashboardQuickSales = _currentUserService.CanView("SaleInvoice");
+        ShowDashboardQuickPurchase = ShowDashboardQuickPurchase && _currentUserService.CanView("PurchaseInvoice");
+        ShowDashboardQuickInstallment = ShowDashboardQuickInstallment && _currentUserService.CanView("InstallmentInvoice");
+        ShowCollectionDashboard = _currentUserService.CanView("Installments");
     }
 }

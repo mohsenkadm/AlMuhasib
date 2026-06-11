@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.7.0",
-    "releaseDate":  "2026-06-10",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.7.0/AlMuhasib-1.7.0.zip",
-    "sha256":  "92A915DC96B124D465F2AB92E8C576C675F01AC28DD8595DF6F10772F5F04A50",
-    "sizeBytes":  78883492,
-    "releaseNotes":  "مركز إشعارات، مهام وملاحظات شخصية، تحسينات الواجهة والمساعد الذكي، إصلاحات واستقرار",
+    "version":  "1.8.0",
+    "releaseDate":  "2026-06-11",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.8.0/AlMuhasib-1.8.0.zip",
+    "sha256":  "234D32A1659035431F8ED9116B0C01DADD4E25CD8A59E85C0A40ED139E2905F6",
+    "sizeBytes":  79116185,
+    "releaseNotes":  "مركز إشعارات مع تنبيهات صوتية وتذكير كل ساعة، لوحة مفاتيح على شاشة تسجيل الدخول، لوحة التحصيل، نقل مخزني، استيراد بيانات، فلاتر أعمدة وعرض بطاقات، مهام وملاحظات شخصية، تحسينات صلاحيات وواجهة، إصلاحات واستقرار",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

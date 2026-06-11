@@ -35,6 +35,8 @@ public class GlobalSearchResultItem
             GlobalSearchKind.SalesInvoice => PackIconKind.CashRegister,
             GlobalSearchKind.PurchaseInvoice => PackIconKind.CartArrowDown,
             GlobalSearchKind.Voucher => PackIconKind.FileDocument,
+            GlobalSearchKind.Installment => PackIconKind.CalendarClock,
+            GlobalSearchKind.OverdueCustomer => PackIconKind.ClockAlert,
             _ => PackIconKind.Magnify
         },
         Category = hit.Kind switch
@@ -45,6 +47,8 @@ public class GlobalSearchResultItem
             GlobalSearchKind.SalesInvoice => "مبيعات",
             GlobalSearchKind.PurchaseInvoice => "مشتريات",
             GlobalSearchKind.Voucher => "سندات",
+            GlobalSearchKind.Installment => "أقساط",
+            GlobalSearchKind.OverdueCustomer => "متأخرون",
             _ => "أخرى"
         },
         EntityHit = hit

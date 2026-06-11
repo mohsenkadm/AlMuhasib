@@ -120,7 +120,9 @@ public partial class MainWindowViewModel : ObservableObject
         IHelpSupportService helpSupport,
         INotificationCenterService notificationCenter,
         IUserTaskService userTaskService,
-        IUserNoteService userNoteService)
+        IUserNoteService userNoteService,
+        ICustomerStatementQuickService customerStatementQuick,
+        IOfflineReminderService offlineReminder)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -141,6 +143,10 @@ public partial class MainWindowViewModel : ObservableObject
         _notificationCenter = notificationCenter;
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
+        _customerStatementQuick = customerStatementQuick;
+
+        offlineReminder.ReminderRaised += OnOfflineReminderRaised;
+        offlineReminder.Start();
 
         _investorRefresh.InvestorsChanged += (_, _) => _investorsLookupDirty = true;
 
@@ -155,6 +161,9 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceNavigationBridge.CopyToSalesInvoiceAsync = CopyToSalesInvoiceAsync;
         InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync = CopyToPurchaseInvoiceAsync;
         InvoiceNavigationBridge.ReturnSalesInvoiceAsync = ReturnSalesInvoiceAsync;
+        InvoiceNavigationBridge.EditSalesInvoiceAsync = EditSalesInvoiceAsync;
+        InvoiceNavigationBridge.EditPurchaseInvoiceAsync = EditPurchaseInvoiceAsync;
+        InvoiceNavigationBridge.EditInstallmentInvoiceAsync = EditInstallmentInvoiceAsync;
     }
 
     private async Task CopyToSalesInvoiceAsync(int invoiceId)
@@ -215,6 +224,66 @@ public partial class MainWindowViewModel : ObservableObject
 
         InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = invoiceId;
         await OpenTabAsync(typeof(SalesInvoiceViewModel), "مرتجع مبيعات", PackIconKind.KeyboardReturn, activateIfExists: false);
+    }
+
+    private async Task EditInstallmentInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(InstallmentInvoiceViewModel));
+        if (existing?.ViewModel is InstallmentInvoiceViewModel installmentVm)
+        {
+            ActivateTab(existing);
+            await installmentVm.LoadInvoiceForEditAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة الأقساط.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingInstallmentEditInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock, activateIfExists: false);
+    }
+
+    private async Task EditSalesInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
+        {
+            ActivateTab(existing);
+            await salesVm.LoadInvoiceForEditAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة المبيعات.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingSalesEditInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister, activateIfExists: false);
+    }
+
+    private async Task EditPurchaseInvoiceAsync(int invoiceId)
+    {
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
+        {
+            ActivateTab(existing);
+            await purchaseVm.LoadInvoiceForEditAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة المشتريات.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingPurchaseEditInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown, activateIfExists: false);
     }
 
     private void InitializeMenu()
@@ -281,6 +350,13 @@ public partial class MainWindowViewModel : ObservableObject
             Icon = PackIconKind.CalendarClock,
             ViewModelType = typeof(InstallmentInvoiceViewModel),
             ScreenName = "InstallmentInvoice"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "لوحة التحصيل",
+            Icon = PackIconKind.CashMultiple,
+            ViewModelType = typeof(CollectionDashboardViewModel),
+            ScreenName = "Installments"
         });
         MenuItems.Add(new NavigationMenuItem
         {
@@ -414,10 +490,31 @@ public partial class MainWindowViewModel : ObservableObject
         });
         MenuItems.Add(new NavigationMenuItem
         {
+            Title = "معالج النقل",
+            Icon = PackIconKind.DatabaseImport,
+            ViewModelType = typeof(MigrationWizardViewModel),
+            ScreenName = "DataImport"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "نقل مخازن",
+            Icon = PackIconKind.TruckDelivery,
+            ViewModelType = typeof(WarehouseTransferViewModel),
+            ScreenName = "Warehouses"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
+            Title = "إعدادات الميزات",
+            Icon = PackIconKind.TuneVariant,
+            ViewModelType = typeof(BusinessFeaturesSettingsViewModel),
+            ScreenName = "BusinessFeatures"
+        });
+        MenuItems.Add(new NavigationMenuItem
+        {
             Title = "إعدادات الطباعة",
             Icon = PackIconKind.PrinterSettings,
             ViewModelType = typeof(PrintLayoutSettingsViewModel),
-            ScreenName = "Backup"
+            ScreenName = "PrintSettings"
         });
         MenuItems.Add(new NavigationMenuItem
         {
@@ -431,7 +528,7 @@ public partial class MainWindowViewModel : ObservableObject
             Title = "المزامنة السحابية",
             Icon = PackIconKind.CloudSync,
             ViewModelType = typeof(CloudSyncSettingsViewModel),
-            ScreenName = "Backup"
+            ScreenName = "CloudSync"
         });
 
         // Mark dashboard as visually selected but do NOT navigate yet
@@ -475,14 +572,8 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        // Permission guard: check CanView (Admin always passes)
-        if (!string.IsNullOrEmpty(item.ScreenName)
-            && item.ScreenName != "Dashboard"
-            && !_currentUserService.CanView(item.ScreenName))
-        {
-            _toast.ShowWarning("ليس لديك صلاحية للوصول إلى هذه الشاشة");
+        if (item.ViewModelType is not null && !TryAuthorizeScreen(item.ViewModelType, out _))
             return;
-        }
 
         // Clear selection across all items including children
         foreach (var m in MenuItems)
@@ -498,9 +589,74 @@ public partial class MainWindowViewModel : ObservableObject
             _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon);
     }
 
+    public bool TryAuthorizeScreen(Type viewModelType, out string? deniedMessage)
+    {
+        if (viewModelType == typeof(SetupWizardViewModel))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
+        var screenName = ScreenPermissionRegistry.GetScreenName(viewModelType);
+        if (_currentUserService.CanView(screenName))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
+        deniedMessage = $"ليس لديك صلاحية للوصول إلى: {ScreenPermissionRegistry.GetLabel(screenName)}";
+        _toast.ShowWarning(deniedMessage);
+        return false;
+    }
+
+    public void RefreshMenuVisibility()
+    {
+        var hidden = _userPreferences.Current.HiddenMenuScreens;
+        var flags = _userPreferences.Current.FeatureFlags;
+
+        foreach (var item in FlattenMenuItems())
+        {
+            if (item.ViewModelType is null)
+                continue;
+
+            if (item.ScreenName == ScreenPermissionRegistry.Dashboard)
+            {
+                item.IsVisible = true;
+                continue;
+            }
+
+            var permitted = _currentUserService.CanView(item.ScreenName);
+            var featureOk = IsFeatureFlagVisible(item, flags);
+            var prefOk = !IsCustomizableMenuItem(item) || !hidden.Contains(GetMenuPreferenceKey(item));
+            item.IsVisible = permitted && featureOk && prefOk;
+        }
+
+        foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
+            group.IsVisible = group.Children.Any(c => c.IsVisible);
+    }
+
+    private void ResetMenuVisibilityOnLogout()
+    {
+        foreach (var item in FlattenMenuItems())
+        {
+            if (item.ViewModelType is not null && item.ScreenName != ScreenPermissionRegistry.Dashboard)
+                item.IsVisible = false;
+        }
+
+        foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
+            group.IsVisible = false;
+
+        var dashboard = MenuItems.FirstOrDefault(m => m.ScreenName == ScreenPermissionRegistry.Dashboard);
+        if (dashboard is not null)
+            dashboard.IsVisible = true;
+    }
+
     /// <summary>Opens a tab for startup, wizard, or external callers.</summary>
     public async Task OpenTabAsync(Type viewModelType, string title, PackIconKind icon, bool activateIfExists = true)
     {
+        if (!TryAuthorizeScreen(viewModelType, out _))
+            return;
+
         if (activateIfExists)
         {
             var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == viewModelType);
@@ -536,9 +692,7 @@ public partial class MainWindowViewModel : ObservableObject
             UpdateTabCloseStates();
             UpdateTabPinStates();
 
-            var screenName = FlattenMenuItems()
-                .FirstOrDefault(m => m.ViewModelType == viewModelType)?.ScreenName
-                ?? viewModelType.Name;
+            var screenName = ScreenPermissionRegistry.GetScreenName(viewModelType);
             _recentActivity.Record($"فتح: {title}", screenName, screenName, viewModelType);
 
             await SafeInitializeTabAsync(viewModel);
@@ -749,25 +903,25 @@ public partial class MainWindowViewModel : ObservableObject
         if (_currentUserService.UserId is int userId)
         {
             var perms = await _authService.GetUserPermissionsAsync(userId);
+            var (normalized, shouldSave, infoMessage, warningMessage) =
+                PermissionCatalogHelper.NormalizeForLogin(_currentUserService.IsAdmin, perms);
+
+            if (shouldSave)
+            {
+                await _authService.SaveUserPermissionsAsync(userId, normalized);
+                perms = normalized;
+            }
+
             _currentUserService.SetPermissions(perms);
+
+            if (!string.IsNullOrEmpty(infoMessage))
+                _toast.ShowInfo(infoMessage);
+
+            if (!string.IsNullOrEmpty(warningMessage))
+                _toast.ShowWarning(warningMessage);
         }
 
-        // Admin sees everything; Users + Permissions are admin-only
-        foreach (var item in MenuItems)
-        {
-            if (item.ScreenName is "Users" or "Permissions" or "AuditLog" or "Capital" or "Backup")
-                item.IsVisible = _currentUserService.IsAdmin;
-            else if (item.ScreenName == "Dashboard")
-                item.IsVisible = true;
-            else
-                item.IsVisible = _currentUserService.CanView(item.ScreenName);
-
-            // Apply visibility to children
-            foreach (var child in item.Children)
-                child.IsVisible = _currentUserService.CanView(child.ScreenName);
-        }
-
-        ApplyMenuVisibilityFromPreferences();
+        RefreshMenuVisibility();
     }
 
     private static async Task RefreshInvestorsLookupSafeAsync(IInvestorLookupHost host)
@@ -1001,6 +1155,7 @@ public partial class MainWindowViewModel : ObservableObject
         StopClock();
         CloseAllTabs();
         ResetPersonalWorkspaceSession();
+        ResetMenuVisibilityOnLogout();
         _currentUserService.Clear();
         LogoutRequested?.Invoke();
     }

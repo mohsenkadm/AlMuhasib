@@ -159,12 +159,15 @@ public partial class App : Application
         services.AddSingleton<INotificationCenterService, NotificationCenterService>();
         services.AddSingleton<IRecentActivityService, RecentActivityService>();
         services.AddSingleton<IFavoriteProductsService, FavoriteProductsService>();
+        services.AddSingleton<IOfflineReminderService, OfflineReminderService>();
+        services.AddSingleton<BackupSchedulerService>();
 
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
+        services.AddSingleton<IBarcodeLabelService, AlMuhasib.Shared.Services.BarcodeLabelService>();
 
         // ViewModels
         services.AddTransient<LoginViewModel>();
@@ -217,6 +220,10 @@ public partial class App : Application
         services.AddTransient<SetupWizardViewModel>();
         services.AddTransient<CapitalAdjustmentViewModel>();
         services.AddTransient<BackupRestoreViewModel>();
+        services.AddTransient<CollectionDashboardViewModel>();
+        services.AddTransient<BusinessFeaturesSettingsViewModel>();
+        services.AddTransient<MigrationWizardViewModel>();
+        services.AddTransient<WarehouseTransferViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
         services.AddTransient<CloudSyncSettingsViewModel>();
         services.AddTransient<HelpVideosViewModel>();
@@ -404,6 +411,17 @@ public partial class App : Application
         var currentUser = _serviceProvider.GetRequiredService<CurrentUserService>();
         mainVm.LoggedInUsername = currentUser.Username;
 
+        try
+        {
+            if (currentUser.UserId is int uid)
+            {
+                using var logScope = _serviceProvider.CreateScope();
+                var loginLog = logScope.ServiceProvider.GetRequiredService<IUserLoginLogService>();
+                await loginLog.LogLoginAsync(uid, currentUser.Username);
+            }
+        }
+        catch { /* ignore login log failures */ }
+
         // Unsubscribe first to avoid duplicate handlers on re-login
         mainVm.LogoutRequested -= OnLogoutRequested;
         mainVm.LogoutRequested += OnLogoutRequested;
@@ -459,6 +477,8 @@ public partial class App : Application
                 await mainVm.OpenInitialSessionTabsAsync();
                 mainVm.TryStartFeatureTour();
             }
+
+            _serviceProvider.GetRequiredService<BackupSchedulerService>().Start();
 
             _ = mainVm.InitializeNotificationCenterAsync();
             _ = mainVm.InitializePersonalWorkspaceAsync();

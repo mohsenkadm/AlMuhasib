@@ -36,4 +36,17 @@ public class UserAppPreferences
 
     /// <summary>تفعيل أصوات التفاعل (حفظ، حذف، تنبيه، إلخ).</summary>
     public bool SoundEnabled { get; set; } = true;
+
+    public BusinessFeatureFlags FeatureFlags { get; set; } = new();
+    public BackupPreferences Backup { get; set; } = new();
+    public ReminderPreferences Reminders { get; set; } = new();
+
+    /// <summary>قفل الشاشة بعد دقائق خمول (0 = معطّل).</summary>
+    public int IdleLockMinutes { get; set; }
+
+    /// <summary>الحد الأدنى لمبلغ التقسيط من POS.</summary>
+    public decimal PosMinInstallmentAmount { get; set; } = 50_000m;
+
+    /// <summary>وضع عرض القوائم (جدول / بطاقات) لكل شاشة بيانات رئيسية.</summary>
+    public Dictionary<string, MasterDataListViewMode> ListViewModes { get; set; } = [];
 }

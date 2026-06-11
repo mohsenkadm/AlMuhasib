@@ -18,6 +18,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class InstallmentsViewModel : ViewModelBase
 {
     private readonly IInstallmentService _installmentService;
+    private readonly IInvoiceService _invoiceService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
@@ -177,12 +178,14 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     public InstallmentsViewModel(
         IInstallmentService installmentService,
+        IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare)
     {
         _installmentService = installmentService;
+        _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _exportService = exportService;

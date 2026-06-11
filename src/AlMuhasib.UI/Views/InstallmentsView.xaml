@@ -249,6 +249,8 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <ComboBox Grid.Column="0"
@@ -288,7 +290,15 @@
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
 
-                            <Button Grid.Column="3"
+                            <controls:ColumnFilterToggle Grid.Column="3"
+                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                           TargetDataGrid="{Binding ElementName=AllPlansGrid}"
+                                                           Margin="4,0,0,0"
+                                                           VerticalAlignment="Center" />
+
+                            <Button Grid.Column="4"
                                     Command="{Binding ExportPlansCommand}"
                                     ToolTip="تصدير Excel"
                                     Style="{StaticResource IconButton}"
@@ -298,7 +308,7 @@
                                 <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
                             </Button>
 
-                            <Button Grid.Column="4"
+                            <Button Grid.Column="5"
                                     Command="{Binding PrintPlansCommand}"
                                     ToolTip="طباعة"
                                     Style="{StaticResource IconButton}"
@@ -314,7 +324,8 @@
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <DockPanel>
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PlansFooter}"/>
-                        <DataGrid ItemsSource="{Binding AllPlans}"
+                        <DataGrid x:Name="AllPlansGrid"
+                                  ItemsSource="{Binding AllPlans}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
@@ -327,11 +338,16 @@
                                   Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                                  materialDesign:DataGridAssist.CellPadding="12 6"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="العميل" Binding="{Binding Customer.Name}" Width="*" />
-                                <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120" />
-                                <DataGridTemplateColumn Header="النوع" Width="80">
+                                <DataGridTextColumn Header="العميل" Binding="{Binding Customer.Name}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Customer.Name" />
+                                <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber" />
+                                <DataGridTemplateColumn Header="النوع" Width="80"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentType">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock HorizontalAlignment="Center"
@@ -340,7 +356,8 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="140">
+                                <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold" />
@@ -348,21 +365,24 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="100">
+                                <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NumberOfInstallments">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="قيمة القسط" Binding="{Binding InstallmentAmount, StringFormat='{}{0:N0} د.ع'}" Width="130">
+                                <DataGridTextColumn Header="قيمة القسط" Binding="{Binding InstallmentAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="نسبة الشركة" Binding="{Binding CompanyFeeAmount, StringFormat='{}{0:N0} د.ع'}" Width="130">
+                                <DataGridTextColumn Header="نسبة الشركة" Binding="{Binding CompanyFeeAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CompanyFeeAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -371,14 +391,16 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="تاريخ البداية" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110">
+                                <DataGridTextColumn Header="تاريخ البداية" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StartDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140">
+                                <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="#1565C0" />
@@ -386,6 +408,42 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="إجراءات" Width="220" MinWidth="220"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource TableViewIconButton}"
+                                                        Command="{Binding DataContext.ViewPlanDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="عرض التفاصيل">
+                                                    <materialDesign:PackIcon Kind="Eye" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Style="{StaticResource TableEditIconButton}"
+                                                        Command="{Binding DataContext.EditPlanInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="تعديل الفاتورة">
+                                                    <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Style="{StaticResource TablePrintIconButton}"
+                                                        Command="{Binding DataContext.PrintPlanInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="طباعة الفاتورة">
+                                                    <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Style="{StaticResource TableDeleteIconButton}"
+                                                        Command="{Binding DataContext.DeletePlanInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="حذف الفاتورة">
+                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                         </DockPanel>
@@ -454,6 +512,12 @@
                                     Height="30"
                                     Margin="16,0,0,0"
                                     FontSize="12" />
+                            <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                           TargetDataGrid="{Binding ElementName=OverdueInstallmentsGrid}"
+                                                           Margin="4,0,0,0"
+                                                           VerticalAlignment="Center" />
                             <Button Command="{Binding PrintOverdueCommand}"
                                     ToolTip="طباعة"
                                     Style="{StaticResource IconButton}"
@@ -489,10 +553,14 @@
                                   Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                                  materialDesign:DataGridAssist.CellPadding="12 6"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*" />
-                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120">
+                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
+                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -501,21 +569,24 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -524,7 +595,8 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="تسديد" Width="90">
+                                <DataGridTemplateColumn Header="تسديد" Width="90"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Command="{Binding DataContext.PayOverdueInstallmentCommand,
@@ -605,9 +677,18 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Text="خطط الأقساط" FontSize="14" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,10" />
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
+                                    <TextBlock Text="خطط الأقساط" FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center" />
+                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                 TargetDataGrid="{Binding ElementName=CustomerPlansGrid}"
+                                                                 Margin="4,0,0,0"
+                                                                 VerticalAlignment="Center" />
+                                </StackPanel>
 
-                                <DataGrid Grid.Row="1"
+                                <DataGrid x:Name="CustomerPlansGrid"
+                                          Grid.Row="1"
                                           ItemsSource="{Binding CustomerPlans}"
                                           SelectedItem="{Binding PaymentSelectedPlan}"
                                           AutoGenerateColumns="False"
@@ -623,13 +704,20 @@
                                           Background="{DynamicResource CardBrush}"
                                           BorderThickness="0"
                                           materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
-                                          materialDesign:DataGridAssist.CellPadding="10 4">
+                                          materialDesign:DataGridAssist.CellPadding="10 4"
+                                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140" />
-                                        <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="130" />
-                                        <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="90" />
-                                        <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120" />
-                                        <DataGridTextColumn Header="تاريخ البداية" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110" />
+                                        <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber" />
+                                        <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount" />
+                                        <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="90"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NumberOfInstallments" />
+                                        <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber" />
+                                        <DataGridTextColumn Header="تاريخ البداية" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StartDate" />
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -644,10 +732,18 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" FontSize="14" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,10">
-                                    <Run Text="تفاصيل الأقساط" />
-                                    <Run Text=" — حدّد عدة صفوف للتسديد الجماعي" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Normal" />
-                                </TextBlock>
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
+                                    <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center">
+                                        <Run Text="تفاصيل الأقساط" />
+                                        <Run Text=" — حدّد عدة صفوف للتسديد الجماعي" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Normal" />
+                                    </TextBlock>
+                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                 TargetDataGrid="{Binding ElementName=PlanInstallmentsGrid}"
+                                                                 Margin="4,0,0,0"
+                                                                 VerticalAlignment="Center" />
+                                </StackPanel>
 
                                 <DockPanel Grid.Row="1">
                                 <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaymentFooter}"/>
@@ -668,12 +764,18 @@
                                           Background="{DynamicResource CardBrush}"
                                           BorderThickness="0"
                                           materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
-                                          materialDesign:DataGridAssist.CellPadding="10 4">
+                                          materialDesign:DataGridAssist.CellPadding="10 4"
+                                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120" />
-                                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120" />
-                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120" />
-                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                        <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate" />
+                                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount" />
+                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount" />
+                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="Bold" />
@@ -682,7 +784,8 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTemplateColumn Header="الحالة" Width="100">
+                                        <DataGridTemplateColumn Header="الحالة" Width="100"
+                                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Status, Converter={StaticResource StatusToText}}"
@@ -808,6 +911,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <ComboBox Grid.Column="0"
@@ -834,7 +938,15 @@
                                     FontSize="13"
                                     Margin="0,0,8,0" />
 
-                            <Button Grid.Column="2"
+                            <controls:ColumnFilterToggle Grid.Column="2"
+                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                           TargetDataGrid="{Binding ElementName=DetailedInstallmentsGrid}"
+                                                           Margin="4,0,0,0"
+                                                           VerticalAlignment="Center" />
+
+                            <Button Grid.Column="3"
                                     Command="{Binding PrintDetailedCommand}"
                                     ToolTip="طباعة"
                                     Style="{StaticResource IconButton}"
@@ -854,9 +966,18 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="جدول الأقساط - اختر خطة أقساط للعميل" FontSize="14" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,10" />
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
+                                <TextBlock Text="جدول الأقساط - اختر خطة أقساط للعميل" FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center" />
+                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                             TargetDataGrid="{Binding ElementName=DetailedPlansGrid}"
+                                                             Margin="4,0,0,0"
+                                                             VerticalAlignment="Center" />
+                            </StackPanel>
 
-                            <DataGrid Grid.Row="1"
+                            <DataGrid x:Name="DetailedPlansGrid"
+                                      Grid.Row="1"
                                       ItemsSource="{Binding DetailedPlans}"
                                       SelectedItem="{Binding DetailedSelectedPlan}"
                                       AutoGenerateColumns="False"
@@ -872,13 +993,20 @@
                                       Background="{DynamicResource CardBrush}"
                                       BorderThickness="0"
                                       materialDesign:DataGridAssist.ColumnHeaderPadding="10 6"
-                                      materialDesign:DataGridAssist.CellPadding="10 4">
+                                      materialDesign:DataGridAssist.CellPadding="10 4"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="العميل" Binding="{Binding Customer.Name}" Width="*" />
-                                    <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0}'}" Width="120" />
-                                    <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="90" />
-                                    <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120" />
-                                    <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140" />
+                                    <DataGridTextColumn Header="العميل" Binding="{Binding Customer.Name}" Width="*"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Customer.Name" />
+                                    <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0}'}" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount" />
+                                    <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="90"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NumberOfInstallments" />
+                                    <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber" />
+                                    <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -907,23 +1035,28 @@
                                   Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                                  materialDesign:DataGridAssist.CellPadding="12 6"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="130">
+                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="130">
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="130">
+                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -931,7 +1064,8 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="130">
+                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -939,7 +1073,8 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="الحالة" Width="120">
+                                <DataGridTemplateColumn Header="الحالة" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Background="{Binding Status, Converter={StaticResource StatusToBrush}}"
@@ -952,15 +1087,18 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="تاريخ التسديد" Binding="{Binding PaymentDate, StringFormat=yyyy/MM/dd}" Width="130">
+                                <DataGridTextColumn Header="تاريخ التسديد" Binding="{Binding PaymentDate, StringFormat=yyyy/MM/dd}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBox.Name}" Width="120" />
-                                <DataGridTemplateColumn Header="إجراء" Width="180">
+                                <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBox.Name}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CashBox.Name" />
+                                <DataGridTemplateColumn Header="إجراء" Width="180"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -1022,6 +1160,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <TextBox Grid.Column="0"
@@ -1042,7 +1181,15 @@
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
 
-                            <Button Grid.Column="2"
+                            <controls:ColumnFilterToggle Grid.Column="2"
+                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                           TargetDataGrid="{Binding ElementName=PaidInstallmentsGrid}"
+                                                           Margin="4,0,0,0"
+                                                           VerticalAlignment="Center" />
+
+                            <Button Grid.Column="3"
                                     Command="{Binding ExportPaidCommand}"
                                     ToolTip="تصدير Excel"
                                     Style="{StaticResource IconButton}"
@@ -1052,7 +1199,7 @@
                                 <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
                             </Button>
 
-                            <Button Grid.Column="3"
+                            <Button Grid.Column="4"
                                     Command="{Binding PrintPaidCommand}"
                                     ToolTip="طباعة"
                                     Style="{StaticResource IconButton}"
@@ -1068,7 +1215,8 @@
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <DockPanel>
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaidFooter}"/>
-                        <DataGrid ItemsSource="{Binding PaidInstallments}"
+                        <DataGrid x:Name="PaidInstallmentsGrid"
+                                  ItemsSource="{Binding PaidInstallments}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
@@ -1081,24 +1229,30 @@
                                   Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                                  materialDesign:DataGridAssist.CellPadding="12 6"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*" />
-                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120">
+                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
+                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -1107,15 +1261,18 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="تاريخ التسديد" Binding="{Binding PaymentDate, StringFormat=yyyy/MM/dd}" Width="130">
+                                <DataGridTextColumn Header="تاريخ التسديد" Binding="{Binding PaymentDate, StringFormat=yyyy/MM/dd}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBox.Name}" Width="120" />
-                                <DataGridTemplateColumn Header="إجراء" Width="110">
+                                <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBox.Name}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CashBox.Name" />
+                                <DataGridTemplateColumn Header="إجراء" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Command="{Binding DataContext.CancelPaidInstallmentCommand,
@@ -1183,6 +1340,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <TextBox Grid.Column="0"
@@ -1205,7 +1363,15 @@
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
 
-                            <Button Grid.Column="2"
+                            <controls:ColumnFilterToggle Grid.Column="2"
+                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                           TargetDataGrid="{Binding ElementName=UnpaidInstallmentsGrid}"
+                                                           Margin="4,0,0,0"
+                                                           VerticalAlignment="Center" />
+
+                            <Button Grid.Column="3"
                                     Command="{Binding ExportUnpaidCommand}"
                                     ToolTip="تصدير Excel"
                                     Style="{StaticResource IconButton}"
@@ -1215,7 +1381,7 @@
                                 <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
                             </Button>
 
-                            <Button Grid.Column="3"
+                            <Button Grid.Column="4"
                                     Command="{Binding PrintUnpaidCommand}"
                                     ToolTip="طباعة"
                                     Style="{StaticResource IconButton}"
@@ -1248,10 +1414,14 @@
                                   Background="{DynamicResource CardBrush}"
                                   BorderThickness="0"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                                  materialDesign:DataGridAssist.CellPadding="12 6"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*" />
-                                <DataGridTemplateColumn Header="الحالة" Width="110">
+                                <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
+                                <DataGridTemplateColumn Header="الحالة" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Background="{Binding Status, Converter={StaticResource StatusToBrush}}"
@@ -1264,28 +1434,32 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120">
+                                <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120">
+                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -1294,7 +1468,8 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="إجراء" Width="90">
+                                <DataGridTemplateColumn Header="إجراء" Width="90"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Command="{Binding DataContext.PayUnpaidInstallmentCommand,

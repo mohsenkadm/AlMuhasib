@@ -14,4 +14,6 @@ public interface ICurrentUserService
     bool CanDelete(string screenName);
     bool CanPrint(string screenName);
     bool CanExport(string screenName);
+    bool CanEditPrice(string screenName);
+    bool IsViewOnly(string screenName);
 }

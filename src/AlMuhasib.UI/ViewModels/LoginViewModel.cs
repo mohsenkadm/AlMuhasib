@@ -68,17 +68,17 @@ public partial class LoginViewModel : ObservableObject
 
         try
         {
-            var admins = await _authService.GetActiveAdminUsersAsync();
+            var users = await _authService.GetActiveUsersAsync();
             AdminUsers.Clear();
 
             var index = 0;
-            foreach (var admin in admins)
-                AdminUsers.Add(LoginAdminOption.FromUser(admin, index++));
+            foreach (var user in users)
+                AdminUsers.Add(LoginAdminOption.FromUser(user, index++));
 
             HasAdmins = AdminUsers.Count > 0;
             if (!HasAdmins)
             {
-                ShowError("لا يوجد حساب مدير نشط. يرجى مراجعة إعدادات المستخدمين.");
+                ShowError("لا يوجد مستخدم نشط. يرجى مراجعة إعدادات المستخدمين.");
                 return;
             }
 

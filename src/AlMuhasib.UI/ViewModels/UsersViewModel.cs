@@ -6,6 +6,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -32,6 +33,7 @@ public partial class UsersViewModel : ViewModelBase
     [ObservableProperty] private bool _isEditing;
 
     private int _editingUserId;
+    private List<UserRow> _allUsers = [];
 
     // ── Reset Password Fields ───────────────────────────
 
@@ -47,20 +49,18 @@ public partial class UsersViewModel : ViewModelBase
         {
             IsBusy = true;
             var users = await _authService.GetAllUsersAsync();
-            Users.Clear();
-            foreach (var u in users)
+            _allUsers = users.Select(u => new UserRow
             {
-                Users.Add(new UserRow
-                {
-                    Id = u.Id,
-                    Username = u.Username,
-                    FullName = u.FullName,
-                    Role = u.Role,
-                    RoleDisplay = u.Role == UserRole.Admin ? "مدير" : "مستخدم",
-                    IsActive = u.IsActive,
-                    StatusDisplay = u.IsActive ? "فعال" : "معطّل"
-                });
-            }
+                Id = u.Id,
+                Username = u.Username,
+                FullName = u.FullName,
+                Role = u.Role,
+                RoleDisplay = u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                IsActive = u.IsActive,
+                StatusDisplay = u.IsActive ? "فعال" : "معطّل"
+            }).ToList();
+
+            ApplyUserFilters();
         }
         catch (Exception ex)
         {
@@ -68,6 +68,16 @@ public partial class UsersViewModel : ViewModelBase
         }
         finally { IsBusy = false; }
     }
+
+    private void ApplyUserFilters()
+    {
+        var filtered = ColumnFilterEngine.Apply(_allUsers, ColumnFilters);
+        Users.Clear();
+        foreach (var u in filtered)
+            Users.Add(u);
+    }
+
+    protected override void OnColumnFiltersChanged() => ApplyUserFilters();
 
     // ── Add User ────────────────────────────────────────
 

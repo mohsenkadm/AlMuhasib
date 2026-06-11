@@ -1,0 +1,273 @@
+<UserControl x:Class="AlMuhasib.UI.Views.BusinessFeaturesSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:ux="clr-namespace:AlMuhasib.Core.Models.Ux;assembly=AlMuhasib.Core"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             x:Name="Root"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft"
+             Loaded="Root_Loaded">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="22,20"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource BackgroundBrush}">
+        <Grid Margin="24" MaxWidth="960">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Hero -->
+            <Border x:Name="HeroHeader" Grid.Row="0" CornerRadius="18" Margin="0,0,0,18" Padding="24,22" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="16"/>
+                </Border.RenderTransform>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1B5E20" Offset="0"/>
+                        <GradientStop Color="#2E7D32" Offset="0.5"/>
+                        <GradientStop Color="#43A047" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.3" Color="#1B5E20"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <materialDesign:PackIcon Kind="TuneVariant" Width="30" Height="30" Foreground="White"/>
+                            <TextBlock Text="إعدادات الميزات" FontSize="26" FontWeight="Bold" Foreground="White" Margin="12,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock Text="فعّل أو ألغِ الميزات حسب نوع نشاطك التجاري — التغييرات تُحفظ محلياً"
+                                   FontSize="13" Foreground="#E8F5E9" TextWrapping="Wrap" MaxWidth="520"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="14" Padding="16,12" VerticalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding EnabledFeaturesCount}" FontSize="28" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="ميزة مفعّلة" FontSize="11" Foreground="#C8E6C9" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Reminders -->
+            <Border x:Name="SectionReminders" Grid.Row="1" Style="{StaticResource SectionCard}" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </Border.RenderTransform>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <materialDesign:PackIcon Kind="BellRing" Width="22" Height="22" Foreground="#1565C0" VerticalAlignment="Center"/>
+                        <TextBlock Text="تذكيرات الأقساط" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <UniformGrid Columns="1">
+                        <controls:FeatureToggleCard Title="تذكيرات الأقساط (أوفلاين)"
+                                                    Description="تنبيهات محلية للأقساط المستحقة دون إنترنت"
+                                                    Icon="Bell" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    IsChecked="{Binding InstallmentRemindersEnabled}"/>
+                        <controls:FeatureToggleCard Title="تشغيل صوت عند التذكير"
+                                                    Description="تنبيه صوتي عند حلول موعد القسط"
+                                                    Icon="VolumeHigh" IconBackground="#FFF3E0" IconForeground="#EF6C00"
+                                                    IsChecked="{Binding ReminderPlaySound}"/>
+                        <controls:FeatureToggleCard Title="عرض تنبيه داخل التطبيق"
+                                                    Description="بانر تنبيه في لوحة الإشعارات"
+                                                    Icon="MessageAlert" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding ReminderShowBanner}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Backup -->
+            <Border x:Name="SectionBackup" Grid.Row="2" Style="{StaticResource SectionCard}" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </Border.RenderTransform>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <materialDesign:PackIcon Kind="DatabaseExport" Width="22" Height="22" Foreground="#6A1B9A" VerticalAlignment="Center"/>
+                        <TextBlock Text="النسخ الاحتياطي التلقائي" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <controls:FeatureToggleCard Title="تفعيل النسخ الاحتياطي التلقائي"
+                                                Description="نسخ قاعدة البيانات تلقائياً حسب الجدولة"
+                                                Icon="ClockCheck" IconBackground="#F3E5F5" IconForeground="#6A1B9A"
+                                                IsChecked="{Binding AutoBackupEnabled}"/>
+                    <Expander IsExpanded="{Binding AutoBackupEnabled}" Margin="0,8,0,0">
+                        <Expander.Header>
+                            <TextBlock Text="خيارات الجدولة والمجلد" FontSize="13" FontWeight="SemiBold" Foreground="#616161"/>
+                        </Expander.Header>
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="الجدولة:" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <ComboBox SelectedValue="{Binding BackupSchedule}" SelectedValuePath="Tag" Width="160"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                                    <ComboBoxItem Content="يومي" Tag="{x:Static ux:BackupSchedule.Daily}"/>
+                                    <ComboBoxItem Content="أسبوعي" Tag="{x:Static ux:BackupSchedule.Weekly}"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding BackupFolderPath}" materialDesign:HintAssist.Hint="مجلد النسخ (USB أو محلي)"
+                                         Style="{StaticResource FilledTextBox}"/>
+                                <Button Grid.Column="1" Command="{Binding BrowseBackupFolderCommand}"
+                                        Style="{StaticResource OutlinedButton}" Margin="8,0,0,0" Padding="14,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderOpen"/>
+                                        <TextBlock Text="استعراض" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="الاحتفاظ بعدد نسخ:" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBox Text="{Binding BackupRetainCount}" Width="80" Style="{StaticResource NumericTextBox}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </Border>
+
+            <!-- Accounting -->
+            <Border x:Name="SectionAccounting" Grid.Row="3" Style="{StaticResource SectionCard}" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </Border.RenderTransform>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <materialDesign:PackIcon Kind="CalculatorVariant" Width="22" Height="22" Foreground="#E65100" VerticalAlignment="Center"/>
+                        <TextBlock Text="تسهيلات محاسبية" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <UniformGrid Columns="2">
+                        <controls:FeatureToggleCard Title="مرتجع مشتريات"
+                                                    Description="إرجاع فواتير المشتريات للموردين"
+                                                    Icon="KeyboardReturn" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    IsChecked="{Binding PurchaseReturns}"/>
+                        <controls:FeatureToggleCard Title="نقل بين مخازن"
+                                                    Description="تحويل المخزون بين المخازن"
+                                                    Icon="TruckDelivery" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    IsChecked="{Binding WarehouseTransfers}"/>
+                        <controls:FeatureToggleCard Title="وحدات قياس"
+                                                    Description="وحدات متعددة لكل منتج"
+                                                    Icon="Ruler" IconBackground="#FFF8E1" IconForeground="#F9A825"
+                                                    IsChecked="{Binding UnitsOfMeasure}"/>
+                        <controls:FeatureToggleCard Title="صلاحية / تاريخ انتهاء"
+                                                    Description="تتبع تواريخ انتهاء المنتجات"
+                                                    Icon="CalendarClock" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding ExpiryTracking}"/>
+                        <controls:FeatureToggleCard Title="سيريال نمبر"
+                                                    Description="تتبع الأرقام التسلسلية"
+                                                    Icon="Barcode" IconBackground="#F3E5F5" IconForeground="#6A1B9A"
+                                                    IsChecked="{Binding SerialNumbers}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Templates -->
+            <Border x:Name="SectionTemplates" Grid.Row="4" Style="{StaticResource SectionCard}" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </Border.RenderTransform>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <materialDesign:PackIcon Kind="Store" Width="22" Height="22" Foreground="#00796B" VerticalAlignment="Center"/>
+                        <TextBlock Text="قوالب السوق" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <UniformGrid Columns="2">
+                        <controls:FeatureToggleCard Title="قالب موبايلات"
+                                                    Description="حقول IMEI وضمان"
+                                                    Icon="Cellphone" IconBackground="#E8EAF6" IconForeground="#3949AB"
+                                                    IsChecked="{Binding TemplateMobileShop}"/>
+                        <controls:FeatureToggleCard Title="قالب ألبسة"
+                                                    Description="مقاسات وألوان"
+                                                    Icon="TshirtCrew" IconBackground="#FCE4EC" IconForeground="#C2185B"
+                                                    IsChecked="{Binding TemplateClothing}"/>
+                        <controls:FeatureToggleCard Title="قالب مواد بناء"
+                                                    Description="وحدات وزن وحجم"
+                                                    Icon="Hammer" IconBackground="#FFF3E0" IconForeground="#E65100"
+                                                    IsChecked="{Binding TemplateConstruction}"/>
+                        <controls:FeatureToggleCard Title="قالب صيدلية"
+                                                    Description="صلاحية ودفعات"
+                                                    Icon="Pill" IconBackground="#E0F7FA" IconForeground="#00838F"
+                                                    IsChecked="{Binding TemplatePharmacy}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Security -->
+            <Border x:Name="SectionSecurity" Grid.Row="5" Style="{StaticResource SectionCard}" Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </Border.RenderTransform>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <materialDesign:PackIcon Kind="ShieldLock" Width="22" Height="22" Foreground="#455A64" VerticalAlignment="Center"/>
+                        <TextBlock Text="الأمان ونقطة البيع" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                            <TextBlock Text="قفل الشاشة بعد الخمول (دقائق)" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBlock Text="0 = معطّل" FontSize="11" Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding IdleLockMinutes}" Style="{StaticResource NumericTextBox}" Width="120" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="الحد الأدنى للتقسيط من POS" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBlock Text="بالدينار العراقي" FontSize="11" Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding PosMinInstallmentAmount, StringFormat=N0}" Style="{StaticResource NumericTextBox}" Width="160" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Save -->
+            <StackPanel x:Name="SavePanel" Grid.Row="6" Opacity="0">
+                <StackPanel.RenderTransform>
+                    <TranslateTransform Y="14"/>
+                </StackPanel.RenderTransform>
+                <Button Command="{Binding SaveCommand}" materialDesign:ButtonAssist.CornerRadius="10"
+                        HorizontalAlignment="Left" Padding="28,10" MinWidth="180">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SaveSuccessPulse}" Value="True">
+                                    <Setter Property="Background" Value="#2E7D32"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center"/>
+                        <TextBlock Text="حفظ الإعدادات" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock x:Name="StatusText" Text="{Binding StatusMessage}" Margin="0,10,0,0"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" FontSize="13"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

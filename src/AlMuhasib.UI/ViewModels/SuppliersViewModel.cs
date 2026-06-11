@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -15,6 +16,7 @@ public partial class SuppliersViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
 
     public ObservableCollection<Supplier> Suppliers { get; } = [];
 
@@ -35,6 +37,9 @@ public partial class SuppliersViewModel : ViewModelBase
 
     [ObservableProperty]
     private Supplier? _selectedSupplier;
+
+    [ObservableProperty]
+    private bool _isCardView;
 
     // Dialog state
     [ObservableProperty]
@@ -74,11 +79,14 @@ public partial class SuppliersViewModel : ViewModelBase
     public SuppliersViewModel(
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Suppliers);
         PageTitle = "الموردون";
     }
 
@@ -103,10 +111,25 @@ public partial class SuppliersViewModel : ViewModelBase
             ? null
             : SearchText.Trim();
 
+        System.Linq.Expressions.Expression<Func<Supplier, bool>>? searchPredicate = filter is null
+            ? null
+            : s => s.Name.Contains(filter) || (s.Phone != null && s.Phone.Contains(filter));
+
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+        {
+            var (allItems, _) = await _unitOfWork.Suppliers.GetPagedAsync(
+                1, int.MaxValue, searchPredicate, q => q.OrderByDescending(s => s.CreatedAt));
+
+            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            MasterDataColumnFilterHelper.ApplyClientPagination(
+                filtered, Suppliers, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+            TotalCount = filteredTotal;
+            TotalPages = filteredPages;
+            return;
+        }
+
         var (items, totalCount) = await _unitOfWork.Suppliers.GetPagedAsync(
-            CurrentPage, PageSize,
-            filter is null ? null : s => s.Name.Contains(filter) || (s.Phone != null && s.Phone.Contains(filter)),
-            q => q.OrderByDescending(s => s.CreatedAt));
+            CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(s => s.CreatedAt));
 
         TotalCount = totalCount;
         TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
@@ -115,6 +138,12 @@ public partial class SuppliersViewModel : ViewModelBase
         Suppliers.Clear();
         foreach (var s in items)
             Suppliers.Add(s);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadSuppliersAsync();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -305,4 +334,7 @@ public partial class SuppliersViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Suppliers, value);
 }

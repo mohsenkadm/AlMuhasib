@@ -35,7 +35,8 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         _syncService = syncService;
         _currentUserService = currentUserService;
         PageTitle = "المزامنة السحابية";
-        IsAdmin = currentUserService.Role == Core.Enums.UserRole.Admin;
+        IsAdmin = currentUserService.CanView("CloudSync");
+        LoadPermissions(currentUserService, "CloudSync");
     }
 
     public bool HasSyncError => !string.IsNullOrWhiteSpace(LastSyncError);
@@ -68,7 +69,6 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
 
     public override async Task InitializeAsync()
     {
-        if (!IsAdmin) return;
         var settings = await _settingsService.GetAsync();
         ApiBaseUrl = settings.ApiBaseUrl;
         Username = settings.Username;
@@ -103,7 +103,7 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (!IsAdmin) return;
+        if (!CanEdit) return;
         try
         {
             IsBusy = true;
@@ -135,7 +135,7 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
     [RelayCommand]
     private async Task TestConnectionAsync()
     {
-        if (!IsAdmin) return;
+        if (!CanEdit) return;
         try
         {
             IsBusy = true;
@@ -163,7 +163,7 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
     [RelayCommand]
     private async Task SyncNowAsync()
     {
-        if (!IsAdmin) return;
+        if (!CanEdit) return;
         try
         {
             IsBusy = true;

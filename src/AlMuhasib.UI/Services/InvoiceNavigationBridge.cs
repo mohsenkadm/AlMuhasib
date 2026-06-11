@@ -8,9 +8,15 @@ public static class InvoiceNavigationBridge
     public static int? PendingSalesCopyInvoiceId { get; set; }
     public static int? PendingPurchaseCopyInvoiceId { get; set; }
     public static int? PendingSalesReturnFromInvoiceId { get; set; }
+    public static int? PendingSalesEditInvoiceId { get; set; }
+    public static int? PendingPurchaseEditInvoiceId { get; set; }
+    public static int? PendingInstallmentEditInvoiceId { get; set; }
     public static InvoiceQueueKind? PendingOpenQueueKind { get; set; }
 
     public static Func<int, Task>? CopyToSalesInvoiceAsync { get; set; }
     public static Func<int, Task>? CopyToPurchaseInvoiceAsync { get; set; }
     public static Func<int, Task>? ReturnSalesInvoiceAsync { get; set; }
+    public static Func<int, Task>? EditSalesInvoiceAsync { get; set; }
+    public static Func<int, Task>? EditPurchaseInvoiceAsync { get; set; }
+    public static Func<int, Task>? EditInstallmentInvoiceAsync { get; set; }
 }

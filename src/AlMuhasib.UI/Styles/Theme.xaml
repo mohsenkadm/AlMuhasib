@@ -997,6 +997,194 @@
         </Setter>
     </Style>
 
+    <!-- Column filter text box -->
+    <Style x:Key="ColumnFilterTextBox" TargetType="TextBox">
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8"
+                            SnapsToDevicePixels="True">
+                        <Grid Margin="{TemplateBinding Padding}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0"
+                                                     Kind="Magnify"
+                                                     Width="14" Height="14"
+                                                     Margin="0,0,6,0"
+                                                     VerticalAlignment="Center"
+                                                     Foreground="#90A4AE"/>
+                            <ScrollViewer Grid.Column="1"
+                                          x:Name="PART_ContentHost"
+                                          VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#B0BEC5"/>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}">
+                            <DataTrigger.Value>
+                                <x:Null/>
+                            </DataTrigger.Value>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Filterable column header (extends Modern) -->
+    <Style x:Key="FilterableDataGridColumnHeader" TargetType="DataGridColumnHeader"
+           BasedOn="{StaticResource ModernDataGridColumnHeader}">
+        <Setter Property="MinHeight" Value="50"/>
+        <Setter Property="Height" Value="Auto"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridColumnHeader">
+                    <Border x:Name="HeaderBd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Title row -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  RecognizesAccessKey="True"/>
+                                <Path x:Name="SortArrow"
+                                      Grid.Column="1"
+                                      Visibility="Collapsed"
+                                      Width="8" Height="6"
+                                      Margin="6,0,0,0"
+                                      VerticalAlignment="Center"
+                                      Fill="#90A4AE"
+                                      Data="M 0,6 L 4,0 L 8,6 Z"/>
+                            </Grid>
+
+                            <!-- Filter row -->
+                            <Border x:Name="FilterRowHost"
+                                    Grid.Row="1"
+                                    ClipToBounds="True"
+                                    MaxHeight="0"
+                                    Opacity="0"
+                                    Margin="0,2,0,0">
+                                <TextBox x:Name="ColumnFilterBox"
+                                         materialDesign:HintAssist.Hint="بحث..."
+                                         Text="{Binding Column.(behaviors:DataGridColumnFilterBehavior.FilterText), RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" BasedOn="{StaticResource ColumnFilterTextBox}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Column.(behaviors:DataGridColumnFilterBehavior.IsFilterable), RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Column.(behaviors:DataGridColumnFilterBehavior.FilterPropertyPath), RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}">
+                                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="HeaderBd" Property="Background" Value="{DynamicResource DataGridHeaderHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Ascending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Descending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="SortArrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" CenterX="4" CenterY="3"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Path=(behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen), RelativeSource={RelativeSource AncestorType=DataGrid}}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard x:Name="OpenFilterSb">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="FilterRowHost"
+                                                         Storyboard.TargetProperty="MaxHeight"
+                                                         To="40" Duration="0:0:0.35">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="FilterRowHost"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.25"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="FilterRowHost"
+                                                         Storyboard.TargetProperty="MaxHeight"
+                                                         To="0" Duration="0:0:0.28">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="FilterRowHost"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Row style -->
     <Style x:Key="ModernDataGridRow" TargetType="DataGridRow"
            BasedOn="{StaticResource MaterialDesignDataGridRow}">

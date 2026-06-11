@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -16,6 +17,7 @@ public partial class CustomersViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
 
     public ObservableCollection<Customer> Customers { get; } = [];
 
@@ -36,6 +38,9 @@ public partial class CustomersViewModel : ViewModelBase
 
     [ObservableProperty]
     private Customer? _selectedCustomer;
+
+    [ObservableProperty]
+    private bool _isCardView;
 
     // Dialog state
     [ObservableProperty]
@@ -78,11 +83,14 @@ public partial class CustomersViewModel : ViewModelBase
     public CustomersViewModel(
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Customers);
         PageTitle = "العملاء";
     }
 
@@ -107,10 +115,25 @@ public partial class CustomersViewModel : ViewModelBase
             ? null
             : SearchText.Trim();
 
+        System.Linq.Expressions.Expression<Func<Customer, bool>>? searchPredicate = filter is null
+            ? null
+            : c => c.Name.Contains(filter) || (c.Phone != null && c.Phone.Contains(filter)) || (c.FileNumber != null && c.FileNumber.Contains(filter));
+
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+        {
+            var (allItems, _) = await _unitOfWork.Customers.GetPagedAsync(
+                1, int.MaxValue, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
+
+            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            MasterDataColumnFilterHelper.ApplyClientPagination(
+                filtered, Customers, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+            TotalCount = filteredTotal;
+            TotalPages = filteredPages;
+            return;
+        }
+
         var (items, totalCount) = await _unitOfWork.Customers.GetPagedAsync(
-            CurrentPage, PageSize,
-            filter is null ? null : c => c.Name.Contains(filter) || (c.Phone != null && c.Phone.Contains(filter)) || (c.FileNumber != null && c.FileNumber.Contains(filter)),
-            q => q.OrderByDescending(c => c.CreatedAt));
+            CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
 
         TotalCount = totalCount;
         TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
@@ -119,6 +142,12 @@ public partial class CustomersViewModel : ViewModelBase
         Customers.Clear();
         foreach (var c in items)
             Customers.Add(c);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadCustomersAsync();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -475,4 +504,7 @@ public partial class CustomersViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseAttachments() => IsAttachmentsDialogOpen = false;
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Customers, value);
 }

@@ -17,15 +17,19 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IInvestorRefreshService _investorRefresh;
+    private readonly IUserPreferencesService _userPreferences;
 
     public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService,
-        ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh)
+        ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh,
+        IUserPreferencesService userPreferences)
     {
         _investorService = investorService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _investorRefresh = investorRefresh;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Investors);
         PageTitle = "المستثمرون";
     }
 
@@ -40,6 +44,9 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
 
     [ObservableProperty]
     private InvestorRow? _selectedInvestor;
+
+    [ObservableProperty]
+    private bool _isCardView;
 
     // Add/Edit form
     [ObservableProperty]
@@ -99,8 +106,10 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     }
 
     [RelayCommand]
-    private void EditInvestor()
+    private void EditInvestor(InvestorRow? row)
     {
+        if (row is not null)
+            SelectedInvestor = row;
         if (SelectedInvestor is null) return;
         FormName = SelectedInvestor.Name;
         FormPhone = SelectedInvestor.Phone ?? string.Empty;
@@ -108,6 +117,9 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         _editingInvestorId = SelectedInvestor.Id;
         IsEditing = true;
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Investors, value);
 
     [RelayCommand]
     private void CancelEdit()

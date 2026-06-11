@@ -20,7 +20,8 @@ public enum SmartAlertAction
     OpenVouchers,
     OpenSalesInvoiceQueue,
     OpenPurchaseInvoiceQueue,
-    OpenInstallmentInvoiceQueue
+    OpenInstallmentInvoiceQueue,
+    OpenCollectionDashboard
 }
 
 public class SmartAlert

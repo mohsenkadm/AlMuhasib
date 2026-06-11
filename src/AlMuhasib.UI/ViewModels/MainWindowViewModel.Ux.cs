@@ -42,19 +42,13 @@ public partial class MainWindowViewModel
     public ObservableCollection<RecentActivityEntry> RecentActivities { get; } = [];
     public ObservableCollection<MenuVisibilityOption> MenuVisibilityOptions { get; } = [];
 
-    public void ApplyMenuVisibilityFromPreferences()
-    {
-        var hidden = _userPreferences.Current.HiddenMenuScreens;
-        foreach (var item in FlattenMenuItems())
-        {
-            if (!IsCustomizableMenuItem(item))
-                continue;
+    public void ApplyMenuVisibilityFromPreferences() => RefreshMenuVisibility();
 
-            var key = GetMenuPreferenceKey(item);
-            var canShow = CanMenuBeShownByPermissions(item);
-            item.IsVisible = canShow && !hidden.Contains(key);
-        }
-    }
+    private static bool IsFeatureFlagVisible(NavigationMenuItem item, BusinessFeatureFlags flags) => item.ViewModelType switch
+    {
+        var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
+        _ => true
+    };
 
     [RelayCommand]
     private void ToggleMenuCustomizer()
@@ -138,16 +132,9 @@ public partial class MainWindowViewModel
     private static string GetMenuPreferenceKey(NavigationMenuItem item) =>
         item.ViewModelType?.Name ?? item.ScreenName;
 
-    private bool CanMenuBeShownByPermissions(NavigationMenuItem item)
-    {
-        if (item.ScreenName is "Users" or "Permissions" or "AuditLog" or "Capital" or "Backup")
-            return _currentUserService.IsAdmin;
-
-        if (item.ScreenName == "Dashboard")
-            return true;
-
-        return _currentUserService.CanView(item.ScreenName);
-    }
+    private bool CanMenuBeShownByPermissions(NavigationMenuItem item) =>
+        item.ScreenName == ScreenPermissionRegistry.Dashboard
+        || _currentUserService.CanView(item.ScreenName);
 
     [RelayCommand]
     private void OpenGlobalSearch()
@@ -189,6 +176,8 @@ public partial class MainWindowViewModel
 
         foreach (var menu in GetSearchableMenuItems())
         {
+            if (!menu.IsVisible || !_currentUserService.CanView(menu.ScreenName))
+                continue;
             if (menu.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
                 GlobalSearchResults.Add(GlobalSearchResultItem.FromMenu(menu));
         }
@@ -232,6 +221,19 @@ public partial class MainWindowViewModel
 
         if (item.EntityHit is null) return;
 
+        if (item.EntityHit.Kind is GlobalSearchKind.Customer or GlobalSearchKind.OverdueCustomer
+            && item.EntityHit.EntityId is int customerId)
+        {
+            await OpenQuickStatementAsync(customerId);
+            return;
+        }
+
+        if (item.EntityHit.Kind == GlobalSearchKind.Installment)
+        {
+            await QuickInstallmentsAsync();
+            return;
+        }
+
         var screen = item.EntityHit.ScreenName ?? string.Empty;
         var menu = FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screen);
         if (menu is not null)
@@ -242,20 +244,20 @@ public partial class MainWindowViewModel
 
     private async Task NavigateByScreenNameAsync(string screenName)
     {
-        var (type, title, icon) = screenName switch
+        if (!_currentUserService.CanView(screenName))
         {
-            "SaleInvoice" => (typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister),
-            "PurchaseInvoice" => (typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown),
-            "Customers" => (typeof(CustomersViewModel), "العملاء", PackIconKind.AccountGroup),
-            "Suppliers" => (typeof(SuppliersViewModel), "الموردون", PackIconKind.Factory),
-            "Products" => (typeof(ProductsViewModel), "المنتجات", PackIconKind.PackageVariantClosed),
-            "Vouchers" => (typeof(VouchersViewModel), "السندات", PackIconKind.FileDocument),
-            "Installments" => (typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock),
-            _ => (null, null, PackIconKind.None)
-        };
+            _toast.ShowWarning($"ليس لديك صلاحية للوصول إلى: {ScreenPermissionRegistry.GetLabel(screenName)}");
+            return;
+        }
 
-        if (type is not null && title is not null)
-            await OpenTabAsync(type, title, icon);
+        var type = ScreenPermissionRegistry.GetDefaultViewModelType(screenName);
+        if (type is null) return;
+
+        var menu = FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screenName && m.ViewModelType == type)
+                   ?? FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screenName);
+        var title = menu?.Title ?? ScreenPermissionRegistry.GetLabel(screenName);
+        var icon = menu?.Icon ?? PackIconKind.Application;
+        await OpenTabAsync(type, title, icon);
     }
 
     [RelayCommand]
@@ -382,6 +384,9 @@ public partial class MainWindowViewModel
         {
             case SmartAlertAction.OpenInstallments:
                 await QuickInstallmentsAsync();
+                break;
+            case SmartAlertAction.OpenCollectionDashboard:
+                await OpenTabAsync(typeof(CollectionDashboardViewModel), "لوحة التحصيل", PackIconKind.CashMultiple);
                 break;
             case SmartAlertAction.OpenOverdueReport:
                 await OpenTabAsync(typeof(OverdueReportViewModel), "الأقساط المتأخرة", PackIconKind.ClockAlert);

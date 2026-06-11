@@ -210,7 +210,17 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
             AddRow();
             GenerateSchedulePreview();
-            TryRestoreDraft();
+
+            if (InvoiceNavigationBridge.PendingInstallmentEditInvoiceId is int pendingEditId)
+            {
+                InvoiceNavigationBridge.PendingInstallmentEditInvoiceId = null;
+                await LoadInvoiceForEditAsync(pendingEditId);
+            }
+            else if (_draftService.HasDraft(DraftKey))
+            {
+                TryRestoreDraft();
+            }
+
             ApplyDefaultInstallmentCustomerIfAny();
             TryOpenPendingQueuePicker();
         }
@@ -522,11 +532,12 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
             var invoice = new Invoice
             {
+                InvoiceNumber = InvoiceNumber,
                 InvoiceType = InvoiceType.Installment,
                 CustomerId = customerId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
-                CashBoxId = SelectedCashBox?.Id ?? 0,
+                CashBoxId = SelectedCashBox?.Id,
                 Date = InvoiceDate,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -552,8 +563,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 });
             }
 
-            // Create invoice (handles stock decrease)
-            var savedInvoice = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+            Invoice savedInvoice;
+            if (_editingInvoiceId is int editId)
+            {
+                savedInvoice = await _invoiceService.ReplaceInvoiceAsync(editId, invoice, invoiceItems);
+                ClearEditingInvoiceId();
+            }
+            else
+            {
+                savedInvoice = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+            }
 
             // Create installment plan
             var plan = await _installmentService.CreatePlanAsync(
@@ -660,6 +679,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private async Task NewInvoice()
     {
         IsSaved = false;
+        ClearEditingInvoiceId();
         _savedInvoice = null;
         _savedItems = [];
         _savedPlan = null;

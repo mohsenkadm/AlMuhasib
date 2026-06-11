@@ -1,0 +1,16 @@
+namespace AlMuhasib.Core.Models.Ux;
+
+/// <summary>تفعيل/إلغاء الميزات المحاسبية وقوالب السوق — يُخزَّن في user-preferences.json</summary>
+public class BusinessFeatureFlags
+{
+    public bool PurchaseReturns { get; set; }
+    public bool WarehouseTransfers { get; set; }
+    public bool UnitsOfMeasure { get; set; }
+    public bool ExpiryTracking { get; set; }
+    public bool SerialNumbers { get; set; }
+
+    public bool TemplateMobileShop { get; set; }
+    public bool TemplateClothing { get; set; }
+    public bool TemplateConstruction { get; set; }
+    public bool TemplatePharmacy { get; set; }
+}

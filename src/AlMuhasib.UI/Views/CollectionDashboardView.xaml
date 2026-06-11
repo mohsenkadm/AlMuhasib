@@ -1,0 +1,105 @@
+<UserControl x:Class="AlMuhasib.UI.Views.CollectionDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="لوحة التحصيل اليومية" FontSize="22" FontWeight="Bold"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=CollectionDashboardGrid}"
+                                                 Margin="0,0,8,0"
+                                                 VerticalAlignment="Center"/>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh"/>
+                            <TextBlock Text="تحديث" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <UniformGrid Columns="3" Margin="0,0,0,16">
+                <Button Margin="0,0,8,0" Padding="0" Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{Binding FilterByBucketCommand}" CommandParameter="Today">
+                    <materialDesign:Card Padding="16" Width="220">
+                        <StackPanel>
+                            <TextBlock Text="مستحق اليوم" FontWeight="SemiBold" Foreground="#1565C0"/>
+                            <TextBlock Text="{Binding DueTodayCount}" FontSize="28" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DueTodayAmount, StringFormat={}{0:N0} د.ع}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Button>
+                <Button Margin="4,0" Padding="0" Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{Binding FilterByBucketCommand}" CommandParameter="Overdue">
+                    <materialDesign:Card Padding="16" Width="220">
+                        <StackPanel>
+                            <TextBlock Text="متأخر" FontWeight="SemiBold" Foreground="#C62828"/>
+                            <TextBlock Text="{Binding OverdueCount}" FontSize="28" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding OverdueAmount, StringFormat={}{0:N0} د.ع}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Button>
+                <Button Margin="8,0,0,0" Padding="0" Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{Binding FilterByBucketCommand}" CommandParameter="ThisWeek">
+                    <materialDesign:Card Padding="16" Width="220">
+                        <StackPanel>
+                            <TextBlock Text="هذا الأسبوع" FontWeight="SemiBold" Foreground="#EF6C00"/>
+                            <TextBlock Text="{Binding ThisWeekCount}" FontSize="28" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding ThisWeekAmount, StringFormat={}{0:N0} د.ع}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Button>
+            </UniformGrid>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="القاصة:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding CashBoxes}" SelectedItem="{Binding PaymentCashBox}"
+                          DisplayMemberPath="Name" Width="200" Margin="0,0,16,0"/>
+                <Button Content="عرض الكل" Command="{Binding FilterByBucketCommand}" CommandParameter="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatButton}"/>
+            </StackPanel>
+
+            <DataGrid x:Name="CollectionDashboardGrid"
+                      ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserAddRows="False" MinHeight="280"
+                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                    <DataGridTextColumn Header="الهاتف" Binding="{Binding CustomerPhone}" Width="120"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerPhone"/>
+                    <DataGridTextColumn Header="الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="100"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="100"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
+                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                    <DataGridTemplateColumn Header="دفع سريع" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="دفع" Padding="8,2"
+                                        Command="{Binding DataContext.QuickPayCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

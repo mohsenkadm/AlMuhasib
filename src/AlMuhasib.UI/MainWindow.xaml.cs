@@ -3,9 +3,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
+using AlMuhasib.UI.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using MaterialDesignThemes.Wpf;
 
@@ -14,22 +17,46 @@ namespace AlMuhasib.UI;
 public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
+    private readonly IUserPreferencesService _preferences;
+    private DispatcherTimer? _idleTimer;
+    private DateTime _lastActivity = DateTime.Now;
 
-    public MainWindow(MainWindowViewModel viewModel)
+    public MainWindow(MainWindowViewModel viewModel, IUserPreferencesService preferences)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _preferences = preferences;
         DataContext = viewModel;
         WindowWorkAreaHelper.Enable(this);
         StateChanged += (_, _) => UpdateMaximizeIcon();
         Loaded += OnFirstLoaded;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         PreviewKeyDown += OnPreviewKeyDown;
+        PreviewMouseMove += (_, _) => _lastActivity = DateTime.Now;
+        StartIdleLockTimer();
         UpdateMaximizeIcon();
+    }
+
+    private void StartIdleLockTimer()
+    {
+        _idleTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _idleTimer.Tick += (_, _) =>
+        {
+            var minutes = _preferences.Current.IdleLockMinutes;
+            if (minutes <= 0) return;
+            if ((DateTime.Now - _lastActivity).TotalMinutes < minutes) return;
+            _lastActivity = DateTime.Now;
+            var login = ((App)Application.Current).Services.GetRequiredService<LoginWindow>();
+            login.Owner = this;
+            login.ShowDialog();
+        };
+        _idleTimer.Start();
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        _lastActivity = DateTime.Now;
+
         if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
         {
             _viewModel.OpenGlobalSearchCommand.Execute(null);

@@ -8,6 +8,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
 
+using AlMuhasib.UI.Services;
+
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class WarehousesViewModel : ViewModelBase
@@ -69,11 +71,25 @@ public partial class WarehousesViewModel : ViewModelBase
     private async Task LoadWarehousesAsync()
     {
         var filter = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        System.Linq.Expressions.Expression<Func<Warehouse, bool>>? searchPredicate = filter is null
+            ? null
+            : w => w.Name.Contains(filter) || (w.Location != null && w.Location.Contains(filter));
+
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+        {
+            var (allItems, _) = await _unitOfWork.Warehouses.GetPagedAsync(
+                1, int.MaxValue, searchPredicate, q => q.OrderByDescending(w => w.CreatedAt));
+
+            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            MasterDataColumnFilterHelper.ApplyClientPagination(
+                filtered, Warehouses, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+            TotalCount = filteredTotal;
+            TotalPages = filteredPages;
+            return;
+        }
 
         var (items, totalCount) = await _unitOfWork.Warehouses.GetPagedAsync(
-            CurrentPage, PageSize,
-            filter is null ? null : w => w.Name.Contains(filter) || (w.Location != null && w.Location.Contains(filter)),
-            q => q.OrderByDescending(w => w.CreatedAt));
+            CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(w => w.CreatedAt));
 
         TotalCount = totalCount;
         TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
@@ -82,6 +98,12 @@ public partial class WarehousesViewModel : ViewModelBase
         Warehouses.Clear();
         foreach (var w in items)
             Warehouses.Add(w);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadWarehousesAsync();
     }
 
     partial void OnSearchTextChanged(string value)

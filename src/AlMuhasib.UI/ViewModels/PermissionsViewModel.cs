@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -19,8 +19,6 @@ public partial class PermissionsViewModel : ViewModelBase
         InitializeScreens();
     }
 
-    // ── User Selection ──────────────────────────────────
-
     public ObservableCollection<UserRow> Users { get; } = [];
 
     [ObservableProperty]
@@ -32,45 +30,14 @@ public partial class PermissionsViewModel : ViewModelBase
             _ = LoadPermissionsAsync();
     }
 
-    // ── Permission Grid ─────────────────────────────────
-
     public ObservableCollection<ScreenPermissionRow> Screens { get; } = [];
-
-    // All available screens with Arabic labels
-    private static readonly (string Name, string Label)[] AllScreens =
-    [
-        ("Dashboard", "لوحة التحكم"),
-        ("Products", "المنتجات"),
-        ("Categories", "تصنيفات المنتجات"),
-        ("Customers", "العملاء"),
-        ("Suppliers", "الموردون"),
-        ("PurchaseInvoice", "فاتورة مشتريات"),
-        ("SaleInvoice", "فاتورة مبيعات"),
-        ("InstallmentInvoice", "فاتورة أقساط"),
-        ("Installments", "الأقساط"),
-        ("OpeningInstallments", "أرصدة الأقساط الافتتاحية"),
-        ("Vouchers", "السندات"),
-        ("Expenses", "المصاريف"),
-        ("CashAndBank", "القاصات والمصرف"),
-        ("Investors", "المستثمرون"),
-        ("OpeningInvestors", "أرصدة المستثمرين الافتتاحية"),
-        ("Warehouses", "المخازن"),
-        ("OpeningStock", "الأرصدة الافتتاحية"),
-        ("StockAdjustment", "تسوية مخزنية"),
-        ("Reports", "التقارير"),
-        ("BalanceSheet", "موازنة يومية"),
-    ];
 
     private void InitializeScreens()
     {
         Screens.Clear();
-        foreach (var (name, label) in AllScreens)
-        {
+        foreach (var (name, label) in ScreenPermissionRegistry.AllScreens)
             Screens.Add(new ScreenPermissionRow { ScreenName = name, ScreenLabel = label });
-        }
     }
-
-    // ── Load Users ──────────────────────────────────────
 
     [RelayCommand]
     private async Task LoadUsersAsync()
@@ -101,8 +68,6 @@ public partial class PermissionsViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    // ── Load Permissions ────────────────────────────────
-
     [RelayCommand]
     private async Task LoadPermissionsAsync()
     {
@@ -112,28 +77,30 @@ public partial class PermissionsViewModel : ViewModelBase
             IsBusy = true;
             var permissions = await _authService.GetUserPermissionsAsync(SelectedUser.Id);
 
-            // Reset all
             foreach (var s in Screens)
             {
-                s.CanView = false;
+                s.CanView = s.ScreenName == ScreenPermissionRegistry.Dashboard;
                 s.CanAdd = false;
                 s.CanEdit = false;
                 s.CanDelete = false;
                 s.CanPrint = false;
                 s.CanExport = false;
+                s.CanEditPrice = false;
+                s.IsViewOnly = false;
             }
 
-            // Apply saved permissions
             foreach (var p in permissions)
             {
                 var screen = Screens.FirstOrDefault(s => s.ScreenName == p.ScreenName);
                 if (screen is null) continue;
-                screen.CanView = p.CanView;
+                screen.CanView = p.ScreenName == ScreenPermissionRegistry.Dashboard || p.CanView;
                 screen.CanAdd = p.CanAdd;
                 screen.CanEdit = p.CanEdit;
                 screen.CanDelete = p.CanDelete;
                 screen.CanPrint = p.CanPrint;
                 screen.CanExport = p.CanExport;
+                screen.CanEditPrice = p.CanEditPrice;
+                screen.IsViewOnly = p.IsViewOnly;
             }
         }
         catch (Exception ex)
@@ -142,8 +109,6 @@ public partial class PermissionsViewModel : ViewModelBase
         }
         finally { IsBusy = false; }
     }
-
-    // ── Save Permissions ────────────────────────────────
 
     [RelayCommand]
     private async Task SavePermissionsAsync()
@@ -160,12 +125,14 @@ public partial class PermissionsViewModel : ViewModelBase
             var permissions = Screens.Select(s => new Permission
             {
                 ScreenName = s.ScreenName,
-                CanView = s.CanView,
-                CanAdd = s.CanAdd,
-                CanEdit = s.CanEdit,
-                CanDelete = s.CanDelete,
-                CanPrint = s.CanPrint,
-                CanExport = s.CanExport
+                CanView = s.ScreenName == ScreenPermissionRegistry.Dashboard || s.CanView,
+                CanAdd = s.CanView && s.CanAdd,
+                CanEdit = s.CanView && s.CanEdit,
+                CanDelete = s.CanView && s.CanDelete,
+                CanPrint = s.CanView && s.CanPrint,
+                CanExport = s.CanView && s.CanExport,
+                CanEditPrice = s.CanView && s.CanEditPrice,
+                IsViewOnly = s.CanView && s.IsViewOnly
             }).ToList();
 
             await _authService.SaveUserPermissionsAsync(SelectedUser.Id, permissions);
@@ -178,8 +145,6 @@ public partial class PermissionsViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    // ── Select / Deselect All ───────────────────────────
-
     [RelayCommand]
     private void SelectAll()
     {
@@ -191,7 +156,32 @@ public partial class PermissionsViewModel : ViewModelBase
             s.CanDelete = true;
             s.CanPrint = true;
             s.CanExport = true;
+            s.CanEditPrice = true;
+            s.IsViewOnly = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task VerifyCatalogAsync()
+    {
+        if (SelectedUser is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار مستخدم أولاً");
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            var permissions = await _authService.GetUserPermissionsAsync(SelectedUser.Id);
+            var report = PermissionCatalogHelper.AnalyzeCoverage(permissions);
+            BeautifulMessageDialog.ShowInfo(report.ToDisplayMessage(SelectedUser.DisplayName));
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally { IsBusy = false; }
     }
 
     [RelayCommand]
@@ -199,24 +189,27 @@ public partial class PermissionsViewModel : ViewModelBase
     {
         foreach (var s in Screens)
         {
+            if (s.ScreenName == ScreenPermissionRegistry.Dashboard)
+            {
+                s.CanView = true;
+                continue;
+            }
             s.CanView = false;
             s.CanAdd = false;
             s.CanEdit = false;
             s.CanDelete = false;
             s.CanPrint = false;
             s.CanExport = false;
+            s.CanEditPrice = false;
+            s.IsViewOnly = false;
         }
     }
-
-    // ── Init ────────────────────────────────────────────
 
     public override async Task InitializeAsync()
     {
         await LoadUsersAsync();
     }
 }
-
-// ── Display Model ───────────────────────────────────────
 
 public partial class ScreenPermissionRow : ObservableObject
 {
@@ -229,4 +222,18 @@ public partial class ScreenPermissionRow : ObservableObject
     [ObservableProperty] private bool _canDelete;
     [ObservableProperty] private bool _canPrint;
     [ObservableProperty] private bool _canExport;
+    [ObservableProperty] private bool _canEditPrice;
+    [ObservableProperty] private bool _isViewOnly;
+
+    partial void OnCanViewChanged(bool value)
+    {
+        if (value || ScreenName == ScreenPermissionRegistry.Dashboard) return;
+        CanAdd = false;
+        CanEdit = false;
+        CanDelete = false;
+        CanPrint = false;
+        CanExport = false;
+        CanEditPrice = false;
+        IsViewOnly = false;
+    }
 }

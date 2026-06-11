@@ -59,7 +59,7 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         _brandingService = brandingService;
         _currentUserService = currentUserService;
         PageTitle = "إعدادات الطباعة";
-        LoadPermissions(currentUserService, "Backup");
+        LoadPermissions(currentUserService, "PrintSettings");
     }
 
     public override async Task InitializeAsync()

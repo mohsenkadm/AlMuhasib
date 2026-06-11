@@ -11,6 +11,8 @@ public class Permission : BaseEntity
     public bool CanDelete { get; set; }
     public bool CanPrint { get; set; }
     public bool CanExport { get; set; }
+    public bool CanEditPrice { get; set; } = true;
+    public bool IsViewOnly { get; set; }
 
     // Navigation
     public User User { get; set; } = null!;

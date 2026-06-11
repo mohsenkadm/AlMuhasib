@@ -46,7 +46,7 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
 
             _allRows = result.Rows;
             CurrentPage = 1;
-            UpdatePagination(_allRows, Rows);
+            UpdatePaginationWithFilters(_allRows, Rows);
         }
         catch (Exception ex)
         {
@@ -58,7 +58,7 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
         }
     }
 
-    protected override void OnPageChanged() => UpdatePagination(_allRows, Rows);
+    protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);
 
     [RelayCommand]
     private void ExportToExcel()

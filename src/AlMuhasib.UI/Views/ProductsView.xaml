@@ -5,6 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ProductsViewModel}"
              Style="{StaticResource PageStyle}"
@@ -121,6 +123,15 @@
                                 ToolTip="تحديث">
                             <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" />
                         </Button>
+
+                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     TargetDataGrid="{Binding ElementName=ProductsGrid}"
+                                                     Margin="4,0,0,0"
+                                                     VerticalAlignment="Center"/>
+
+                        <controls:ListViewModeToggle OnDarkBackground="False" Margin="8,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -132,12 +143,19 @@
                                  UniformCornerRadius="12"
                                  Padding="8,8,8,4"
                                  materialDesign:ElevationAssist.Elevation="Dp2">
-                <DataGrid ItemsSource="{Binding Products}"
-                          SelectedItem="{Binding SelectedProduct}">
+                <Grid>
+                <DataGrid x:Name="ProductsGrid"
+                          ItemsSource="{Binding Products}"
+                          SelectedItem="{Binding SelectedProduct}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
 
                     <DataGrid.Columns>
                         <!-- # Row Number -->
-                        <DataGridTemplateColumn Header="#" Width="56" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="#" Width="56" IsReadOnly="True"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border Background="#F0F4F8"
@@ -158,7 +176,8 @@
                         <!-- Name -->
                         <DataGridTextColumn Header="اسم المنتج"
                                             Binding="{Binding Name}"
-                                            Width="2*">
+                                            Width="2*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -171,12 +190,14 @@
                         <!-- Category -->
                         <DataGridTextColumn Header="التصنيف"
                                             Binding="{Binding Category.Name}"
-                                            Width="*" />
+                                            Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Category.Name" />
 
                         <!-- Barcode -->
                         <DataGridTextColumn Header="الباركود"
                                             Binding="{Binding Barcode}"
-                                            Width="*">
+                                            Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontFamily" Value="Consolas" />
@@ -188,7 +209,8 @@
                         <!-- Description -->
                         <DataGridTextColumn Header="الوصف"
                                             Binding="{Binding Description}"
-                                            Width="2*">
+                                            Width="2*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -198,7 +220,8 @@
                         </DataGridTextColumn>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110" IsReadOnly="True"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
@@ -235,6 +258,19 @@
                         </Style>
                     </DataGrid.Style>
                 </DataGrid>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Products}"
+                                        ItemTemplate="{StaticResource ProductCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
             </materialDesign:Card>
 
             <!-- Empty State Overlay -->
@@ -272,75 +308,7 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- ═══════════════════════════════════════════ -->
-            <!-- ROW 2: PAGINATION                              -->
-            <!-- ═══════════════════════════════════════════ -->
-            <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="2"
-                                 UniformCornerRadius="12"
-                                 Padding="12,8"
-                                 Margin="0,16,0,0"
-                                 materialDesign:ElevationAssist.Elevation="Dp1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />  <!-- Info -->
-                        <ColumnDefinition Width="*" />     <!-- Spacer -->
-                        <ColumnDefinition Width="Auto" />  <!-- Nav buttons -->
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Result info -->
-                    <TextBlock Grid.Column="0"
-                               VerticalAlignment="Center"
-                               FontSize="12"
-                               Foreground="#757575">
-                        <Run Text="إجمالي النتائج:" />
-                        <Run Text="{Binding TotalCount, Mode=OneWay}" FontWeight="SemiBold" Foreground="#424242" />
-                    </TextBlock>
-
-                    <!-- Pagination Nav -->
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center">
-
-                        <Button Command="{Binding FirstPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                ToolTip="الصفحة الأولى"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="PageFirst" Width="18" Height="18" />
-                        </Button>
-
-                        <Button Command="{Binding PreviousPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                ToolTip="السابقة"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronRight" Width="18" Height="18" />
-                        </Button>
-
-                        <Border Padding="12,0"
-                                VerticalAlignment="Center">
-                            <TextBlock FontSize="12" Foreground="#424242">
-                                <Run Text="صفحة" />
-                                <Run Text="{Binding CurrentPage, Mode=OneWay}" FontWeight="SemiBold" />
-                                <Run Text="من" />
-                                <Run Text="{Binding TotalPages, Mode=OneWay}" FontWeight="SemiBold" />
-                            </TextBlock>
-                        </Border>
-
-                        <Button Command="{Binding NextPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                ToolTip="التالية"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronLeft" Width="18" Height="18" />
-                        </Button>
-
-                        <Button Command="{Binding LastPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                ToolTip="الصفحة الأخيرة"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="PageLast" Width="18" Height="18" />
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </materialDesign:Card>
+            <controls:PaginationBar Grid.Row="2" Margin="0,16,0,0"/>
         </Grid>
 
         <!-- ═══════════════════════════════════════════ -->

@@ -8,6 +8,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=False}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
@@ -535,6 +536,7 @@
                             <!-- Quick actions -->
                             <UniformGrid Grid.Row="1" Columns="3" Margin="0,18,0,0">
                                 <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickSales, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenSalesInvoiceCommand}"
                                         Background="#E8F5E9" Margin="0,0,8,0">
                                     <StackPanel Orientation="Horizontal">
@@ -938,16 +940,31 @@
                                 <TextBlock Text="آخر العمليات"
                                            Style="{StaticResource SectionHeader}"
                                            Margin="8,0,0,0" />
+                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                               ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                               ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                               TargetDataGrid="{Binding ElementName=RecentTransactionsGrid}"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center"/>
                             </StackPanel>
-                            <DataGrid Grid.Row="1"
+                            <DataGrid x:Name="RecentTransactionsGrid"
+                                      Grid.Row="1"
                                       ItemsSource="{Binding RecentTransactions}"
                                       Style="{StaticResource ModernDataGrid}"
-                                      MaxHeight="280">
+                                      IsReadOnly="True"
+                                      AutoGenerateColumns="False"
+                                      MaxHeight="280"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="80" />
-                                    <DataGridTextColumn Header="الرقم" Binding="{Binding Number}" Width="90" />
-                                    <DataGridTextColumn Header="الجهة" Binding="{Binding Party}" Width="*" />
-                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="100">
+                                    <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="80"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Type" />
+                                    <DataGridTextColumn Header="الرقم" Binding="{Binding Number}" Width="90"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Number" />
+                                    <DataGridTextColumn Header="الجهة" Binding="{Binding Party}" Width="*"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Party" />
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="100"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -955,7 +972,8 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="95" />
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="95"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -976,14 +994,27 @@
                                 <TextBlock Text="أقساط قريبة الاستحقاق"
                                            Style="{StaticResource SectionHeader}"
                                            Margin="8,0,0,0" />
+                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                               ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                               ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                               TargetDataGrid="{Binding ElementName=UpcomingInstallmentsGrid}"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center"/>
                             </StackPanel>
-                            <DataGrid Grid.Row="1"
+                            <DataGrid x:Name="UpcomingInstallmentsGrid"
+                                      Grid.Row="1"
                                       ItemsSource="{Binding UpcomingInstallments}"
                                       Style="{StaticResource ModernDataGrid}"
-                                      MaxHeight="280">
+                                      IsReadOnly="True"
+                                      AutoGenerateColumns="False"
+                                      MaxHeight="280"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*" />
-                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="90">
+                                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName" />
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="90"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -991,8 +1022,10 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="110" />
-                                    <DataGridTemplateColumn Header="المتبقي" Width="80">
+                                    <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate" />
+                                    <DataGridTemplateColumn Header="المتبقي" Width="80"
+                                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border CornerRadius="12" Padding="8,4" HorizontalAlignment="Center">

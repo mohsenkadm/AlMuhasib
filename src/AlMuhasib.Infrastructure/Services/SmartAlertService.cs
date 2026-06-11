@@ -73,6 +73,28 @@ public class SmartAlertService : ISmartAlertService
             });
         }
 
+        var weekEnd = today.AddDays(7);
+        var dueThisWeek = await context.Installments.AsNoTracking()
+            .Where(i => i.DueDate.Date > today
+                        && i.DueDate.Date <= weekEnd
+                        && i.RemainingAmount > 0
+                        && i.Status != InstallmentStatus.Paid)
+            .ToListAsync(cancellationToken);
+
+        if (dueThisWeek.Count > 0)
+        {
+            var weekTotal = dueThisWeek.Sum(i => i.RemainingAmount);
+            alerts.Add(new SmartAlert
+            {
+                Title = "أقساط هذا الأسبوع",
+                Message = $"{dueThisWeek.Count} قسط بإجمالي {weekTotal:N0} د.ع",
+                Severity = SmartAlertSeverity.Info,
+                Action = SmartAlertAction.OpenCollectionDashboard,
+                Count = dueThisWeek.Count,
+                Amount = weekTotal
+            });
+        }
+
         var lowStock = await context.WarehouseStocks.AsNoTracking()
             .GroupBy(ws => ws.ProductId)
             .Select(g => new { ProductId = g.Key, Qty = g.Sum(x => x.Quantity) })

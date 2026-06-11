@@ -457,6 +457,16 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Command="{Binding OpenInvoiceSearchCommand}" Style="{StaticResource AccentButton}"
+                                        Height="42" Padding="18,0" Margin="0,0,10,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        FontWeight="SemiBold"
+                                        ToolTip="بحث سريع عن فاتورة للتعديل">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FileSearchOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="بحث فواتير" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Command="{Binding OpenTemplatePickerCommand}" Style="{StaticResource OutlinedButton}"
                                         Height="40" Padding="14,0" Margin="0,0,8,0"
                                         materialDesign:ButtonAssist.CornerRadius="10">
@@ -548,6 +558,16 @@
         <controls:ProductPickerOverlay Panel.ZIndex="120"
                                        DataContext="{Binding ProductPicker}"
                                        IsOpen="{Binding DataContext.IsProductPickerOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+        <controls:InvoiceSearchSidePanel Panel.ZIndex="140"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Stretch"
+                                         IsOpen="{Binding IsInvoiceSearchOpen, Mode=TwoWay}"
+                                         CloseCommand="{Binding CloseInvoiceSearchCommand}"
+                                         SelectInvoiceCommand="{Binding SelectInvoiceFromSearchCommand}"
+                                         PanelTitle="بحث فواتير المشتريات"
+                                         HeaderColorStart="#0D47A1"
+                                         HeaderColorEnd="#1976D2"/>
 
         <Grid Visibility="{Binding IsTemplatePickerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="130">
             <Border Background="#80000000"/>

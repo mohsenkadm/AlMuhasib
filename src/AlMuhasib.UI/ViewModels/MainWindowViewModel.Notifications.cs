@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
+using SoundEffect = AlMuhasib.UI.Services.SoundEffect;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -138,6 +139,21 @@ public partial class MainWindowViewModel
 
     [RelayCommand]
     private void DismissNotificationReminder() => IsNotificationReminderVisible = false;
+
+    private void OnOfflineReminderRaised(OfflineReminderEvent e)
+    {
+        if (!_userPreferences.Current.Reminders.ShowInAppBanner)
+            return;
+
+        NotificationReminderTitle = e.Title;
+        NotificationReminderMessage = e.Message;
+        IsNotificationReminderVisible = true;
+
+        if (_userPreferences.Current.Reminders.PlaySound)
+            _sound.Play(SoundEffect.Notification);
+
+        _ = RefreshNotificationsAsync();
+    }
 
     public async Task RefreshNotificationsAsync()
     {

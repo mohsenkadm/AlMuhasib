@@ -10,6 +10,9 @@ public class InvoiceItem : BaseEntity
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
 
+    /// <summary>حقول مخصصة (IMEI، مقاس، لون...) JSON.</summary>
+    public string? CustomFieldsJson { get; set; }
+
     // Navigation
     public Invoice Invoice { get; set; } = null!;
     public Product? Product { get; set; }

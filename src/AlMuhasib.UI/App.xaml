@@ -12,6 +12,7 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
                 <!-- Custom theme overrides MUST come AFTER MaterialDesign defaults -->
                 <ResourceDictionary Source="/Styles/Theme.xaml" />
+                <ResourceDictionary Source="/Styles/MasterDataCardTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Converters -->
@@ -25,6 +26,7 @@
             <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
             <converters:UserTaskStatusLabelConverter x:Key="UserTaskStatusLabelConverter" />
             <converters:IdEqualsMultiConverter x:Key="IdEqualsMultiConverter" />
+            <converters:PaginationStatisticsTextConverter x:Key="PaginationStatisticsTextConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />

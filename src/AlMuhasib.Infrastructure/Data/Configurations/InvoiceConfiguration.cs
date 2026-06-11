@@ -58,7 +58,9 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(i => i.InvoiceNumber).IsUnique();
+        builder.HasIndex(i => i.InvoiceNumber)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(i => i.Date);
         builder.HasIndex(i => i.InvoiceType);
     }

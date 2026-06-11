@@ -18,7 +18,7 @@ public class InvoiceService : IInvoiceService
         _currentUserService = currentUserService;
     }
 
-    public async Task<Invoice> CreateInvoiceAsync(Invoice invoice, IEnumerable<InvoiceItem> items)
+    public async Task<Invoice> CreateInvoiceAsync(Invoice invoice, IEnumerable<InvoiceItem> items, bool skipStockUpdate = false)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -64,7 +64,8 @@ public class InvoiceService : IInvoiceService
                 invoice.IsCreditPaid = true;
             }
 
-            invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(context, invoice.InvoiceType);
+            if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+                invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(context, invoice.InvoiceType);
 
             await context.Invoices.AddAsync(invoice);
             await context.SaveChangesAsync();
@@ -76,7 +77,7 @@ public class InvoiceService : IInvoiceService
             }
             await context.SaveChangesAsync();
 
-            if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.Sale || invoice.InvoiceType == InvoiceType.Installment)
+            if (!skipStockUpdate && (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.Sale || invoice.InvoiceType == InvoiceType.Installment))
             {
                 foreach (var item in itemsList.Where(i => i.ProductId.HasValue))
                 {
@@ -232,6 +233,90 @@ public class InvoiceService : IInvoiceService
             return -remainder;
     }
 
+    public async Task<IReadOnlyList<Invoice>> SearchAsync(
+        InvoiceType invoiceType,
+        string? searchText,
+        bool newestFirst,
+        int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = context.Invoices
+            .AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Supplier)
+            .Where(i => i.InvoiceType == invoiceType);
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var term = searchText.Trim();
+            query = invoiceType switch
+            {
+                InvoiceType.Purchase => query.Where(i =>
+                    EF.Functions.Like(i.InvoiceNumber, $"%{term}%") ||
+                    (i.Supplier != null && EF.Functions.Like(i.Supplier.Name, $"%{term}%"))),
+                _ => query.Where(i =>
+                    EF.Functions.Like(i.InvoiceNumber, $"%{term}%") ||
+                    (i.Customer != null && EF.Functions.Like(i.Customer.Name, $"%{term}%")))
+            };
+        }
+
+        query = newestFirst
+            ? query.OrderByDescending(i => i.Date).ThenByDescending(i => i.Id)
+            : query.OrderBy(i => i.Date).ThenBy(i => i.Id);
+
+        return await query.Take(limit).ToListAsync(cancellationToken);
+    }
+
+    public async Task<Invoice> ReplaceInvoiceAsync(
+        int existingId,
+        Invoice invoice,
+        IEnumerable<InvoiceItem> items,
+        bool skipStockUpdate = false)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var existing = await context.Invoices
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.Id == existingId);
+
+        var preservedNumber = !string.IsNullOrWhiteSpace(invoice.InvoiceNumber)
+            ? invoice.InvoiceNumber
+            : existing?.InvoiceNumber ?? string.Empty;
+
+        decimal preservedPaidAmount = 0;
+        decimal preservedRemainingAmount = 0;
+        bool preservedIsCreditPaid = false;
+        var preserveCreditState = existing?.PaymentMethod == PaymentMethod.Credit
+                                  && invoice.PaymentMethod == PaymentMethod.Credit;
+        if (preserveCreditState && existing is not null)
+        {
+            preservedPaidAmount = existing.PaidAmount;
+            preservedRemainingAmount = existing.RemainingAmount;
+            preservedIsCreditPaid = existing.IsCreditPaid;
+        }
+
+        await DeleteInvoiceAsync(existingId);
+
+        invoice.InvoiceNumber = preservedNumber;
+        invoice.Id = 0;
+        var created = await CreateInvoiceAsync(invoice, items, skipStockUpdate);
+
+        if (!preserveCreditState)
+            return created;
+
+        await using var updateContext = await _contextFactory.CreateDbContextAsync();
+        var updated = await updateContext.Invoices.FirstOrDefaultAsync(i => i.Id == created.Id);
+        if (updated is null)
+            return created;
+
+        updated.PaidAmount = Math.Min(preservedPaidAmount, updated.NetAmount);
+        updated.RemainingAmount = Math.Max(0, updated.NetAmount - updated.PaidAmount);
+        updated.IsCreditPaid = updated.RemainingAmount <= 0;
+        await updateContext.SaveChangesAsync();
+        return updated;
+    }
+
     public async Task DeleteInvoiceAsync(int id)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -243,6 +328,7 @@ public class InvoiceService : IInvoiceService
         if (invoice is null) return;
 
         var username = _currentUserService.Username;
+        var originalInvoiceNumber = invoice.InvoiceNumber;
 
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
@@ -281,6 +367,7 @@ public class InvoiceService : IInvoiceService
                 }
             }
 
+            ReleaseInvoiceNumberForSoftDelete(invoice);
             invoice.MarkSoftDeleted(username);
 
             foreach (var item in invoice.Items)
@@ -303,7 +390,7 @@ public class InvoiceService : IInvoiceService
                     Action = AuditAction.Delete,
                     EntityName = "Invoice",
                     EntityId = invoice.Id,
-                    OldValues = $"رقم الفاتورة: {invoice.InvoiceNumber}, المبلغ: {invoice.NetAmount}, النوع: {invoice.InvoiceType}",
+                    OldValues = $"رقم الفاتورة: {originalInvoiceNumber}, المبلغ: {invoice.NetAmount}, النوع: {invoice.InvoiceType}",
                     Timestamp = DateTime.UtcNow,
                     CreatedBy = username,
                     CreatedAt = DateTime.UtcNow
@@ -387,5 +474,24 @@ public class InvoiceService : IInvoiceService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Frees the unique invoice number slot when soft-deleting so a replacement invoice can reuse the number.
+    /// </summary>
+    private static void ReleaseInvoiceNumberForSoftDelete(Invoice invoice)
+    {
+        const int maxLength = 50;
+        var suffix = $"-D{invoice.Id}";
+        var number = invoice.InvoiceNumber;
+
+        if (number.EndsWith(suffix, StringComparison.Ordinal))
+            return;
+
+        var maxBaseLength = maxLength - suffix.Length;
+        if (number.Length > maxBaseLength)
+            number = number[..maxBaseLength];
+
+        invoice.InvoiceNumber = number + suffix;
     }
 }

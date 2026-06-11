@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Models.Ux;
@@ -86,12 +87,14 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _totalInventoryValue;
 
     public DashboardViewModel(IDashboardService dashboardService, ISmartAlertService smartAlertService,
-        MainWindowViewModel mainWindow, IUserPreferencesService userPreferences)
+        MainWindowViewModel mainWindow, IUserPreferencesService userPreferences,
+        ICurrentUserService currentUserService)
     {
         _dashboardService = dashboardService;
         _smartAlertService = smartAlertService;
         _mainWindow = mainWindow;
         _userPreferences = userPreferences;
+        _currentUserService = currentUserService;
         PageTitle = "لوحة التحكم";
         IsBusy = true;
         IsLoaded = false;
@@ -122,9 +125,15 @@ public partial class DashboardViewModel : ViewModelBase
     private async Task OpenInstallmentsFromAlertAsync() =>
         await _mainWindow.QuickInstallmentsCommand.ExecuteAsync(null);
 
+    [RelayCommand]
+    private async Task OpenCollectionDashboardAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(CollectionDashboardViewModel), "لوحة التحصيل", PackIconKind.CashMultiple);
+
     public override async Task InitializeAsync()
     {
         if (_initialized) return;
+
+        ApplyDashboardProfile();
 
         IsBusy = true;
         IsLoaded = false;

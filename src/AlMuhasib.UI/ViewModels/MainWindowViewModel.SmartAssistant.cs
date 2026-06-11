@@ -4,6 +4,7 @@ using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -18,12 +19,17 @@ public partial class MainWindowViewModel
     public ObservableCollection<SmartAlert> AssistantAlerts { get; } = [];
     public ObservableCollection<DailyTaskItem> AssistantTasks { get; } = [];
     public ObservableCollection<string> AssistantTips { get; } = [];
+    public ObservableCollection<LocalQueryDefinition> AssistantQueries { get; } = [];
+    public ObservableCollection<string> AssistantQueryResults { get; } = [];
+
+    [ObservableProperty] private string _assistantQueryTitle = string.Empty;
+    [ObservableProperty] private string _assistantQuerySummary = string.Empty;
 
     private static readonly string[] StaticTips =
     [
-        "استخدم Ctrl+K للبحث السريع في العملاء والمنتجات والشاشات.",
+        "استخدم Ctrl+K للبحث السريع في العملاء والمنتجات والأقساط.",
         "ثبّت التبويبات الأكثر استخداماً من «تخصيص القائمة».",
-        "شاشة البيع السريع (POS) مناسبة للكاشير — نقدي فقط.",
+        "لوحة التحصيل اليومية — مستحق/متأخر/هذا الأسبوع.",
         "احفظ قوالب الفواتير المتكررة من شاشة المبيعات أو المشتريات.",
         "راجع التنبيهات يومياً من لوحة التحكم أو المساعد الذكي."
     ];
@@ -64,6 +70,14 @@ public partial class MainWindowViewModel
             foreach (var tip in StaticTips)
                 AssistantTips.Add(tip);
 
+            AssistantQueries.Clear();
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var localQuery = scope.ServiceProvider.GetRequiredService<ILocalQueryService>();
+                foreach (var q in localQuery.GetAvailableQueries())
+                    AssistantQueries.Add(q);
+            }
+
             SmartAlertCount = summary.Alerts.Count;
         }
         finally
@@ -86,6 +100,20 @@ public partial class MainWindowViewModel
         if (alert is null || alert.Action == SmartAlertAction.None) return;
         IsSmartAssistantOpen = false;
         await ExecuteDailyTaskAsync(alert.Action);
+    }
+
+    [RelayCommand]
+    private async Task RunAssistantQueryAsync(LocalQueryDefinition? query)
+    {
+        if (query is null) return;
+        using var scope = _serviceProvider.CreateScope();
+        var localQuery = scope.ServiceProvider.GetRequiredService<ILocalQueryService>();
+        var result = await localQuery.ExecuteAsync(query.Key);
+        AssistantQueryTitle = result.Title;
+        AssistantQuerySummary = result.Summary;
+        AssistantQueryResults.Clear();
+        foreach (var line in result.Lines)
+            AssistantQueryResults.Add(line);
     }
 
     [RelayCommand]

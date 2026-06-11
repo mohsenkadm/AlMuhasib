@@ -32,6 +32,15 @@ public class Invoice : BaseEntity
     /// <summary>هل تم تسديد الفاتورة الآجلة بالكامل</summary>
     public bool IsCreditPaid { get; set; }
 
+    /// <summary>حالة الإيقاف المؤقت (POS Hold).</summary>
+    public InvoiceHoldStatus HoldStatus { get; set; } = InvoiceHoldStatus.None;
+
+    /// <summary>تاريخ الإيقاف المؤقت.</summary>
+    public DateTime? HeldAt { get; set; }
+
+    /// <summary>ملاحظة الإيقاف.</summary>
+    public string? HoldNote { get; set; }
+
     // Navigation
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }

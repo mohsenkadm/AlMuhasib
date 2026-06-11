@@ -126,6 +126,68 @@ public class GlobalSearchService : IGlobalSearchService
             .ToListAsync(cancellationToken);
         hits.AddRange(vouchers);
 
+        var today = DateTime.Today;
+        var installments = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan)
+            .ThenInclude(p => p!.Customer)
+            .Where(i => i.RemainingAmount > 0
+                        && i.Status != InstallmentStatus.Paid
+                        && (i.Status == InstallmentStatus.Overdue
+                            || i.DueDate.Date <= today.AddDays(7))
+                        && i.InstallmentPlan != null
+                        && i.InstallmentPlan.Customer != null
+                        && (EF.Functions.Like(i.InstallmentPlan.Customer.Name, like)
+                            || (i.InstallmentPlan.Customer.Phone != null
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))))
+            .OrderBy(i => i.DueDate)
+            .Take(PerCategoryLimit)
+            .Select(i => new GlobalSearchHit
+            {
+                Kind = i.Status == InstallmentStatus.Overdue
+                    ? GlobalSearchKind.Installment
+                    : GlobalSearchKind.Installment,
+                EntityId = i.Id,
+                Title = i.InstallmentPlan!.Customer!.Name,
+                Subtitle = (i.Status == InstallmentStatus.Overdue ? "قسط متأخر — " : "قسط — ")
+                           + i.RemainingAmount.ToString("N0") + " د.ع — " + i.DueDate.ToString("yyyy/MM/dd"),
+                ScreenName = "Installments"
+            })
+            .ToListAsync(cancellationToken);
+        hits.AddRange(installments);
+
+        var overdueCustomers = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan)
+            .ThenInclude(p => p!.Customer)
+            .Where(i => i.Status == InstallmentStatus.Overdue
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan != null
+                        && i.InstallmentPlan.Customer != null
+                        && (EF.Functions.Like(i.InstallmentPlan.Customer.Name, like)
+                            || (i.InstallmentPlan.Customer.Phone != null
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))))
+            .GroupBy(i => i.InstallmentPlan!.CustomerId)
+            .Select(g => new
+            {
+                CustomerId = g.Key,
+                Customer = g.First().InstallmentPlan!.Customer!,
+                Count = g.Count(),
+                Total = g.Sum(x => x.RemainingAmount)
+            })
+            .Take(PerCategoryLimit)
+            .ToListAsync(cancellationToken);
+
+        foreach (var oc in overdueCustomers)
+        {
+            hits.Add(new GlobalSearchHit
+            {
+                Kind = GlobalSearchKind.OverdueCustomer,
+                EntityId = oc.CustomerId,
+                Title = oc.Customer.Name,
+                Subtitle = $"متأخر — {oc.Count} قسط — {oc.Total:N0} د.ع",
+                ScreenName = "Installments"
+            });
+        }
+
         return hits.Take(maxResults).ToList();
     }
 }

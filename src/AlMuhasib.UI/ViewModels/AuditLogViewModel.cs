@@ -8,6 +8,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -62,6 +63,7 @@ public partial class AuditLogViewModel : ViewModelBase
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private int _totalCount;
     private const int PageSize = 50;
+    private List<AuditLogRow> _allRows = [];
 
     // ── Commands ──
 
@@ -171,14 +173,30 @@ public partial class AuditLogViewModel : ViewModelBase
         {
             IsBusy = true;
 
+            var useClientPaging = MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters);
+            var page = useClientPaging ? 1 : CurrentPage;
+            var pageSize = useClientPaging ? int.MaxValue : PageSize;
+
             var result = await _auditLogService.QueryAsync(
                 userId: SelectedUser?.Id,
                 action: SelectedAction?.Value,
                 entityName: string.IsNullOrEmpty(SelectedEntity) ? null : SelectedEntity,
                 from: DateFrom,
                 to: DateTo,
-                page: CurrentPage,
-                pageSize: PageSize);
+                page: page,
+                pageSize: pageSize);
+
+            _allRows = result.Rows;
+
+            if (useClientPaging)
+            {
+                var filtered = ColumnFilterEngine.Apply(_allRows, ColumnFilters).ToList();
+                MasterDataColumnFilterHelper.ApplyClientPagination(
+                    filtered, Rows, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+                TotalCount = filteredTotal;
+                TotalPages = filteredPages;
+                return;
+            }
 
             TotalCount = result.TotalCount;
             TotalPages = Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)PageSize));
@@ -191,6 +209,12 @@ public partial class AuditLogViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError(ex.Message);
         }
         finally { IsBusy = false; }
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = ExecuteQueryAsync();
     }
 
     private async Task LoadLookupsAsync()

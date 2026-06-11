@@ -99,13 +99,13 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
 
             _allRows = result.Rows;
             CurrentPage = 1;
-            UpdatePagination(_allRows, Rows);
+            UpdatePaginationWithFilters(_allRows, Rows);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
     }
 
-    protected override void OnPageChanged() => UpdatePagination(_allRows, Rows);
+    protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);
 
     // ── Action Commands ─────────────────────────────────────
 
@@ -157,6 +157,27 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             _exportService.PrintInvoice(model);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    [RelayCommand]
+    private async Task EditInvoice(PurchasesReportRow? row)
+    {
+        if (row is null) return;
+
+        if (InvoiceNavigationBridge.EditPurchaseInvoiceAsync is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة فاتورة المشتريات");
+            return;
+        }
+
+        try
+        {
+            await InvoiceNavigationBridge.EditPurchaseInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     [RelayCommand]

@@ -60,6 +60,18 @@ public abstract partial class ReportViewModelBase : ViewModelBase
         PaginationText = $"عرض {start}-{end} من {TotalRecords}";
     }
 
+    protected void UpdatePaginationWithFilters<T>(IList<T> allRows, ObservableCollection<T> displayRows)
+    {
+        var filtered = ColumnFilterEngine.Apply(allRows, ColumnFilters);
+        UpdatePagination(filtered, displayRows);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        OnPageChanged();
+    }
+
     [RelayCommand]
     protected void FirstPage() { CurrentPage = 1; OnPageChanged(); }
 

@@ -188,6 +188,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [RelayCommand]
     private async Task CompleteSaleAsync()
     {
+        if (IsInstallmentMode)
+        {
+            await CompleteInstallmentSaleCoreAsync();
+            return;
+        }
+
         if (!CanAdd) return;
 
         if (SelectedWarehouse is null)

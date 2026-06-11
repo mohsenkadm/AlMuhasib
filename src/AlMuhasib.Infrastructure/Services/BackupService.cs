@@ -1,103 +1,89 @@
+using System.Data;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.Infrastructure.Data;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace AlMuhasib.Infrastructure.Services;
 
 public class BackupService : IBackupService
 {
-    private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IConfiguration _configuration;
 
-    public BackupService(IDbContextFactory<AppDbContext> contextFactory)
+    public BackupService(IConfiguration configuration)
     {
-        _contextFactory = contextFactory;
+        _configuration = configuration;
+    }
+
+    public string GetDefaultBackupDirectory()
+    {
+        var path = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AlMuhasib",
+            "Backups");
+        Directory.CreateDirectory(path);
+        return path;
     }
 
     public async Task<string> BackupDatabaseAsync(string destinationPath)
     {
-        var directory = Path.GetDirectoryName(destinationPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            Directory.CreateDirectory(directory);
+        var connectionString = _configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string not configured.");
 
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var databaseName = context.Database.GetDbConnection().Database;
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        var databaseName = builder.InitialCatalog;
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("Database name not found in connection string.");
 
-        if (string.IsNullOrWhiteSpace(databaseName) || databaseName.Contains('\'') || databaseName.Contains(';'))
-            throw new ArgumentException("Invalid database name.");
+        Directory.CreateDirectory(destinationPath);
+        var fileName = $"AlMuhasib_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
+        var fullPath = Path.Combine(destinationPath, fileName);
 
-        if (string.IsNullOrWhiteSpace(destinationPath) || destinationPath.Contains('\'') || destinationPath.Contains(';'))
-            throw new ArgumentException("Invalid backup path.");
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
 
-        // بدون COMPRESSION — غير مدعوم في SQL Server Express
-        var sql = $"BACKUP DATABASE [{databaseName}] TO DISK = N'{destinationPath.Replace("'", "''")}' WITH FORMAT, INIT, STATS = 10";
+        var sql = $"BACKUP DATABASE [{databaseName}] TO DISK = @path WITH FORMAT, INIT, NAME = N'AlMuhasib Backup', SKIP, NOREWIND, NOUNLOAD, STATS = 10";
+        await using var cmd = new SqlCommand(sql, connection) { CommandTimeout = 300 };
+        cmd.Parameters.AddWithValue("@path", fullPath);
+        await cmd.ExecuteNonQueryAsync();
 
-        await context.Database.ExecuteSqlRawAsync(sql);
-
-        return destinationPath;
+        return fullPath;
     }
 
     public async Task RestoreDatabaseAsync(string backupFilePath)
     {
         if (!File.Exists(backupFilePath))
-            throw new FileNotFoundException("ملف النسخة الاحتياطية غير موجود.", backupFilePath);
+            throw new FileNotFoundException("ملف النسخ الاحتياطي غير موجود.", backupFilePath);
 
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var connectionString = context.Database.GetConnectionString()
-            ?? throw new InvalidOperationException("Connection string not available.");
+        var connectionString = _configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string not configured.");
 
         var builder = new SqlConnectionStringBuilder(connectionString);
         var databaseName = builder.InitialCatalog;
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("Database name not found in connection string.");
 
-        if (string.IsNullOrWhiteSpace(databaseName) || databaseName.Contains('\'') || databaseName.Contains(';'))
-            throw new ArgumentException("Invalid database name.");
+        var masterBuilder = new SqlConnectionStringBuilder(connectionString) { InitialCatalog = "master" };
 
-        if (string.IsNullOrWhiteSpace(backupFilePath) || backupFilePath.Contains('\'') || backupFilePath.Contains(';'))
-            throw new ArgumentException("Invalid backup file path.");
-
-        builder.InitialCatalog = "master";
-
-        await using var connection = new SqlConnection(builder.ConnectionString);
+        await using var connection = new SqlConnection(masterBuilder.ConnectionString);
         await connection.OpenAsync();
 
-        var setSingleUser = $"ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE";
-        await using (var cmd = new SqlCommand(setSingleUser, connection))
-        {
-            cmd.CommandTimeout = 120;
-            await cmd.ExecuteNonQueryAsync();
-        }
+        var killSql = $@"
+            DECLARE @sql NVARCHAR(MAX) = N'';
+            SELECT @sql += N'KILL ' + CAST(session_id AS NVARCHAR(10)) + N';'
+            FROM sys.dm_exec_sessions
+            WHERE database_id = DB_ID(N'{databaseName}') AND session_id <> @@SPID;
+            EXEC sp_executesql @sql;";
 
-        try
-        {
-            var restoreSql = $"RESTORE DATABASE [{databaseName}] FROM DISK = N'{backupFilePath.Replace("'", "''")}' WITH REPLACE";
-            await using var cmd = new SqlCommand(restoreSql, connection);
-            cmd.CommandTimeout = 600;
-            await cmd.ExecuteNonQueryAsync();
-        }
-        finally
-        {
-            try
-            {
-                var setMultiUser = $"ALTER DATABASE [{databaseName}] SET MULTI_USER";
-                await using var cmd = new SqlCommand(setMultiUser, connection);
-                cmd.CommandTimeout = 30;
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch
-            {
-                // Best effort
-            }
-        }
-    }
+        await using (var killCmd = new SqlCommand(killSql, connection) { CommandTimeout = 60 })
+            await killCmd.ExecuteNonQueryAsync();
 
-    public string GetDefaultBackupDirectory()
-    {
-        var backupDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AlMuhasib",
-            "Backups");
-        if (!Directory.Exists(backupDir))
-            Directory.CreateDirectory(backupDir);
-        return backupDir;
+        var restoreSql = $@"
+            ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+            RESTORE DATABASE [{databaseName}] FROM DISK = @path WITH REPLACE;
+            ALTER DATABASE [{databaseName}] SET MULTI_USER;";
+
+        await using var restoreCmd = new SqlCommand(restoreSql, connection) { CommandTimeout = 600 };
+        restoreCmd.Parameters.AddWithValue("@path", backupFilePath);
+        await restoreCmd.ExecuteNonQueryAsync();
     }
 }

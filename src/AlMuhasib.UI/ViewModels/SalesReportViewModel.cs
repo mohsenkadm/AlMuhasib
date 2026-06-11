@@ -106,13 +106,13 @@ public partial class SalesReportViewModel : ReportViewModelBase
 
             _allRows = result.Rows;
             CurrentPage = 1;
-            UpdatePagination(_allRows, Rows);
+            UpdatePaginationWithFilters(_allRows, Rows);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
     }
 
-    protected override void OnPageChanged() => UpdatePagination(_allRows, Rows);
+    protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);
 
     // ── Action Commands ─────────────────────────────────────
 
@@ -203,6 +203,39 @@ public partial class SalesReportViewModel : ReportViewModelBase
         try
         {
             await InvoiceNavigationBridge.ReturnSalesInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditInvoice(SalesReportRow? row)
+    {
+        if (row is null) return;
+
+        try
+        {
+            if (row.PaymentMethod == "أقساط")
+            {
+                if (InvoiceNavigationBridge.EditInstallmentInvoiceAsync is null)
+                {
+                    BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة فاتورة الأقساط");
+                    return;
+                }
+
+                await InvoiceNavigationBridge.EditInstallmentInvoiceAsync(row.InvoiceId);
+                return;
+            }
+
+            if (InvoiceNavigationBridge.EditSalesInvoiceAsync is null)
+            {
+                BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة فاتورة المبيعات");
+                return;
+            }
+
+            await InvoiceNavigationBridge.EditSalesInvoiceAsync(row.InvoiceId);
         }
         catch (Exception ex)
         {

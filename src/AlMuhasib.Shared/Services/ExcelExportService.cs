@@ -805,4 +805,32 @@ public class ExcelExportService : IExportService
             name = name.Replace(c, '_');
         return name.Trim();
     }
+
+    public void PrintThermalReceipt(InvoicePrintModel model)
+    {
+        var cols = new[] { "البند", "كمية", "المبلغ" };
+        var rows = model.Items.Select(i => new object[] { i.ItemName, i.Quantity, i.TotalPrice }).ToList();
+        rows.Add(new object[] { "الإجمالي", "", model.GrandTotal });
+        PrintTable($"إيصال {model.InvoiceNumber}", cols, rows,
+            [$"العميل: {model.PartyName}", $"التاريخ: {model.Date:yyyy/MM/dd HH:mm}"]);
+    }
+
+    public string ExportInstallmentContractToPdf(InvoicePrintModel model)
+    {
+        model.Title = "عقد تقسيط";
+        return ExportInvoiceToPdf(model);
+    }
+
+    public void PrintInstallmentSchedule(InvoicePrintModel model)
+    {
+        if (model.Schedule is null || model.Schedule.Count == 0)
+        {
+            PrintTable("جدول الأقساط", ["#", "الاستحقاق", "المبلغ"], []);
+            return;
+        }
+        var cols = new[] { "#", "تاريخ الاستحقاق", "المبلغ" };
+        var rows = model.Schedule.Select(s => new object[] { s.Number, s.DueDate.ToString("yyyy/MM/dd"), s.Amount }).ToList();
+        PrintTable($"جدول أقساط — {model.PartyName}", cols, rows,
+            [$"فاتورة: {model.InvoiceNumber}", $"عدد الأقساط: {model.NumberOfInstallments}"]);
+    }
 }

@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     
@@ -48,10 +50,18 @@
                             <TextBlock Text="إعادة كلمة المرور"/>
                         </StackPanel>
                     </Button>
+
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=UsersGrid}"
+                                                 Margin="8,0,0,0"
+                                                 VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Data Grid -->
-                <DataGrid Grid.Row="2"
+                <DataGrid x:Name="UsersGrid"
+                          Grid.Row="2"
                           ItemsSource="{Binding Users}"
                           SelectedItem="{Binding SelectedUser}"
                           AutoGenerateColumns="False"
@@ -59,12 +69,19 @@
                           CanUserAddRows="False"
                           SelectionMode="Single"
                           HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}">
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="اسم المستخدم" Binding="{Binding Username}" Width="130"/>
-                        <DataGridTextColumn Header="الاسم الكامل" Binding="{Binding FullName}" Width="*"/>
-                        <DataGridTextColumn Header="الصلاحية" Binding="{Binding RoleDisplay}" Width="80"/>
-                        <DataGridTemplateColumn Header="الحالة" Width="80">
+                        <DataGridTextColumn Header="اسم المستخدم" Binding="{Binding Username}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Username"/>
+                        <DataGridTextColumn Header="الاسم الكامل" Binding="{Binding FullName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FullName"/>
+                        <DataGridTextColumn Header="الصلاحية" Binding="{Binding RoleDisplay}" Width="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoleDisplay"/>
+                        <DataGridTemplateColumn Header="الحالة" Width="80"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding StatusDisplay}" HorizontalAlignment="Center">

@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
@@ -69,12 +71,19 @@
                     <Button Command="{Binding ExportToExcelCommand}"
                             Style="{StaticResource PrimaryButton}"
                             md:ButtonAssist.CornerRadius="8"
-                            Background="#388E3C">
+                            Background="#388E3C"
+                            Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="FileExcel" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
                             <TextBlock Text="تصدير Excel" Foreground="White"/>
                         </StackPanel>
                     </Button>
+
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=CapitalAdjustmentGrid}"
+                                                 VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Adjustment Form (collapsible) -->
@@ -130,7 +139,8 @@
         <!-- HISTORY TABLE -->
         <!-- ═══════════════════════════════════════════ -->
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
-            <DataGrid ItemsSource="{Binding Entries}"
+            <DataGrid x:Name="CapitalAdjustmentGrid"
+                      ItemsSource="{Binding Entries}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False" CanUserDeleteRows="False"
                       IsReadOnly="True"
@@ -138,10 +148,13 @@
                       Style="{StaticResource ModernDataGrid}"
                       SelectionMode="Single"
                       GridLinesVisibility="Horizontal"
-                      HorizontalGridLinesBrush="#E0E0E0">
+                      HorizontalGridLinesBrush="#E0E0E0"
+                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="التاريخ" Width="130"
-                                        Binding="{Binding Date, StringFormat='{}{0:yyyy/MM/dd}'}">
+                                        Binding="{Binding Date, StringFormat='{}{0:yyyy/MM/dd}'}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -150,7 +163,8 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
-                    <DataGridTemplateColumn Header="النوع" Width="120">
+                    <DataGridTemplateColumn Header="النوع" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
@@ -188,7 +202,8 @@
                     </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="المبلغ" Width="150"
-                                        Binding="{Binding Amount, StringFormat=N0}">
+                                        Binding="{Binding Amount, StringFormat=N0}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -199,7 +214,8 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="الملاحظات" Width="*"
-                                        Binding="{Binding Notes}">
+                                        Binding="{Binding Notes}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -209,7 +225,8 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="المنشئ" Width="120"
-                                        Binding="{Binding CreatedBy}">
+                                        Binding="{Binding CreatedBy}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreatedBy">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="VerticalAlignment" Value="Center"/>

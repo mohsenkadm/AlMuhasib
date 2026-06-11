@@ -30,10 +30,21 @@ public class CurrentUserService : ICurrentUserService
     private Permission? Get(string screenName) =>
         _permissions.FirstOrDefault(p => p.ScreenName == screenName);
 
-    public bool CanView(string screenName) => IsAdmin || (Get(screenName)?.CanView ?? false);
-    public bool CanAdd(string screenName) => IsAdmin || (Get(screenName)?.CanAdd ?? false);
-    public bool CanEdit(string screenName) => IsAdmin || (Get(screenName)?.CanEdit ?? false);
-    public bool CanDelete(string screenName) => IsAdmin || (Get(screenName)?.CanDelete ?? false);
-    public bool CanPrint(string screenName) => IsAdmin || (Get(screenName)?.CanPrint ?? false);
-    public bool CanExport(string screenName) => IsAdmin || (Get(screenName)?.CanExport ?? false);
+    public bool CanView(string screenName) =>
+        screenName == ScreenPermissionRegistry.Dashboard
+        || (Get(screenName)?.CanView ?? false);
+
+    public bool CanAdd(string screenName) => Get(screenName)?.CanAdd ?? false;
+
+    public bool CanEdit(string screenName) => Get(screenName)?.CanEdit ?? false;
+
+    public bool CanDelete(string screenName) => Get(screenName)?.CanDelete ?? false;
+
+    public bool CanPrint(string screenName) => Get(screenName)?.CanPrint ?? false;
+
+    public bool CanExport(string screenName) => Get(screenName)?.CanExport ?? false;
+
+    public bool CanEditPrice(string screenName) => Get(screenName)?.CanEditPrice ?? false;
+
+    public bool IsViewOnly(string screenName) => Get(screenName)?.IsViewOnly ?? false;
 }

@@ -213,7 +213,7 @@
                     </Grid>
                     <TextBlock Text="{Binding FullName}" FontSize="14" FontWeight="SemiBold"
                                Foreground="#1A237E" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="120"/>
-                    <TextBlock Text="مدير النظام" FontSize="11" Foreground="#78909C"
+                    <TextBlock Text="{Binding RoleDisplay}" FontSize="11" Foreground="#78909C"
                                HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Button>
@@ -302,7 +302,7 @@
                                            FontSize="11" Foreground="#E1F5FE"/>
                             </Border>
 
-                            <TextBlock Text="اختر حساب المدير ثم أكمل تسجيل الدخول بكلمة المرور"
+                            <TextBlock Text="اختر المستخدم ثم أكمل تسجيل الدخول بكلمة المرور"
                                        FontSize="12.5" Foreground="#B0BEC5" TextWrapping="Wrap"
                                        TextAlignment="Center" Margin="0,28,0,0" MaxWidth="260" LineHeight="20"/>
                         </StackPanel>
@@ -348,7 +348,7 @@
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="من يقوم بتسجيل الدخول؟"
                                                FontSize="24" FontWeight="Bold" Foreground="#1A237E"/>
-                                    <TextBlock Text="اختر حساب المدير للمتابعة"
+                                    <TextBlock Text="اختر المستخدم للمتابعة"
                                                FontSize="13" Foreground="#78909C" Margin="0,6,0,24"/>
 
                                     <Border CornerRadius="16" Background="White" Padding="16,20"
@@ -358,7 +358,7 @@
                                                         Visibility="{Binding IsLoadingAdmins, Converter={StaticResource BoolToVis}}">
                                                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                                                              IsIndeterminate="True" Width="36" Height="36"/>
-                                                <TextBlock Text="جاري تحميل حسابات المديرين..."
+                                                <TextBlock Text="جاري تحميل المستخدمين..."
                                                            Foreground="#78909C" FontSize="13"
                                                            HorizontalAlignment="Center" Margin="0,12,0,0"/>
                                             </StackPanel>
@@ -378,7 +378,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <TextBlock Text="اضغط على بطاقة المدير للمتابعة"
+                                    <TextBlock Text="اضغط على بطاقة المستخدم للمتابعة"
                                                FontSize="12" Foreground="#90A4AE"
                                                HorizontalAlignment="Center" Margin="0,16,0,0"/>
                                 </StackPanel>
@@ -398,7 +398,7 @@
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"
                                                                      VerticalAlignment="Center"/>
-                                            <TextBlock Text="اختيار مدير آخر" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="اختيار مستخدم آخر" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
 

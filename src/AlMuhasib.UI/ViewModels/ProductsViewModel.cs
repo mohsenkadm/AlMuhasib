@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -18,6 +19,8 @@ public partial class ProductsViewModel : ViewModelBase
     private readonly IAuthService _authService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBarcodeLabelService _barcodeLabelService;
+    private readonly IUserPreferencesService _userPreferences;
 
     // ── Collections ────────────────────────────────────────
     public ObservableCollection<Product> Products { get; } = [];
@@ -46,6 +49,9 @@ public partial class ProductsViewModel : ViewModelBase
     // ── Selected item ──────────────────────────────────────
     [ObservableProperty]
     private Product? _selectedProduct;
+
+    [ObservableProperty]
+    private bool _isCardView;
 
     // ── Dialog state ───────────────────────────────────────
     [ObservableProperty]
@@ -88,13 +94,18 @@ public partial class ProductsViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         IAuthService authService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IBarcodeLabelService barcodeLabelService,
+        IUserPreferencesService userPreferences)
     {
         _productService = productService;
         _unitOfWork = unitOfWork;
         _authService = authService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _barcodeLabelService = barcodeLabelService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
     }
@@ -128,6 +139,21 @@ public partial class ProductsViewModel : ViewModelBase
     // ── Product loading ────────────────────────────────────
     private async Task LoadProductsAsync()
     {
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+        {
+            var (allItems, _) = await _productService.GetPagedAsync(
+                1, int.MaxValue,
+                SelectedCategory?.Id,
+                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+
+            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            MasterDataColumnFilterHelper.ApplyClientPagination(
+                filtered, Products, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+            TotalCount = filteredTotal;
+            TotalPages = filteredPages;
+            return;
+        }
+
         var (items, totalCount) = await _productService.GetPagedAsync(
             CurrentPage,
             PageSize,
@@ -141,6 +167,12 @@ public partial class ProductsViewModel : ViewModelBase
         Products.Clear();
         foreach (var p in items)
             Products.Add(p);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = ReloadAsync();
     }
 
     // ── Search with debounce ───────────────────────────────
@@ -503,4 +535,7 @@ public partial class ProductsViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Products, value);
 }

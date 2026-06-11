@@ -34,6 +34,12 @@ public class InvoiceTemplate
     /// <summary>قالب مدمج في النظام (لا يُحذف).</summary>
     public bool IsBuiltIn { get; set; }
 
+    /// <summary>وسم نشاط تجاري (mobile, clothing, construction, pharmacy).</summary>
+    public string? IndustryTag { get; set; }
+
+    /// <summary>حقول مخصصة للنشاط (IMEI، مقاس، لون...).</summary>
+    public List<string> CustomFieldLabels { get; set; } = [];
+
     public string LineCountText => Lines.Count > 0
         ? $"{Lines.Count} بند"
         : NumberOfInstallments is > 0

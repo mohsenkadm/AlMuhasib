@@ -1084,6 +1084,18 @@
                         <DataTemplate DataType="{x:Type vm:BackupRestoreViewModel}">
                             <views:BackupRestoreView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CollectionDashboardViewModel}">
+                            <views:CollectionDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:BusinessFeaturesSettingsViewModel}">
+                            <views:BusinessFeaturesSettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:MigrationWizardViewModel}">
+                            <views:MigrationWizardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:WarehouseTransferViewModel}">
+                            <views:WarehouseTransferView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PrintLayoutSettingsViewModel}">
                             <views:PrintLayoutSettingsView />
                         </DataTemplate>
@@ -1708,6 +1720,12 @@
                                       Grid.RowSpan="2"
                                       Panel.ZIndex="2000"
                                       Visibility="{Binding IsGlobalSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <controls:CustomerQuickStatementOverlay x:Name="QuickStatementOverlay"
+                                                Grid.RowSpan="2"
+                                                Panel.ZIndex="2100"
+                                                DataContext="{Binding}"
+                                                Visibility="{Binding IsQuickStatementOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <!-- آخر العمليات -->
         <Popup x:Name="RecentActivityPopup"
