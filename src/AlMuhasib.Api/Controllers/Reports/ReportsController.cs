@@ -147,6 +147,16 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetSupplierStatementAsync(f.SupplierId.Value, f.From, f.To));
     }
 
+    [HttpGet("statements/investor")]
+    public async Task<IActionResult> InvestorStatement([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        if (!f.InvestorId.HasValue)
+            return BadRequest("investorSyncId is required.");
+        return Ok(await _reports.GetInvestorStatementAsync(f.InvestorId.Value, f.From, f.To));
+    }
+
     // ── Expenses & Income ──────────────────────────────────────
 
     [HttpGet("expenses")]

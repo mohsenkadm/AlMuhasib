@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.ViewModels;
 using AlMuhasib.UI.Windows;
 using Microsoft.Extensions.DependencyInjection;

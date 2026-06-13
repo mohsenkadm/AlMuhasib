@@ -8,6 +8,7 @@ using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -25,6 +26,7 @@ public partial class CashBankViewModel : ViewModelBase
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "القاصات والمصرف";
+        TransferPager.Bind(LoadTransfersAsync);
     }
 
     // ── Tab selection ──────────────────────────────────────
@@ -149,13 +151,7 @@ public partial class CashBankViewModel : ViewModelBase
     [ObservableProperty]
     private string _transferNotes = string.Empty;
 
-    [ObservableProperty]
-    private int _transferCurrentPage = 1;
-
-    [ObservableProperty]
-    private int _transferTotalPages = 1;
-
-    private const int TransferPageSize = 20;
+    public PagerState TransferPager { get; } = new() { PageSize = 20 };
 
     // Source balance display
     [ObservableProperty]
@@ -678,33 +674,13 @@ public partial class CashBankViewModel : ViewModelBase
     private async Task LoadTransfersAsync()
     {
         var (items, totalCount) = await _cashBankService.GetPagedTransfersAsync(
-            TransferCurrentPage, TransferPageSize);
+            TransferPager.CurrentPage, TransferPager.PageSize);
 
         Transfers.Clear();
         foreach (var t in items)
             Transfers.Add(t);
 
-        TransferTotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / TransferPageSize));
-    }
-
-    [RelayCommand]
-    private async Task TransferNextPage()
-    {
-        if (TransferCurrentPage < TransferTotalPages)
-        {
-            TransferCurrentPage++;
-            await LoadTransfersAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task TransferPreviousPage()
-    {
-        if (TransferCurrentPage > 1)
-        {
-            TransferCurrentPage--;
-            await LoadTransfersAsync();
-        }
+        TransferPager.ApplyStats(totalCount);
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch

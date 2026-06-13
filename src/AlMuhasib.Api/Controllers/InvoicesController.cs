@@ -1,4 +1,5 @@
 using AlMuhasib.Api.Models;
+using AlMuhasib.Cloud.Application.Models;
 using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
@@ -24,22 +25,58 @@ public sealed class InvoicesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<InvoiceDetailResponse>>> GetAll(
+    public async Task<ActionResult<PagedResult<InvoiceDetailResponse>>> GetAll(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] InvoiceType? invoiceType,
         [FromQuery] PaymentMethod? paymentMethod,
-        CancellationToken ct)
+        [FromQuery] string? search,
+        [FromQuery] Guid? customerSyncId,
+        [FromQuery] Guid? supplierSyncId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
     {
         EnsureTenant();
         var query = BuildInvoiceQuery();
+
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
         if (to.HasValue) query = query.Where(i => i.Date <= to.Value);
         if (invoiceType.HasValue) query = query.Where(i => i.InvoiceType == invoiceType.Value);
         if (paymentMethod.HasValue) query = query.Where(i => i.PaymentMethod == paymentMethod.Value);
 
-        var invoices = await query.OrderByDescending(i => i.Date).ToListAsync(ct);
-        return Ok(invoices.Select(MapInvoice).ToList());
+        if (customerSyncId.HasValue)
+        {
+            query = query.Where(i => i.Customer != null && i.Customer.SyncId == customerSyncId.Value);
+        }
+
+        if (supplierSyncId.HasValue)
+        {
+            query = query.Where(i => i.Supplier != null && i.Supplier.SyncId == supplierSyncId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(i =>
+                EF.Functions.Like(i.InvoiceNumber, term) ||
+                (i.Customer != null && EF.Functions.Like(i.Customer.Name, term)) ||
+                (i.Supplier != null && EF.Functions.Like(i.Supplier.Name, term)));
+        }
+
+        query = query.OrderByDescending(i => i.Date);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 500);
+        var total = await query.CountAsync(ct);
+        var invoices = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+        return Ok(new PagedResult<InvoiceDetailResponse>
+        {
+            Items = invoices.Select(MapInvoice).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        });
     }
 
     [HttpGet("{syncId:guid}")]

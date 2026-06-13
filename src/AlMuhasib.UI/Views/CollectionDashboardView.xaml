@@ -73,7 +73,8 @@
             </StackPanel>
 
             <DataGrid x:Name="CollectionDashboardGrid"
-                      ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                      ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}"
+                      AutoGenerateColumns="False" IsReadOnly="True"
                       CanUserAddRows="False" MinHeight="280"
                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                       behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">

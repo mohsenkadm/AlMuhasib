@@ -709,6 +709,54 @@
         </Setter>
     </Style>
 
+    <Style x:Key="SidebarNavReportCategoryButton" TargetType="Button" BasedOn="{StaticResource SidebarNavMenuButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" CornerRadius="11" Padding="8,0" Background="Transparent"
+                            BorderBrush="Transparent" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="IconHost" Grid.Column="0" Width="36" Height="36"
+                                    CornerRadius="10" Background="Transparent"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="{Binding Icon}" Width="21" Height="21"
+                                                         Foreground="#90A4AE"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"
+                                       FontSize="13" FontWeight="SemiBold" Foreground="#B0BEC5"
+                                       Visibility="{Binding DataContext.IsSidebarExpanded,
+                                           RelativeSource={RelativeSource AncestorType=Window},
+                                           Converter={StaticResource SidebarBoolToVis}}"/>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft"
+                                                     Width="18" Height="18"
+                                                     VerticalAlignment="Center" Foreground="#78909C" Opacity="0.85"
+                                                     Visibility="{Binding DataContext.IsSidebarExpanded,
+                                                         RelativeSource={RelativeSource AncestorType=Window},
+                                                         Converter={StaticResource SidebarBoolToVis}}"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1A3D62"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF18"/>
+                        </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1A2F4A"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF10"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="SidebarNavChildButton" TargetType="Button">
         <Setter Property="Height" Value="40"/>
         <Setter Property="Margin" Value="14,1,6,1"/>
@@ -947,35 +995,47 @@
         <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="SeparatorBrush" Value="Transparent"/>
+        <Setter Property="SeparatorBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="Background" Value="{DynamicResource DataGridHeaderBackgroundBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">
-                    <Border x:Name="HeaderBd"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ContentPresenter Grid.Column="0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              RecognizesAccessKey="True"/>
-                            <Path x:Name="SortArrow"
-                                  Grid.Column="1"
-                                  Visibility="Collapsed"
-                                  Width="8" Height="6"
-                                  Margin="6,0,0,0"
-                                  VerticalAlignment="Center"
-                                  Fill="#90A4AE"
-                                  Data="M 0,6 L 4,0 L 8,6 Z"/>
-                        </Grid>
-                    </Border>
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="HeaderBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  RecognizesAccessKey="True"/>
+                                <Path x:Name="SortArrow"
+                                      Grid.Column="1"
+                                      Visibility="Collapsed"
+                                      Width="8" Height="6"
+                                      Margin="6,0,0,0"
+                                      VerticalAlignment="Center"
+                                      Fill="#90A4AE"
+                                      Data="M 0,6 L 4,0 L 8,6 Z"/>
+                            </Grid>
+                        </Border>
+                        <Thumb x:Name="PART_LeftHeaderGripper"
+                               HorizontalAlignment="Left"
+                               Width="8"
+                               Cursor="SizeWE"
+                               Opacity="0.01"/>
+                        <Thumb x:Name="PART_RightHeaderGripper"
+                               HorizontalAlignment="Right"
+                               Width="8"
+                               Cursor="SizeWE"
+                               Opacity="0.01"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="HeaderBd" Property="Background" Value="{DynamicResource DataGridHeaderHoverBrush}"/>
@@ -1069,11 +1129,12 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">
-                    <Border x:Name="HeaderBd"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="HeaderBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1129,7 +1190,18 @@
                                 </TextBox>
                             </Border>
                         </Grid>
-                    </Border>
+                        </Border>
+                        <Thumb x:Name="PART_LeftHeaderGripper"
+                               HorizontalAlignment="Left"
+                               Width="8"
+                               Cursor="SizeWE"
+                               Opacity="0.01"/>
+                        <Thumb x:Name="PART_RightHeaderGripper"
+                               HorizontalAlignment="Right"
+                               Width="8"
+                               Cursor="SizeWE"
+                               Opacity="0.01"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="HeaderBd" Property="Background" Value="{DynamicResource DataGridHeaderHoverBrush}"/>
@@ -1259,6 +1331,8 @@
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource ModernDataGridColumnHeader}"/>
         <Setter Property="RowStyle" Value="{StaticResource ModernDataGridRow}"/>
         <Setter Property="CellStyle" Value="{StaticResource ModernDataGridCell}"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
     </Style>
 
     <!-- فواتير — جدول البنود -->
@@ -1429,6 +1503,7 @@
         <Setter Property="MaxHeight" Value="420"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="RowStyle" Value="{StaticResource InvoiceItemsDataGridRow}"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="materialDesign:DataGridAssist.CellPadding" Value="8,6"/>
         <Setter Property="materialDesign:DataGridAssist.ColumnHeaderPadding" Value="10,8"/>

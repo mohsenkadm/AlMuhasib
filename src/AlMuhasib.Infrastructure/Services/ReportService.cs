@@ -625,6 +625,72 @@ public class ReportService : IReportService
         };
     }
 
+    public async Task<InvestorStatementResult> GetInvestorStatementAsync(int investorId, DateTime? from = null, DateTime? to = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var investor = await context.Investors.FindAsync(investorId);
+        if (investor is null) return new InvestorStatementResult { InvestorName = "\u2014" };
+
+        var rows = new List<InvestorStatementRow>();
+
+        if (investor.OpeningBalance > 0 && (!from.HasValue || from.Value <= investor.CreatedAt))
+        {
+            rows.Add(new InvestorStatementRow
+            {
+                Date = investor.CreatedAt,
+                Description = "رصيد افتتاحي",
+                Credit = investor.OpeningBalance
+            });
+        }
+
+        var txQ = context.InvestorTransactions.Where(t => t.InvestorId == investorId);
+        if (from.HasValue) txQ = txQ.Where(t => t.Date >= from.Value);
+        if (to.HasValue) txQ = txQ.Where(t => t.Date < EndOfDay(to));
+        foreach (var tx in await txQ.OrderBy(t => t.Date).ToListAsync())
+        {
+            rows.Add(new InvestorStatementRow
+            {
+                Date = tx.Date,
+                Description = tx.Type == InvestorTransactionType.Deposit ? "إيداع" : "سحب",
+                Credit = tx.Type == InvestorTransactionType.Deposit ? tx.Amount : 0,
+                Debit = tx.Type == InvestorTransactionType.Withdrawal ? tx.Amount : 0
+            });
+        }
+
+        var distQ = context.ProfitDistributionDetails
+            .Include(d => d.ProfitDistribution)
+            .Where(d => d.InvestorId == investorId);
+        if (from.HasValue) distQ = distQ.Where(d => d.ProfitDistribution.Date >= from.Value);
+        if (to.HasValue) distQ = distQ.Where(d => d.ProfitDistribution.Date < EndOfDay(to));
+        foreach (var dist in await distQ.OrderBy(d => d.ProfitDistribution.Date).ToListAsync())
+        {
+            rows.Add(new InvestorStatementRow
+            {
+                Date = dist.ProfitDistribution.Date,
+                Description = "توزيع أرباح",
+                Credit = dist.Amount
+            });
+        }
+
+        rows = rows.OrderBy(r => r.Date).ToList();
+        decimal balance = 0;
+        foreach (var r in rows)
+        {
+            balance += r.Credit - r.Debit;
+            r.RunningBalance = balance;
+        }
+
+        return new InvestorStatementResult
+        {
+            InvestorName = investor.Name,
+            TotalDebit = rows.Sum(r => r.Debit),
+            TotalCredit = rows.Sum(r => r.Credit),
+            Balance = balance,
+            TransactionCount = rows.Count,
+            Rows = rows
+        };
+    }
+
     // ══════════════════════════════════════════════════════════════
     // EXPENSES
     // ══════════════════════════════════════════════════════════════

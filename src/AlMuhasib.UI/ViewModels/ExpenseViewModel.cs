@@ -6,10 +6,11 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class ExpenseViewModel : ViewModelBase
+public partial class ExpenseViewModel : PagedViewModelBase
 {
     private readonly IExpenseService _expenseService;
     private readonly IUnitOfWork _unitOfWork;
@@ -229,15 +230,6 @@ public partial class ExpenseViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalFiltered;
 
-    // Paging
-    [ObservableProperty]
-    private int _currentPage = 1;
-
-    [ObservableProperty]
-    private int _totalPages = 1;
-
-    private const int PageSize = 20;
-
     private bool _isClearing;
 
     partial void OnFilterExpenseTypeChanged(ExpenseType? value) { if (!_isClearing) _ = LoadExpensesAsync(); }
@@ -266,25 +258,7 @@ public partial class ExpenseViewModel : ViewModelBase
         await LoadExpensesAsync();
     }
 
-    [RelayCommand]
-    private async Task NextPageAsync()
-    {
-        if (CurrentPage < TotalPages)
-        {
-            CurrentPage++;
-            await LoadExpensesAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task PreviousPageAsync()
-    {
-        if (CurrentPage > 1)
-        {
-            CurrentPage--;
-            await LoadExpensesAsync();
-        }
-    }
+    protected override Task OnPageChangedAsync() => LoadExpensesAsync();
 
     private async Task LoadExpensesAsync()
     {
@@ -302,7 +276,7 @@ public partial class ExpenseViewModel : ViewModelBase
             foreach (var item in items)
                 Expenses.Add(item);
 
-            TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / PageSize));
+            ApplyPaginationStats(totalCount);
             TotalFiltered = items.Sum(e => e.Amount);
         }
         catch (Exception ex)

@@ -85,7 +85,11 @@
         <!-- PERMISSIONS TABLE -->
         <!-- ═══════════════════════════════════════════ -->
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
-            <DataGrid ItemsSource="{Binding Screens}"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+            <DataGrid Grid.Row="0" ItemsSource="{Binding Screens}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
@@ -197,6 +201,7 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+            </Grid>
         </md:Card>
     </Grid>
 </UserControl>

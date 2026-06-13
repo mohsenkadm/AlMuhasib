@@ -37,6 +37,9 @@ public partial class CustomersViewModel : ViewModelBase
     private int _totalPages;
 
     [ObservableProperty]
+    private string _paginationText = string.Empty;
+
+    [ObservableProperty]
     private Customer? _selectedCustomer;
 
     [ObservableProperty]
@@ -126,9 +129,11 @@ public partial class CustomersViewModel : ViewModelBase
 
             var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
             MasterDataColumnFilterHelper.ApplyClientPagination(
-                filtered, Customers, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+                filtered, Customers, CurrentPage, PageSize,
+                out var filteredTotal, out var filteredPages, out var filteredText);
             TotalCount = filteredTotal;
             TotalPages = filteredPages;
+            PaginationText = filteredText;
             return;
         }
 
@@ -136,8 +141,8 @@ public partial class CustomersViewModel : ViewModelBase
             CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
 
         TotalCount = totalCount;
-        TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
-        if (TotalPages == 0) TotalPages = 1;
+        TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
+        PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
         Customers.Clear();
         foreach (var c in items)

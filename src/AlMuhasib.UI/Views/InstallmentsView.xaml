@@ -236,7 +236,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!-- Filter bar -->
@@ -322,23 +321,20 @@
                     <!-- Plans DataGrid -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
-                        <DockPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0">
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PlansFooter}"/>
                         <DataGrid x:Name="AllPlansGrid"
                                   ItemsSource="{Binding AllPlans}"
+                                  Style="{StaticResource ModernDataGrid}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
                                   SelectionMode="Single"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F0F0"
-                                  RowHeight="44"
-                                  FontSize="13"
-                                  Background="{DynamicResource CardBrush}"
-                                  BorderThickness="0"
-                                  materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
@@ -447,30 +443,9 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         </DockPanel>
+                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding PlansPager}"/>
+                        </Grid>
                     </materialDesign:Card>
-
-                    <!-- Pagination -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
-                        <Button Command="{Binding PlansPreviousPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronRight" />
-                        </Button>
-                        <TextBlock VerticalAlignment="Center" Margin="12,0" FontSize="13">
-                            <Run Text="صفحة" />
-                            <Run Text="{Binding PlansCurrentPage, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="من" />
-                            <Run Text="{Binding PlansTotalPages, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="|" />
-                            <Run Text="{Binding PlansTotalCount, Mode=OneWay}" />
-                            <Run Text="خطة" />
-                        </TextBlock>
-                        <Button Command="{Binding PlansNextPageCommand}"
-                                Style="{StaticResource IconButton}"
-                                Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronLeft" />
-                        </Button>
-                    </StackPanel>
                 </Grid>
             </TabItem>
 
@@ -1148,7 +1123,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!-- Filter -->
@@ -1213,23 +1187,20 @@
                     <!-- Paid DataGrid -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
-                        <DockPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0">
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaidFooter}"/>
                         <DataGrid x:Name="PaidInstallmentsGrid"
                                   ItemsSource="{Binding PaidInstallments}"
+                                  Style="{StaticResource ModernDataGrid}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
                                   SelectionMode="Single"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#C8E6C9"
-                                  RowHeight="44"
-                                  FontSize="13"
-                                  Background="{DynamicResource CardBrush}"
-                                  BorderThickness="0"
-                                  materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
@@ -1290,26 +1261,9 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         </DockPanel>
+                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding PaidPager}"/>
+                        </Grid>
                     </materialDesign:Card>
-
-                    <!-- Pagination -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
-                        <Button Command="{Binding PaidPreviousPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronRight" />
-                        </Button>
-                        <TextBlock VerticalAlignment="Center" Margin="12,0" FontSize="13">
-                            <Run Text="صفحة" />
-                            <Run Text="{Binding PaidCurrentPage, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="من" />
-                            <Run Text="{Binding PaidTotalPages, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="|" />
-                            <Run Text="{Binding PaidTotalCount, Mode=OneWay}" />
-                            <Run Text="قسط" />
-                        </TextBlock>
-                        <Button Command="{Binding PaidNextPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronLeft" />
-                        </Button>
-                    </StackPanel>
                 </Grid>
             </TabItem>
 
@@ -1328,7 +1282,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!-- Filter -->
@@ -1395,26 +1348,23 @@
                     <!-- Unpaid DataGrid -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
-                        <DockPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0">
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط (Ctrl+نقر) ثم استخدم «تسديد المحدد» في الأسفل"
                                    FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
                         <DataGrid x:Name="UnpaidInstallmentsGrid"
                                   ItemsSource="{Binding UnpaidInstallments}"
+                                  Style="{StaticResource ModernDataGrid}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
                                   SelectionMode="Extended"
                                   SelectionChanged="PayableInstallmentsGrid_SelectionChanged"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F0F0"
-                                  RowHeight="44"
-                                  FontSize="13"
-                                  Background="{DynamicResource CardBrush}"
-                                  BorderThickness="0"
-                                  materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>
@@ -1488,26 +1438,9 @@
                         </DataGrid>
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding UnpaidFooter}"/>
                         </DockPanel>
+                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding UnpaidPager}"/>
+                        </Grid>
                     </materialDesign:Card>
-
-                    <!-- Pagination -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
-                        <Button Command="{Binding UnpaidPreviousPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronRight" />
-                        </Button>
-                        <TextBlock VerticalAlignment="Center" Margin="12,0" FontSize="13">
-                            <Run Text="صفحة" />
-                            <Run Text="{Binding UnpaidCurrentPage, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="من" />
-                            <Run Text="{Binding UnpaidTotalPages, Mode=OneWay}" FontWeight="Bold" />
-                            <Run Text="|" />
-                            <Run Text="{Binding UnpaidTotalCount, Mode=OneWay}" />
-                            <Run Text="قسط" />
-                        </TextBlock>
-                        <Button Command="{Binding UnpaidNextPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
-                            <materialDesign:PackIcon Kind="ChevronLeft" />
-                        </Button>
-                    </StackPanel>
                 </Grid>
             </TabItem>
 

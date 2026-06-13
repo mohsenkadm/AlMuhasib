@@ -635,6 +635,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10"
@@ -643,6 +644,7 @@
                             </Border>
 
                             <DataGrid Grid.Row="1" ItemsSource="{Binding Transfers}"
+                                      Style="{StaticResource ModernDataGrid}"
                                       AutoGenerateColumns="False" IsReadOnly="True"
                                       CanUserSortColumns="True" CanUserReorderColumns="False"
                                       materialDesign:DataGridAssist.CellPadding="10 6"
@@ -675,24 +677,10 @@
                                     <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
+
+                            <controls:PaginationBar Grid.Row="2" DataContext="{Binding TransferPager}"/>
                         </Grid>
                     </materialDesign:Card>
-
-                    <!-- Pager -->
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
-                        <Button Content="السابق" Command="{Binding TransferPreviousPageCommand}"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="12" Margin="0,0,8,0" />
-                        <TextBlock VerticalAlignment="Center" FontSize="13">
-                            <Run Text="صفحة" />
-                            <Run Text="{Binding TransferCurrentPage}" />
-                            <Run Text="من" />
-                            <Run Text="{Binding TransferTotalPages}" />
-                        </TextBlock>
-                        <Button Content="التالي" Command="{Binding TransferNextPageCommand}"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="12" Margin="8,0,0,0" />
-                    </StackPanel>
                 </Grid>
             </TabItem>
 

@@ -8,6 +8,8 @@ namespace AlMuhasib.UI.Services;
 public static class ScreenPermissionRegistry
 {
     public const string Dashboard = "Dashboard";
+    public const string Reports = "Reports";
+    public const string BalanceSheet = "BalanceSheet";
 
     public static IReadOnlyList<(string Name, string Label)> AllScreens { get; } =
     [

@@ -22,6 +22,7 @@ public interface IReportService
     // Statements
     Task<CustomerStatementResult> GetCustomerStatementAsync(int customerId, DateTime? from = null, DateTime? to = null);
     Task<SupplierStatementResult> GetSupplierStatementAsync(int supplierId, DateTime? from = null, DateTime? to = null);
+    Task<InvestorStatementResult> GetInvestorStatementAsync(int investorId, DateTime? from = null, DateTime? to = null);
 
     // Expenses
     Task<ExpensesReportResult> GetExpensesReportAsync(DateTime? from, DateTime? to, int? expenseTypeId, int? cashBoxId);
@@ -337,6 +338,25 @@ public class SupplierStatementResult
 }
 
 public class SupplierStatementRow
+{
+    public DateTime Date { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public decimal Debit { get; set; }
+    public decimal Credit { get; set; }
+    public decimal RunningBalance { get; set; }
+}
+
+public class InvestorStatementResult
+{
+    public string InvestorName { get; set; } = string.Empty;
+    public decimal TotalDebit { get; set; }
+    public decimal TotalCredit { get; set; }
+    public decimal Balance { get; set; }
+    public int TransactionCount { get; set; }
+    public List<InvestorStatementRow> Rows { get; set; } = [];
+}
+
+public class InvestorStatementRow
 {
     public DateTime Date { get; set; }
     public string Description { get; set; } = string.Empty;

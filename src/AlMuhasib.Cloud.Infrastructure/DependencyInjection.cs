@@ -5,6 +5,7 @@ using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Cloud.Infrastructure.Options;
 using AlMuhasib.Cloud.Infrastructure.Reports;
 using AlMuhasib.Cloud.Infrastructure.Services;
+using AlMuhasib.Cloud.Infrastructure.Mobile;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<ICloudReportService, CloudReportService>();
         services.AddScoped<ICloudDashboardService, CloudDashboardService>();
         services.AddScoped<ICloudMasterDataService, CloudMasterDataService>();
+        services.AddScoped<ICloudMobileWriteService, CloudMobileWriteService>();
 
         services.AddHttpClient("OneSignal");
 

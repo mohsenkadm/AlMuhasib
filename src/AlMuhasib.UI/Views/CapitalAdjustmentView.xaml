@@ -139,7 +139,11 @@
         <!-- HISTORY TABLE -->
         <!-- ═══════════════════════════════════════════ -->
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
-            <DataGrid x:Name="CapitalAdjustmentGrid"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+            <DataGrid x:Name="CapitalAdjustmentGrid" Grid.Row="0"
                       ItemsSource="{Binding Entries}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False" CanUserDeleteRows="False"
@@ -237,6 +241,7 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
+            </Grid>
         </md:Card>
     </Grid>
 </UserControl>

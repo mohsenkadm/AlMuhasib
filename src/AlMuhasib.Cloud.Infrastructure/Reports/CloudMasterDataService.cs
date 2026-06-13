@@ -13,26 +13,48 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public async Task<MasterDataBundle> GetAllAsync(CancellationToken ct = default) => new()
     {
-        Categories = await GetCategoriesAsync(ct),
-        Products = await GetProductsAsync(ct),
-        Customers = await GetCustomersAsync(ct),
-        Suppliers = await GetSuppliersAsync(ct),
-        Warehouses = await GetWarehousesAsync(ct),
-        CashBoxes = await GetCashBoxesAsync(ct),
-        BankAccounts = await GetBankAccountsAsync(ct),
-        ExpenseTypes = await GetExpenseTypesAsync(ct),
-        Investors = await GetInvestorsAsync(ct)
+        Categories = await GetCategoriesAsync(ct: ct),
+        Products = await GetProductsAsync(ct: ct),
+        Customers = await GetCustomersAsync(ct: ct),
+        Suppliers = await GetSuppliersAsync(ct: ct),
+        Warehouses = await GetWarehousesAsync(ct: ct),
+        CashBoxes = await GetCashBoxesAsync(ct: ct),
+        BankAccounts = await GetBankAccountsAsync(ct: ct),
+        ExpenseTypes = await GetExpenseTypesAsync(ct: ct),
+        Investors = await GetInvestorsAsync(ct: ct)
     };
 
-    public Task<List<LookupItem>> GetCategoriesAsync(CancellationToken ct = default) =>
-        _db.Categories.AsNoTracking()
-            .OrderBy(c => c.Name)
+    public Task<List<LookupItem>> GetCategoriesAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Categories.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(c => EF.Functions.Like(c.Name, term));
+        }
+
+        return query.OrderBy(c => c.Name)
             .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name })
             .ToListAsync(ct);
+    }
 
-    public Task<List<ProductLookupItem>> GetProductsAsync(CancellationToken ct = default) =>
-        _db.Products.AsNoTracking()
-            .OrderBy(p => p.Name)
+    public Task<List<ProductLookupItem>> GetProductsAsync(
+        string? search = null, Guid? categorySyncId = null, string? barcode = null, CancellationToken ct = default)
+    {
+        var query = _db.Products.AsNoTracking().AsQueryable();
+        if (categorySyncId.HasValue)
+            query = query.Where(p => p.Category.SyncId == categorySyncId.Value);
+        if (!string.IsNullOrWhiteSpace(barcode))
+            query = query.Where(p => p.Barcode == barcode.Trim());
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(p =>
+                EF.Functions.Like(p.Name, term) ||
+                (p.Barcode != null && EF.Functions.Like(p.Barcode, term)));
+        }
+
+        return query.OrderBy(p => p.Name)
             .Select(p => new ProductLookupItem
             {
                 Id = p.Id,
@@ -43,48 +65,111 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 CategoryName = p.Category.Name
             })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetCustomersAsync(CancellationToken ct = default) =>
-        _db.Customers.AsNoTracking()
-            .OrderBy(c => c.Name)
+    public Task<List<LookupItem>> GetCustomersAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Customers.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(c =>
+                EF.Functions.Like(c.Name, term) ||
+                (c.Phone != null && EF.Functions.Like(c.Phone, term)));
+        }
+
+        return query.OrderBy(c => c.Name)
             .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name, Extra = c.Phone })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetSuppliersAsync(CancellationToken ct = default) =>
-        _db.Suppliers.AsNoTracking()
-            .OrderBy(s => s.Name)
+    public Task<List<LookupItem>> GetSuppliersAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Suppliers.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(s =>
+                EF.Functions.Like(s.Name, term) ||
+                (s.Phone != null && EF.Functions.Like(s.Phone, term)));
+        }
+
+        return query.OrderBy(s => s.Name)
             .Select(s => new LookupItem { Id = s.Id, SyncId = s.SyncId, Name = s.Name, Extra = s.Phone })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetWarehousesAsync(CancellationToken ct = default) =>
-        _db.Warehouses.AsNoTracking()
-            .OrderBy(w => w.Name)
+    public Task<List<LookupItem>> GetWarehousesAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Warehouses.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(w => EF.Functions.Like(w.Name, term));
+        }
+
+        return query.OrderBy(w => w.Name)
             .Select(w => new LookupItem { Id = w.Id, SyncId = w.SyncId, Name = w.Name })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetCashBoxesAsync(CancellationToken ct = default) =>
-        _db.CashBoxes.AsNoTracking()
-            .OrderBy(c => c.Name)
+    public Task<List<LookupItem>> GetCashBoxesAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.CashBoxes.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(c => EF.Functions.Like(c.Name, term));
+        }
+
+        return query.OrderBy(c => c.Name)
             .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetBankAccountsAsync(CancellationToken ct = default) =>
-        _db.BankAccounts.AsNoTracking()
-            .OrderBy(b => b.Name)
+    public Task<List<LookupItem>> GetBankAccountsAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.BankAccounts.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(b => EF.Functions.Like(b.Name, term));
+        }
+
+        return query.OrderBy(b => b.Name)
             .Select(b => new LookupItem { Id = b.Id, SyncId = b.SyncId, Name = b.Name })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetExpenseTypesAsync(CancellationToken ct = default) =>
-        _db.ExpenseTypes.AsNoTracking()
-            .OrderBy(e => e.Name)
+    public Task<List<LookupItem>> GetExpenseTypesAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.ExpenseTypes.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(e => EF.Functions.Like(e.Name, term));
+        }
+
+        return query.OrderBy(e => e.Name)
             .Select(e => new LookupItem { Id = e.Id, SyncId = e.SyncId, Name = e.Name })
             .ToListAsync(ct);
+    }
 
-    public Task<List<LookupItem>> GetInvestorsAsync(CancellationToken ct = default) =>
-        _db.Investors.AsNoTracking()
-            .OrderBy(i => i.Name)
+    public Task<List<LookupItem>> GetInvestorsAsync(string? search = null, CancellationToken ct = default)
+    {
+        var query = _db.Investors.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(i =>
+                EF.Functions.Like(i.Name, term) ||
+                (i.Phone != null && EF.Functions.Like(i.Phone, term)));
+        }
+
+        return query.OrderBy(i => i.Name)
             .Select(i => new LookupItem { Id = i.Id, SyncId = i.SyncId, Name = i.Name })
             .ToListAsync(ct);
+    }
 
     public Task<int?> ResolveIdBySyncIdAsync(string entityType, Guid syncId, CancellationToken ct = default) =>
         entityType.ToLowerInvariant() switch

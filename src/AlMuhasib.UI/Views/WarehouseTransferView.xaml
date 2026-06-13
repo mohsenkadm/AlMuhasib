@@ -15,7 +15,8 @@
             <TextBox Text="{Binding LineQuantity}" Width="80" Margin="0,0,8,0"/>
             <Button Content="إضافة" Command="{Binding AddLineCommand}"/>
         </StackPanel>
-        <DataGrid ItemsSource="{Binding Lines}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="200" Margin="0,0,0,12">
+        <DataGrid ItemsSource="{Binding Lines}" Style="{StaticResource ModernDataGrid}"
+                  AutoGenerateColumns="False" IsReadOnly="True" MinHeight="200" Margin="0,0,0,12">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"/>
                 <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity}" Width="100"/>

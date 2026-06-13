@@ -14,8 +14,14 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0">
             <StackPanel>
@@ -82,41 +88,35 @@
                     </Grid>
                 </materialDesign:Card>
 
-                <!-- TABLE -->
-                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
-                                     Padding="0" Margin="0,0,0,16"
-                                     materialDesign:ElevationAssist.Elevation="Dp1">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+            </StackPanel>
+        </ScrollViewer>
 
-                        <Border Grid.Row="0" Background="#FFF3E0" CornerRadius="12,12,0,0" Padding="16,10">
-                            <TextBlock Text="كميات المنتجات"
-                                       FontSize="15" FontWeight="SemiBold" Foreground="#E65100"
-                                       VerticalAlignment="Center"/>
-                        </Border>
+        <!-- TABLE -->
+        <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                             Padding="0" Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                        <DataGrid Grid.Row="1"
-                                  ItemsSource="{Binding Rows}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  CanUserSortColumns="True"
-                                  SelectionMode="Single"
-                                  SelectionUnit="Cell"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F0F0"
-                                  RowHeight="48"
-                                  MinHeight="200"
-                                  MaxHeight="500"
-                                  FontSize="13"
-                                  Background="White"
-                                  BorderThickness="0"
-                                  materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                                  materialDesign:DataGridAssist.CellPadding="12 6">
+                <Border Grid.Row="0" Background="#FFF3E0" CornerRadius="12,12,0,0" Padding="16,10">
+                    <TextBlock Text="كميات المنتجات"
+                               FontSize="15" FontWeight="SemiBold" Foreground="#E65100"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Rows}"
+                          Style="{StaticResource ModernDataGrid}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserSortColumns="True"
+                          SelectionMode="Single"
+                          SelectionUnit="Cell"
+                          MinHeight="200">
 
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True">
@@ -189,12 +189,12 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </materialDesign:Card>
+                </DataGrid>
+            </Grid>
+        </materialDesign:Card>
 
-                <!-- ACTIONS -->
-                <Grid Margin="0,0,0,16">
+        <!-- ACTIONS -->
+        <Grid Grid.Row="2" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -238,9 +238,6 @@
                         </StackPanel>
                     </Button>
                 </Grid>
-
-            </StackPanel>
-        </ScrollViewer>
 
         <Border Style="{StaticResource PageLoading}"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">

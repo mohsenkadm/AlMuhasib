@@ -1,3 +1,4 @@
+using AlMuhasib.Cloud.Application.Models;
 using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -16,12 +17,35 @@ public sealed class CustomersController : ControllerBase
     public CustomersController(CloudDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<ActionResult<List<CloudCustomer>>> GetAll(CancellationToken ct)
+    public async Task<ActionResult<PagedResult<CloudCustomer>>> GetAll(
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
-        return Ok(await _db.Customers.AsNoTracking()
-            .Where(c => c.TenantId == tenantId)
-            .OrderBy(c => c.Name)
-            .ToListAsync(ct));
+        var query = _db.Customers.AsNoTracking().Where(c => c.TenantId == tenantId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(c =>
+                EF.Functions.Like(c.Name, term) ||
+                (c.Phone != null && EF.Functions.Like(c.Phone, term)));
+        }
+
+        query = query.OrderBy(c => c.Name);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 500);
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+        return Ok(new PagedResult<CloudCustomer>
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        });
     }
 }

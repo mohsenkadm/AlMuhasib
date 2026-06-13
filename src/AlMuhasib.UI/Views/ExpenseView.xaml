@@ -268,6 +268,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Header bar -->
@@ -373,36 +374,17 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Footer: Total + Pager -->
                 <Border Grid.Row="2" Background="#F5F5F5" Padding="16,8">
-                    <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="إجمالي المبلغ:" FontWeight="SemiBold" Margin="0,0,8,0"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding TotalFiltered, StringFormat=N0}"
-                                       FontWeight="Bold" FontSize="15" Foreground="#D32F2F"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                            <Button Command="{Binding PreviousPageCommand}" 
-                                    Style="{StaticResource FlatButton}"
-                                    Padding="4">
-                                <md:PackIcon Kind="ChevronRight"/>
-                            </Button>
-                            <TextBlock VerticalAlignment="Center" Margin="8,0">
-                                <Run Text="{Binding CurrentPage, Mode=OneWay}"/>
-                                <Run Text="/"/>
-                                <Run Text="{Binding TotalPages, Mode=OneWay}"/>
-                            </TextBlock>
-                            <Button Command="{Binding NextPageCommand}"
-                                    Style="{StaticResource FlatButton}"
-                                    Padding="4">
-                                <md:PackIcon Kind="ChevronLeft"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="إجمالي المبلغ:" FontWeight="SemiBold" Margin="0,0,8,0"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalFiltered, StringFormat=N0}"
+                                   FontWeight="Bold" FontSize="15" Foreground="#D32F2F"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Border>
+
+                <controls:PaginationBar Grid.Row="3"/>
             </Grid>
         </md:Card>
     </Grid>

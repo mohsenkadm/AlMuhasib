@@ -14,8 +14,14 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
             <StackPanel>
                 <Border CornerRadius="14" Margin="0,0,0,16" Padding="24,18">
                     <Border.Background>
@@ -51,26 +57,23 @@
                         </Button>
                     </Grid>
                 </Border>
+            </StackPanel>
+        </ScrollViewer>
 
-                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
-                                     Padding="0" Margin="0,0,0,16" materialDesign:ElevationAssist.Elevation="Dp1">
-                    <DataGrid ItemsSource="{Binding Rows}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              SelectionMode="Single"
-                              SelectionUnit="Cell"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#F0F0F0"
-                              RowHeight="48"
-                              MinHeight="200"
-                              MaxHeight="520"
-                              FontSize="13"
-                              Background="White"
-                              BorderThickness="0"
-                              materialDesign:DataGridAssist.ColumnHeaderPadding="12 8"
-                              materialDesign:DataGridAssist.CellPadding="12 6">
+        <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                             Padding="0" Margin="0,0,0,16" materialDesign:ElevationAssist.Elevation="Dp1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DataGrid Grid.Row="0" ItemsSource="{Binding Rows}"
+                          Style="{StaticResource ModernDataGrid}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          SelectionMode="Single"
+                          SelectionUnit="Cell"
+                          MinHeight="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="اسم المستثمر" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="2*"/>
                             <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
@@ -102,10 +105,11 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
                         </DataGrid.Columns>
-                    </DataGrid>
-                </materialDesign:Card>
+                </DataGrid>
+            </Grid>
+        </materialDesign:Card>
 
-                <Grid Margin="0,0,0,16">
+        <Grid Grid.Row="2" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -131,8 +135,6 @@
                         </StackPanel>
                     </Button>
                 </Grid>
-            </StackPanel>
-        </ScrollViewer>
 
         <Border Style="{StaticResource PageLoading}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">

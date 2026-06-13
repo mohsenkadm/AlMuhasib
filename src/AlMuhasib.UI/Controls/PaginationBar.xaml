@@ -36,6 +36,8 @@
                         <Binding Path="PaginationText"/>
                         <Binding Path="TotalCount"/>
                         <Binding Path="TotalRecords"/>
+                        <Binding Path="CurrentPage"/>
+                        <Binding Path="PageSize"/>
                     </MultiBinding>
                 </TextBlock.Text>
             </TextBlock>

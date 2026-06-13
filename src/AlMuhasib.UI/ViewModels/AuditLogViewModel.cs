@@ -12,7 +12,7 @@ using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class AuditLogViewModel : ViewModelBase
+public partial class AuditLogViewModel : PagedViewModelBase
 {
     private readonly IAuditLogService _auditLogService;
     private readonly IAuthService _authService;
@@ -21,6 +21,8 @@ public partial class AuditLogViewModel : ViewModelBase
 
     private static readonly JsonSerializerOptions _prettyJson = new() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
+    private List<AuditLogRow> _allRows = [];
+
     public AuditLogViewModel(IAuditLogService auditLogService, IAuthService authService, IExportService exportService, ICurrentUserService currentUserService)
     {
         _auditLogService = auditLogService;
@@ -28,6 +30,7 @@ public partial class AuditLogViewModel : ViewModelBase
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "سجل العمليات";
+        PageSize = 50;
     }
 
     // ── Filters ──
@@ -57,14 +60,6 @@ public partial class AuditLogViewModel : ViewModelBase
     [ObservableProperty] private string _detailsOldValues = string.Empty;
     [ObservableProperty] private string _detailsNewValues = string.Empty;
 
-    // ── Paging ──
-
-    [ObservableProperty] private int _currentPage = 1;
-    [ObservableProperty] private int _totalPages = 1;
-    [ObservableProperty] private int _totalCount;
-    private const int PageSize = 50;
-    private List<AuditLogRow> _allRows = [];
-
     // ── Commands ──
 
     [RelayCommand]
@@ -88,26 +83,6 @@ public partial class AuditLogViewModel : ViewModelBase
     {
         CurrentPage = 1;
         await ExecuteQueryAsync();
-    }
-
-    [RelayCommand]
-    private async Task NextPageAsync()
-    {
-        if (CurrentPage < TotalPages)
-        {
-            CurrentPage++;
-            await ExecuteQueryAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task PreviousPageAsync()
-    {
-        if (CurrentPage > 1)
-        {
-            CurrentPage--;
-            await ExecuteQueryAsync();
-        }
     }
 
     [RelayCommand]
@@ -165,6 +140,8 @@ public partial class AuditLogViewModel : ViewModelBase
         _exportService.PrintTable("سجل العمليات", cols, (IList<object[]>)rows);
     }
 
+    protected override Task OnPageChangedAsync() => ExecuteQueryAsync();
+
     // ── Helpers ──
 
     private async Task ExecuteQueryAsync()
@@ -192,15 +169,15 @@ public partial class AuditLogViewModel : ViewModelBase
             {
                 var filtered = ColumnFilterEngine.Apply(_allRows, ColumnFilters).ToList();
                 MasterDataColumnFilterHelper.ApplyClientPagination(
-                    filtered, Rows, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+                    filtered, Rows, CurrentPage, PageSize,
+                    out var filteredTotal, out var filteredPages, out var filteredText);
                 TotalCount = filteredTotal;
                 TotalPages = filteredPages;
+                PaginationText = filteredText;
                 return;
             }
 
-            TotalCount = result.TotalCount;
-            TotalPages = Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)PageSize));
-
+            ApplyPaginationStats(result.TotalCount);
             Rows.Clear();
             foreach (var r in result.Rows) Rows.Add(r);
         }
@@ -229,7 +206,7 @@ public partial class AuditLogViewModel : ViewModelBase
 
         if (EntityNames.Count == 0)
         {
-            EntityNames.Add(string.Empty); // "الكل"
+            EntityNames.Add(string.Empty);
             var names = await _auditLogService.GetDistinctEntityNamesAsync();
             foreach (var n in names)
                 EntityNames.Add(n);
@@ -253,7 +230,6 @@ public partial class AuditLogViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "AuditLog");
-
         await LoadAsync();
     }
 }

@@ -329,9 +329,10 @@
             </Grid>
         </Border>
 
-        <!-- Body: sidebar + main -->
+        <!-- Body: sidebar + report flyout + main -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -559,19 +560,56 @@
                             <DataTemplate>
                                 <StackPanel Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
 
-                                    <!-- Regular menu item (non-group) -->
+                                    <!-- Section label (e.g. التقارير) -->
+                                    <TextBlock Text="{Binding Title}"
+                                               Margin="16,14,12,6"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#607D8B"
+                                               Visibility="{Binding IsMenuSectionLabel, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsMenuSectionLabel}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <!-- Regular menu item (non-group, non-category) -->
                                     <Button Command="{Binding DataContext.SelectMenuItemCommand,
                                                 RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource SidebarNavMenuButton}">
-                                        <Button.Visibility>
-                                            <Binding Path="IsGroupHeader">
-                                                <Binding.Converter>
-                                                    <local:InverseBoolToVisibilityConverter />
-                                                </Binding.Converter>
-                                            </Binding>
-                                        </Button.Visibility>
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource SidebarNavMenuButton}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGroupHeader}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsReportCategory}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsMenuSectionLabel}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
                                     </Button>
+
+                                    <!-- Report category → click opens flyout -->
+                                    <Button Style="{StaticResource SidebarNavReportCategoryButton}"
+                                            Visibility="{Binding IsReportCategory, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Command="{Binding DataContext.SelectMenuItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"/>
 
                                     <!-- Group header (expandable) -->
                                     <StackPanel Visibility="{Binding IsGroupHeader, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -656,10 +694,50 @@
             </Grid>
         </Border>
 
+        <!-- Report category flyout (adjacent to sidebar, click-driven) -->
+        <Grid Grid.Column="1"
+              VerticalAlignment="Top"
+              Visibility="{Binding IsReportFlyoutOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border ClipToBounds="True"
+                    VerticalAlignment="Top"
+                    RenderTransformOrigin="1,0.5">
+                <Border.RenderTransform>
+                    <TranslateTransform X="16"/>
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsReportFlyoutOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.18">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             From="16" To="0" Duration="0:0:0.22">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <controls:ReportCategoryFlyout DataContext="{Binding}" VerticalAlignment="Top"/>
+            </Border>
+        </Grid>
+
         <!-- ═══════════════════════════════════════════ -->
         <!-- MAIN AREA (LEFT side in RTL)                 -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Column="1">
+        <Grid Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

@@ -11,7 +11,7 @@ using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
+public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 {
     /// <summary>يُعيَّن من شريط الإجراءات السريع قبل فتح الشاشة.</summary>
     public static VoucherType? PendingInitialType { get; set; }
@@ -92,17 +92,6 @@ public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
 
     [ObservableProperty]
     private string _searchText = string.Empty;
-
-    [ObservableProperty]
-    private int _currentPage = 1;
-
-    [ObservableProperty]
-    private int _totalPages = 1;
-
-    [ObservableProperty]
-    private int _totalCount;
-
-    private const int PageSize = 20;
 
     // ── Voucher type items for the ComboBox ────────────────
     public List<VoucherTypeItem> VoucherTypes { get; } =
@@ -321,35 +310,16 @@ public partial class VouchersViewModel : ViewModelBase, IInvestorLookupHost
         foreach (var v in items)
             Vouchers.Add(v);
 
-        TotalCount = totalCount;
-        TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / PageSize));
+        ApplyPaginationStats(totalCount);
     }
+
+    protected override Task OnPageChangedAsync() => LoadVouchersAsync();
 
     [RelayCommand]
     private async Task SearchVouchersAsync()
     {
         CurrentPage = 1;
         await LoadVouchersAsync();
-    }
-
-    [RelayCommand]
-    private async Task NextPage()
-    {
-        if (CurrentPage < TotalPages)
-        {
-            CurrentPage++;
-            await LoadVouchersAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task PreviousPage()
-    {
-        if (CurrentPage > 1)
-        {
-            CurrentPage--;
-            await LoadVouchersAsync();
-        }
     }
 
     // ══════════════════════════════════════════════════════

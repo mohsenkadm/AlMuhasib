@@ -37,15 +37,6 @@ public partial class InstallmentsViewModel : ViewModelBase
     private string _plansSearchText = string.Empty;
 
     [ObservableProperty]
-    private int _plansCurrentPage = 1;
-
-    [ObservableProperty]
-    private int _plansTotalPages = 1;
-
-    [ObservableProperty]
-    private int _plansTotalCount;
-
-    [ObservableProperty]
     private InstallmentType? _selectedInstallmentTypeFilter;
 
     public List<InstallmentTypeFilterItem> InstallmentTypeFilters { get; } =
@@ -55,8 +46,6 @@ public partial class InstallmentsViewModel : ViewModelBase
         new(InstallmentType.Platform, "بيع منصة"),
         new(InstallmentType.OpeningBalance, "رصيد افتتاحي"),
     ];
-
-    private const int PlansPageSize = 20;
 
     // ══════════════════════════════════════════════════════
     // TAB 1: OVERDUE (كشف المتلكئين)
@@ -133,18 +122,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     public ObservableCollection<Installment> PaidInstallments { get; } = [];
 
     [ObservableProperty]
-    private int _paidCurrentPage = 1;
-
-    [ObservableProperty]
-    private int _paidTotalPages = 1;
-
-    [ObservableProperty]
-    private int _paidTotalCount;
-
-    [ObservableProperty]
     private string _paidSearchText = string.Empty;
-
-    private const int PaidPageSize = 20;
 
     // ══════════════════════════════════════════════════════
     // TAB 5: UNPAID (كشف غير مسددة)
@@ -152,18 +130,11 @@ public partial class InstallmentsViewModel : ViewModelBase
     public ObservableCollection<Installment> UnpaidInstallments { get; } = [];
 
     [ObservableProperty]
-    private int _unpaidCurrentPage = 1;
-
-    [ObservableProperty]
-    private int _unpaidTotalPages = 1;
-
-    [ObservableProperty]
-    private int _unpaidTotalCount;
-
-    [ObservableProperty]
     private string _unpaidSearchText = string.Empty;
 
-    private const int UnpaidPageSize = 20;
+    public PagerState PlansPager { get; } = new() { PageSize = 20 };
+    public PagerState PaidPager { get; } = new() { PageSize = 20 };
+    public PagerState UnpaidPager { get; } = new() { PageSize = 20 };
 
     public InstallmentGridTotals PlansFooter { get; } = new();
     public InstallmentGridTotals OverdueFooter { get; } = new();
@@ -192,6 +163,9 @@ public partial class InstallmentsViewModel : ViewModelBase
         _whatsAppShare = whatsAppShare;
 
         PageTitle = "الأقساط";
+        PlansPager.Bind(LoadAllPlansAsync);
+        PaidPager.Bind(LoadPaidAsync);
+        UnpaidPager.Bind(LoadUnpaidAsync);
     }
 
     public override async Task InitializeAsync()
@@ -389,7 +363,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     private async Task LoadAllPlansAsync()
     {
         var (items, totalCount) = await _installmentService.GetPagedPlansAsync(
-            PlansCurrentPage, PlansPageSize,
+            PlansPager.CurrentPage, PlansPager.PageSize,
             string.IsNullOrWhiteSpace(PlansSearchText) ? null : PlansSearchText.Trim(),
             installmentType: SelectedInstallmentTypeFilter);
 
@@ -397,8 +371,7 @@ public partial class InstallmentsViewModel : ViewModelBase
         foreach (var p in items)
             AllPlans.Add(p);
 
-        PlansTotalCount = totalCount;
-        PlansTotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PlansPageSize));
+        PlansPager.ApplyStats(totalCount);
         await RefreshPlansFooterAsync();
     }
 
@@ -413,35 +386,15 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     partial void OnSelectedInstallmentTypeFilterChanged(InstallmentType? value)
     {
-        PlansCurrentPage = 1;
+        PlansPager.ResetToFirstPage();
         _ = LoadAllPlansAsync();
     }
 
     [RelayCommand]
     private async Task PlansSearchAsync()
     {
-        PlansCurrentPage = 1;
+        PlansPager.ResetToFirstPage();
         await LoadAllPlansAsync();
-    }
-
-    [RelayCommand]
-    private async Task PlansNextPage()
-    {
-        if (PlansCurrentPage < PlansTotalPages)
-        {
-            PlansCurrentPage++;
-            await LoadAllPlansAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task PlansPreviousPage()
-    {
-        if (PlansCurrentPage > 1)
-        {
-            PlansCurrentPage--;
-            await LoadAllPlansAsync();
-        }
     }
 
     [RelayCommand]
@@ -745,15 +698,14 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     private async Task LoadPaidAsync()
     {
         var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
-            PaidCurrentPage, PaidPageSize, InstallmentStatus.Paid, searchTerm:
+            PaidPager.CurrentPage, PaidPager.PageSize, InstallmentStatus.Paid, searchTerm:
             string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim());
 
         PaidInstallments.Clear();
         foreach (var i in items)
             PaidInstallments.Add(i);
 
-        PaidTotalCount = totalCount;
-        PaidTotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PaidPageSize));
+        PaidPager.ApplyStats(totalCount);
 
         var search = string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim();
         var (allItems, allCount) = await _installmentService.GetPagedInstallmentsAsync(
@@ -764,28 +716,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     [RelayCommand]
     private async Task PaidSearchAsync()
     {
-        PaidCurrentPage = 1;
+        PaidPager.ResetToFirstPage();
         await LoadPaidAsync();
-    }
-
-    [RelayCommand]
-    private async Task PaidNextPage()
-    {
-        if (PaidCurrentPage < PaidTotalPages)
-        {
-            PaidCurrentPage++;
-            await LoadPaidAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task PaidPreviousPage()
-    {
-        if (PaidCurrentPage > 1)
-        {
-            PaidCurrentPage--;
-            await LoadPaidAsync();
-        }
     }
 
     [RelayCommand]
@@ -843,7 +775,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         // Get pending + overdue + partially paid
         var pendingResult = await _installmentService.GetPagedInstallmentsAsync(
-            UnpaidCurrentPage, UnpaidPageSize, InstallmentStatus.Pending, searchTerm:
+            UnpaidPager.CurrentPage, UnpaidPager.PageSize, InstallmentStatus.Pending, searchTerm:
             string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim());
 
         var overdueResult = await _installmentService.GetPagedInstallmentsAsync(
@@ -862,42 +794,22 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         foreach (var i in pendingResult.Items)
             UnpaidInstallments.Add(i);
 
-        UnpaidTotalCount = pendingResult.TotalCount + overdueResult.TotalCount + partialResult.TotalCount;
-        UnpaidTotalPages = Math.Max(1, (int)Math.Ceiling(UnpaidTotalCount / (double)UnpaidPageSize));
+        var unpaidTotalCount = pendingResult.TotalCount + overdueResult.TotalCount + partialResult.TotalCount;
+        UnpaidPager.ApplyStats(unpaidTotalCount);
 
         var search = string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim();
         var allOverdue = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Overdue, searchTerm: search);
         var allPartial = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.PartiallyPaid, searchTerm: search);
         var allPending = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Pending, searchTerm: search);
         var allUnpaid = allOverdue.Items.Concat(allPartial.Items).Concat(allPending.Items).ToList();
-        UnpaidFooter.SetFromInstallments(allUnpaid, $"إجمالي الأقساط غير المسددة ({UnpaidTotalCount:N0})");
+        UnpaidFooter.SetFromInstallments(allUnpaid, $"إجمالي الأقساط غير المسددة ({unpaidTotalCount:N0})");
     }
 
     [RelayCommand]
     private async Task UnpaidSearchAsync()
     {
-        UnpaidCurrentPage = 1;
+        UnpaidPager.ResetToFirstPage();
         await LoadUnpaidAsync();
-    }
-
-    [RelayCommand]
-    private async Task UnpaidNextPage()
-    {
-        if (UnpaidCurrentPage < UnpaidTotalPages)
-        {
-            UnpaidCurrentPage++;
-            await LoadUnpaidAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task UnpaidPreviousPage()
-    {
-        if (UnpaidCurrentPage > 1)
-        {
-            UnpaidCurrentPage--;
-            await LoadUnpaidAsync();
-        }
     }
 
     [RelayCommand]

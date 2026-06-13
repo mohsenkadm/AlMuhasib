@@ -106,6 +106,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<NavigationMenuItem> MenuItems { get; } = [];
 
+    [ObservableProperty]
+    private bool _isReportFlyoutOpen;
+
+    [ObservableProperty]
+    private string _activeReportCategoryTitle = string.Empty;
+
+    [ObservableProperty]
+    private PackIconKind _activeReportCategoryIcon;
+
+    [ObservableProperty]
+    private string _activeReportCategoryAccent = "#1565C0";
+
+    [ObservableProperty]
+    private NavigationMenuItem? _activeReportCategory;
+
+    public ObservableCollection<ReportMenuEntry> ReportFlyoutItems { get; } = [];
+
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
         CurrentUserService currentUserService, IAuthService authService,
         IBackupService backupService, IInvestorRefreshService investorRefresh,
@@ -428,38 +445,16 @@ public partial class MainWindowViewModel : ObservableObject
             ViewModelType = typeof(StockAdjustmentViewModel),
             ScreenName = "StockAdjustment"
         });
-        var reportsGroup = new NavigationMenuItem
+        MenuItems.Add(new NavigationMenuItem
         {
             Title = "التقارير",
-            Icon = PackIconKind.ChartBar,
-            IsGroupHeader = true,
-            ScreenName = "Reports"
-        };
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المبيعات", Icon = PackIconKind.CashRegister, ViewModelType = typeof(SalesReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المشتريات", Icon = PackIconKind.CartArrowDown, ViewModelType = typeof(PurchasesReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير الأرباح", Icon = PackIconKind.TrendingUp, ViewModelType = typeof(ProfitReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "أفضل المنتجات", Icon = PackIconKind.StarCircle, ViewModelType = typeof(TopProductsReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "هامش ربح المنتجات", Icon = PackIconKind.ChartPie, ViewModelType = typeof(ProductProfitMarginReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "أعمار ذمم الأقساط", Icon = PackIconKind.TimelineClock, ViewModelType = typeof(InstallmentAgingReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص الأقساط", Icon = PackIconKind.CalendarMultipleCheck, ViewModelType = typeof(InstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تفاصيل الأقساط", Icon = PackIconKind.CalendarClock, ViewModelType = typeof(InstallmentDetailReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط المسددة", Icon = PackIconKind.CheckCircle, ViewModelType = typeof(PaidInstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط غير المسددة", Icon = PackIconKind.AlertCircle, ViewModelType = typeof(UnpaidInstallmentsReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "الأقساط المتأخرة", Icon = PackIconKind.ClockAlert, ViewModelType = typeof(OverdueReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص العملاء", Icon = PackIconKind.AccountMultiple, ViewModelType = typeof(CustomersOverviewReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "ملخص الموردين", Icon = PackIconKind.TruckDelivery, ViewModelType = typeof(SuppliersOverviewReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "مقارنة الأرباح", Icon = PackIconKind.Compare, ViewModelType = typeof(ProfitComparisonReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "حركة المنتجات", Icon = PackIconKind.SwapVertical, ViewModelType = typeof(ProductMovementReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "كشف حساب عميل", Icon = PackIconKind.AccountCash, ViewModelType = typeof(CustomerStatementViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "كشف حساب مورد", Icon = PackIconKind.Factory, ViewModelType = typeof(SupplierStatementViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المصاريف", Icon = PackIconKind.CashMinus, ViewModelType = typeof(ExpensesReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "الواردات والمصروفات", Icon = PackIconKind.SwapHorizontal, ViewModelType = typeof(IncomeExpenseReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المخازن", Icon = PackIconKind.Warehouse, ViewModelType = typeof(WarehouseReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "صحة المخزون", Icon = PackIconKind.PackageVariant, ViewModelType = typeof(StockHealthReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "تقرير المستثمرين", Icon = PackIconKind.AccountGroup, ViewModelType = typeof(InvestorsReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "التدفق النقدي", Icon = PackIconKind.ChartTimelineVariantShimmer, ViewModelType = typeof(CashFlowReportViewModel), ScreenName = "Reports", IsSubItem = true });
-        reportsGroup.Children.Add(new NavigationMenuItem { Title = "موازنة يومية", Icon = PackIconKind.ScaleBalance, ViewModelType = typeof(BalanceSheetViewModel), ScreenName = "BalanceSheet", IsSubItem = true });
-        MenuItems.Add(reportsGroup);
+            IsMenuSectionLabel = true,
+            ScreenName = ScreenPermissionRegistry.Reports
+        });
+
+        foreach (var category in ReportMenuCatalog.CreateCategoryMenuItems())
+            MenuItems.Add(category);
+
         MenuItems.Add(new NavigationMenuItem
         {
             Title = "رأس المال",
@@ -565,12 +560,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ApplyMenuSelection(NavigationMenuItem item)
     {
+        if (item.IsMenuSectionLabel)
+            return;
+
+        if (item.IsReportCategory)
+        {
+            ToggleReportFlyout(item);
+            return;
+        }
+
         // Group header: toggle expand/collapse, don't navigate
         if (item.IsGroupHeader)
         {
             item.IsExpanded = !item.IsExpanded;
             return;
         }
+
+        CloseReportFlyout();
 
         if (item.ViewModelType is not null && !TryAuthorizeScreen(item.ViewModelType, out _))
             return;
@@ -587,6 +593,68 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (item.ViewModelType is not null)
             _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon);
+    }
+
+    public void ToggleReportFlyout(NavigationMenuItem category)
+    {
+        if (!category.IsReportCategory || !category.IsVisible)
+            return;
+
+        if (IsReportFlyoutOpen && ActiveReportCategory == category)
+        {
+            CloseReportFlyout();
+            return;
+        }
+
+        ShowReportFlyout(category);
+    }
+
+    private void ShowReportFlyout(NavigationMenuItem category)
+    {
+        ActiveReportCategory = category;
+        ActiveReportCategoryTitle = category.Title;
+        ActiveReportCategoryIcon = category.Icon;
+        ActiveReportCategoryAccent = category.CategoryAccentColor;
+
+        ReportFlyoutItems.Clear();
+        foreach (var entry in ReportMenuCatalog.GetVisibleReports(category))
+            ReportFlyoutItems.Add(entry);
+
+        if (ReportFlyoutItems.Count == 0)
+            return;
+
+        foreach (var m in MenuItems)
+        {
+            m.IsSelected = m == category;
+            foreach (var c in m.Children)
+                c.IsSelected = false;
+        }
+
+        IsReportFlyoutOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseReportFlyout()
+    {
+        IsReportFlyoutOpen = false;
+        ActiveReportCategory = null;
+
+        foreach (var m in MenuItems.Where(i => i.IsReportCategory))
+            m.IsSelected = false;
+    }
+
+    [RelayCommand]
+    private async Task OpenReportFromFlyoutAsync(ReportMenuEntry? entry)
+    {
+        if (entry?.ViewModelType is null)
+            return;
+
+        if (!TryAuthorizeScreen(entry.ViewModelType, out _))
+            return;
+
+        CloseReportFlyout();
+        PageTitle = entry.Title;
+        await OpenTabAsync(entry.ViewModelType, entry.Title, entry.Icon);
     }
 
     public bool TryAuthorizeScreen(Type viewModelType, out string? deniedMessage)
@@ -616,6 +684,26 @@ public partial class MainWindowViewModel : ObservableObject
 
         foreach (var item in FlattenMenuItems())
         {
+            if (item.IsMenuSectionLabel)
+                continue;
+
+            if (item.IsReportCategory)
+            {
+                foreach (var child in item.Children)
+                {
+                    if (child.ViewModelType is null)
+                        continue;
+
+                    var childPermitted = _currentUserService.CanView(child.ScreenName);
+                    var childFeatureOk = IsFeatureFlagVisible(child, flags);
+                    var childPrefOk = !IsCustomizableMenuItem(child) || !hidden.Contains(GetMenuPreferenceKey(child));
+                    child.IsVisible = childPermitted && childFeatureOk && childPrefOk;
+                }
+
+                item.IsVisible = item.Children.Any(c => c.IsVisible);
+                continue;
+            }
+
             if (item.ViewModelType is null)
                 continue;
 
@@ -631,6 +719,10 @@ public partial class MainWindowViewModel : ObservableObject
             item.IsVisible = permitted && featureOk && prefOk;
         }
 
+        var reportsSection = MenuItems.FirstOrDefault(i => i.IsMenuSectionLabel && i.ScreenName == ScreenPermissionRegistry.Reports);
+        if (reportsSection is not null)
+            reportsSection.IsVisible = MenuItems.Any(i => i.IsReportCategory && i.IsVisible);
+
         foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
             group.IsVisible = group.Children.Any(c => c.IsVisible);
     }
@@ -639,12 +731,28 @@ public partial class MainWindowViewModel : ObservableObject
     {
         foreach (var item in FlattenMenuItems())
         {
+            if (item.IsMenuSectionLabel)
+            {
+                item.IsVisible = false;
+                continue;
+            }
+
+            if (item.IsReportCategory)
+            {
+                item.IsVisible = false;
+                foreach (var child in item.Children)
+                    child.IsVisible = false;
+                continue;
+            }
+
             if (item.ViewModelType is not null && item.ScreenName != ScreenPermissionRegistry.Dashboard)
                 item.IsVisible = false;
         }
 
         foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
             group.IsVisible = false;
+
+        CloseReportFlyout();
 
         var dashboard = MenuItems.FirstOrDefault(m => m.ScreenName == ScreenPermissionRegistry.Dashboard);
         if (dashboard is not null)
@@ -1039,7 +1147,10 @@ public partial class MainWindowViewModel : ObservableObject
     {
         foreach (var item in MenuItems)
         {
-            if (item.IsVisible && !item.IsGroupHeader && item.ViewModelType is not null)
+            if (item.IsMenuSectionLabel)
+                continue;
+
+            if (item.IsVisible && !item.IsGroupHeader && !item.IsReportCategory && item.ViewModelType is not null)
                 yield return item;
 
             foreach (var child in item.Children)
@@ -1054,6 +1165,8 @@ public partial class MainWindowViewModel : ObservableObject
     private void ToggleSidebar()
     {
         IsSidebarExpanded = !IsSidebarExpanded;
+        if (!IsSidebarExpanded)
+            CloseReportFlyout();
     }
 
     [RelayCommand]

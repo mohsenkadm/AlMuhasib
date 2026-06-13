@@ -46,18 +46,15 @@ public abstract partial class ReportViewModelBase : ViewModelBase
 
     protected void UpdatePagination<T>(IList<T> allItems, ObservableCollection<T> displayItems)
     {
-        TotalRecords = allItems.Count;
-        TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalRecords / PageSize));
+        PaginationHelper.ApplyPage(allItems, displayItems, CurrentPage, PageSize,
+            out var totalRecords, out var totalPages, out var paginationText);
+
+        TotalRecords = totalRecords;
+        TotalPages = totalPages;
+        PaginationText = paginationText;
+
         if (CurrentPage > TotalPages) CurrentPage = TotalPages;
         if (CurrentPage < 1) CurrentPage = 1;
-
-        displayItems.Clear();
-        var paged = allItems.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
-        foreach (var item in paged) displayItems.Add(item);
-
-        var start = TotalRecords == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
-        var end = Math.Min(CurrentPage * PageSize, TotalRecords);
-        PaginationText = $"عرض {start}-{end} من {TotalRecords}";
     }
 
     protected void UpdatePaginationWithFilters<T>(IList<T> allRows, ObservableCollection<T> displayRows)

@@ -22,65 +22,69 @@ public sealed class MasterDataController : TenantApiControllerBase
     }
 
     [HttpGet("categories")]
-    public async Task<IActionResult> GetCategories(CancellationToken ct)
+    public async Task<IActionResult> GetCategories([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetCategoriesAsync(ct));
+        return Ok(await MasterData.GetCategoriesAsync(search, ct));
     }
 
     [HttpGet("products")]
-    public async Task<IActionResult> GetProducts(CancellationToken ct)
+    public async Task<IActionResult> GetProducts(
+        [FromQuery] string? search,
+        [FromQuery] Guid? categorySyncId,
+        [FromQuery] string? barcode,
+        CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetProductsAsync(ct));
+        return Ok(await MasterData.GetProductsAsync(search, categorySyncId, barcode, ct));
     }
 
     [HttpGet("customers")]
-    public async Task<IActionResult> GetCustomers(CancellationToken ct)
+    public async Task<IActionResult> GetCustomers([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetCustomersAsync(ct));
+        return Ok(await MasterData.GetCustomersAsync(search, ct));
     }
 
     [HttpGet("suppliers")]
-    public async Task<IActionResult> GetSuppliers(CancellationToken ct)
+    public async Task<IActionResult> GetSuppliers([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetSuppliersAsync(ct));
+        return Ok(await MasterData.GetSuppliersAsync(search, ct));
     }
 
     [HttpGet("warehouses")]
-    public async Task<IActionResult> GetWarehouses(CancellationToken ct)
+    public async Task<IActionResult> GetWarehouses([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetWarehousesAsync(ct));
+        return Ok(await MasterData.GetWarehousesAsync(search, ct));
     }
 
     [HttpGet("cash-boxes")]
-    public async Task<IActionResult> GetCashBoxes(CancellationToken ct)
+    public async Task<IActionResult> GetCashBoxes([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetCashBoxesAsync(ct));
+        return Ok(await MasterData.GetCashBoxesAsync(search, ct));
     }
 
     [HttpGet("bank-accounts")]
-    public async Task<IActionResult> GetBankAccounts(CancellationToken ct)
+    public async Task<IActionResult> GetBankAccounts([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetBankAccountsAsync(ct));
+        return Ok(await MasterData.GetBankAccountsAsync(search, ct));
     }
 
     [HttpGet("expense-types")]
-    public async Task<IActionResult> GetExpenseTypes(CancellationToken ct)
+    public async Task<IActionResult> GetExpenseTypes([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetExpenseTypesAsync(ct));
+        return Ok(await MasterData.GetExpenseTypesAsync(search, ct));
     }
 
     [HttpGet("investors")]
-    public async Task<IActionResult> GetInvestors(CancellationToken ct)
+    public async Task<IActionResult> GetInvestors([FromQuery] string? search, CancellationToken ct)
     {
         EnsureTenant();
-        return Ok(await MasterData.GetInvestorsAsync(ct));
+        return Ok(await MasterData.GetInvestorsAsync(search, ct));
     }
 }

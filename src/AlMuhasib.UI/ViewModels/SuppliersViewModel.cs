@@ -36,6 +36,9 @@ public partial class SuppliersViewModel : ViewModelBase
     private int _totalPages;
 
     [ObservableProperty]
+    private string _paginationText = string.Empty;
+
+    [ObservableProperty]
     private Supplier? _selectedSupplier;
 
     [ObservableProperty]
@@ -122,9 +125,11 @@ public partial class SuppliersViewModel : ViewModelBase
 
             var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
             MasterDataColumnFilterHelper.ApplyClientPagination(
-                filtered, Suppliers, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+                filtered, Suppliers, CurrentPage, PageSize,
+                out var filteredTotal, out var filteredPages, out var filteredText);
             TotalCount = filteredTotal;
             TotalPages = filteredPages;
+            PaginationText = filteredText;
             return;
         }
 
@@ -132,8 +137,8 @@ public partial class SuppliersViewModel : ViewModelBase
             CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(s => s.CreatedAt));
 
         TotalCount = totalCount;
-        TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
-        if (TotalPages == 0) TotalPages = 1;
+        TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
+        PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
         Suppliers.Clear();
         foreach (var s in items)

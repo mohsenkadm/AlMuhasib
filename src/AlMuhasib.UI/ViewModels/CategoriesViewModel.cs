@@ -36,6 +36,9 @@ public partial class CategoriesViewModel : ViewModelBase
     private int _totalPages;
 
     [ObservableProperty]
+    private string _paginationText = string.Empty;
+
+    [ObservableProperty]
     private Category? _selectedCategory;
 
     [ObservableProperty]
@@ -113,9 +116,11 @@ public partial class CategoriesViewModel : ViewModelBase
 
             var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
             MasterDataColumnFilterHelper.ApplyClientPagination(
-                filtered, Categories, CurrentPage, PageSize, out var filteredTotal, out var filteredPages);
+                filtered, Categories, CurrentPage, PageSize,
+                out var filteredTotal, out var filteredPages, out var filteredText);
             TotalCount = filteredTotal;
             TotalPages = filteredPages;
+            PaginationText = filteredText;
             return;
         }
 
@@ -123,8 +128,8 @@ public partial class CategoriesViewModel : ViewModelBase
             CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
 
         TotalCount = totalCount;
-        TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
-        if (TotalPages == 0) TotalPages = 1;
+        TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
+        PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
         Categories.Clear();
         foreach (var c in items)
