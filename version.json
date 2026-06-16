@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.9.0",
-    "releaseDate":  "2026-06-14",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.9.0/AlMuhasib-1.9.0.zip",
-    "sha256":  "",
-    "sizeBytes":  0,
-    "releaseNotes":  "إضافة نظام إدارة الفنادق كنظام ثالث مع قاعدة بيانات معزولة، حجوزات، تسجيل دخول/خروج، غرف، نزلاء، صندوق، مصاريف، تقارير، واجهة API سحابية للفنادق، مع الحفاظ على نظام المحاسبة وعقود السيارات",
+    "version":  "1.9.1",
+    "releaseDate":  "2026-06-16",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.9.1/AlMuhasib-1.9.1.zip",
+    "sha256":  "9A9D7F1D44C0709478FD6B1F3621FD84A0FD11B179C3480A76716F2E2F8CCA0B",
+    "sizeBytes":  79753217,
+    "releaseNotes":  "إصلاح تطبيق التحديثات التلقائية — استبدال الملفات وإعادة التشغيل بالإصدار الجديد",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }
