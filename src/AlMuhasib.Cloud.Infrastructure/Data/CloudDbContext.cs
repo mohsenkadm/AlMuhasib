@@ -44,6 +44,21 @@ public class CloudDbContext : DbContext
     public DbSet<CloudProfitDistributionDetail> ProfitDistributionDetails => Set<CloudProfitDistributionDetail>();
     public DbSet<CloudCapitalEntry> CapitalEntries => Set<CloudCapitalEntry>();
     public DbSet<CloudCustomerAttachment> CustomerAttachments => Set<CloudCustomerAttachment>();
+    public DbSet<CloudHotelSettings> HotelSettings => Set<CloudHotelSettings>();
+    public DbSet<CloudHotelFloor> HotelFloors => Set<CloudHotelFloor>();
+    public DbSet<CloudHotelRoomType> HotelRoomTypes => Set<CloudHotelRoomType>();
+    public DbSet<CloudHotelRoom> HotelRooms => Set<CloudHotelRoom>();
+    public DbSet<CloudHotelGuest> HotelGuests => Set<CloudHotelGuest>();
+    public DbSet<CloudHotelReservation> HotelReservations => Set<CloudHotelReservation>();
+    public DbSet<CloudHotelReservationCharge> HotelReservationCharges => Set<CloudHotelReservationCharge>();
+    public DbSet<CloudHotelReservationPayment> HotelReservationPayments => Set<CloudHotelReservationPayment>();
+    public DbSet<CloudHotelCashBox> HotelCashBoxes => Set<CloudHotelCashBox>();
+    public DbSet<CloudHotelVoucher> HotelVouchers => Set<CloudHotelVoucher>();
+    public DbSet<CloudHotelExpenseType> HotelExpenseTypes => Set<CloudHotelExpenseType>();
+    public DbSet<CloudHotelExpense> HotelExpenses => Set<CloudHotelExpense>();
+    public DbSet<CloudHotelRatePlan> HotelRatePlans => Set<CloudHotelRatePlan>();
+    public DbSet<CloudHotelRatePlanSeason> HotelRatePlanSeasons => Set<CloudHotelRatePlanSeason>();
+    public DbSet<CloudHotelHousekeepingTask> HotelHousekeepingTasks => Set<CloudHotelHousekeepingTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

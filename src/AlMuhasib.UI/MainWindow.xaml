@@ -8,6 +8,10 @@
         xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
         xmlns:models="clr-namespace:AlMuhasib.UI.Models"
         xmlns:views="clr-namespace:AlMuhasib.UI.Views"
+        xmlns:carViews="clr-namespace:AlMuhasib.UI.Views.Car"
+        xmlns:carVm="clr-namespace:AlMuhasib.UI.ViewModels.Car"
+        xmlns:hotelViews="clr-namespace:AlMuhasib.UI.Views.Hotel"
+        xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
         xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
         mc:Ignorable="d"
@@ -840,6 +844,50 @@
                     Padding="12,8,12,4">
                 <ScrollViewer Style="{StaticResource ModernHorizontalScrollViewer}">
                     <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding QuickNewCarContractCommand}"
+                                Visibility="{Binding ShowQuickNewCarContract, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="إنشاء عقد بيع سيارة جديد">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileDocumentPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#1565C0"/>
+                                <TextBlock Text="عقد جديد" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCarContractsListCommand}"
+                                Visibility="{Binding ShowQuickCarContractsList, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="قائمة عقود السيارات">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FormatListBulleted" Width="18" Height="18" VerticalAlignment="Center" Foreground="#1565C0"/>
+                                <TextBlock Text="العقود" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickNewReservationCommand}"
+                                Visibility="{Binding ShowQuickNewReservation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="حجز فندقي جديد">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CalendarPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#6A1B9A"/>
+                                <TextBlock Text="حجز جديد" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCheckInCommand}"
+                                Visibility="{Binding ShowQuickCheckIn, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="تسجيل دخول/خروج">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Login" Width="18" Height="18" VerticalAlignment="Center" Foreground="#6A1B9A"/>
+                                <TextBlock Text="تسجيل دخول" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                         <Button Command="{Binding QuickPosSaleCommand}"
                                 Visibility="{Binding ShowQuickPos, Converter={StaticResource BooleanToVisibilityConverter}}"
                                 Style="{StaticResource OutlinedButton}"
@@ -1018,6 +1066,63 @@
                         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
                             <views:DashboardView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type carVm:CarDashboardViewModel}">
+                            <carViews:CarDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carVm:CarContractFormViewModel}">
+                            <carViews:CarContractFormView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carVm:CarContractsViewModel}">
+                            <carViews:CarContractsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carVm:CarContractsReportViewModel}">
+                            <carViews:CarContractsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelDashboardViewModel}">
+                            <hotelViews:HotelDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelReservationsViewModel}">
+                            <hotelViews:HotelReservationsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelReservationsCalendarViewModel}">
+                            <hotelViews:HotelReservationsCalendarView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelReservationFormViewModel}">
+                            <hotelViews:HotelReservationFormView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelCheckInOutViewModel}">
+                            <hotelViews:HotelCheckInOutView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelRoomsViewModel}">
+                            <hotelViews:HotelRoomsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelRoomTypesViewModel}">
+                            <hotelViews:HotelRoomTypesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelFloorsViewModel}">
+                            <hotelViews:HotelFloorsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelGuestsViewModel}">
+                            <hotelViews:HotelGuestsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelRatePlansViewModel}">
+                            <hotelViews:HotelRatePlansView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelHousekeepingViewModel}">
+                            <hotelViews:HotelHousekeepingView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelCashViewModel}">
+                            <hotelViews:HotelCashView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelExpensesViewModel}">
+                            <hotelViews:HotelExpensesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelReportsViewModel}">
+                            <hotelViews:HotelReportsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:HotelSetupWizardViewModel}">
+                            <hotelViews:HotelSetupWizardView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>
@@ -1179,6 +1284,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CloudSyncSettingsViewModel}">
                             <views:CloudSyncSettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeveloperSystemSwitchViewModel}">
+                            <views:DeveloperSystemSwitchView />
                         </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>

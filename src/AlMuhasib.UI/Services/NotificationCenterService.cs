@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Models;
@@ -11,13 +12,18 @@ public sealed class NotificationCenterService : INotificationCenterService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IInvoiceQueueService _queueService;
+    private readonly ISystemProfileService _systemProfile;
     private readonly string _statePath;
     private Dictionary<string, string> _readFingerprints = new(StringComparer.Ordinal);
 
-    public NotificationCenterService(IServiceScopeFactory scopeFactory, IInvoiceQueueService queueService)
+    public NotificationCenterService(
+        IServiceScopeFactory scopeFactory,
+        IInvoiceQueueService queueService,
+        ISystemProfileService systemProfile)
     {
         _scopeFactory = scopeFactory;
         _queueService = queueService;
+        _systemProfile = systemProfile;
         _statePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "AlMuhasib",
@@ -28,10 +34,14 @@ public sealed class NotificationCenterService : INotificationCenterService
     public async Task<IReadOnlyList<AppNotificationItem>> RefreshAsync(CancellationToken cancellationToken = default)
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
-        var installmentService = scope.ServiceProvider.GetRequiredService<IInstallmentService>();
         var smartAlertService = scope.ServiceProvider.GetRequiredService<ISmartAlertService>();
 
-        await installmentService.UpdateOverdueStatusesAsync();
+        if (_systemProfile.ActiveSystem != ApplicationSystemType.HotelManagement)
+        {
+            var installmentService = scope.ServiceProvider.GetRequiredService<IInstallmentService>();
+            await installmentService.UpdateOverdueStatusesAsync();
+        }
+
         var summary = await smartAlertService.GetSummaryAsync(cancellationToken);
 
         var items = new List<AppNotificationItem>();
@@ -54,7 +64,8 @@ public sealed class NotificationCenterService : INotificationCenterService
             });
         }
 
-        AppendQueueNotifications(items, now);
+        if (_systemProfile.ActiveSystem != ApplicationSystemType.HotelManagement)
+            AppendQueueNotifications(items, now);
 
         return items
             .OrderBy(i => i.IsRead)
@@ -136,6 +147,9 @@ public sealed class NotificationCenterService : INotificationCenterService
         SmartAlertAction.OpenStockHealthReport => "low-stock",
         SmartAlertAction.OpenUnpaidSales => "unpaid-sales",
         SmartAlertAction.OpenUnpaidPurchases => "unpaid-purchases",
+        SmartAlertAction.OpenHotelCheckInOut => "hotel-checkinout",
+        SmartAlertAction.OpenHotelRooms => "hotel-rooms",
+        SmartAlertAction.OpenHotelHousekeeping => "hotel-housekeeping",
         _ => alert.Id
     };
 

@@ -7,6 +7,8 @@ public sealed class TenantLoginResponse
     public DateTime AccessTokenExpiresAt { get; set; }
     public int TenantId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
+    public string TenantName { get; set; } = string.Empty;
+    public int ApplicationSystemType { get; set; }
     public bool IsMobileEnabled { get; set; }
     public DateTime? LicenseExpiresAt { get; set; }
     public DateTime? AccountExpiresAt { get; set; }

@@ -5,8 +5,10 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.ViewModels.Hotel;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
+using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.Services;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
@@ -25,6 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private readonly INavigationService _navigationService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly SystemModuleRegistry _moduleRegistry;
     private readonly CurrentUserService _currentUserService;
     private readonly IAuthService _authService;
     private readonly IBackupService _backupService;
@@ -124,6 +127,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<ReportMenuEntry> ReportFlyoutItems { get; } = [];
 
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
+        SystemModuleRegistry moduleRegistry,
         CurrentUserService currentUserService, IAuthService authService,
         IBackupService backupService, IInvestorRefreshService investorRefresh,
         IToastNotificationService toast,
@@ -143,6 +147,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
+        _moduleRegistry = moduleRegistry;
         _currentUserService = currentUserService;
         _authService = authService;
         _backupService = backupService;
@@ -303,232 +308,13 @@ public partial class MainWindowViewModel : ObservableObject
         await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown, activateIfExists: false);
     }
 
+    private Type ActiveDashboardType => _moduleRegistry.ActiveModule.DashboardViewModelType;
+
     private void InitializeMenu()
     {
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "لوحة التحكم",
-            Icon = PackIconKind.ViewDashboard,
-            ViewModelType = typeof(DashboardViewModel),
-            ScreenName = "Dashboard"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المنتجات",
-            Icon = PackIconKind.PackageVariantClosed,
-            ViewModelType = typeof(ProductsViewModel),
-            ScreenName = "Products"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "تصنيفات المنتجات",
-            Icon = PackIconKind.TagMultiple,
-            ViewModelType = typeof(CategoriesViewModel),
-            ScreenName = "Categories"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "العملاء",
-            Icon = PackIconKind.AccountGroup,
-            ViewModelType = typeof(CustomersViewModel),
-            ScreenName = "Customers"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "الموردون",
-            Icon = PackIconKind.Factory,
-            ViewModelType = typeof(SuppliersViewModel),
-            ScreenName = "Suppliers"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "فاتورة مشتريات",
-            Icon = PackIconKind.CartArrowDown,
-            ViewModelType = typeof(PurchaseInvoiceViewModel),
-            ScreenName = "PurchaseInvoice"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "فاتورة مبيعات",
-            Icon = PackIconKind.CashRegister,
-            ViewModelType = typeof(SalesInvoiceViewModel),
-            ScreenName = "SaleInvoice"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "بيع سريع (POS)",
-            Icon = PackIconKind.PointOfSale,
-            ViewModelType = typeof(PosQuickSaleViewModel),
-            ScreenName = "SaleInvoice"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "فاتورة أقساط",
-            Icon = PackIconKind.CalendarClock,
-            ViewModelType = typeof(InstallmentInvoiceViewModel),
-            ScreenName = "InstallmentInvoice"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "لوحة التحصيل",
-            Icon = PackIconKind.CashMultiple,
-            ViewModelType = typeof(CollectionDashboardViewModel),
-            ScreenName = "Installments"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "الأقساط",
-            Icon = PackIconKind.CalendarMultipleCheck,
-            ViewModelType = typeof(InstallmentsViewModel),
-            ScreenName = "Installments"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "أرصدة الأقساط الافتتاحية",
-            Icon = PackIconKind.History,
-            ViewModelType = typeof(OpeningInstallmentBalanceViewModel),
-            ScreenName = "OpeningInstallments"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "السندات",
-            Icon = PackIconKind.FileDocumentOutline,
-            ViewModelType = typeof(VouchersViewModel),
-            ScreenName = "Vouchers"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المصاريف",
-            Icon = PackIconKind.CashMinus,
-            ViewModelType = typeof(ExpenseViewModel),
-            ScreenName = "Expenses"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "القاصات والمصرف",
-            Icon = PackIconKind.Bank,
-            ViewModelType = typeof(CashBankViewModel),
-            ScreenName = "CashAndBank"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المستثمرون",
-            Icon = PackIconKind.TrendingUp,
-            ViewModelType = typeof(InvestorsViewModel),
-            ScreenName = "Investors"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "أرصدة المستثمرين الافتتاحية",
-            Icon = PackIconKind.AccountCashOutline,
-            ViewModelType = typeof(OpeningInvestorsViewModel),
-            ScreenName = "OpeningInvestors"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المخازن",
-            Icon = PackIconKind.Warehouse,
-            ViewModelType = typeof(WarehousesViewModel),
-            ScreenName = "Warehouses"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "الأرصدة الافتتاحية",
-            Icon = PackIconKind.PackageVariantClosedPlus,
-            ViewModelType = typeof(OpeningStockViewModel),
-            ScreenName = "OpeningStock"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "تسوية مخزنية",
-            Icon = PackIconKind.TuneVerticalVariant,
-            ViewModelType = typeof(StockAdjustmentViewModel),
-            ScreenName = "StockAdjustment"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "التقارير",
-            IsMenuSectionLabel = true,
-            ScreenName = ScreenPermissionRegistry.Reports
-        });
-
-        foreach (var category in ReportMenuCatalog.CreateCategoryMenuItems())
-            MenuItems.Add(category);
-
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "رأس المال",
-            Icon = PackIconKind.Cash,
-            ViewModelType = typeof(CapitalAdjustmentViewModel),
-            ScreenName = "Capital"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "سجل العمليات",
-            Icon = PackIconKind.History,
-            ViewModelType = typeof(AuditLogViewModel),
-            ScreenName = "AuditLog"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المستخدمون",
-            Icon = PackIconKind.AccountMultiple,
-            ViewModelType = typeof(UsersViewModel),
-            ScreenName = "Users"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "الصلاحيات",
-            Icon = PackIconKind.ShieldKey,
-            ViewModelType = typeof(PermissionsViewModel),
-            ScreenName = "Permissions"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "معالج النقل",
-            Icon = PackIconKind.DatabaseImport,
-            ViewModelType = typeof(MigrationWizardViewModel),
-            ScreenName = "DataImport"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "نقل مخازن",
-            Icon = PackIconKind.TruckDelivery,
-            ViewModelType = typeof(WarehouseTransferViewModel),
-            ScreenName = "Warehouses"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "إعدادات الميزات",
-            Icon = PackIconKind.TuneVariant,
-            ViewModelType = typeof(BusinessFeaturesSettingsViewModel),
-            ScreenName = "BusinessFeatures"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "إعدادات الطباعة",
-            Icon = PackIconKind.PrinterSettings,
-            ViewModelType = typeof(PrintLayoutSettingsViewModel),
-            ScreenName = "PrintSettings"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "النسخ الاحتياطي",
-            Icon = PackIconKind.DatabaseCog,
-            ViewModelType = typeof(BackupRestoreViewModel),
-            ScreenName = "Backup"
-        });
-        MenuItems.Add(new NavigationMenuItem
-        {
-            Title = "المزامنة السحابية",
-            Icon = PackIconKind.CloudSync,
-            ViewModelType = typeof(CloudSyncSettingsViewModel),
-            ScreenName = "CloudSync"
-        });
-
-        // Mark dashboard as visually selected but do NOT navigate yet
-        // Navigation happens from App.OnStartup after permissions are loaded
-        MenuItems[0].IsSelected = true;
+        MenuItems.Clear();
+        foreach (var item in _moduleRegistry.ActiveModule.BuildMenuItems())
+            MenuItems.Add(item);
     }
 
     private bool _suppressNavigation;
@@ -665,6 +451,18 @@ public partial class MainWindowViewModel : ObservableObject
             return true;
         }
 
+        if (viewModelType == typeof(HotelSetupWizardViewModel))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
+        if (viewModelType == typeof(DeveloperSystemSwitchViewModel))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
         var screenName = ScreenPermissionRegistry.GetScreenName(viewModelType);
         if (_currentUserService.CanView(screenName))
         {
@@ -707,7 +505,13 @@ public partial class MainWindowViewModel : ObservableObject
             if (item.ViewModelType is null)
                 continue;
 
-            if (item.ScreenName == ScreenPermissionRegistry.Dashboard)
+            if (item.ViewModelType == ActiveDashboardType)
+            {
+                item.IsVisible = true;
+                continue;
+            }
+
+            if (item.ViewModelType == typeof(DeveloperSystemSwitchViewModel))
             {
                 item.IsVisible = true;
                 continue;
@@ -745,7 +549,7 @@ public partial class MainWindowViewModel : ObservableObject
                 continue;
             }
 
-            if (item.ViewModelType is not null && item.ScreenName != ScreenPermissionRegistry.Dashboard)
+            if (item.ViewModelType is not null && item.ViewModelType != ActiveDashboardType)
                 item.IsVisible = false;
         }
 
@@ -754,7 +558,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         CloseReportFlyout();
 
-        var dashboard = MenuItems.FirstOrDefault(m => m.ScreenName == ScreenPermissionRegistry.Dashboard);
+        var dashboard = MenuItems.FirstOrDefault(m => m.ViewModelType == ActiveDashboardType);
         if (dashboard is not null)
             dashboard.IsVisible = true;
     }
@@ -885,7 +689,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (OpenTabs.Count == 0)
         {
-            _ = OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+            _ = OpenTabAsync(ActiveDashboardType, "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
             return;
         }
 
@@ -899,10 +703,17 @@ public partial class MainWindowViewModel : ObservableObject
         UpdateTabPinStates();
     }
 
+    public void CloseTabForViewModel(ViewModelBase viewModel)
+    {
+        var tab = OpenTabs.FirstOrDefault(t => ReferenceEquals(t.ViewModel, viewModel));
+        if (tab is not null)
+            CloseTab(tab);
+    }
+
     /// <summary>يفتح لوحة التحكم ثم التبويبات المثبتة المحفوظة في التفضيلات.</summary>
     public async Task OpenInitialSessionTabsAsync()
     {
-        await OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+        await OpenTabAsync(ActiveDashboardType, "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
 
         foreach (var key in _userPreferences.Current.PinnedMenuScreens)
         {
@@ -910,7 +721,7 @@ public partial class MainWindowViewModel : ObservableObject
                 break;
 
             var menu = FindMenuItemByPreferenceKey(key);
-            if (menu?.ViewModelType is null || menu.ViewModelType == typeof(DashboardViewModel))
+            if (menu?.ViewModelType is null || menu.ViewModelType == ActiveDashboardType)
                 continue;
             if (!menu.IsVisible || !CanMenuBeShownByPermissions(menu))
                 continue;
@@ -927,7 +738,7 @@ public partial class MainWindowViewModel : ObservableObject
     private void TogglePinTab(DocumentTab? tab)
     {
         tab ??= SelectedTab;
-        if (tab is null || tab.ViewModelType == typeof(DashboardViewModel))
+        if (tab is null || tab.ViewModelType == ActiveDashboardType)
         {
             _toast.ShowWarning("لا يمكن تثبيت لوحة التحكم");
             return;
@@ -970,7 +781,7 @@ public partial class MainWindowViewModel : ObservableObject
     private void UpdateTabCloseStates()
     {
         var onlyDashboard = OpenTabs.Count == 1
-                            && OpenTabs[0].ViewModelType == typeof(DashboardViewModel);
+                            && OpenTabs[0].ViewModelType == ActiveDashboardType;
 
         foreach (var tab in OpenTabs)
             tab.CanClose = !onlyDashboard;
@@ -1225,8 +1036,8 @@ public partial class MainWindowViewModel : ObservableObject
     private async void GoToDashboard()
     {
         IsQuickAssistOpen = false;
-        await OpenTabAsync(typeof(DashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard);
-        var dashboard = MenuItems.FirstOrDefault(m => m.ViewModelType == typeof(DashboardViewModel));
+        await OpenTabAsync(ActiveDashboardType, "لوحة التحكم", PackIconKind.ViewDashboard);
+        var dashboard = MenuItems.FirstOrDefault(m => m.ViewModelType == ActiveDashboardType);
         if (dashboard is not null)
         {
             _suppressNavigation = true;

@@ -21,7 +21,10 @@ public enum SmartAlertAction
     OpenSalesInvoiceQueue,
     OpenPurchaseInvoiceQueue,
     OpenInstallmentInvoiceQueue,
-    OpenCollectionDashboard
+    OpenCollectionDashboard,
+    OpenHotelCheckInOut,
+    OpenHotelRooms,
+    OpenHotelHousekeeping
 }
 
 public class SmartAlert

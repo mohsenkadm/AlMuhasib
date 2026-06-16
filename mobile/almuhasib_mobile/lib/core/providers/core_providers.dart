@@ -8,6 +8,7 @@ import '../../features/auth/data/auth_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/reports/data/reports_repository.dart';
 import '../../features/data_tab/data/data_repository.dart';
+import '../../features/hotel/data/hotel_repository.dart';
 import '../../features/operations/data/mobile_operations_repository.dart';
 
 final secureStorageProvider = Provider<SecureStorageService>((ref) {
@@ -58,6 +59,10 @@ final dataRepositoryProvider = Provider<DataRepository>((ref) {
 final mobileOperationsRepositoryProvider =
     Provider<MobileOperationsRepository>((ref) {
   return MobileOperationsRepository(ref.watch(apiClientProvider));
+});
+
+final hotelRepositoryProvider = Provider<HotelRepository>((ref) {
+  return HotelRepository(ref.watch(apiClientProvider));
 });
 
 class AuthState {

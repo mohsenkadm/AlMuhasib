@@ -2,7 +2,11 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core"
-                    xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels">
+                    xmlns:hotel="clr-namespace:AlMuhasib.Core.Entities.Hotel;assembly=AlMuhasib.Core"
+                    xmlns:hotelModels="clr-namespace:AlMuhasib.Core.Models.Hotel;assembly=AlMuhasib.Core"
+                    xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+                    xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
+                    xmlns:controls="clr-namespace:AlMuhasib.UI.Controls">
 
     <Style x:Key="MasterDataEntityCardBorder" TargetType="Border">
         <Setter Property="Width" Value="228"/>
@@ -263,6 +267,174 @@
                             CommandParameter="{Binding}"
                             Style="{StaticResource TableEditIconButton}">
                         <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- ═══ Hotel Floor Card ═══ -->
+    <DataTemplate x:Key="HotelFloorCardTemplate" DataType="{x:Type hotel:Floor}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#E8EAF6" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Stairs" Width="20" Height="20" Foreground="#3949AB"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <TextBlock Grid.Row="2" Style="{StaticResource MasterDataCardMeta}">
+                    <Run Text="الترتيب: "/>
+                    <Run Text="{Binding SortOrder}"/>
+                </TextBlock>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- ═══ Hotel Room Type Card ═══ -->
+    <DataTemplate x:Key="HotelRoomTypeCardTemplate" DataType="{x:Type hotel:RoomType}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}" Width="248">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#E3F2FD" Margin="0,0,0,8">
+                    <md:PackIcon Kind="BedKingOutline" Width="20" Height="20" Foreground="#1565C0"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="السعة: "/>
+                        <Run Text="{Binding Capacity}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="السعر الأساسي: "/>
+                        <Run Text="{Binding BasePrice, StringFormat=N0}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- ═══ Hotel Room Card ═══ -->
+    <DataTemplate x:Key="HotelRoomCardTemplate" DataType="{x:Type hotelVm:HotelRoomListDisplay}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}" Width="228">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Door" Width="20" Height="20" Foreground="#2E7D32"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding RoomNumber}" Style="{StaticResource MasterDataCardTitle}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الطابق: "/>
+                        <Run Text="{Binding FloorName}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="النوع: "/>
+                        <Run Text="{Binding RoomTypeName}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="النزيل: "/>
+                        <Run Text="{Binding CurrentGuestName}"/>
+                    </TextBlock>
+                </StackPanel>
+                <controls:HotelStatusBadge Grid.Row="3" Label="{Binding StatusLabel}" Color="{Binding StatusColor}" Margin="0,8,0,0"/>
+                <StackPanel Grid.Row="4" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- ═══ Hotel Guest Card ═══ -->
+    <DataTemplate x:Key="HotelGuestCardTemplate" DataType="{x:Type hotelModels:GuestListItem}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}" Width="248">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF3E0" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Account" Width="20" Height="20" Foreground="#F57C00"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding FullName}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding FullName}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهاتف: "/>
+                        <Run Text="{Binding Phone, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهوية: "/>
+                        <Run Text="{Binding IdNumber, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الحجوزات: "/>
+                        <Run Text="{Binding ReservationCount}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                     </Button>
                 </StackPanel>
             </Grid>

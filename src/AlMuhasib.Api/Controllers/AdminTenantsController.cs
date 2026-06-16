@@ -36,12 +36,13 @@ public sealed class AdminTenantsController : ControllerBase
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public DateTime? AccountExpiresAt { get; set; }
+        public int ApplicationSystemType { get; set; }
     }
 
     [HttpPost]
     public async Task<ActionResult<Tenant>> Create([FromBody] CreateTenantRequest request, CancellationToken ct)
     {
-        var tenant = await _tenantService.CreateAsync(request.CompanyName, request.IsMobileEnabled, request.LicenseExpiresAt, ct);
+        var tenant = await _tenantService.CreateAsync(request.CompanyName, request.IsMobileEnabled, request.LicenseExpiresAt, request.ApplicationSystemType, ct);
         if (!string.IsNullOrWhiteSpace(request.Username) && !string.IsNullOrWhiteSpace(request.Password))
             await _tenantService.CreateAccountAsync(tenant.Id, request.Username, request.Password, request.AccountExpiresAt, ct);
 

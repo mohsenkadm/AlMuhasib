@@ -215,3 +215,170 @@ public class CloudCustomerAttachment : CloudBaseEntity
     public string? Description { get; set; }
     public byte[]? FileData { get; set; }
 }
+
+// Hotel sync entities
+public class CloudHotelSettings : CloudBaseEntity
+{
+    public string HotelName { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public TimeSpan CheckInTime { get; set; } = new(14, 0, 0);
+    public TimeSpan CheckOutTime { get; set; } = new(12, 0, 0);
+    public string CancellationPolicy { get; set; } = string.Empty;
+    public string Currency { get; set; } = "IQD";
+    public bool IsConfigured { get; set; }
+}
+
+public class CloudHotelFloor : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+}
+
+public class CloudHotelRoomType : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int Capacity { get; set; } = 2;
+    public decimal BasePrice { get; set; }
+    public int SortOrder { get; set; }
+}
+
+public class CloudHotelRoom : CloudBaseEntity
+{
+    public string RoomNumber { get; set; } = string.Empty;
+    public int FloorId { get; set; }
+    public int RoomTypeId { get; set; }
+    public RoomStatus Status { get; set; } = RoomStatus.Available;
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelFloor Floor { get; set; } = null!;
+    public CloudHotelRoomType RoomType { get; set; } = null!;
+}
+
+public class CloudHotelGuest : CloudBaseEntity
+{
+    public string FullName { get; set; } = string.Empty;
+    public string IdNumber { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudHotelReservation : CloudBaseEntity
+{
+    public string ReservationNumber { get; set; } = string.Empty;
+    public int GuestId { get; set; }
+    public int? RoomId { get; set; }
+    public string GuestName { get; set; } = string.Empty;
+    public string? RoomNumber { get; set; }
+    public DateTime CheckInDate { get; set; }
+    public DateTime CheckOutDate { get; set; }
+    public DateTime? ActualCheckIn { get; set; }
+    public DateTime? ActualCheckOut { get; set; }
+    public int GuestCount { get; set; } = 1;
+    public ReservationStatus Status { get; set; } = ReservationStatus.Confirmed;
+    public decimal TotalAmount { get; set; }
+    public decimal AmountPaid { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelGuest Guest { get; set; } = null!;
+    public CloudHotelRoom? Room { get; set; }
+}
+
+public class CloudHotelReservationCharge : CloudBaseEntity
+{
+    public int ReservationId { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public DateTime ChargeDate { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelReservation Reservation { get; set; } = null!;
+}
+
+public class CloudHotelReservationPayment : CloudBaseEntity
+{
+    public int ReservationId { get; set; }
+    public DateTime PaymentDate { get; set; }
+    public decimal Amount { get; set; }
+    public string PaymentMethod { get; set; } = "نقد";
+    public string Notes { get; set; } = string.Empty;
+    public int? HotelCashBoxId { get; set; }
+    public CloudHotelReservation Reservation { get; set; } = null!;
+    public CloudHotelCashBox? HotelCashBox { get; set; }
+}
+
+public class CloudHotelCashBox : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsBank { get; set; }
+    public decimal OpeningBalance { get; set; }
+    public decimal CurrentBalance { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudHotelVoucher : CloudBaseEntity
+{
+    public string VoucherNumber { get; set; } = string.Empty;
+    public DateTime VoucherDate { get; set; }
+    public HotelVoucherType Type { get; set; }
+    public decimal Amount { get; set; }
+    public int HotelCashBoxId { get; set; }
+    public int? ReservationId { get; set; }
+    public int? HotelExpenseId { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelCashBox HotelCashBox { get; set; } = null!;
+    public CloudHotelReservation? Reservation { get; set; }
+    public CloudHotelExpense? HotelExpense { get; set; }
+}
+
+public class CloudHotelExpenseType : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudHotelExpense : CloudBaseEntity
+{
+    public int HotelExpenseTypeId { get; set; }
+    public DateTime ExpenseDate { get; set; }
+    public decimal Amount { get; set; }
+    public int? HotelCashBoxId { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelExpenseType ExpenseType { get; set; } = null!;
+    public CloudHotelCashBox? HotelCashBox { get; set; }
+}
+
+public class CloudHotelRatePlan : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public int RoomTypeId { get; set; }
+    public decimal BasePrice { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelRoomType RoomType { get; set; } = null!;
+}
+
+public class CloudHotelRatePlanSeason : CloudBaseEntity
+{
+    public int RatePlanId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal PricePerNight { get; set; }
+    public CloudHotelRatePlan RatePlan { get; set; } = null!;
+}
+
+public class CloudHotelHousekeepingTask : CloudBaseEntity
+{
+    public int RoomId { get; set; }
+    public HousekeepingStatus Status { get; set; } = HousekeepingStatus.Pending;
+    public string AssignedTo { get; set; } = string.Empty;
+    public DateTime? StartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudHotelRoom Room { get; set; } = null!;
+}

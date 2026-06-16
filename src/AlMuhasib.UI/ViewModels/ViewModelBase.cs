@@ -64,6 +64,16 @@ public abstract partial class ViewModelBase : ObservableObject
 
     protected void LoadPermissions(ICurrentUserService currentUserService, string screenName)
     {
+        if (currentUserService.IsAdmin)
+        {
+            CanAdd = true;
+            CanEdit = true;
+            CanDelete = true;
+            CanPrint = true;
+            CanExport = true;
+            return;
+        }
+
         CanAdd = currentUserService.CanAdd(screenName) && !currentUserService.IsViewOnly(screenName);
         CanEdit = currentUserService.CanEdit(screenName) && !currentUserService.IsViewOnly(screenName);
         CanDelete = currentUserService.CanDelete(screenName) && !currentUserService.IsViewOnly(screenName);

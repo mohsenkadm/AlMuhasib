@@ -32,6 +32,8 @@ public class CurrentUserService : ICurrentUserService
 
     public bool CanView(string screenName) =>
         screenName == ScreenPermissionRegistry.Dashboard
+        || screenName == HotelPermissionRegistry.Dashboard
+        || screenName == ScreenPermissionRegistry.DeveloperSystem
         || (Get(screenName)?.CanView ?? false);
 
     public bool CanAdd(string screenName) => Get(screenName)?.CanAdd ?? false;

@@ -1,0 +1,231 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Hotel.HotelRatePlansView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="خطط الأسعار والمواسم" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddPlanDialogCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0" IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Tag" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="خطة جديدة"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding LoadAllPlansCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=RatePlansGrid}"
+                                                 Margin="4,0,0,0"
+                                                 VerticalAlignment="Center"/>
+                    <TextBox md:HintAssist.Hint="بحث..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="220" Margin="16,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Padding="12" Background="#6A1B9A">
+                        <TextBlock Text="خطط الأسعار" Foreground="White" FontWeight="Bold"/>
+                    </Border>
+                    <controls:HotelListStatsBar Grid.Row="1" Margin="12,8,12,4" ItemsSource="{Binding Stats}"/>
+                    <DataGrid x:Name="RatePlansGrid"
+                              Grid.Row="2"
+                              Margin="8"
+                              ItemsSource="{Binding RatePlans}"
+                              SelectedItem="{Binding SelectedRatePlan}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Style="{StaticResource HotelListDataGrid}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" MinWidth="140"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                            <DataGridTextColumn Header="السعر" Binding="{Binding BasePrice, StringFormat=N0}" Width="110" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BasePrice"/>
+                            <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="60"
+                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                            <DataGridTemplateColumn Header="إجراءات" Width="100" MinWidth="100"
+                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Style="{StaticResource TableEditIconButton}"
+                                                    Command="{Binding DataContext.OpenEditPlanDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Style="{StaticResource TableDeleteIconButton}"
+                                                    Command="{Binding DataContext.DeletePlanCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <controls:PaginationBar Grid.Row="3"/>
+                </Grid>
+            </md:Card>
+
+            <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="8,0,0,0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Padding="12" Background="#1565C0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="مواسم السعر" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Command="{Binding OpenAddSeasonDialogCommand}" Style="{StaticResource FlatButton}" Foreground="White" IsEnabled="{Binding CanAdd}" Margin="12,0,0,0">
+                                    <md:PackIcon Kind="Plus"/>
+                                </Button>
+                            </StackPanel>
+                            <TextBox md:HintAssist.Hint="بحث في المواسم..."
+                                     Text="{Binding SeasonSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     Margin="0,8,0,0"
+                                     Foreground="Black"/>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid x:Name="SeasonsGrid" ItemsSource="{Binding Seasons}" SelectedItem="{Binding SelectedSeason}" AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الموسم" Binding="{Binding Name}" Width="*" MinWidth="120"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                            <DataGridTextColumn Header="من" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                            <DataGridTextColumn Header="إلى" Binding="{Binding EndDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                            <DataGridTextColumn Header="السعر/ليلة" Binding="{Binding PricePerNight, StringFormat=N0}" Width="110" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                            <DataGridTemplateColumn Header="إجراءات" Width="100" MinWidth="100">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Style="{StaticResource TableEditIconButton}"
+                                                    Command="{Binding DataContext.OpenEditSeasonDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Style="{StaticResource TableDeleteIconButton}"
+                                                    Command="{Binding DataContext.DeleteSeasonCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </md:Card>
+        </Grid>
+
+        <md:DialogHost IsOpen="{Binding IsPlanDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <controls:HotelFormDialog Title="خطة أسعار"
+                                          IconKind="Tag"
+                                          SaveCommand="{Binding SavePlanCommand}"
+                                          CloseCommand="{Binding ClosePlanDialogCommand}"
+                                          IsBusy="{Binding IsBusy}"
+                                          SaveButtonText="حفظ"
+                                          CancelButtonText="إلغاء">
+                    <controls:HotelFormDialog.DialogContent>
+                        <StackPanel>
+                            <TextBox md:HintAssist.Hint="اسم الخطة *"
+                                     Text="{Binding EditPlanName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <ComboBox md:HintAssist.Hint="نوع الغرفة *"
+                                      ItemsSource="{Binding RoomTypes}"
+                                      SelectedValuePath="Id"
+                                      SelectedValue="{Binding EditPlanRoomTypeId}"
+                                      DisplayMemberPath="Name"
+                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                            <TextBox md:HintAssist.Hint="السعر الأساسي"
+                                     Text="{Binding EditPlanBasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <CheckBox Content="نشط" IsChecked="{Binding EditPlanIsActive}" Margin="0,0,0,12"/>
+                            <TextBox md:HintAssist.Hint="ملاحظات"
+                                     Text="{Binding EditPlanNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        </StackPanel>
+                    </controls:HotelFormDialog.DialogContent>
+                </controls:HotelFormDialog>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsSeasonDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <controls:HotelFormDialog Title="موسم السعر"
+                                          IconKind="CalendarPlus"
+                                          SaveCommand="{Binding SaveSeasonCommand}"
+                                          CloseCommand="{Binding CloseSeasonDialogCommand}"
+                                          IsBusy="{Binding IsBusy}"
+                                          SaveButtonText="حفظ"
+                                          CancelButtonText="إلغاء">
+                    <controls:HotelFormDialog.DialogContent>
+                        <StackPanel>
+                            <TextBox md:HintAssist.Hint="اسم الموسم *"
+                                     Text="{Binding EditSeasonName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <DatePicker md:HintAssist.Hint="من"
+                                         SelectedDate="{Binding EditSeasonStart}" Margin="0,0,0,12"/>
+                            <DatePicker md:HintAssist.Hint="إلى"
+                                         SelectedDate="{Binding EditSeasonEnd}" Margin="0,0,0,12"/>
+                            <TextBox md:HintAssist.Hint="السعر / ليلة"
+                                     Text="{Binding EditSeasonPrice, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        </StackPanel>
+                    </controls:HotelFormDialog.DialogContent>
+                </controls:HotelFormDialog>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

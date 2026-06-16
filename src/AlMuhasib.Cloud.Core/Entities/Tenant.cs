@@ -4,6 +4,7 @@ public class Tenant
 {
     public int Id { get; set; }
     public string CompanyName { get; set; } = string.Empty;
+    public int ApplicationSystemType { get; set; } = 0;
     public bool IsMobileEnabled { get; set; }
     public DateTime? LicenseExpiresAt { get; set; }
     public bool IsActive { get; set; } = true;

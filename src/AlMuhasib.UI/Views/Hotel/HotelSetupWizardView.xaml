@@ -1,0 +1,172 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Hotel.HotelSetupWizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+            <md:PackIcon Kind="Hotel" Width="48" Height="48" HorizontalAlignment="Center" Foreground="#6A1B9A"/>
+            <TextBlock Text="معالج إعداد الفندق" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="#757575" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <ProgressBar Grid.Row="1" Maximum="{Binding TotalSteps}" Value="{Binding CurrentStep}" Height="6" Margin="0,0,0,20"/>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="720">
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep0, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="بيانات الفندق" Style="{StaticResource SectionSubHeader}"/>
+                        <TextBox md:HintAssist.Hint="اسم الفندق" Text="{Binding HotelName}" Margin="0,0,0,8"/>
+                        <TextBox md:HintAssist.Hint="العنوان" Text="{Binding HotelAddress}" Margin="0,0,0,8"/>
+                        <TextBox md:HintAssist.Hint="الهاتف" Text="{Binding HotelPhone}" Margin="0,0,0,8"/>
+                        <TextBox md:HintAssist.Hint="البريد" Text="{Binding HotelEmail}" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" md:HintAssist.Hint="وقت الوصول (14:00)" Text="{Binding CheckInTimeText}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="وقت المغادرة (12:00)" Text="{Binding CheckOutTimeText}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="2" md:HintAssist.Hint="العملة" Text="{Binding Currency}"/>
+                        </Grid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep1, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="الطوابق" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="اسم الطابق" Text="{Binding NewFloorName}"/>
+                            <Button Grid.Column="1" Command="{Binding AddFloorCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"><md:PackIcon Kind="Plus"/></Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Floors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Command="{Binding DataContext.RemoveFloorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource FlatButton}"><md:PackIcon Kind="Delete"/></Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="أنواع الغرف" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="الاسم" Text="{Binding NewRoomTypeName}"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="السعة" Text="{Binding NewRoomTypeCapacity}" Margin="8,0,0,0"/>
+                            <TextBox Grid.Column="2" md:HintAssist.Hint="السعر" Text="{Binding NewRoomTypePrice}" Margin="8,0,0,0"/>
+                            <Button Grid.Column="3" Command="{Binding AddRoomTypeCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"><md:PackIcon Kind="Plus"/></Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding RoomTypes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Margin="0,4"><Run Text="{Binding Name}"/><Run Text=" — "/><Run Text="{Binding BasePrice, StringFormat=N0}"/></TextBlock>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep3, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="إضافة الغرف (دفعة)" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="بادئة الرقم" Text="{Binding BulkPrefix}" Margin="0,0,8,8"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="من" Text="{Binding BulkFrom}" Margin="0,0,8,8"/>
+                            <TextBox Grid.Column="2" md:HintAssist.Hint="إلى" Text="{Binding BulkTo}" Margin="0,0,0,8"/>
+                        </Grid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep4, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="الصناديق وخطط الأسعار" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="اسم الصندوق" Text="{Binding NewCashBoxName}"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="الرصيد" Text="{Binding NewCashBoxBalance}" Margin="8,0,0,0"/>
+                            <Button Grid.Column="2" Command="{Binding AddCashBoxCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"><md:PackIcon Kind="Plus"/></Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding CashBoxes}" Margin="0,0,0,16">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}" Margin="0,2"/></DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="اسم خطة السعر" Text="{Binding NewRatePlanName}"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="السعر" Text="{Binding NewRatePlanPrice}" Margin="8,0,0,0"/>
+                            <Button Grid.Column="2" Command="{Binding AddRatePlanCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"><md:PackIcon Kind="Plus"/></Button>
+                        </Grid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" Visibility="{Binding IsStep5, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="أنواع المصاريف" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="نوع مصروف" Text="{Binding NewExpenseTypeName}"/>
+                            <Button Grid.Column="1" Command="{Binding AddExpenseTypeCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"><md:PackIcon Kind="Plus"/></Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding ExpenseTypes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}" Margin="0,4"/></DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+            <Button Command="{Binding PreviousStepCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanGoBack}" Margin="0,0,8,0"><TextBlock Text="السابق"/></Button>
+            <Button Command="{Binding NextStepCommand}" Style="{StaticResource PrimaryButton}" Visibility="{Binding IsLastStep, Converter={StaticResource InverseBooleanToVisibilityConverter}}" Margin="0,0,8,0"><TextBlock Text="التالي"/></Button>
+            <Button Command="{Binding FinishCommand}" Style="{StaticResource PrimaryButton}" Visibility="{Binding IsLastStep, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="إنهاء الإعداد"/></Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

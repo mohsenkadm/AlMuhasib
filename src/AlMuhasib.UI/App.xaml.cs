@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.UI.Charts;
@@ -10,6 +11,10 @@ using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
+using AlMuhasib.UI.ViewModels.Car;
+using AlMuhasib.UI.ViewModels.Hotel;
+using AlMuhasib.UI.Modules;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Windows;
 using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
@@ -24,31 +29,27 @@ public partial class App : Application
     private static readonly string LogFilePath =
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
 
-    private readonly ServiceProvider _serviceProvider;
-    public IServiceProvider Services => _serviceProvider;
+    private readonly SystemProfileService _systemProfile = new();
+    private ServiceProvider? _serviceProvider;
+    public IServiceProvider Services => _serviceProvider ?? throw new InvalidOperationException("Application is not initialized.");
     private bool _isLoggingOut;
 
     public App()
     {
-        // Global exception handlers so no exception is silently swallowed
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    }
 
-        try
-        {
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            _serviceProvider = services.BuildServiceProvider();
-        }
-        catch (Exception ex)
-        {
-            // Constructor failure: WPF resources/MaterialDesign may not be loaded yet,
-            // so fall back to the native Win32 MessageBox + a log file.
-            ShowFatalError("فشل تهيئة التطبيق", ex);
-            Environment.Exit(1);
-            throw; // unreachable, but keeps compiler happy about _serviceProvider
-        }
+    private void EnsureServiceProvider()
+    {
+        if (_serviceProvider is not null)
+            return;
+
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        _serviceProvider = services.BuildServiceProvider();
+        ScreenPermissionRegistry.Initialize(_serviceProvider.GetRequiredService<SystemModuleRegistry>());
     }
 
     private static void LogException(string context, Exception ex)
@@ -126,22 +127,22 @@ public partial class App : Application
         });
     }
 
-    private static void ConfigureServices(IServiceCollection services)
+    private void ConfigureServices(IServiceCollection services)
     {
-        // Configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
 
         services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<ISystemProfileService>(_systemProfile);
+        services.AddSingleton<SystemModuleRegistry>();
 
         services.Configure<AppUpdateOptions>(configuration.GetSection(AppUpdateOptions.SectionName));
         services.AddHttpClient();
         services.AddSingleton<IAppUpdateService, AppUpdateService>();
 
-        // Infrastructure (EF Core + Repositories + AuthService)
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, _systemProfile);
 
         // Services
         var currentUserService = new CurrentUserService();
@@ -152,6 +153,7 @@ public partial class App : Application
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
         services.AddSingleton<ISoundService, SoundService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
+        services.AddSingleton<IDeveloperAccessService, DeveloperAccessService>();
         services.AddSingleton<ThemeService>();
         services.AddSingleton<IInvoiceDraftService, InvoiceDraftService>();
         services.AddSingleton<IInvoiceTemplateService, InvoiceTemplateService>();
@@ -226,7 +228,32 @@ public partial class App : Application
         services.AddTransient<WarehouseTransferViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
         services.AddTransient<CloudSyncSettingsViewModel>();
+        services.AddTransient<DeveloperSystemSwitchViewModel>();
         services.AddTransient<HelpVideosViewModel>();
+
+        services.AddTransient<CarDashboardViewModel>();
+        services.AddTransient<CarContractFormViewModel>();
+        services.AddTransient<CarContractsViewModel>();
+        services.AddTransient<CarContractsReportViewModel>();
+
+        services.AddTransient<HotelDashboardViewModel>();
+        services.AddTransient<HotelReservationsViewModel>();
+        services.AddTransient<HotelReservationsCalendarViewModel>();
+        services.AddTransient<HotelReservationFormViewModel>();
+        services.AddTransient<HotelCheckInOutViewModel>();
+        services.AddTransient<HotelRoomsViewModel>();
+        services.AddTransient<HotelRoomTypesViewModel>();
+        services.AddTransient<HotelFloorsViewModel>();
+        services.AddTransient<HotelGuestsViewModel>();
+        services.AddTransient<HotelRatePlansViewModel>();
+        services.AddTransient<HotelHousekeepingViewModel>();
+        services.AddTransient<HotelCashViewModel>();
+        services.AddTransient<HotelExpensesViewModel>();
+        services.AddTransient<HotelReportsViewModel>();
+        services.AddTransient<HotelSetupWizardViewModel>();
+        services.AddSingleton<ICarContractPrintService, CarContractPrintService>();
+        services.AddSingleton<IHotelInvoicePrintService, HotelInvoicePrintService>();
+
         services.AddSingleton<MainWindowViewModel>();
 
         // Views
@@ -242,6 +269,20 @@ public partial class App : Application
         try
         {
             base.OnStartup(e);
+
+            if (_systemProfile.IsFirstRun)
+            {
+                var selection = new SystemSelectionWindow();
+                if (selection.ShowDialog() != true || selection.SelectedSystem is null)
+                {
+                    Shutdown();
+                    return;
+                }
+
+                _systemProfile.SaveSelection(selection.SelectedSystem.Value);
+            }
+
+            EnsureServiceProvider();
 
             PrintPreferences.Load();
 
@@ -444,25 +485,53 @@ public partial class App : Application
         {
             mainVm.CloseAllTabs();
 
-            // Check if initial setup is needed (no capital entries exist)
+            // Check if initial setup is needed
             bool needsSetup = false;
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                needsSetup = currentUser.IsAdmin && !await uow.CapitalEntries.AnyAsync();
+                if (_systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
+                {
+                    using var scope = _serviceProvider!.CreateScope();
+                    var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    needsSetup = currentUser.IsAdmin && !await uow.CapitalEntries.AnyAsync();
+                }
+                else if (_systemProfile.ActiveSystem == ApplicationSystemType.HotelManagement)
+                {
+                    using var scope = _serviceProvider!.CreateScope();
+                    var hotelSettings = scope.ServiceProvider.GetRequiredService<IHotelSettingsService>();
+                    needsSetup = currentUser.IsAdmin && !await hotelSettings.IsConfiguredAsync();
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[Startup] Setup check error: {ex}");
             }
 
-            if (needsSetup)
+            if (needsSetup && _systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
             {
                 await mainVm.OpenTabAsync(typeof(SetupWizardViewModel), "إعداد النظام", PackIconKind.CogOutline, activateIfExists: false);
                 if (mainVm.CurrentViewModel is SetupWizardViewModel wizardVm)
                 {
                     wizardVm.SetupCompleted += async () =>
+                    {
+                        mainVm.CloseAllTabs();
+                        await mainVm.OpenInitialSessionTabsAsync();
+                        mainVm.TryStartFeatureTour();
+                        _ = mainVm.InitializeNotificationCenterAsync();
+                        _ = mainVm.InitializePersonalWorkspaceAsync();
+                    };
+                }
+            }
+            else if (needsSetup && _systemProfile.ActiveSystem == ApplicationSystemType.HotelManagement)
+            {
+                await mainVm.OpenTabAsync(typeof(HotelSetupWizardViewModel), "إعداد الفندق", PackIconKind.Hotel, activateIfExists: false);
+                if (mainVm.CurrentViewModel is not HotelSetupWizardViewModel)
+                {
+                    await mainVm.OpenInitialSessionTabsAsync();
+                }
+                else if (mainVm.CurrentViewModel is HotelSetupWizardViewModel hotelWizardVm)
+                {
+                    hotelWizardVm.SetupCompleted += async () =>
                     {
                         mainVm.CloseAllTabs();
                         await mainVm.OpenInitialSessionTabsAsync();
@@ -530,7 +599,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _serviceProvider.Dispose();
+        _serviceProvider?.Dispose();
         base.OnExit(e);
     }
 }

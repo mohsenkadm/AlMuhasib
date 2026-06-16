@@ -8,4 +8,6 @@ abstract final class StorageKeys {
   static const refreshToken = 'refresh_token';
   static const accessTokenExpiresAt = 'access_token_expires_at';
   static const tenantId = 'tenant_id';
+  static const applicationSystemType = 'application_system_type';
+  static const tenantName = 'tenant_name';
 }

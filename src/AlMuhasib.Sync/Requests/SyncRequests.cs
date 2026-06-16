@@ -27,6 +27,22 @@ public sealed class SyncDataBundle
     public List<ProfitDistributionDetailSyncDto> ProfitDistributionDetails { get; set; } = [];
     public List<CapitalEntrySyncDto> CapitalEntries { get; set; } = [];
     public List<CustomerAttachmentSyncDto> CustomerAttachments { get; set; } = [];
+
+    public List<HotelSettingsSyncDto> HotelSettings { get; set; } = [];
+    public List<HotelFloorSyncDto> HotelFloors { get; set; } = [];
+    public List<HotelRoomTypeSyncDto> HotelRoomTypes { get; set; } = [];
+    public List<HotelRoomSyncDto> HotelRooms { get; set; } = [];
+    public List<HotelGuestSyncDto> HotelGuests { get; set; } = [];
+    public List<HotelReservationSyncDto> HotelReservations { get; set; } = [];
+    public List<HotelReservationChargeSyncDto> HotelReservationCharges { get; set; } = [];
+    public List<HotelReservationPaymentSyncDto> HotelReservationPayments { get; set; } = [];
+    public List<HotelCashBoxSyncDto> HotelCashBoxes { get; set; } = [];
+    public List<HotelVoucherSyncDto> HotelVouchers { get; set; } = [];
+    public List<HotelExpenseTypeSyncDto> HotelExpenseTypes { get; set; } = [];
+    public List<HotelExpenseSyncDto> HotelExpenses { get; set; } = [];
+    public List<HotelRatePlanSyncDto> HotelRatePlans { get; set; } = [];
+    public List<HotelRatePlanSeasonSyncDto> HotelRatePlanSeasons { get; set; } = [];
+    public List<HotelHousekeepingTaskSyncDto> HotelHousekeepingTasks { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

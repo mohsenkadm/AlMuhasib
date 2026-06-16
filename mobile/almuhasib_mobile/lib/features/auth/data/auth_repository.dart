@@ -45,6 +45,10 @@ class AuthRepository {
     await _preferences.setCompanyName(response.companyName);
     await _preferences.setTenantId(response.tenantId);
     await _preferences.setUsername(username);
+    await _preferences.setApplicationSystemType(response.applicationSystemType);
+    if (response.tenantName != null && response.tenantName!.isNotEmpty) {
+      await _preferences.setTenantName(response.tenantName!);
+    }
 
     await _notificationService.initialize();
     await _notificationService.registerDeviceWithApi();

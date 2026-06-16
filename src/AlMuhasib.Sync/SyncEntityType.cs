@@ -24,5 +24,20 @@ public enum SyncEntityType
     ProfitDistribution,
     ProfitDistributionDetail,
     CapitalEntry,
-    CustomerAttachment
+    CustomerAttachment,
+    HotelSettings,
+    HotelFloor,
+    HotelRoomType,
+    HotelRoom,
+    HotelGuest,
+    HotelReservation,
+    HotelReservationCharge,
+    HotelReservationPayment,
+    HotelCashBox,
+    HotelVoucher,
+    HotelExpenseType,
+    HotelExpense,
+    HotelRatePlan,
+    HotelRatePlanSeason,
+    HotelHousekeepingTask
 }

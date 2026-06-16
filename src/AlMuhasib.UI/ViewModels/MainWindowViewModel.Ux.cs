@@ -5,6 +5,8 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.ViewModels.Car;
+using AlMuhasib.UI.ViewModels.Hotel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
@@ -127,6 +129,7 @@ public partial class MainWindowViewModel
     private static bool IsCustomizableMenuItem(NavigationMenuItem item) =>
         !item.IsGroupHeader
         && item.ViewModelType is not null
+        && item.ViewModelType != typeof(DeveloperSystemSwitchViewModel)
         && item.ScreenName != "Dashboard";
 
     private static string GetMenuPreferenceKey(NavigationMenuItem item) =>
@@ -134,6 +137,7 @@ public partial class MainWindowViewModel
 
     private bool CanMenuBeShownByPermissions(NavigationMenuItem item) =>
         item.ScreenName == ScreenPermissionRegistry.Dashboard
+        || item.ViewModelType == typeof(DeveloperSystemSwitchViewModel)
         || _currentUserService.CanView(item.ScreenName);
 
     [RelayCommand]
@@ -259,6 +263,22 @@ public partial class MainWindowViewModel
         var icon = menu?.Icon ?? PackIconKind.Application;
         await OpenTabAsync(type, title, icon);
     }
+
+    [RelayCommand]
+    private async Task QuickNewCarContractAsync() =>
+        await OpenTabAsync(typeof(CarContractFormViewModel), "عقد جديد", PackIconKind.FileDocumentPlus, activateIfExists: false);
+
+    [RelayCommand]
+    private async Task QuickCarContractsListAsync() =>
+        await OpenTabAsync(typeof(CarContractsViewModel), "العقود", PackIconKind.FormatListBulleted);
+
+    [RelayCommand]
+    private async Task QuickNewReservationAsync() =>
+        await OpenTabAsync(typeof(HotelReservationFormViewModel), "حجز جديد", PackIconKind.CalendarPlus, activateIfExists: false);
+
+    [RelayCommand]
+    private async Task QuickCheckInAsync() =>
+        await OpenTabAsync(typeof(HotelCheckInOutViewModel), "تسجيل دخول/خروج", PackIconKind.Login);
 
     [RelayCommand]
     private async Task QuickNewSaleAsync() =>
@@ -417,6 +437,15 @@ public partial class MainWindowViewModel
                 break;
             case SmartAlertAction.OpenInstallmentInvoiceQueue:
                 await OpenInvoiceQueueAsync(InvoiceQueueKind.Installment);
+                break;
+            case SmartAlertAction.OpenHotelCheckInOut:
+                await OpenTabAsync(typeof(HotelCheckInOutViewModel), "تسجيل دخول/خروج", PackIconKind.Login);
+                break;
+            case SmartAlertAction.OpenHotelRooms:
+                await OpenTabAsync(typeof(HotelRoomsViewModel), "الغرف", PackIconKind.Door);
+                break;
+            case SmartAlertAction.OpenHotelHousekeeping:
+                await OpenTabAsync(typeof(HotelHousekeepingViewModel), "النظافة", PackIconKind.Broom);
                 break;
         }
     }

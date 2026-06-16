@@ -13,12 +13,12 @@ public static class DocumentPrintHelper
     private const double DefaultPageWidth = 793.7;  // A4 @ 96 DPI
     private const double DefaultPageHeight = 1122.5;
 
-    public static void PrintWithPreview(FlowDocument document, string jobName, Size? pageSize = null)
+    public static void PrintWithPreview(FlowDocument document, string jobName, Size? pageSize = null, int defaultCopies = 1)
     {
         var size = pageSize ?? new Size(DefaultPageWidth, DefaultPageHeight);
         ApplyPageLayout(document, size);
 
-        var preview = new PrintPreviewWindow(document, jobName);
+        var preview = new PrintPreviewWindow(document, jobName, defaultCopies);
         preview.ShowDialog();
     }
 
@@ -33,8 +33,9 @@ public static class DocumentPrintHelper
     {
         private readonly FlowDocument _document;
         private readonly string _jobName;
+        private readonly TextBox _copiesInput;
 
-        public PrintPreviewWindow(FlowDocument document, string jobName)
+        public PrintPreviewWindow(FlowDocument document, string jobName, int defaultCopies = 1)
         {
             _document = document;
             _jobName = jobName;
@@ -80,17 +81,41 @@ public static class DocumentPrintHelper
             {
                 Content = "إغلاق",
                 Padding = new Thickness(20, 8, 20, 8),
-                MinWidth = 100
+                MinWidth = 100,
+                Margin = new Thickness(0, 0, 16, 0)
             };
             closeButton.Click += (_, _) => Close();
 
+            _copiesInput = new TextBox
+            {
+                Width = 56,
+                Text = Math.Max(1, defaultCopies).ToString(),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0)
+            };
+
+            var copiesPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            copiesPanel.Children.Add(new TextBlock
+            {
+                Text = "عدد النسخ:",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0)
+            });
+            copiesPanel.Children.Add(_copiesInput);
+
             toolbarPanel.Children.Add(printButton);
             toolbarPanel.Children.Add(closeButton);
+            toolbarPanel.Children.Add(copiesPanel);
             toolbar.Child = toolbarPanel;
             Grid.SetRow(toolbar, 0);
             root.Children.Add(toolbar);
 
-            // FlowDocumentPageViewer supports FlowDocument; DocumentViewer does not.
             var viewer = new FlowDocumentPageViewer
             {
                 Document = document,
@@ -106,12 +131,31 @@ public static class DocumentPrintHelper
 
         private void OnPrintClick(object sender, RoutedEventArgs e)
         {
+            if (!int.TryParse(_copiesInput.Text.Trim(), out var copies) || copies < 1)
+            {
+                MessageBox.Show("أدخل عدداً صحيحاً للنسخ (1 أو أكثر).", "طباعة", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             var printDialog = new PrintDialog();
             if (printDialog.ShowDialog() != true)
                 return;
 
             var paginator = ((IDocumentPaginatorSource)_document).DocumentPaginator;
             paginator.PageSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
+
+            try
+            {
+                printDialog.PrintTicket.CopyCount = copies;
+            }
+            catch
+            {
+                for (var i = 0; i < copies; i++)
+                    printDialog.PrintDocument(paginator, _jobName);
+                Close();
+                return;
+            }
+
             printDialog.PrintDocument(paginator, _jobName);
             Close();
         }

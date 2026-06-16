@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Cloud.Infrastructure.Services;
 
-public sealed class SyncEngine : ISyncEngine
+public sealed partial class SyncEngine : ISyncEngine
 {
     private readonly CloudDbContext _db;
 
@@ -20,6 +20,13 @@ public sealed class SyncEngine : ISyncEngine
 
     public async Task<SyncPushResponse> PushAsync(int tenantId, SyncPushRequest request, CancellationToken ct = default)
     {
+        var tenantType = await _db.Tenants.AsNoTracking()
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.ApplicationSystemType)
+            .FirstOrDefaultAsync(ct);
+        if (tenantType == (int)ApplicationSystemType.HotelManagement)
+            return await PushHotelAsync(tenantId, request, ct);
+
         var resolver = new SyncIdResolver(_db, tenantId);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
         var accepted = 0;
@@ -191,6 +198,13 @@ public sealed class SyncEngine : ISyncEngine
 
     public async Task<SyncPullResponse> PullAsync(int tenantId, SyncPullRequest request, CancellationToken ct = default)
     {
+        var tenantType = await _db.Tenants.AsNoTracking()
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.ApplicationSystemType)
+            .FirstOrDefaultAsync(ct);
+        if (tenantType == (int)ApplicationSystemType.HotelManagement)
+            return await PullHotelAsync(tenantId, request, ct);
+
         var since = request.Since ?? DateTime.MinValue;
         var bundle = new SyncDataBundle();
 

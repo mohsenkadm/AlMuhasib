@@ -20,6 +20,10 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _showQuickInstallmentInvoice = true;
     [ObservableProperty] private bool _showQuickReturn = true;
     [ObservableProperty] private bool _showQuickAssistant = true;
+    [ObservableProperty] private bool _showQuickNewCarContract;
+    [ObservableProperty] private bool _showQuickCarContractsList;
+    [ObservableProperty] private bool _showQuickNewReservation;
+    [ObservableProperty] private bool _showQuickCheckIn;
 
     public string WorkspaceProfileDisplay => WorkspaceProfile switch
     {
@@ -38,6 +42,46 @@ public partial class MainWindowViewModel
 
     private void ApplyWorkspaceProfile()
     {
+        if (_moduleRegistry.IsHotelManagement)
+        {
+            ShowQuickPos = false;
+            ShowQuickSale = false;
+            ShowQuickPurchase = false;
+            ShowQuickReceipt = false;
+            ShowQuickPayment = false;
+            ShowQuickInstallments = false;
+            ShowQuickInstallmentInvoice = false;
+            ShowQuickReturn = false;
+            ShowQuickAssistant = false;
+            ShowQuickNewCarContract = false;
+            ShowQuickCarContractsList = false;
+            ShowQuickNewReservation = true;
+            ShowQuickCheckIn = true;
+            return;
+        }
+
+        ShowQuickNewReservation = false;
+        ShowQuickCheckIn = false;
+
+        if (_moduleRegistry.IsCarContracts)
+        {
+            ShowQuickPos = false;
+            ShowQuickSale = false;
+            ShowQuickPurchase = false;
+            ShowQuickReceipt = false;
+            ShowQuickPayment = false;
+            ShowQuickInstallments = false;
+            ShowQuickInstallmentInvoice = false;
+            ShowQuickReturn = false;
+            ShowQuickAssistant = false;
+            ShowQuickNewCarContract = true;
+            ShowQuickCarContractsList = true;
+            return;
+        }
+
+        ShowQuickNewCarContract = false;
+        ShowQuickCarContractsList = false;
+
         switch (WorkspaceProfile)
         {
             case WorkspaceProfile.Cashier:

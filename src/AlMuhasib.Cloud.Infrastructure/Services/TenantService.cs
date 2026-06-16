@@ -20,13 +20,14 @@ public sealed class TenantService : ITenantService
     public Task<Tenant?> GetByIdAsync(int id, CancellationToken ct = default) =>
         _db.Tenants.Include(t => t.Accounts).FirstOrDefaultAsync(t => t.Id == id, ct);
 
-    public async Task<Tenant> CreateAsync(string companyName, bool isMobileEnabled, DateTime? licenseExpiresAt, CancellationToken ct = default)
+    public async Task<Tenant> CreateAsync(string companyName, bool isMobileEnabled, DateTime? licenseExpiresAt, int applicationSystemType = 0, CancellationToken ct = default)
     {
         var tenant = new Tenant
         {
             CompanyName = companyName,
             IsMobileEnabled = isMobileEnabled,
             LicenseExpiresAt = licenseExpiresAt,
+            ApplicationSystemType = applicationSystemType,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };

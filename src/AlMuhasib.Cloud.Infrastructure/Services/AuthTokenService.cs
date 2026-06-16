@@ -28,7 +28,8 @@ public sealed class AuthTokenService : IAuthTokenService
             new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
             new Claim("tenant_id", tenant.Id.ToString()),
             new Claim(ClaimTypes.Name, account.Username),
-            new Claim(ClaimTypes.Role, "Tenant")
+            new Claim(ClaimTypes.Role, "Tenant"),
+            new Claim("system_type", tenant.ApplicationSystemType.ToString())
         };
 
         var token = CreateToken(claims, expiresAt);
@@ -41,6 +42,8 @@ public sealed class AuthTokenService : IAuthTokenService
             AccessTokenExpiresAt = expiresAt,
             TenantId = tenant.Id,
             CompanyName = tenant.CompanyName,
+            TenantName = tenant.CompanyName,
+            ApplicationSystemType = tenant.ApplicationSystemType,
             IsMobileEnabled = tenant.IsMobileEnabled,
             LicenseExpiresAt = tenant.LicenseExpiresAt,
             AccountExpiresAt = account.ExpiresAt

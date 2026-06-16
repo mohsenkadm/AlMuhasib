@@ -1,5 +1,6 @@
 using System.Data;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Infrastructure;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
@@ -8,34 +9,38 @@ namespace AlMuhasib.Infrastructure.Services;
 public class BackupService : IBackupService
 {
     private readonly IConfiguration _configuration;
+    private readonly ISystemProfileService _systemProfile;
 
-    public BackupService(IConfiguration configuration)
+    public BackupService(IConfiguration configuration, ISystemProfileService systemProfile)
     {
         _configuration = configuration;
+        _systemProfile = systemProfile;
     }
+
+    private string GetActiveConnectionString() =>
+        SystemConnectionStrings.Build(_configuration, _systemProfile.ActiveSystem);
 
     public string GetDefaultBackupDirectory()
     {
         var path = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "AlMuhasib",
-            "Backups");
+            "Backups",
+            _systemProfile.ActiveDatabaseName);
         Directory.CreateDirectory(path);
         return path;
     }
 
     public async Task<string> BackupDatabaseAsync(string destinationPath)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string not configured.");
-
+        var connectionString = GetActiveConnectionString();
         var builder = new SqlConnectionStringBuilder(connectionString);
         var databaseName = builder.InitialCatalog;
         if (string.IsNullOrWhiteSpace(databaseName))
             throw new InvalidOperationException("Database name not found in connection string.");
 
         Directory.CreateDirectory(destinationPath);
-        var fileName = $"AlMuhasib_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
+        var fileName = $"{databaseName}_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
         var fullPath = Path.Combine(destinationPath, fileName);
 
         await using var connection = new SqlConnection(connectionString);
@@ -54,9 +59,7 @@ public class BackupService : IBackupService
         if (!File.Exists(backupFilePath))
             throw new FileNotFoundException("ملف النسخ الاحتياطي غير موجود.", backupFilePath);
 
-        var connectionString = _configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string not configured.");
-
+        var connectionString = GetActiveConnectionString();
         var builder = new SqlConnectionStringBuilder(connectionString);
         var databaseName = builder.InitialCatalog;
         if (string.IsNullOrWhiteSpace(databaseName))

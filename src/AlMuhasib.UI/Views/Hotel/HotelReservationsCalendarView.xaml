@@ -1,0 +1,161 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Hotel.HotelReservationsCalendarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding PreviousMonthCommand}" Style="{StaticResource FlatButton}" Margin="0,0,8,0">
+                        <md:PackIcon Kind="ChevronRight"/>
+                    </Button>
+                    <TextBlock Text="{Binding MonthTitle}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Command="{Binding NextMonthCommand}" Style="{StaticResource FlatButton}" Margin="0,0,16,0">
+                        <md:PackIcon Kind="ChevronLeft"/>
+                    </Button>
+                    <Button Command="{Binding GoToTodayCommand}" Style="{StaticResource FlatButton}" Content="اليوم" Margin="0,0,8,0"/>
+                    <Button Command="{Binding OpenNewReservationCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CalendarPlus" Margin="0,0,6,0"/>
+                            <TextBlock Text="حجز جديد"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding OpenReservationsListCommand}" Style="{StaticResource FlatButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="FormatListBulleted" Margin="0,0,6,0"/>
+                        <TextBlock Text="قائمة الحجوزات"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </md:Card>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,8,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <UniformGrid Columns="7" Margin="0,0,0,8">
+                        <TextBlock Text="السبت" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الأحد" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الاثنين" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الثلاثاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الأربعاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الخميس" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="الجمعة" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                    </UniformGrid>
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding CalendarDays}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="7"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="2"
+                                        Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="4"
+                                        MinHeight="72">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
+                                            <Setter Property="Background" Value="#F5F5F5"/>
+                                            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="#EDE7F6"/>
+                                                    <Setter Property="BorderBrush" Value="#6A1B9A"/>
+                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DayNumber}" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ReservationCount}" HorizontalAlignment="Center"
+                                                   Foreground="#6A1B9A" FontWeight="SemiBold"
+                                                   Visibility="{Binding HasReservations, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        <TextBlock Text="حجز" HorizontalAlignment="Center" FontSize="10"
+                                                   Foreground="#6A1B9A"
+                                                   Visibility="{Binding HasReservations, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </md:Card>
+            <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="#6A1B9A" Padding="16,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding SelectedDayTitle}" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                            <controls:ColumnFilterToggle Grid.Column="1"
+                                                         IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         TargetDataGrid="{Binding ElementName=DayReservationsGrid}"/>
+                        </Grid>
+                    </Border>
+                    <DataGrid x:Name="DayReservationsGrid" Grid.Row="1"
+                              ItemsSource="{Binding SelectedDayReservations}"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource HotelListDataGrid}" Margin="8"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="رقم" Binding="{Binding ReservationNumber}" Width="100" MinWidth="80"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ReservationNumber"/>
+                            <DataGridTextColumn Header="النزيل" Binding="{Binding GuestName}" Width="2*" MinWidth="120"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GuestName"/>
+                            <DataGridTextColumn Header="الغرفة" Binding="{Binding RoomNumber}" Width="90" MinWidth="70"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber"/>
+                            <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckInDate"/>
+                            <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckOutDate"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </md:Card>
+        </Grid>
+    </Grid>
+</UserControl>

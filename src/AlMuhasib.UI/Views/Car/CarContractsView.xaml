@@ -1,0 +1,552 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Car.CarContractsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <UserControl.Resources>
+        <Style x:Key="DetailLabel" TargetType="TextBlock" BasedOn="{StaticResource FormFieldLabel}">
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+        </Style>
+        <Style x:Key="DetailValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style x:Key="DetailFieldPanel" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style x:Key="DetailSectionCard" TargetType="Border">
+            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Action bar -->
+        <md:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="إدارة العقود" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <WrapPanel>
+                    <Button Command="{Binding OpenNewContractCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileDocumentPlus" Margin="0,0,6,0"/>
+                            <TextBlock Text="عقد جديد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding PrintAllCommand}" Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanPrint}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Printer" Margin="0,0,6,0"/>
+                            <TextBlock Text="طباعة الكل"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ExportExcelCommand}" Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanExport}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileExcelOutline" Margin="0,0,6,0"/>
+                            <TextBlock Text="تصدير Excel"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding LoadContractsCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox md:HintAssist.Hint="بحث..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource SearchBox}" MinWidth="200" Margin="0,0,8,8"/>
+                    <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,8"/>
+                    <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"/>
+                    <CheckBox Content="غير مسددة فقط" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                </WrapPanel>
+            </StackPanel>
+        </md:Card>
+
+        <!-- Data grid -->
+        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="قائمة العقود" FontSize="15" FontWeight="Bold"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                        <controls:ColumnFilterToggle Grid.Column="1"
+                                                     IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     TargetDataGrid="{Binding ElementName=ContractsGrid}"/>
+                    </Grid>
+                </Border>
+
+                <DataGrid x:Name="ContractsGrid" Grid.Row="2"
+                          ItemsSource="{Binding Contracts}" SelectedItem="{Binding SelectedContract}"
+                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                          SelectionMode="Single" HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          md:DataGridAssist.CellPadding="10 8"
+                          FontSize="13" Margin="8,4,8,0"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractNumber">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractDate"/>
+                        <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SellerName"/>
+                        <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BuyerName"/>
+                        <DataGridTextColumn Header="اللوحة" Binding="{Binding PlateNumber}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlateNumber"/>
+                        <DataGridTextColumn Header="السعر" Binding="{Binding CarPrice, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CarPrice">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="الواصل" Binding="{Binding AmountReceived, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AmountReceived"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#C62828"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="280" MinWidth="280"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Style="{StaticResource TableViewIconButton}"
+                                                Command="{Binding DataContext.ViewContractDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="عرض التفاصيل">
+                                            <md:PackIcon Kind="Eye" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableSecondaryIconButton}"
+                                                Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="تسديد"
+                                                IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="CashCheck" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TablePrintIconButton}"
+                                                Command="{Binding DataContext.PrintContractCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="طباعة"
+                                                IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableEditIconButton}"
+                                                Command="{Binding DataContext.EditContractCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="تعديل"
+                                                IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableDeleteIconButton}"
+                                                Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="حذف"
+                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <controls:PaginationBar Grid.Row="3"/>
+            </Grid>
+        </md:Card>
+
+        <!-- Payment dialog -->
+        <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="440" MaxWidth="480" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#2E7D32" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                            <StackPanel>
+                                <Button Command="{Binding ClosePaymentDialogCommand}"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource FlatButton}"
+                                        Foreground="White"
+                                        ToolTip="إغلاق"
+                                        Padding="2"
+                                        Margin="0,0,0,8">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                                <TextBlock Text="تسديد مبلغ" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding PaymentContractSummary}" FontSize="12" Foreground="#E8F5E9"
+                                           Margin="0,6,0,0" TextWrapping="Wrap" LineHeight="20"/>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Row="1" Margin="24,20,24,8">
+                            <TextBlock Text="المبلغ *" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding PaymentAmount, StringFormat=N0}" Style="{StaticResource NumericTextBox}" Margin="0,0,0,12"/>
+                            <TextBlock Text="تاريخ التسديد" Style="{StaticResource FormFieldLabel}"/>
+                            <DatePicker SelectedDate="{Binding PaymentDate}" Style="{StaticResource MaterialDesignFilledDatePicker}" Margin="0,0,0,12"/>
+                            <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding PaymentNotes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" MinHeight="60" AcceptsReturn="True"/>
+                        </StackPanel>
+
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Content="تسديد" Command="{Binding SubmitPaymentCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#2E7D32" md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,8,0"/>
+                                <Button Content="إغلاق" Command="{Binding ClosePaymentDialogCommand}"
+                                        Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- Detail dialog -->
+        <md:DialogHost IsOpen="{Binding IsDetailDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="820" MaxWidth="920" MaxHeight="720" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="#1565C0" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                            <StackPanel>
+                                <Button Command="{Binding CloseDetailDialogCommand}"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource FlatButton}"
+                                        Foreground="White"
+                                        ToolTip="إغلاق"
+                                        Padding="2"
+                                        Margin="0,0,0,8">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                                <TextBlock Text="تفاصيل العقد" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <TextBlock Text="{Binding DetailContract.ContractNumber}" FontSize="14" FontWeight="SemiBold" Foreground="#E3F2FD"/>
+                                    <TextBlock Text="  •  " Foreground="#90CAF9"/>
+                                    <TextBlock Text="{Binding DetailContract.Status}" FontSize="13" Foreground="#BBDEFB"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="28,20"
+                                      DataContext="{Binding DetailContract}">
+                            <StackPanel HorizontalAlignment="Stretch">
+
+                                <Border Style="{StaticResource DetailSectionCard}">
+                                    <StackPanel>
+                                        <TextBlock Text="بيانات العقد" FontWeight="Bold" Foreground="#1565C0" FontSize="14" Margin="0,0,0,12"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="رقم العقد" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding ContractNumber}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="التاريخ" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding ContractDate}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="4" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الحالة" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource DetailSectionCard}">
+                                    <StackPanel>
+                                        <TextBlock Text="البائع" FontWeight="Bold" Foreground="#2E7D32" FontSize="14" Margin="0,0,0,12"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الاسم" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding SellerName}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الهاتف" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding SellerPhone}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="العنوان" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding SellerAddress}" Style="{StaticResource DetailValue}"/>
+                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="رقم الهوية" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding SellerIdNumber}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="تاريخ الهوية" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding SellerIdDate}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource DetailSectionCard}">
+                                    <StackPanel>
+                                        <TextBlock Text="المشتري" FontWeight="Bold" Foreground="#1565C0" FontSize="14" Margin="0,0,0,12"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الاسم" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding BuyerName}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الهاتف" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding BuyerPhone}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="العنوان" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding BuyerAddress}" Style="{StaticResource DetailValue}"/>
+                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="رقم الهوية" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding BuyerIdNumber}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="تاريخ الهوية" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding BuyerIdDate}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource DetailSectionCard}">
+                                    <StackPanel>
+                                        <TextBlock Text="السيارة والمبالغ" FontWeight="Bold" Foreground="#E65100" FontSize="14" Margin="0,0,0,12"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="رقم اللوحة" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding PlateNumber}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="نوع السيارة" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding CarType}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الموديل" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding CarModel}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="اللون" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding CarColor}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="رقم الشاصي" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding ChassisNumber}" Style="{StaticResource DetailValue}"/>
+                                        </StackPanel>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="صاحب السنوية" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding AnnualOwnerName}" Style="{StaticResource DetailValue}"/>
+                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="سعر السيارة" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding CarPrice}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="المبلغ الواصل" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding AmountReceived}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="المبلغ المتبقي" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding RemainingAmount}" Style="{StaticResource DetailValue}" Foreground="#C62828"/>
+                                        </StackPanel>
+                                        <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                            <TextBlock Text="السعر كتابة" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding CarPriceInWords}" Style="{StaticResource DetailValue}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource DetailSectionCard}" Margin="0">
+                                    <StackPanel>
+                                        <TextBlock Text="ملاحظات" Style="{StaticResource DetailLabel}"/>
+                                        <TextBlock Text="{Binding Notes}" Style="{StaticResource DetailValue}" TextWrapping="Wrap" MinHeight="24"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Command="{Binding DetailPrintCommand}" Style="{StaticResource PrimaryButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0" IsEnabled="{Binding CanPrint}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Printer" Margin="0,0,6,0"/>
+                                        <TextBlock Text="طباعة"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding DetailEditCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0" IsEnabled="{Binding CanEdit}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="PencilOutline" Margin="0,0,6,0"/>
+                                        <TextBlock Text="تعديل"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding DetailDeleteCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#C62828" md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0" IsEnabled="{Binding CanDelete}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
+                                        <TextBlock Text="حذف"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding CloseDetailDialogCommand}" Style="{StaticResource FlatButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="16,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Close" Margin="0,0,6,0"/>
+                                        <TextBlock Text="إغلاق"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- Delete dialog -->
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="400" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#C62828" Padding="20,14" CornerRadius="16,16,0,0">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="تأكيد الحذف" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="لا يمكن التراجع عن هذه العملية" FontSize="12" Foreground="#FFCDD2" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Button Command="{Binding CancelDeleteCommand}" HorizontalAlignment="Left"
+                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="4">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <TextBlock Grid.Row="1" Margin="24,20,24,8" FontSize="14" TextWrapping="Wrap">
+                            <Run Text="هل أنت متأكد من حذف العقد "/>
+                            <Run Text="{Binding ContractToDelete.ContractNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Content="حذف" Command="{Binding DeleteConfirmedCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#C62828" md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,8,0"/>
+                                <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}"
+                                        Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

@@ -10,6 +10,8 @@ public abstract partial class PagedViewModelBase : ViewModelBase
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private int _pageSize = 20;
     [ObservableProperty] private int _totalCount;
+    // PaginationBar.xaml binds to TotalRecords
+    [ObservableProperty] private int _totalRecords;
     [ObservableProperty] private string _paginationText = string.Empty;
 
     protected void ApplyPaginationStats(int totalCount, int? currentPage = null)
@@ -17,6 +19,7 @@ public abstract partial class PagedViewModelBase : ViewModelBase
         var page = currentPage ?? CurrentPage;
         PaginationHelper.ComputeStats(totalCount, page, PageSize, out var totalPages, out var text);
         TotalCount = totalCount;
+        TotalRecords = totalCount;
         TotalPages = totalPages;
         PaginationText = text;
 

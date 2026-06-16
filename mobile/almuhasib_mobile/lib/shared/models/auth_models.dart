@@ -46,6 +46,8 @@ class TenantLoginResponse {
     required this.isMobileEnabled,
     this.licenseExpiresAt,
     this.accountExpiresAt,
+    this.applicationSystemType = 0,
+    this.tenantName,
   });
 
   factory TenantLoginResponse.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,8 @@ class TenantLoginResponse {
       accountExpiresAt: json['accountExpiresAt'] != null
           ? DateTime.tryParse(json['accountExpiresAt'] as String)
           : null,
+      applicationSystemType: json['applicationSystemType'] as int? ?? 0,
+      tenantName: json['tenantName'] as String?,
     );
   }
 
@@ -75,6 +79,8 @@ class TenantLoginResponse {
   final bool isMobileEnabled;
   final DateTime? licenseExpiresAt;
   final DateTime? accountExpiresAt;
+  final int applicationSystemType;
+  final String? tenantName;
 }
 
 class LicenseStatusResponse {

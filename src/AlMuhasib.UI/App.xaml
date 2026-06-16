@@ -27,6 +27,7 @@
             <converters:UserTaskStatusLabelConverter x:Key="UserTaskStatusLabelConverter" />
             <converters:IdEqualsMultiConverter x:Key="IdEqualsMultiConverter" />
             <converters:PaginationStatisticsTextConverter x:Key="PaginationStatisticsTextConverter" />
+            <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />

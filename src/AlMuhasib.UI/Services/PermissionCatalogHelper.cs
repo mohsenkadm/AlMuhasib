@@ -22,18 +22,25 @@ public static class PermissionCatalogHelper
         IsViewOnly = false
     };
 
-    public static Permission CreateDenied(string screenName) => new()
+    public static Permission CreateDenied(string screenName)
     {
-        ScreenName = screenName,
-        CanView = screenName == ScreenPermissionRegistry.Dashboard,
-        CanAdd = false,
-        CanEdit = false,
-        CanDelete = false,
-        CanPrint = false,
-        CanExport = false,
-        CanEditPrice = false,
-        IsViewOnly = false
-    };
+        var dashboardScreen = AllScreens.FirstOrDefault().Name ?? ScreenPermissionRegistry.Dashboard;
+        return new Permission
+        {
+            ScreenName = screenName,
+            CanView = screenName == dashboardScreen,
+            CanAdd = false,
+            CanEdit = false,
+            CanDelete = false,
+            CanPrint = false,
+            CanExport = false,
+            CanEditPrice = false,
+            IsViewOnly = false
+        };
+    }
+
+    private static IReadOnlyList<(string Name, string Label)> AllScreens =>
+        ScreenPermissionRegistry.AllScreens;
 
     public static List<Permission> CreateFullCatalog() =>
         ScreenPermissionRegistry.AllScreens.Select(s => CreateFull(s.Name)).ToList();
@@ -70,7 +77,7 @@ public static class PermissionCatalogHelper
             if (byScreen.ContainsKey(name))
                 continue;
 
-            byScreen[name] = CreateDenied(name);
+            byScreen[name] = isAdmin ? CreateFull(name) : CreateDenied(name);
             changed = true;
         }
 

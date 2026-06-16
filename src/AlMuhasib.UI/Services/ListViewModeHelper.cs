@@ -10,6 +10,12 @@ public static class ListViewModeKeys
     public const string Customers = "Customers";
     public const string Suppliers = "Suppliers";
     public const string Investors = "Investors";
+    public const string HotelFloors = "HotelFloors";
+    public const string HotelRoomTypes = "HotelRoomTypes";
+    public const string HotelRooms = "HotelRooms";
+    public const string HotelGuests = "HotelGuests";
+    public const string HotelRatePlans = "HotelRatePlans";
+    public const string HotelHousekeeping = "HotelHousekeeping";
 }
 
 public static class ListViewModeHelper

@@ -1,4 +1,6 @@
+using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.ViewModels;
+using AlMuhasib.UI.ViewModels.Car;
 
 namespace AlMuhasib.UI.Services;
 
@@ -8,10 +10,60 @@ namespace AlMuhasib.UI.Services;
 public static class ScreenPermissionRegistry
 {
     public const string Dashboard = "Dashboard";
+    public const string DeveloperSystem = "DeveloperSystem";
     public const string Reports = "Reports";
     public const string BalanceSheet = "BalanceSheet";
 
-    public static IReadOnlyList<(string Name, string Label)> AllScreens { get; } =
+    private static SystemModuleRegistry? _registry;
+
+    public static void Initialize(SystemModuleRegistry registry) => _registry = registry;
+
+    public static bool IsCarContracts => _registry?.IsCarContracts == true;
+
+    public static bool IsHotelManagement => _registry?.IsHotelManagement == true;
+
+    public static IReadOnlyList<(string Name, string Label)> AllScreens =>
+        IsHotelManagement
+            ? HotelPermissionRegistryScreens
+            : IsCarContracts
+                ? CarPermissionRegistryScreens
+                : AccountingScreens;
+
+    private static IReadOnlyList<(string Name, string Label)> CarPermissionRegistryScreens { get; } =
+    [
+        (CarPermissionRegistry.Dashboard, "لوحة التحكم"),
+        (CarPermissionRegistry.CarContractForm, "عقد جديد"),
+        (CarPermissionRegistry.CarContracts, "العقود"),
+        (CarPermissionRegistry.CarContractReports, "تقرير العقود"),
+        (CarPermissionRegistry.Users, "المستخدمون"),
+        (CarPermissionRegistry.Permissions, "الصلاحيات"),
+        (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
+        (CarPermissionRegistry.Backup, "النسخ الاحتياطي")
+    ];
+
+    private static IReadOnlyList<(string Name, string Label)> HotelPermissionRegistryScreens { get; } =
+    [
+        (HotelPermissionRegistry.Dashboard, "لوحة التحكم"),
+        (HotelPermissionRegistry.Reservations, "الحجوزات"),
+        (HotelPermissionRegistry.ReservationsCalendar, "تقويم الحجوزات"),
+        (HotelPermissionRegistry.ReservationForm, "حجز جديد"),
+        (HotelPermissionRegistry.CheckInOut, "تسجيل دخول/خروج"),
+        (HotelPermissionRegistry.Rooms, "الغرف"),
+        (HotelPermissionRegistry.RoomTypes, "أنواع الغرف"),
+        (HotelPermissionRegistry.Floors, "الطوابق"),
+        (HotelPermissionRegistry.Guests, "النزلاء"),
+        (HotelPermissionRegistry.RatePlans, "خطط الأسعار"),
+        (HotelPermissionRegistry.Housekeeping, "النظافة"),
+        (HotelPermissionRegistry.HotelCash, "الصندوق"),
+        (HotelPermissionRegistry.HotelExpenses, "المصاريف"),
+        (HotelPermissionRegistry.HotelReports, "التقارير"),
+        (HotelPermissionRegistry.Users, "المستخدمون"),
+        (HotelPermissionRegistry.Permissions, "الصلاحيات"),
+        (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
+        (HotelPermissionRegistry.Backup, "النسخ الاحتياطي")
+    ];
+
+    public static IReadOnlyList<(string Name, string Label)> AccountingScreens { get; } =
     [
         (Dashboard, "لوحة التحكم"),
         ("Products", "المنتجات"),
@@ -43,6 +95,36 @@ public static class ScreenPermissionRegistry
         ("Backup", "النسخ الاحتياطي"),
         ("CloudSync", "المزامنة السحابية"),
     ];
+
+    public static string GetScreenName(Type viewModelType) =>
+        IsHotelManagement
+            ? HotelPermissionRegistry.GetScreenName(viewModelType)
+            : IsCarContracts
+                ? CarPermissionRegistry.GetScreenName(viewModelType)
+                : GetAccountingScreenName(viewModelType);
+
+    public static string GetAccountingScreenName(Type viewModelType) =>
+        ViewModelToScreen.TryGetValue(viewModelType, out var name) ? name : viewModelType.Name;
+
+    public static Type? GetDefaultViewModelType(string screenName) =>
+        IsHotelManagement
+            ? HotelPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsCarContracts
+                ? CarPermissionRegistry.GetDefaultViewModelType(screenName)
+                : GetAccountingDefaultViewModelType(screenName);
+
+    public static Type? GetAccountingDefaultViewModelType(string screenName) =>
+        ScreenToDefaultViewModel.TryGetValue(screenName, out var type) ? type : null;
+
+    public static string GetLabel(string screenName) =>
+        IsHotelManagement
+            ? HotelPermissionRegistry.GetLabel(screenName)
+            : IsCarContracts
+                ? CarPermissionRegistry.GetLabel(screenName)
+                : GetAccountingLabel(screenName);
+
+    public static string GetAccountingLabel(string screenName) =>
+        AccountingScreens.FirstOrDefault(s => s.Name == screenName).Label ?? screenName;
 
     private static readonly Dictionary<Type, string> ViewModelToScreen = new()
     {
@@ -134,13 +216,4 @@ public static class ScreenPermissionRegistry
         ["Backup"] = typeof(BackupRestoreViewModel),
         ["CloudSync"] = typeof(CloudSyncSettingsViewModel),
     };
-
-    public static string GetScreenName(Type viewModelType) =>
-        ViewModelToScreen.TryGetValue(viewModelType, out var name) ? name : viewModelType.Name;
-
-    public static Type? GetDefaultViewModelType(string screenName) =>
-        ScreenToDefaultViewModel.TryGetValue(screenName, out var type) ? type : null;
-
-    public static string GetLabel(string screenName) =>
-        AllScreens.FirstOrDefault(s => s.Name == screenName).Label ?? screenName;
 }

@@ -39,6 +39,19 @@ class PreferencesService {
 
   Future<void> setTenantId(int id) => _prefs.setInt(StorageKeys.tenantId, id);
 
+  int get applicationSystemType =>
+      _prefs.getInt(StorageKeys.applicationSystemType) ?? 0;
+
+  Future<void> setApplicationSystemType(int type) =>
+      _prefs.setInt(StorageKeys.applicationSystemType, type);
+
+  String? get tenantName => _prefs.getString(StorageKeys.tenantName);
+
+  Future<void> setTenantName(String name) =>
+      _prefs.setString(StorageKeys.tenantName, name);
+
+  bool get isHotelTenant => applicationSystemType == 2;
+
   String get themeMode => _prefs.getString(StorageKeys.themeMode) ?? 'dark';
 
   Future<void> setThemeMode(String mode) =>
@@ -48,5 +61,7 @@ class PreferencesService {
     await _prefs.remove(StorageKeys.companyName);
     await _prefs.remove(StorageKeys.username);
     await _prefs.remove(StorageKeys.tenantId);
+    await _prefs.remove(StorageKeys.applicationSystemType);
+    await _prefs.remove(StorageKeys.tenantName);
   }
 }

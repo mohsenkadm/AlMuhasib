@@ -1,0 +1,120 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Hotel.HotelReservationFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid>
+        <ScrollViewer Padding="24">
+            <StackPanel MaxWidth="900">
+                <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,16"/>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="بيانات الحجز" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="رقم الحجز" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding ReservationNumber}" IsReadOnly="True" Margin="0,0,0,12"/>
+                                <TextBlock Text="تاريخ الوصول" Style="{StaticResource FormFieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding CheckInDate}" Margin="0,0,0,12"/>
+                                <TextBlock Text="تاريخ المغادرة" Style="{StaticResource FormFieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding CheckOutDate}" Margin="0,0,0,12"/>
+                                <TextBlock Text="عدد النزلاء" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding GuestCount}" Margin="0,0,0,12"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="النزيل" Style="{StaticResource FormFieldLabel}"/>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding SelectedGuestDisplay}" IsReadOnly="True"/>
+                                    <Button Grid.Column="1" Command="{Binding OpenGuestPickerCommand}" Style="{StaticResource FlatButton}" ToolTip="اختيار نزيل">
+                                        <md:PackIcon Kind="AccountSearch"/>
+                                    </Button>
+                                    <Button Grid.Column="2" Command="{Binding OpenNewGuestDialogCommand}" Style="{StaticResource FlatButton}" ToolTip="نزيل جديد">
+                                        <md:PackIcon Kind="AccountPlus"/>
+                                    </Button>
+                                </Grid>
+                                <TextBlock Text="نوع الغرفة" Style="{StaticResource FormFieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding RoomTypes}" SelectedValuePath="Id" SelectedValue="{Binding SelectedRoomTypeId}" DisplayMemberPath="Name" Margin="0,0,0,12"/>
+                                <TextBlock Text="الغرفة (اختياري)" Style="{StaticResource FormFieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding AvailableRooms}" SelectedValuePath="Id" SelectedValue="{Binding SelectedRoomId}" DisplayMemberPath="Number" Margin="0,0,0,12"/>
+                                <TextBlock Text="الإجمالي" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding TotalAmount, StringFormat=N0}" IsReadOnly="True" FontWeight="Bold" Margin="0,0,0,12"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}"/>
+                        <TextBox Text="{Binding Notes}" AcceptsReturn="True" MinHeight="60"/>
+                    </StackPanel>
+                </md:Card>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,16,0,0">
+                    <Button Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanSave}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ContentSave" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding PrintCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanPrint}" Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Printer" Margin="0,0,6,0"/>
+                            <TextBlock Text="طباعة"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- اختيار نزيل -->
+        <md:DialogHost IsOpen="{Binding IsGuestPickerOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="480" MaxWidth="560">
+                    <StackPanel>
+                        <TextBlock Text="اختيار نزيل" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                        <TextBox md:HintAssist.Hint="بحث بالاسم أو الهاتف..." Text="{Binding GuestSearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SearchBox}" Margin="0,0,0,12"/>
+                        <DataGrid ItemsSource="{Binding GuestSearchResults}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="280" Style="{StaticResource HotelListDataGrid}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="الاسم" Binding="{Binding FullName}" Width="*"/>
+                                <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"/>
+                                <DataGridTemplateColumn Header="" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="اختيار" Command="{Binding DataContext.SelectGuestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Style="{StaticResource FlatButton}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="إغلاق" Command="{Binding CloseGuestPickerCommand}" Style="{StaticResource FlatButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- نزيل جديد -->
+        <md:DialogHost IsOpen="{Binding IsNewGuestDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="400">
+                    <StackPanel>
+                        <TextBlock Text="إضافة نزيل" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                        <TextBox md:HintAssist.Hint="الاسم الكامل *" Text="{Binding NewGuestName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="الهاتف" Text="{Binding NewGuestPhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="رقم الهوية" Text="{Binding NewGuestIdNumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حفظ" Command="{Binding SaveNewGuestCommand}" Style="{StaticResource MaterialDesignRaisedButton}" md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CloseNewGuestDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

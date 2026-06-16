@@ -53,6 +53,33 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveProfitDistributionAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.ProfitDistributions, syncId, ct);
 
+    public async Task<int?> ResolveHotelFloorAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelFloors, syncId, ct);
+
+    public async Task<int?> ResolveHotelRoomTypeAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelRoomTypes, syncId, ct);
+
+    public async Task<int?> ResolveHotelRoomAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelRooms, syncId, ct);
+
+    public async Task<int?> ResolveHotelGuestAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelGuests, syncId, ct);
+
+    public async Task<int?> ResolveHotelReservationAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelReservations, syncId, ct);
+
+    public async Task<int?> ResolveHotelCashBoxAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelCashBoxes, syncId, ct);
+
+    public async Task<int?> ResolveHotelExpenseTypeAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelExpenseTypes, syncId, ct);
+
+    public async Task<int?> ResolveHotelExpenseAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelExpenses, syncId, ct);
+
+    public async Task<int?> ResolveHotelRatePlanAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.HotelRatePlans, syncId, ct);
+
     public async Task<int> ResolveTransferAccountAsync(TransferAccountType type, Guid syncId, CancellationToken ct) =>
         type switch
         {

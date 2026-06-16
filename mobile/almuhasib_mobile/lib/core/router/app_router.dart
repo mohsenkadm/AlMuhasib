@@ -6,6 +6,15 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_list_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
+import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
+import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
+import '../../features/hotel/guests/hotel_guest_form_screen.dart';
+import '../../features/hotel/guests/hotel_guests_screen.dart';
+import '../../features/hotel/hotel_shell.dart';
+import '../../features/hotel/models/hotel_models.dart';
+import '../../features/hotel/reservations/hotel_reservation_detail_screen.dart';
+import '../../features/hotel/reservations/hotel_reservations_screen.dart';
+import '../../features/hotel/rooms/hotel_rooms_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/operations/presentation/forms/customer_form_screen.dart';
 import '../../features/operations/presentation/forms/entity_forms.dart';
@@ -56,6 +65,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (authState.isAuthenticated && (isLogin || isOnboarding || isSplash)) {
+        return prefs.isHotelTenant ? '/hotel/home' : '/home';
+      }
+
+      if (authState.isAuthenticated && prefs.isHotelTenant) {
+        const accountingPaths = ['/home', '/reports', '/data', '/settings'];
+        if (accountingPaths.any((p) => path == p || path.startsWith('$p/'))) {
+          return '/hotel/home';
+        }
+      }
+
+      if (authState.isAuthenticated && !prefs.isHotelTenant && path.startsWith('/hotel')) {
         return '/home';
       }
 
@@ -288,6 +308,97 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      StatefulShellRoute.indexedStack(
+        builder: (_, __, navigationShell) =>
+            HotelShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotel/home',
+                pageBuilder: (_, state) => animatedPage(
+                  key: state.pageKey,
+                  child: const HotelDashboardScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotel/reservations',
+                pageBuilder: (_, state) => animatedPage(
+                  key: state.pageKey,
+                  child: const HotelReservationsScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':syncId',
+                    pageBuilder: (context, state) => slideHorizontalPage(
+                      key: state.pageKey,
+                      child: HotelReservationDetailScreen(
+                        syncId: state.pathParameters['syncId']!,
+                        reservation: _hotelReservation(state),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotel/rooms',
+                pageBuilder: (_, state) => animatedPage(
+                  key: state.pageKey,
+                  child: const HotelRoomsScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotel/operations',
+                pageBuilder: (_, state) => animatedPage(
+                  key: state.pageKey,
+                  child: const HotelCheckInOutScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotel/guests',
+                pageBuilder: (_, state) => animatedPage(
+                  key: state.pageKey,
+                  child: const HotelGuestsScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    pageBuilder: (context, state) => slideHorizontalPage(
+                      key: state.pageKey,
+                      child: const HotelGuestFormScreen(),
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':syncId/edit',
+                    pageBuilder: (context, state) => slideHorizontalPage(
+                      key: state.pageKey,
+                      child: HotelGuestFormScreen(
+                        guest: _hotelGuest(state),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
       GoRoute(
         path: '/profile',
         pageBuilder: (_, state) => slideHorizontalPage(
@@ -317,6 +428,18 @@ String _entityName(GoRouterState state) {
   final extra = state.extra;
   if (extra is LookupItem) return extra.name;
   return state.uri.queryParameters['name'] ?? '';
+}
+
+HotelReservation? _hotelReservation(GoRouterState state) {
+  final extra = state.extra;
+  if (extra is HotelReservation) return extra;
+  return null;
+}
+
+HotelGuest? _hotelGuest(GoRouterState state) {
+  final extra = state.extra;
+  if (extra is HotelGuest) return extra;
+  return null;
 }
 
 class _RouterRefresh extends ChangeNotifier {

@@ -1,0 +1,135 @@
+<UserControl x:Class="AlMuhasib.UI.Views.DeveloperSystemSwitchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" CornerRadius="14" Padding="22,18" Margin="0,0,0,16">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#37474F" Offset="0"/>
+                    <GradientStop Color="#546E7A" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="52" Height="52" CornerRadius="14" Background="#33FFFFFF" Margin="0,0,14,0">
+                    <md:PackIcon Kind="DeveloperBoard" Width="28" Height="28" Foreground="White"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="منطقة المطور — تبديل النظام" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="محمية بكلمة مرور. كل نظام يحتفظ ببياناته في قاعدة منفصلة."
+                               FontSize="12" Foreground="#CFD8DC" Margin="0,4,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Password gate -->
+        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="28"
+                 Visibility="{Binding IsUnlocked, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+            <StackPanel MaxWidth="420" HorizontalAlignment="Center">
+                <md:PackIcon Kind="Lock" Width="40" Height="40" Foreground="#546E7A" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                <TextBlock Text="كلمة مرور المطور" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                <PasswordBox x:Name="DevPasswordBox" md:HintAssist.Hint="كلمة المرور"
+                             Style="{StaticResource MaterialDesignOutlinedPasswordBox}"
+                             PasswordChanged="DevPasswordBox_PasswordChanged" Margin="0,0,0,16"/>
+                <Button Command="{Binding UnlockCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        MinHeight="44" MinWidth="160" Padding="32,12" HorizontalAlignment="Center"
+                        Content="دخول"/>
+            </StackPanel>
+        </md:Card>
+
+        <!-- Switch panel -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsUnlocked, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel MaxWidth="720">
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="النظام الحالي" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="نوع النظام" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="{Binding CurrentSystemDisplay}" FontSize="16" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="قاعدة البيانات" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="{Binding CurrentDatabaseDisplay}" FontSize="16" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="التبديل إلى نظام آخر" FontWeight="Bold" FontSize="15" Margin="0,0,0,8"/>
+                        <TextBlock Text="سيتم إعادة تشغيل التطبيق. بيانات كل نظام تبقى محفوظة في قاعدتها الخاصة."
+                                   FontSize="13" Foreground="Gray" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                        <StackPanel>
+                            <Button Command="{Binding SwitchToAccountingCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    MinHeight="48" Padding="24,12" Margin="0,0,0,12"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Calculator" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="نظام المحاسبة" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SwitchToCarContractsCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    MinHeight="48" Padding="24,12" Margin="0,0,0,12"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Car" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="نظام عقود السيارات" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SwitchToHotelManagementCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    MinHeight="48" Padding="24,12"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Hotel" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="نظام إدارة الفنادق" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="تغيير كلمة مرور المطور" FontWeight="Bold" FontSize="15" Margin="0,0,0,12"/>
+                        <PasswordBox x:Name="NewDevPasswordBox" md:HintAssist.Hint="كلمة مرور جديدة (6 أحرف على الأقل)"
+                                     Style="{StaticResource MaterialDesignOutlinedPasswordBox}" Margin="0,0,0,16"
+                                     PasswordChanged="NewDevPasswordBox_PasswordChanged"/>
+                        <Button Command="{Binding UpdateDeveloperPasswordCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                MinHeight="44" MinWidth="200" Padding="24,10"
+                                HorizontalAlignment="Left" HorizontalContentAlignment="Center"
+                                Content="تحديث كلمة المرور"/>
+                    </StackPanel>
+                </md:Card>
+
+                <Button Command="{Binding LockCommand}"
+                        Style="{StaticResource FlatButton}"
+                        MinHeight="40" Padding="20,10"
+                        HorizontalAlignment="Left" HorizontalContentAlignment="Center"
+                        Content="قفل المنطقة"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
