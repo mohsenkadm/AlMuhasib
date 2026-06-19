@@ -960,24 +960,18 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
             .Where(c => c.Type == CapitalEntryType.Adjustment && c.Date <= endOfDay)
             .SumAsync(c => c.Amount);
 
-        decimal totalSales = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.Date <= endOfDay)
-            .SumAsync(i => i.NetAmount);
-        decimal totalPurchases = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date <= endOfDay)
-            .SumAsync(i => i.NetAmount);
+        decimal profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
+
+        var salesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .Where(i => i.Date <= endOfDay);
+        decimal totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        decimal costOfSales = await CalculateCogsAsync(context, null, endOfDay.AddTicks(1));
         decimal totalExpenses = await context.Expenses
             .Where(e => e.Date <= endOfDay)
-            .SumAsync(e => e.Amount);
-        decimal totalBankFees = await context.Vouchers
-            .Where(v => v.VoucherType == VoucherType.BankReceipt && v.Date <= endOfDay)
-            .SumAsync(v => v.BankFees);
-        decimal distributedProfits = await context.ProfitDistributions
-            .Where(p => p.Date <= endOfDay)
-            .SumAsync(p => p.DistributedAmount);
+            .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
-        decimal profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
-        decimal accumulatedProfits = totalSales - totalPurchases - totalExpenses - totalBankFees - distributedProfits + profitOpening;
+        decimal salesProfit = totalSales - costOfSales;
+        decimal accumulatedProfits = profitOpening + salesProfit - totalExpenses;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
         // LIABILITIES
@@ -987,15 +981,22 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => i.NetAmount);
+        var supplierIds = await context.Suppliers.Select(s => s.Id).ToListAsync();
         decimal supplierPaymentVouchers = await context.Vouchers
             .Where(v => v.VoucherType == VoucherType.Payment &&
                         v.CustomerId != null &&
+                        supplierIds.Contains(v.CustomerId.Value) &&
                         v.Date <= endOfDay)
             .SumAsync(v => v.Amount);
         decimal supplierPayables = Math.Max(0, supplierCreditPurchases - supplierPaymentVouchers);
 
-        decimal investorDeposits = await context.Investors
-            .SumAsync(i => i.TotalDeposit);
+        decimal investorDeposits = await context.InvestorTransactions
+            .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        decimal investorWithdrawals = await context.InvestorTransactions
+            .Where(t => t.Type == InvestorTransactionType.Withdrawal && t.Date <= endOfDay)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        investorDeposits = Math.Max(0, investorDeposits - investorWithdrawals);
 
         decimal liabilitiesTotal = supplierPayables + investorDeposits;
         decimal equityAndLiabilitiesTotal = equityTotal + liabilitiesTotal;
@@ -1055,6 +1056,11 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
             Adjustments = adjustments,
             AccumulatedProfits = accumulatedProfits,
             EquityTotal = equityTotal,
+            ProfitOpeningBalance = profitOpening,
+            SalesTotal = totalSales,
+            CostOfSales = costOfSales,
+            SalesProfit = salesProfit,
+            ExpensesTotal = totalExpenses,
             SupplierPayables = supplierPayables,
             InvestorDeposits = investorDeposits,
             LiabilitiesTotal = liabilitiesTotal,

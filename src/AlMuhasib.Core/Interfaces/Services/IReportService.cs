@@ -11,6 +11,7 @@ public interface IReportService
     // Profit
     Task<ProfitReportResult> GetProfitReportAsync(DateTime? from, DateTime? to);
     Task<List<MonthlyProfitRow>> GetMonthlyProfitAsync(DateTime? from, DateTime? to);
+    Task<List<ProfitInvoiceDetailRow>> GetProfitInvoiceDetailsAsync(DateTime? from, DateTime? to);
 
     // Installments
     Task<InstallmentsSummaryResult> GetInstallmentsSummaryAsync(DateTime? from, DateTime? to, int? customerId, string? status);
@@ -184,6 +185,20 @@ public class MonthlyProfitRow
     public decimal Expenses { get; set; }
     public decimal NetProfit { get; set; }
     public decimal ProfitMargin { get; set; }
+}
+
+public class ProfitInvoiceDetailRow
+{
+    public int InvoiceId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string InvoiceTypeLabel { get; set; } = string.Empty;
+    public int ItemCount { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal Cost { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal MarginPercent { get; set; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -494,6 +509,12 @@ public class BalanceSheetResult
     public decimal Adjustments { get; set; }
     public decimal AccumulatedProfits { get; set; }
     public decimal EquityTotal { get; set; }
+
+    public decimal ProfitOpeningBalance { get; set; }
+    public decimal SalesTotal { get; set; }
+    public decimal CostOfSales { get; set; }
+    public decimal SalesProfit { get; set; }
+    public decimal ExpensesTotal { get; set; }
 
     public decimal SupplierPayables { get; set; }
     public decimal InvestorDeposits { get; set; }

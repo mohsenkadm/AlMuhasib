@@ -63,8 +63,10 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply all Fluent API configurations from this assembly
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        // Accounting-only configs (exclude Car/Hotel modules in the same assembly)
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(AppDbContext).Assembly,
+            type => type.Namespace == "AlMuhasib.Infrastructure.Data.Configurations");
 
         // Apply global query filter (IsDeleted == false) on every entity that inherits BaseEntity
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

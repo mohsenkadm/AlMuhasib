@@ -319,6 +319,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private bool _suppressNavigation;
     private bool _isTabSwitchInternal;
+    private (Type Type, string Title, PackIconKind Icon)? _pendingTabOpen;
 
     partial void OnSelectedMenuItemChanged(NavigationMenuItem? value)
     {
@@ -341,7 +342,15 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void SelectMenuItem(NavigationMenuItem item)
     {
-        SelectedMenuItem = item;
+        NavigateMenuItem(item);
+    }
+
+    private void NavigateMenuItem(NavigationMenuItem item)
+    {
+        if (ReferenceEquals(SelectedMenuItem, item))
+            ApplyMenuSelection(item);
+        else
+            SelectedMenuItem = item;
     }
 
     private void ApplyMenuSelection(NavigationMenuItem item)
@@ -581,9 +590,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (OpenTabs.Count >= MaxOpenTabs)
         {
+            _pendingTabOpen = (viewModelType, title, icon);
             _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح شاشة جديدة.");
             return;
         }
+
+        _pendingTabOpen = null;
 
         var scope = _serviceProvider.CreateScope();
         try
@@ -701,6 +713,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         UpdateTabCloseStates();
         UpdateTabPinStates();
+
+        if (_pendingTabOpen is { } pending && OpenTabs.Count < MaxOpenTabs)
+        {
+            _pendingTabOpen = null;
+            _ = OpenTabAsync(pending.Type, pending.Title, pending.Icon);
+        }
     }
 
     public void CloseTabForViewModel(ViewModelBase viewModel)
@@ -923,7 +941,7 @@ public partial class MainWindowViewModel : ObservableObject
         SearchText = string.Empty;
         SearchResults.Clear();
         HasSearchResults = false;
-        SelectedMenuItem = item;
+        NavigateMenuItem(item);
     }
 
     partial void OnSearchTextChanged(string value) => UpdateSearchResults();

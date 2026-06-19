@@ -137,15 +137,14 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Product Name -->
-                                <DataGridTextColumn Header="اسم المنتج"
-                                                    Binding="{Binding ProductName, Mode=OneWay}"
-                                                    Width="2*" IsReadOnly="True">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="اسم المنتج" Width="2*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ContentControl Content="{Binding}"
+                                                            ContentTemplate="{StaticResource InvoiceProductCellTemplate}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
                                 <!-- Quantity -->
                                 <DataGridTemplateColumn Header="الكمية" Width="140">

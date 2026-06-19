@@ -33,6 +33,11 @@ public partial class BalanceSheetViewModel : ViewModelBase
     [ObservableProperty] private decimal _adjustments;
     [ObservableProperty] private decimal _accumulatedProfits;
     [ObservableProperty] private decimal _equityTotal;
+    [ObservableProperty] private decimal _profitOpeningBalance;
+    [ObservableProperty] private decimal _salesTotal;
+    [ObservableProperty] private decimal _costOfSales;
+    [ObservableProperty] private decimal _salesProfit;
+    [ObservableProperty] private decimal _expensesTotal;
 
     // ── LIABILITIES ─────────────────────────────────────
 
@@ -74,6 +79,11 @@ public partial class BalanceSheetViewModel : ViewModelBase
             Adjustments = result.Adjustments;
             AccumulatedProfits = result.AccumulatedProfits;
             EquityTotal = result.EquityTotal;
+            ProfitOpeningBalance = result.ProfitOpeningBalance;
+            SalesTotal = result.SalesTotal;
+            CostOfSales = result.CostOfSales;
+            SalesProfit = result.SalesProfit;
+            ExpensesTotal = result.ExpensesTotal;
 
             // Liabilities
             SupplierPayables = result.SupplierPayables;
@@ -137,12 +147,17 @@ public partial class BalanceSheetViewModel : ViewModelBase
             new object[] { "═══ حقوق الملكية ═══", "" },
             new object[] { "رأس المال", Capital },
             new object[] { "تسويات", Adjustments },
+            new object[] { "  رصيد الأرباح الافتتاحي", ProfitOpeningBalance },
+            new object[] { "  + إجمالي المبيعات", SalesTotal },
+            new object[] { "  − تكلفة المبيعات", CostOfSales },
+            new object[] { "  = أرباح المبيعات", SalesProfit },
+            new object[] { "  − المصاريف", ExpensesTotal },
             new object[] { "الأرباح المتراكمة", AccumulatedProfits },
             new object[] { "إجمالي حقوق الملكية", EquityTotal },
             new object[] { "", "" },
             new object[] { "═══ الالتزامات ═══", "" },
             new object[] { "المطلوبات للموردين", SupplierPayables },
-            new object[] { "ودائع المستثمرين", InvestorDeposits },
+            new object[] { "ودائع مستثمرين (جديدة)", InvestorDeposits },
             new object[] { "إجمالي الالتزامات", LiabilitiesTotal },
             new object[] { "", "" },
             new object[] { "إجمالي الملكية والالتزامات", EquityAndLiabilitiesTotal },

@@ -403,7 +403,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CloudSyncSettings");
+                    b.ToTable("CloudSyncSettings", (string)null);
 
                     b.HasData(
                         new
@@ -577,7 +577,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("SyncId");
 
-                    b.ToTable("CustomerAttachments");
+                    b.ToTable("CustomerAttachments", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Expense", b =>
@@ -1991,7 +1991,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("EntityType");
 
-                    b.ToTable("SyncStates");
+                    b.ToTable("SyncStates", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Transfer", b =>

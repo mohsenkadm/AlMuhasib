@@ -219,7 +219,7 @@ public partial class MainWindowViewModel
 
         if (item.MenuItem is not null)
         {
-            SelectedMenuItem = item.MenuItem;
+            NavigateMenuItem(item.MenuItem);
             return;
         }
 
@@ -241,7 +241,7 @@ public partial class MainWindowViewModel
         var screen = item.EntityHit.ScreenName ?? string.Empty;
         var menu = FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screen);
         if (menu is not null)
-            SelectedMenuItem = menu;
+            NavigateMenuItem(menu);
         else
             await NavigateByScreenNameAsync(screen);
     }

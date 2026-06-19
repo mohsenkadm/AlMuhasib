@@ -1,6 +1,6 @@
 using AlMuhasib.Core.Enums;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace AlMuhasib.Infrastructure;
 
@@ -15,14 +15,28 @@ public static class SystemConnectionStrings
         var baseConnection = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
+        var databaseName = systemType switch
+        {
+            ApplicationSystemType.CarContracts => CarContractsDatabase,
+            ApplicationSystemType.HotelManagement => HotelsDatabase,
+            _ => AccountingDatabase
+        };
+
+        if (LocalDatabasePathResolver.HasAttachDbFilename(baseConnection))
+        {
+            var custom = new SqlConnectionStringBuilder(baseConnection)
+            {
+                InitialCatalog = databaseName
+            };
+            return custom.ConnectionString;
+        }
+
+        if (LocalDatabasePathResolver.UsesLocalDb(baseConnection))
+            return LocalDatabasePathResolver.BuildLocalDbConnectionString(databaseName);
+
         var builder = new SqlConnectionStringBuilder(baseConnection)
         {
-            InitialCatalog = systemType switch
-            {
-                ApplicationSystemType.CarContracts => CarContractsDatabase,
-                ApplicationSystemType.HotelManagement => HotelsDatabase,
-                _ => AccountingDatabase
-            }
+            InitialCatalog = databaseName
         };
 
         return builder.ConnectionString;

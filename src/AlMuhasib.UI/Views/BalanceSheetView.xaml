@@ -20,18 +20,24 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="MinWidth" Value="100"/>
         </Style>
         <Style x:Key="SubLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#757575"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#455A64"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="24,0,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="8,0,12,0"/>
         </Style>
         <Style x:Key="SubValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#757575"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#37474F"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="MinWidth" Value="100"/>
         </Style>
         <Style x:Key="TotalLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16"/>
@@ -63,6 +69,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <DatePicker Grid.Column="0" Width="180"
@@ -82,6 +89,17 @@
                 </Button>
 
                 <Button Grid.Column="3"
+                        Command="{Binding ExportBalanceSheetCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        md:ButtonAssist.CornerRadius="8"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="MicrosoftExcel" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="تصدير"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="4"
                         Command="{Binding PrintBalanceSheetCommand}"
                         Style="{StaticResource PrimaryButton}"
                         md:ButtonAssist.CornerRadius="8">
@@ -109,39 +127,93 @@
             <StackPanel Grid.Column="0">
                 <!-- Equity Card -->
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="24,20" md:ElevationAssist.Elevation="Dp3" Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="حقوق الملكية" Style="{StaticResource SectionTitle}" Foreground="#1565C0"/>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                                   Text="حقوق الملكية"
-                                   Style="{StaticResource SectionTitle}"
-                                   Foreground="#1565C0"/>
+                        <Grid Margin="0,4,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="130"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="رأس المال" Style="{StaticResource LineLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Capital, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#1976D2"/>
+                        </Grid>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="رأس المال" Style="{StaticResource LineLabel}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Capital, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#1976D2"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="130"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="+ تسويات" Style="{StaticResource LineLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Adjustments, StringFormat=N0}" Style="{StaticResource LineValue}"/>
+                        </Grid>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="+ تسويات" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Adjustments, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
+                        <Border Background="#E3F2FD" CornerRadius="10" Padding="16,14" Margin="0,4,0,12">
+                            <StackPanel>
+                                <TextBlock Text="الأرباح المتراكمة" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,12"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="+ الأرباح المتراكمة" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AccumulatedProfits, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="رصيد الأرباح الافتتاحي" Style="{StaticResource SubLabel}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding ProfitOpeningBalance, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="+ إجمالي المبيعات" Style="{StaticResource SubLabel}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SalesTotal, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="− تكلفة المبيعات" Style="{StaticResource SubLabel}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CostOfSales, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="= أرباح المبيعات" Style="{StaticResource SubLabel}" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SalesProfit, StringFormat=N0}" Style="{StaticResource SubValue}" FontWeight="Bold"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="− المصاريف" Style="{StaticResource SubLabel}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding ExpensesTotal, StringFormat=N0}" Style="{StaticResource SubValue}"/>
+                                </Grid>
+                                <Separator Margin="0,4,0,10" Background="#BBDEFB"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="= الأرباح" Style="{StaticResource LineLabel}" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding AccumulatedProfits, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#1565C0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
-                        <Separator Grid.Row="4" Grid.ColumnSpan="2" Margin="0,16,0,12"/>
-
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="الإجمالي" Style="{StaticResource TotalLabel}"/>
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding EquityTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#1565C0"/>
-                    </Grid>
+                        <Separator Margin="0,4,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="130"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="إجمالي حقوق الملكية" Style="{StaticResource TotalLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding EquityTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#1565C0"/>
+                        </Grid>
+                    </StackPanel>
                 </md:Card>
 
                 <!-- Liabilities Card -->
@@ -156,7 +228,7 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="130"/>
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
@@ -167,7 +239,7 @@
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="المطلوبات للموردين" Style="{StaticResource LineLabel}"/>
                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SupplierPayables, StringFormat=N0}" Style="{StaticResource LineValue}" Foreground="#EF6C00"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ودائع المستثمرين" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="ودائع مستثمرين (جديدة)" Style="{StaticResource LineLabel}" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InvestorDeposits, StringFormat=N0}" Style="{StaticResource LineValue}" Margin="0,8,0,0"/>
 
                         <Separator Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,12"/>

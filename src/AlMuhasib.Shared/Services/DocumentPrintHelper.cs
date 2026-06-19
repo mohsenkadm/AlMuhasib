@@ -1,12 +1,13 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace AlMuhasib.Shared.Services;
 
 /// <summary>
-/// In-app print preview (FlowDocumentPageViewer) then system print dialog.
-/// DocumentViewer only supports FixedDocument and shows "not supported" for FlowDocument.
+/// In-app print preview with Chrome-like zoom/scroll, then system print dialog.
 /// </summary>
 public static class DocumentPrintHelper
 {
@@ -31,9 +32,17 @@ public static class DocumentPrintHelper
 
     internal sealed class PrintPreviewWindow : Window
     {
+        private const double MinZoom = 50;
+        private const double MaxZoom = 300;
+        private const double ZoomStep = 10;
+
         private readonly FlowDocument _document;
         private readonly string _jobName;
         private readonly TextBox _copiesInput;
+        private readonly ScrollViewer _scrollViewer;
+        private readonly FlowDocumentScrollViewer _documentViewer;
+        private readonly ScaleTransform _scaleTransform;
+        private readonly TextBlock _zoomLabel;
 
         public PrintPreviewWindow(FlowDocument document, string jobName, int defaultCopies = 1)
         {
@@ -41,11 +50,11 @@ public static class DocumentPrintHelper
             _jobName = jobName;
 
             Title = "معاينة الطباعة";
-            Width = 900;
-            Height = 700;
+            Width = 960;
+            Height = 760;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             FlowDirection = FlowDirection.RightToLeft;
-            FontFamily = new System.Windows.Media.FontFamily("Segoe UI, Tahoma, Arial");
+            FontFamily = new FontFamily("Segoe UI, Tahoma, Arial");
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -53,11 +62,9 @@ public static class DocumentPrintHelper
 
             var toolbar = new Border
             {
-                Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0xF5, 0xF7, 0xFA)),
+                Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF7, 0xFA)),
                 Padding = new Thickness(12, 10, 12, 10),
-                BorderBrush = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0xE0, 0xE0, 0xE0)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
                 BorderThickness = new Thickness(0, 0, 0, 1)
             };
 
@@ -99,7 +106,7 @@ public static class DocumentPrintHelper
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 8, 0)
+                Margin = new Thickness(0, 0, 16, 0)
             };
             copiesPanel.Children.Add(new TextBlock
             {
@@ -109,25 +116,149 @@ public static class DocumentPrintHelper
             });
             copiesPanel.Children.Add(_copiesInput);
 
+            var zoomOutButton = CreateZoomButton("−", "تصغير");
+            zoomOutButton.Click += (_, _) => AdjustZoom(-ZoomStep);
+
+            _zoomLabel = new TextBlock
+            {
+                Text = "100%",
+                VerticalAlignment = VerticalAlignment.Center,
+                MinWidth = 52,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(4, 0, 4, 0),
+                FontWeight = FontWeights.SemiBold
+            };
+
+            var zoomInButton = CreateZoomButton("+", "تكبير");
+            zoomInButton.Click += (_, _) => AdjustZoom(ZoomStep);
+
+            var zoomResetButton = new Button
+            {
+                Content = "100%",
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(4, 0, 4, 0),
+                MinWidth = 56,
+                ToolTip = "إعادة التعيين"
+            };
+            zoomResetButton.Click += (_, _) => SetZoom(100);
+
+            var zoomFitButton = new Button
+            {
+                Content = "ملاءمة",
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(0, 0, 8, 0),
+                MinWidth = 64,
+                ToolTip = "ملاءمة العرض"
+            };
+            zoomFitButton.Click += (_, _) => FitToWidth();
+
+            var zoomPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            zoomPanel.Children.Add(new TextBlock
+            {
+                Text = "التكبير:",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0)
+            });
+            zoomPanel.Children.Add(zoomOutButton);
+            zoomPanel.Children.Add(_zoomLabel);
+            zoomPanel.Children.Add(zoomInButton);
+            zoomPanel.Children.Add(zoomResetButton);
+            zoomPanel.Children.Add(zoomFitButton);
+
             toolbarPanel.Children.Add(printButton);
             toolbarPanel.Children.Add(closeButton);
             toolbarPanel.Children.Add(copiesPanel);
+            toolbarPanel.Children.Add(zoomPanel);
             toolbar.Child = toolbarPanel;
             Grid.SetRow(toolbar, 0);
             root.Children.Add(toolbar);
 
-            var viewer = new FlowDocumentPageViewer
+            _scaleTransform = new ScaleTransform(1, 1);
+            _documentViewer = new FlowDocumentScrollViewer
             {
                 Document = document,
-                Zoom = 90,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
+                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Background = Brushes.White,
+                Padding = new Thickness(24),
+                LayoutTransform = _scaleTransform
             };
-            Grid.SetRow(viewer, 1);
-            root.Children.Add(viewer);
+
+            var pageHost = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xCF, 0xD8, 0xDC)),
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(24, 16, 24, 24),
+                Child = _documentViewer
+            };
+
+            _scrollViewer = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Background = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x52)),
+                Content = pageHost,
+                Focusable = true
+            };
+            _scrollViewer.PreviewMouseWheel += OnPreviewMouseWheel;
+
+            Grid.SetRow(_scrollViewer, 1);
+            root.Children.Add(_scrollViewer);
 
             Content = root;
+            Loaded += (_, _) => FitToWidth();
         }
+
+        private static Button CreateZoomButton(string content, string toolTip) => new()
+        {
+            Content = content,
+            Padding = new Thickness(10, 6, 10, 6),
+            MinWidth = 36,
+            FontSize = 16,
+            FontWeight = FontWeights.Bold,
+            ToolTip = toolTip
+        };
+
+        private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control)
+                return;
+
+            AdjustZoom(e.Delta > 0 ? ZoomStep : -ZoomStep);
+            e.Handled = true;
+        }
+
+        private void AdjustZoom(double delta) => SetZoom(_scaleTransform.ScaleX * 100 + delta);
+
+        private void SetZoom(double percent)
+        {
+            var clamped = Math.Clamp(percent, MinZoom, MaxZoom) / 100.0;
+            _scaleTransform.ScaleX = clamped;
+            _scaleTransform.ScaleY = clamped;
+            _documentViewer.LayoutTransform = _scaleTransform;
+            UpdateZoomLabel();
+        }
+
+        private void FitToWidth()
+        {
+            if (_scrollViewer.ActualWidth <= 0)
+            {
+                SetZoom(100);
+                return;
+            }
+
+            var available = _scrollViewer.ActualWidth - 80;
+            var pageWidth = _document.PageWidth > 0 ? _document.PageWidth + 48 : DefaultPageWidth;
+            var fitZoom = available / pageWidth * 100;
+            SetZoom(Math.Clamp(fitZoom, MinZoom, MaxZoom));
+        }
+
+        private void UpdateZoomLabel() => _zoomLabel.Text = $"{_scaleTransform.ScaleX * 100:0}%";
 
         private void OnPrintClick(object sender, RoutedEventArgs e)
         {

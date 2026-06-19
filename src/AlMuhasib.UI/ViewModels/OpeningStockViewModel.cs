@@ -85,6 +85,7 @@ public partial class OpeningStockViewModel : ViewModelBase
                 stockDetails.TryGetValue(product.Id, out var stock);
                 Rows.Add(new OpeningStockRow
                 {
+                    SelectedProduct = product,
                     ProductId = product.Id,
                     ProductName = product.Name,
                     Quantity = stock?.Quantity ?? 0,
@@ -125,6 +126,12 @@ public partial class OpeningStockViewModel : ViewModelBase
         if (validRows.Count == 0)
         {
             ErrorMessage = "لا توجد بيانات للحفظ";
+            return;
+        }
+
+        if (validRows.GroupBy(r => r.ProductId).Any(g => g.Count() > 1))
+        {
+            ErrorMessage = "لا يمكن تكرار نفس المنتج في أكثر من صف";
             return;
         }
 
@@ -197,9 +204,30 @@ public partial class OpeningStockRow : ObservableObject
     [ObservableProperty] private decimal _quantity;
     [ObservableProperty] private decimal _unitCost;
     [ObservableProperty] private decimal _totalCost;
+    [ObservableProperty] private Product? _selectedProduct;
 
     private bool _isManualTotal;
     private bool _isRecalculating;
+
+    partial void OnSelectedProductChanged(Product? value)
+    {
+        if (value is null)
+        {
+            ProductId = 0;
+            ProductName = string.Empty;
+            return;
+        }
+
+        ProductId = value.Id;
+        ProductName = value.Name;
+    }
+
+    /// <summary>Alias for invoice product cell template compatibility.</summary>
+    public string ItemName
+    {
+        get => ProductName;
+        set => ProductName = value;
+    }
 
     partial void OnQuantityChanged(decimal value)
     {

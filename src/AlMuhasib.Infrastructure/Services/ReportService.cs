@@ -284,6 +284,81 @@ public class ReportService : IReportService
         return cogs;
     }
 
+    public async Task<List<ProfitInvoiceDetailRow>> GetProfitInvoiceDetailsAsync(DateTime? from, DateTime? to)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var invoicesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .AsQueryable();
+
+        if (from.HasValue)
+            invoicesQ = invoicesQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue)
+            invoicesQ = invoicesQ.Where(i => i.Date < EndOfDay(to));
+
+        var invoices = await invoicesQ
+            .Include(i => i.Customer)
+            .Include(i => i.Items)
+            .OrderByDescending(i => i.Date)
+            .ToListAsync();
+        if (invoices.Count == 0)
+            return [];
+
+        var soldItems = invoices
+            .SelectMany(i => i.Items.Where(ii => ii.ProductId != null))
+            .ToList();
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+
+        var purchaseItems = await context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && productIds.Contains(ii.ProductId.Value)
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
+                         && (!to.HasValue || ii.Invoice.Date < EndOfDay(to)))
+            .ToListAsync();
+
+        var purchasesByProduct = purchaseItems
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var rows = new List<ProfitInvoiceDetailRow>();
+        foreach (var invoice in invoices)
+        {
+            decimal cost = 0;
+            var lineItems = invoice.Items.Where(ii => ii.ProductId != null).ToList();
+            foreach (var item in lineItems)
+            {
+                var productId = item.ProductId!.Value;
+                var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
+                var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
+                cost += Math.Round(item.Quantity * avgCost, 0);
+            }
+
+            var revenue = invoice.NetAmount;
+            var profit = revenue - cost;
+            rows.Add(new ProfitInvoiceDetailRow
+            {
+                InvoiceId = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
+                Date = invoice.Date,
+                CustomerName = invoice.Customer?.Name ?? "—",
+                InvoiceTypeLabel = invoice.InvoiceType == InvoiceType.Installment ? "أقساط" : "مبيعات",
+                ItemCount = lineItems.Count,
+                Revenue = revenue,
+                Cost = cost,
+                GrossProfit = profit,
+                MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 1) : 0
+            });
+        }
+
+        return rows;
+    }
+
     // ══════════════════════════════════════════════════════════════
     // INSTALLMENTS
     // ══════════════════════════════════════════════════════════════
@@ -957,24 +1032,18 @@ public class ReportService : IReportService
             .Where(c => c.Type == CapitalEntryType.Adjustment && c.Date <= endOfDay)
             .SumAsync(c => c.Amount);
 
-        decimal totalSales = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.Date <= endOfDay)
-            .SumAsync(i => i.NetAmount);
-        decimal totalPurchases = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date <= endOfDay)
-            .SumAsync(i => i.NetAmount);
+        decimal profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
+
+        var salesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .Where(i => i.Date <= endOfDay);
+        decimal totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        decimal costOfSales = await CalculateCogsAsync(context, null, endOfDay.AddTicks(1));
         decimal totalExpenses = await context.Expenses
             .Where(e => e.Date <= endOfDay)
-            .SumAsync(e => e.Amount);
-        decimal totalBankFees = await context.Vouchers
-            .Where(v => v.VoucherType == VoucherType.BankReceipt && v.Date <= endOfDay)
-            .SumAsync(v => v.BankFees);
-        decimal distributedProfits = await context.ProfitDistributions
-            .Where(p => p.Date <= endOfDay)
-            .SumAsync(p => p.DistributedAmount);
+            .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
-        decimal profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
-        decimal accumulatedProfits = totalSales - totalPurchases - totalExpenses - totalBankFees - distributedProfits + profitOpening;
+        decimal salesProfit = totalSales - costOfSales;
+        decimal accumulatedProfits = profitOpening + salesProfit - totalExpenses;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
         // LIABILITIES
@@ -984,15 +1053,22 @@ public class ReportService : IReportService
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => i.NetAmount);
+        var supplierIds = await context.Suppliers.Select(s => s.Id).ToListAsync();
         decimal supplierPaymentVouchers = await context.Vouchers
             .Where(v => v.VoucherType == VoucherType.Payment &&
                         v.CustomerId != null &&
+                        supplierIds.Contains(v.CustomerId.Value) &&
                         v.Date <= endOfDay)
             .SumAsync(v => v.Amount);
         decimal supplierPayables = Math.Max(0, supplierCreditPurchases - supplierPaymentVouchers);
 
-        decimal investorDeposits = await context.Investors
-            .SumAsync(i => i.TotalDeposit);
+        decimal investorDeposits = await context.InvestorTransactions
+            .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        decimal investorWithdrawals = await context.InvestorTransactions
+            .Where(t => t.Type == InvestorTransactionType.Withdrawal && t.Date <= endOfDay)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+        investorDeposits = Math.Max(0, investorDeposits - investorWithdrawals);
 
         decimal liabilitiesTotal = supplierPayables + investorDeposits;
         decimal equityAndLiabilitiesTotal = equityTotal + liabilitiesTotal;
@@ -1052,6 +1128,11 @@ public class ReportService : IReportService
             Adjustments = adjustments,
             AccumulatedProfits = accumulatedProfits,
             EquityTotal = equityTotal,
+            ProfitOpeningBalance = profitOpening,
+            SalesTotal = totalSales,
+            CostOfSales = costOfSales,
+            SalesProfit = salesProfit,
+            ExpensesTotal = totalExpenses,
             SupplierPayables = supplierPayables,
             InvestorDeposits = investorDeposits,
             LiabilitiesTotal = liabilitiesTotal,
