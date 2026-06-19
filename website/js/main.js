@@ -14,6 +14,7 @@ function applyDownloadLinks(url) {
     if (a) a.href = url;
   });
 }
+window.applyDownloadLinks = applyDownloadLinks;
 
 async function loadVersion() {
   const els = {
@@ -55,9 +56,9 @@ function observeReveals() {
     }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
   }
   document.querySelectorAll('.reveal:not(.visible)').forEach(el => revealObserver.observe(el));
-  // إظهار فوري للعناصر في أعلى الصفحة
   document.querySelectorAll('.hero .reveal, .site-header').forEach(el => el.classList.add('visible'));
 }
+window.observeReveals = observeReveals;
 
 function initCounters() {
   const run = el => {
@@ -101,6 +102,7 @@ async function boot() {
   initCounters();
   initLang();
   initVideos?.();
+  initSystems?.();
   loadVersion();
   document.querySelectorAll('[data-github]').forEach(a => a.href = GITHUB_REPO);
 }

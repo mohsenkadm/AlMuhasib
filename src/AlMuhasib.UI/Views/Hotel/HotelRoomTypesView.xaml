@@ -87,13 +87,17 @@
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" MinWidth="120"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
-                            <DataGridTextColumn Header="السعة" Binding="{Binding Capacity}" Width="90"
+                            <DataGridTextColumn Header="السعة" Binding="{Binding Capacity}" Width="90" MinWidth="70"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Capacity"/>
-                            <DataGridTextColumn Header="السعر الأساسي" Binding="{Binding BasePrice, StringFormat=N0}" Width="140"
+                            <DataGridTextColumn Header="السعر الأساسي" Binding="{Binding BasePrice, StringFormat=N0}" Width="140" MinWidth="110"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BasePrice"/>
-                            <DataGridTextColumn Header="الترتيب" Binding="{Binding SortOrder}" Width="90"
+                            <DataGridTextColumn Header="الترتيب" Binding="{Binding SortOrder}" Width="90" MinWidth="70"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SortOrder"/>
                             <DataGridTemplateColumn Header="إجراءات" Width="140" MinWidth="140"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">

@@ -13,7 +13,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
-            <WrapPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="إدارة الحجوزات" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <WrapPanel Grid.Row="1">
                 <Button Command="{Binding OpenNewReservationCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" IsEnabled="{Binding CanAdd}">
                     <StackPanel Orientation="Horizontal">
                         <md:PackIcon Kind="CalendarPlus" Margin="0,0,6,0"/>
@@ -42,7 +49,8 @@
                                              Margin="4,0,0,0"
                                              VerticalAlignment="Center"/>
                 <CheckBox Content="غير مسددة" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center"/>
-            </WrapPanel>
+                </WrapPanel>
+            </Grid>
         </md:Card>
         <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0">
             <Grid>
@@ -52,7 +60,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="#6A1B9A" Padding="16,10">
+                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
                     <TextBlock Text="الحجوزات" FontWeight="Bold" Foreground="White"/>
                 </Border>
                 <DataGrid x:Name="ReservationsGrid"
@@ -85,7 +93,7 @@
                                             Width="100" MinWidth="80"
                                             ElementStyle="{StaticResource HotelDataGridTextElement}"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber"/>
-                        <DataGridTemplateColumn Header="الحالة" Width="110">
+                        <DataGridTemplateColumn Header="الحالة" Width="110" MinWidth="100">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border x:Name="StatusBadge" CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
@@ -116,8 +124,12 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="100" behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
-                        <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="100" behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckInDate"/>
+                        <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckOutDate"/>
                         <DataGridTextColumn Header="الإجمالي"
                                             Binding="{Binding TotalAmount, StringFormat=N0}"
                                             Width="110" MinWidth="90"
@@ -128,7 +140,7 @@
                                             Width="110" MinWidth="90"
                                             ElementStyle="{StaticResource HotelDataGridTextElement}"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                        <DataGridTemplateColumn Header="إجراءات" Width="220">
+                        <DataGridTemplateColumn Header="إجراءات" Width="220" MinWidth="180">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>

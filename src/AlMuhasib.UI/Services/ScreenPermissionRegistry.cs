@@ -54,13 +54,20 @@ public static class ScreenPermissionRegistry
         (HotelPermissionRegistry.Guests, "النزلاء"),
         (HotelPermissionRegistry.RatePlans, "خطط الأسعار"),
         (HotelPermissionRegistry.Housekeeping, "النظافة"),
+        (HotelPermissionRegistry.RestaurantPos, "كاشير المطعم"),
+        (HotelPermissionRegistry.RestaurantMenu, "قائمة المطعم"),
+        (HotelPermissionRegistry.RestaurantInventory, "مخزون المطبخ"),
+        (HotelPermissionRegistry.RestaurantTables, "طاولات الصالة"),
+        (HotelPermissionRegistry.RestaurantReports, "تقارير المطعم"),
+        (HotelPermissionRegistry.RestaurantKitchen, "شاشة المطبخ"),
         (HotelPermissionRegistry.HotelCash, "الصندوق"),
         (HotelPermissionRegistry.HotelExpenses, "المصاريف"),
         (HotelPermissionRegistry.HotelReports, "التقارير"),
         (HotelPermissionRegistry.Users, "المستخدمون"),
         (HotelPermissionRegistry.Permissions, "الصلاحيات"),
         (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
-        (HotelPermissionRegistry.Backup, "النسخ الاحتياطي")
+        (HotelPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (HotelPermissionRegistry.CloudSync, "المزامنة السحابية")
     ];
 
     public static IReadOnlyList<(string Name, string Label)> AccountingScreens { get; } =

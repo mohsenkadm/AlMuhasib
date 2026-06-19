@@ -1,19 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../core/constants/app_colors.dart';
-import '../../core/providers/core_providers.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../core/services/app_info_service.dart';
-import '../../core/theme/theme_provider.dart';
 import '../../shared/widgets/app_animations.dart';
 import '../../shared/widgets/common_widgets.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -33,15 +32,13 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(authStateProvider.notifier).logout();
-      if (context.mounted) context.go('/login');
+      await AppServices.auth.logout();
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final prefs = ref.watch(preferencesServiceProvider);
-    final appInfo = ref.watch(appInfoProvider);
+  Widget build(BuildContext context) {
+    final prefs = AppServices.prefs;
     final company = prefs.companyName ?? 'app_name'.tr();
     final username = prefs.username ?? '—';
 
@@ -118,25 +115,25 @@ class ProfileScreen extends ConsumerWidget {
             icon: Icons.settings_outlined,
             title: 'settings_title'.tr(),
             subtitle: 'profile_settings_desc'.tr(),
-            onTap: () => context.push('/settings'),
+            onTap: () => Get.toNamed(AppRoutes.settings),
           ),
           _ProfileMenuTile(
             index: 1,
             icon: Icons.info_outline,
             title: 'about_title'.tr(),
             subtitle: 'about_subtitle'.tr(),
-            onTap: () => context.push('/about'),
+            onTap: () => Get.toNamed(AppRoutes.about),
           ),
           _ProfileMenuTile(
             index: 2,
             icon: Icons.privacy_tip_outlined,
             title: 'privacy_title'.tr(),
             subtitle: 'privacy_subtitle'.tr(),
-            onTap: () => context.push('/privacy'),
+            onTap: () => Get.toNamed(AppRoutes.privacy),
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () => _confirmLogout(context, ref),
+            onPressed: () => _confirmLogout(context),
             icon: const Icon(Icons.logout, color: AppColors.error),
             label: Text(
               'logout'.tr(),
@@ -149,17 +146,24 @@ class ProfileScreen extends ConsumerWidget {
           ).fadeSlideIn(delayMs: 280),
           const SizedBox(height: 24),
           Center(
-            child: appInfo.when(
-              data: (info) => Text(
-                '${'version'.tr()} ${info.versionLabel}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              loading: () => const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              error: (_, __) => Text('version'.tr()),
+            child: FutureBuilder<AppInfo>(
+              future: AppServices.appInfo.load(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Text('version'.tr());
+                }
+                return Text(
+                  '${'version'.tr()} ${snapshot.data!.versionLabel}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
+              },
             ),
           ).fadeSlideIn(delayMs: 340),
         ],

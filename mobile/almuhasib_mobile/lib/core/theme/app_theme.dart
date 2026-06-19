@@ -4,15 +4,17 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 abstract final class AppTheme {
-  static ThemeData light() {
+  static ThemeData light({Color? seedColor, Color? accentColor}) {
+    final primary = seedColor ?? AppColors.primary;
+    final accent = accentColor ?? AppColors.accent;
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: primary,
         brightness: Brightness.light,
-        primary: AppColors.primary,
-        secondary: AppColors.accent,
+        primary: primary,
+        secondary: accent,
         surface: AppColors.surfaceLight,
       ),
       scaffoldBackgroundColor: AppColors.surfaceLight,
@@ -44,7 +46,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
+          borderSide: BorderSide(color: accent, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -60,15 +62,17 @@ abstract final class AppTheme {
     return base;
   }
 
-  static ThemeData dark() {
+  static ThemeData dark({Color? seedColor, Color? accentColor}) {
+    final primary = seedColor ?? AppColors.primary;
+    final accent = accentColor ?? AppColors.accent;
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: primary,
         brightness: Brightness.dark,
-        primary: AppColors.primaryLight,
-        secondary: AppColors.accent,
+        primary: primary.withValues(alpha: 0.9),
+        secondary: accent,
         surface: AppColors.surfaceDarkCard,
       ),
       scaffoldBackgroundColor: AppColors.surfaceDark,
@@ -100,7 +104,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
+          borderSide: BorderSide(color: accent, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),

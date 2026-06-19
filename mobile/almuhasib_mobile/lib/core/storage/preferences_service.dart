@@ -1,6 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/application_system_type.dart';
 import '../config/env_config.dart';
+import '../config/system_profile.dart';
 import '../constants/storage_keys.dart';
 
 class PreferencesService {
@@ -50,7 +52,22 @@ class PreferencesService {
   Future<void> setTenantName(String name) =>
       _prefs.setString(StorageKeys.tenantName, name);
 
-  bool get isHotelTenant => applicationSystemType == 2;
+  ApplicationSystemType get systemType =>
+      ApplicationSystemType.fromInt(applicationSystemType);
+
+  bool get isAccountingTenant =>
+      systemType == ApplicationSystemType.accounting;
+
+  bool get isCarTenant => systemType == ApplicationSystemType.carContracts;
+
+  bool get isHotelTenant =>
+      systemType == ApplicationSystemType.hotelManagement;
+
+  SystemProfile get systemProfile => SystemProfile.of(systemType);
+
+  String get homeRoute => systemProfile.homeRoute;
+
+  String get launchRoute => systemProfile.launchRoute;
 
   String get themeMode => _prefs.getString(StorageKeys.themeMode) ?? 'dark';
 

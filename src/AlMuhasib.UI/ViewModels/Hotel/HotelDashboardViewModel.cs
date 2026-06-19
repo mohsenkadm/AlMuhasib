@@ -41,6 +41,9 @@ public partial class HotelDashboardViewModel : ViewModelBase
     public ObservableCollection<ReservationListItem> TodayArrivalList { get; } = [];
     public ObservableCollection<SmartAlert> SmartAlerts { get; } = [];
 
+    public int SmartAlertCount => SmartAlerts.Count;
+    public int TodayArrivalListCount => TodayArrivalList.Count;
+
     public HotelDashboardViewModel(
         IHotelDashboardService dashboardService,
         IHotelSmartAlertService alertService,
@@ -102,11 +105,21 @@ public partial class HotelDashboardViewModel : ViewModelBase
             SmartAlerts.Clear();
             foreach (var alert in await _alertService.GetAlertsAsync())
                 SmartAlerts.Add(alert);
+
+            OnPropertyChanged(nameof(SmartAlertCount));
+            OnPropertyChanged(nameof(TodayArrivalListCount));
         }
         finally
         {
             IsLoaded = true;
         }
+    }
+
+    [RelayCommand]
+    private async Task ExecuteAlertAsync(SmartAlert? alert)
+    {
+        if (alert is { Action: not SmartAlertAction.None })
+            await _mainWindow.ExecuteDailyTaskAsync(alert.Action);
     }
 
     [RelayCommand]
@@ -120,4 +133,12 @@ public partial class HotelDashboardViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenCheckInOutAsync() =>
         await _mainWindow.OpenTabAsync(typeof(HotelCheckInOutViewModel), "تسجيل دخول/خروج", PackIconKind.Login);
+
+    [RelayCommand]
+    private async Task OpenRoomsAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(HotelRoomsViewModel), "الغرف", PackIconKind.Door);
+
+    [RelayCommand]
+    private async Task OpenHousekeepingAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(HotelHousekeepingViewModel), "النظافة", PackIconKind.Broom);
 }

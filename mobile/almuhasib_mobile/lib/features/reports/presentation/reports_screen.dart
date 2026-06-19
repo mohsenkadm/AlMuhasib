@@ -1,8 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 
@@ -15,6 +16,7 @@ class ReportsScreen extends StatelessWidget {
       _ReportItem('sales', 'report_sales', Icons.point_of_sale, AppColors.success),
       _ReportItem('purchases', 'report_purchases', Icons.shopping_bag_outlined, AppColors.primaryLight),
       _ReportItem('profit', 'report_profit', Icons.trending_up, AppColors.accent),
+      _ReportItem('balance_sheet', 'report_balance_sheet', Icons.account_balance, const Color(0xFF5C6BC0)),
       _ReportItem('overdue', 'report_overdue', Icons.warning_amber_rounded, AppColors.warning),
       _ReportItem('statement', 'report_statement', Icons.receipt_long, AppColors.primary),
       _ReportItem('investor_statement', 'report_investor_statement', Icons.savings_outlined, const Color(0xFF00897B)),
@@ -46,7 +48,9 @@ class ReportsScreen extends StatelessWidget {
                   ),
                   title: Text(entry.value.titleKey.tr()),
                   trailing: const Icon(Icons.chevron_left),
-                  onTap: () => context.push('/reports/detail/${entry.value.type}'),
+                  onTap: () => Get.toNamed(
+                    AppRoutes.reportDetailPath(entry.value.type),
+                  ),
                 ),
               ).fadeSlideInList(index: entry.key),
             ),

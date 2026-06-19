@@ -108,4 +108,28 @@ class ReportsRepository {
           TopProductsReportResult.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<List<ProfitInvoiceDetailRow>> getProfitInvoiceDetails(
+    DateTime? from,
+    DateTime? to,
+  ) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/reports/profit/invoices',
+      queryParameters: _dateParams(from, to),
+      parser: (data) => (data as List<dynamic>)
+          .map((e) => ProfitInvoiceDetailRow.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<BalanceSheetResult> getBalanceSheet(DateTime date) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/reports/balance-sheet',
+      queryParameters: {'date': date.toIso8601String()},
+      parser: (data) =>
+          BalanceSheetResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

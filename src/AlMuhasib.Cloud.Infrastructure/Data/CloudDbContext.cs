@@ -59,6 +59,19 @@ public class CloudDbContext : DbContext
     public DbSet<CloudHotelRatePlan> HotelRatePlans => Set<CloudHotelRatePlan>();
     public DbSet<CloudHotelRatePlanSeason> HotelRatePlanSeasons => Set<CloudHotelRatePlanSeason>();
     public DbSet<CloudHotelHousekeepingTask> HotelHousekeepingTasks => Set<CloudHotelHousekeepingTask>();
+    public DbSet<CloudRestaurantIngredient> RestaurantIngredients => Set<CloudRestaurantIngredient>();
+    public DbSet<CloudRestaurantIngredientStock> RestaurantIngredientStocks => Set<CloudRestaurantIngredientStock>();
+    public DbSet<CloudRestaurantMenuCategory> RestaurantMenuCategories => Set<CloudRestaurantMenuCategory>();
+    public DbSet<CloudRestaurantRecipe> RestaurantRecipes => Set<CloudRestaurantRecipe>();
+    public DbSet<CloudRestaurantMenuItem> RestaurantMenuItems => Set<CloudRestaurantMenuItem>();
+    public DbSet<CloudRestaurantRecipeLine> RestaurantRecipeLines => Set<CloudRestaurantRecipeLine>();
+    public DbSet<CloudRestaurantTable> RestaurantTables => Set<CloudRestaurantTable>();
+    public DbSet<CloudRestaurantOrder> RestaurantOrders => Set<CloudRestaurantOrder>();
+    public DbSet<CloudRestaurantOrderLine> RestaurantOrderLines => Set<CloudRestaurantOrderLine>();
+    public DbSet<CloudRestaurantOrderPayment> RestaurantOrderPayments => Set<CloudRestaurantOrderPayment>();
+    public DbSet<CloudRestaurantStockMovement> RestaurantStockMovements => Set<CloudRestaurantStockMovement>();
+    public DbSet<CloudCarSaleContract> CarSaleContracts => Set<CloudCarSaleContract>();
+    public DbSet<CloudCarContractPayment> CarContractPayments => Set<CloudCarContractPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +89,44 @@ public class CloudDbContext : DbContext
         modelBuilder.Entity<DeviceSubscription>()
             .HasIndex(d => new { d.TenantId, d.PlayerId })
             .IsUnique();
+
+        modelBuilder.Entity<CloudCarSaleContract>(e =>
+        {
+            e.Property(c => c.ContractNumber).HasMaxLength(50);
+            e.Property(c => c.SellerName).HasMaxLength(200);
+            e.Property(c => c.SellerAddress).HasMaxLength(500);
+            e.Property(c => c.SellerIdNumber).HasMaxLength(50);
+            e.Property(c => c.SellerPhone).HasMaxLength(50);
+            e.Property(c => c.BuyerName).HasMaxLength(200);
+            e.Property(c => c.BuyerAddress).HasMaxLength(500);
+            e.Property(c => c.BuyerIdNumber).HasMaxLength(50);
+            e.Property(c => c.BuyerPhone).HasMaxLength(50);
+            e.Property(c => c.AnnualOwnerName).HasMaxLength(200);
+            e.Property(c => c.AnnualOwnerAddress).HasMaxLength(500);
+            e.Property(c => c.PlateNumber).HasMaxLength(30);
+            e.Property(c => c.CarType).HasMaxLength(100);
+            e.Property(c => c.CarModel).HasMaxLength(100);
+            e.Property(c => c.CarColor).HasMaxLength(50);
+            e.Property(c => c.ChassisNumber).HasMaxLength(100);
+            e.Property(c => c.CarPriceInWords).HasMaxLength(1000);
+            e.Property(c => c.Notes).HasMaxLength(2000);
+            e.Property(c => c.CarPrice).HasPrecision(18, 2);
+            e.Property(c => c.AmountReceived).HasPrecision(18, 2);
+            e.Property(c => c.RemainingAmount).HasPrecision(18, 2);
+            e.HasIndex(c => new { c.TenantId, c.ContractNumber });
+        });
+
+        modelBuilder.Entity<CloudCarContractPayment>(e =>
+        {
+            e.Property(p => p.Amount).HasPrecision(18, 2);
+            e.Property(p => p.RemainingBefore).HasPrecision(18, 2);
+            e.Property(p => p.RemainingAfter).HasPrecision(18, 2);
+            e.Property(p => p.Notes).HasMaxLength(1000);
+            e.HasOne(p => p.Contract)
+                .WithMany(c => c.Payments)
+                .HasForeignKey(p => p.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

@@ -7,7 +7,9 @@ using AlMuhasib.Infrastructure.Data.Car;
 using AlMuhasib.Infrastructure.Data.Hotel;
 using AlMuhasib.Infrastructure.Repositories;
 using AlMuhasib.Infrastructure.Services;
+using AlMuhasib.Infrastructure.Services.Car;
 using AlMuhasib.Infrastructure.Services.Hotel;
+using AlMuhasib.Infrastructure.Services.Hotel.Restaurant;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -100,6 +102,10 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, CarSyncService>();
+        services.AddHttpClient("CloudSync");
     }
 
     private static void RegisterHotelInfrastructure(IServiceCollection services, string connectionString)
@@ -130,6 +136,12 @@ public static class DependencyInjection
         services.AddScoped<IHotelDashboardService, HotelDashboardService>();
         services.AddScoped<IHotelReportService, HotelReportService>();
         services.AddScoped<IHotelSmartAlertService, HotelSmartAlertService>();
+
+        services.AddScoped<IRestaurantInventoryService, RestaurantInventoryService>();
+        services.AddScoped<IRestaurantMenuService, RestaurantMenuService>();
+        services.AddScoped<IRestaurantOrderService, RestaurantOrderService>();
+        services.AddScoped<IRestaurantTableService, RestaurantTableService>();
+        services.AddScoped<IRestaurantReportService, RestaurantReportService>();
 
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
         services.AddScoped<ISmartAlertService, HotelSmartAlertBridge>();

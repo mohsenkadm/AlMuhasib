@@ -11,80 +11,121 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,16">
-            <WrapPanel>
-                <Button Command="{Binding OpenAddExpenseDialogCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,8">
-                    <TextBlock Text="مصروف جديد"/>
-                </Button>
-                <Button Command="{Binding OpenAddTypeDialogCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,8">
-                    <TextBlock Text="نوع مصروف"/>
-                </Button>
-                <Button Command="{Binding LoadExpensesCommand}" Style="{StaticResource FlatButton}" Margin="0,0,8,8">
-                    <md:PackIcon Kind="Refresh"/>
-                </Button>
-                <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="130" Margin="0,0,8,8"/>
-                <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="130" Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=ExpensesGrid}"
-                                             Margin="4,0,0,0"
-                                             VerticalAlignment="Center"/>
-            </WrapPanel>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="مصاريف الفندق" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <WrapPanel Grid.Row="1">
+                    <Button Command="{Binding OpenAddExpenseDialogCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CashMinus" Margin="0,0,6,0"/>
+                            <TextBlock Text="مصروف جديد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenAddTypeDialogCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="TagPlus" Margin="0,0,6,0"/>
+                            <TextBlock Text="نوع مصروف"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding LoadExpensesCommand}" Style="{StaticResource FlatButton}" Margin="0,0,8,8">
+                        <md:PackIcon Kind="Refresh"/>
+                    </Button>
+                    <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="130" Margin="0,0,8,8"/>
+                    <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="130" Margin="0,0,8,8"/>
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=ExpensesGrid}"
+                                                 Margin="4,0,0,0"
+                                                 VerticalAlignment="Center"/>
+                </WrapPanel>
+            </Grid>
         </md:Card>
-        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="12" Margin="0,0,0,12">
-            <StackPanel>
-                <TextBlock Text="أنواع المصاريف" FontWeight="Bold" Margin="0,0,0,8"/>
-                <DataGrid ItemsSource="{Binding ExpenseTypes}" SelectedItem="{Binding SelectedExpenseType}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="120" Style="{StaticResource HotelListDataGrid}">
+
+        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
+                    <TextBlock Text="أنواع المصاريف" FontWeight="Bold" Foreground="White"/>
+                </Border>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding ExpenseTypes}" SelectedItem="{Binding SelectedExpenseType}"
+                          AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="140" Margin="8"
+                          Style="{StaticResource HotelListDataGrid}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTemplateColumn Header="إجراء" Width="80">
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" MinWidth="140"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                        <DataGridTemplateColumn Header="إجراء" Width="80" MinWidth="70"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource TableEditIconButton}" Command="{Binding DataContext.OpenEditTypeDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource TableEditIconButton}"
+                                            Command="{Binding DataContext.OpenEditTypeDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </StackPanel>
+            </Grid>
         </md:Card>
-        <DataGrid x:Name="ExpensesGrid" Grid.Row="2" ItemsSource="{Binding Expenses}" SelectedItem="{Binding SelectedExpense}"
-                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
-                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                  behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="120" MinWidth="100"
-                                    ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseDate"/>
-                <DataGridTextColumn Header="النوع" Binding="{Binding ExpenseType.Name}" Width="160" MinWidth="120"
-                                    ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseType.Name"/>
-                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120" MinWidth="90"
-                                    ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
-                <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="2*" MinWidth="180"
-                                    ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
-                <DataGridTemplateColumn Header="إجراءات" Width="120" MinWidth="120"
-                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Style="{StaticResource TableEditIconButton}" Command="{Binding DataContext.OpenEditExpenseDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
-                                <Button Style="{StaticResource TableDeleteIconButton}" Command="{Binding DataContext.DeleteExpenseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-        <controls:PaginationBar Grid.Row="3"/>
 
-        <md:DialogHost IsOpen="{Binding IsExpenseDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="4">
+        <md:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                    <TextBlock Text="سجل المصاريف" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                </Border>
+                <DataGrid x:Name="ExpensesGrid" Grid.Row="1"
+                          ItemsSource="{Binding Expenses}" SelectedItem="{Binding SelectedExpense}"
+                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="120" MinWidth="100"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseDate"/>
+                        <DataGridTextColumn Header="النوع" Binding="{Binding ExpenseType.Name}" Width="160" MinWidth="120"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseType.Name"/>
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                        <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="2*" MinWidth="180"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
+                        <DataGridTemplateColumn Header="إجراءات" Width="120" MinWidth="120"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource TableEditIconButton}" Command="{Binding DataContext.OpenEditExpenseDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                        <Button Style="{StaticResource TableDeleteIconButton}" Command="{Binding DataContext.DeleteExpenseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsExpenseDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="3">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="420">
                     <StackPanel>
@@ -114,7 +155,7 @@
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <md:DialogHost IsOpen="{Binding IsTypeDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="4">
+        <md:DialogHost IsOpen="{Binding IsTypeDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="3">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="380">
                     <StackPanel>

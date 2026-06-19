@@ -250,6 +250,12 @@ public partial class App : Application
         services.AddTransient<HotelCashViewModel>();
         services.AddTransient<HotelExpensesViewModel>();
         services.AddTransient<HotelReportsViewModel>();
+        services.AddTransient<RestaurantPosViewModel>();
+        services.AddTransient<RestaurantMenuViewModel>();
+        services.AddTransient<RestaurantInventoryViewModel>();
+        services.AddTransient<RestaurantTablesViewModel>();
+        services.AddTransient<RestaurantReportsViewModel>();
+        services.AddTransient<RestaurantKitchenViewModel>();
         services.AddTransient<HotelSetupWizardViewModel>();
         services.AddSingleton<ICarContractPrintService, CarContractPrintService>();
         services.AddSingleton<IHotelInvoicePrintService, HotelInvoicePrintService>();

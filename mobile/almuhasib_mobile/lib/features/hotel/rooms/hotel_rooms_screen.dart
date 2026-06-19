@@ -1,25 +1,33 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/providers/core_providers.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
+import '../controllers/hotel_rooms_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-final hotelRoomsProvider = FutureProvider.autoDispose<List<HotelRoom>>((ref) {
-  return ref.watch(hotelRepositoryProvider).getRooms();
-});
-
-class HotelRoomsScreen extends ConsumerWidget {
+class HotelRoomsScreen extends StatefulWidget {
   const HotelRoomsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final roomsAsync = ref.watch(hotelRoomsProvider);
+  State<HotelRoomsScreen> createState() => _HotelRoomsScreenState();
+}
+
+class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
+  late final HotelRoomsController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(HotelRoomsController(), tag: 'hotel_rooms');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
@@ -45,41 +53,45 @@ class HotelRoomsScreen extends ConsumerWidget {
           _StatusLegend().fadeSlideIn(),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(hotelRoomsProvider),
-              child: roomsAsync.when(
-                loading: () => const ListShimmer(),
-                error: (e, _) => ErrorStateWidget(
-                  message: e.toString(),
-                  onRetry: () => ref.invalidate(hotelRoomsProvider),
-                ),
-                data: (rooms) {
-                  if (rooms.isEmpty) {
-                    return ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.sizeOf(context).height * 0.35,
-                          child: EmptyStateWidget(message: 'no_data'.tr()),
-                        ),
-                      ],
-                    );
-                  }
-                  return GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.85,
-                    ),
-                    itemCount: rooms.length,
-                    itemBuilder: (context, index) {
-                      return _RoomCard(room: rooms[index])
-                          .fadeSlideInList(index: index);
-                    },
+              onRefresh: _controller.load,
+              child: Obx(() {
+                if (_controller.isLoading.value) {
+                  return const ListShimmer();
+                }
+                final error = _controller.error.value;
+                if (error != null) {
+                  return ErrorStateWidget(
+                    message: error.toString(),
+                    onRetry: _controller.load,
                   );
-                },
-              ),
+                }
+                final rooms = _controller.rooms.value;
+                if (rooms.isEmpty) {
+                  return ListView(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.35,
+                        child: EmptyStateWidget(message: 'no_data'.tr()),
+                      ),
+                    ],
+                  );
+                }
+                return GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: rooms.length,
+                  itemBuilder: (context, index) {
+                    return _RoomCard(room: rooms[index])
+                        .fadeSlideInList(index: index);
+                  },
+                );
+              }),
             ),
           ),
         ],

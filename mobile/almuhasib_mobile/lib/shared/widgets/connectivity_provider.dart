@@ -1,16 +1,16 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
-final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
-  return Connectivity().onConnectivityChanged;
-});
+import '../../core/getx/app_services.dart';
 
-final isOfflineProvider = Provider<bool>((ref) {
-  final connectivity = ref.watch(connectivityProvider);
-  return connectivity.maybeWhen(
-    data: (results) =>
-        results.every((r) => r == ConnectivityResult.none),
-    orElse: () => false,
-  );
-});
+/// Reactive offline flag backed by [ConnectivityController].
+bool get isOffline => AppServices.connectivity.isOffline.value;
+
+/// Widget helper — pass [isOffline] from [Obx] watching connectivity.
+class ConnectivityState {
+  ConnectivityState._();
+
+  static bool get offline => AppServices.connectivity.isOffline.value;
+
+  static void watch() => AppServices.connectivity.isOffline.value;
+}

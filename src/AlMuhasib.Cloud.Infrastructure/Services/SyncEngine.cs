@@ -26,6 +26,8 @@ public sealed partial class SyncEngine : ISyncEngine
             .FirstOrDefaultAsync(ct);
         if (tenantType == (int)ApplicationSystemType.HotelManagement)
             return await PushHotelAsync(tenantId, request, ct);
+        if (tenantType == (int)ApplicationSystemType.CarContracts)
+            return await PushCarAsync(tenantId, request, ct);
 
         var resolver = new SyncIdResolver(_db, tenantId);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
@@ -204,6 +206,8 @@ public sealed partial class SyncEngine : ISyncEngine
             .FirstOrDefaultAsync(ct);
         if (tenantType == (int)ApplicationSystemType.HotelManagement)
             return await PullHotelAsync(tenantId, request, ct);
+        if (tenantType == (int)ApplicationSystemType.CarContracts)
+            return await PullCarAsync(tenantId, request, ct);
 
         var since = request.Since ?? DateTime.MinValue;
         var bundle = new SyncDataBundle();

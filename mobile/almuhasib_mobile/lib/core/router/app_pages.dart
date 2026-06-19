@@ -1,0 +1,386 @@
+import 'package:get/get.dart';
+
+import '../../features/auth/presentation/login_screen.dart';
+import '../../features/car/car_shell.dart';
+import '../../features/car/contracts/car_contract_detail_screen.dart';
+import '../../features/car/contracts/car_contract_form_screen.dart';
+import '../../features/car/contracts/car_contracts_screen.dart';
+import '../../features/car/dashboard/car_dashboard_screen.dart';
+import '../../features/car/payments/car_payments_screen.dart';
+import '../../features/car/reports/car_report_screen.dart';
+import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/data_tab/presentation/data_list_screen.dart';
+import '../../features/data_tab/presentation/data_screen.dart';
+import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
+import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
+import '../../features/hotel/guests/hotel_guest_form_screen.dart';
+import '../../features/hotel/guests/hotel_guests_screen.dart';
+import '../../features/hotel/hotel_shell.dart';
+import '../../features/hotel/models/hotel_models.dart'
+    hide ApplicationSystemType;
+import '../../features/hotel/reservations/hotel_reservation_detail_screen.dart';
+import '../../features/hotel/reservations/hotel_reservation_form_screen.dart';
+import '../../features/hotel/reservations/hotel_reservations_screen.dart';
+import '../../features/hotel/restaurant/pos/restaurant_hub_screen.dart';
+import '../../features/hotel/rooms/hotel_rooms_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/operations/presentation/forms/customer_form_screen.dart';
+import '../../features/operations/presentation/forms/entity_forms.dart';
+import '../../features/operations/presentation/invoice_wizard/invoice_wizard_screen.dart';
+import '../../features/profile/about_screen.dart';
+import '../../features/profile/privacy_policy_screen.dart';
+import '../../features/profile/profile_screen.dart';
+import '../../features/reports/presentation/report_detail_screen.dart';
+import '../../features/reports/presentation/reports_screen.dart';
+import '../../features/settings/settings_screen.dart';
+import '../../features/shell/main_shell.dart';
+import '../../features/splash/splash_screen.dart';
+import '../../features/system/system_launch_screen.dart';
+import '../../shared/models/master_data_models.dart';
+import '../config/application_system_type.dart';
+import 'app_routes.dart';
+import 'page_transitions.dart';
+import 'route_guard.dart';
+
+abstract final class AppPages {
+  static const initial = AppRoutes.splash;
+
+  static final routes = <GetPage>[
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.login,
+      page: () => const LoginScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.launchAccounting,
+      page: () => const SystemLaunchScreen(
+        systemType: ApplicationSystemType.accounting,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.launchCar,
+      page: () => const SystemLaunchScreen(
+        systemType: ApplicationSystemType.carContracts,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.launchHotel,
+      page: () => const SystemLaunchScreen(
+        systemType: ApplicationSystemType.hotelManagement,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.home,
+      page: () => const MainShellPage(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.reports,
+      page: () => const MainShellPage(initialTab: 1),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.data,
+      page: () => const MainShellPage(initialTab: 2),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.settings,
+      page: () => const MainShellPage(initialTab: 3),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.reportDetail,
+      page: () => ReportDetailScreen(
+        reportType: Get.parameters['type']!,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.dataList,
+      page: () => DataListScreen(listType: Get.parameters['type']!),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.invoiceNew,
+      page: () => const InvoiceWizardScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.invoiceDetail,
+      page: () => InvoiceDetailScreen(syncId: Get.parameters['syncId']!),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.customerNew,
+      page: () => const CustomerFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.customerEdit,
+      page: () => CustomerFormScreen(syncId: Get.parameters['syncId']),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.customerDetail,
+      page: () => EntityDetailScreen(
+        entityType: 'customer',
+        syncId: Get.parameters['syncId']!,
+        name: Get.parameters['name'] ?? '',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productNew,
+      page: () => const ProductFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productEdit,
+      page: () => ProductFormScreen(syncId: Get.parameters['syncId']),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productDetail,
+      page: () => EntityDetailScreen(
+        entityType: 'product',
+        syncId: Get.parameters['syncId']!,
+        name: Get.parameters['name'] ?? '',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.supplierNew,
+      page: () => const SupplierFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.supplierEdit,
+      page: () => SupplierFormScreen(syncId: Get.parameters['syncId']),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.supplierDetail,
+      page: () => EntityDetailScreen(
+        entityType: 'supplier',
+        syncId: Get.parameters['syncId']!,
+        name: Get.parameters['name'] ?? '',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.investorNew,
+      page: () => const InvestorFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.investorEdit,
+      page: () => InvestorFormScreen(syncId: Get.parameters['syncId']),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.investorDetail,
+      page: () => EntityDetailScreen(
+        entityType: 'investor',
+        syncId: Get.parameters['syncId']!,
+        name: Get.parameters['name'] ?? '',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.hotelHome,
+      page: () => const HotelShellPage(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.hotelReservations,
+      page: () => const HotelShellPage(initialTab: 1),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelRooms,
+      page: () => const HotelShellPage(initialTab: 2),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelOperations,
+      page: () => const HotelShellPage(initialTab: 3),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelGuests,
+      page: () => const HotelShellPage(initialTab: 4),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelRestaurant,
+      page: () => const HotelShellPage(initialTab: 5),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelSettings,
+      page: () => const HotelShellPage(initialTab: 6),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.hotelReservationNew,
+      page: () => const HotelReservationFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.hotelReservationDetail,
+      page: () => HotelReservationDetailScreen(
+        syncId: Get.parameters['syncId']!,
+        reservation: Get.arguments is HotelReservation
+            ? Get.arguments as HotelReservation
+            : null,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.hotelGuestNew,
+      page: () => const HotelGuestFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.hotelGuestEdit,
+      page: () => HotelGuestFormScreen(
+        guest: Get.arguments is HotelGuest ? Get.arguments as HotelGuest : null,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carHome,
+      page: () => const CarShellPage(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carContracts,
+      page: () => const CarShellPage(initialTab: 1),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carPayments,
+      page: () => const CarShellPage(initialTab: 2),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carReports,
+      page: () => const CarShellPage(initialTab: 3),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carSettings,
+      page: () => const CarShellPage(initialTab: 4),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carContractNew,
+      page: () => const CarContractFormScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carContractDetail,
+      page: () => CarContractDetailScreen(
+        syncId: Get.parameters['syncId']!,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.about,
+      page: () => const AboutScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.privacy,
+      page: () => const PrivacyPolicyScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+  ];
+}

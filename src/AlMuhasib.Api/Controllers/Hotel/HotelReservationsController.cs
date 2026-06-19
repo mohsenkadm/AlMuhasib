@@ -1,4 +1,5 @@
 using AlMuhasib.Cloud.Application.Models;
+using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core.Enums;
@@ -77,6 +78,65 @@ public sealed class HotelReservationsController : HotelApiControllerBase
             Notes = r.Notes
         });
     }
+
+    [HttpPost]
+    public async Task<ActionResult<object>> CreateReservation([FromBody] CreateHotelReservationRequest request, CancellationToken ct)
+    {
+        if (await EnsureHotelTenantAsync(ct) is { } err) return err;
+        if (string.IsNullOrWhiteSpace(request.GuestName))
+            return BadRequest("guestName is required.");
+
+        int? roomId = null;
+        string? roomNumber = null;
+        if (request.RoomSyncId.HasValue)
+        {
+            var room = await Db.HotelRooms.FirstOrDefaultAsync(
+                r => r.TenantId == TenantId && r.SyncId == request.RoomSyncId.Value, ct);
+            if (room is null) return BadRequest("Room not found.");
+            roomId = room.Id;
+            roomNumber = room.RoomNumber;
+        }
+
+        var guest = await Db.HotelGuests.FirstOrDefaultAsync(
+            g => g.TenantId == TenantId && g.FullName == request.GuestName.Trim(), ct);
+        if (guest is null)
+        {
+            guest = new CloudHotelGuest
+            {
+                TenantId = TenantId,
+                SyncId = Guid.NewGuid(),
+                FullName = request.GuestName.Trim(),
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Mobile"
+            };
+            Db.HotelGuests.Add(guest);
+            await Db.SaveChangesAsync(ct);
+        }
+
+        var number = $"R{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var entity = new CloudHotelReservation
+        {
+            TenantId = TenantId,
+            SyncId = Guid.NewGuid(),
+            ReservationNumber = number,
+            GuestId = guest.Id,
+            GuestName = guest.FullName,
+            RoomId = roomId,
+            RoomNumber = roomNumber,
+            CheckInDate = request.CheckInDate.Date,
+            CheckOutDate = request.CheckOutDate.Date,
+            GuestCount = request.GuestCount,
+            Status = ReservationStatus.Confirmed,
+            TotalAmount = request.TotalAmount,
+            AmountPaid = 0,
+            RemainingAmount = request.TotalAmount,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "Mobile"
+        };
+        Db.HotelReservations.Add(entity);
+        await Db.SaveChangesAsync(ct);
+        return Ok(new { syncId = entity.SyncId.ToString() });
+    }
 }
 
 public class HotelReservationListDto
@@ -99,4 +159,14 @@ public sealed class HotelReservationDetailDto : HotelReservationListDto
     public int GuestCount { get; set; }
     public decimal AmountPaid { get; set; }
     public string Notes { get; set; } = string.Empty;
+}
+
+public sealed class CreateHotelReservationRequest
+{
+    public string GuestName { get; set; } = string.Empty;
+    public Guid? RoomSyncId { get; set; }
+    public DateTime CheckInDate { get; set; }
+    public DateTime CheckOutDate { get; set; }
+    public int GuestCount { get; set; } = 1;
+    public decimal TotalAmount { get; set; }
 }

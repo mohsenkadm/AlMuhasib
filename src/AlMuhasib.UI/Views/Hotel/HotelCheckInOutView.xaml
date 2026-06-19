@@ -11,20 +11,24 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,16">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="تسجيل دخول/خروج" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <DatePicker md:HintAssist.Hint="التاريخ" SelectedDate="{Binding SelectedDate}" Width="160" Margin="0,0,8,0"/>
-                <Button Command="{Binding LoadDataCommand}" Style="{StaticResource FlatButton}">
-                    <md:PackIcon Kind="Refresh"/>
-                </Button>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=ArrivalsGrid}"
-                                             Margin="8,0,0,0"
-                                             VerticalAlignment="Center"/>
-            </StackPanel>
+        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="تسجيل دخول/خروج" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <DatePicker md:HintAssist.Hint="التاريخ" SelectedDate="{Binding SelectedDate}" Width="160" Margin="0,0,8,0"/>
+                    <Button Command="{Binding LoadDataCommand}" Style="{StaticResource FlatButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </md:Card>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -33,15 +37,26 @@
             </Grid.ColumnDefinitions>
             <md:Card Grid.Column="0" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="#6A1B9A" Padding="12,8">
-                        <TextBlock Text="وصول اليوم" Foreground="White" FontWeight="Bold"/>
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueMidBrush}" Padding="12,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="وصول اليوم" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <controls:ColumnFilterToggle Grid.Column="1"
+                                                         IsChecked="{Binding IsArrivalColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ArrivalActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearArrivalColumnFiltersCommand}"
+                                                         TargetDataGrid="{Binding ElementName=ArrivalsGrid}"/>
+                        </Grid>
                     </Border>
                     <DataGrid x:Name="ArrivalsGrid"
                               ItemsSource="{Binding Arrivals}" SelectedItem="{Binding SelectedArrival}"
                               AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsArrivalColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyArrivalColumnFiltersCommand}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="رقم" Binding="{Binding ReservationNumber}" Width="110" MinWidth="90"
                                                 ElementStyle="{StaticResource HotelDataGridTextElement}"
@@ -66,15 +81,26 @@
             </md:Card>
             <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="8,0,0,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="#1565C0" Padding="12,8">
-                        <TextBlock Text="مغادرة اليوم" Foreground="White" FontWeight="Bold"/>
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueMidBrush}" Padding="12,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="مغادرة اليوم" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <controls:ColumnFilterToggle Grid.Column="1"
+                                                         IsChecked="{Binding IsDepartureColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding DepartureActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearDepartureColumnFiltersCommand}"
+                                                         TargetDataGrid="{Binding ElementName=DeparturesGrid}"/>
+                        </Grid>
                     </Border>
                     <DataGrid x:Name="DeparturesGrid"
                               ItemsSource="{Binding Departures}" SelectedItem="{Binding SelectedDeparture}"
                               AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsDepartureColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyDepartureColumnFiltersCommand}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="رقم" Binding="{Binding ReservationNumber}" Width="110" MinWidth="90"
                                                 ElementStyle="{StaticResource HotelDataGridTextElement}"
@@ -103,7 +129,7 @@
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="420">
                     <StackPanel>
-                        <TextBlock Text="تسجيل دخول" FontSize="18" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,8"/>
+                        <TextBlock Text="تسجيل دخول" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,8"/>
                         <TextBlock Margin="0,0,0,16">
                             <Run Text="الحجز: "/>
                             <Run Text="{Binding SelectedArrival.ReservationNumber, Mode=OneWay}" FontWeight="Bold"/>

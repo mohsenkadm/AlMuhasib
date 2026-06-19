@@ -71,6 +71,14 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetProfitComparisonAsync(f.From, f.To));
     }
 
+    [HttpGet("profit/invoices")]
+    public async Task<IActionResult> ProfitInvoiceDetails([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetProfitInvoiceDetailsAsync(f.From, f.To));
+    }
+
     // ── Installments ───────────────────────────────────────────
 
     [HttpGet("installments/summary")]

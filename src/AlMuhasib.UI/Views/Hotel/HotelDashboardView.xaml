@@ -1,121 +1,506 @@
 <UserControl x:Class="AlMuhasib.UI.Views.Hotel.HotelDashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
-             Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
-    <ScrollViewer Padding="24">
-        <StackPanel>
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:HotelDashboardViewModel, IsDesignTimeCreatable=False}"
+             behaviors:ScrollViewerMouseWheel.IsEnabled="True"
+             Background="{DynamicResource BackgroundBrush}"
+             FlowDirection="RightToLeft"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis" />
+
+        <Style x:Key="HotelSummaryCard" TargetType="materialDesign:Card">
+            <Setter Property="UniformCornerRadius" Value="14" />
+            <Setter Property="Padding" Value="18,16" />
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
+            <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp6" />
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1.02" Duration="0:0:0.18" />
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1.02" Duration="0:0:0.18" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1" Duration="0:0:0.18" />
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1" Duration="0:0:0.18" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HotelSectionCard" TargetType="materialDesign:Card">
+            <Setter Property="UniformCornerRadius" Value="16" />
+            <Setter Property="Padding" Value="22,18" />
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
+            <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+        </Style>
+
+        <Style x:Key="HotelQuickAction" TargetType="Button">
+            <Setter Property="Height" Value="88" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <materialDesign:Card x:Name="Card" UniformCornerRadius="14" Padding="14,12"
+                                             materialDesign:ElevationAssist.Elevation="Dp2"
+                                             Background="{TemplateBinding Background}"
+                                             RenderTransformOrigin="0.5,0.5">
+                            <materialDesign:Card.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </materialDesign:Card.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                        </materialDesign:Card>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Loading overlay -->
+        <Border Background="{DynamicResource BackgroundBrush}"
+                Visibility="{Binding IsLoaded, Converter={StaticResource InvBoolToVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             Value="0" IsIndeterminate="True" Width="48" Height="48" />
+                <TextBlock Text="جاري تحميل لوحة التحكم..." Margin="0,16,0,0"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVis}}">
             <Grid Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="لوحة التحكم — إدارة الفندق" FontSize="20" FontWeight="Bold" Foreground="#6A1B9A"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Command="{Binding OpenCheckInOutCommand}" Style="{StaticResource OutlinedButton}" Margin="4,0">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Login" Margin="0,0,6,0"/>
-                            <TextBlock Text="تسجيل دخول/خروج"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding OpenReservationsCommand}" Style="{StaticResource OutlinedButton}" Margin="4,0">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="CalendarClock" Margin="0,0,6,0"/>
-                            <TextBlock Text="الحجوزات"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding OpenNewReservationCommand}" Style="{StaticResource PrimaryButton}" Margin="4,0">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="CalendarPlus" Margin="0,0,6,0"/>
-                            <TextBlock Text="حجز جديد"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding LoadDataCommand}" Style="{StaticResource FlatButton}" Margin="4,0">
-                        <md:PackIcon Kind="Refresh"/>
-                    </Button>
-                </StackPanel>
-            </Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <UniformGrid Columns="4" Margin="0,0,0,16">
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="الغرف المتاحة" Foreground="#78909C"/><TextBlock Text="{Binding AvailableRooms}" FontSize="24" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="مشغولة" Foreground="#78909C"/><TextBlock Text="{Binding OccupiedRooms}" FontSize="24" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="وصول اليوم" Foreground="#78909C"/><TextBlock Text="{Binding TodayArrivalCount}" FontSize="24" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="نسبة الإشغال %" Foreground="#78909C"/><TextBlock Text="{Binding OccupancyRate}" FontSize="24" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-            </UniformGrid>
+                <!-- Welcome header -->
+                <materialDesign:Card Grid.Row="0" UniformCornerRadius="16" Padding="0"
+                                     Margin="0,0,0,18"
+                                     materialDesign:ElevationAssist.Elevation="Dp3"
+                                     BorderBrush="#E1BEE7" BorderThickness="1">
+                    <Grid>
+                        <Border CornerRadius="16" Opacity="0.96">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#6A1B9A" Offset="0" />
+                                    <GradientStop Color="#8E24AA" Offset="0.55" />
+                                    <GradientStop Color="#AB47BC" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Grid Margin="22,18">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <materialDesign:PackIcon Kind="Hotel" Width="26" Height="26"
+                                                                 Foreground="White" VerticalAlignment="Center" />
+                                        <TextBlock Text="لوحة تحكم الفندق"
+                                                   FontSize="22" FontWeight="Bold" Foreground="White"
+                                                   Margin="10,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="نظرة شاملة على الإشغال والحجوزات والإيرادات اليوم"
+                                               FontSize="13" Foreground="#F3E5F5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Background="#26FFFFFF" CornerRadius="12" Padding="14,10" Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Bed" Width="20" Height="20"
+                                                                     Foreground="White" VerticalAlignment="Center" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Foreground="White">
+                                                <Run Text="إجمالي الغرف: " FontSize="12" />
+                                                <Run Text="{Binding TotalRooms, Mode=OneWay}" FontSize="14" FontWeight="Bold" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+                                    <Button Command="{Binding LoadDataCommand}"
+                                            Style="{StaticResource FlatButton}"
+                                            Foreground="White" ToolTip="تحديث">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
 
-            <ItemsControl ItemsSource="{Binding SmartAlerts}" Margin="0,0,0,16">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <md:Card Padding="12" Margin="0,0,0,8" Background="#FFF3E0">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding Message}" Foreground="#616161"/>
+                            <!-- Quick actions -->
+                            <UniformGrid Grid.Row="1" Columns="4" Margin="0,18,0,0">
+                                <Button Style="{StaticResource HotelQuickAction}"
+                                        Command="{Binding OpenCheckInOutCommand}"
+                                        Background="#F3E5F5" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#6A1B9A" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="Login" Width="24" Height="24"
+                                                                     Foreground="White"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="تسجيل دخول/خروج" FontWeight="Bold" FontSize="14" Foreground="#4A148C" />
+                                            <TextBlock Text="استقبال ومغادرة النزلاء" FontSize="11" Foreground="#7B1FA2" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HotelQuickAction}"
+                                        Command="{Binding OpenNewReservationCommand}"
+                                        Background="#E8F5E9" Margin="4,0,4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#2E7D32" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="CalendarPlus" Width="24" Height="24"
+                                                                     Foreground="White"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="حجز جديد" FontWeight="Bold" FontSize="14" Foreground="#1B5E20" />
+                                            <TextBlock Text="إنشاء حجز للنزيل" FontSize="11" Foreground="#388E3C" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HotelQuickAction}"
+                                        Command="{Binding OpenReservationsCommand}"
+                                        Background="#E3F2FD" Margin="4,0,4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#1565C0" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="CalendarClock" Width="24" Height="24"
+                                                                     Foreground="White"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="الحجوزات" FontWeight="Bold" FontSize="14" Foreground="#0D47A1" />
+                                            <TextBlock Text="إدارة ومتابعة الحجوزات" FontSize="11" Foreground="#1976D2" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HotelQuickAction}"
+                                        Command="{Binding OpenRoomsCommand}"
+                                        Background="#FFF3E0" Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="44" Height="44" CornerRadius="12" Background="#EF6C00" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="Door" Width="24" Height="24"
+                                                                     Foreground="White"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="الغرف" FontWeight="Bold" FontSize="14" Foreground="#E65100" />
+                                            <TextBlock Text="حالة وتوفر الغرف" FontSize="11" Foreground="#F57C00" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </UniformGrid>
+                        </Grid>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Alerts + Today arrivals -->
+                <materialDesign:Card Grid.Row="1" Style="{StaticResource HotelSectionCard}" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <materialDesign:PackIcon Kind="BellRing" Width="22" Height="22" Foreground="#C62828" VerticalAlignment="Center" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <Run Text="تنبيهات ذكية" FontWeight="Bold" FontSize="15" />
+                                    <Run Text=" (" /><Run Text="{Binding SmartAlertCount, Mode=OneWay}" FontWeight="Bold" /><Run Text=")" />
+                                </TextBlock>
                             </StackPanel>
-                        </md:Card>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding SmartAlerts}" MaxHeight="220">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.ExecuteAlertCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource FlatButton}"
+                                                HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,6">
+                                            <Border Background="#FFF8E1" CornerRadius="8" Padding="10,8"
+                                                    BorderBrush="#FFE082" BorderThickness="1" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Button}}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#E65100" />
+                                                        <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#6D4C41" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                    </StackPanel>
+                                                    <materialDesign:PackIcon Grid.Column="1" Kind="ChevronLeft" Foreground="#90A4AE" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="لا توجد تنبيهات حالياً — كل شيء يسير بسلاسة"
+                                       FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,8,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SmartAlertCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <materialDesign:PackIcon Kind="AirplaneLanding" Width="22" Height="22" Foreground="#6A1B9A" VerticalAlignment="Center" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <Run Text="وصول اليوم" FontWeight="Bold" FontSize="15" />
+                                    <Run Text=" (" /><Run Text="{Binding TodayArrivalListCount, Mode=OneWay}" FontWeight="Bold" /><Run Text=")" />
+                                </TextBlock>
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding TodayArrivalList}"
+                                      AutoGenerateColumns="False" IsReadOnly="True"
+                                      MaxHeight="220" Style="{StaticResource HotelListDataGrid}"
+                                      HeadersVisibility="Column">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="النزيل" Binding="{Binding GuestName}" Width="*"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                    <DataGridTextColumn Header="الغرفة" Binding="{Binding RoomNumber}" Width="80"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                    <DataGridTextColumn Header="نوع الغرفة" Binding="{Binding RoomTypeName}" Width="*"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
 
-            <Grid Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <md:Card Grid.Column="0" Style="{StaticResource ElevatedCard}" Padding="12" Margin="4">
+                <!-- KPI cards -->
+                <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,16">
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#E8F5E9">
+                                <materialDesign:PackIcon Kind="DoorOpen" Width="28" Height="28"
+                                                         Foreground="#2E7D32"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="غرف متاحة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                                <TextBlock Text="{Binding AvailableRooms}" FontSize="22" FontWeight="Bold" Foreground="#2E7D32" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="5,0,5,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#F3E5F5">
+                                <materialDesign:PackIcon Kind="Bed" Width="28" Height="28"
+                                                         Foreground="#6A1B9A"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="غرف مشغولة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                                <TextBlock Text="{Binding OccupiedRooms}" FontSize="22" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="5,0,5,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#E3F2FD">
+                                <materialDesign:PackIcon Kind="AirplaneLanding" Width="28" Height="28"
+                                                         Foreground="#1565C0"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="وصول / مغادرة اليوم" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                                <TextBlock FontSize="22" FontWeight="Bold" Foreground="#1565C0" Margin="0,4,0,0">
+                                    <Run Text="{Binding TodayArrivalCount, Mode=OneWay}" />
+                                    <Run Text=" / " FontSize="16" Foreground="{DynamicResource HintForegroundBrush}" />
+                                    <Run Text="{Binding TodayDepartureCount, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="10,0,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#FFF3E0">
+                                <materialDesign:PackIcon Kind="ChartPie" Width="28" Height="28"
+                                                         Foreground="#EF6C00"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="نسبة الإشغال" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                                <TextBlock FontSize="22" FontWeight="Bold" Foreground="#EF6C00" Margin="0,4,0,0">
+                                    <Run Text="{Binding OccupancyRate, StringFormat=N1, Mode=OneWay}" />
+                                    <Run Text="%" FontSize="16" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                </UniformGrid>
+
+                <!-- Charts -->
+                <Grid Grid.Row="3" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <materialDesign:Card Grid.Column="0" Style="{StaticResource HotelSectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="اتجاه الإيراد (7 أيام)" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" />
+                            <lvc:CartesianChart Series="{Binding RevenueSeries}"
+                                                XAxes="{Binding RevenueXAxes}"
+                                                YAxes="{Binding RevenueYAxes}"
+                                                Height="260" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Grid.Column="2" Style="{StaticResource HotelSectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="حالة الغرف" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" />
+                            <lvc:PieChart Series="{Binding RoomStatusSeries}" Height="260" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Grid.Column="4" Style="{StaticResource HotelSectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="الإيراد حسب النوع" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" />
+                            <lvc:PieChart Series="{Binding RevenueByTypeSeries}" Height="260" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+
+                <!-- Financial KPIs -->
+                <UniformGrid Grid.Row="4" Columns="4" Margin="0,0,0,16">
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="0,0,10,0">
+                        <StackPanel>
+                            <TextBlock Text="إيراد اليوم" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                            <TextBlock Text="{Binding TodayRevenue, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#2E7D32" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="5,0,5,0">
+                        <StackPanel>
+                            <TextBlock Text="إيراد الشهر" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                            <TextBlock Text="{Binding MonthRevenue, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#1565C0" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="5,0,5,0">
+                        <StackPanel>
+                            <TextBlock Text="أرصدة مستحقة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                            <TextBlock Text="{Binding OutstandingBalances, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#C62828" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Style="{StaticResource HotelSummaryCard}" Margin="10,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="نزلاء حالياً" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                            <TextBlock Text="{Binding InHouseGuests}" FontSize="20" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </UniformGrid>
+
+                <!-- Recent reservations -->
+                <materialDesign:Card Grid.Row="5" Style="{StaticResource HotelSectionCard}">
                     <StackPanel>
-                        <TextBlock Text="اتجاه الإيراد (7 أيام)" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <lvc:CartesianChart Series="{Binding RevenueSeries}" XAxes="{Binding RevenueXAxes}" YAxes="{Binding RevenueYAxes}" Height="240"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CalendarMultiple" Width="22" Height="22" Foreground="#6A1B9A" VerticalAlignment="Center" />
+                                <TextBlock Text="أحدث الحجوزات" FontWeight="SemiBold" FontSize="15" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Command="{Binding OpenHousekeepingCommand}"
+                                    Style="{StaticResource FlatButton}" Padding="8,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Broom" Width="18" Height="18" Foreground="#78909C" />
+                                    <TextBlock Text="النظافة" Margin="6,0,0,0" Foreground="#78909C" FontSize="12" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <DataGrid ItemsSource="{Binding RecentReservations}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  MaxHeight="260" Style="{StaticResource HotelListDataGrid}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="رقم" Binding="{Binding ReservationNumber}" Width="110" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                <DataGridTextColumn Header="النزيل" Binding="{Binding GuestName}" Width="2*" MinWidth="140"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                <DataGridTextColumn Header="الغرفة" Binding="{Binding RoomNumber}" Width="90" MinWidth="70"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
-                </md:Card>
-                <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="12" Margin="4">
-                    <StackPanel>
-                        <TextBlock Text="حالة الغرف" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <lvc:PieChart Series="{Binding RoomStatusSeries}" Height="240"/>
-                    </StackPanel>
-                </md:Card>
+                </materialDesign:Card>
             </Grid>
-
-            <UniformGrid Columns="3" Margin="0,0,0,16">
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="إيراد اليوم" Foreground="#78909C"/><TextBlock Text="{Binding TodayRevenue, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="إيراد الشهر" Foreground="#78909C"/><TextBlock Text="{Binding MonthRevenue, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel>
-                </md:Card>
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="4">
-                    <StackPanel><TextBlock Text="أرصدة مستحقة" Foreground="#78909C"/><TextBlock Text="{Binding OutstandingBalances, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#C62828"/></StackPanel>
-                </md:Card>
-            </UniformGrid>
-
-            <md:Card Style="{StaticResource ElevatedCard}" Padding="12" Margin="4">
-                <StackPanel>
-                    <TextBlock Text="أحدث الحجوزات" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <DataGrid ItemsSource="{Binding RecentReservations}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="220" Style="{StaticResource HotelListDataGrid}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="رقم" Binding="{Binding ReservationNumber}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="النزيل" Binding="{Binding GuestName}" Width="2*" MinWidth="140"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="الغرفة" Binding="{Binding RoomNumber}" Width="90" MinWidth="70"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </md:Card>
-        </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

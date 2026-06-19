@@ -39,9 +39,20 @@ public class BackupService : IBackupService
         if (string.IsNullOrWhiteSpace(databaseName))
             throw new InvalidOperationException("Database name not found in connection string.");
 
-        Directory.CreateDirectory(destinationPath);
-        var fileName = $"{databaseName}_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-        var fullPath = Path.Combine(destinationPath, fileName);
+        string fullPath;
+        if (destinationPath.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
+        {
+            fullPath = destinationPath;
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+        }
+        else
+        {
+            Directory.CreateDirectory(destinationPath);
+            var fileName = $"{databaseName}_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
+            fullPath = Path.Combine(destinationPath, fileName);
+        }
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync();

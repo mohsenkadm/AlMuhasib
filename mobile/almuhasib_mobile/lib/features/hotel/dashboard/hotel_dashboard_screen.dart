@@ -1,59 +1,71 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/providers/core_providers.dart';
-import '../../../core/theme/theme_provider.dart';
+import '../../../core/getx/app_services.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
-import '../../../shared/widgets/connectivity_provider.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
+import '../controllers/hotel_dashboard_controller.dart';
 import '../models/hotel_models.dart';
 
-final hotelDashboardProvider =
-    FutureProvider.autoDispose<HotelDashboardData>((ref) async {
-  final repo = ref.watch(hotelRepositoryProvider);
-  try {
-    return await repo.getDashboard();
-  } catch (_) {
-    final occupancy = await repo.getOccupancy();
-    return HotelDashboardData(occupancy: occupancy);
-  }
-});
-
-class HotelDashboardScreen extends ConsumerWidget {
+class HotelDashboardScreen extends StatefulWidget {
   const HotelDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardAsync = ref.watch(hotelDashboardProvider);
-    final prefs = ref.watch(preferencesServiceProvider);
+  State<HotelDashboardScreen> createState() => _HotelDashboardScreenState();
+}
+
+class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
+  late final HotelDashboardController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(HotelDashboardController(), tag: 'hotel_dashboard');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = AppServices.prefs;
     final tenantName = prefs.tenantName ?? prefs.companyName ?? 'app_name'.tr();
-    final isOffline = ref.watch(isOfflineProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Column(
         children: [
-          ConnectivityBanner(isOffline: isOffline),
+          Obx(
+            () => ConnectivityBanner(
+              isOffline: AppServices.connectivity.isOffline.value,
+            ),
+          ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(hotelDashboardProvider),
+              onRefresh: _controller.load,
               edgeOffset: 120,
-              child: dashboardAsync.when(
-                loading: () => const DashboardShimmer(),
-                error: (e, _) => ErrorStateWidget(
-                  message: e.toString(),
-                  onRetry: () => ref.invalidate(hotelDashboardProvider),
-                ),
-                data: (data) => _HotelDashboardBody(
+              child: Obx(() {
+                if (_controller.isLoading.value) {
+                  return const DashboardShimmer();
+                }
+                final error = _controller.error.value;
+                if (error != null) {
+                  return ErrorStateWidget(
+                    message: error.toString(),
+                    onRetry: _controller.load,
+                  );
+                }
+                final data = _controller.data.value;
+                if (data == null) {
+                  return const SizedBox.shrink();
+                }
+                return _HotelDashboardBody(
                   data: data,
                   tenantName: tenantName,
-                ),
-              ),
+                );
+              }),
             ),
           ),
         ],
@@ -175,7 +187,7 @@ class _HotelDashboardBody extends StatelessWidget {
         ).fadeSlideIn(delayMs: 240),
         const SizedBox(height: 24),
         FilledButton.icon(
-          onPressed: () => context.go('/hotel/operations'),
+          onPressed: () => Get.offNamed(AppRoutes.hotelOperations),
           icon: const Icon(Icons.login_rounded),
           label: Text('hotel_go_check_in'.tr()),
         ).fadeSlideIn(delayMs: 280),
@@ -249,7 +261,7 @@ class _HotelHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () => context.push('/profile'),
+            onPressed: () => Get.toNamed(AppRoutes.profile),
             icon: const Icon(Icons.person_outline_rounded),
           ),
         ],

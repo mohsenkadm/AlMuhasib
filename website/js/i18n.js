@@ -6,13 +6,14 @@ const I18N = {
     this.lang = lang;
     localStorage.setItem('almuhasib-lang', lang);
 
-    // مضمّن — يعمل مع file:// وبدون خادم
+    // مضمّن — المصدر الرئيسي (يعمل مع file:// و http)
     if (window.LOCALES?.[lang]) {
       this.strings = window.LOCALES[lang];
     }
 
-    // اختياري: تحديث من JSON عند التشغيل عبر http/https
-    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    // اختياري: locales/*.json للت override عند النشر — لا يستبدل المضمّن إن وُجد systems
+    if ((window.location.protocol === 'http:' || window.location.protocol === 'https:')
+        && !window.LOCALES?.[lang]?.systems) {
       try {
         const url = new URL(`locales/${lang}.json`, window.location.href);
         const res = await fetch(url);
@@ -88,9 +89,25 @@ const I18N = {
       mobilePoints.innerHTML = this.strings.mobile.points.map(p => `<li>${p}</li>`).join('');
     }
 
-    const reports = document.getElementById('reports-list');
-    if (reports && this.strings.reports?.items) {
-      reports.innerHTML = this.strings.reports.items.map(r => `<span class="report-chip">${r}</span>`).join('');
+    const reports = document.getElementById('reports-groups');
+    if (reports && this.strings.reports?.groups) {
+      reports.innerHTML = this.strings.reports.groups.map(g => `
+        <div class="reports-group reveal">
+          <h3 class="reports-group-label">${g.label}</h3>
+          <div class="reports-list">${g.items.map(r => `<span class="report-chip">${r}</span>`).join('')}</div>
+        </div>`).join('');
+    } else {
+      const reportsLegacy = document.getElementById('reports-list');
+      if (reportsLegacy && this.strings.reports?.items) {
+        reportsLegacy.innerHTML = this.strings.reports.items.map(r => `<span class="report-chip">${r}</span>`).join('');
+      }
+    }
+
+    const mobileProfiles = document.getElementById('mobile-profiles');
+    if (mobileProfiles && this.strings.mobile?.profiles) {
+      const p = this.strings.mobile.profiles;
+      mobileProfiles.innerHTML = Object.values(p).map(label =>
+        `<span class="mobile-profile-chip">${label}</span>`).join('');
     }
 
     const faq = document.getElementById('faq-list');

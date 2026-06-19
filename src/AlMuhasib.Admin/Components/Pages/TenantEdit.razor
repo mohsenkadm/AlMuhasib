@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @using AlMuhasib.Cloud.Core.Entities
 @using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Core.Enums
 @using AlMuhasib.Admin.Services
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
@@ -39,6 +40,14 @@
                 <div class="form-group">
                     <label>انتهاء الترخيص</label>
                     <input type="date" class="form-control" @bind="_licenseExpires" />
+                </div>
+                <div class="form-group">
+                    <label>نوع النظام</label>
+                    <select class="form-control" @bind="_applicationSystemType">
+                        <option value="@((int)ApplicationSystemType.Accounting)">المحاسبة</option>
+                        <option value="@((int)ApplicationSystemType.CarContracts)">عقود السيارات</option>
+                        <option value="@((int)ApplicationSystemType.HotelManagement)">إدارة الفنادق</option>
+                    </select>
                 </div>
             </div>
             <button class="btn btn-primary" @onclick="SaveAsync" style="margin-top:.5rem">حفظ البيانات</button>
@@ -133,6 +142,7 @@
     private string _companyName = "";
     private bool _isMobileEnabled = true;
     private DateTime? _licenseExpires;
+    private int _applicationSystemType;
     private List<TenantAccount> _accounts = [];
     private string _newUsername = "";
     private string _newPassword = "";
@@ -157,6 +167,7 @@
             _companyName = _tenant.CompanyName;
             _isMobileEnabled = _tenant.IsMobileEnabled;
             _licenseExpires = _tenant.LicenseExpiresAt;
+            _applicationSystemType = _tenant.ApplicationSystemType;
             _accounts = await TenantService.GetAccountsAsync(Id);
         }
         else
@@ -175,7 +186,7 @@
         {
             if (Id == 0)
             {
-                var tenant = await TenantService.CreateAsync(_companyName, _isMobileEnabled, _licenseExpires);
+                var tenant = await TenantService.CreateAsync(_companyName, _isMobileEnabled, _licenseExpires, _applicationSystemType);
                 if (!string.IsNullOrWhiteSpace(_newUsername) && !string.IsNullOrWhiteSpace(_newPassword))
                     await TenantService.CreateAccountAsync(tenant.Id, _newUsername, _newPassword, _newAccountExpires);
                 Nav.NavigateTo($"/tenants/{tenant.Id}");
@@ -185,6 +196,7 @@
             _tenant!.CompanyName = _companyName;
             _tenant.IsMobileEnabled = _isMobileEnabled;
             _tenant.LicenseExpiresAt = _licenseExpires;
+            _tenant.ApplicationSystemType = _applicationSystemType;
             await TenantService.UpdateAsync(_tenant);
             _message = "تم حفظ بيانات العميل بنجاح";
         }

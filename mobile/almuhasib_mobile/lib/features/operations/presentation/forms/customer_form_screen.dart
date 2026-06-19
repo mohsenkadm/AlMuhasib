@@ -1,75 +1,37 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
-import '../../../../core/providers/core_providers.dart';
-import '../../../../shared/models/mobile_models.dart';
+import '../../controllers/customer_form_controller.dart';
 import '../../../../shared/widgets/form_section_card.dart';
-import '../../../../shared/widgets/sticky_summary_bar.dart';
 
-class CustomerFormScreen extends ConsumerStatefulWidget {
+class CustomerFormScreen extends StatelessWidget {
   const CustomerFormScreen({super.key, this.syncId});
 
   final String? syncId;
 
   @override
-  ConsumerState<CustomerFormScreen> createState() => _CustomerFormScreenState();
+  Widget build(BuildContext context) {
+    final controller = Get.put(CustomerFormController(syncId: syncId));
+    return _CustomerFormView(controller: controller);
+  }
 }
 
-class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
-  final _address = TextEditingController();
-  final _notes = TextEditingController();
-  bool _saving = false;
+class _CustomerFormView extends StatelessWidget {
+  const _CustomerFormView({required this.controller});
 
-  @override
-  void dispose() {
-    _name.dispose();
-    _phone.dispose();
-    _address.dispose();
-    _notes.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-    try {
-      final response = await ref.read(mobileOperationsRepositoryProvider).createCustomer(
-            CreateCustomerRequest(
-              syncId: widget.syncId,
-              name: _name.text.trim(),
-              phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
-              address: _address.text.trim().isEmpty ? null : _address.text.trim(),
-              notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
-            ),
-          );
-      if (!mounted) return;
-      if (response.conflicts.isNotEmpty) {
-        showErrorSnackbar(context, response.message);
-        return;
-      }
-      showSuccessSnackbar(context, response.message);
-      context.pop(true);
-    } catch (e) {
-      if (mounted) showErrorSnackbar(context, e.toString());
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
+  final CustomerFormController controller;
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.syncId != null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'edit_customer'.tr() : 'add_customer'.tr()),
+        title: Text(
+          controller.isEdit ? 'edit_customer'.tr() : 'add_customer'.tr(),
+        ),
       ),
       body: Form(
-        key: _formKey,
+        key: controller.formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -77,39 +39,41 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               title: 'customer_info'.tr(),
               children: [
                 TextFormField(
-                  controller: _name,
+                  controller: controller.nameController,
                   decoration: InputDecoration(labelText: 'name'.tr()),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'required_field'.tr() : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _phone,
+                  controller: controller.phoneController,
                   decoration: InputDecoration(labelText: 'phone'.tr()),
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _address,
+                  controller: controller.addressController,
                   decoration: InputDecoration(labelText: 'address'.tr()),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _notes,
+                  controller: controller.notesController,
                   decoration: InputDecoration(labelText: 'notes'.tr()),
                   maxLines: 3,
                 ),
               ],
             ),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text('save'.tr()),
+            Obx(
+              () => FilledButton(
+                onPressed: controller.saving.value ? null : controller.save,
+                child: controller.saving.value
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text('save'.tr()),
+              ),
             ),
           ],
         ),

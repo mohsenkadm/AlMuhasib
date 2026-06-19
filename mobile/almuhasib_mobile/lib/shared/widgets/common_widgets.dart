@@ -8,10 +8,12 @@ class EmptyStateWidget extends StatelessWidget {
     super.key,
     this.message,
     this.onRetry,
+    this.icon,
   });
 
   final String? message;
   final VoidCallback? onRetry;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.inbox_outlined,
+              icon ?? Icons.inbox_outlined,
               size: 64,
               color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
             ),

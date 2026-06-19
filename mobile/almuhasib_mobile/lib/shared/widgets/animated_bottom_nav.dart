@@ -22,16 +22,22 @@ class AnimatedBottomNavBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onTap,
     required this.items,
+    this.accentColor,
+    this.primaryColor,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onTap;
   final List<BottomNavItem> items;
+  final Color? accentColor;
+  final Color? primaryColor;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final accent = accentColor ?? AppColors.accent;
+    final primary = primaryColor ?? AppColors.primaryLight;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottomInset + 10),
@@ -69,8 +75,8 @@ class AnimatedBottomNavBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primaryLight.withValues(alpha: 0.18),
-                          AppColors.accent.withValues(alpha: 0.14),
+                          primary.withValues(alpha: 0.18),
+                          accent.withValues(alpha: 0.14),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -86,6 +92,8 @@ class AnimatedBottomNavBar extends StatelessWidget {
                         item: item,
                         selected: selected,
                         onTap: () => onTap(index),
+                        accent: accent,
+                        primary: primary,
                       ),
                     );
                   }),
@@ -104,16 +112,20 @@ class _NavItem extends StatelessWidget {
     required this.item,
     required this.selected,
     required this.onTap,
+    required this.accent,
+    required this.primary,
   });
 
   final BottomNavItem item;
   final bool selected;
   final VoidCallback onTap;
+  final Color accent;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55);
-    final color = selected ? AppColors.primaryLight : muted;
+    final color = selected ? primary : muted;
 
     return Material(
       color: Colors.transparent,
@@ -129,7 +141,7 @@ class _NavItem extends StatelessWidget {
               curve: Curves.easeOutBack,
               child: Icon(
                 selected ? item.activeIcon : item.icon,
-                color: selected ? AppColors.accent : color,
+                color: selected ? accent : color,
                 size: 24,
               ),
             ),
@@ -139,7 +151,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: selected ? 11.5 : 11,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? AppColors.primaryLight : color,
+                color: selected ? primary : color,
               ),
               child: Text(item.labelKey.tr(), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),

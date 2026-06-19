@@ -1,45 +1,44 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
-import '../../../core/providers/core_providers.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/search_filter_bar.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
+import '../controllers/hotel_reservations_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-final hotelReservationsProvider =
-    FutureProvider.autoDispose.family<HotelReservationPage, String>(
-  (ref, search) {
-    return ref.watch(hotelRepositoryProvider).getReservations(
-          search: search,
-          pageSize: 50,
-        );
-  },
-);
-
-class HotelReservationsScreen extends ConsumerStatefulWidget {
+class HotelReservationsScreen extends StatefulWidget {
   const HotelReservationsScreen({super.key});
 
   @override
-  ConsumerState<HotelReservationsScreen> createState() =>
+  State<HotelReservationsScreen> createState() =>
       _HotelReservationsScreenState();
 }
 
-class _HotelReservationsScreenState
-    extends ConsumerState<HotelReservationsScreen> {
-  String _search = '';
+class _HotelReservationsScreenState extends State<HotelReservationsScreen> {
+  late final HotelReservationsController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(HotelReservationsController(), tag: 'hotel_reservations');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final reservationsAsync = ref.watch(hotelReservationsProvider(_search));
     final topPadding = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Get.toNamed(AppRoutes.hotelReservationNew),
+        icon: const Icon(Icons.add),
+        label: Text('hotel_new_reservation'.tr()),
+      ),
       body: Column(
         children: [
           SizedBox(height: topPadding + 8),
@@ -53,51 +52,53 @@ class _HotelReservationsScreenState
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: SearchFilterBar(
-              onSearchChanged: (v) => setState(() => _search = v),
+              onSearchChanged: _controller.updateSearch,
             ),
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async =>
-                  ref.invalidate(hotelReservationsProvider(_search)),
-              child: reservationsAsync.when(
-                loading: () => const ListShimmer(),
-                error: (e, _) => ErrorStateWidget(
-                  message: e.toString(),
-                  onRetry: () =>
-                      ref.invalidate(hotelReservationsProvider(_search)),
-                ),
-                data: (page) {
-                  if (page.items.isEmpty) {
-                    return ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.sizeOf(context).height * 0.4,
-                          child: EmptyStateWidget(
-                            message: _search.isEmpty
-                                ? 'no_data'.tr()
-                                : 'no_search_results'.tr(),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                    itemCount: page.items.length,
-                    itemBuilder: (context, index) {
-                      final item = page.items[index];
-                      return _ReservationTile(
-                        reservation: item,
-                        onTap: () => context.push(
-                          '/hotel/reservations/${item.syncId}',
-                          extra: item,
-                        ),
-                      ).fadeSlideInList(index: index);
-                    },
+              onRefresh: _controller.load,
+              child: Obx(() {
+                if (_controller.isLoading.value) {
+                  return const ListShimmer();
+                }
+                final error = _controller.error.value;
+                if (error != null) {
+                  return ErrorStateWidget(
+                    message: error.toString(),
+                    onRetry: _controller.load,
                   );
-                },
-              ),
+                }
+                final page = _controller.page.value;
+                if (page == null || page.items.isEmpty) {
+                  return ListView(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.4,
+                        child: EmptyStateWidget(
+                          message: _controller.search.value.isEmpty
+                              ? 'no_data'.tr()
+                              : 'no_search_results'.tr(),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  itemCount: page.items.length,
+                  itemBuilder: (context, index) {
+                    final item = page.items[index];
+                    return _ReservationTile(
+                      reservation: item,
+                      onTap: () => Get.toNamed(
+                        AppRoutes.hotelReservationDetailPath(item.syncId),
+                        arguments: item,
+                      ),
+                    ).fadeSlideInList(index: index);
+                  },
+                );
+              }),
             ),
           ),
         ],

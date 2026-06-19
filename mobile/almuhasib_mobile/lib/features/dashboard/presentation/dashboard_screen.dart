@@ -1,57 +1,80 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
+import '../../../core/getx/app_services.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/providers/core_providers.dart';
-import '../../../core/theme/theme_provider.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/models/dashboard_models.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
-import '../../../shared/widgets/connectivity_provider.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
-final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
-  return ref.watch(dashboardRepositoryProvider).getDashboard();
-});
+class DashboardController extends GetxController {
+  final isLoading = true.obs;
+  final Rxn<Object> error = Rxn<Object>();
+  final Rxn<DashboardData> data = Rxn<DashboardData>();
 
-class DashboardScreen extends ConsumerWidget {
+  String get companyName =>
+      AppServices.prefs.companyName ?? 'app_name'.tr();
+
+  @override
+  void onInit() {
+    super.onInit();
+    reload();
+  }
+
+  Future<void> reload() async {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      data.value = await AppServices.dashboard.getDashboard();
+    } catch (e) {
+      error.value = e;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
+
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardAsync = ref.watch(dashboardProvider);
-    final companyName = ref.watch(preferencesServiceProvider).companyName;
-    final isOffline = ref.watch(isOfflineProvider);
+  Widget build(BuildContext context) {
+    final controller = Get.put(DashboardController(), tag: 'dashboard');
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Column(
-        children: [
-          ConnectivityBanner(isOffline: isOffline),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(dashboardProvider),
-              edgeOffset: 120,
-              child: dashboardAsync.when(
-                loading: () => const DashboardShimmer(),
-                error: (e, _) => ErrorStateWidget(
-                  message: e.toString(),
-                  onRetry: () => ref.invalidate(dashboardProvider),
-                ),
-                data: (data) => _DashboardBody(
-                  data: data,
-                  companyName: companyName ?? 'app_name'.tr(),
-                ),
+    return Obx(() {
+      final isOffline = AppServices.connectivity.isOffline.value;
+
+      return Scaffold(
+        extendBodyBehindAppBar: true,
+        body: Column(
+          children: [
+            ConnectivityBanner(isOffline: isOffline),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.reload,
+                edgeOffset: 120,
+                child: controller.isLoading.value
+                    ? const DashboardShimmer()
+                    : controller.error.value != null
+                        ? ErrorStateWidget(
+                            message: controller.error.value.toString(),
+                            onRetry: controller.reload,
+                          )
+                        : _DashboardBody(
+                            data: controller.data.value!,
+                            companyName: controller.companyName,
+                          ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -71,7 +94,7 @@ class _DashboardBody extends StatelessWidget {
         _DashboardHeader(companyName: companyName).fadeSlideIn(),
         const SizedBox(height: 20),
         _QuickActionButton(
-          onPressed: () => context.push('/data/invoice/new'),
+          onPressed: () => Get.toNamed(AppRoutes.invoiceNew),
         ).fadeSlideIn(delayMs: 80),
         const SizedBox(height: 24),
         Text(
@@ -140,7 +163,8 @@ class _DashboardBody extends StatelessWidget {
               (entry) => Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.accent.withValues(alpha: 0.15),
                     child: const Icon(Icons.receipt, color: AppColors.accent),
@@ -159,10 +183,12 @@ class _DashboardBody extends StatelessWidget {
               (i) => Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.warning.withValues(alpha: 0.15),
-                    child: const Icon(Icons.schedule, color: AppColors.warning),
+                    child:
+                        const Icon(Icons.schedule, color: AppColors.warning),
                   ),
                   title: Text(i.customerName),
                   subtitle: Text(
@@ -366,7 +392,9 @@ class _SalesChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 46,
               getTitlesWidget: (value, _) => Text(
-                value >= 1000 ? '${(value / 1000).toStringAsFixed(0)}k' : '${value.toInt()}',
+                value >= 1000
+                    ? '${(value / 1000).toStringAsFixed(0)}k'
+                    : '${value.toInt()}',
                 style: const TextStyle(fontSize: 10),
               ),
             ),

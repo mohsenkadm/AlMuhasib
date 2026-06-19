@@ -1,70 +1,21 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../core/config/env_config.dart';
-import '../../core/providers/core_providers.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../core/services/app_info_service.dart';
-import '../../core/theme/theme_provider.dart';
 import '../../shared/widgets/app_animations.dart';
+import 'settings_controller.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  late final TextEditingController _apiUrlController;
-  String? _licenseText;
-
-  @override
-  void initState() {
-    super.initState();
-    _apiUrlController = TextEditingController(
-      text: ref.read(preferencesServiceProvider).apiBaseUrl,
-    );
-    _loadLicense();
-  }
-
-  Future<void> _loadLicense() async {
-    try {
-      final status = await ref.read(authRepositoryProvider).getLicenseStatus();
-      setState(() {
-        _licenseText = status.isActive && status.isMobileEnabled
-            ? 'license_active'.tr()
-            : status.message ?? status.statusCode ?? 'license_inactive'.tr();
-      });
-    } catch (_) {
-      setState(() => _licenseText = '—');
-    }
-  }
-
-  @override
-  void dispose() {
-    _apiUrlController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveApiUrl() async {
-    await ref
-        .read(preferencesServiceProvider)
-        .setApiBaseUrl(_apiUrlController.text.trim());
-    ref.read(apiClientProvider).updateBaseUrl();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('settings_saved'.tr())),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final prefs = ref.watch(preferencesServiceProvider);
-    final themeMode = ref.watch(themeModeProvider);
-    final appInfo = ref.watch(appInfoProvider);
+    final controller = Get.put(SettingsController(), tag: 'settings');
+    final prefs = AppServices.prefs;
 
     return Scaffold(
       appBar: AppBar(title: Text('settings_title'.tr())),
@@ -81,7 +32,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: Text('profile_title'.tr()),
               subtitle: Text('profile_settings_desc'.tr()),
               trailing: const Icon(Icons.chevron_left),
-              onTap: () => context.push('/profile'),
+              onTap: () => Get.toNamed(AppRoutes.profile),
             ),
           ).fadeSlideIn(),
           _SettingsTile(
@@ -90,15 +41,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'company_name'.tr(),
             subtitle: prefs.companyName ?? '—',
           ),
-          _SettingsTile(
-            index: 1,
-            icon: Icons.verified_outlined,
-            title: 'license_status'.tr(),
-            subtitle: _licenseText ?? 'loading'.tr(),
+          Obx(
+            () => _SettingsTile(
+              index: 1,
+              icon: Icons.verified_outlined,
+              title: 'license_status'.tr(),
+              subtitle: controller.licenseText.value ?? 'loading'.tr(),
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: _apiUrlController,
+            controller: controller.apiUrlController,
             decoration: InputDecoration(
               labelText: 'api_url'.tr(),
               prefixIcon: const Icon(Icons.link),
@@ -106,22 +59,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ).fadeSlideIn(delayMs: 120),
           const SizedBox(height: 12),
           FilledButton.icon(
-            onPressed: _saveApiUrl,
+            onPressed: controller.saveApiUrl,
             icon: const Icon(Icons.save_outlined),
             label: Text('save'.tr()),
           ).fadeSlideIn(delayMs: 160),
           const Divider(height: 32),
-          SwitchListTile(
-            title: Text('theme_mode'.tr()),
-            subtitle: Text(
-              themeMode == ThemeMode.dark ? 'theme_dark'.tr() : 'theme_light'.tr(),
-            ),
-            secondary: Icon(
-              themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
-            ),
-            value: themeMode == ThemeMode.dark,
-            onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
-          ).fadeSlideIn(delayMs: 200),
+          Obx(() {
+            final themeMode = AppServices.theme.themeMode.value;
+            return SwitchListTile(
+              title: Text('theme_mode'.tr()),
+              subtitle: Text(
+                themeMode == ThemeMode.dark ? 'theme_dark'.tr() : 'theme_light'.tr(),
+              ),
+              secondary: Icon(
+                themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+              ),
+              value: themeMode == ThemeMode.dark,
+              onChanged: (_) => AppServices.theme.toggle(),
+            );
+          }).fadeSlideIn(delayMs: 200),
           ListTile(
             leading: const Icon(Icons.language),
             title: Text('language'.tr()),
@@ -144,13 +100,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ).fadeSlideIn(delayMs: 280),
           const SizedBox(height: 32),
           Center(
-            child: appInfo.when(
-              data: (info) => Text(
-                '${'version'.tr()} ${info.versionLabel}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+            child: FutureBuilder<AppInfo>(
+              future: AppServices.appInfo.load(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox.shrink();
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+                return Text(
+                  '${'version'.tr()} ${snapshot.data!.versionLabel}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
+              },
             ),
           ).fadeSlideIn(delayMs: 320),
         ],

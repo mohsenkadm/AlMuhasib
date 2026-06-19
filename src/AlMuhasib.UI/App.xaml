@@ -28,6 +28,8 @@
             <converters:IdEqualsMultiConverter x:Key="IdEqualsMultiConverter" />
             <converters:PaginationStatisticsTextConverter x:Key="PaginationStatisticsTextConverter" />
             <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
+            <converters:RestaurantEnumLabelConverter x:Key="RestaurantEnumLabelConverter" />
+            <converters:PositiveIntToVisibilityConverter x:Key="PositiveIntToVisibilityConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />

@@ -1,27 +1,68 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
-import '../../../core/providers/core_providers.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
+import '../controllers/hotel_check_in_out_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-final hotelTodayReservationsProvider =
-    FutureProvider.autoDispose<List<HotelReservation>>((ref) {
-  return ref.watch(hotelRepositoryProvider).getTodayReservations();
-});
-
-class HotelCheckInOutScreen extends ConsumerWidget {
+class HotelCheckInOutScreen extends StatefulWidget {
   const HotelCheckInOutScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reservationsAsync = ref.watch(hotelTodayReservationsProvider);
+  State<HotelCheckInOutScreen> createState() => _HotelCheckInOutScreenState();
+}
+
+class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
+  late final HotelCheckInOutController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(HotelCheckInOutController(), tag: 'hotel_check_in_out');
+  }
+
+  Future<void> _performCheckIn(HotelReservation reservation) async {
+    try {
+      await _controller.checkIn(reservation);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('hotel_check_in_success'.tr())),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
+  Future<void> _performCheckOut(HotelReservation reservation) async {
+    try {
+      await _controller.checkOut(reservation);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('hotel_check_out_success'.tr())),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
 
     return DefaultTabController(
@@ -51,102 +92,56 @@ class HotelCheckInOutScreen extends ConsumerWidget {
             ),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(hotelTodayReservationsProvider),
-                child: reservationsAsync.when(
-                  loading: () => const ListShimmer(),
-                  error: (e, _) => ErrorStateWidget(
-                    message: e.toString(),
-                    onRetry: () =>
-                        ref.invalidate(hotelTodayReservationsProvider),
-                  ),
-                  data: (reservations) {
-                    final today = DateTime.now();
-                    final arrivals = reservations
-                        .where((r) =>
-                            r.checkInDate.year == today.year &&
-                            r.checkInDate.month == today.month &&
-                            r.checkInDate.day == today.day)
-                        .toList();
-                    final departures = reservations
-                        .where((r) =>
-                            r.checkOutDate.year == today.year &&
-                            r.checkOutDate.month == today.month &&
-                            r.checkOutDate.day == today.day)
-                        .toList();
-
-                    return TabBarView(
-                      children: [
-                        _ReservationList(
-                          items: arrivals,
-                          emptyMessage: 'hotel_no_arrivals'.tr(),
-                          actionLabel: 'hotel_check_in'.tr(),
-                          onAction: (r) => _performCheckIn(ref, context, r),
-                        ),
-                        _ReservationList(
-                          items: departures,
-                          emptyMessage: 'hotel_no_departures'.tr(),
-                          actionLabel: 'hotel_check_out'.tr(),
-                          onAction: (r) => _performCheckOut(ref, context, r),
-                        ),
-                      ],
+                onRefresh: _controller.load,
+                child: Obx(() {
+                  if (_controller.isLoading.value) {
+                    return const ListShimmer();
+                  }
+                  final error = _controller.error.value;
+                  if (error != null) {
+                    return ErrorStateWidget(
+                      message: error.toString(),
+                      onRetry: _controller.load,
                     );
-                  },
-                ),
+                  }
+                  final reservations = _controller.reservations.value;
+                  final today = DateTime.now();
+                  final arrivals = reservations
+                      .where((r) =>
+                          r.checkInDate.year == today.year &&
+                          r.checkInDate.month == today.month &&
+                          r.checkInDate.day == today.day)
+                      .toList();
+                  final departures = reservations
+                      .where((r) =>
+                          r.checkOutDate.year == today.year &&
+                          r.checkOutDate.month == today.month &&
+                          r.checkOutDate.day == today.day)
+                      .toList();
+
+                  return TabBarView(
+                    children: [
+                      _ReservationList(
+                        items: arrivals,
+                        emptyMessage: 'hotel_no_arrivals'.tr(),
+                        actionLabel: 'hotel_check_in'.tr(),
+                        onAction: _performCheckIn,
+                      ),
+                      _ReservationList(
+                        items: departures,
+                        emptyMessage: 'hotel_no_departures'.tr(),
+                        actionLabel: 'hotel_check_out'.tr(),
+                        onAction: _performCheckOut,
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _performCheckIn(
-    WidgetRef ref,
-    BuildContext context,
-    HotelReservation reservation,
-  ) async {
-    try {
-      await ref.read(hotelRepositoryProvider).checkIn(
-            HotelCheckInRequest(reservationSyncId: reservation.syncId),
-          );
-      ref.invalidate(hotelTodayReservationsProvider);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('hotel_check_in_success'.tr())),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
-    }
-  }
-
-  Future<void> _performCheckOut(
-    WidgetRef ref,
-    BuildContext context,
-    HotelReservation reservation,
-  ) async {
-    try {
-      await ref.read(hotelRepositoryProvider).checkOut(
-            HotelCheckOutRequest(reservationSyncId: reservation.syncId),
-          );
-      ref.invalidate(hotelTodayReservationsProvider);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('hotel_check_out_success'.tr())),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
-    }
   }
 }
 
@@ -200,9 +195,9 @@ class _ReservationList extends StatelessWidget {
               onPressed: () => onAction(item),
               child: Text(actionLabel),
             ),
-            onTap: () => context.push(
-              '/hotel/reservations/${item.syncId}',
-              extra: item,
+            onTap: () => Get.toNamed(
+              AppRoutes.hotelReservationDetailPath(item.syncId),
+              arguments: item,
             ),
           ),
         ).fadeSlideInList(index: index);

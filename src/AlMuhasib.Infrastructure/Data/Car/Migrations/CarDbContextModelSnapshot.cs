@@ -552,6 +552,25 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
                     b.ToTable("PrintBrandingSettings", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.SyncState", b =>
+                {
+                    b.Property<string>("EntityType")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LastPulledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastPushedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ServerCursor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("EntityType");
+
+                    b.ToTable("SyncStates");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")

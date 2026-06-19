@@ -1,0 +1,173 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Hotel.RestaurantInventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="مخزون المطبخ" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddDialogCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0" IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="PackageVariantPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="مكون جديد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding LoadIngredientsCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 TargetDataGrid="{Binding ElementName=IngredientsGrid}"
+                                                 Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    <TextBox md:HintAssist.Hint="بحث..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="16,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+
+        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                    <TextBlock Text="المكونات والمخزون" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                </Border>
+                <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
+                <DataGrid x:Name="IngredientsGrid" Grid.Row="2" Margin="8"
+                          ItemsSource="{Binding Ingredients}" SelectedItem="{Binding SelectedIngredient}"
+                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="المكون" Binding="{Binding Name}" Width="*" MinWidth="140"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                        <DataGridTextColumn Header="الوحدة" Binding="{Binding Unit}" Width="90" MinWidth="70"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Unit"/>
+                        <DataGridTextColumn Header="الرصيد" Binding="{Binding Stock.Quantity, StringFormat=N2}" Width="90" MinWidth="80"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Stock.Quantity"/>
+                        <DataGridTextColumn Header="الحد الأدنى" Binding="{Binding MinQuantity, StringFormat=N2}" Width="100" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="MinQuantity"/>
+                        <DataGridTextColumn Header="التكلفة" Binding="{Binding AverageCost, StringFormat=N0}" Width="100" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AverageCost"/>
+                        <DataGridTemplateColumn Header="إجراءات" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource TableEditIconButton}" ToolTip="تعديل"
+                                                Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button Style="{StaticResource TableSecondaryIconButton}" ToolTip="شراء مخزون"
+                                                Command="{Binding DataContext.OpenPurchaseDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="CartPlus" Width="16" Height="16"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsIngredientDialogOpen}" CloseOnClickAway="False"
+                       Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="420">
+                    <StackPanel>
+                        <TextBlock FontSize="18" FontWeight="Bold" Margin="0,0,0,16">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="إضافة مكون"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                            <Setter Property="Text" Value="تعديل مكون"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBox md:HintAssist.Hint="اسم المكون *" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="الوحدة" Text="{Binding EditUnit, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="الحد الأدنى" Text="{Binding EditMinQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="متوسط التكلفة" Text="{Binding EditAverageCost, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="الكمية الابتدائية (إضافة فقط)"
+                                 Text="{Binding EditInitialQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"
+                                 Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حفظ" Command="{Binding SaveIngredientCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}" md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CloseIngredientDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsPurchaseDialogOpen}" CloseOnClickAway="False"
+                       Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="420">
+                    <StackPanel>
+                        <TextBlock Text="شراء مخزون" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding SelectedIngredient.Name}" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                        <TextBox md:HintAssist.Hint="الكمية *" Text="{Binding PurchaseQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="تكلفة الوحدة *" Text="{Binding PurchaseUnitCost, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,12" Opacity="0.85">
+                            <Run Text="الإجمالي:"/>
+                            <Run Text="{Binding PurchaseTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold"/>
+                        </TextBlock>
+                        <ComboBox md:HintAssist.Hint="الصندوق" ItemsSource="{Binding CashBoxes}"
+                                  SelectedValuePath="Id" SelectedValue="{Binding PurchaseCashBoxId}"
+                                  DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="ملاحظات" Text="{Binding PurchaseNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="تأكيد الشراء" Command="{Binding ConfirmPurchaseCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}" md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding ClosePurchaseDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

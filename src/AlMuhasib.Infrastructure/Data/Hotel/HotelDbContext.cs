@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Entities.Hotel;
+using AlMuhasib.Core.Entities.Hotel.Restaurant;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Infrastructure.Data.Configurations;
@@ -43,6 +44,18 @@ public class HotelDbContext : DbContext
     public DbSet<HousekeepingTask> HousekeepingTasks => Set<HousekeepingTask>();
     public DbSet<SyncState> SyncStates => Set<SyncState>();
 
+    public DbSet<RestaurantIngredient> RestaurantIngredients => Set<RestaurantIngredient>();
+    public DbSet<RestaurantIngredientStock> RestaurantIngredientStocks => Set<RestaurantIngredientStock>();
+    public DbSet<RestaurantMenuCategory> RestaurantMenuCategories => Set<RestaurantMenuCategory>();
+    public DbSet<RestaurantMenuItem> RestaurantMenuItems => Set<RestaurantMenuItem>();
+    public DbSet<RestaurantRecipe> RestaurantRecipes => Set<RestaurantRecipe>();
+    public DbSet<RestaurantRecipeLine> RestaurantRecipeLines => Set<RestaurantRecipeLine>();
+    public DbSet<RestaurantTable> RestaurantTables => Set<RestaurantTable>();
+    public DbSet<RestaurantOrder> RestaurantOrders => Set<RestaurantOrder>();
+    public DbSet<RestaurantOrderLine> RestaurantOrderLines => Set<RestaurantOrderLine>();
+    public DbSet<RestaurantOrderPayment> RestaurantOrderPayments => Set<RestaurantOrderPayment>();
+    public DbSet<RestaurantStockMovement> RestaurantStockMovements => Set<RestaurantStockMovement>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -66,6 +79,17 @@ public class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RatePlanConfiguration());
         modelBuilder.ApplyConfiguration(new RatePlanSeasonConfiguration());
         modelBuilder.ApplyConfiguration(new HousekeepingTaskConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantIngredientConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantIngredientStockConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantMenuCategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantRecipeConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantMenuItemConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantRecipeLineConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantTableConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantOrderConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantOrderLineConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantOrderPaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantStockMovementConfiguration());
 
         modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
 

@@ -48,6 +48,26 @@ extension AnimatedEntry on Widget {
         )
         .fadeIn(duration: AppAnimations.fast);
   }
+
+  Widget pulseAttention({Duration? period}) {
+    return animate(onPlay: (c) => c.repeat(reverse: true))
+        .scale(
+          begin: const Offset(1, 1),
+          end: const Offset(1.03, 1.03),
+          duration: period ?? const Duration(milliseconds: 900),
+        );
+  }
+
+  Widget heroSharedAxis({bool fromRight = true}) {
+    return animate()
+        .fadeIn(duration: AppAnimations.fast)
+        .slideX(
+          begin: fromRight ? 0.08 : -0.08,
+          end: 0,
+          duration: AppAnimations.normal,
+          curve: AppAnimations.curve,
+        );
+  }
 }
 
 /// Wraps list children with staggered entrance animations.

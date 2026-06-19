@@ -28,30 +28,78 @@ public partial class HotelCheckInOutViewModel : ViewModelBase
 
     private List<ReservationListItem> _allArrivals = [];
     private List<ReservationListItem> _allDepartures = [];
+    private readonly Dictionary<string, string> _arrivalColumnFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _departureColumnFilters = new(StringComparer.OrdinalIgnoreCase);
 
-    protected override void OnColumnFiltersChanged()
+    [ObservableProperty] private bool _isArrivalColumnFilterPanelOpen;
+    [ObservableProperty] private bool _isDepartureColumnFilterPanelOpen;
+    [ObservableProperty] private int _arrivalActiveColumnFilterCount;
+    [ObservableProperty] private int _departureActiveColumnFilterCount;
+
+    private void ApplyArrivalFilters()
     {
+        var items = MasterDataColumnFilterHelper.HasActiveColumnFilters(_arrivalColumnFilters)
+            ? ColumnFilterEngine.Apply(_allArrivals, _arrivalColumnFilters).ToList()
+            : _allArrivals;
+
+        Arrivals.Clear();
+        foreach (var item in items)
+            Arrivals.Add(item);
+    }
+
+    private void ApplyDepartureFilters()
+    {
+        var items = MasterDataColumnFilterHelper.HasActiveColumnFilters(_departureColumnFilters)
+            ? ColumnFilterEngine.Apply(_allDepartures, _departureColumnFilters).ToList()
+            : _allDepartures;
+
+        Departures.Clear();
+        foreach (var item in items)
+            Departures.Add(item);
+    }
+
+    [RelayCommand]
+    private void ApplyArrivalColumnFilters(Dictionary<string, string>? filters)
+    {
+        _arrivalColumnFilters.Clear();
+        if (filters is not null)
+        {
+            foreach (var kv in filters)
+                _arrivalColumnFilters[kv.Key] = kv.Value;
+        }
+
+        ArrivalActiveColumnFilterCount = _arrivalColumnFilters.Count(kv => !string.IsNullOrWhiteSpace(kv.Value));
         ApplyArrivalFilters();
+    }
+
+    [RelayCommand]
+    private void ClearArrivalColumnFilters()
+    {
+        _arrivalColumnFilters.Clear();
+        ArrivalActiveColumnFilterCount = 0;
+        ApplyArrivalFilters();
+    }
+
+    [RelayCommand]
+    private void ApplyDepartureColumnFilters(Dictionary<string, string>? filters)
+    {
+        _departureColumnFilters.Clear();
+        if (filters is not null)
+        {
+            foreach (var kv in filters)
+                _departureColumnFilters[kv.Key] = kv.Value;
+        }
+
+        DepartureActiveColumnFilterCount = _departureColumnFilters.Count(kv => !string.IsNullOrWhiteSpace(kv.Value));
         ApplyDepartureFilters();
     }
 
-    private void ApplyArrivalFilters() =>
-        ApplyFilteredReservations(_allArrivals, Arrivals);
-
-    private void ApplyDepartureFilters() =>
-        ApplyFilteredReservations(_allDepartures, Departures);
-
-    private void ApplyFilteredReservations(
-        List<ReservationListItem> source,
-        ObservableCollection<ReservationListItem> target)
+    [RelayCommand]
+    private void ClearDepartureColumnFilters()
     {
-        var items = MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters)
-            ? ColumnFilterEngine.Apply(source, ColumnFilters).ToList()
-            : source;
-
-        target.Clear();
-        foreach (var item in items)
-            target.Add(item);
+        _departureColumnFilters.Clear();
+        DepartureActiveColumnFilterCount = 0;
+        ApplyDepartureFilters();
     }
 
     public HotelCheckInOutViewModel(

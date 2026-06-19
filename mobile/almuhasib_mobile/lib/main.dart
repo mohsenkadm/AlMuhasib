@@ -1,13 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
 import 'app.dart';
 import 'core/config/env_config.dart';
-import 'core/providers/core_providers.dart';
-import 'core/services/notification_service.dart';
+import 'core/getx/app_services.dart';
 import 'core/storage/preferences_service.dart';
-import 'core/theme/theme_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,28 +13,20 @@ Future<void> main() async {
   await EnvConfig.load();
 
   final prefs = await PreferencesService.create();
-  final container = ProviderContainer(
-    overrides: [
-      preferencesServiceProvider.overrideWithValue(prefs),
-    ],
-  );
+  await AppServices.init(prefs);
 
-  final notificationService = container.read(notificationServiceProvider);
-  await notificationService.initialize();
-  notificationService.setNotificationOpenedHandler((route) {
-    // Deep link handling can be extended here.
+  await AppServices.notifications.initialize();
+  AppServices.notifications.setNotificationOpenedHandler((route) {
+    if (route != null && route.isNotEmpty) Get.toNamed(route);
   });
 
   runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: EasyLocalization(
-        supportedLocales: const [Locale('ar'), Locale('en')],
-        path: 'assets/translations',
-        fallbackLocale: const Locale('ar'),
-        startLocale: const Locale('ar'),
-        child: const AlMuhasibApp(),
-      ),
+    EasyLocalization(
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('ar'),
+      startLocale: const Locale('ar'),
+      child: const AlMuhasibApp(),
     ),
   );
 }

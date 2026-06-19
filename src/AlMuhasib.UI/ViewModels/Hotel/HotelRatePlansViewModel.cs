@@ -156,6 +156,10 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
     }
 
     [ObservableProperty] private string _seasonSearchText = string.Empty;
+    [ObservableProperty] private bool _isSeasonColumnFilterPanelOpen;
+    [ObservableProperty] private int _seasonActiveColumnFilterCount;
+
+    private readonly Dictionary<string, string> _seasonColumnFilters = new(StringComparer.OrdinalIgnoreCase);
 
     partial void OnSeasonSearchTextChanged(string value) => ApplySeasonFilters();
 
@@ -181,11 +185,36 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
         var search = string.IsNullOrWhiteSpace(SeasonSearchText) ? null : SeasonSearchText.Trim();
         var items = _allSeasons
             .Where(s => search is null || s.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .AsEnumerable();
+
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(_seasonColumnFilters))
+            items = ColumnFilterEngine.Apply(items, _seasonColumnFilters);
 
         Seasons.Clear();
         foreach (var season in items)
             Seasons.Add(season);
+    }
+
+    [RelayCommand]
+    private void ApplySeasonColumnFilters(Dictionary<string, string>? filters)
+    {
+        _seasonColumnFilters.Clear();
+        if (filters is not null)
+        {
+            foreach (var kv in filters)
+                _seasonColumnFilters[kv.Key] = kv.Value;
+        }
+
+        SeasonActiveColumnFilterCount = _seasonColumnFilters.Count(kv => !string.IsNullOrWhiteSpace(kv.Value));
+        ApplySeasonFilters();
+    }
+
+    [RelayCommand]
+    private void ClearSeasonColumnFilters()
+    {
+        _seasonColumnFilters.Clear();
+        SeasonActiveColumnFilterCount = 0;
+        ApplySeasonFilters();
     }
 
     [RelayCommand]

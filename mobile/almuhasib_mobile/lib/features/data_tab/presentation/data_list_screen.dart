@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
-import '../../../core/providers/core_providers.dart';
+import '../../../core/getx/app_services.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
@@ -12,63 +12,92 @@ import '../../../shared/widgets/entity_list_tile.dart';
 import '../../../shared/widgets/search_filter_bar.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
-class DataListScreen extends ConsumerStatefulWidget {
-  const DataListScreen({super.key, required this.listType});
+class DataListController extends GetxController {
+  DataListController({required this.listType});
 
   final String listType;
 
-  @override
-  ConsumerState<DataListScreen> createState() => _DataListScreenState();
-}
-
-class _DataListScreenState extends ConsumerState<DataListScreen> {
-  bool _loading = true;
-  Object? _error;
-  List<dynamic> _items = [];
-  String _search = '';
-  int? _invoiceTypeFilter;
-  int? _paymentFilter;
-  DateTime _from = DateTime.now().subtract(const Duration(days: 90));
-  DateTime _to = DateTime.now();
+  final isLoading = true.obs;
+  final Rxn<Object> error = Rxn<Object>();
+  final items = <dynamic>[].obs;
+  final search = ''.obs;
+  final RxnInt invoiceTypeFilter = RxnInt();
+  final RxnInt paymentFilter = RxnInt();
+  final from = DateTime.now().subtract(const Duration(days: 90)).obs;
+  final to = DateTime.now().obs;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void onInit() {
+    super.onInit();
+    reload();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> reload() async {
+    isLoading.value = true;
+    error.value = null;
     try {
-      final repo = ref.read(dataRepositoryProvider);
-      final items = switch (widget.listType) {
-        'customers' => await repo.getCustomers(search: _search),
-        'products' => await repo.getProducts(search: _search),
-        'suppliers' => await repo.getSuppliers(search: _search),
-        'investors' => await repo.getInvestors(search: _search),
-        'warehouses' => await repo.getWarehouses(search: _search),
+      final repo = AppServices.data;
+      final loaded = switch (listType) {
+        'customers' => await repo.getCustomers(search: search.value),
+        'products' => await repo.getProducts(search: search.value),
+        'suppliers' => await repo.getSuppliers(search: search.value),
+        'investors' => await repo.getInvestors(search: search.value),
+        'warehouses' => await repo.getWarehouses(search: search.value),
         'invoices' => (await repo.getInvoices(
-            from: _from,
-            to: _to,
-            search: _search,
-            invoiceType: _invoiceTypeFilter,
-            paymentMethod: _paymentFilter,
+            from: from.value,
+            to: to.value,
+            search: search.value,
+            invoiceType: invoiceTypeFilter.value,
+            paymentMethod: paymentFilter.value,
           ))
             .items,
         _ => <dynamic>[],
       };
-      setState(() => _items = items);
+      items.value = loaded;
     } catch (e) {
-      setState(() => _error = e);
+      error.value = e;
     } finally {
-      setState(() => _loading = false);
+      isLoading.value = false;
     }
   }
 
-  String get _title => switch (widget.listType) {
+  void updateSearch(String value) {
+    search.value = value;
+    reload();
+  }
+
+  void updateInvoiceTypeFilter(String? id) {
+    invoiceTypeFilter.value = id == null ? null : int.tryParse(id);
+    reload();
+  }
+
+  Future<void> pickFromDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: from.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      from.value = picked;
+      await reload();
+    }
+  }
+
+  Future<void> pickToDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: to.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      to.value = picked;
+      await reload();
+    }
+  }
+
+  String get title => switch (listType) {
         'customers' => 'customers'.tr(),
         'products' => 'products'.tr(),
         'suppliers' => 'suppliers'.tr(),
@@ -78,18 +107,40 @@ class _DataListScreenState extends ConsumerState<DataListScreen> {
         _ => 'data_title'.tr(),
       };
 
-  String? get _fabRoute => switch (widget.listType) {
-        'customers' => '/data/customer/new',
-        'products' => '/data/product/new',
-        'suppliers' => '/data/supplier/new',
-        'investors' => '/data/investor/new',
-        'invoices' => '/data/invoice/new',
+  String? get fabRoute => switch (listType) {
+        'customers' => AppRoutes.customerNew,
+        'products' => AppRoutes.productNew,
+        'suppliers' => AppRoutes.supplierNew,
+        'investors' => AppRoutes.investorNew,
+        'invoices' => AppRoutes.invoiceNew,
         _ => null,
       };
 
+  String? detailRouteFor(LookupItem item) => switch (listType) {
+        'customers' =>
+          AppRoutes.customerDetailPath(item.syncId, name: item.name),
+        'products' => AppRoutes.productDetailPath(item.syncId, name: item.name),
+        'suppliers' =>
+          AppRoutes.supplierDetailPath(item.syncId, name: item.name),
+        'investors' =>
+          AppRoutes.investorDetailPath(item.syncId, name: item.name),
+        _ => null,
+      };
+}
+
+class DataListScreen extends StatelessWidget {
+  const DataListScreen({super.key, required this.listType});
+
+  final String listType;
+
   @override
   Widget build(BuildContext context) {
-    final invoiceFilters = widget.listType == 'invoices'
+    final controller = Get.put(
+      DataListController(listType: listType),
+      tag: 'data_list_$listType',
+    );
+
+    final invoiceFilters = listType == 'invoices'
         ? [
             const FilterChipOption(id: '0', label: 'شراء'),
             const FilterChipOption(id: '1', label: 'بيع'),
@@ -98,109 +149,112 @@ class _DataListScreenState extends ConsumerState<DataListScreen> {
           ]
         : <FilterChipOption>[];
 
-    return Scaffold(
-      appBar: AppBar(title: Text(_title)),
-      floatingActionButton: _fabRoute != null
-          ? FloatingActionButton(
-              onPressed: () async {
-                final refreshed = await context.push<bool>(_fabRoute!);
-                if (refreshed == true) _load();
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: SearchFilterBar(
-              onSearchChanged: (v) {
-                _search = v;
-                _load();
-              },
-              filterChips: invoiceFilters,
-              onFilterSelected: widget.listType == 'invoices'
-                  ? (id) {
-                      _invoiceTypeFilter =
-                          id == null ? null : int.tryParse(id);
-                      _load();
-                    }
-                  : null,
-            ),
-          ),
-          if (widget.listType == 'invoices')
+    return Obx(() {
+      return Scaffold(
+        appBar: AppBar(title: Text(controller.title)),
+        floatingActionButton: controller.fabRoute != null
+            ? FloatingActionButton(
+                onPressed: () async {
+                  final refreshed =
+                      await Get.toNamed<bool>(controller.fabRoute!);
+                  if (refreshed == true) controller.reload();
+                },
+                child: const Icon(Icons.add),
+              )
+            : null,
+        body: Column(
+          children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _from,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          setState(() => _from = picked);
-                          _load();
-                        }
-                      },
-                      child: Text('${'from_date'.tr()}\n${formatDate(_from)}'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _to,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          setState(() => _to = picked);
-                          _load();
-                        }
-                      },
-                      child: Text('${'to_date'.tr()}\n${formatDate(_to)}'),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: SearchFilterBar(
+                onSearchChanged: controller.updateSearch,
+                filterChips: invoiceFilters,
+                onFilterSelected: listType == 'invoices'
+                    ? controller.updateInvoiceTypeFilter
+                    : null,
               ),
             ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _load,
-              child: _buildBody(),
+            if (listType == 'invoices')
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => controller.pickFromDate(context),
+                        child: Text(
+                          '${'from_date'.tr()}\n${formatDate(controller.from.value)}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => controller.pickToDate(context),
+                        child: Text(
+                          '${'to_date'.tr()}\n${formatDate(controller.to.value)}',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.reload,
+                child: _DataListBody(
+                  controller: controller,
+                  listType: listType,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
+}
 
-  Widget _buildBody() {
-    if (_loading) return const ListShimmer();
-    if (_error != null) {
-      return ErrorStateWidget(message: _error.toString(), onRetry: _load);
+class _DataListBody extends StatelessWidget {
+  const _DataListBody({
+    required this.controller,
+    required this.listType,
+  });
+
+  final DataListController controller;
+  final String listType;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller.isLoading.value) return const ListShimmer();
+    if (controller.error.value != null) {
+      return ErrorStateWidget(
+        message: controller.error.value.toString(),
+        onRetry: controller.reload,
+      );
     }
-    if (_items.isEmpty) return EmptyStateWidget(onRetry: _load);
+    if (controller.items.isEmpty) {
+      return EmptyStateWidget(onRetry: controller.reload);
+    }
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: _items.length,
+      itemCount: controller.items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final item = _items[index];
+        final item = controller.items[index];
         Widget tile;
-        if (item is LookupItem && widget.listType != 'invoices') {
+        if (item is LookupItem && listType != 'invoices') {
           tile = EntityListTile(
             name: item.name,
             subtitle: item.extra,
-            onTap: () => _openEntityDetail(item),
+            onTap: () {
+              final route = controller.detailRouteFor(item);
+              if (route != null) {
+                Get.toNamed(route, arguments: item);
+              }
+            },
           );
         } else if (item is ProductLookupItem) {
           tile = EntityListTile(
@@ -214,7 +268,7 @@ class _DataListScreenState extends ConsumerState<DataListScreen> {
             subtitle:
                 '${invoiceTypeLabel(item.invoiceType)} • ${formatDate(item.date)}',
             trailing: Text(formatCurrency(item.netAmount)),
-            onTap: () => context.push('/data/invoice/${item.syncId}'),
+            onTap: () => Get.toNamed(AppRoutes.invoiceDetailPath(item.syncId)),
           );
         } else {
           return const SizedBox.shrink();
@@ -222,17 +276,6 @@ class _DataListScreenState extends ConsumerState<DataListScreen> {
         return tile.fadeSlideInList(index: index);
       },
     );
-  }
-
-  void _openEntityDetail(LookupItem item) {
-    final route = switch (widget.listType) {
-      'customers' => '/data/customer/${item.syncId}',
-      'products' => '/data/product/${item.syncId}',
-      'suppliers' => '/data/supplier/${item.syncId}',
-      'investors' => '/data/investor/${item.syncId}',
-      _ => null,
-    };
-    if (route != null) context.push(route, extra: item);
   }
 }
 
@@ -248,9 +291,16 @@ class EntityDetailScreen extends StatelessWidget {
   final String syncId;
   final String name;
 
+  String get _editRoute => switch (entityType) {
+        'customer' => AppRoutes.customerEditPath(syncId),
+        'product' => AppRoutes.productEditPath(syncId),
+        'supplier' => AppRoutes.supplierEditPath(syncId),
+        'investor' => AppRoutes.investorEditPath(syncId),
+        _ => AppRoutes.customerEditPath(syncId),
+      };
+
   @override
   Widget build(BuildContext context) {
-    final editRoute = '/data/$entityType/$syncId/edit';
     return Scaffold(
       appBar: AppBar(title: Text(name)),
       body: ListView(
@@ -268,7 +318,7 @@ class EntityDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () => context.push(editRoute),
+            onPressed: () => Get.toNamed(_editRoute),
             icon: const Icon(Icons.edit),
             label: Text('edit'.tr()),
           ),
@@ -278,95 +328,108 @@ class EntityDetailScreen extends StatelessWidget {
   }
 }
 
-class InvoiceDetailScreen extends ConsumerStatefulWidget {
+class InvoiceDetailController extends GetxController {
+  InvoiceDetailController({required this.syncId});
+
+  final String syncId;
+
+  final isLoading = true.obs;
+  final Rxn<Object> error = Rxn<Object>();
+  final Rxn<InvoiceDetailResponse> invoice = Rxn<InvoiceDetailResponse>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    reload();
+  }
+
+  Future<void> reload() async {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      invoice.value = await AppServices.data.getInvoiceDetail(syncId);
+    } catch (e) {
+      error.value = e;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
+
+class InvoiceDetailScreen extends StatelessWidget {
   const InvoiceDetailScreen({super.key, required this.syncId});
 
   final String syncId;
 
   @override
-  ConsumerState<InvoiceDetailScreen> createState() =>
-      _InvoiceDetailScreenState();
-}
-
-class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
-  bool _loading = true;
-  Object? _error;
-  InvoiceDetailResponse? _invoice;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final invoice =
-          await ref.read(dataRepositoryProvider).getInvoiceDetail(widget.syncId);
-      setState(() => _invoice = invoice);
-    } catch (e) {
-      setState(() => _error = e);
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('invoices'.tr())),
-      body: _loading
-          ? const ListShimmer(itemCount: 4)
-          : _error != null
-              ? ErrorStateWidget(message: _error.toString(), onRetry: _load)
-              : _invoice == null
-                  ? EmptyStateWidget(onRetry: _load)
-                  : ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        GradientCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _invoice!.invoiceNumber,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${invoiceTypeLabel(_invoice!.invoiceType)} • ${paymentMethodLabel(_invoice!.paymentMethod)}',
-                              ),
-                              Text(formatDate(_invoice!.date)),
-                              if (_invoice!.customerName != null)
-                                Text(_invoice!.customerName!),
-                              if (_invoice!.supplierName != null)
-                                Text(_invoice!.supplierName!),
-                              const SizedBox(height: 12),
-                              Text(
-                                formatCurrency(_invoice!.netAmount),
-                                style: Theme.of(context).textTheme.displaySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ..._invoice!.items.map(
-                          (item) => Card(
-                            child: ListTile(
-                              title: Text(item.itemName),
-                              subtitle: Text(
-                                '${item.quantity} × ${formatCurrency(item.unitPrice)}',
-                              ),
-                              trailing: Text(formatCurrency(item.totalPrice)),
+    final controller = Get.put(
+      InvoiceDetailController(syncId: syncId),
+      tag: 'invoice_$syncId',
+    );
+
+    return Obx(() {
+      return Scaffold(
+        appBar: AppBar(title: Text('invoices'.tr())),
+        body: controller.isLoading.value
+            ? const ListShimmer(itemCount: 4)
+            : controller.error.value != null
+                ? ErrorStateWidget(
+                    message: controller.error.value.toString(),
+                    onRetry: controller.reload,
+                  )
+                : controller.invoice.value == null
+                    ? EmptyStateWidget(onRetry: controller.reload)
+                    : ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          GradientCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  controller.invoice.value!.invoiceNumber,
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${invoiceTypeLabel(controller.invoice.value!.invoiceType)} • ${paymentMethodLabel(controller.invoice.value!.paymentMethod)}',
+                                ),
+                                Text(formatDate(controller.invoice.value!.date)),
+                                if (controller.invoice.value!.customerName !=
+                                    null)
+                                  Text(controller.invoice.value!.customerName!),
+                                if (controller.invoice.value!.supplierName !=
+                                    null)
+                                  Text(controller.invoice.value!.supplierName!),
+                                const SizedBox(height: 12),
+                                Text(
+                                  formatCurrency(
+                                    controller.invoice.value!.netAmount,
+                                  ),
+                                  style:
+                                      Theme.of(context).textTheme.displaySmall,
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-    );
+                          const SizedBox(height: 16),
+                          ...controller.invoice.value!.items.map(
+                            (item) => Card(
+                              child: ListTile(
+                                title: Text(item.itemName),
+                                subtitle: Text(
+                                  '${item.quantity} × ${formatCurrency(item.unitPrice)}',
+                                ),
+                                trailing:
+                                    Text(formatCurrency(item.totalPrice)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+      );
+    });
   }
 }

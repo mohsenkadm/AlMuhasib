@@ -80,6 +80,27 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveHotelRatePlanAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.HotelRatePlans, syncId, ct);
 
+    public async Task<int?> ResolveRestaurantIngredientAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantIngredients, syncId, ct);
+
+    public async Task<int?> ResolveRestaurantMenuCategoryAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantMenuCategories, syncId, ct);
+
+    public async Task<int?> ResolveRestaurantRecipeAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantRecipes, syncId, ct);
+
+    public async Task<int?> ResolveRestaurantMenuItemAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantMenuItems, syncId, ct);
+
+    public async Task<int?> ResolveRestaurantTableAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantTables, syncId, ct);
+
+    public async Task<int?> ResolveRestaurantOrderAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.RestaurantOrders, syncId, ct);
+
+    public async Task<int?> ResolveCarSaleContractAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.CarSaleContracts, syncId, ct);
+
     public async Task<int> ResolveTransferAccountAsync(TransferAccountType type, Guid syncId, CancellationToken ct) =>
         type switch
         {

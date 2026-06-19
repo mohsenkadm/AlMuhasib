@@ -286,6 +286,78 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
         return cogs;
     }
 
+    public async Task<List<ProfitInvoiceDetailRow>> GetProfitInvoiceDetailsAsync(DateTime? from, DateTime? to)
+    {
+        var invoicesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices, _db.InstallmentPlans).AsQueryable();
+
+        if (from.HasValue)
+            invoicesQ = invoicesQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue)
+            invoicesQ = invoicesQ.Where(i => i.Date < EndOfDay(to));
+
+        var invoices = await invoicesQ
+            .Include(i => i.Customer)
+            .Include(i => i.Items)
+            .OrderByDescending(i => i.Date)
+            .ToListAsync();
+        if (invoices.Count == 0)
+            return [];
+
+        var soldItems = invoices
+            .SelectMany(i => i.Items.Where(ii => ii.ProductId != null))
+            .ToList();
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stocks = await _db.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+
+        var purchaseItems = await _db.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && productIds.Contains(ii.ProductId.Value)
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
+                         && (!to.HasValue || ii.Invoice.Date < EndOfDay(to)))
+            .ToListAsync();
+
+        var purchasesByProduct = purchaseItems
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var rows = new List<ProfitInvoiceDetailRow>();
+        foreach (var invoice in invoices)
+        {
+            decimal cost = 0;
+            var lineItems = invoice.Items.Where(ii => ii.ProductId != null).ToList();
+            foreach (var item in lineItems)
+            {
+                var productId = item.ProductId!.Value;
+                var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
+                var avgCost = CloudProductCostHelper.ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
+                cost += Math.Round(item.Quantity * avgCost, 0);
+            }
+
+            var revenue = invoice.NetAmount;
+            var profit = revenue - cost;
+            rows.Add(new ProfitInvoiceDetailRow
+            {
+                InvoiceId = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
+                Date = invoice.Date,
+                CustomerName = invoice.Customer?.Name ?? "—",
+                InvoiceTypeLabel = invoice.InvoiceType == InvoiceType.Installment ? "أقساط" : "مبيعات",
+                ItemCount = lineItems.Count,
+                Revenue = revenue,
+                Cost = cost,
+                GrossProfit = profit,
+                MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 1) : 0
+            });
+        }
+
+        return rows;
+    }
+
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // INSTALLMENTS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

@@ -1,8 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 
@@ -49,7 +50,9 @@ class DataScreen extends StatelessWidget {
                   ),
                   title: Text(entry.value.titleKey.tr()),
                   trailing: const Icon(Icons.chevron_left),
-                  onTap: () => context.push('/data/list/${entry.value.type}'),
+                  onTap: () => Get.toNamed(
+                    AppRoutes.dataListPath(entry.value.type),
+                  ),
                 ),
               ).fadeSlideInList(index: entry.key),
             ),
@@ -71,7 +74,7 @@ class DataScreen extends StatelessWidget {
               title: Text('new_invoice'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/data/invoice/new');
+                Get.toNamed(AppRoutes.invoiceNew);
               },
             ),
             ListTile(
@@ -79,7 +82,7 @@ class DataScreen extends StatelessWidget {
               title: Text('add_customer'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/data/customer/new');
+                Get.toNamed(AppRoutes.customerNew);
               },
             ),
             ListTile(
@@ -87,7 +90,7 @@ class DataScreen extends StatelessWidget {
               title: Text('add_product'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/data/product/new');
+                Get.toNamed(AppRoutes.productNew);
               },
             ),
           ],

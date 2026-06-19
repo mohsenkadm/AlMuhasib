@@ -1120,6 +1120,24 @@
                         <DataTemplate DataType="{x:Type hotelVm:HotelReportsViewModel}">
                             <hotelViews:HotelReportsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantPosViewModel}">
+                            <hotelViews:RestaurantPosView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantMenuViewModel}">
+                            <hotelViews:RestaurantMenuView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantInventoryViewModel}">
+                            <hotelViews:RestaurantInventoryView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantTablesViewModel}">
+                            <hotelViews:RestaurantTablesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantReportsViewModel}">
+                            <hotelViews:RestaurantReportsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type hotelVm:RestaurantKitchenViewModel}">
+                            <hotelViews:RestaurantKitchenView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type hotelVm:HotelSetupWizardViewModel}">
                             <hotelViews:HotelSetupWizardView />
                         </DataTemplate>

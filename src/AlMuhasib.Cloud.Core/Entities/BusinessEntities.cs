@@ -382,3 +382,172 @@ public class CloudHotelHousekeepingTask : CloudBaseEntity
     public string Notes { get; set; } = string.Empty;
     public CloudHotelRoom Room { get; set; } = null!;
 }
+
+public class CloudRestaurantIngredient : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+    public decimal MinQuantity { get; set; }
+    public decimal AverageCost { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudRestaurantIngredientStock : CloudBaseEntity
+{
+    public int RestaurantIngredientId { get; set; }
+    public decimal Quantity { get; set; }
+    public CloudRestaurantIngredient Ingredient { get; set; } = null!;
+}
+
+public class CloudRestaurantMenuCategory : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public string ColorHex { get; set; } = "#00897B";
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudRestaurantRecipe : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudRestaurantMenuItem : CloudBaseEntity
+{
+    public int RestaurantMenuCategoryId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
+    public decimal SalePrice { get; set; }
+    public int? RecipeId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public int SortOrder { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudRestaurantMenuCategory Category { get; set; } = null!;
+    public CloudRestaurantRecipe? Recipe { get; set; }
+}
+
+public class CloudRestaurantRecipeLine : CloudBaseEntity
+{
+    public int RestaurantRecipeId { get; set; }
+    public int RestaurantIngredientId { get; set; }
+    public decimal Quantity { get; set; }
+    public CloudRestaurantRecipe Recipe { get; set; } = null!;
+    public CloudRestaurantIngredient Ingredient { get; set; } = null!;
+}
+
+public class CloudRestaurantTable : CloudBaseEntity
+{
+    public string TableNumber { get; set; } = string.Empty;
+    public int Capacity { get; set; } = 4;
+    public RestaurantTableStatus Status { get; set; }
+    public int SortOrder { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudRestaurantOrder : CloudBaseEntity
+{
+    public string OrderNumber { get; set; } = string.Empty;
+    public RestaurantOrderType OrderType { get; set; }
+    public RestaurantOrderStatus Status { get; set; }
+    public RestaurantKitchenStatus KitchenStatus { get; set; }
+    public int? RestaurantTableId { get; set; }
+    public int? ReservationId { get; set; }
+    public int? RoomId { get; set; }
+    public int? GuestId { get; set; }
+    public decimal SubTotal { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal CogsAmount { get; set; }
+    public decimal GrossProfit { get; set; }
+    public DateTime OrderDate { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudRestaurantOrderLine : CloudBaseEntity
+{
+    public int RestaurantOrderId { get; set; }
+    public int RestaurantMenuItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal LineTotal { get; set; }
+    public decimal CogsAmount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudRestaurantOrder Order { get; set; } = null!;
+}
+
+public class CloudRestaurantOrderPayment : CloudBaseEntity
+{
+    public int RestaurantOrderId { get; set; }
+    public decimal Amount { get; set; }
+    public RestaurantPaymentMethod PaymentMethod { get; set; }
+    public int? HotelCashBoxId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public CloudRestaurantOrder Order { get; set; } = null!;
+}
+
+public class CloudRestaurantStockMovement : CloudBaseEntity
+{
+    public int RestaurantIngredientId { get; set; }
+    public RestaurantStockMovementType MovementType { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public int? RestaurantOrderId { get; set; }
+    public DateTime MovementDate { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+// Car sync entities
+public class CloudCarSaleContract : CloudBaseEntity
+{
+    public string ContractNumber { get; set; } = string.Empty;
+    public DateTime ContractDate { get; set; } = DateTime.Today;
+
+    public string SellerName { get; set; } = string.Empty;
+    public string SellerAddress { get; set; } = string.Empty;
+    public string SellerIdNumber { get; set; } = string.Empty;
+    public DateTime? SellerIdDate { get; set; }
+    public string SellerPhone { get; set; } = string.Empty;
+
+    public string BuyerName { get; set; } = string.Empty;
+    public string BuyerAddress { get; set; } = string.Empty;
+    public string BuyerIdNumber { get; set; } = string.Empty;
+    public DateTime? BuyerIdDate { get; set; }
+    public string BuyerPhone { get; set; } = string.Empty;
+
+    public string AnnualOwnerName { get; set; } = string.Empty;
+    public string AnnualOwnerAddress { get; set; } = string.Empty;
+
+    public string PlateNumber { get; set; } = string.Empty;
+    public string CarType { get; set; } = string.Empty;
+    public string CarModel { get; set; } = string.Empty;
+    public string CarColor { get; set; } = string.Empty;
+    public string ChassisNumber { get; set; } = string.Empty;
+
+    public decimal CarPrice { get; set; }
+    public string CarPriceInWords { get; set; } = string.Empty;
+    public decimal AmountReceived { get; set; }
+    public decimal RemainingAmount { get; set; }
+
+    public string Notes { get; set; } = string.Empty;
+    public CarContractStatus Status { get; set; } = CarContractStatus.Active;
+
+    public ICollection<CloudCarContractPayment> Payments { get; set; } = [];
+}
+
+public class CloudCarContractPayment : CloudBaseEntity
+{
+    public int ContractId { get; set; }
+    public CloudCarSaleContract Contract { get; set; } = null!;
+
+    public DateTime PaymentDate { get; set; } = DateTime.Today;
+    public decimal Amount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public decimal RemainingBefore { get; set; }
+    public decimal RemainingAfter { get; set; }
+}

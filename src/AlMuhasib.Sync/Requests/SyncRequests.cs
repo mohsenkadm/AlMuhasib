@@ -43,6 +43,21 @@ public sealed class SyncDataBundle
     public List<HotelRatePlanSyncDto> HotelRatePlans { get; set; } = [];
     public List<HotelRatePlanSeasonSyncDto> HotelRatePlanSeasons { get; set; } = [];
     public List<HotelHousekeepingTaskSyncDto> HotelHousekeepingTasks { get; set; } = [];
+
+    public List<RestaurantIngredientSyncDto> RestaurantIngredients { get; set; } = [];
+    public List<RestaurantIngredientStockSyncDto> RestaurantIngredientStocks { get; set; } = [];
+    public List<RestaurantMenuCategorySyncDto> RestaurantMenuCategories { get; set; } = [];
+    public List<RestaurantRecipeSyncDto> RestaurantRecipes { get; set; } = [];
+    public List<RestaurantMenuItemSyncDto> RestaurantMenuItems { get; set; } = [];
+    public List<RestaurantRecipeLineSyncDto> RestaurantRecipeLines { get; set; } = [];
+    public List<RestaurantTableSyncDto> RestaurantTables { get; set; } = [];
+    public List<RestaurantOrderSyncDto> RestaurantOrders { get; set; } = [];
+    public List<RestaurantOrderLineSyncDto> RestaurantOrderLines { get; set; } = [];
+    public List<RestaurantOrderPaymentSyncDto> RestaurantOrderPayments { get; set; } = [];
+    public List<RestaurantStockMovementSyncDto> RestaurantStockMovements { get; set; } = [];
+
+    public List<CarSaleContractSyncDto> CarSaleContracts { get; set; } = [];
+    public List<CarContractPaymentSyncDto> CarContractPayments { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

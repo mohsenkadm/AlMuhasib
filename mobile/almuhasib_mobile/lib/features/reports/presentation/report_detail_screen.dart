@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart' hide Trans;
 
-import '../../../core/providers/core_providers.dart';
+import '../../../core/getx/app_services.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/report_models.dart';
 import '../../../shared/utils/formatters.dart';
@@ -11,146 +11,148 @@ import '../../../shared/widgets/lookup_picker_sheet.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
-class ReportDetailScreen extends ConsumerStatefulWidget {
-  const ReportDetailScreen({super.key, required this.reportType});
+class ReportDetailController extends GetxController {
+  ReportDetailController({required this.reportType});
 
   final String reportType;
 
-  @override
-  ConsumerState<ReportDetailScreen> createState() => _ReportDetailScreenState();
-}
-
-class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
-  DateTime _from = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _to = DateTime.now();
-  LookupItem? _selectedCustomer;
-  LookupItem? _selectedInvestor;
-  bool _loading = true;
-  Object? _error;
-  dynamic _result;
+  final from = DateTime.now().subtract(const Duration(days: 30)).obs;
+  final to = DateTime.now().obs;
+  final Rxn<LookupItem> selectedCustomer = Rxn<LookupItem>();
+  final Rxn<LookupItem> selectedInvestor = Rxn<LookupItem>();
+  final isLoading = true.obs;
+  final Rxn<Object> error = Rxn<Object>();
+  final Rxn<dynamic> result = Rxn<dynamic>();
+  final profitInvoices = <ProfitInvoiceDetailRow>[].obs;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void onInit() {
+    super.onInit();
+    reload();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> reload() async {
+    isLoading.value = true;
+    error.value = null;
     try {
-      final repo = ref.read(reportsRepositoryProvider);
-      dynamic result;
-      switch (widget.reportType) {
+      final repo = AppServices.reports;
+      dynamic loaded;
+      switch (reportType) {
         case 'sales':
-          result = await repo.getSalesReport(_from, _to);
+          loaded = await repo.getSalesReport(from.value, to.value);
         case 'purchases':
-          result = await repo.getPurchasesReport(_from, _to);
+          loaded = await repo.getPurchasesReport(from.value, to.value);
         case 'profit':
-          result = await repo.getProfitReport(_from, _to);
+          loaded = await repo.getProfitReport(from.value, to.value);
+          profitInvoices.value =
+              await repo.getProfitInvoiceDetails(from.value, to.value);
+        case 'balance_sheet':
+          loaded = await repo.getBalanceSheet(to.value);
         case 'overdue':
-          result = await repo.getOverdueReport();
+          loaded = await repo.getOverdueReport();
         case 'warehouse':
-          result = await repo.getWarehouseReport();
+          loaded = await repo.getWarehouseReport();
         case 'top_products':
-          result = await repo.getTopProductsReport(_from, _to);
+          loaded = await repo.getTopProductsReport(from.value, to.value);
         case 'statement':
-          if (_selectedCustomer == null) {
-            final customers = await ref.read(dataRepositoryProvider).getCustomers();
-            if (customers.isNotEmpty) _selectedCustomer = customers.first;
+          if (selectedCustomer.value == null) {
+            final customers = await AppServices.data.getCustomers();
+            if (customers.isNotEmpty) {
+              selectedCustomer.value = customers.first;
+            }
           }
-          if (_selectedCustomer != null) {
-            result = await repo.getCustomerStatement(
-              _selectedCustomer!.syncId,
-              from: _from,
-              to: _to,
+          if (selectedCustomer.value != null) {
+            loaded = await repo.getCustomerStatement(
+              selectedCustomer.value!.syncId,
+              from: from.value,
+              to: to.value,
             );
           }
         case 'investor_statement':
-          if (_selectedInvestor == null) {
-            final investors = await ref.read(dataRepositoryProvider).getInvestors();
-            if (investors.isNotEmpty) _selectedInvestor = investors.first;
+          if (selectedInvestor.value == null) {
+            final investors = await AppServices.data.getInvestors();
+            if (investors.isNotEmpty) {
+              selectedInvestor.value = investors.first;
+            }
           }
-          if (_selectedInvestor != null) {
-            result = await repo.getInvestorStatement(
-              _selectedInvestor!.syncId,
-              from: _from,
-              to: _to,
+          if (selectedInvestor.value != null) {
+            loaded = await repo.getInvestorStatement(
+              selectedInvestor.value!.syncId,
+              from: from.value,
+              to: to.value,
             );
           }
         default:
-          result = null;
+          loaded = null;
       }
-      setState(() => _result = result);
+      result.value = loaded;
     } catch (e) {
-      setState(() => _error = e);
+      error.value = e;
     } finally {
-      setState(() => _loading = false);
+      isLoading.value = false;
     }
   }
 
-  Future<void> _pickFromDate() async {
+  Future<void> pickFromDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _from,
+      initialDate: from.value,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
-      setState(() => _from = picked);
-      await _load();
+      from.value = picked;
+      await reload();
     }
   }
 
-  Future<void> _pickToDate() async {
+  Future<void> pickToDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _to,
+      initialDate: to.value,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
-      setState(() => _to = picked);
-      await _load();
+      to.value = picked;
+      await reload();
     }
   }
 
-  Future<void> _pickCustomer() async {
-    final repo = ref.read(dataRepositoryProvider);
+  Future<void> pickCustomer(BuildContext context) async {
     final selected = await showLookupPickerSheet<LookupItem>(
       context: context,
       title: 'select_customer'.tr(),
-      loadItems: (search) => repo.getCustomers(search: search),
+      loadItems: (search) => AppServices.data.getCustomers(search: search),
     );
     if (selected != null) {
-      setState(() => _selectedCustomer = selected);
-      await _load();
+      selectedCustomer.value = selected;
+      await reload();
     }
   }
 
-  Future<void> _pickInvestor() async {
-    final repo = ref.read(dataRepositoryProvider);
+  Future<void> pickInvestor(BuildContext context) async {
     final selected = await showLookupPickerSheet<LookupItem>(
       context: context,
       title: 'select_investor'.tr(),
-      loadItems: (search) => repo.getInvestors(search: search),
+      loadItems: (search) => AppServices.data.getInvestors(search: search),
     );
     if (selected != null) {
-      setState(() => _selectedInvestor = selected);
-      await _load();
+      selectedInvestor.value = selected;
+      await reload();
     }
   }
 
-  String get _title {
-    switch (widget.reportType) {
+  String get title {
+    switch (reportType) {
       case 'sales':
         return 'report_sales'.tr();
       case 'purchases':
         return 'report_purchases'.tr();
       case 'profit':
         return 'report_profit'.tr();
+      case 'balance_sheet':
+        return 'report_balance_sheet'.tr();
       case 'overdue':
         return 'report_overdue'.tr();
       case 'statement':
@@ -166,86 +168,145 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
     }
   }
 
+  bool get showDateFilter =>
+      !{'overdue', 'warehouse', 'balance_sheet'}.contains(reportType);
+
+  bool get singleDate => reportType == 'balance_sheet';
+}
+
+class ReportDetailScreen extends StatelessWidget {
+  const ReportDetailScreen({super.key, required this.reportType});
+
+  final String reportType;
+
   @override
   Widget build(BuildContext context) {
-    final showDateFilter = !{'overdue', 'warehouse'}.contains(widget.reportType);
-
-    return Scaffold(
-      appBar: AppBar(title: Text(_title)),
-      body: Column(
-        children: [
-          if (showDateFilter)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickFromDate,
-                      icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text('${'from_date'.tr()}\n${formatDate(_from)}'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickToDate,
-                      icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text('${'to_date'.tr()}\n${formatDate(_to)}'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (widget.reportType == 'statement')
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
-                onPressed: _pickCustomer,
-                icon: const Icon(Icons.person_search),
-                label: Text(_selectedCustomer?.name ?? 'select_customer'.tr()),
-              ),
-            ),
-          if (widget.reportType == 'investor_statement')
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
-                onPressed: _pickInvestor,
-                icon: const Icon(Icons.savings_outlined),
-                label: Text(_selectedInvestor?.name ?? 'select_investor'.tr()),
-              ),
-            ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _load,
-              child: _buildBody(),
-            ),
-          ),
-        ],
-      ),
+    final controller = Get.put(
+      ReportDetailController(reportType: reportType),
+      tag: 'report_$reportType',
     );
-  }
 
-  Widget _buildBody() {
-    if (_loading) return const ListShimmer();
-    if (_error != null) {
-      return ErrorStateWidget(message: _error.toString(), onRetry: _load);
+    return Obx(() {
+      return Scaffold(
+        appBar: AppBar(title: Text(controller.title)),
+        body: Column(
+          children: [
+            if (controller.showDateFilter)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    if (!controller.singleDate)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => controller.pickFromDate(context),
+                          icon: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(
+                            '${'from_date'.tr()}\n${formatDate(controller.from.value)}',
+                          ),
+                        ),
+                      ),
+                    if (!controller.singleDate) const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => controller.pickToDate(context),
+                        icon: const Icon(Icons.calendar_today, size: 16),
+                        label: Text(
+                          '${controller.singleDate ? 'date'.tr() : 'to_date'.tr()}\n${formatDate(controller.to.value)}',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (reportType == 'statement')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: OutlinedButton.icon(
+                  onPressed: () => controller.pickCustomer(context),
+                  icon: const Icon(Icons.person_search),
+                  label: Text(
+                    controller.selectedCustomer.value?.name ??
+                        'select_customer'.tr(),
+                  ),
+                ),
+              ),
+            if (reportType == 'investor_statement')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: OutlinedButton.icon(
+                  onPressed: () => controller.pickInvestor(context),
+                  icon: const Icon(Icons.savings_outlined),
+                  label: Text(
+                    controller.selectedInvestor.value?.name ??
+                        'select_investor'.tr(),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.reload,
+                child: _ReportDetailBody(
+                  controller: controller,
+                  reportType: reportType,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _ReportDetailBody extends StatelessWidget {
+  const _ReportDetailBody({
+    required this.controller,
+    required this.reportType,
+  });
+
+  final ReportDetailController controller;
+  final String reportType;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller.isLoading.value) return const ListShimmer();
+    if (controller.error.value != null) {
+      return ErrorStateWidget(
+        message: controller.error.value.toString(),
+        onRetry: controller.reload,
+      );
     }
-    if (_result == null) return EmptyStateWidget(onRetry: _load);
+    if (controller.result.value == null) {
+      return EmptyStateWidget(onRetry: controller.reload);
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        ...switch (widget.reportType) {
-          'sales' => _buildSales(_result as SalesReportResult),
-          'purchases' => _buildPurchases(_result as PurchasesReportResult),
-          'profit' => _buildProfit(_result as ProfitReportResult),
-          'overdue' => _buildOverdue(_result as OverdueResult),
-          'statement' => _buildStatement(_result as CustomerStatementResult),
-          'investor_statement' =>
-              _buildInvestorStatement(_result as InvestorStatementResult),
-          'warehouse' => _buildWarehouse(_result as List<WarehouseStockRow>),
-          'top_products' => _buildTopProducts(_result as TopProductsReportResult),
+        ...switch (reportType) {
+          'sales' => _buildSales(controller.result.value as SalesReportResult),
+          'purchases' =>
+            _buildPurchases(controller.result.value as PurchasesReportResult),
+          'profit' => _buildProfit(
+              context,
+              controller.result.value as ProfitReportResult,
+              controller.profitInvoices,
+            ),
+          'balance_sheet' =>
+            _buildBalanceSheet(controller.result.value as BalanceSheetResult),
+          'overdue' => _buildOverdue(controller.result.value as OverdueResult),
+          'statement' => _buildStatement(
+              controller.result.value as CustomerStatementResult,
+            ),
+          'investor_statement' => _buildInvestorStatement(
+              controller.result.value as InvestorStatementResult,
+            ),
+          'warehouse' =>
+            _buildWarehouse(controller.result.value as List<WarehouseStockRow>),
+          'top_products' => _buildTopProducts(
+              controller.result.value as TopProductsReportResult,
+            ),
           _ => [EmptyStateWidget()],
         },
       ],
@@ -280,11 +341,67 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
         ),
       ];
 
-  List<Widget> _buildProfit(ProfitReportResult r) => [
-        _SummaryCard('total'.tr(), formatCurrency(r.netProfit)),
+  List<Widget> _buildProfit(
+    BuildContext context,
+    ProfitReportResult r,
+    List<ProfitInvoiceDetailRow> profitInvoices,
+  ) =>
+      [
         _SummaryCard('report_sales'.tr(), formatCurrency(r.totalSales)),
         _SummaryCard('report_purchases'.tr(), formatCurrency(r.totalPurchases)),
-        _SummaryCard('net_profit'.tr(), '${r.profitMargin.toStringAsFixed(1)}%'),
+        _SummaryCard('total_expenses'.tr(), formatCurrency(r.totalExpenses)),
+        _SummaryCard('net_profit'.tr(), formatCurrency(r.netProfit)),
+        _SummaryCard(
+          'profit_margin'.tr(),
+          '${r.profitMargin.toStringAsFixed(1)}%',
+        ),
+        if (profitInvoices.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Text(
+              'profit_invoice_details'.tr(),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          ...profitInvoices.asMap().entries.map(
+                (e) => Card(
+                  child: ListTile(
+                    title: Text(e.value.invoiceNumber),
+                    subtitle: Text(
+                      '${e.value.customerName} • ${formatDate(e.value.date)}',
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(formatCurrency(e.value.grossProfit)),
+                        Text('${e.value.marginPercent.toStringAsFixed(0)}%'),
+                      ],
+                    ),
+                  ),
+                ).fadeSlideInList(index: e.key),
+              ),
+        ],
+      ];
+
+  List<Widget> _buildBalanceSheet(BalanceSheetResult r) => [
+        _SummaryCard('equity_total'.tr(), formatCurrency(r.equityTotal)),
+        _SummaryCard('liabilities_total'.tr(), formatCurrency(r.liabilitiesTotal)),
+        _SummaryCard('assets_total'.tr(), formatCurrency(r.assetsTotal)),
+        _SummaryCard('sales_profit'.tr(), formatCurrency(r.salesProfit)),
+        _SummaryCard('cost_of_sales'.tr(), formatCurrency(r.costOfSales)),
+        _SummaryCard('supplier_payables'.tr(), formatCurrency(r.supplierPayables)),
+        _SummaryCard('investor_deposits'.tr(), formatCurrency(r.investorDeposits)),
+        _SummaryCard('customer_debts'.tr(), formatCurrency(r.customerDebts)),
+        _SummaryCard('inventory_value'.tr(), formatCurrency(r.inventoryValue)),
+        if (r.isBalanced)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'balance_sheet_balanced'.tr(),
+              style: const TextStyle(color: Colors.green),
+            ),
+          ),
       ];
 
   List<Widget> _buildOverdue(OverdueResult r) => [

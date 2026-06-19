@@ -13,6 +13,8 @@ public class CarDbContext : DbContext
 {
     private readonly ICurrentUserService? _currentUserService;
 
+    public bool IsApplyingSyncPull { get; set; }
+
     public CarDbContext(DbContextOptions<CarDbContext> options, ICurrentUserService? currentUserService = null)
         : base(options)
     {
@@ -25,6 +27,7 @@ public class CarDbContext : DbContext
     public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
     public DbSet<CarSaleContract> CarSaleContracts => Set<CarSaleContract>();
     public DbSet<CarContractPayment> CarContractPayments => Set<CarContractPayment>();
+    public DbSet<SyncState> SyncStates => Set<SyncState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +39,8 @@ public class CarDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PrintBrandingSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new CarSaleContractConfiguration());
         modelBuilder.ApplyConfiguration(new CarContractPaymentConfiguration());
+
+        modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
 
         modelBuilder.Entity<User>().Ignore(u => u.Tasks);
         modelBuilder.Entity<User>().Ignore(u => u.Notes);

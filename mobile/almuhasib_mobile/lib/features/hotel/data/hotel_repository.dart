@@ -155,4 +155,27 @@ class HotelRepository {
           .toList(),
     );
   }
+
+  Future<String> createReservation({
+    required String guestName,
+    required DateTime checkIn,
+    required DateTime checkOut,
+    String? roomSyncId,
+    double totalAmount = 0,
+    int guestCount = 1,
+  }) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.post(
+      '/api/hotel/reservations',
+      data: {
+        'guestName': guestName,
+        'checkInDate': checkIn.toIso8601String(),
+        'checkOutDate': checkOut.toIso8601String(),
+        if (roomSyncId != null) 'roomSyncId': roomSyncId,
+        'totalAmount': totalAmount,
+        'guestCount': guestCount,
+      },
+      parser: (data) => (data as Map<String, dynamic>)['syncId'] as String,
+    );
+  }
 }

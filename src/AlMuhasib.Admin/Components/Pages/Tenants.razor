@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using AlMuhasib.Cloud.Core.Entities
 @using AlMuhasib.Cloud.Core.Interfaces
+@using AlMuhasib.Core.Enums
 @using AlMuhasib.Admin.Services
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
@@ -34,6 +35,7 @@
                     <thead>
                         <tr>
                             <th>الشركة</th>
+                            <th>النظام</th>
                             <th>الحالة</th>
                             <th>المزامنة</th>
                             <th>انتهاء الترخيص</th>
@@ -47,6 +49,11 @@
                             var expired = t.LicenseExpiresAt < DateTime.UtcNow;
                             <tr>
                                 <td><strong>@t.CompanyName</strong></td>
+                                <td>
+                                    <span class="badge @GetSystemBadgeClass(t.ApplicationSystemType)">
+                                        @GetSystemLabel(t.ApplicationSystemType)
+                                    </span>
+                                </td>
                                 <td>
                                     <span class="badge @(t.IsActive ? "badge-success" : "badge-danger")">
                                         @(t.IsActive ? "نشط" : "معطّل")
@@ -92,4 +99,18 @@
         _tenants = await TenantService.GetAllAsync();
         _ready = true;
     }
+
+    private static string GetSystemLabel(int type) => type switch
+    {
+        (int)ApplicationSystemType.CarContracts => "عقود السيارات",
+        (int)ApplicationSystemType.HotelManagement => "الفنادق",
+        _ => "المحاسبة"
+    };
+
+    private static string GetSystemBadgeClass(int type) => type switch
+    {
+        (int)ApplicationSystemType.CarContracts => "badge-info",
+        (int)ApplicationSystemType.HotelManagement => "badge-success",
+        _ => "badge-secondary"
+    };
 }

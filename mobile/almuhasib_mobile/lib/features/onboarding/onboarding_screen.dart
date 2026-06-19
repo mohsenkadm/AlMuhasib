@@ -1,25 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/theme/theme_provider.dart';
 import '../../shared/widgets/app_animations.dart';
+import 'onboarding_controller.dart';
 
-class OnboardingScreen extends ConsumerStatefulWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
-  @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  final _controller = PageController();
-  int _currentPage = 0;
-
-  final _slides = const [
+  static const _slides = [
     _OnboardingSlideData(
       icon: Icons.analytics_outlined,
       titleKey: 'onboarding_title_1',
@@ -40,31 +31,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ),
   ];
 
-  Future<void> _complete() async {
-    final prefs = ref.read(preferencesServiceProvider);
-    await prefs.setOnboardingCompleted(true);
-    if (mounted) context.go('/login');
-  }
-
-  void _next() {
-    if (_currentPage < _slides.length - 1) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    } else {
-      _complete();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(OnboardingController(), tag: 'onboarding');
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -72,15 +42,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: TextButton(
-                onPressed: _complete,
+                onPressed: controller.complete,
                 child: Text('onboarding_skip'.tr()),
               ),
             ),
             Expanded(
               child: PageView.builder(
-                controller: _controller,
+                controller: controller.pageController,
                 itemCount: _slides.length,
-                onPageChanged: (index) => setState(() => _currentPage = index),
+                onPageChanged: controller.onPageChanged,
                 itemBuilder: (_, index) {
                   final slide = _slides[index];
                   return Padding(
@@ -123,7 +93,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
             SmoothPageIndicator(
-              controller: _controller,
+              controller: controller.pageController,
               count: _slides.length,
               effect: ExpandingDotsEffect(
                 activeDotColor: AppColors.accent,
@@ -139,17 +109,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _next,
+                  onPressed: controller.next,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text(
-                    _currentPage == _slides.length - 1
-                        ? 'onboarding_start'.tr()
-                        : 'onboarding_next'.tr(),
+                  child: Obx(
+                    () => Text(
+                      controller.currentPage.value == _slides.length - 1
+                          ? 'onboarding_start'.tr()
+                          : 'onboarding_next'.tr(),
+                    ),
                   ),
                 ),
               ),

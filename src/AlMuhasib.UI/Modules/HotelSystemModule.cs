@@ -27,6 +27,12 @@ public sealed class HotelSystemModule : ISystemModule
         (HotelPermissionRegistry.Guests, "النزلاء"),
         (HotelPermissionRegistry.RatePlans, "خطط الأسعار"),
         (HotelPermissionRegistry.Housekeeping, "النظافة"),
+        (HotelPermissionRegistry.RestaurantPos, "كاشير المطعم"),
+        (HotelPermissionRegistry.RestaurantMenu, "قائمة المطعم"),
+        (HotelPermissionRegistry.RestaurantInventory, "مخزون المطبخ"),
+        (HotelPermissionRegistry.RestaurantTables, "طاولات الصالة"),
+        (HotelPermissionRegistry.RestaurantReports, "تقارير المطعم"),
+        (HotelPermissionRegistry.RestaurantKitchen, "شاشة المطبخ"),
         (HotelPermissionRegistry.HotelCash, "الصندوق"),
         (HotelPermissionRegistry.HotelExpenses, "المصاريف"),
         (HotelPermissionRegistry.HotelReports, "التقارير"),
@@ -115,6 +121,48 @@ public sealed class HotelSystemModule : ISystemModule
             Icon = PackIconKind.Broom,
             ViewModelType = typeof(HotelHousekeepingViewModel),
             ScreenName = HotelPermissionRegistry.Housekeeping
+        },
+        new NavigationMenuItem
+        {
+            Title = "كاشير المطعم",
+            Icon = PackIconKind.SilverwareForkKnife,
+            ViewModelType = typeof(RestaurantPosViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantPos
+        },
+        new NavigationMenuItem
+        {
+            Title = "قائمة المطعم",
+            Icon = PackIconKind.Food,
+            ViewModelType = typeof(RestaurantMenuViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantMenu
+        },
+        new NavigationMenuItem
+        {
+            Title = "مخزون المطبخ",
+            Icon = PackIconKind.PackageVariant,
+            ViewModelType = typeof(RestaurantInventoryViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantInventory
+        },
+        new NavigationMenuItem
+        {
+            Title = "طاولات الصالة",
+            Icon = PackIconKind.TableChair,
+            ViewModelType = typeof(RestaurantTablesViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantTables
+        },
+        new NavigationMenuItem
+        {
+            Title = "تقارير المطعم",
+            Icon = PackIconKind.ChartPie,
+            ViewModelType = typeof(RestaurantReportsViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantReports
+        },
+        new NavigationMenuItem
+        {
+            Title = "شاشة المطبخ",
+            Icon = PackIconKind.Stove,
+            ViewModelType = typeof(RestaurantKitchenViewModel),
+            ScreenName = HotelPermissionRegistry.RestaurantKitchen
         },
         new NavigationMenuItem
         {

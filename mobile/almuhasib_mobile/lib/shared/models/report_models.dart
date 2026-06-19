@@ -332,6 +332,121 @@ class TopProductRow {
   final double revenue;
 }
 
+class ProfitInvoiceDetailRow {
+  ProfitInvoiceDetailRow({
+    required this.invoiceNumber,
+    required this.date,
+    required this.customerName,
+    required this.invoiceTypeLabel,
+    required this.itemCount,
+    required this.revenue,
+    required this.cost,
+    required this.grossProfit,
+    required this.marginPercent,
+  });
+
+  factory ProfitInvoiceDetailRow.fromJson(Map<String, dynamic> json) {
+    return ProfitInvoiceDetailRow(
+      invoiceNumber: json['invoiceNumber'] as String? ?? '',
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      customerName: json['customerName'] as String? ?? '',
+      invoiceTypeLabel: json['invoiceTypeLabel'] as String? ?? '',
+      itemCount: json['itemCount'] as int? ?? 0,
+      revenue: _num(json['revenue']),
+      cost: _num(json['cost']),
+      grossProfit: _num(json['grossProfit']),
+      marginPercent: _num(json['marginPercent']),
+    );
+  }
+
+  final String invoiceNumber;
+  final DateTime date;
+  final String customerName;
+  final String invoiceTypeLabel;
+  final int itemCount;
+  final double revenue;
+  final double cost;
+  final double grossProfit;
+  final double marginPercent;
+}
+
+class BalanceSheetResult {
+  BalanceSheetResult({
+    required this.equityTotal,
+    required this.liabilitiesTotal,
+    required this.assetsTotal,
+    required this.salesTotal,
+    required this.costOfSales,
+    required this.salesProfit,
+    required this.expensesTotal,
+    required this.supplierPayables,
+    required this.investorDeposits,
+    required this.cashBoxesTotal,
+    required this.banksTotal,
+    required this.customerDebts,
+    required this.inventoryValue,
+    required this.isBalanced,
+    this.cashBoxes = const [],
+    this.banks = const [],
+  });
+
+  factory BalanceSheetResult.fromJson(Map<String, dynamic> json) {
+    return BalanceSheetResult(
+      equityTotal: _num(json['equityTotal']),
+      liabilitiesTotal: _num(json['liabilitiesTotal']),
+      assetsTotal: _num(json['assetsTotal']),
+      salesTotal: _num(json['salesTotal']),
+      costOfSales: _num(json['costOfSales']),
+      salesProfit: _num(json['salesProfit']),
+      expensesTotal: _num(json['expensesTotal']),
+      supplierPayables: _num(json['supplierPayables']),
+      investorDeposits: _num(json['investorDeposits']),
+      cashBoxesTotal: _num(json['cashBoxesTotal']),
+      banksTotal: _num(json['banksTotal']),
+      customerDebts: _num(json['customerDebts']),
+      inventoryValue: _num(json['inventoryValue']),
+      isBalanced: json['isBalanced'] as bool? ?? false,
+      cashBoxes: (json['cashBoxes'] as List<dynamic>? ?? [])
+          .map((e) => BalanceSheetNamedRow.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      banks: (json['banks'] as List<dynamic>? ?? [])
+          .map((e) => BalanceSheetNamedRow.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  final double equityTotal;
+  final double liabilitiesTotal;
+  final double assetsTotal;
+  final double salesTotal;
+  final double costOfSales;
+  final double salesProfit;
+  final double expensesTotal;
+  final double supplierPayables;
+  final double investorDeposits;
+  final double cashBoxesTotal;
+  final double banksTotal;
+  final double customerDebts;
+  final double inventoryValue;
+  final bool isBalanced;
+  final List<BalanceSheetNamedRow> cashBoxes;
+  final List<BalanceSheetNamedRow> banks;
+}
+
+class BalanceSheetNamedRow {
+  BalanceSheetNamedRow({required this.name, required this.balance});
+
+  factory BalanceSheetNamedRow.fromJson(Map<String, dynamic> json) {
+    return BalanceSheetNamedRow(
+      name: json['name'] as String? ?? '',
+      balance: _num(json['balance']),
+    );
+  }
+
+  final String name;
+  final double balance;
+}
+
 double _num(dynamic value) {
   if (value == null) return 0;
   if (value is num) return value.toDouble();

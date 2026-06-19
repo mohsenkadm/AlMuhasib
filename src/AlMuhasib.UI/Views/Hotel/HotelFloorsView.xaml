@@ -125,10 +125,14 @@
                             <DataGridTextColumn Header="الاسم"
                                                 Binding="{Binding Name}"
                                                 Width="*"
+                                                MinWidth="120"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
                             <DataGridTextColumn Header="الترتيب"
                                                 Binding="{Binding SortOrder}"
                                                 Width="120"
+                                                MinWidth="90"
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SortOrder"/>
                             <DataGridTemplateColumn Header="الإجراءات"
                                                     Width="140"

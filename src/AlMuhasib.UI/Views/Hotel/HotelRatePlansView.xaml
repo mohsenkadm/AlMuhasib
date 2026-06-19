@@ -62,7 +62,7 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Padding="12" Background="#6A1B9A">
+                    <Border Grid.Row="0" Padding="12" Background="{DynamicResource PrimaryHueMidBrush}">
                         <TextBlock Text="خطط الأسعار" Foreground="White" FontWeight="Bold"/>
                     </Border>
                     <controls:HotelListStatsBar Grid.Row="1" Margin="12,8,12,4" ItemsSource="{Binding Stats}"/>
@@ -116,14 +116,26 @@
 
             <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="8,0,0,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Padding="12" Background="#1565C0">
+                    <Border DockPanel.Dock="Top" Padding="12" Background="{DynamicResource PrimaryHueMidBrush}">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="مواسم السعر" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                                <Button Command="{Binding OpenAddSeasonDialogCommand}" Style="{StaticResource FlatButton}" Foreground="White" IsEnabled="{Binding CanAdd}" Margin="12,0,0,0">
-                                    <md:PackIcon Kind="Plus"/>
-                                </Button>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="مواسم السعر" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <Button Command="{Binding OpenAddSeasonDialogCommand}" Style="{StaticResource FlatButton}" Foreground="White" IsEnabled="{Binding CanAdd}" Margin="12,0,0,0">
+                                        <md:PackIcon Kind="Plus"/>
+                                    </Button>
+                                </StackPanel>
+                                <controls:ColumnFilterToggle Grid.Column="1"
+                                                             IsChecked="{Binding IsSeasonColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding SeasonActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearSeasonColumnFiltersCommand}"
+                                                             TargetDataGrid="{Binding ElementName=SeasonsGrid}"
+                                                             VerticalAlignment="Center"/>
+                            </Grid>
                             <TextBox md:HintAssist.Hint="بحث في المواسم..."
                                      Text="{Binding SeasonSearchText, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}"
@@ -131,16 +143,23 @@
                                      Foreground="Black"/>
                         </StackPanel>
                     </Border>
-                    <DataGrid x:Name="SeasonsGrid" ItemsSource="{Binding Seasons}" SelectedItem="{Binding SelectedSeason}" AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                    <DataGrid x:Name="SeasonsGrid" ItemsSource="{Binding Seasons}" SelectedItem="{Binding SelectedSeason}" AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsSeasonColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplySeasonColumnFiltersCommand}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="الموسم" Binding="{Binding Name}" Width="*" MinWidth="120"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
                             <DataGridTextColumn Header="من" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StartDate"/>
                             <DataGridTextColumn Header="إلى" Binding="{Binding EndDate, StringFormat=yyyy/MM/dd}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="EndDate"/>
                             <DataGridTextColumn Header="السعر/ليلة" Binding="{Binding PricePerNight, StringFormat=N0}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PricePerNight"/>
                             <DataGridTemplateColumn Header="إجراءات" Width="100" MinWidth="100">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>

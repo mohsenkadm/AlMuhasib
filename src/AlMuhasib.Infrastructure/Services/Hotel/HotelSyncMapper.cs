@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Infrastructure.Services.Hotel;
 
-internal static class HotelSyncMapper
+internal static partial class HotelSyncMapper
 {
     public static async Task<SyncDataBundle> BuildPushBundleAsync(HotelDbContext db, DateTime? since, CancellationToken ct)
     {
@@ -48,7 +48,7 @@ internal static class HotelSyncMapper
         var referencedRoomTypeIds = changedRooms.Select(r => r.RoomTypeId)
             .Concat(ratePlans.Where(ShouldSync).Select(p => p.RoomTypeId)).ToHashSet();
 
-        return new SyncDataBundle
+        var bundle = new SyncDataBundle
         {
             HotelSettings = settings.Where(ShouldSync).Select(MapSettings).ToList(),
             HotelFloors = floors.Where(f => ShouldSync(f) || referencedFloorIds.Contains(f.Id)).Select(MapFloor).ToList(),
@@ -75,6 +75,9 @@ internal static class HotelSyncMapper
             HotelHousekeepingTasks = tasks.Where(ShouldSync).Where(t => roomMap.ContainsKey(t.RoomId))
                 .Select(t => MapHousekeeping(t, roomMap)).ToList()
         };
+
+        await AppendRestaurantToBundleAsync(bundle, db, ShouldSync, roomMap, guestMap, reservationMap, cashBoxMap, ct);
+        return bundle;
     }
 
     public static async Task ApplyPullBundleAsync(HotelDbContext db, SyncDataBundle data, CancellationToken ct)
@@ -97,6 +100,7 @@ internal static class HotelSyncMapper
             var ratePlanMap = await ApplyRatePlansAsync(db, data.HotelRatePlans, roomTypeMap, ct);
             await ApplySeasonsAsync(db, data.HotelRatePlanSeasons, ratePlanMap, ct);
             await ApplyHousekeepingAsync(db, data.HotelHousekeepingTasks, roomMap, ct);
+            await ApplyRestaurantPullAsync(db, data, roomMap, guestMap, reservationMap, cashBoxMap, ct);
             await db.SaveChangesAsync(ct);
         }
         finally

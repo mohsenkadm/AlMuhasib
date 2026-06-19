@@ -149,6 +149,8 @@ public sealed partial class SyncEngine
                 accepted += await UpsertHotelHousekeepingTaskAsync(tenantId, dto, roomId.Value, response, ct);
             }
 
+            accepted += await AcceptRestaurantPushAsync(tenantId, request, resolver, response, ct);
+
             var tenant = await _db.Tenants.FindAsync([tenantId], ct);
             if (tenant is not null)
                 tenant.LastSyncAt = DateTime.UtcNow;
@@ -296,6 +298,8 @@ public sealed partial class SyncEngine
             RoomSyncId = roomMap.GetValueOrDefault(t.RoomId), Status = t.Status, AssignedTo = t.AssignedTo,
             StartedAt = t.StartedAt, CompletedAt = t.CompletedAt, Notes = t.Notes
         }).ToList();
+
+        await AppendRestaurantPullBundleAsync(tenantId, bundle, since, ct);
 
         var serverTime = DateTime.UtcNow;
         return new SyncPullResponse
