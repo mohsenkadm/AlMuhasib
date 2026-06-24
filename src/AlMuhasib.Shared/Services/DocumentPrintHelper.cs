@@ -27,7 +27,10 @@ public static class DocumentPrintHelper
     {
         document.PageWidth = pageSize.Width;
         document.PageHeight = pageSize.Height;
-        document.ColumnWidth = pageSize.Width;
+        PrintBrandingFlowDocumentHelper.SyncBrandingToPageWidth(document, pageSize.Width);
+
+        var pad = document.PagePadding;
+        document.ColumnWidth = Math.Max(1, pageSize.Width - pad.Left - pad.Right);
     }
 
     internal sealed class PrintPreviewWindow : Window

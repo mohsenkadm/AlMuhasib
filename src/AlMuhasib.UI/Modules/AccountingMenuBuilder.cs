@@ -235,6 +235,13 @@ public static class AccountingMenuBuilder
             },
             new NavigationMenuItem
             {
+                Title = "تحديث النظام",
+                Icon = PackIconKind.CloudDownload,
+                ViewModelType = typeof(SystemUpdateViewModel),
+                ScreenName = ScreenPermissionRegistry.SystemUpdate
+            },
+            new NavigationMenuItem
+            {
                 Title = "تبديل النظام (مطور)",
                 Icon = PackIconKind.DeveloperBoard,
                 ViewModelType = typeof(DeveloperSystemSwitchViewModel),

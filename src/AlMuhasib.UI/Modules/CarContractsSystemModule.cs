@@ -23,7 +23,8 @@ public sealed class CarContractsSystemModule : ISystemModule
         (CarPermissionRegistry.Users, "المستخدمون"),
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
-        (CarPermissionRegistry.Backup, "النسخ الاحتياطي")
+        (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (ScreenPermissionRegistry.SystemUpdate, "تحديث النظام")
     ];
 
     public IReadOnlyList<NavigationMenuItem> BuildMenuItems() =>
@@ -83,6 +84,13 @@ public sealed class CarContractsSystemModule : ISystemModule
             Icon = PackIconKind.DatabaseCog,
             ViewModelType = typeof(BackupRestoreViewModel),
             ScreenName = CarPermissionRegistry.Backup
+        },
+        new NavigationMenuItem
+        {
+            Title = "تحديث النظام",
+            Icon = PackIconKind.CloudDownload,
+            ViewModelType = typeof(SystemUpdateViewModel),
+            ScreenName = ScreenPermissionRegistry.SystemUpdate
         },
         new NavigationMenuItem
         {

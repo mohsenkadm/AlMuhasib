@@ -11,6 +11,7 @@ public static class ScreenPermissionRegistry
 {
     public const string Dashboard = "Dashboard";
     public const string DeveloperSystem = "DeveloperSystem";
+    public const string SystemUpdate = "SystemUpdate";
     public const string Reports = "Reports";
     public const string BalanceSheet = "BalanceSheet";
 
@@ -38,7 +39,8 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Users, "المستخدمون"),
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
-        (CarPermissionRegistry.Backup, "النسخ الاحتياطي")
+        (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (SystemUpdate, "تحديث النظام")
     ];
 
     private static IReadOnlyList<(string Name, string Label)> HotelPermissionRegistryScreens { get; } =
@@ -67,7 +69,8 @@ public static class ScreenPermissionRegistry
         (HotelPermissionRegistry.Permissions, "الصلاحيات"),
         (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (HotelPermissionRegistry.Backup, "النسخ الاحتياطي"),
-        (HotelPermissionRegistry.CloudSync, "المزامنة السحابية")
+        (HotelPermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (SystemUpdate, "تحديث النظام")
     ];
 
     public static IReadOnlyList<(string Name, string Label)> AccountingScreens { get; } =
@@ -101,6 +104,7 @@ public static class ScreenPermissionRegistry
         ("PrintSettings", "إعدادات الطباعة"),
         ("Backup", "النسخ الاحتياطي"),
         ("CloudSync", "المزامنة السحابية"),
+        (SystemUpdate, "تحديث النظام"),
     ];
 
     public static string GetScreenName(Type viewModelType) =>
@@ -189,6 +193,7 @@ public static class ScreenPermissionRegistry
         [typeof(PrintLayoutSettingsViewModel)] = "PrintSettings",
         [typeof(BackupRestoreViewModel)] = "Backup",
         [typeof(CloudSyncSettingsViewModel)] = "CloudSync",
+        [typeof(SystemUpdateViewModel)] = SystemUpdate,
     };
 
     private static readonly Dictionary<string, Type> ScreenToDefaultViewModel = new()
@@ -222,5 +227,6 @@ public static class ScreenPermissionRegistry
         ["PrintSettings"] = typeof(PrintLayoutSettingsViewModel),
         ["Backup"] = typeof(BackupRestoreViewModel),
         ["CloudSync"] = typeof(CloudSyncSettingsViewModel),
+        [SystemUpdate] = typeof(SystemUpdateViewModel),
     };
 }

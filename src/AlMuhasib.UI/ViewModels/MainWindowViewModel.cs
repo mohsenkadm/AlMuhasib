@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels.Hotel;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.Services;
@@ -93,6 +94,11 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<NavigationMenuItem> SearchResults { get; } = [];
 
     // ── Exit Dialog ──
+    [ObservableProperty]
+    private bool _isCheckingForUpdate;
+
+    public string AppVersionLabel => AppInfo.VersionLabel;
+
     [ObservableProperty]
     private bool _isExitDialogOpen;
 
@@ -1019,6 +1025,31 @@ public partial class MainWindowViewModel : ObservableObject
     {
         IsQuickAssistOpen = false;
         await OpenTabAsync(typeof(PrintLayoutSettingsViewModel), "إعدادات الطباعة", PackIconKind.PrinterSettings);
+    }
+
+    [RelayCommand]
+    private async Task OpenSystemUpdate()
+    {
+        IsQuickAssistOpen = false;
+        await OpenTabAsync(typeof(SystemUpdateViewModel), "تحديث النظام", PackIconKind.CloudDownload);
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsCheckingForUpdate)
+            return;
+
+        try
+        {
+            IsCheckingForUpdate = true;
+            IsQuickAssistOpen = false;
+            await AppUpdateCoordinator.CheckAndApplyManuallyAsync(_serviceProvider);
+        }
+        finally
+        {
+            IsCheckingForUpdate = false;
+        }
     }
 
     [RelayCommand]

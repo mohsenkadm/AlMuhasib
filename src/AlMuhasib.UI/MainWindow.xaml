@@ -283,6 +283,13 @@
                             </Border>
                         </Grid>
                     </Button>
+                    <Button Command="{Binding CheckForUpdatesCommand}"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            Width="38" Height="38" Margin="0,0,8,0"
+                            ToolTip="التحقق من تحديثات النظام"
+                            IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
+                        <materialDesign:PackIcon Kind="CloudDownload" Width="20" Height="20" Foreground="#1565C0"/>
+                    </Button>
                     <Button Command="{Binding OpenHelpVideosCommand}"
                             Style="{StaticResource OutlinedButton}"
                             Height="34" Padding="10,0" Margin="0,0,6,0"
@@ -1300,6 +1307,9 @@
                         <DataTemplate DataType="{x:Type vm:PrintLayoutSettingsViewModel}">
                             <views:PrintLayoutSettingsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SystemUpdateViewModel}">
+                            <views:SystemUpdateView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CloudSyncSettingsViewModel}">
                             <views:CloudSyncSettingsView />
                         </DataTemplate>
@@ -1446,6 +1456,32 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding OpenSystemUpdateCommand}"
+                                    Margin="0,8,0,0"
+                                    IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="CloudDownload" Width="18" Height="18"
+                                                                 Foreground="#1565C0"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="تحديث النظام" VerticalAlignment="Center" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuickAssistActionButton}"
+                                    Command="{Binding CheckForUpdatesCommand}"
+                                    Margin="0,8,0,0"
+                                    IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                        <materialDesign:PackIcon Kind="CloudSync" Width="18" Height="18"
+                                                                 Foreground="#2E7D32"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="فحص التحديث الآن" VerticalAlignment="Center" FontWeight="Medium"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"

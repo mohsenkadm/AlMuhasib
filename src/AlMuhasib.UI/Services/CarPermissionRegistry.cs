@@ -23,7 +23,8 @@ public static class CarPermissionRegistry
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
-        [typeof(BackupRestoreViewModel)] = Backup
+        [typeof(BackupRestoreViewModel)] = Backup,
+        [typeof(SystemUpdateViewModel)] = ScreenPermissionRegistry.SystemUpdate
     };
 
     private static readonly Dictionary<string, Type> ScreenToDefaultViewModel = new()
@@ -35,7 +36,8 @@ public static class CarPermissionRegistry
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
-        [Backup] = typeof(BackupRestoreViewModel)
+        [Backup] = typeof(BackupRestoreViewModel),
+        [ScreenPermissionRegistry.SystemUpdate] = typeof(SystemUpdateViewModel)
     };
 
     private static readonly Dictionary<string, string> Labels = new()
@@ -47,7 +49,8 @@ public static class CarPermissionRegistry
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",
-        [Backup] = "النسخ الاحتياطي"
+        [Backup] = "النسخ الاحتياطي",
+        [ScreenPermissionRegistry.SystemUpdate] = "تحديث النظام"
     };
 
     public static string GetScreenName(Type viewModelType) =>

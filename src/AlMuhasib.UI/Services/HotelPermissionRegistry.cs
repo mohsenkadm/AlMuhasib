@@ -57,7 +57,8 @@ public static class HotelPermissionRegistry
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
         [typeof(BackupRestoreViewModel)] = Backup,
-        [typeof(CloudSyncSettingsViewModel)] = CloudSync
+        [typeof(CloudSyncSettingsViewModel)] = CloudSync,
+        [typeof(SystemUpdateViewModel)] = ScreenPermissionRegistry.SystemUpdate
     };
 
     private static readonly Dictionary<string, Type> ScreenToDefaultViewModel = new()
@@ -86,7 +87,8 @@ public static class HotelPermissionRegistry
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
         [Backup] = typeof(BackupRestoreViewModel),
-        [CloudSync] = typeof(CloudSyncSettingsViewModel)
+        [CloudSync] = typeof(CloudSyncSettingsViewModel),
+        [ScreenPermissionRegistry.SystemUpdate] = typeof(SystemUpdateViewModel)
     };
 
     private static readonly Dictionary<string, string> Labels = new()
@@ -115,7 +117,8 @@ public static class HotelPermissionRegistry
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",
         [Backup] = "النسخ الاحتياطي",
-        [CloudSync] = "المزامنة السحابية"
+        [CloudSync] = "المزامنة السحابية",
+        [ScreenPermissionRegistry.SystemUpdate] = "تحديث النظام"
     };
 
     public static string GetScreenName(Type viewModelType) =>

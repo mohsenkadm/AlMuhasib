@@ -56,6 +56,18 @@ public static class AppUpdateCoordinator
 
     public static async Task<bool> CheckAndApplyManuallyAsync(IServiceProvider services)
     {
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var options = configuration.GetSection(AppUpdateOptions.SectionName).Get<AppUpdateOptions>()
+                      ?? new AppUpdateOptions();
+
+        if (!options.Enabled)
+        {
+            BeautifulMessageDialog.ShowInfo(
+                "التحديث عبر الإنترنت غير مفعّل في إعدادات هذا الإصدار.",
+                "تحديث النظام");
+            return false;
+        }
+
         var updateService = services.GetRequiredService<IAppUpdateService>();
 
         if (!await updateService.IsOnlineAsync())

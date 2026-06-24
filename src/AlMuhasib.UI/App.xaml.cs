@@ -228,6 +228,7 @@ public partial class App : Application
         services.AddTransient<WarehouseTransferViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
         services.AddTransient<CloudSyncSettingsViewModel>();
+        services.AddTransient<SystemUpdateViewModel>();
         services.AddTransient<DeveloperSystemSwitchViewModel>();
         services.AddTransient<HelpVideosViewModel>();
 
