@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.10.0",
-    "releaseDate":  "2026-06-19",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.10.0/AlMuhasib-1.10.0.zip",
-    "sha256":  "044BAD6F232A680E804D871E0A2E12AE9190C1A246ABDA78750787CD56661C7C",
-    "sizeBytes":  79765481,
-    "releaseNotes":  "تحسينات التبويبات والأرصدة الافتتاحية، تقرير أرباح وتفاصيل الفواتير، تصحيح الموازنة اليومية، قاعدة بيانات بجانب التطبيق، معاينة طباعة بتكبير/تصغير، وإصلاح هجرات قاعدة البيانات عند التحديث",
+    "version":  "1.11.0",
+    "releaseDate":  "2026-06-24",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.11.0/AlMuhasib-1.11.0.zip",
+    "sha256":  "42BCE633F952B7E7F81BA29D1960A5E0075548B64D4ACB80B5D443D4CD71FEB6",
+    "sizeBytes":  79998763,
+    "releaseNotes":  "إصلاح تجميع إجمالي الفواتير والتقريب، قفل الجلسة عند الخمول، وإصلاح إعدادات الطباعة (التمرير وصورة الهيدر بعرض الورقة)",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }
