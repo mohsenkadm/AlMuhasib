@@ -195,8 +195,6 @@ public partial class InstallmentInvoiceViewModel
         if (Items.Count == 0)
             AddRow();
 
-        _isManualGrandTotal = true;
-        GrandTotal = invoice.NetAmount;
         RecalculateTotals();
         GenerateSchedulePreview();
         _draftService.ClearDraft(DraftKey);

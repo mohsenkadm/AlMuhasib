@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly IUserPreferencesService _preferences;
     private DispatcherTimer? _idleTimer;
     private DateTime _lastActivity = DateTime.Now;
+    private bool _isSessionLocked;
 
     public MainWindow(MainWindowViewModel viewModel, IUserPreferencesService preferences)
     {
@@ -33,10 +34,14 @@ public partial class MainWindow : Window
         Loaded += OnFirstLoaded;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         PreviewKeyDown += OnPreviewKeyDown;
-        PreviewMouseMove += (_, _) => _lastActivity = DateTime.Now;
+        PreviewMouseDown += (_, _) => TouchActivity();
+        PreviewMouseMove += (_, _) => TouchActivity();
+        PreviewMouseWheel += (_, _) => TouchActivity();
         StartIdleLockTimer();
         UpdateMaximizeIcon();
     }
+
+    private void TouchActivity() => _lastActivity = DateTime.Now;
 
     private void StartIdleLockTimer()
     {
@@ -44,19 +49,54 @@ public partial class MainWindow : Window
         _idleTimer.Tick += (_, _) =>
         {
             var minutes = _preferences.Current.IdleLockMinutes;
-            if (minutes <= 0) return;
+            if (minutes <= 0 || _isSessionLocked) return;
             if ((DateTime.Now - _lastActivity).TotalMinutes < minutes) return;
-            _lastActivity = DateTime.Now;
-            var login = ((App)Application.Current).Services.GetRequiredService<LoginWindow>();
-            login.Owner = this;
-            login.ShowDialog();
+            PromptIdleReLogin();
         };
         _idleTimer.Start();
     }
 
+    private void PromptIdleReLogin()
+    {
+        if (_isSessionLocked) return;
+        _isSessionLocked = true;
+        _idleTimer?.Stop();
+
+        var app = (App)Application.Current;
+        var currentUser = app.Services.GetRequiredService<CurrentUserService>();
+        currentUser.Clear();
+
+        IsEnabled = false;
+
+        while (true)
+        {
+            var login = app.Services.GetRequiredService<LoginWindow>();
+            login.IsSessionLockMode = true;
+            login.Owner = this;
+            login.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            var ok = login.ShowDialog() == true;
+            if (!ok)
+            {
+                Application.Current.Shutdown();
+                return;
+            }
+
+            var mainVm = app.Services.GetRequiredService<MainWindowViewModel>();
+            mainVm.LoggedInUsername = currentUser.Username;
+            _ = mainVm.ApplyPermissionsAsync();
+            TouchActivity();
+            break;
+        }
+
+        IsEnabled = true;
+        _isSessionLocked = false;
+        _idleTimer?.Start();
+    }
+
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        _lastActivity = DateTime.Now;
+        TouchActivity();
 
         if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
         {

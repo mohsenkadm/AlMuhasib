@@ -60,9 +60,21 @@ public partial class InvoiceItemRow : ObservableObject
 
     partial void OnTotalPriceChanged(decimal oldValue, decimal newValue)
     {
-        // If user manually edited the total (not from RecalcTotal), mark as manual
         if (!_isRecalculating)
-            _isManualTotal = true;
+        {
+            if (Quantity != 0)
+            {
+                _isRecalculating = true;
+                UnitPrice = newValue / Quantity;
+                _isRecalculating = false;
+                _isManualTotal = false;
+            }
+            else
+            {
+                _isManualTotal = true;
+            }
+        }
+
         TotalChanged?.Invoke();
     }
 

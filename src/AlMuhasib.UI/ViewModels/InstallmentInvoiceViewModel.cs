@@ -409,15 +409,15 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         ScheduleDraftSave();
     }
 
-    private bool _isManualGrandTotal;
     private bool _isRecalculating;
 
     partial void OnGrandTotalChanged(decimal value)
     {
         if (!_isRecalculating)
-            _isManualGrandTotal = true;
-        UpdateCompanyFee();
-        GenerateSchedulePreview();
+        {
+            UpdateCompanyFee();
+            GenerateSchedulePreview();
+        }
     }
 
     private void RecalculateTotals()
@@ -438,15 +438,18 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         Subtotal = sub;
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
-        RoundingAmount = _invoiceService.CalculateRounding(sub, InvoiceType.Installment);
 
-        if (!_isManualGrandTotal)
-        {
-            _isRecalculating = true;
-            GrandTotal = sub + RoundingAmount;
-            _isRecalculating = false;
-        }
+        var (_, rounding, grand) = InvoiceTotalsCalculator.Compute(
+            Items.Select(i => i.TotalPrice),
+            _invoiceService,
+            InvoiceType.Installment);
+
+        RoundingAmount = rounding;
+        _isRecalculating = true;
+        GrandTotal = grand;
+        _isRecalculating = false;
         UpdateCompanyFee();
+        GenerateSchedulePreview();
     }
 
     partial void OnSelectedInstallmentTypeChanged(InstallmentType value) => UpdateCompanyFee();
@@ -688,7 +691,6 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
         FileNumber = string.Empty;
-        _isManualGrandTotal = false;
         NumberOfInstallments = 6;
         InstallmentStartDate = DateTime.Now.AddMonths(1);
         InvoiceDate = DateTime.Now;

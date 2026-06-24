@@ -52,16 +52,15 @@
             </Grid>
         </Border>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.1*"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Settings column -->
-                <StackPanel x:Name="SettingsColumn" Grid.Column="0" Opacity="0">
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel x:Name="SettingsColumn" Opacity="0">
                     <StackPanel.RenderTransform>
                         <TranslateTransform X="-24"/>
                     </StackPanel.RenderTransform>
@@ -83,8 +82,9 @@
                     <materialDesign:Card Style="{StaticResource SettingsCard}">
                         <StackPanel>
                             <TextBlock Text="صورة الهيدر" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,10"/>
-                            <Border Background="#F5F7FA" CornerRadius="10" MinHeight="100" Margin="0,0,0,10">
-                                <Image Source="{Binding HeaderImagePreview}" Stretch="Uniform" MaxHeight="120" Margin="8"/>
+                            <Border Background="#F5F7FA" CornerRadius="10" MinHeight="100" Margin="0,0,0,10" ClipToBounds="True">
+                                <Image Source="{Binding HeaderImagePreview}" Stretch="UniformToFill"
+                                       Height="120" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Orientation="Horizontal">
                                 <Button Command="{Binding PickHeaderImageCommand}" Style="{StaticResource OutlinedButton}"
@@ -151,43 +151,43 @@
                         </StackPanel>
                     </materialDesign:Card>
                 </StackPanel>
+            </ScrollViewer>
 
-                <!-- Preview column -->
-                <materialDesign:Card x:Name="PreviewCard" Grid.Column="2" UniformCornerRadius="14" Padding="0"
-                                     materialDesign:ElevationAssist.Elevation="Dp4" Opacity="0">
-                    <materialDesign:Card.RenderTransform>
-                        <TranslateTransform X="24"/>
-                    </materialDesign:Card.RenderTransform>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Border Background="#ECEFF1" Padding="14,10" CornerRadius="14,14,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
-                                <TextBlock Text="معاينة الطباعة" FontWeight="SemiBold" Foreground="#37474F" VerticalAlignment="Center"/>
-                                <TextBlock Text="— مثال تقرير" FontSize="11" Foreground="#90A4AE" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
+            <!-- Preview column — خارج ScrollViewer الرئيسي لتجنب خطأ FlowDocument -->
+            <materialDesign:Card x:Name="PreviewCard" Grid.Column="2" UniformCornerRadius="14" Padding="0"
+                                 materialDesign:ElevationAssist.Elevation="Dp4" Opacity="0">
+                <materialDesign:Card.RenderTransform>
+                    <TranslateTransform X="24"/>
+                </materialDesign:Card.RenderTransform>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="#ECEFF1" Padding="14,10" CornerRadius="14,14,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
+                            <TextBlock Text="معاينة الطباعة" FontWeight="SemiBold" Foreground="#37474F" VerticalAlignment="Center"/>
+                            <TextBlock Text="— مثال تقرير" FontSize="11" Foreground="#90A4AE" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Background="#B0BEC5" Padding="16">
+                        <Border Background="White" CornerRadius="4" Padding="0" ClipToBounds="True"
+                                materialDesign:ElevationAssist.Elevation="Dp8" Width="420" HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.25"/>
+                            </Border.Effect>
+                            <FlowDocumentScrollViewer Document="{Binding PreviewDocument}"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      Background="White"
+                                                      MinHeight="480"
+                                                      MaxHeight="640"/>
                         </Border>
-                        <Border Grid.Row="1" Background="#B0BEC5" Padding="16">
-                            <Border Background="White" CornerRadius="4" Padding="0"
-                                    materialDesign:ElevationAssist.Elevation="Dp8" MaxWidth="420" HorizontalAlignment="Center">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.25"/>
-                                </Border.Effect>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="520">
-                                    <FlowDocumentScrollViewer Document="{Binding PreviewDocument}"
-                                                              VerticalScrollBarVisibility="Disabled"
-                                                              HorizontalScrollBarVisibility="Disabled"
-                                                              Background="White"/>
-                                </ScrollViewer>
-                            </Border>
-                        </Border>
-                    </Grid>
-                </materialDesign:Card>
-            </Grid>
-        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
 
         <Border Grid.Row="2" Margin="0,12,0,0" Padding="16,12" Background="White" CornerRadius="12"
                 BorderBrush="#E0E7EF" BorderThickness="1">

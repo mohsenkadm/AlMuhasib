@@ -365,14 +365,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         ScheduleDraftSave();
     }
 
-    private bool _isManualGrandTotal;
     private bool _isRecalculating;
-
-    partial void OnGrandTotalChanged(decimal value)
-    {
-        if (!_isRecalculating)
-            _isManualGrandTotal = true;
-    }
 
     private void RecalculateTotals()
     {
@@ -392,14 +385,16 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         Subtotal = sub;
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
-        RoundingAmount = _invoiceService.CalculateRounding(sub, InvoiceType.Purchase);
 
-        if (!_isManualGrandTotal)
-        {
-            _isRecalculating = true;
-            GrandTotal = sub + RoundingAmount;
-            _isRecalculating = false;
-        }
+        var (_, rounding, grand) = InvoiceTotalsCalculator.Compute(
+            Items.Select(i => i.TotalPrice),
+            _invoiceService,
+            InvoiceType.Purchase);
+
+        RoundingAmount = rounding;
+        _isRecalculating = true;
+        GrandTotal = grand;
+        _isRecalculating = false;
     }
 
     // ── Save ───────────────────────────────────────────────
@@ -558,7 +553,6 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         SupplierSearchText = string.Empty;
         SelectedSupplier = null;
         InvoiceDate = DateTime.Now;
-        _isManualGrandTotal = false;
 
         foreach (var item in Items.ToList())
             UnwireItemRow(item);

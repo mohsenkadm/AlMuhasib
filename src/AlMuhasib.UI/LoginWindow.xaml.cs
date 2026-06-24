@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,6 +10,9 @@ namespace AlMuhasib.UI;
 public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _viewModel;
+
+    /// <summary>When true, the user must authenticate or the application exits.</summary>
+    public bool IsSessionLockMode { get; set; }
 
     public LoginWindow(LoginViewModel viewModel)
     {
@@ -24,6 +28,9 @@ public partial class LoginWindow : Window
     private async void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnWindowLoaded;
+        CloseButton.Visibility = IsSessionLockMode ? Visibility.Collapsed : Visibility.Visible;
+        if (IsSessionLockMode)
+            Title = "انتهت الجلسة — تسجيل الدخول";
         await _viewModel.LoadAdminsAsync();
     }
 
@@ -156,8 +163,24 @@ public partial class LoginWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
+        if (IsSessionLockMode)
+        {
+            Application.Current.Shutdown();
+            return;
+        }
+
         DialogResult = false;
         Close();
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (IsSessionLockMode && DialogResult != true)
+        {
+            Application.Current.Shutdown();
+        }
+
+        base.OnClosing(e);
     }
 
     protected override void OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)

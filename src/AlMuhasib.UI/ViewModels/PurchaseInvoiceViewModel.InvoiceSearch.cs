@@ -186,8 +186,6 @@ public partial class PurchaseInvoiceViewModel
         if (Items.Count == 0)
             AddRow();
 
-        _isManualGrandTotal = true;
-        GrandTotal = invoice.NetAmount;
         RecalculateTotals();
         _draftService.ClearDraft(DraftKey);
     }

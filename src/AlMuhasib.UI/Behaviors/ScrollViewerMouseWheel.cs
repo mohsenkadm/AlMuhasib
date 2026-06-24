@@ -38,7 +38,7 @@ public static class ScrollViewerMouseWheel
     /// </summary>
     private static void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        for (var dep = e.OriginalSource as DependencyObject; dep != null; dep = VisualTreeHelper.GetParent(dep))
+        for (var dep = e.OriginalSource as DependencyObject; dep != null; dep = GetParent(dep))
         {
             if (dep is not ScrollViewer scrollViewer)
                 continue;
@@ -50,6 +50,17 @@ public static class ScrollViewerMouseWheel
             return;
         }
     }
+
+    /// <summary>
+    /// FlowDocument and other content elements are not Visuals — VisualTreeHelper.GetParent throws on them.
+    /// </summary>
+    private static DependencyObject? GetParent(DependencyObject current) => current switch
+    {
+        Visual => VisualTreeHelper.GetParent(current),
+        System.Windows.Media.Media3D.Visual3D => VisualTreeHelper.GetParent(current),
+        FrameworkContentElement fce => fce.Parent,
+        _ => null
+    };
 
     private static bool TryScroll(ScrollViewer scrollViewer, int delta)
     {

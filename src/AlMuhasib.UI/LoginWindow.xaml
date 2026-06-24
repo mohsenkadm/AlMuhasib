@@ -310,7 +310,7 @@
 
                     <!-- ═══ Login content ═══ -->
                     <Grid Grid.Column="1" Background="#FAFBFD">
-                        <Button HorizontalAlignment="Left" VerticalAlignment="Top"
+                        <Button x:Name="CloseButton" HorizontalAlignment="Left" VerticalAlignment="Top"
                                 Margin="16,16,0,0" Style="{StaticResource IconButton}"
                                 Foreground="#78909C" Width="36" Height="36"
                                 Click="CloseButton_Click" ToolTip="إغلاق">
