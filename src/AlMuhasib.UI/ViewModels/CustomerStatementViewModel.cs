@@ -3,9 +3,10 @@ using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -16,9 +17,13 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalCredit = "0";
     [ObservableProperty] private string _balance = "0";
     [ObservableProperty] private string _transactionCount = "0";
+    [ObservableProperty] private string _periodLabel = "جميع الفترات";
 
-    [ObservableProperty] private int? _selectedCustomerId;
+    [ObservableProperty] private Customer? _selectedCustomer;
+    [ObservableProperty] private string _customerSearchText = string.Empty;
+
     public ObservableCollection<Customer> Customers { get; } = [];
+    public ObservableCollection<Customer> FilteredCustomers { get; } = [];
 
     private List<CustomerStatementRow> _allRows = [];
     public ObservableCollection<CustomerStatementRow> Rows { get; } = [];
@@ -26,28 +31,65 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
     public CustomerStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "كشف حساب عميل"; }
+    {
+        PageTitle = "كشف حساب عميل";
+        DateFrom = null;
+        DateTo = null;
+    }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
-        foreach (var c in await _unitOfWork.Customers.GetAllAsync()) Customers.Add(c);
+        Customers.Clear();
+        FilteredCustomers.Clear();
+        foreach (var c in (await _unitOfWork.Customers.GetAllAsync()).OrderBy(c => c.Name))
+        {
+            Customers.Add(c);
+            FilteredCustomers.Add(c);
+        }
+    }
+
+    partial void OnSelectedCustomerChanged(Customer? value)
+    {
+        if (value is not null)
+            CustomerSearchText = value.Name;
+    }
+
+    partial void OnCustomerSearchTextChanged(string value)
+    {
+        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+            return;
+
+        SelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
     }
 
     [RelayCommand]
     private async Task LoadDataAsync()
     {
-        if (_selectedCustomerId is null) { BeautifulMessageDialog.ShowWarning("يرجى اختيار عميل"); return; }
+        if (SelectedCustomer is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار عميل من القائمة");
+            return;
+        }
+
+        if (DateFrom.HasValue && DateTo.HasValue && DateFrom.Value.Date > DateTo.Value.Date)
+        {
+            BeautifulMessageDialog.ShowWarning("تاريخ البداية يجب أن يكون قبل تاريخ النهاية");
+            return;
+        }
+
         try
         {
             IsBusy = true;
-            var result = await _reportService.GetCustomerStatementAsync(_selectedCustomerId.Value, DateFrom, DateTo);
+            var result = await _reportService.GetCustomerStatementAsync(SelectedCustomer.Id, DateFrom, DateTo);
 
             CustomerName = result.CustomerName;
             TotalDebit = FormatCurrency(result.TotalDebit);
             TotalCredit = FormatCurrency(result.TotalCredit);
             Balance = FormatCurrency(result.Balance);
             TransactionCount = result.TransactionCount.ToString("N0");
+            PeriodLabel = BuildPeriodLabel();
 
             _allRows = result.Rows;
             CurrentPage = 1;
@@ -73,8 +115,34 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
+        if (_allRows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("لا توجد بيانات للطباعة");
+            return;
+        }
+
         var cols = new[] { "التاريخ", "البيان", "مدين", "دائن", "الرصيد" };
-        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance }).ToList();
-        _exportService.PrintTable($"كشف حساب {CustomerName}", cols, rows);
+        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit.ToString("N0"), r.Credit.ToString("N0"), r.RunningBalance.ToString("N0") }).ToList();
+        var title = $"كشف حساب {CustomerName} — {PeriodLabel}";
+        var summary = new List<string>
+        {
+            $"الفترة: {PeriodLabel}",
+            $"عدد الحركات: {TransactionCount}",
+            $"إجمالي المدين: {TotalDebit}",
+            $"إجمالي الدائن: {TotalCredit}",
+            $"الرصيد: {Balance}"
+        };
+        _exportService.PrintTable(title, cols, rows, summary);
+    }
+
+    private string BuildPeriodLabel()
+    {
+        if (!DateFrom.HasValue && !DateTo.HasValue)
+            return "جميع الفترات";
+        if (DateFrom.HasValue && DateTo.HasValue)
+            return $"{DateFrom:yyyy/MM/dd} — {DateTo:yyyy/MM/dd}";
+        if (DateFrom.HasValue)
+            return $"من {DateFrom:yyyy/MM/dd}";
+        return $"حتى {DateTo:yyyy/MM/dd}";
     }
 }

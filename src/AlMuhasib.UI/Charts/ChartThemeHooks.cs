@@ -50,6 +50,7 @@ public static class ChartThemeHooks
             case CartesianChart cart:
                 cart.TooltipBackgroundPaint = ChartThemeConfig.TooltipBackgroundPaint;
                 cart.TooltipTextPaint = ChartThemeConfig.TooltipTextPaint;
+                cart.LegendTextPaint = ChartThemeConfig.LegendTextPaint;
                 break;
             case PieChart pie:
                 pie.TooltipBackgroundPaint = ChartThemeConfig.TooltipBackgroundPaint;

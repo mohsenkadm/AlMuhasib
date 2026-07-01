@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
 using System.Windows;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -31,12 +33,24 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private int _dailyTaskCount;
 
+    [ObservableProperty]
+    private int _smartAlertCount;
+
     // ── Snackbar ───────────────────────────────────────────
     public SnackbarMessageQueue SnackbarQueue { get; } = new(TimeSpan.FromSeconds(3));
 
     // ── Loading state ──────────────────────────────────────
     [ObservableProperty]
     private bool _isLoaded;
+
+    [ObservableProperty]
+    private string _welcomeGreeting = string.Empty;
+
+    [ObservableProperty]
+    private string _userDisplayName = string.Empty;
+
+    [ObservableProperty]
+    private string _displayDate = string.Empty;
 
     // ── Summary cards ──────────────────────────────────────
     [ObservableProperty]
@@ -59,6 +73,9 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _customerCreditBalance;
+
+    [ObservableProperty]
+    private decimal _totalCashBalance;
 
     // ── Charts ─────────────────────────────────────────────
     [ObservableProperty]
@@ -99,7 +116,32 @@ public partial class DashboardViewModel : ViewModelBase
         IsBusy = true;
         IsLoaded = false;
         ApplyDashboardProfile();
+        RefreshWelcomeHeader();
         ThemeChartRefresh.Register(RefreshChartsOnlyAsync);
+    }
+
+    private void RefreshWelcomeHeader()
+    {
+        var hour = DateTime.Now.Hour;
+        WelcomeGreeting = hour switch
+        {
+            >= 5 and < 12 => "صباح الخير",
+            >= 12 and < 17 => "مساءً طيباً",
+            _ => "مساء الخير"
+        };
+
+        UserDisplayName = string.IsNullOrWhiteSpace(_currentUserService.Username)
+            ? "مستخدم"
+            : _currentUserService.Username;
+
+        try
+        {
+            DisplayDate = DateTime.Now.ToString("dddd، d MMMM yyyy", new CultureInfo("ar-IQ"));
+        }
+        catch
+        {
+            DisplayDate = DateTime.Now.ToString("yyyy/MM/dd", CultureInfo.InvariantCulture);
+        }
     }
 
     [RelayCommand]
@@ -173,6 +215,7 @@ public partial class DashboardViewModel : ViewModelBase
                 // Bottom
                 CashBoxes.Clear();
                 foreach (var c in data.CashBoxes) CashBoxes.Add(c);
+                TotalCashBalance = data.CashBoxes.Sum(c => c.Balance);
                 BankBalance = data.BankBalance;
                 TotalInventoryValue = data.TotalInventoryValue;
 
@@ -184,6 +227,7 @@ public partial class DashboardViewModel : ViewModelBase
                 foreach (var t in alertSummary.DailyTasks)
                     DailyTasks.Add(t);
                 DailyTaskCount = alertSummary.TotalTaskCount;
+                SmartAlertCount = alertSummary.Alerts.Count;
 
                 IsLoaded = true;
                 _initialized = true;

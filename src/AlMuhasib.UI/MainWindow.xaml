@@ -13,11 +13,13 @@
         xmlns:hotelViews="clr-namespace:AlMuhasib.UI.Views.Hotel"
         xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+        xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
         xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
         mc:Ignorable="d"
         behaviors:ScrollViewerMouseWheel.IsEnabled="True"
         d:DataContext="{d:DesignInstance vm:MainWindowViewModel, IsDesignTimeCreatable=False}"
-        Title="المحاسب - AlMuhasib"
+        Icon="pack://application:,,,/Assets/Brand/qayd-icon.ico"
+        Title="قيد - Qayd"
         Height="768" Width="1366"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
@@ -383,33 +385,23 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12"
-                                VerticalAlignment="Center">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#1565C0" Offset="0"/>
-                                    <GradientStop Color="#1E88E5" Offset="0.55"/>
-                                    <GradientStop Color="#42A5F5" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.Effect>
-                                <DropShadowEffect Color="#1565C0" BlurRadius="14" ShadowDepth="0" Opacity="0.35"/>
-                            </Border.Effect>
-                            <materialDesign:PackIcon Kind="CalculatorVariant"
-                                                     Width="26" Height="26"
-                                                     Foreground="White"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"/>
+                                VerticalAlignment="Center"
+                                Background="Transparent">
+                            <Image Source="pack://application:,,,/Assets/Brand/qayd-mark.png"
+                                   Width="44" Height="44"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
                         </Border>
 
                         <StackPanel Grid.Column="1"
                                     Margin="12,0,0,0"
                                     VerticalAlignment="Center"
                                     Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="المحاسب"
+                            <TextBlock Text="قيد"
                                        FontSize="20"
                                        FontWeight="Bold"
                                        Foreground="White" />
-                            <TextBlock Text="نظام المحاسبة المتكامل"
+                            <TextBlock Text="{x:Static helpers:AppInfo.TaglineAr}"
                                        FontSize="10.5"
                                        Foreground="#90A4AE"
                                        Margin="0,3,0,0" />
@@ -989,6 +981,32 @@
                                 <TextBlock Text="المساعد" Margin="6,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
+                        <Button Command="{Binding ToggleVoiceAssistantCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="المساعد الصوتي (Ctrl+Space)">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="18" Height="18" VerticalAlignment="Center">
+                                    <Ellipse Width="18" Height="18">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush GradientOrigin="0.3,0.25" Center="0.38,0.34">
+                                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                                <GradientStop Color="#67E8F9" Offset="0.35"/>
+                                                <GradientStop Color="#C084FC" Offset="0.72"/>
+                                                <GradientStop Color="#6366F1" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="#818CF8" BlurRadius="6" ShadowDepth="0" Opacity="0.65"/>
+                                        </Ellipse.Effect>
+                                    </Ellipse>
+                                    <Ellipse Width="6" Height="6" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                             Fill="#F8FAFC" Opacity="0.95"/>
+                                </Grid>
+                                <TextBlock Text="صوتي Ctrl+Space" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                         <Button Command="{Binding OpenGlobalSearchCommand}"
                                 Style="{StaticResource OutlinedButton}"
                                 Height="34" Padding="12,0" Margin="0,0,6,0"
@@ -1234,6 +1252,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:StockHealthReportViewModel}">
                             <views:StockHealthReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InventoryReplenishmentReportViewModel}">
+                            <views:InventoryReplenishmentReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InstallmentsReportViewModel}">
                             <views:InstallmentsReportView />
@@ -1960,6 +1981,12 @@
                                       Grid.RowSpan="2"
                                       Panel.ZIndex="2000"
                                       Visibility="{Binding IsGlobalSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <controls:VoiceAssistantOverlay x:Name="VoiceAssistantOverlay"
+                                        Grid.RowSpan="2"
+                                        Panel.ZIndex="2300"
+                                        DataContext="{Binding}"
+                                        Visibility="{Binding IsVoiceAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <controls:CustomerQuickStatementOverlay x:Name="QuickStatementOverlay"
                                                 Grid.RowSpan="2"

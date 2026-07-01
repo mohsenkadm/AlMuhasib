@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 
 namespace AlMuhasib.Infrastructure;
@@ -7,8 +8,14 @@ namespace AlMuhasib.Infrastructure;
 /// </summary>
 public static class LocalDatabasePathResolver
 {
+    private static string? _configuredDataDirectory;
+
     public static string EnsureDataDirectory()
     {
+        var configured = TryGetConfiguredDataDirectory();
+        if (!string.IsNullOrWhiteSpace(configured) && TryCreateDirectory(configured))
+            return configured;
+
         var appDataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
         if (TryCreateDirectory(appDataDir))
             return appDataDir;
@@ -67,6 +74,39 @@ public static class LocalDatabasePathResolver
         {
             return false;
         }
+    }
+
+    private static string? TryGetConfiguredDataDirectory()
+    {
+        if (_configuredDataDirectory is not null)
+            return string.IsNullOrWhiteSpace(_configuredDataDirectory) ? null : _configuredDataDirectory;
+
+        try
+        {
+            var settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            if (!File.Exists(settingsPath))
+            {
+                _configuredDataDirectory = string.Empty;
+                return null;
+            }
+
+            using var stream = File.OpenRead(settingsPath);
+            using var document = JsonDocument.Parse(stream);
+            if (document.RootElement.TryGetProperty("Installation", out var installation)
+                && installation.TryGetProperty("DataDirectory", out var dataDirectory))
+            {
+                var value = dataDirectory.GetString()?.Trim();
+                _configuredDataDirectory = string.IsNullOrWhiteSpace(value) ? string.Empty : value;
+                return string.IsNullOrWhiteSpace(value) ? null : value;
+            }
+        }
+        catch
+        {
+            // Fall back to default resolution paths.
+        }
+
+        _configuredDataDirectory = string.Empty;
+        return null;
     }
 
     private static bool TryCreateDirectory(string path)

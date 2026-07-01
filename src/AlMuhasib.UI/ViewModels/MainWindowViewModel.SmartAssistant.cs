@@ -37,6 +37,7 @@ public partial class MainWindowViewModel
     [RelayCommand]
     private async Task ToggleSmartAssistantAsync()
     {
+        IsVoiceAssistantOpen = false;
         IsMenuCustomizerOpen = false;
         IsQuickAssistOpen = false;
         IsTasksPanelOpen = false;

@@ -40,6 +40,7 @@ public static class ReportMenuCatalog
             ("حركة المنتجات", PackIconKind.SwapVertical, typeof(ProductMovementReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير المخازن", PackIconKind.Warehouse, typeof(WarehouseReportViewModel), ScreenPermissionRegistry.Reports),
             ("صحة المخزون", PackIconKind.PackageVariant, typeof(StockHealthReportViewModel), ScreenPermissionRegistry.Reports),
+            ("احتياج المخزون", PackIconKind.PackageVariantClosed, typeof(InventoryReplenishmentReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير المصاريف", PackIconKind.CashMinus, typeof(ExpensesReportViewModel), ScreenPermissionRegistry.Reports),
             ("الواردات والمصروفات", PackIconKind.SwapHorizontal, typeof(IncomeExpenseReportViewModel), ScreenPermissionRegistry.Reports),
             ("التدفق النقدي", PackIconKind.ChartTimelineVariantShimmer, typeof(CashFlowReportViewModel), ScreenPermissionRegistry.Reports),

@@ -98,6 +98,20 @@ public partial class MainWindow : Window
     {
         TouchActivity();
 
+        if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            _ = _viewModel.ToggleVoiceAssistantCommand.ExecuteAsync(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && _viewModel.IsVoiceAssistantOpen)
+        {
+            _viewModel.CloseVoiceAssistantCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
         {
             _viewModel.OpenGlobalSearchCommand.Execute(null);

@@ -44,6 +44,7 @@ public sealed class ReportFilterRequest
     public decimal? LowStockThreshold { get; set; }
     public int? DeadStockDays { get; set; }
     public string? StockHealthFilter { get; set; }
+    public string? InventoryReplenishmentFilter { get; set; }
     public DateTime? AsOfDate { get; set; }
     public int? MinDaysOverdue { get; set; }
 }

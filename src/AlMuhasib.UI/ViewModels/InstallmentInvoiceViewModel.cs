@@ -6,6 +6,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
@@ -243,19 +244,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             return;
 
         SelectedCustomer = null;
-
-        FilteredCustomers.Clear();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            foreach (var c in Customers)
-                FilteredCustomers.Add(c);
-        }
-        else
-        {
-            var term = value.Trim();
-            foreach (var c in Customers.Where(c => c.Name.Contains(term, StringComparison.OrdinalIgnoreCase)))
-                FilteredCustomers.Add(c);
-        }
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
     }
 
     // ── Schedule regeneration triggers ─────────────────────
@@ -608,7 +597,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 "يمكنك الطباعة أو الإرسال عبر واتساب.";
             BeautifulMessageDialog.ShowSuccess(successMsg);
 
-            PrintInvoice();
+            await PrintInvoiceAsync();
         }
         catch (Exception ex)
         {
@@ -622,9 +611,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
     // ── Print ──────────────────────────────────────────────
     [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
-    private void PrintInvoice()
+    private async Task PrintInvoiceAsync()
     {
         if (_savedInvoice is null) return;
+
+        if (_savedPlan?.Id > 0)
+        {
+            var installments = await _installmentService.GetInstallmentsByPlanIdAsync(_savedPlan.Id);
+            _savedPlan.Installments = installments.ToList();
+        }
+
         _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
     }
 
@@ -668,12 +664,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice
             }).ToList(),
-            Schedule = SchedulePreview.Select(s => new InstallmentPrintRow
-            {
-                Number = s.Number,
-                DueDate = s.DueDate,
-                Amount = s.Amount
-            }).ToList()
+            Schedule = _savedPlan?.Installments?.Count > 0
+                ? InstallmentPrintHelpers.ToPrintRows(_savedPlan.Installments)
+                : SchedulePreview.Select(s => new InstallmentPrintRow
+                {
+                    Number = s.Number,
+                    DueDate = s.DueDate,
+                    Amount = s.Amount,
+                    RemainingAmount = s.Amount,
+                    StatusText = "معلق"
+                }).ToList()
         };
     }
 

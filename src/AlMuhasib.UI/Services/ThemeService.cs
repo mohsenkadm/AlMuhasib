@@ -91,10 +91,12 @@ public sealed class ThemeService
 
         ApplyTableActionBrushes(res, isDark);
         ApplyPanelChromeBrushes(res, isDark);
+        ApplyDashboardBrushes(res, isDark);
 
         SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
         SetBrush(res, "HighlightLightBrush", isDark ? "#2A2540" : "#EDE7F6");
         SetBrush(res, "HighlightBorderBrush", isDark ? "#5E35B1" : "#D1C4E9");
+        SetBrush(res, "HighlightBrush", isDark ? "#B39DDB" : "#7E57C2");
 
         res["NormalFontSize"] = 14.0 * fontScale;
         res["SmallFontSize"] = 12.0 * fontScale;
@@ -201,5 +203,113 @@ public sealed class ThemeService
         SetBrush(res, "PanelCloseHoverBorderBrush", isDark ? "#EF5350" : "#EF9A9A");
         SetBrush(res, "PanelCloseHoverForegroundBrush", "#C62828");
         SetBrush(res, "PanelClosePressedBackgroundBrush", isDark ? "#4D2A30" : "#FFCDD2");
+    }
+
+    private static void ApplyDashboardBrushes(ResourceDictionary res, bool isDark)
+    {
+        res["DashboardAmbientBrush"] = CreateDashboardAmbientBrush(isDark);
+        res["DashboardHeroBrush"] = CreateDashboardHeroBrush(isDark);
+        res["DashboardGlassChipBrush"] = CreateDashboardGlassChipBrush(isDark);
+
+        SetBrush(res, "DashboardTasksPanelBrush", isDark ? "#1A2438" : "#F8FAFC");
+        SetBrush(res, "DashboardTasksPanelBorderBrush", isDark ? "#2D3A52" : "#E2E8F0");
+        SetBrush(res, "DashboardAlertsPanelBrush", isDark ? "#2A2218" : "#FFFBF0");
+        SetBrush(res, "DashboardAlertsPanelBorderBrush", isDark ? "#4A3A22" : "#FFE0B2");
+        SetBrush(res, "DashboardItemBrush", isDark ? "#232B3A" : "#FFFFFF");
+        SetBrush(res, "DashboardItemBorderBrush", isDark ? "#354155" : "#E2E8F0");
+        SetBrush(res, "DashboardItemHoverBrush", isDark ? "#2A3548" : "#F1F5F9");
+        SetBrush(res, "DashboardChartWellBrush", isDark ? "#171D28" : "#F8FAFC");
+        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? "#2D3544" : "#EEF2F7");
+        SetBrush(res, "DashboardSuccessPanelBrush", isDark ? "#1A2E22" : "#E8F5E9");
+        SetBrush(res, "DashboardSuccessPanelBorderBrush", isDark ? "#2E4D38" : "#C8E6C9");
+        SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "DashboardQuickActionBrush", isDark ? "#F0FFFFFF" : "#F5FFFFFF");
+        SetBrush(res, "DashboardAlertTitleBrush", isDark ? "#FFB74D" : "#E65100");
+        SetBrush(res, "DashboardAlertBodyBrush", isDark ? "#BCAAA4" : "#6D4C41");
+        SetBrush(res, "DashboardAlertItemBorderBrush", isDark ? "#5D4037" : "#FFE082");
+
+        SetBrush(res, "DashboardKpiGreenBrush", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "DashboardKpiGreenLightBrush", isDark ? "#1B3324" : "#E8F5E9");
+        SetBrush(res, "DashboardKpiOrangeBrush", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "DashboardKpiOrangeLightBrush", isDark ? "#3D2A14" : "#FFF3E0");
+        SetBrush(res, "DashboardKpiBlueBrush", isDark ? "#64B5F6" : "#1565C0");
+        SetBrush(res, "DashboardKpiBlueLightBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+        SetBrush(res, "DashboardKpiRedBrush", isDark ? "#EF5350" : "#C62828");
+        SetBrush(res, "DashboardKpiRedLightBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "DashboardKpiIndigoBrush", isDark ? "#9FA8DA" : "#283593");
+        SetBrush(res, "DashboardKpiIndigoLightBrush", isDark ? "#252A45" : "#E8EAF6");
+        SetBrush(res, "DashboardKpiPinkBrush", isDark ? "#F48FB1" : "#AD1457");
+        SetBrush(res, "DashboardKpiPinkLightBrush", isDark ? "#3D2230" : "#FCE4EC");
+        SetBrush(res, "DashboardKpiTealBrush", isDark ? "#4DB6AC" : "#00695C");
+        SetBrush(res, "DashboardKpiTealLightBrush", isDark ? "#1A3330" : "#E0F2F1");
+
+        SetBrush(res, "DashboardPriorityHighBrush", isDark ? "#EF5350" : "#C62828");
+        SetBrush(res, "DashboardPriorityHighLightBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "DashboardPriorityMediumBrush", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "DashboardPriorityMediumLightBrush", isDark ? "#3D2A14" : "#FFF3E0");
+        SetBrush(res, "DashboardPriorityLowBrush", isDark ? "#64B5F6" : "#1565C0");
+        SetBrush(res, "DashboardPriorityLowLightBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+
+        SetBrush(res, "DashboardIconBadgeBlueBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+        SetBrush(res, "DashboardIconBadgeRedBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "DashboardIconBadgeCyanBrush", isDark ? "#1A3338" : "#E0F7FA");
+        SetBrush(res, "DashboardIconBadgeAccentBrush", isDark ? "#1A3338" : "#E0F7FA");
+    }
+
+    private static LinearGradientBrush CreateDashboardAmbientBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#12151C")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#151B26")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#121820")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#EEF2F9")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E6ECF6")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F3F6FB")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateDashboardHeroBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A2540")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#123A5C")!, 0.45));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A4A72")!, 0.82));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1F5C5A")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A3D7A")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1565C0")!, 0.45));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1E88E5")!, 0.82));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#26A69A")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateDashboardGlassChipBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#33FFFFFF")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#18FFFFFF")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#40FFFFFF")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#24FFFFFF")!, 1));
+        }
+
+        return brush;
     }
 }

@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.12.0",
-    "releaseDate":  "2026-06-24",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.12.0/AlMuhasib-1.12.0.zip",
-    "sha256":  "3BEEC7251BF7FB6BD725FC1BD1EB7CD20ADD952012B305255EF95A51AACB22AF",
-    "sizeBytes":  80008216,
-    "releaseNotes":  "فحص التحديث اليدوي من القائمة وشريط الأدوات، وإصلاح صورة الهيدر بعرض الورقة كاملاً في طباعة العقود والفواتير والتقارير",
+    "version":  "1.13.0",
+    "releaseDate":  "2026-06-17",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.13.0/AlMuhasib-1.13.0.zip",
+    "sha256":  "",
+    "sizeBytes":  0,
+    "releaseNotes":  "المساعد الصوتي قيد، إعادة تصميم لوحة التحكم، تقرير تعبئة المخزون، مثبّت Windows (Inno Setup)، تحسينات طباعة الأقساط والتصدير، وتحديث الهوية البصرية",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

@@ -641,9 +641,23 @@ public class ExcelExportService : IExportService
         schedTable.RowGroups.Add(schedHeader);
 
         var schedData = new TableRowGroup();
+        decimal totalPaid = 0;
+        decimal totalRemaining = 0;
+        int paidCount = 0;
         foreach (var s in m.Schedule!)
         {
-            var remaining = s.Amount;
+            totalPaid += s.PaidAmount;
+            totalRemaining += s.RemainingAmount;
+            if (s.StatusText is "مسدد" or "مسدد جزئياً" && s.PaidAmount > 0)
+                paidCount++;
+
+            var rowBg = s.StatusText switch
+            {
+                "مسدد" => new SolidColorBrush(Color.FromRgb(0xE8, 0xF5, 0xE9)),
+                "متأخر" => new SolidColorBrush(Color.FromRgb(0xFF, 0xEB, 0xEE)),
+                _ => null
+            };
+
             var values = new[]
             {
                 s.Number.ToString(),
@@ -651,14 +665,17 @@ public class ExcelExportService : IExportService
                 s.Amount.ToString("N0"),
                 "0",
                 "0",
-                "0",
-                remaining.ToString("N0"),
-                "",
-                "معلق",
-                ""
+                s.PaidAmount.ToString("N0"),
+                s.RemainingAmount.ToString("N0"),
+                s.PaymentDate?.ToString("yyyy/MM/dd") ?? "",
+                s.StatusText,
+                s.DelayDays?.ToString() ?? ""
             };
 
             var row = new TableRow();
+            if (rowBg is not null)
+                row.Background = rowBg;
+
             foreach (var val in values)
             {
                 row.Cells.Add(new TableCell(new Paragraph(new Run(val))
@@ -676,6 +693,24 @@ public class ExcelExportService : IExportService
         }
         schedTable.RowGroups.Add(schedData);
         doc.Blocks.Add(schedTable);
+
+        // Summary stats under schedule
+        var paidPct = m.GrandTotal > 0 ? totalPaid * 100m / m.GrandTotal : 0;
+        doc.Blocks.Add(new Paragraph
+        {
+            Margin = new Thickness(0, 6, 0, 4),
+            FontSize = 9.5,
+            Inlines =
+            {
+                new Run($"إجمالي المسدد: {totalPaid:N0} د.ع") { FontWeight = FontWeights.SemiBold },
+                new Run("    |    "),
+                new Run($"إجمالي المتبقي: {totalRemaining:N0} د.ع") { FontWeight = FontWeights.SemiBold },
+                new Run("    |    "),
+                new Run($"أقساط مسددة: {paidCount} من {m.Schedule.Count}") { FontWeight = FontWeights.SemiBold },
+                new Run("    |    "),
+                new Run($"نسبة التحصيل: {paidPct:N1}%")
+            }
+        });
 
         // Items title
         doc.Blocks.Add(new Paragraph(new Run("تفاصيل القائمة"))
@@ -750,7 +785,7 @@ public class ExcelExportService : IExportService
         totalsGroup.Rows.Add(totalsHeader);
 
         var totalsRow = new TableRow();
-        foreach (var val in new[] { m.GrandTotal.ToString("N0"), "0", "0", m.GrandTotal.ToString("N0"), "دينار", "" })
+        foreach (var val in new[] { totalRemaining.ToString("N0"), totalPaid.ToString("N0"), "0", m.GrandTotal.ToString("N0"), "دينار", "" })
         {
             totalsRow.Cells.Add(new TableCell(new Paragraph(new Run(val))
             {
@@ -832,5 +867,26 @@ public class ExcelExportService : IExportService
         var rows = model.Schedule.Select(s => new object[] { s.Number, s.DueDate.ToString("yyyy/MM/dd"), s.Amount }).ToList();
         PrintTable($"جدول أقساط — {model.PartyName}", cols, rows,
             [$"فاتورة: {model.InvoiceNumber}", $"عدد الأقساط: {model.NumberOfInstallments}"]);
+    }
+
+    public void PrintInstallmentPlanDetail(InstallmentPlanDetailPrintModel model)
+    {
+        var doc = InstallmentPrintDocumentBuilder.BuildPlanDetailDocument(model);
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+        InstallmentPrintDocumentBuilder.PrintDocument(doc, "كشف الأقساط التفصيلي");
+    }
+
+    public void PrintInstallmentMultiPlanDetail(IReadOnlyList<InstallmentPlanDetailPrintModel> plans, string title)
+    {
+        var doc = InstallmentPrintDocumentBuilder.BuildMultiPlanDocument(plans, title);
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+        InstallmentPrintDocumentBuilder.PrintDocument(doc, title);
+    }
+
+    public void PrintInstallmentPlansSummary(InstallmentPlansSummaryPrintModel model)
+    {
+        var doc = InstallmentPrintDocumentBuilder.BuildPlansSummaryDocument(model);
+        PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
+        InstallmentPrintDocumentBuilder.PrintDocument(doc, model.Title);
     }
 }

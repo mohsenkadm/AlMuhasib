@@ -5,8 +5,8 @@ namespace AlMuhasib.UI.Helpers;
 /// <summary>Application display name and version.</summary>
 public static class AppInfo
 {
-    public const string AppNameAr = "نظام المحاسب";
-    public const string AppNameEn = "AlMuhasib";
+    public const string AppNameAr = "قيد";
+    public const string AppNameEn = "Qayd";
     public const string TaglineAr = "حلول محاسبة وتجارة متكاملة";
 
     public static string Version

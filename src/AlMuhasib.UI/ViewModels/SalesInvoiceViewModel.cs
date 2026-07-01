@@ -395,25 +395,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     partial void OnCustomerSearchTextChanged(string value)
     {
-        // If the text matches the selected customer, don't clear selection
         if (SelectedCustomer is not null && SelectedCustomer.Name == value)
             return;
 
-        // Text changed by user typing → clear selection and filter
         SelectedCustomer = null;
-
-        FilteredCustomers.Clear();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            foreach (var c in Customers)
-                FilteredCustomers.Add(c);
-        }
-        else
-        {
-            var term = value.Trim();
-            foreach (var c in Customers.Where(c => c.Name.Contains(term, StringComparison.OrdinalIgnoreCase)))
-                FilteredCustomers.Add(c);
-        }
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
     }
 
     // ── Items management ───────────────────────────────────

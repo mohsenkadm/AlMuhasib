@@ -63,6 +63,13 @@ public interface IReportService
 
     Task<StockHealthReportResult> GetStockHealthReportAsync(
         int? warehouseId, decimal lowStockThreshold, int deadStockDays, StockHealthFilter filter = StockHealthFilter.All);
+
+    Task<InventoryReplenishmentReportResult> GetInventoryReplenishmentReportAsync(
+        DateTime? from,
+        DateTime? to,
+        int? warehouseId,
+        decimal minimumStock,
+        InventoryReplenishmentFilter filter = InventoryReplenishmentFilter.All);
 }
 
 public enum StockHealthFilter
@@ -76,6 +83,19 @@ public enum StockHealthStatus
 {
     LowStock,
     DeadStock
+}
+
+public enum InventoryReplenishmentFilter
+{
+    All,
+    NeedsReplenishmentOnly
+}
+
+public enum InventoryReplenishmentStatus
+{
+    Sufficient,
+    NeedsReorder,
+    Critical
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -718,4 +738,42 @@ public class StockHealthRow
     public int? DaysSinceLastSale { get; set; }
     public DateTime? LastSaleDate { get; set; }
     public string StatusDisplay => Status == StockHealthStatus.DeadStock ? "راكد" : "منخفض";
+}
+
+public class InventoryReplenishmentReportResult
+{
+    public int TotalProducts { get; set; }
+    public decimal TotalCurrentQuantity { get; set; }
+    public decimal TotalSoldQuantity { get; set; }
+    public decimal TotalSuggestedOrderQuantity { get; set; }
+    public int ItemsNeedingReplenishment { get; set; }
+    public decimal TotalStockValue { get; set; }
+    public decimal EstimatedOrderValue { get; set; }
+    public List<InventoryReplenishmentRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> StatusChart { get; set; } = [];
+    public List<NameAmountPoint> ReorderChart { get; set; } = [];
+    public List<InventoryReplenishmentRow> StockVsSoldChart { get; set; } = [];
+}
+
+public class InventoryReplenishmentRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal CurrentQuantity { get; set; }
+    public decimal QuantitySold { get; set; }
+    public decimal MinimumStock { get; set; }
+    public decimal SuggestedOrderQuantity { get; set; }
+    public decimal AverageCost { get; set; }
+    public decimal StockValue { get; set; }
+    public decimal EstimatedOrderValue { get; set; }
+    public InventoryReplenishmentStatus Status { get; set; }
+
+    public string StatusDisplay => Status switch
+    {
+        InventoryReplenishmentStatus.Critical => "حرج",
+        InventoryReplenishmentStatus.NeedsReorder => "يحتاج توريد",
+        _ => "كافٍ"
+    };
 }

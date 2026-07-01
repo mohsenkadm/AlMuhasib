@@ -1618,6 +1618,162 @@ public class ReportService : IReportService
         };
     }
 
+    public async Task<InventoryReplenishmentReportResult> GetInventoryReplenishmentReportAsync(
+        DateTime? from,
+        DateTime? to,
+        int? warehouseId,
+        decimal minimumStock,
+        InventoryReplenishmentFilter filter = InventoryReplenishmentFilter.All)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var minStock = Math.Max(0, minimumStock);
+
+        var stockQ = context.WarehouseStocks.AsNoTracking()
+            .Include(ws => ws.Product).ThenInclude(p => p!.Category)
+            .Include(ws => ws.Warehouse)
+            .AsQueryable();
+        if (warehouseId.HasValue)
+            stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
+
+        var stocks = await stockQ.ToListAsync();
+
+        var salesQ = context.InvoiceItems.AsNoTracking()
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale
+                             || ii.Invoice.InvoiceType == InvoiceType.Installment));
+        if (from.HasValue) salesQ = salesQ.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) salesQ = salesQ.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) salesQ = salesQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var salesItems = await salesQ.ToListAsync();
+        var soldByKey = salesItems
+            .GroupBy(ii => (ProductId: ii.ProductId!.Value, WarehouseId: ii.Invoice!.WarehouseId))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+
+        var warehouses = await context.Warehouses.AsNoTracking().ToDictionaryAsync(w => w.Id, w => w.Name);
+        var products = await context.Products.AsNoTracking()
+            .Include(p => p.Category)
+            .ToDictionaryAsync(p => p.Id);
+
+        var rows = new List<InventoryReplenishmentRow>();
+        var processedKeys = new HashSet<(int ProductId, int WarehouseId)>();
+
+        foreach (var s in stocks)
+        {
+            var key = (s.ProductId, s.WarehouseId);
+            processedKeys.Add(key);
+            soldByKey.TryGetValue(key, out var soldQty);
+            var row = await BuildReplenishmentRowAsync(context, s.ProductId, s.WarehouseId,
+                s.Product?.Name, s.Warehouse?.Name, s.Product?.Category?.Name,
+                s.Quantity, soldQty, minStock, s.OpeningQuantity, s.UnitCost, filter);
+            if (row is not null)
+                rows.Add(row);
+        }
+
+        foreach (var sale in soldByKey)
+        {
+            if (processedKeys.Contains(sale.Key))
+                continue;
+
+            products.TryGetValue(sale.Key.ProductId, out var product);
+            warehouses.TryGetValue(sale.Key.WarehouseId, out var warehouseName);
+            var row = await BuildReplenishmentRowAsync(context, sale.Key.ProductId, sale.Key.WarehouseId,
+                product?.Name, warehouseName, product?.Category?.Name,
+                0, sale.Value, minStock, 0, 0, filter);
+            if (row is not null)
+                rows.Add(row);
+        }
+
+        var needs = rows.Where(r => r.Status != InventoryReplenishmentStatus.Sufficient).ToList();
+        var sufficientCount = rows.Count - needs.Count;
+
+        return new InventoryReplenishmentReportResult
+        {
+            TotalProducts = rows.Count,
+            TotalCurrentQuantity = rows.Sum(r => r.CurrentQuantity),
+            TotalSoldQuantity = rows.Sum(r => r.QuantitySold),
+            TotalSuggestedOrderQuantity = rows.Sum(r => r.SuggestedOrderQuantity),
+            ItemsNeedingReplenishment = needs.Count,
+            TotalStockValue = rows.Sum(r => r.StockValue),
+            EstimatedOrderValue = rows.Sum(r => r.EstimatedOrderValue),
+            Rows = rows
+                .OrderByDescending(r => r.SuggestedOrderQuantity)
+                .ThenBy(r => r.CurrentQuantity)
+                .ThenBy(r => r.ProductName)
+                .ToList(),
+            StatusChart =
+            [
+                new NameAmountPoint { Name = "يحتاج توريد", Amount = needs.Count },
+                new NameAmountPoint { Name = "كافٍ", Amount = Math.Max(0, sufficientCount) }
+            ],
+            ReorderChart = rows
+                .Where(r => r.SuggestedOrderQuantity > 0)
+                .OrderByDescending(r => r.SuggestedOrderQuantity)
+                .Take(10)
+                .Select(r => new NameAmountPoint { Name = TruncateChartLabel(r.ProductName), Amount = r.SuggestedOrderQuantity })
+                .ToList(),
+            StockVsSoldChart = rows
+                .OrderByDescending(r => r.QuantitySold)
+                .ThenByDescending(r => r.CurrentQuantity)
+                .Take(8)
+                .ToList()
+        };
+    }
+
+    private static async Task<InventoryReplenishmentRow?> BuildReplenishmentRowAsync(
+        AppDbContext context,
+        int productId,
+        int warehouseId,
+        string? productName,
+        string? warehouseName,
+        string? categoryName,
+        decimal currentQty,
+        decimal soldQty,
+        decimal minStock,
+        decimal openingQty,
+        decimal unitCost,
+        InventoryReplenishmentFilter filter)
+    {
+        var targetStock = minStock + soldQty;
+        var suggested = Math.Max(0, targetStock - currentQty);
+        var status = currentQty <= 0
+            ? InventoryReplenishmentStatus.Critical
+            : suggested > 0
+                ? InventoryReplenishmentStatus.NeedsReorder
+                : InventoryReplenishmentStatus.Sufficient;
+
+        if (filter == InventoryReplenishmentFilter.NeedsReplenishmentOnly
+            && status == InventoryReplenishmentStatus.Sufficient)
+            return null;
+
+        var purchaseItems = await context.InvoiceItems.AsNoTracking()
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId == productId && ii.Invoice!.InvoiceType == InvoiceType.Purchase)
+            .ToListAsync();
+        var avgCost = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, openingQty, unitCost);
+
+        return new InventoryReplenishmentRow
+        {
+            ProductId = productId,
+            ProductName = productName ?? "—",
+            WarehouseName = warehouseName ?? "—",
+            CategoryName = categoryName ?? "—",
+            CurrentQuantity = currentQty,
+            QuantitySold = soldQty,
+            MinimumStock = minStock,
+            SuggestedOrderQuantity = suggested,
+            AverageCost = Math.Round(avgCost, 0),
+            StockValue = Math.Round(currentQty * avgCost, 0),
+            EstimatedOrderValue = Math.Round(suggested * avgCost, 0),
+            Status = status
+        };
+    }
+
+    private static string TruncateChartLabel(string name) =>
+        name.Length <= 18 ? name : string.Concat(name.AsSpan(0, 15), "...");
+
     private static decimal PercentChange(decimal previous, decimal current) =>
         previous == 0 ? (current == 0 ? 0 : 100) : Math.Round((current - previous) / previous * 100, 1);
 }

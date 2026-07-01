@@ -149,7 +149,11 @@ public partial class MainWindowViewModel : ObservableObject
         IUserTaskService userTaskService,
         IUserNoteService userNoteService,
         ICustomerStatementQuickService customerStatementQuick,
-        IOfflineReminderService offlineReminder)
+        IOfflineReminderService offlineReminder,
+        IVoiceRecognitionService voiceRecognition,
+        VoiceCommandCatalog voiceCommandCatalog,
+        VoiceCommandMatcher voiceCommandMatcher,
+        VoiceCommandExecutor voiceCommandExecutor)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -172,6 +176,12 @@ public partial class MainWindowViewModel : ObservableObject
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
         _customerStatementQuick = customerStatementQuick;
+
+        _voiceRecognition = voiceRecognition;
+        _voiceCommandCatalog = voiceCommandCatalog;
+        _voiceCommandMatcher = voiceCommandMatcher;
+        _voiceCommandExecutor = voiceCommandExecutor;
+        WireVoiceRecognition();
 
         offlineReminder.ReminderRaised += OnOfflineReminderRaised;
         offlineReminder.Start();

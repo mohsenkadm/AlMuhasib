@@ -9,10 +9,11 @@
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=False}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
-             Background="{DynamicResource BackgroundBrush}"
+             Background="Transparent"
              FlowDirection="RightToLeft"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch">
@@ -21,6 +22,8 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis" />
         <converters:CurrencyFormatConverter x:Key="CurrencyFormat" />
+        <converters:TaskPriorityToBrushConverter x:Key="TaskPriorityBrush" />
+        <converters:TaskPriorityToLightBrushConverter x:Key="TaskPriorityLightBrush" />
 
         <!-- ─── Color Palette ─────────────────────────────── -->
         <Color x:Key="PrimaryColor">#1565C0</Color>
@@ -28,22 +31,11 @@
         <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
 
-        <!-- ─── Shimmer sweep storyboard ──────────────────── -->
-        <Storyboard x:Key="SkeletonShimmerStoryboard" RepeatBehavior="Forever">
-            <DoubleAnimation Storyboard.TargetName="ShimmerWave"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                             From="-160" To="520" Duration="0:0:1.35">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseInOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
         <!-- ─── Summary card with hover scale + elevation ─── -->
         <Style x:Key="SummaryCard" TargetType="materialDesign:Card">
-            <Setter Property="UniformCornerRadius" Value="14" />
-            <Setter Property="Padding" Value="18,16" />
-            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
+            <Setter Property="UniformCornerRadius" Value="20" />
+            <Setter Property="Padding" Value="20,18" />
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp1" />
             <Setter Property="Background" Value="{DynamicResource CardBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -56,18 +48,19 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp8" />
+                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp6" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
                     <Trigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.03" Duration="0:0:0.2">
+                                                 To="1.02" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <CubicEase EasingMode="EaseOut" />
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.03" Duration="0:0:0.2">
+                                                 To="1.02" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <CubicEase EasingMode="EaseOut" />
                                     </DoubleAnimation.EasingFunction>
@@ -79,13 +72,13 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.0" Duration="0:0:0.2">
+                                                 To="1.0" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <CubicEase EasingMode="EaseOut" />
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.0" Duration="0:0:0.2">
+                                                 To="1.0" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <CubicEase EasingMode="EaseOut" />
                                     </DoubleAnimation.EasingFunction>
@@ -99,24 +92,75 @@
 
         <!-- ─── Section card with hover glow ──────────────── -->
         <Style x:Key="SectionCard" TargetType="materialDesign:Card">
-            <Setter Property="UniformCornerRadius" Value="16" />
-            <Setter Property="Padding" Value="22,18" />
-            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
+            <Setter Property="UniformCornerRadius" Value="20" />
+            <Setter Property="Padding" Value="24,20" />
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp1" />
             <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp6" />
+                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="DashboardTaskButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder" Background="Transparent" SnapsToDevicePixels="True">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ─── Section header ────────────────────────────── -->
         <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="Margin" Value="0,0,0,14" />
+            <Setter Property="Margin" Value="0,0,0,0" />
         </Style>
+
+        <Style x:Key="DashboardSectionHeaderPanel" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+
+        <Style x:Key="DashboardIconBadge" TargetType="Border">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+        </Style>
+        <Storyboard x:Key="SkeletonShimmerStoryboard" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="ShimmerWave"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                             From="-160" To="520" Duration="0:0:1.35">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseInOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
 
         <!-- ─── Skeleton placeholder with moving shimmer ─── -->
         <Style x:Key="SkeletonRect" TargetType="ContentControl">
@@ -185,16 +229,17 @@
 
         <!-- ─── Quick action button ───────────────────────── -->
         <Style x:Key="DashboardQuickAction" TargetType="Button">
-            <Setter Property="Height" Value="88"/>
+            <Setter Property="Height" Value="92"/>
             <Setter Property="Margin" Value="0,0,10,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <materialDesign:Card x:Name="Card" UniformCornerRadius="14" Padding="14,12"
-                                             materialDesign:ElevationAssist.Elevation="Dp2"
+                        <materialDesign:Card x:Name="Card" UniformCornerRadius="16" Padding="16,14"
+                                             materialDesign:ElevationAssist.Elevation="Dp0"
                                              Background="{TemplateBinding Background}"
+                                             BorderBrush="#33FFFFFF" BorderThickness="1"
                                              RenderTransformOrigin="0.5,0.5">
                             <materialDesign:Card.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -203,7 +248,7 @@
                         </materialDesign:Card>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp8"/>
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -342,11 +387,32 @@
     </UserControl.Resources>
 
     <Grid>
+        <!-- Ambient page background -->
+        <Border Background="{DynamicResource DashboardAmbientBrush}" IsHitTestVisible="False" />
+        <Ellipse Width="480" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-140,-120,0,0" IsHitTestVisible="False" Opacity="0.55">
+            <Ellipse.Fill>
+                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                    <GradientStop Color="#221565C0" Offset="0" />
+                    <GradientStop Color="#001565C0" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse Width="360" Height="360" HorizontalAlignment="Right" VerticalAlignment="Top"
+                 Margin="0,-80,-100,0" IsHitTestVisible="False" Opacity="0.45">
+            <Ellipse.Fill>
+                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                    <GradientStop Color="#1A00ACC1" Offset="0" />
+                    <GradientStop Color="#0000ACC1" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
         <!-- ═══════════════════════════════════════════════════ -->
         <!-- LOADING SKELETON (shown while IsBusy)              -->
         <!-- ═══════════════════════════════════════════════════ -->
         <Grid Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
-              Margin="0,0,0,16">
+              Margin="24,20,16,16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -474,7 +540,7 @@
                     </Style.Triggers>
                 </Style>
             </ScrollViewer.Style>
-            <Grid x:Name="DashboardContent" Margin="0,0,0,16">
+            <Grid x:Name="DashboardContent" Margin="24,20,16,24">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -486,97 +552,154 @@
                 </Grid.RowDefinitions>
 
                 <!-- Welcome header -->
-                <materialDesign:Card Grid.Row="0" UniformCornerRadius="16" Padding="0"
-                                     Margin="0,0,0,18"
-                                     materialDesign:ElevationAssist.Elevation="Dp3"
-                                     BorderBrush="#D6E4F5" BorderThickness="1">
-                    <Grid>
-                        <Border CornerRadius="16" Opacity="0.95">
+                <materialDesign:Card Grid.Row="0" UniformCornerRadius="24" Padding="0"
+                                     Margin="0,0,0,20" ClipToBounds="True"
+                                     materialDesign:ElevationAssist.Elevation="Dp4"
+                                     BorderThickness="0">
+                    <Grid MinHeight="210">
+                        <Border CornerRadius="24">
                             <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#1565C0" Offset="0"/>
-                                    <GradientStop Color="#1E88E5" Offset="0.55"/>
-                                    <GradientStop Color="#42A5F5" Offset="1"/>
-                                </LinearGradientBrush>
+                                <DynamicResource ResourceKey="DashboardHeroBrush" />
                             </Border.Background>
                         </Border>
-                        <Grid Margin="22,18">
+
+                        <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="White" />
+                        <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                 Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#80DEEA" />
+                        <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="White" />
+
+                        <Grid Margin="28,26">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
+
                             <Grid Grid.Row="0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <materialDesign:PackIcon Kind="ViewDashboard" Width="26" Height="26"
-                                                                 Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Text="لوحة التحكم"
-                                                   FontSize="22" FontWeight="Bold" Foreground="White"
-                                                   Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <Border Background="#33FFFFFF" CornerRadius="20" Padding="10,4"
+                                            HorizontalAlignment="Right" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ViewDashboard" Width="16" Height="16"
+                                                                     Foreground="White" VerticalAlignment="Center" />
+                                            <TextBlock Text="لوحة التحكم" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="White" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock FontSize="28" FontWeight="Bold" Foreground="White">
+                                        <Run Text="{Binding WelcomeGreeting, Mode=OneWay}" />
+                                        <Run Text="، " />
+                                        <Run Text="{Binding UserDisplayName, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock Text="نظرة شاملة على أداء عملك — مؤشرات محدّثة لحظياً"
+                                               FontSize="14" Foreground="#E3F2FD" Margin="0,8,0,0" Opacity="0.95" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                        <materialDesign:PackIcon Kind="CalendarToday" Width="16" Height="16"
+                                                                 Foreground="#B3E5FC" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DisplayDate, Mode=OneWay}"
+                                                   FontSize="12" Foreground="#B3E5FC"
+                                                   Margin="6,0,0,0" VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <TextBlock Text="نظرة شاملة على أداء عملك اليوم"
-                                               FontSize="13" Foreground="#E3F2FD"/>
                                 </StackPanel>
-                                <Border Grid.Column="1" Background="#26FFFFFF" CornerRadius="12"
-                                        Padding="14,10" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="20" Height="20"
-                                                                 Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Text="مؤشرات محدّثة لحظياً"
-                                                   FontSize="12" Foreground="White"
-                                                   Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="20,0,0,0">
+                                    <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="16"
+                                            Padding="16,12" Margin="0,0,0,10" BorderBrush="#33FFFFFF" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="مبيعات اليوم" FontSize="11" Foreground="#E1F5FE" />
+                                            <TextBlock Text="{Binding TodaySales, Converter={StaticResource CurrencyFormat}}"
+                                                       FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="16"
+                                            Padding="16,12" BorderBrush="#33FFFFFF" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ClipboardList" Width="18" Height="18"
+                                                                     Foreground="White" VerticalAlignment="Center" />
+                                            <StackPanel Margin="10,0,0,0">
+                                                <TextBlock Text="مهام اليوم" FontSize="11" Foreground="#E1F5FE" />
+                                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="White">
+                                                    <Run Text="{Binding DailyTaskCount, Mode=OneWay}" />
+                                                    <Run Text=" مهمة" FontSize="13" FontWeight="Normal" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
 
+                            <TextBlock Grid.Row="1" Text="إجراءات سريعة" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#E1F5FE" Margin="0,22,0,10" />
+
                             <!-- Quick actions -->
-                            <UniformGrid Grid.Row="1" Columns="3" Margin="0,18,0,0">
+                            <UniformGrid Grid.Row="2" Columns="3">
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickSales, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenSalesInvoiceCommand}"
-                                        Background="#E8F5E9" Margin="0,0,8,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="0,0,8,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="44" Height="44" CornerRadius="12" Background="#2E7D32" Margin="0,0,12,0">
+                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#43A047" Offset="0" />
+                                                    <GradientStop Color="#2E7D32" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
                                             <materialDesign:PackIcon Kind="CashRegister" Width="24" Height="24"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14" Foreground="#1B5E20"/>
-                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11" Foreground="#558B2F" Margin="0,2,0,0"/>
+                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14" Foreground="#1B5E20" />
+                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11" Foreground="#558B2F" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickPurchase, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenPurchaseInvoiceCommand}"
-                                        Background="#FFF3E0" Margin="4,0,4,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="4,0,4,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="44" Height="44" CornerRadius="12" Background="#EF6C00" Margin="0,0,12,0">
+                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FB8C00" Offset="0" />
+                                                    <GradientStop Color="#EF6C00" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
                                             <materialDesign:PackIcon Kind="CartArrowDown" Width="24" Height="24"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14" Foreground="#E65100"/>
-                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11" Foreground="#F57C00" Margin="0,2,0,0"/>
+                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14" Foreground="#E65100" />
+                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11" Foreground="#F57C00" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickInstallment, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenInstallmentInvoiceCommand}"
-                                        Background="#E3F2FD" Margin="8,0,0,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="8,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="44" Height="44" CornerRadius="12" Background="#1565C0" Margin="0,0,12,0">
+                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#42A5F5" Offset="0" />
+                                                    <GradientStop Color="#1565C0" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
                                             <materialDesign:PackIcon Kind="CalendarClock" Width="24" Height="24"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14" Foreground="#0D47A1"/>
-                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11" Foreground="#1976D2" Margin="0,2,0,0"/>
+                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14" Foreground="#0D47A1" />
+                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11" Foreground="#1976D2" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -586,270 +709,246 @@
                 </materialDesign:Card>
 
                 <!-- مركز المهام والتنبيهات الذكية -->
-                <materialDesign:Card Grid.Row="1" Style="{StaticResource SectionCard}" Margin="0,0,0,16"
+                <materialDesign:Card Grid.Row="1" Style="{StaticResource SectionCard}" Margin="0,0,0,18"
                                      Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVis}}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="20" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <materialDesign:PackIcon Kind="ClipboardList" Width="22" Height="22" Foreground="#1565C0" VerticalAlignment="Center" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center">
-                                    <Run Text="مهام اليوم" FontWeight="Bold" FontSize="15" />
-                                    <Run Text=" (" /><Run Text="{Binding DailyTaskCount, Mode=OneWay}" FontWeight="Bold" /><Run Text=")" />
+
+                        <Border Grid.Column="0" Background="{DynamicResource DashboardTasksPanelBrush}" CornerRadius="16" Padding="18,16"
+                                BorderBrush="{DynamicResource DashboardTasksPanelBorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardIconBadgeBlueBrush}">
+                                        <materialDesign:PackIcon Kind="ClipboardList" Width="22" Height="22"
+                                                                 Foreground="{DynamicResource DashboardKpiBlueBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock FontWeight="Bold" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}">
+                                            <Run Text="مهام اليوم" />
+                                            <Run Text=" (" Foreground="{DynamicResource HintForegroundBrush}" />
+                                            <Run Text="{Binding DailyTaskCount, Mode=OneWay}" FontWeight="Bold" />
+                                            <Run Text=")" Foreground="{DynamicResource HintForegroundBrush}" />
+                                        </TextBlock>
+                                        <TextBlock Text="إنجاز المهام العاجلة يحافظ على تدفق العمل"
+                                                   FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding DailyTasks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource DashboardTaskButton}"
+                                                    Command="{Binding DataContext.ExecuteDailyTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Border Background="{DynamicResource DashboardItemBrush}" CornerRadius="14" Padding="14,12"
+                                                        BorderBrush="{DynamicResource DashboardItemBorderBrush}" BorderThickness="1" MinHeight="64">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="42" Height="42" CornerRadius="12" Margin="0,0,12,0"
+                                                                Background="{Binding Priority, Converter={StaticResource TaskPriorityLightBrush}}">
+                                                            <TextBlock Text="{Binding Priority}" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{Binding Priority, Converter={StaticResource TaskPriorityBrush}}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                            <TextBlock Text="{Binding Description}" FontSize="12"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                        <Border Grid.Column="2" Background="{DynamicResource DashboardIconBadgeBlueBrush}"
+                                                                CornerRadius="10" Padding="8,6" VerticalAlignment="Center">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="تنفيذ" FontSize="11" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource DashboardKpiBlueBrush}" VerticalAlignment="Center" />
+                                                                <materialDesign:PackIcon Kind="ChevronLeft" Foreground="{DynamicResource DashboardKpiBlueBrush}"
+                                                                                         Width="16" Height="16" Margin="4,0,0,0" />
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Border Background="{DynamicResource DashboardSuccessPanelBrush}" CornerRadius="12" Padding="14,12" Margin="0,10,0,0"
+                                        BorderBrush="{DynamicResource DashboardSuccessPanelBorderBrush}" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="CheckCircleOutline" Width="18" Height="18"
+                                                                 Foreground="{DynamicResource DashboardSuccessForegroundBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="لا توجد مهام عاجلة اليوم — عمل رائع!"
+                                                   FontSize="12" Foreground="{DynamicResource DashboardSuccessForegroundBrush}"
+                                                   Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DailyTaskCount}" Value="0">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="{DynamicResource DashboardAlertsPanelBrush}" CornerRadius="16" Padding="18,16"
+                                BorderBrush="{DynamicResource DashboardAlertsPanelBorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardIconBadgeRedBrush}">
+                                        <materialDesign:PackIcon Kind="BellRing" Width="22" Height="22"
+                                                                 Foreground="{DynamicResource DashboardKpiRedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="تنبيهات ذكية" FontWeight="Bold" FontSize="15"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Text="متابعة فورية للحالات التي تحتاج انتباهك"
+                                                   FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <ItemsControl ItemsSource="{Binding SmartAlerts}" MaxHeight="260">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource DashboardItemBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,0,8"
+                                                    BorderBrush="{DynamicResource DashboardAlertItemBorderBrush}" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="10" Height="10" CornerRadius="5"
+                                                            Background="{DynamicResource DashboardAlertTitleBrush}" VerticalAlignment="Top" Margin="0,6,10,0" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"
+                                                                   Foreground="{DynamicResource DashboardAlertTitleBrush}" />
+                                                        <TextBlock Text="{Binding Message}" FontSize="12"
+                                                                   Foreground="{DynamicResource DashboardAlertBodyBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,5,0,0" LineHeight="18" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="لا توجد تنبيهات حالياً"
+                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}"
+                                           HorizontalAlignment="Center" Margin="0,12,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SmartAlertCount}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
                                 </TextBlock>
                             </StackPanel>
-                            <ItemsControl ItemsSource="{Binding DailyTasks}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.ExecuteDailyTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource FlatButton}"
-                                                HorizontalContentAlignment="Stretch" Padding="8,6" Margin="0,2">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" />
-                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                </StackPanel>
-                                                <materialDesign:PackIcon Grid.Column="1" Kind="ChevronLeft" Foreground="#90A4AE" VerticalAlignment="Center" />
-                                            </Grid>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock Text="لا توجد مهام عاجلة اليوم — عمل رائع!"
-                                       FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,8,0,0">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DailyTaskCount}" Value="0">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <materialDesign:PackIcon Kind="BellRing" Width="22" Height="22" Foreground="#C62828" VerticalAlignment="Center" />
-                                <TextBlock Text="تنبيهات ذكية" FontWeight="Bold" FontSize="15" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
-                            <ItemsControl ItemsSource="{Binding SmartAlerts}" MaxHeight="200">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#FFF8E1" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
-                                                BorderBrush="#FFE082" BorderThickness="1">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#E65100" />
-                                                <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#6D4C41" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
+                        </Border>
                     </Grid>
                 </materialDesign:Card>
 
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 1: SUMMARY CARDS (staggered entrance)  -->
                 <!-- ═══════════════════════════════════════════ -->
-                <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,16"
-                             Style="{StaticResource DashboardReveal0}">
+                <Grid Grid.Row="2" Margin="0,0,0,16" Style="{StaticResource DashboardReveal0}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Today's Sales -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="0,0,10,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#E8F5E9">
-                                <materialDesign:PackIcon Kind="CashRegister"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#2E7D32" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="إجمالي المبيعات اليوم"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding TodaySales, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="#2E7D32"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="0" Margin="0,0,8,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="إجمالي المبيعات اليوم"
+                                               Value="{Binding TodaySales, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="CashRegister"
+                                               AccentBrush="{DynamicResource DashboardKpiGreenBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiGreenLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiGreenBrush}" />
 
-                    <!-- Today's Purchases -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="5,0,5,0"
-                                         Visibility="{Binding ShowTodayPurchases, Converter={StaticResource BoolToVis}}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="{DynamicResource HighlightLightBrush}">
-                                <materialDesign:PackIcon Kind="CartArrowDown"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{DynamicResource HighlightBrush}" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="إجمالي المشتريات اليوم"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding TodayPurchases, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
+                                               HorizontalAlignment="Stretch"
+                                               Visibility="{Binding ShowTodayPurchases, Converter={StaticResource BoolToVis}}"
+                                               Title="إجمالي المشتريات اليوم"
+                                               Value="{Binding TodayPurchases, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="CartArrowDown"
+                                               AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}" />
 
-                    <!-- Net Profit -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="5,0,5,0"
-                                         Visibility="{Binding ShowNetProfit, Converter={StaticResource BoolToVis}}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#E3F2FD">
-                                <materialDesign:PackIcon Kind="ChartLine"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource PrimaryBrush}" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="الأرباح الصافية"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding NetProfit, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold"
-                                           Foreground="{StaticResource PrimaryBrush}"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="2" Margin="4,0,4,0"
+                                               HorizontalAlignment="Stretch"
+                                               Visibility="{Binding ShowNetProfit, Converter={StaticResource BoolToVis}}"
+                                               Title="الأرباح الصافية"
+                                               Value="{Binding NetProfit, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="ChartLine"
+                                               AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}" />
 
-                    <!-- Overdue Installments -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="10,0,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#FFEBEE">
-                                <materialDesign:PackIcon Kind="AlertCircleOutline"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#C62828" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="الأقساط المتأخرة"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock FontSize="22" FontWeight="Bold" Foreground="#C62828"
-                                           Margin="0,4,0,0">
-                                    <Run Text="{Binding OverdueInstallmentsCount, Mode=OneWay}" />
-                                    <Run Text=" قسط" />
-                                </TextBlock>
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
-                </UniformGrid>
+                    <controls:DashboardKpiCard Grid.Column="3" Margin="8,0,0,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="الأقساط المتأخرة"
+                                               Value="{Binding OverdueInstallmentsCount, StringFormat={}{0} قسط}"
+                                               Icon="AlertCircleOutline"
+                                               AccentBrush="{DynamicResource DashboardKpiRedBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiRedLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiRedBrush}" />
+                </Grid>
 
                 <!-- Additional Statistics Row -->
-                <UniformGrid Grid.Row="3" Columns="3" Margin="0,0,0,16"
-                             Visibility="{Binding ShowInvestorStats, Converter={StaticResource BoolToVis}}"
-                             Style="{StaticResource DashboardReveal1}">
-                    <!-- Investor Balance -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="0,0,10,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#E8EAF6">
-                                <materialDesign:PackIcon Kind="TrendingUp"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#283593" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="رصيد المستثمرين"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding InvestorBalance, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="#283593"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
+                <Grid Grid.Row="3" Margin="0,0,0,16"
+                      Visibility="{Binding ShowInvestorStats, Converter={StaticResource BoolToVis}}"
+                      Style="{StaticResource DashboardReveal1}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Unpaid Installments Balance -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="5,0,5,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="{DynamicResource HighlightLightBrush}">
-                                <materialDesign:PackIcon Kind="CalendarMultipleCheck"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{DynamicResource HighlightBrush}" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="رصيد الأقساط غير المسددة"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding UnpaidInstallmentsBalance, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="0" Margin="0,0,8,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="رصيد المستثمرين"
+                                               Value="{Binding InvestorBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="TrendingUp"
+                                               AccentBrush="{DynamicResource DashboardKpiIndigoBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiIndigoLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}" />
 
-                    <!-- Customer Credit Balance -->
-                    <materialDesign:Card Style="{StaticResource SummaryCard}" Margin="10,0,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14"
-                                    Background="#FCE4EC">
-                                <materialDesign:PackIcon Kind="AccountCash"
-                                                         Width="28" Height="28"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#AD1457" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="رصيد الآجل للعملاء"
-                                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                                <TextBlock Text="{Binding CustomerCreditBalance, Converter={StaticResource CurrencyFormat}}"
-                                           FontSize="22" FontWeight="Bold" Foreground="#AD1457"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </materialDesign:Card>
-                </UniformGrid>
+                    <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="رصيد الأقساط غير المسددة"
+                                               Value="{Binding UnpaidInstallmentsBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="CalendarMultipleCheck"
+                                               AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}" />
+
+                    <controls:DashboardKpiCard Grid.Column="2" Margin="8,0,0,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="رصيد الآجل للعملاء"
+                                               Value="{Binding CustomerCreditBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="AccountCash"
+                                               AccentBrush="{DynamicResource DashboardKpiPinkBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiPinkLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiPinkBrush}" />
+                </Grid>
 
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ROW 2: CHARTS                              -->
@@ -870,20 +969,25 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="300" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
-                                <materialDesign:PackIcon Kind="ChartAreaspline"
-                                                         Width="22" Height="22"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource PrimaryBrush}" />
-                                <TextBlock Text="مبيعات آخر 30 يوم"
-                                           Style="{StaticResource SectionHeader}"
-                                           Margin="8,0,0,0" />
+                            <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
+                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardIconBadgeBlueBrush}">
+                                    <materialDesign:PackIcon Kind="ChartAreaspline" Width="22" Height="22"
+                                                             Foreground="{DynamicResource DashboardKpiBlueBrush}"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="مبيعات آخر 30 يوم" Style="{StaticResource SectionHeader}" />
+                                    <TextBlock Text="اتجاه الإيرادات اليومية" FontSize="11"
+                                               Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0" />
+                                </StackPanel>
                             </StackPanel>
-                            <Border Grid.Row="1" FlowDirection="LeftToRight">
+                            <Border Grid.Row="1" Background="{DynamicResource DashboardChartWellBrush}" CornerRadius="14" Padding="8"
+                                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}" BorderThickness="1" FlowDirection="LeftToRight">
                                 <lvc:CartesianChart Series="{Binding SalesSeries}"
                                                     XAxes="{Binding SalesXAxes}"
                                                     YAxes="{Binding SalesYAxes}"
                                                     TooltipPosition="Top"
+                                                    MinHeight="260"
                                                     AnimationsSpeed="00:00:00.500" />
                             </Border>
                         </Grid>
@@ -896,18 +1000,23 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="300" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
-                                <materialDesign:PackIcon Kind="ChartPie"
-                                                         Width="22" Height="22"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource AccentBrush}" />
-                                <TextBlock Text="توزيع المصاريف"
-                                           Style="{StaticResource SectionHeader}"
-                                           Margin="8,0,0,0" />
+                            <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
+                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardIconBadgeCyanBrush}">
+                                    <materialDesign:PackIcon Kind="ChartPie" Width="22" Height="22"
+                                                             Foreground="{DynamicResource DashboardKpiTealBrush}"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="توزيع المصاريف" Style="{StaticResource SectionHeader}" />
+                                    <TextBlock Text="حصة كل فئة من إجمالي المصروفات" FontSize="11"
+                                               Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0" />
+                                </StackPanel>
                             </StackPanel>
-                            <Border Grid.Row="1" FlowDirection="LeftToRight">
+                            <Border Grid.Row="1" Background="{DynamicResource DashboardChartWellBrush}" CornerRadius="14" Padding="8"
+                                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}" BorderThickness="1" FlowDirection="LeftToRight">
                                 <lvc:PieChart Series="{Binding ExpenseSeries}"
                                               LegendPosition="Bottom"
+                                              MinHeight="260"
                                               AnimationsSpeed="00:00:00.500" />
                             </Border>
                         </Grid>
@@ -1067,106 +1176,58 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Cash Boxes -->
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource SectionCard}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0" Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10"
-                                        Background="{DynamicResource AccentLightBrush}">
-                                    <materialDesign:PackIcon Kind="SafeSquareOutline"
-                                                             Width="22" Height="22"
-                                                             HorizontalAlignment="Center"
-                                                             VerticalAlignment="Center"
-                                                             Foreground="{StaticResource AccentBrush}" />
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="أرصدة القاصات"
-                                           FontSize="15" FontWeight="SemiBold"
-                                           VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Foreground="{DynamicResource TextPrimaryBrush}" />
-                            </Grid>
-
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding CashBoxes}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Padding="0,8" BorderBrush="#F5F5F5" BorderThickness="0,0,0,1">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                           FontSize="13" Foreground="#424242" />
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{Binding Balance, StringFormat=N0}"
-                                                           FontSize="13" FontWeight="Bold"
-                                                           Foreground="{StaticResource PrimaryBrush}" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="0"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Stretch"
+                                               Title="إجمالي القاصات"
+                                               Value="{Binding TotalCashBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="SafeSquareOutline"
+                                               AccentBrush="{DynamicResource DashboardKpiTealBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiTealLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiTealBrush}">
+                        <ItemsControl ItemsSource="{Binding CashBoxes}" Margin="0,8,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="0,8" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Balance, StringFormat=N0}"
+                                                       FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource DashboardKpiTealBrush}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </controls:DashboardKpiCard>
 
                     <!-- Bank Balance -->
-                    <materialDesign:Card Grid.Column="2" Style="{StaticResource SummaryCard}">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Width="60" Height="60" CornerRadius="30"
-                                    Background="#E8EAF6" HorizontalAlignment="Center">
-                                <materialDesign:PackIcon Kind="Bank" Width="32" Height="32"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource PrimaryBrush}" />
-                            </Border>
-                            <TextBlock Grid.Row="1" Text="رصيد المصرف"
-                                       FontSize="13" Foreground="{DynamicResource HintForegroundBrush}"
-                                       HorizontalAlignment="Center" Margin="0,14,0,4" />
-                            <TextBlock Grid.Row="2"
-                                       Text="{Binding BankBalance, Converter={StaticResource CurrencyFormat}}"
-                                       FontSize="26" FontWeight="Bold"
-                                       Foreground="{StaticResource PrimaryBrush}"
-                                       HorizontalAlignment="Center" />
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="2"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Stretch"
+                                               Title="رصيد المصرف"
+                                               Value="{Binding BankBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="Bank"
+                                               AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}" />
 
                     <!-- Total Inventory -->
-                    <materialDesign:Card Grid.Column="4" Style="{StaticResource SummaryCard}">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Width="60" Height="60" CornerRadius="30"
-                                    Background="#E0F2F1" HorizontalAlignment="Center">
-                                <materialDesign:PackIcon Kind="Warehouse" Width="32" Height="32"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#00695C" />
-                            </Border>
-                            <TextBlock Grid.Row="1" Text="قيمة المخزون"
-                                       FontSize="13" Foreground="{DynamicResource HintForegroundBrush}"
-                                       HorizontalAlignment="Center" Margin="0,14,0,4" />
-                            <TextBlock Grid.Row="2"
-                                       Text="{Binding TotalInventoryValue, Converter={StaticResource CurrencyFormat}}"
-                                       FontSize="26" FontWeight="Bold"
-                                       Foreground="#00695C"
-                                       HorizontalAlignment="Center" />
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:DashboardKpiCard Grid.Column="4"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Stretch"
+                                               Title="قيمة المخزون"
+                                               Value="{Binding TotalInventoryValue, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="Warehouse"
+                                               AccentBrush="{DynamicResource DashboardKpiIndigoBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiIndigoLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}" />
                 </Grid>
             </Grid>
         </ScrollViewer>

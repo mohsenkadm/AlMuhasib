@@ -1,6 +1,7 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.Input;
@@ -151,13 +152,23 @@ public partial class InstallmentsViewModel
             ?? invoice.InstallmentPlans.FirstOrDefault()?.Installments.OrderBy(i => i.DueDate).ToList()
             ?? [];
 
-        model.Schedule = installments.Select((inst, idx) => new InstallmentPrintRow
-        {
-            Number = idx + 1,
-            DueDate = inst.DueDate,
-            Amount = inst.Amount
-        }).ToList();
+        model.Schedule = InstallmentPrintHelpers.ToPrintRows(installments);
 
         return model;
+    }
+
+    internal static InstallmentPlanDetailPrintModel BuildPlanDetailPrintModel(InstallmentPlan plan, IEnumerable<Installment> installments)
+    {
+        var list = installments.OrderBy(i => i.DueDate).ToList();
+        return new InstallmentPlanDetailPrintModel
+        {
+            CustomerName = plan.Customer?.Name ?? "—",
+            InvoiceNumber = plan.Invoice?.InvoiceNumber ?? plan.InvoiceId.ToString(),
+            FileNumber = plan.FileNumber,
+            StartDate = plan.StartDate,
+            InstallmentTypeLabel = InstallmentPrintHelpers.InstallmentTypeLabel(plan.InstallmentType),
+            TotalAmount = plan.TotalAmount,
+            Schedule = InstallmentPrintHelpers.ToPrintRows(list)
+        };
     }
 }

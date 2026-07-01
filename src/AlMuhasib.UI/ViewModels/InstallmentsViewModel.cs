@@ -11,7 +11,6 @@ using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -62,6 +61,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     private string _paymentCustomerSearch = string.Empty;
 
     public ObservableCollection<Customer> PaymentCustomers { get; } = [];
+    public ObservableCollection<Customer> FilteredPaymentCustomers { get; } = [];
 
     [ObservableProperty]
     private Customer? _paymentSelectedCustomer;
@@ -188,8 +188,12 @@ public partial class InstallmentsViewModel : ViewModelBase
             // Load all customers for payment search
             var customers = await _unitOfWork.Customers.GetAllAsync();
             PaymentCustomers.Clear();
-            foreach (var c in customers)
+            FilteredPaymentCustomers.Clear();
+            foreach (var c in customers.OrderBy(c => c.Name))
+            {
                 PaymentCustomers.Add(c);
+                FilteredPaymentCustomers.Add(c);
+            }
 
             // Load initial data for active tab
             await LoadAllPlansAsync();
@@ -397,6 +401,47 @@ public partial class InstallmentsViewModel : ViewModelBase
         await LoadAllPlansAsync();
     }
 
+    private static readonly string[] PlanSummaryColumns =
+    [
+        "العميل", "رقم الإضبارة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء",
+        "رقم الفاتورة", "المسدد", "المتبقي", "أقساط مسددة"
+    ];
+
+    private static object[] BuildPlanSummaryRow(InstallmentPlan p)
+    {
+        var installments = p.Installments?.ToList() ?? [];
+        return
+        [
+            p.Customer?.Name ?? "",
+            p.FileNumber ?? "",
+            p.TotalAmount.ToString("N0"),
+            p.NumberOfInstallments,
+            p.InstallmentAmount.ToString("N0"),
+            p.StartDate.ToString("yyyy/MM/dd"),
+            p.Invoice?.InvoiceNumber ?? "",
+            installments.Sum(i => i.PaidAmount).ToString("N0"),
+            installments.Sum(i => i.RemainingAmount).ToString("N0"),
+            installments.Count(i => i.Status == InstallmentStatus.Paid)
+        ];
+    }
+
+    private static InstallmentPlansSummaryPrintModel BuildPlansSummaryPrintModel(IEnumerable<InstallmentPlan> plans, string title)
+    {
+        var list = plans.ToList();
+        var installments = list.SelectMany(p => p.Installments ?? []).ToList();
+        return new InstallmentPlansSummaryPrintModel
+        {
+            Title = title,
+            Columns = PlanSummaryColumns,
+            Rows = list.Select(BuildPlanSummaryRow).ToList(),
+            PlanCount = list.Count,
+            TotalAmount = list.Sum(p => p.TotalAmount),
+            PaidAmount = installments.Sum(i => i.PaidAmount),
+            RemainingAmount = installments.Sum(i => i.RemainingAmount),
+            PaidInstallmentCount = installments.Count(i => i.Status == InstallmentStatus.Paid)
+        };
+    }
+
     [RelayCommand]
     private void ExportPlans()
     {
@@ -411,19 +456,8 @@ public partial class InstallmentsViewModel : ViewModelBase
 
         if (dialog.ShowDialog() != true) return;
 
-        var columns = new[] { "العميل", "رقم الإضبارة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء", "رقم الفاتورة" };
-        var rows = AllPlans.Select(p => new object[]
-        {
-            p.Customer?.Name ?? "",
-            p.FileNumber ?? "",
-            p.TotalAmount,
-            p.NumberOfInstallments,
-            p.InstallmentAmount,
-            p.StartDate.ToString("yyyy/MM/dd"),
-            p.Invoice?.InvoiceNumber ?? ""
-        }).ToList();
-
-        _exportService.ExportToExcel(dialog.FileName, "كشف الأقساط", columns, rows);
+        var rows = AllPlans.Select(BuildPlanSummaryRow).ToList();
+        _exportService.ExportToExcel(dialog.FileName, "كشف الأقساط", PlanSummaryColumns, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
 
@@ -431,18 +465,8 @@ public partial class InstallmentsViewModel : ViewModelBase
     private void PrintPlans()
     {
         if (AllPlans.Count == 0) return;
-        _exportService.PrintTable("كشف الأقساط العام",
-            new[] { "العميل", "رقم الإضبارة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء" },
-            AllPlans.Select(p => new object[]
-            {
-                p.Customer?.Name ?? "",
-                p.FileNumber ?? "",
-                p.TotalAmount.ToString("N0"),
-                p.NumberOfInstallments,
-                p.InstallmentAmount.ToString("N0"),
-                p.StartDate.ToString("yyyy/MM/dd")
-            }).ToList(),
-            PlansFooter.ToPrintSummary());
+        _exportService.PrintInstallmentPlansSummary(
+            BuildPlansSummaryPrintModel(AllPlans, "كشف الأقساط العام"));
     }
 
     // ══════════════════════════════════════════════════════
@@ -527,7 +551,17 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
     partial void OnPaymentCustomerSearchChanged(string value)
     {
-        // Not used for auto-filter; search is triggered by command
+        if (PaymentSelectedCustomer is not null && PaymentSelectedCustomer.Name == value)
+            return;
+
+        PaymentSelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(PaymentCustomers, FilteredPaymentCustomers, value);
+    }
+
+    partial void OnPaymentSelectedCustomerChanged(Customer? value)
+    {
+        if (value is not null)
+            PaymentCustomerSearch = value.Name;
     }
 
     [RelayCommand]
@@ -857,21 +891,46 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     }
 
     [RelayCommand]
-    private void PrintDetailed()
+    private async Task PrintDetailedAsync()
     {
-        if (DetailedInstallments.Count == 0) return;
-        _exportService.PrintTable("كشف الأقساط التفصيلي",
-            new[] { "تاريخ الاستحقاق", "المبلغ", "المدفوع", "المتبقي", "الحالة", "تاريخ التسديد" },
-            DetailedInstallments.Select(i => new object[]
+        if (DetailedSelectedPlan is null || DetailedInstallments.Count == 0) return;
+
+        var model = BuildPlanDetailPrintModel(DetailedSelectedPlan, DetailedInstallments);
+        _exportService.PrintInstallmentPlanDetail(model);
+        await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private async Task PrintAllDetailedPlansAsync()
+    {
+        if (DetailedPlans.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("لا توجد خطط للطباعة — ابحث عن عميل أولاً");
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            var sections = new List<InstallmentPlanDetailPrintModel>();
+            foreach (var plan in DetailedPlans)
             {
-                i.DueDate.ToString("yyyy/MM/dd"),
-                i.Amount.ToString("N0"),
-                i.PaidAmount.ToString("N0"),
-                i.RemainingAmount.ToString("N0"),
-                StatusToArabic(i.Status),
-                i.PaymentDate?.ToString("yyyy/MM/dd") ?? ""
-            }).ToList(),
-            DetailedFooter.ToPrintSummary());
+                var installments = await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id);
+                sections.Add(BuildPlanDetailPrintModel(plan, installments));
+            }
+
+            var customerName = DetailedPlans.FirstOrDefault()?.Customer?.Name ?? "العميل";
+            _exportService.PrintInstallmentMultiPlanDetail(sections,
+                $"كشف أقساط تفصيلي — {customerName}");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر الطباعة:\n{ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private static string StatusToArabic(InstallmentStatus status) => status switch

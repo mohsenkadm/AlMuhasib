@@ -31,6 +31,15 @@ public interface IExportService
 
     /// <summary>طباعة جدول أقساط للعميل.</summary>
     void PrintInstallmentSchedule(InvoicePrintModel model);
+
+    /// <summary>طباعة كشف تفصيلي لخطة أقساط واحدة.</summary>
+    void PrintInstallmentPlanDetail(InstallmentPlanDetailPrintModel model);
+
+    /// <summary>طباعة عدة خطط أقساط مع ملخص كلي.</summary>
+    void PrintInstallmentMultiPlanDetail(IReadOnlyList<InstallmentPlanDetailPrintModel> plans, string title);
+
+    /// <summary>طباعة كشف الأقساط العام مع بطاقات إحصائيات.</summary>
+    void PrintInstallmentPlansSummary(InstallmentPlansSummaryPrintModel model);
 }
 
 /// <summary>Data passed to PrintInvoice.</summary>
@@ -71,6 +80,34 @@ public class InstallmentPrintRow
     public int Number { get; set; }
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public DateTime? PaymentDate { get; set; }
+    public string StatusText { get; set; } = "معلق";
+    public int? DelayDays { get; set; }
+}
+
+public class InstallmentPlanDetailPrintModel
+{
+    public string CustomerName { get; set; } = string.Empty;
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public string? FileNumber { get; set; }
+    public DateTime StartDate { get; set; }
+    public string InstallmentTypeLabel { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public IReadOnlyList<InstallmentPrintRow> Schedule { get; set; } = [];
+}
+
+public class InstallmentPlansSummaryPrintModel
+{
+    public string Title { get; set; } = "كشف الأقساط العام";
+    public string[] Columns { get; set; } = [];
+    public IList<object[]> Rows { get; set; } = [];
+    public int PlanCount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int PaidInstallmentCount { get; set; }
 }
 
 /// <summary>إيصال تسديد قسط (فردي أو جماعي) للطباعة/واتساب.</summary>

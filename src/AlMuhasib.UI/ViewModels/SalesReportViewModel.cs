@@ -29,10 +29,12 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalCompanyFees = "0";
 
     // Filters
-    [ObservableProperty] private int? _selectedCustomerId;
+    [ObservableProperty] private Customer? _selectedCustomer;
+    [ObservableProperty] private string _customerSearchText = string.Empty;
     [ObservableProperty] private int? _selectedWarehouseId;
     [ObservableProperty] private PaymentMethodItem? _selectedPaymentMethodItem;
     public ObservableCollection<Customer> Customers { get; } = [];
+    public ObservableCollection<Customer> FilteredCustomers { get; } = [];
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
 
     // Chart
@@ -71,12 +73,32 @@ public partial class SalesReportViewModel : ReportViewModelBase
 
     private async Task LoadFiltersAsync()
     {
-        var customers = await _unitOfWork.Customers.GetAllAsync();
-        foreach (var c in customers) Customers.Add(c);
+        Customers.Clear();
+        FilteredCustomers.Clear();
+        foreach (var c in (await _unitOfWork.Customers.GetAllAsync()).OrderBy(c => c.Name))
+        {
+            Customers.Add(c);
+            FilteredCustomers.Add(c);
+        }
         var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
         foreach (var w in warehouses) Warehouses.Add(w);
         var cashBoxes = await _unitOfWork.CashBoxes.GetAllAsync();
         foreach (var cb in cashBoxes) CashBoxes.Add(cb);
+    }
+
+    partial void OnSelectedCustomerChanged(Customer? value)
+    {
+        if (value is not null)
+            CustomerSearchText = value.Name;
+    }
+
+    partial void OnCustomerSearchTextChanged(string value)
+    {
+        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+            return;
+
+        SelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
     }
 
     [RelayCommand]
@@ -85,7 +107,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
         try
         {
             IsBusy = true;
-            var result = await _reportService.GetSalesReportAsync(DateFrom, DateTo, _selectedCustomerId, _selectedPaymentMethodItem?.Value, _selectedWarehouseId);
+            var result = await _reportService.GetSalesReportAsync(DateFrom, DateTo, SelectedCustomer?.Id, _selectedPaymentMethodItem?.Value, _selectedWarehouseId);
 
             TotalSales = FormatCurrency(result.TotalSales);
             CashSales = FormatCurrency(result.CashSales);

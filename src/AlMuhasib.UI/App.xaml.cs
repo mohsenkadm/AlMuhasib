@@ -81,7 +81,7 @@ public partial class App : Application
         // Use native MessageBox – does not depend on any WPF resources/themes.
         System.Windows.MessageBox.Show(
             message,
-            "AlMuhasib - خطأ",
+            "قيد - خطأ",
             System.Windows.MessageBoxButton.OK,
             System.Windows.MessageBoxImage.Error);
     }
@@ -163,6 +163,10 @@ public partial class App : Application
         services.AddSingleton<IFavoriteProductsService, FavoriteProductsService>();
         services.AddSingleton<IOfflineReminderService, OfflineReminderService>();
         services.AddSingleton<BackupSchedulerService>();
+        services.AddSingleton<IVoiceRecognitionService, QaydVoiceRecognitionService>();
+        services.AddSingleton<VoiceCommandCatalog>();
+        services.AddSingleton<VoiceCommandMatcher>();
+        services.AddSingleton<VoiceCommandExecutor>();
 
         // Export service (Shared project)
         services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
@@ -216,6 +220,7 @@ public partial class App : Application
         services.AddTransient<ProfitComparisonReportViewModel>();
         services.AddTransient<ProductMovementReportViewModel>();
         services.AddTransient<StockHealthReportViewModel>();
+        services.AddTransient<InventoryReplenishmentReportViewModel>();
         services.AddTransient<UsersViewModel>();
         services.AddTransient<PermissionsViewModel>();
         services.AddTransient<AuditLogViewModel>();

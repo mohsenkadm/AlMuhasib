@@ -618,11 +618,12 @@
                                 </Grid.ColumnDefinitions>
 
                                 <ComboBox Grid.Column="0"
-                                          ItemsSource="{Binding PaymentCustomers}"
-                                          SelectedItem="{Binding PaymentSelectedCustomer}"
+                                          ItemsSource="{Binding FilteredPaymentCustomers}"
+                                          SelectedItem="{Binding PaymentSelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                                           DisplayMemberPath="Name"
+                                          Text="{Binding PaymentCustomerSearch, UpdateSourceTrigger=PropertyChanged}"
                                           IsEditable="True"
-                                          IsTextSearchEnabled="True"
+                                          IsTextSearchEnabled="False"
                                           StaysOpenOnEdit="True"
                                           materialDesign:HintAssist.Hint="اختر العميل أو ابحث بالاسم..."
                                           materialDesign:HintAssist.IsFloating="True"
@@ -887,6 +888,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <ComboBox Grid.Column="0"
@@ -923,11 +925,21 @@
 
                             <Button Grid.Column="3"
                                     Command="{Binding PrintDetailedCommand}"
-                                    ToolTip="طباعة"
+                                    ToolTip="طباعة الخطة المحددة"
                                     Style="{StaticResource IconButton}"
                                     Foreground="#1565C0"
-                                    Width="36" Height="36">
+                                    Width="36" Height="36"
+                                    Margin="0,0,4,0">
                                 <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
+                            </Button>
+
+                            <Button Grid.Column="4"
+                                    Command="{Binding PrintAllDetailedPlansCommand}"
+                                    ToolTip="طباعة كل فواتير العميل"
+                                    Style="{StaticResource IconButton}"
+                                    Foreground="#2E7D32"
+                                    Width="36" Height="36">
+                                <materialDesign:PackIcon Kind="PrinterPos" Width="20" Height="20" />
                             </Button>
                         </Grid>
                     </materialDesign:Card>

@@ -228,6 +228,16 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetStockHealthReportAsync(f.WarehouseId, threshold, deadDays, f.StockHealthFilter));
     }
 
+    [HttpGet("inventory-replenishment")]
+    public async Task<IActionResult> InventoryReplenishment([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        var minStock = f.LowStockThreshold ?? _options.DefaultLowStockThreshold;
+        return Ok(await _reports.GetInventoryReplenishmentReportAsync(
+            f.From, f.To, f.WarehouseId, minStock, f.InventoryReplenishmentFilter));
+    }
+
     // ── Financial ──────────────────────────────────────────────
 
     [HttpGet("investors")]

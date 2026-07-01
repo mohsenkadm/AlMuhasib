@@ -45,7 +45,8 @@ public abstract class TenantApiControllerBase : ControllerBase
             CashBoxId = await ResolveIdAsync("cashbox", filter.CashBoxSyncId, ct),
             ExpenseTypeId = await ResolveIdAsync("expensetype", filter.ExpenseTypeSyncId, ct),
             InvestorId = await ResolveIdAsync("investor", filter.InvestorSyncId, ct),
-            StockHealthFilter = ParseStockHealthFilter(filter.StockHealthFilter)
+            StockHealthFilter = ParseStockHealthFilter(filter.StockHealthFilter),
+            InventoryReplenishmentFilter = ParseInventoryReplenishmentFilter(filter.InventoryReplenishmentFilter)
         };
     }
 
@@ -60,6 +61,13 @@ public abstract class TenantApiControllerBase : ControllerBase
         "deadstock" or "deadstockonly" => StockHealthFilter.DeadStockOnly,
         _ => StockHealthFilter.All
     };
+
+    private static InventoryReplenishmentFilter ParseInventoryReplenishmentFilter(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "needs" or "needsreplenishmentonly" => InventoryReplenishmentFilter.NeedsReplenishmentOnly,
+            _ => InventoryReplenishmentFilter.All
+        };
 }
 
 public sealed class ResolvedReportFilter
@@ -80,4 +88,5 @@ public sealed class ResolvedReportFilter
     public DateTime? AsOfDate { get; init; }
     public int? MinDaysOverdue { get; init; }
     public StockHealthFilter StockHealthFilter { get; init; } = StockHealthFilter.All;
+    public InventoryReplenishmentFilter InventoryReplenishmentFilter { get; init; } = InventoryReplenishmentFilter.All;
 }

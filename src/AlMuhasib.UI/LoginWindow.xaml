@@ -9,7 +9,8 @@
         xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:LoginViewModel, IsDesignTimeCreatable=False}"
-        Title="تسجيل الدخول - المحاسب"
+        Title="تسجيل الدخول - قيد"
+        Icon="pack://application:,,,/Assets/Brand/qayd-icon.ico"
         Height="640" Width="920"
         MinHeight="580" MinWidth="780"
         WindowStartupLocation="CenterScreen"
@@ -282,11 +283,12 @@
                                 <Ellipse Width="92" Height="92" Stroke="#55FFFFFF" StrokeThickness="1.5"
                                          StrokeDashArray="4 6" Opacity="0.55"/>
                                 <Border Width="68" Height="68" CornerRadius="34"
-                                        Background="#28FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1"
+                                        Background="Transparent"
                                         HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="CalculatorVariant" Width="36" Height="36"
-                                                             Foreground="#80DEEA"
-                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image Source="pack://application:,,,/Assets/Brand/qayd-mark.png"
+                                           Width="68" Height="68"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>
                             </Grid>
 

@@ -143,6 +143,7 @@ public partial class MainWindowViewModel
     [RelayCommand]
     private void OpenGlobalSearch()
     {
+        IsVoiceAssistantOpen = false;
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
         IsNotificationPanelOpen = false;

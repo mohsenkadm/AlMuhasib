@@ -33,6 +33,7 @@ public static class ChartThemeConfig
     // ── Theme-aware chart chrome (updated via ApplyTheme) ───
     public static SKColor GridLineColor { get; private set; } = SKColor.Parse("#F0F0F0");
     public static SKColor LabelColor { get; private set; } = SKColor.Parse("#757575");
+    public static SKColor ChartSurfaceColor { get; private set; } = SKColor.Parse("#F8FAFC");
     public static SKColor TooltipBg { get; private set; } = SKColors.White;
     public static SKColor GeometryFillColor { get; private set; } = SKColors.White;
 
@@ -47,10 +48,17 @@ public static class ChartThemeConfig
         _isDark = isDark;
         GridLineColor = SKColor.Parse(isDark ? "#2D3544" : "#F0F0F0");
         LabelColor = SKColor.Parse(isDark ? "#B0BEC5" : "#757575");
+        ChartSurfaceColor = SKColor.Parse(isDark ? "#171D28" : "#F8FAFC");
         TooltipBg = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
-        GeometryFillColor = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
+        GeometryFillColor = SKColor.Parse(isDark ? "#64B5F6" : "#FFFFFF");
         EnsurePaints();
     }
+
+    public static DrawMarginFrame CreateDrawMarginFrame() => new()
+    {
+        Fill = null,
+        Stroke = new SolidColorPaint(GridLineColor) { StrokeThickness = 1 }
+    };
 
     public static void EnsurePaints()
     {
@@ -149,7 +157,7 @@ public static class ChartThemeConfig
         GeometryStroke = PaletteStrokePaint(colorIndex, 2f),
         GeometryFill = new SolidColorPaint(GeometryFillColor),
         GeometrySize = 8,
-        Fill = PalettePaint(colorIndex, (byte)50),
+        Fill = PalettePaint(colorIndex, (byte)(_isDark ? 90 : 50)),
         LineSmoothness = 0.65,
         AnimationsSpeed = TimeSpan.FromMilliseconds(800),
         EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut
