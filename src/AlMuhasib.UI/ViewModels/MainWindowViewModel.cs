@@ -150,6 +150,7 @@ public partial class MainWindowViewModel : ObservableObject
         IUserNoteService userNoteService,
         ICustomerStatementQuickService customerStatementQuick,
         IOfflineReminderService offlineReminder,
+        IRecentExcelExportService recentExcelExport,
         IVoiceRecognitionService voiceRecognition,
         VoiceCommandCatalog voiceCommandCatalog,
         VoiceCommandMatcher voiceCommandMatcher,
@@ -176,6 +177,8 @@ public partial class MainWindowViewModel : ObservableObject
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
         _customerStatementQuick = customerStatementQuick;
+        _recentExcelExport = recentExcelExport;
+        _recentExcelExport.ExportsChanged += OnRecentExcelExportsChanged;
 
         _voiceRecognition = voiceRecognition;
         _voiceCommandCatalog = voiceCommandCatalog;
@@ -195,6 +198,7 @@ public partial class MainWindowViewModel : ObservableObject
         UpdateDateTime();
         StartClock();
         _ = RefreshRecentActivitiesAsync();
+        RefreshRecentExcelExports();
 
         InvoiceNavigationBridge.CopyToSalesInvoiceAsync = CopyToSalesInvoiceAsync;
         InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync = CopyToPurchaseInvoiceAsync;

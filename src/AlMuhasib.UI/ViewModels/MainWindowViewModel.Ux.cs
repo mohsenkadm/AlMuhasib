@@ -147,6 +147,7 @@ public partial class MainWindowViewModel
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
         IsNotificationPanelOpen = false;
+        IsOpenRecentExcelPanelOpen = false;
         IsGlobalSearchOpen = true;
         _ = RefreshGlobalSearchAsync();
     }

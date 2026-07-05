@@ -135,6 +135,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key == Key.Escape && _viewModel.IsOpenRecentExcelPanelOpen)
+        {
+            _viewModel.CloseOpenRecentExcelPanelCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && _viewModel.IsNotificationPanelOpen)
         {
             _viewModel.CloseNotificationPanelCommand.Execute(null);
@@ -266,6 +273,9 @@ public partial class MainWindow : Window
 
     private void NotesBackdrop_Click(object sender, MouseButtonEventArgs e) =>
         _ = _viewModel.CloseNotesPanelCommand.ExecuteAsync(null);
+
+    private void OpenRecentExcelBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.CloseOpenRecentExcelPanelCommand.Execute(null);
 
     private void ChromeTabClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

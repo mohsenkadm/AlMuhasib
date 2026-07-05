@@ -1,0 +1,313 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.OpenRecentExcelPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             Width="620"
+             MaxHeight="620">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <Style x:Key="RecentExcelCard" TargetType="Border">
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E8F5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F1F8E9"/>
+                    <Setter Property="BorderBrush" Value="#81C784"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1.015" Duration="0:0:0.18">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1.015" Duration="0:0:0.18">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1" Duration="0:0:0.15"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1" Duration="0:0:0.15"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+                <DataTrigger Binding="{Binding FileExists}" Value="False">
+                    <Setter Property="Opacity" Value="0.55"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource CardBrush}"
+            CornerRadius="18"
+            BorderBrush="#C8E6C9"
+            BorderThickness="1"
+            RenderTransformOrigin="0.5,0">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.24" Color="#1B5E20"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" CornerRadius="18,18,0,0" Padding="18,16">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1B5E20" Offset="0"/>
+                        <GradientStop Color="#43A047" Offset="0.55"/>
+                        <GradientStop Color="#66BB6A" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="46" Height="46" CornerRadius="12"
+                            Background="#33FFFFFF" Margin="0,0,12,0">
+                        <materialDesign:PackIcon Kind="MicrosoftExcel" Width="26" Height="26"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Open Recent" FontSize="19" FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock Text="ملفات Excel التي صدّرتها من النظام — افتحها بضغطة واحدة"
+                                   FontSize="11.5" Foreground="#E8F5E9" Margin="0,3,0,0"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="2" Background="#33FFFFFF" CornerRadius="12"
+                            Padding="12,5" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock FontSize="12" Foreground="White">
+                            <Run Text="العدد: "/>
+                            <Run Text="{Binding RecentExcelExportCount}" FontWeight="Bold"/>
+                        </TextBlock>
+                    </Border>
+
+                    <Button Grid.Column="3"
+                            Command="{Binding CloseOpenRecentExcelPanelCommand}"
+                            Style="{StaticResource PanelCloseButton}"
+                            Foreground="White" Background="#33FFFFFF"
+                            ToolTip="إغلاق"/>
+                </Grid>
+            </Border>
+
+            <!-- Accent shimmer -->
+            <Border Grid.Row="1" Height="3">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                        <GradientStop Color="#00FFFFFF" Offset="0"/>
+                        <GradientStop Color="#66FFFFFF" Offset="0.5"/>
+                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="16,14,16,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding RecentExcelExports}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:RecentExcelExportItem}">
+                                <Border Style="{StaticResource RecentExcelCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" Width="44" Height="44" CornerRadius="11"
+                                                Margin="0,0,12,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#E8F5E9" Offset="0"/>
+                                                    <GradientStop Color="#C8E6C9" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="FileExcelOutline" Width="24" Height="24"
+                                                                     Foreground="#2E7D32"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="14"
+                                                       Foreground="{DynamicResource SearchResultTitleBrush}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <Border Background="#E3F2FD" CornerRadius="6" Padding="6,2" Margin="0,0,6,0">
+                                                    <TextBlock Text="{Binding SheetName}" FontSize="10.5"
+                                                               Foreground="#1565C0" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding TimeAgoDisplay}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text=" · " FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding ExportedAtDisplay}" FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding FolderPath}" FontSize="10.5" Margin="0,5,0,0"
+                                                       Foreground="#78909C" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding FilePath}"/>
+                                            <TextBlock Text="الملف غير موجود في المسار المحفوظ"
+                                                       FontSize="10.5" Foreground="#C62828" Margin="0,4,0,0"
+                                                       FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FileExists}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource IconButton}"
+                                                    Command="{Binding DataContext.OpenRecentExcelFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="فتح الملف"
+                                                    Width="36" Height="36" Margin="0,0,4,0">
+                                                <materialDesign:PackIcon Kind="OpenInNew" Width="18" Height="18"
+                                                                         Foreground="#2E7D32"/>
+                                            </Button>
+                                            <Button Style="{StaticResource IconButton}"
+                                                    Command="{Binding DataContext.OpenRecentExcelFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="إظهار في المجلد"
+                                                    Width="36" Height="36" Margin="0,0,4,0">
+                                                <materialDesign:PackIcon Kind="FolderOpenOutline" Width="18" Height="18"
+                                                                         Foreground="#1565C0"/>
+                                            </Button>
+                                            <Button Style="{StaticResource IconButton}"
+                                                    Command="{Binding DataContext.RemoveRecentExcelExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="إزالة من القائمة"
+                                                    Width="36" Height="36">
+                                                <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18"
+                                                                         Foreground="#EF5350"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.OpenRecentExcelFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty state -->
+                <Border CornerRadius="16" Padding="28,36"
+                        Background="{DynamicResource BackgroundBrush}"
+                        BorderBrush="#E0E0E0" BorderThickness="1"
+                        VerticalAlignment="Center">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasRecentExcelExports}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Border Width="72" Height="72" CornerRadius="20" Background="#E8F5E9" Margin="0,0,0,16">
+                            <materialDesign:PackIcon Kind="FileExcelOutline" Width="38" Height="38"
+                                                     Foreground="#43A047"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="لا توجد ملفات Excel حديثة"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SearchResultTitleBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="عند تصدير أي تقرير أو بيانات إلى Excel من النظام&#x0a;سيظهر الملف هنا تلقائياً مع مسار الحفظ"
+                                   FontSize="12.5" TextAlignment="Center" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,8,0,0" LineHeight="20"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="3" Padding="16,12" BorderBrush="#E8F5E9" BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,18,18" Background="#FAFAFA">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="يتم حفظ آخر 50 ملف Excel تلقائياً"
+                               FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Command="{Binding RefreshRecentExcelExportsCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="تحديث" Margin="6,0,0,0" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ClearRecentExcelExportsCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Foreground="#C62828"/>
+                                <TextBlock Text="مسح السجل" Margin="6,0,0,0" FontSize="12"
+                                           VerticalAlignment="Center" Foreground="#C62828"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

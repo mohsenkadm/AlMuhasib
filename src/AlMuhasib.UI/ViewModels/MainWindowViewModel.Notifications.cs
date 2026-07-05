@@ -68,6 +68,7 @@ public partial class MainWindowViewModel
         IsGlobalSearchOpen = false;
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
+        IsOpenRecentExcelPanelOpen = false;
         IsNotificationPanelOpen = true;
         await RefreshNotificationsAsync();
     }

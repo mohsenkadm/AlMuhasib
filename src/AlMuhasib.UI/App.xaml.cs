@@ -160,6 +160,7 @@ public partial class App : Application
         services.AddSingleton<IInvoiceQueueService, InvoiceQueueService>();
         services.AddSingleton<INotificationCenterService, NotificationCenterService>();
         services.AddSingleton<IRecentActivityService, RecentActivityService>();
+        services.AddSingleton<IRecentExcelExportService, RecentExcelExportService>();
         services.AddSingleton<IFavoriteProductsService, FavoriteProductsService>();
         services.AddSingleton<IOfflineReminderService, OfflineReminderService>();
         services.AddSingleton<BackupSchedulerService>();
@@ -168,8 +169,11 @@ public partial class App : Application
         services.AddSingleton<VoiceCommandMatcher>();
         services.AddSingleton<VoiceCommandExecutor>();
 
-        // Export service (Shared project)
-        services.AddSingleton<IExportService, AlMuhasib.Shared.Services.ExcelExportService>();
+        // Export service (Shared project) — wrapped to track Excel paths for Open Recent
+        services.AddSingleton<AlMuhasib.Shared.Services.ExcelExportService>();
+        services.AddSingleton<IExportService>(sp => new TrackingExportService(
+            sp.GetRequiredService<AlMuhasib.Shared.Services.ExcelExportService>(),
+            sp.GetRequiredService<IRecentExcelExportService>()));
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();

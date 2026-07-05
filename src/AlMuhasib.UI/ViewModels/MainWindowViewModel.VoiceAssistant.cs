@@ -229,6 +229,7 @@ public partial class MainWindowViewModel
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
         IsNotificationPanelOpen = false;
+        IsOpenRecentExcelPanelOpen = false;
         IsGlobalSearchOpen = false;
         IsRecentActivityOpen = false;
         IsQuickStatementOpen = false;
