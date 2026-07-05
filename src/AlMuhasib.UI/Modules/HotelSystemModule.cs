@@ -43,198 +43,73 @@ public sealed class HotelSystemModule : ISystemModule
         (HotelPermissionRegistry.CloudSync, "المزامنة السحابية")
     ];
 
-    public IReadOnlyList<NavigationMenuItem> BuildMenuItems() =>
-    [
-        new NavigationMenuItem
+    public IReadOnlyList<NavigationMenuItem> BuildMenuItems()
+    {
+        var operations = CreateGroup("العمليات", PackIconKind.BriefcaseClockOutline, isExpanded: true,
+            Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(HotelDashboardViewModel), HotelPermissionRegistry.Dashboard),
+            Item("حجز جديد", PackIconKind.CalendarPlus, typeof(HotelReservationFormViewModel), HotelPermissionRegistry.ReservationForm),
+            Item("الحجوزات", PackIconKind.CalendarClock, typeof(HotelReservationsViewModel), HotelPermissionRegistry.Reservations),
+            Item("تقويم الحجوزات", PackIconKind.CalendarMonth, typeof(HotelReservationsCalendarViewModel), HotelPermissionRegistry.ReservationsCalendar),
+            Item("تسجيل دخول/خروج", PackIconKind.Login, typeof(HotelCheckInOutViewModel), HotelPermissionRegistry.CheckInOut));
+
+        var roomsGuests = CreateGroup("الغرف والنزلاء", PackIconKind.Bed, isExpanded: true,
+            Item("الغرف", PackIconKind.Door, typeof(HotelRoomsViewModel), HotelPermissionRegistry.Rooms),
+            Item("أنواع الغرف", PackIconKind.Bed, typeof(HotelRoomTypesViewModel), HotelPermissionRegistry.RoomTypes),
+            Item("الطوابق", PackIconKind.Stairs, typeof(HotelFloorsViewModel), HotelPermissionRegistry.Floors),
+            Item("النزلاء", PackIconKind.AccountGroup, typeof(HotelGuestsViewModel), HotelPermissionRegistry.Guests),
+            Item("خطط الأسعار", PackIconKind.CurrencyUsd, typeof(HotelRatePlansViewModel), HotelPermissionRegistry.RatePlans),
+            Item("النظافة", PackIconKind.Broom, typeof(HotelHousekeepingViewModel), HotelPermissionRegistry.Housekeeping));
+
+        var restaurant = CreateGroup("المطعم", PackIconKind.SilverwareForkKnife, isExpanded: false,
+            Item("كاشير المطعم", PackIconKind.SilverwareForkKnife, typeof(RestaurantPosViewModel), HotelPermissionRegistry.RestaurantPos),
+            Item("قائمة المطعم", PackIconKind.Food, typeof(RestaurantMenuViewModel), HotelPermissionRegistry.RestaurantMenu),
+            Item("مخزون المطبخ", PackIconKind.PackageVariant, typeof(RestaurantInventoryViewModel), HotelPermissionRegistry.RestaurantInventory),
+            Item("طاولات الصالة", PackIconKind.TableChair, typeof(RestaurantTablesViewModel), HotelPermissionRegistry.RestaurantTables),
+            Item("تقارير المطعم", PackIconKind.ChartPie, typeof(RestaurantReportsViewModel), HotelPermissionRegistry.RestaurantReports),
+            Item("شاشة المطبخ", PackIconKind.Stove, typeof(RestaurantKitchenViewModel), HotelPermissionRegistry.RestaurantKitchen));
+
+        var finance = CreateGroup("المالية", PackIconKind.CashMultiple, isExpanded: false,
+            Item("الصندوق", PackIconKind.CashRegister, typeof(HotelCashViewModel), HotelPermissionRegistry.HotelCash),
+            Item("المصاريف", PackIconKind.CashMinus, typeof(HotelExpensesViewModel), HotelPermissionRegistry.HotelExpenses),
+            Item("التقارير", PackIconKind.ChartBar, typeof(HotelReportsViewModel), HotelPermissionRegistry.HotelReports));
+
+        var system = CreateGroup("النظام", PackIconKind.CogOutline, isExpanded: false,
+            Item("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), HotelPermissionRegistry.Users),
+            Item("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), HotelPermissionRegistry.Permissions),
+            Item("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), HotelPermissionRegistry.PrintSettings),
+            Item("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), HotelPermissionRegistry.Backup),
+            Item("المزامنة السحابية", PackIconKind.CloudSync, typeof(CloudSyncSettingsViewModel), HotelPermissionRegistry.CloudSync),
+            Item("تحديث النظام", PackIconKind.CloudDownload, typeof(SystemUpdateViewModel), ScreenPermissionRegistry.SystemUpdate),
+            Item("تبديل النظام (مطور)", PackIconKind.DeveloperBoard, typeof(DeveloperSystemSwitchViewModel), ScreenPermissionRegistry.DeveloperSystem));
+
+        return [operations, roomsGuests, restaurant, finance, system];
+    }
+
+    private static NavigationMenuItem Item(string title, PackIconKind icon, Type viewModelType, string screenName) =>
+        new()
         {
-            Title = "لوحة التحكم",
-            Icon = PackIconKind.ViewDashboard,
-            ViewModelType = typeof(HotelDashboardViewModel),
-            ScreenName = HotelPermissionRegistry.Dashboard
-        },
-        new NavigationMenuItem
+            Title = title,
+            Icon = icon,
+            ViewModelType = viewModelType,
+            ScreenName = screenName,
+            IsSubItem = true
+        };
+
+    private static NavigationMenuItem CreateGroup(string title, PackIconKind icon, bool isExpanded, params NavigationMenuItem[] children)
+    {
+        var group = new NavigationMenuItem
         {
-            Title = "حجز جديد",
-            Icon = PackIconKind.CalendarPlus,
-            ViewModelType = typeof(HotelReservationFormViewModel),
-            ScreenName = HotelPermissionRegistry.ReservationForm
-        },
-        new NavigationMenuItem
-        {
-            Title = "الحجوزات",
-            Icon = PackIconKind.CalendarClock,
-            ViewModelType = typeof(HotelReservationsViewModel),
-            ScreenName = HotelPermissionRegistry.Reservations
-        },
-        new NavigationMenuItem
-        {
-            Title = "تقويم الحجوزات",
-            Icon = PackIconKind.CalendarMonth,
-            ViewModelType = typeof(HotelReservationsCalendarViewModel),
-            ScreenName = HotelPermissionRegistry.ReservationsCalendar
-        },
-        new NavigationMenuItem
-        {
-            Title = "تسجيل دخول/خروج",
-            Icon = PackIconKind.Login,
-            ViewModelType = typeof(HotelCheckInOutViewModel),
-            ScreenName = HotelPermissionRegistry.CheckInOut
-        },
-        new NavigationMenuItem
-        {
-            Title = "الغرف",
-            Icon = PackIconKind.Door,
-            ViewModelType = typeof(HotelRoomsViewModel),
-            ScreenName = HotelPermissionRegistry.Rooms
-        },
-        new NavigationMenuItem
-        {
-            Title = "أنواع الغرف",
-            Icon = PackIconKind.Bed,
-            ViewModelType = typeof(HotelRoomTypesViewModel),
-            ScreenName = HotelPermissionRegistry.RoomTypes
-        },
-        new NavigationMenuItem
-        {
-            Title = "الطوابق",
-            Icon = PackIconKind.Stairs,
-            ViewModelType = typeof(HotelFloorsViewModel),
-            ScreenName = HotelPermissionRegistry.Floors
-        },
-        new NavigationMenuItem
-        {
-            Title = "النزلاء",
-            Icon = PackIconKind.AccountGroup,
-            ViewModelType = typeof(HotelGuestsViewModel),
-            ScreenName = HotelPermissionRegistry.Guests
-        },
-        new NavigationMenuItem
-        {
-            Title = "خطط الأسعار",
-            Icon = PackIconKind.CurrencyUsd,
-            ViewModelType = typeof(HotelRatePlansViewModel),
-            ScreenName = HotelPermissionRegistry.RatePlans
-        },
-        new NavigationMenuItem
-        {
-            Title = "النظافة",
-            Icon = PackIconKind.Broom,
-            ViewModelType = typeof(HotelHousekeepingViewModel),
-            ScreenName = HotelPermissionRegistry.Housekeeping
-        },
-        new NavigationMenuItem
-        {
-            Title = "كاشير المطعم",
-            Icon = PackIconKind.SilverwareForkKnife,
-            ViewModelType = typeof(RestaurantPosViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantPos
-        },
-        new NavigationMenuItem
-        {
-            Title = "قائمة المطعم",
-            Icon = PackIconKind.Food,
-            ViewModelType = typeof(RestaurantMenuViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantMenu
-        },
-        new NavigationMenuItem
-        {
-            Title = "مخزون المطبخ",
-            Icon = PackIconKind.PackageVariant,
-            ViewModelType = typeof(RestaurantInventoryViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantInventory
-        },
-        new NavigationMenuItem
-        {
-            Title = "طاولات الصالة",
-            Icon = PackIconKind.TableChair,
-            ViewModelType = typeof(RestaurantTablesViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantTables
-        },
-        new NavigationMenuItem
-        {
-            Title = "تقارير المطعم",
-            Icon = PackIconKind.ChartPie,
-            ViewModelType = typeof(RestaurantReportsViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantReports
-        },
-        new NavigationMenuItem
-        {
-            Title = "شاشة المطبخ",
-            Icon = PackIconKind.Stove,
-            ViewModelType = typeof(RestaurantKitchenViewModel),
-            ScreenName = HotelPermissionRegistry.RestaurantKitchen
-        },
-        new NavigationMenuItem
-        {
-            Title = "الصندوق",
-            Icon = PackIconKind.CashRegister,
-            ViewModelType = typeof(HotelCashViewModel),
-            ScreenName = HotelPermissionRegistry.HotelCash
-        },
-        new NavigationMenuItem
-        {
-            Title = "المصاريف",
-            Icon = PackIconKind.CashMinus,
-            ViewModelType = typeof(HotelExpensesViewModel),
-            ScreenName = HotelPermissionRegistry.HotelExpenses
-        },
-        new NavigationMenuItem
-        {
-            Title = "التقارير",
-            Icon = PackIconKind.ChartBar,
-            ViewModelType = typeof(HotelReportsViewModel),
-            ScreenName = HotelPermissionRegistry.HotelReports
-        },
-        new NavigationMenuItem
-        {
-            Title = "المستخدمون",
-            Icon = PackIconKind.AccountMultiple,
-            ViewModelType = typeof(UsersViewModel),
-            ScreenName = HotelPermissionRegistry.Users
-        },
-        new NavigationMenuItem
-        {
-            Title = "الصلاحيات",
-            Icon = PackIconKind.ShieldKey,
-            ViewModelType = typeof(PermissionsViewModel),
-            ScreenName = HotelPermissionRegistry.Permissions
-        },
-        new NavigationMenuItem
-        {
-            Title = "إعدادات الطباعة",
-            Icon = PackIconKind.PrinterSettings,
-            ViewModelType = typeof(PrintLayoutSettingsViewModel),
-            ScreenName = HotelPermissionRegistry.PrintSettings
-        },
-        new NavigationMenuItem
-        {
-            Title = "النسخ الاحتياطي",
-            Icon = PackIconKind.DatabaseCog,
-            ViewModelType = typeof(BackupRestoreViewModel),
-            ScreenName = HotelPermissionRegistry.Backup
-        },
-        new NavigationMenuItem
-        {
-            Title = "المزامنة السحابية",
-            Icon = PackIconKind.CloudSync,
-            ViewModelType = typeof(CloudSyncSettingsViewModel),
-            ScreenName = HotelPermissionRegistry.CloudSync
-        },
-        new NavigationMenuItem
-        {
-            Title = "تحديث النظام",
-            Icon = PackIconKind.CloudDownload,
-            ViewModelType = typeof(SystemUpdateViewModel),
-            ScreenName = ScreenPermissionRegistry.SystemUpdate
-        },
-        new NavigationMenuItem
-        {
-            Title = "تبديل النظام (مطور)",
-            Icon = PackIconKind.DeveloperBoard,
-            ViewModelType = typeof(DeveloperSystemSwitchViewModel),
-            ScreenName = ScreenPermissionRegistry.DeveloperSystem
-        }
-    ];
+            Title = title,
+            Icon = icon,
+            IsGroupHeader = true,
+            IsExpanded = isExpanded
+        };
+
+        foreach (var child in children)
+            group.Children.Add(child);
+
+        return group;
+    }
 
     public string GetScreenName(Type viewModelType) =>
         HotelPermissionRegistry.GetScreenName(viewModelType);

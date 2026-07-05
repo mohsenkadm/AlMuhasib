@@ -90,6 +90,8 @@ internal static class HotelReservationAmountHelper
         query.Select(r => new ReservationListItem
         {
             Id = r.Id,
+            GuestId = r.GuestId,
+            RoomId = r.RoomId,
             ReservationNumber = r.ReservationNumber,
             GuestName = r.Guest.FullName,
             RoomNumber = r.Room != null ? r.Room.RoomNumber : null,

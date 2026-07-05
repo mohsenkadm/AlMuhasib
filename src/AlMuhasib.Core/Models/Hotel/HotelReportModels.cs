@@ -65,6 +65,8 @@ public class GuestListItem
 public class ReservationListItem
 {
     public int Id { get; set; }
+    public int GuestId { get; set; }
+    public int? RoomId { get; set; }
     public string ReservationNumber { get; set; } = string.Empty;
     public string GuestName { get; set; } = string.Empty;
     public string? RoomNumber { get; set; }
@@ -91,6 +93,8 @@ public class RoomListItem
     public int Capacity { get; set; }
     public decimal BasePrice { get; set; }
     public string? CurrentGuestName { get; set; }
+    public int? CurrentGuestId { get; set; }
+    public int? CurrentReservationId { get; set; }
 }
 
 public class OccupancyReportData

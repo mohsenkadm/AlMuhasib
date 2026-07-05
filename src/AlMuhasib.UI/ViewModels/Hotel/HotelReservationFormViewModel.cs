@@ -75,9 +75,9 @@ public partial class HotelReservationFormViewModel : ViewModelBase
         LoadPermissions(_currentUserService, HotelPermissionRegistry.ReservationForm);
         await LoadLookupsAsync();
 
-        if (HotelReservationNavigationBridge.PendingEditReservationId is int editId)
+        if (HotelNavigationBridge.PendingEditReservationId is int editId)
         {
-            HotelReservationNavigationBridge.PendingEditReservationId = null;
+            HotelNavigationBridge.PendingEditReservationId = null;
             await LoadReservationAsync(editId);
         }
         else

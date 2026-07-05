@@ -83,13 +83,15 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
                     <TextBlock Text="سجل المصاريف" FontSize="15" FontWeight="Bold" Foreground="White"/>
                 </Border>
-                <DataGrid x:Name="ExpensesGrid" Grid.Row="1"
+                <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
+                <DataGrid x:Name="ExpensesGrid" Grid.Row="2"
                           ItemsSource="{Binding Expenses}" SelectedItem="{Binding SelectedExpense}"
                           AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -121,7 +123,7 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-                <controls:PaginationBar Grid.Row="2"/>
+                <controls:PaginationBar Grid.Row="3"/>
             </Grid>
         </md:Card>
 

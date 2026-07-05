@@ -2,6 +2,7 @@ using AlMuhasib.Core.Entities.Hotel;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,6 +20,7 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
     public ObservableCollection<HotelExpense> Expenses { get; } = [];
     public ObservableCollection<HotelExpenseType> ExpenseTypes { get; } = [];
     public ObservableCollection<HotelCashBox> CashBoxes { get; } = [];
+    public ObservableCollection<HotelListStatItem> Stats { get; } = [];
 
     [ObservableProperty] private HotelExpense? _selectedExpense;
     [ObservableProperty] private HotelExpenseType? _selectedExpenseType;
@@ -99,6 +101,7 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
                     filtered, Expenses, CurrentPage, PageSize,
                     out var filteredTotal, out _, out _);
                 ApplyPaginationStats(filteredTotal);
+                RebuildStats(filtered);
                 return;
             }
 
@@ -108,11 +111,20 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
             foreach (var e in items)
                 Expenses.Add(e);
             ApplyPaginationStats(total);
+            RebuildStats(items);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void RebuildStats(IEnumerable<HotelExpense> items)
+    {
+        var list = items.ToList();
+        Stats.Clear();
+        Stats.Add(new HotelListStatItem { Label = "عدد المصاريف", Value = list.Count.ToString("N0"), AccentColor = "#1565C0" });
+        Stats.Add(new HotelListStatItem { Label = "إجمالي المبالغ", Value = list.Sum(e => e.Amount).ToString("N0"), AccentColor = "#C62828" });
     }
 
     [RelayCommand]

@@ -80,13 +80,15 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
                     <TextBlock Text="سندات القبض والصرف" FontSize="15" FontWeight="Bold" Foreground="White"/>
                 </Border>
-                <DataGrid x:Name="VouchersGrid" Grid.Row="1"
+                <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
+                <DataGrid x:Name="VouchersGrid" Grid.Row="2"
                           ItemsSource="{Binding Vouchers}" AutoGenerateColumns="False"
                           IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -110,7 +112,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <controls:PaginationBar Grid.Row="2"/>
+                <controls:PaginationBar Grid.Row="3"/>
             </Grid>
         </md:Card>
 

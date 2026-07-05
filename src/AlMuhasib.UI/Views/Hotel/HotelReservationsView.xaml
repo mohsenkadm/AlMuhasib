@@ -7,20 +7,23 @@
              xmlns:local="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="إدارة الحجوزات" FontSize="16" FontWeight="Bold"
-                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
-                <WrapPanel Grid.Row="1">
+    <controls:HotelListPageShell PageTitle="إدارة الحجوزات"
+                                 ListTitle="الحجوزات"
+                                 ShowStatsBar="True"
+                                 StatsItemsSource="{Binding Stats}"
+                                 HasPreviewSelection="{Binding HasPreviewSelection}"
+                                 PreviewTitle="{Binding PreviewTitle}"
+                                 PreviewSubtitle="{Binding PreviewSubtitle}"
+                                 PreviewIconKind="{Binding PreviewIconKind}"
+                                 PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
+
+        <controls:HotelListPageShell.ListHeaderExtra>
+            <controls:ListViewModeToggle OnDarkBackground="True"/>
+        </controls:HotelListPageShell.ListHeaderExtra>
+
+        <controls:HotelListPageShell.ToolbarContent>
+            <WrapPanel>
                 <Button Command="{Binding OpenNewReservationCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" IsEnabled="{Binding CanAdd}">
                     <StackPanel Orientation="Horizontal">
                         <md:PackIcon Kind="CalendarPlus" Margin="0,0,6,0"/>
@@ -49,247 +52,254 @@
                                              Margin="4,0,0,0"
                                              VerticalAlignment="Center"/>
                 <CheckBox Content="غير مسددة" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center"/>
-                </WrapPanel>
-            </Grid>
-        </md:Card>
-        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="الحجوزات" FontWeight="Bold" Foreground="White"/>
-                </Border>
-                <DataGrid x:Name="ReservationsGrid"
-                          Grid.Row="1"
-                          ItemsSource="{Binding Reservations}"
-                          SelectedItem="{Binding SelectedReservation}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          CanUserAddRows="False"
-                          SelectionMode="Single"
-                          HeadersVisibility="Column"
-                          Style="{StaticResource HotelListDataGrid}"
-                          Margin="8"
-                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="رقم"
-                                            Binding="{Binding ReservationNumber}"
-                                            Width="110" MinWidth="90"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ReservationNumber"/>
-                        <DataGridTextColumn Header="النزيل"
-                                            Binding="{Binding GuestName}"
-                                            Width="2*" MinWidth="140"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GuestName"/>
-                        <DataGridTextColumn Header="الغرفة"
-                                            Binding="{Binding RoomNumber}"
-                                            Width="100" MinWidth="80"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber"/>
-                        <DataGridTemplateColumn Header="الحالة" Width="110" MinWidth="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border x:Name="StatusBadge" CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
-                                        <TextBlock x:Name="StatusLabel" Text="{Binding Status}" FontWeight="SemiBold" Foreground="White"/>
-                                    </Border>
-                                    <DataTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static local:ReservationStatus.Confirmed}">
-                                            <Setter TargetName="StatusBadge" Property="Background" Value="#1565C0"/>
-                                            <Setter TargetName="StatusLabel" Property="Text" Value="مؤكد"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static local:ReservationStatus.CheckedIn}">
-                                            <Setter TargetName="StatusBadge" Property="Background" Value="#2E7D32"/>
-                                            <Setter TargetName="StatusLabel" Property="Text" Value="مسجل"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static local:ReservationStatus.CheckedOut}">
-                                            <Setter TargetName="StatusBadge" Property="Background" Value="#616161"/>
-                                            <Setter TargetName="StatusLabel" Property="Text" Value="غادر"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static local:ReservationStatus.Cancelled}">
-                                            <Setter TargetName="StatusBadge" Property="Background" Value="#C62828"/>
-                                            <Setter TargetName="StatusLabel" Property="Text" Value="ملغى"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static local:ReservationStatus.NoShow}">
-                                            <Setter TargetName="StatusBadge" Property="Background" Value="#F57C00"/>
-                                            <Setter TargetName="StatusLabel" Property="Text" Value="لم يحضر"/>
-                                        </DataTrigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckInDate"/>
-                        <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckOutDate"/>
-                        <DataGridTextColumn Header="الإجمالي"
-                                            Binding="{Binding TotalAmount, StringFormat=N0}"
-                                            Width="110" MinWidth="90"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
-                        <DataGridTextColumn Header="المتبقي"
-                                            Binding="{Binding RemainingAmount, StringFormat=N0}"
-                                            Width="110" MinWidth="90"
-                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                        <DataGridTemplateColumn Header="إجراءات" Width="220" MinWidth="180">
-                            <DataGridTemplateColumn.CellStyle>
-                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
-                            </DataGridTemplateColumn.CellStyle>
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button Style="{StaticResource TableViewIconButton}" Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
-                                            <md:PackIcon Kind="Eye"/>
-                                        </Button>
-                                        <Button Style="{StaticResource TableSecondaryIconButton}" Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
-                                            <md:PackIcon Kind="CashCheck"/>
-                                        </Button>
-                                        <Button Style="{StaticResource TableEditIconButton}" Command="{Binding DataContext.EditReservationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
-                                            <md:PackIcon Kind="PencilOutline"/>
-                                        </Button>
-                                        <Button Style="{StaticResource TableDeleteIconButton}" Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
-                                            <md:PackIcon Kind="DeleteOutline"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-                <Border Grid.Row="2" Background="#F5F5F5" Padding="16,8">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="عدد الحجوزات:" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding FilteredReservationsCount, StringFormat=N0}" FontWeight="Bold" Margin="0,0,16,0"/>
-                        <TextBlock Text="إجمالي المبلغ:" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding FilteredTotalAmount, StringFormat=N0}" FontWeight="Bold" Foreground="#1565C0" Margin="0,0,16,0"/>
-                        <TextBlock Text="المتبقي:" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding FilteredRemainingAmount, StringFormat=N0}" FontWeight="Bold" Foreground="#C62828"/>
+            </WrapPanel>
+        </controls:HotelListPageShell.ToolbarContent>
+
+        <controls:HotelListPageShell.ListContent>
+            <DataGrid x:Name="ReservationsGrid"
+                      ItemsSource="{Binding Reservations}"
+                      SelectedItem="{Binding SelectedReservation}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      Style="{StaticResource HotelListDataGrid}"
+                      Margin="8"
+                      Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                      behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="رقم" Width="110" MinWidth="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ReservationNumber">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:HotelEntityLink LinkText="{Binding ReservationNumber}"
+                                                          Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          CommandParameter="{Binding}"
+                                                          ToolTipText="عرض تفاصيل الحجز"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="النزيل" Width="2*" MinWidth="140"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GuestName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:HotelEntityLink LinkText="{Binding GuestName}"
+                                                          Command="{Binding DataContext.OpenGuestFromReservationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          CommandParameter="{Binding GuestId}"
+                                                          ToolTipText="فتح ملف النزيل"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="الغرفة" Width="100" MinWidth="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:HotelEntityLink LinkText="{Binding RoomNumber, TargetNullValue=—}"
+                                                          Command="{Binding DataContext.OpenRoomFromReservationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          CommandParameter="{Binding RoomId}"
+                                                          ToolTipText="عرض الغرفة"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="الحالة" Width="110" MinWidth="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:HotelStatusBadge Label="{Binding Status, Converter={StaticResource ReservationStatusLabelConverter}}"
+                                                             Color="{Binding Status, Converter={StaticResource ReservationStatusColorConverter}}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="الوصول" Binding="{Binding CheckInDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                        ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckInDate"/>
+                    <DataGridTextColumn Header="المغادرة" Binding="{Binding CheckOutDate, StringFormat=yyyy/MM/dd}" Width="100" MinWidth="90"
+                                        ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CheckOutDate"/>
+                    <DataGridTextColumn Header="الإجمالي"
+                                        Binding="{Binding TotalAmount, StringFormat=N0}"
+                                        Width="110" MinWidth="90"
+                                        ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                    <DataGridTextColumn Header="المتبقي"
+                                        Binding="{Binding RemainingAmount, StringFormat=N0}"
+                                        Width="110" MinWidth="90"
+                                        ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                    <DataGridTemplateColumn Header="إجراءات" Width="180" MinWidth="160">
+                        <DataGridTemplateColumn.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                        </DataGridTemplateColumn.CellStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource TableSecondaryIconButton}" Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
+                                        <md:PackIcon Kind="CashCheck"/>
+                                    </Button>
+                                    <Button Style="{StaticResource TableEditIconButton}" Command="{Binding DataContext.EditReservationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
+                                        <md:PackIcon Kind="PencilOutline"/>
+                                    </Button>
+                                    <Button Style="{StaticResource TableDeleteIconButton}" Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
+                                        <md:PackIcon Kind="DeleteOutline"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </controls:HotelListPageShell.ListContent>
+
+        <controls:HotelListPageShell.ListFooterContent>
+            <Border Background="{StaticResource HotelSummaryFooterBrush}" Padding="16,8">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="عدد الحجوزات:" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FilteredReservationsCount, StringFormat=N0}" FontWeight="Bold" Margin="0,0,16,0"/>
+                    <TextBlock Text="إجمالي المبلغ:" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FilteredTotalAmount, StringFormat=N0}" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,16,0"/>
+                    <TextBlock Text="المتبقي:" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FilteredRemainingAmount, StringFormat=N0}" FontWeight="Bold" Foreground="#C62828"/>
+                </StackPanel>
+            </Border>
+        </controls:HotelListPageShell.ListFooterContent>
+
+        <controls:HotelListPageShell.PreviewSummaryContent>
+            <StackPanel Margin="12,0" DataContext="{Binding DetailReservation}">
+                <controls:HotelStatusBadge Label="{Binding Status}" Color="{Binding StatusColor}" HorizontalAlignment="Right" Margin="0,0,0,12"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="النزيل" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding GuestName}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                        <TextBlock Text="الهاتف" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding GuestPhone}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                        <TextBlock Text="الغرفة" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding RoomNumber}" Style="{StaticResource HotelPreviewFieldValue}"/>
                     </StackPanel>
-                </Border>
-                <controls:PaginationBar Grid.Row="3"/>
-            </Grid>
-        </md:Card>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <TextBlock Text="الوصول" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding CheckInDate}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                        <TextBlock Text="المغادرة" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding CheckOutDate}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                        <TextBlock Text="المتبقي" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                        <TextBlock Text="{Binding RemainingAmount}" Style="{StaticResource HotelPreviewFieldValue}" Foreground="#C62828"/>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="ملاحظات" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                <TextBlock Text="{Binding Notes}" Style="{StaticResource HotelPreviewFieldValue}"/>
+            </StackPanel>
+        </controls:HotelListPageShell.PreviewSummaryContent>
 
-        <!-- تفاصيل الحجز -->
-        <md:DialogHost IsOpen="{Binding IsDetailDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
-            <md:DialogHost.DialogContent>
-                <controls:HotelFormDialog Title="تفاصيل الحجز"
-                                          IconKind="CalendarCheck"
-                                          ShowSaveButton="False"
-                                          CancelButtonText="إغلاق"
-                                          CloseCommand="{Binding CloseDetailDialogCommand}"
-                                          MinDialogWidth="520"
-                                          MaxDialogWidth="600">
-                    <controls:HotelFormDialog.DialogContent>
-                        <StackPanel>
-                            <StackPanel DataContext="{Binding DetailReservation}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                        <TextBlock Text="رقم الحجز" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding ReservationNumber}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                        <TextBlock Text="النزيل" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding GuestName}" Margin="0,0,0,8"/>
-                                        <TextBlock Text="الهاتف" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding GuestPhone}" Margin="0,0,0,8"/>
-                                        <TextBlock Text="الغرفة" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding RoomNumber}" Margin="0,0,0,8"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                                        <TextBlock Text="الوصول" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding CheckInDate}" Margin="0,0,0,8"/>
-                                        <TextBlock Text="المغادرة" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding CheckOutDate}" Margin="0,0,0,8"/>
-                                        <TextBlock Text="الحالة" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding Status}" Margin="0,0,0,8"/>
-                                        <TextBlock Text="المتبقي" Style="{StaticResource FormFieldLabel}"/>
-                                        <TextBlock Text="{Binding RemainingAmount}" FontWeight="Bold" Foreground="#C62828"/>
-                                    </StackPanel>
-                                </Grid>
-                                <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}" Margin="0,8,0,0"/>
-                                <TextBlock Text="{Binding Notes}" Margin="0,0,0,8"/>
-                            </StackPanel>
-                            <WrapPanel Margin="0,12,0,0">
-                                <Button Content="تسجيل دخول/خروج" Command="{Binding DetailOpenCheckInOutCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
-                                <Button Content="تسجيل دفعة" Command="{Binding DetailOpenPaymentCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
-                                <Button Content="فتح الغرف" Command="{Binding DetailOpenRoomCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
-                                <Button Content="طباعة" Command="{Binding DetailPrintCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
-                                <Button Content="تعديل" Command="{Binding DetailEditCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
-                            </WrapPanel>
-                        </StackPanel>
-                    </controls:HotelFormDialog.DialogContent>
-                </controls:HotelFormDialog>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
+        <controls:HotelListPageShell.PreviewHistoryContent>
+            <StackPanel Margin="12,0" DataContext="{Binding DetailReservation}">
+                <TextBlock Text="الرسوم" FontWeight="Bold" Margin="0,0,0,8"/>
+                <ItemsControl ItemsSource="{Binding Charges}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Description}" Grid.Column="0"/>
+                                <TextBlock Text="{Binding Amount}" Grid.Column="1" FontWeight="SemiBold"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="المدفوعات" FontWeight="Bold" Margin="0,12,0,8"/>
+                <ItemsControl ItemsSource="{Binding Payments}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding PaymentDate}" FontSize="12"/>
+                                    <TextBlock Text="{Binding PaymentMethod}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Amount}" Grid.Column="1" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </controls:HotelListPageShell.PreviewHistoryContent>
 
-        <!-- دفع حجز -->
-        <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
-            <md:DialogHost.DialogContent>
-                <controls:HotelFormDialog Title="تسجيل دفعة"
-                                          Subtitle="{Binding PaymentSummary}"
-                                          IconKind="CashCheck"
-                                          SaveButtonText="تسجيل الدفعة"
-                                          CancelButtonText="إلغاء"
-                                          SaveCommand="{Binding SubmitPaymentCommand}"
-                                          CloseCommand="{Binding ClosePaymentDialogCommand}"
-                                          IsBusy="{Binding IsBusy}">
-                    <controls:HotelFormDialog.DialogContent>
-                        <StackPanel>
-                            <TextBox md:HintAssist.Hint="المبلغ *"
-                                     Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                            <DatePicker md:HintAssist.Hint="تاريخ الدفع"
-                                         SelectedDate="{Binding PaymentDate}"
-                                         Margin="0,0,0,12"/>
-                            <TextBox md:HintAssist.Hint="طريقة الدفع"
-                                     Text="{Binding PaymentMethod, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                            <ComboBox md:HintAssist.Hint="الصندوق"
-                                      ItemsSource="{Binding CashBoxes}"
-                                      SelectedValuePath="Id"
-                                      SelectedValue="{Binding PaymentCashBoxId}"
-                                      DisplayMemberPath="Name"
-                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <TextBox md:HintAssist.Hint="ملاحظات"
-                                     Text="{Binding PaymentNotes, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                        </StackPanel>
-                    </controls:HotelFormDialog.DialogContent>
-                </controls:HotelFormDialog>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
+        <controls:HotelListPageShell.PreviewActionsContent>
+            <WrapPanel Margin="12,0" DataContext="{Binding}">
+                <Button Content="تسجيل دخول/خروج" Command="{Binding DetailOpenCheckInOutCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="تسجيل دفعة" Command="{Binding DetailOpenPaymentCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="ملف النزيل" Command="{Binding DetailOpenGuestCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="عرض الغرفة" Command="{Binding DetailOpenRoomCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="طباعة" Command="{Binding DetailPrintCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="تعديل" Command="{Binding DetailEditCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+            </WrapPanel>
+        </controls:HotelListPageShell.PreviewActionsContent>
+    </controls:HotelListPageShell>
 
-        <!-- حذف -->
-        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
-            <md:DialogHost.DialogContent>
-                <controls:HotelFormDialog Title="تأكيد الحذف"
-                                          IconKind="DeleteOutline"
-                                          SaveButtonText="حذف"
-                                          CancelButtonText="إلغاء"
-                                          SaveCommand="{Binding DeleteConfirmedCommand}"
-                                          CloseCommand="{Binding CancelDeleteCommand}"
-                                          IsBusy="{Binding IsBusy}">
-                    <controls:HotelFormDialog.DialogContent>
-                        <TextBlock Margin="0,0,0,16">
-                            <Run Text="هل أنت متأكد من حذف الحجز "/>
-                            <Run Text="{Binding ReservationToDelete.ReservationNumber, Mode=OneWay}" FontWeight="Bold"/>
-                            <Run Text="؟"/>
-                        </TextBlock>
-                    </controls:HotelFormDialog.DialogContent>
-                </controls:HotelFormDialog>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
-    </Grid>
+    <!-- دفع حجز -->
+    <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}">
+        <md:DialogHost.DialogContent>
+            <controls:HotelFormDialog Title="تسجيل دفعة"
+                                      Subtitle="{Binding PaymentSummary}"
+                                      IconKind="CashCheck"
+                                      SaveButtonText="تسجيل الدفعة"
+                                      CancelButtonText="إلغاء"
+                                      SaveCommand="{Binding SubmitPaymentCommand}"
+                                      CloseCommand="{Binding ClosePaymentDialogCommand}"
+                                      IsBusy="{Binding IsBusy}">
+                <controls:HotelFormDialog.DialogContent>
+                    <StackPanel>
+                        <TextBox md:HintAssist.Hint="المبلغ *"
+                                 Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <DatePicker md:HintAssist.Hint="تاريخ الدفع"
+                                     SelectedDate="{Binding PaymentDate}"
+                                     Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="طريقة الدفع"
+                                 Text="{Binding PaymentMethod, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <ComboBox md:HintAssist.Hint="الصندوق"
+                                  ItemsSource="{Binding CashBoxes}"
+                                  SelectedValuePath="Id"
+                                  SelectedValue="{Binding PaymentCashBoxId}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="ملاحظات"
+                                 Text="{Binding PaymentNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    </StackPanel>
+                </controls:HotelFormDialog.DialogContent>
+            </controls:HotelFormDialog>
+        </md:DialogHost.DialogContent>
+    </md:DialogHost>
+
+    <!-- حذف -->
+    <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}">
+        <md:DialogHost.DialogContent>
+            <controls:HotelFormDialog Title="تأكيد الحذف"
+                                      IconKind="DeleteOutline"
+                                      SaveButtonText="حذف"
+                                      CancelButtonText="إلغاء"
+                                      SaveCommand="{Binding DeleteConfirmedCommand}"
+                                      CloseCommand="{Binding CancelDeleteCommand}"
+                                      IsBusy="{Binding IsBusy}">
+                <controls:HotelFormDialog.DialogContent>
+                    <TextBlock Margin="0,0,0,16">
+                        <Run Text="هل أنت متأكد من حذف الحجز "/>
+                        <Run Text="{Binding ReservationToDelete.ReservationNumber, Mode=OneWay}" FontWeight="Bold"/>
+                        <Run Text="؟"/>
+                    </TextBlock>
+                </controls:HotelFormDialog.DialogContent>
+            </controls:HotelFormDialog>
+        </md:DialogHost.DialogContent>
+    </md:DialogHost>
 </UserControl>

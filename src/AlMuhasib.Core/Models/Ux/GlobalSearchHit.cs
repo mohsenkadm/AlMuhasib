@@ -10,7 +10,10 @@ public enum GlobalSearchKind
     PurchaseInvoice,
     Voucher,
     Installment,
-    OverdueCustomer
+    OverdueCustomer,
+    HotelGuest,
+    HotelRoom,
+    HotelReservation
 }
 
 public class GlobalSearchHit

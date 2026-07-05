@@ -7,16 +7,18 @@ using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.Hotel;
 
-public partial class HotelGuestsViewModel : PagedViewModelBase
+public partial class HotelGuestsViewModel : HotelListPreviewViewModelBase
 {
     private readonly IGuestService _guestService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
 
     public ObservableCollection<GuestListItem> Guests { get; } = [];
@@ -35,6 +37,7 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GuestListItem? _guestToDelete;
     [ObservableProperty] private string _dialogTitle = string.Empty;
+    [ObservableProperty] private HotelGuestDetailDisplay? _detailGuest;
 
     private int? _editingId;
 
@@ -42,12 +45,14 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
         IGuestService guestService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        MainWindowViewModel mainWindow)
     {
         _guestService = guestService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "النزلاء";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelGuests);
     }
@@ -56,6 +61,51 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
     {
         LoadPermissions(_currentUserService, HotelPermissionRegistry.Guests);
         await LoadGuestsAsync();
+        await ApplyPendingSelectionAsync();
+    }
+
+    private async Task ApplyPendingSelectionAsync()
+    {
+        if (HotelNavigationBridge.PendingGuestId is not int pendingId)
+            return;
+
+        HotelNavigationBridge.PendingGuestId = null;
+        var item = Guests.FirstOrDefault(g => g.Id == pendingId);
+        if (item is null)
+        {
+            var guest = await _guestService.GetByIdAsync(pendingId);
+            if (guest is null)
+                return;
+
+            item = new GuestListItem
+            {
+                Id = guest.Id,
+                FullName = guest.FullName,
+                Phone = guest.Phone,
+                IdNumber = guest.IdNumber,
+                Email = guest.Email
+            };
+        }
+
+        SelectedGuest = item;
+        await LoadPreviewAsync(item);
+    }
+
+    protected override void OnPreviewClosed()
+    {
+        SelectedGuest = null;
+        DetailGuest = null;
+    }
+
+    partial void OnSelectedGuestChanged(GuestListItem? value)
+    {
+        if (value is null)
+        {
+            ClosePreview();
+            return;
+        }
+
+        _ = LoadPreviewAsync(value);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -120,17 +170,27 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
         }
     }
 
+    private async Task LoadPreviewAsync(GuestListItem item)
+    {
+        var guest = await _guestService.GetByIdAsync(item.Id);
+        if (guest is null)
+        {
+            _toast.ShowError("النزيل غير موجود");
+            return;
+        }
+
+        var reservations = await _guestService.GetReservationsByGuestIdAsync(item.Id);
+        DetailGuest = HotelGuestDetailDisplay.FromGuest(guest, reservations);
+        SetPreviewHeader(guest.FullName, guest.Phone, PackIconKind.Account);
+    }
+
     private void RebuildStats(IEnumerable<GuestListItem> items)
     {
         var list = items.ToList();
-        var total = list.Count;
-        var withReservations = list.Count(x => x.ReservationCount > 0);
-        var totalReservations = list.Sum(x => x.ReservationCount);
-
         Stats.Clear();
-        Stats.Add(new HotelListStatItem { Label = "إجمالي النزلاء", Value = total.ToString("N0"), AccentColor = "#1565C0" });
-        Stats.Add(new HotelListStatItem { Label = "نزلاء لديهم حجوزات", Value = withReservations.ToString("N0"), AccentColor = "#2E7D32" });
-        Stats.Add(new HotelListStatItem { Label = "إجمالي الحجوزات", Value = totalReservations.ToString("N0"), AccentColor = "#6A1B9A" });
+        Stats.Add(new HotelListStatItem { Label = "إجمالي النزلاء", Value = list.Count.ToString("N0"), AccentColor = "#1565C0" });
+        Stats.Add(new HotelListStatItem { Label = "نزلاء لديهم حجوزات", Value = list.Count(x => x.ReservationCount > 0).ToString("N0"), AccentColor = "#2E7D32" });
+        Stats.Add(new HotelListStatItem { Label = "إجمالي الحجوزات", Value = list.Sum(x => x.ReservationCount).ToString("N0"), AccentColor = "#6A1B9A" });
     }
 
     [RelayCommand]
@@ -205,6 +265,8 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
 
             IsDialogOpen = false;
             await LoadGuestsAsync();
+            if (SelectedGuest is not null)
+                await LoadPreviewAsync(SelectedGuest);
         }
         catch (Exception ex)
         {
@@ -232,6 +294,7 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
             await _guestService.DeleteAsync(GuestToDelete.Id, _currentUserService.Username ?? "System");
             IsDeleteDialogOpen = false;
             GuestToDelete = null;
+            ClosePreview();
             _toast.ShowSuccess("تم الحذف");
             await LoadGuestsAsync();
         }
@@ -239,5 +302,36 @@ public partial class HotelGuestsViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private async Task SelectGuestAsync(GuestListItem? guest)
+    {
+        if (guest is null)
+            return;
+
+        SelectedGuest = guest;
+        await LoadPreviewAsync(guest);
+    }
+
+    [RelayCommand]
+    private async Task OpenGuestHistoryTabAsync(GuestListItem? guest)
+    {
+        guest ??= SelectedGuest;
+        if (guest is null)
+            return;
+
+        SelectedGuest = guest;
+        await LoadPreviewAsync(guest);
+        OpenPreviewHistoryTab();
+    }
+
+    [RelayCommand]
+    private async Task OpenReservationFromGuestAsync(ReservationListItem? reservation)
+    {
+        if (reservation is null)
+            return;
+
+        await _navigation.OpenReservationsAsync(reservation.Id);
     }
 }
