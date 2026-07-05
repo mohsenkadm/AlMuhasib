@@ -79,6 +79,7 @@ public partial class MainWindowViewModel
     private void CloseOtherPanelsForPersonalWorkspace()
     {
         IsNotificationPanelOpen = false;
+        IsOpenRecentExcelPanelOpen = false;
         IsQuickAssistOpen = false;
         IsSmartAssistantOpen = false;
         IsGlobalSearchOpen = false;

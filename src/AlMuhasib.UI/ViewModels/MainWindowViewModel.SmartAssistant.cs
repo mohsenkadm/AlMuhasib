@@ -43,6 +43,7 @@ public partial class MainWindowViewModel
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
         IsNotificationPanelOpen = false;
+        IsOpenRecentExcelPanelOpen = false;
         IsSmartAssistantOpen = !IsSmartAssistantOpen;
         if (IsSmartAssistantOpen)
             await RefreshSmartAssistantAsync();

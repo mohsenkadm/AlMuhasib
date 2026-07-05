@@ -216,12 +216,40 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Tasks + Notes + Notifications + Help -->
+                <!-- Open Recent + Tasks + Notes + Notifications + Help -->
                 <StackPanel Grid.Column="4"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="0,0,12,0"
                             WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Command="{Binding ToggleOpenRecentExcelPanelCommand}"
+                            Style="{StaticResource TitleBarCaptionButton}"
+                            Width="38" Height="38" Margin="0,0,8,0"
+                            ToolTip="Open Recent — ملفات Excel الأخيرة">
+                        <Grid Width="24" Height="24">
+                            <materialDesign:PackIcon Kind="MicrosoftExcel" Width="20" Height="20"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                     Foreground="#2E7D32"/>
+                            <Border Width="18" Height="18" CornerRadius="9"
+                                    Background="#43A047" BorderBrush="White" BorderThickness="1.5"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-7,-9,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RecentExcelExportCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding RecentExcelExportBadgeText}"
+                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Button>
                     <Button Command="{Binding ToggleTasksPanelCommand}"
                             Style="{StaticResource TitleBarCaptionButton}"
                             Width="38" Height="38" Margin="0,0,8,0"
@@ -2286,6 +2314,55 @@
                     </Style>
                 </controls:NotificationPanel.Style>
             </controls:NotificationPanel>
+        </Grid>
+
+        <!-- Open Recent Excel panel -->
+        <Grid Grid.RowSpan="2"
+              Panel.ZIndex="2202"
+              Visibility="{Binding IsOpenRecentExcelPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="#55000000" MouseLeftButtonDown="OpenRecentExcelBackdrop_Click"/>
+            <controls:OpenRecentExcelPanel x:Name="OpenRecentExcelPanelHost"
+                                           DataContext="{Binding}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Panel.ZIndex="1"
+                                           RenderTransformOrigin="0.5,0.5">
+                <controls:OpenRecentExcelPanel.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </controls:OpenRecentExcelPanel.RenderTransform>
+                <controls:OpenRecentExcelPanel.Style>
+                    <Style TargetType="controls:OpenRecentExcelPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOpenRecentExcelPanelOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             From="0.92" To="1" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.35"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             From="0.92" To="1" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.35"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:OpenRecentExcelPanel.Style>
+            </controls:OpenRecentExcelPanel>
         </Grid>
 
         <!-- Bottom notification reminder -->
