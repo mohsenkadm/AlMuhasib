@@ -8,16 +8,18 @@ using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.Hotel;
 
-public partial class HotelRoomsViewModel : PagedViewModelBase
+public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
 {
     private readonly IHotelMasterDataService _masterDataService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
 
     public ObservableCollection<HotelRoomListDisplay> Rooms { get; } = [];
@@ -38,6 +40,7 @@ public partial class HotelRoomsViewModel : PagedViewModelBase
     [ObservableProperty] private RoomStatus _editStatus = RoomStatus.Available;
     [ObservableProperty] private string _editNotes = string.Empty;
     [ObservableProperty] private string _statusFilter = "الكل";
+    [ObservableProperty] private HotelRoomDetailDisplay? _detailRoom;
 
     private int? _editingRoomId;
     private List<HotelRoomListDisplay> _allRooms = [];
@@ -54,12 +57,14 @@ public partial class HotelRoomsViewModel : PagedViewModelBase
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        MainWindowViewModel mainWindow)
     {
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "الغرف";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelRooms);
     }
@@ -70,6 +75,59 @@ public partial class HotelRoomsViewModel : PagedViewModelBase
         await LoadLookupsAsync();
         await LoadAllRoomsAsync();
         await ReloadPageAsync();
+        await ApplyPendingSelectionAsync();
+    }
+
+    private async Task ApplyPendingSelectionAsync()
+    {
+        if (HotelNavigationBridge.PendingRoomId is not int pendingId)
+            return;
+
+        HotelNavigationBridge.PendingRoomId = null;
+        var item = Rooms.FirstOrDefault(r => r.Id == pendingId)
+                   ?? _allRooms.FirstOrDefault(r => r.Id == pendingId);
+        if (item is null)
+            return;
+
+        SelectedRoom = item;
+        await LoadPreviewAsync(item);
+    }
+
+    protected override void OnPreviewClosed()
+    {
+        SelectedRoom = null;
+        DetailRoom = null;
+    }
+
+    partial void OnSelectedRoomChanged(HotelRoomListDisplay? value)
+    {
+        if (value is null)
+        {
+            ClosePreview();
+            return;
+        }
+
+        _ = LoadPreviewAsync(value);
+    }
+
+    private async Task LoadPreviewAsync(HotelRoomListDisplay item)
+    {
+        var room = await _masterDataService.GetRoomByIdAsync(item.Id);
+        if (room is null)
+        {
+            _toast.ShowError("الغرفة غير موجودة");
+            return;
+        }
+
+        var listItem = _allRooms.FirstOrDefault(r => r.Id == item.Id);
+        DetailRoom = HotelRoomDetailDisplay.FromRoom(room, new RoomListItem
+        {
+            Id = item.Id,
+            CurrentGuestName = listItem?.CurrentGuestName,
+            CurrentGuestId = listItem?.CurrentGuestId,
+            CurrentReservationId = listItem?.CurrentReservationId
+        });
+        SetPreviewHeader(room.RoomNumber, room.RoomType?.Name ?? "—", PackIconKind.Door);
     }
 
     partial void OnStatusFilterChanged(string value) => _ = ReloadFromFirstPageAsync();
@@ -141,7 +199,9 @@ public partial class HotelRoomsViewModel : PagedViewModelBase
                     PendingStatus = room.Status,
                     StatusLabel = HotelDisplayHelper.GetRoomStatusLabel(room.Status),
                     StatusColor = HotelDisplayHelper.GetRoomStatusColor(room.Status),
-                    CurrentGuestName = room.CurrentGuestName ?? "—"
+                    CurrentGuestName = room.CurrentGuestName ?? "—",
+                    CurrentGuestId = room.CurrentGuestId,
+                    CurrentReservationId = room.CurrentReservationId
                 })
                 .ToList();
         }
@@ -343,6 +403,44 @@ public partial class HotelRoomsViewModel : PagedViewModelBase
             row.PendingStatus = row.Status;
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private async Task SelectRoomAsync(HotelRoomListDisplay? room)
+    {
+        if (room is null)
+            return;
+
+        SelectedRoom = room;
+        await LoadPreviewAsync(room);
+    }
+
+    [RelayCommand]
+    private async Task OpenGuestFromRoomAsync()
+    {
+        if (DetailRoom?.CurrentGuestId is int guestId)
+            await _navigation.OpenGuestsAsync(guestId);
+        else
+            _toast.ShowWarning("لا يوجد نزيل في الغرفة");
+    }
+
+    [RelayCommand]
+    private async Task OpenGuestFromRoomLinkAsync(HotelRoomListDisplay? room)
+    {
+        room ??= SelectedRoom;
+        if (room?.CurrentGuestId is int guestId)
+            await _navigation.OpenGuestsAsync(guestId);
+        else
+            _toast.ShowWarning("لا يوجد نزيل في الغرفة");
+    }
+
+    [RelayCommand]
+    private async Task OpenReservationFromRoomAsync()
+    {
+        if (DetailRoom?.CurrentReservationId is int reservationId)
+            await _navigation.OpenReservationsAsync(reservationId);
+        else
+            _toast.ShowWarning("لا يوجد حجز نشط");
     }
 }
 

@@ -4,6 +4,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Core.Models.Hotel;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,6 +20,7 @@ public partial class HotelCashViewModel : PagedViewModelBase
 
     public ObservableCollection<HotelCashBox> CashBoxes { get; } = [];
     public ObservableCollection<HotelVoucher> Vouchers { get; } = [];
+    public ObservableCollection<HotelListStatItem> Stats { get; } = [];
 
     [ObservableProperty] private HotelCashBox? _selectedCashBox;
     [ObservableProperty] private HotelVoucher? _selectedVoucher;
@@ -106,6 +108,7 @@ public partial class HotelCashViewModel : PagedViewModelBase
                     filtered, Vouchers, CurrentPage, PageSize,
                     out var filteredTotal, out _, out _);
                 ApplyPaginationStats(filteredTotal);
+                RebuildStats(filtered);
                 return;
             }
 
@@ -114,11 +117,21 @@ public partial class HotelCashViewModel : PagedViewModelBase
             foreach (var v in items)
                 Vouchers.Add(v);
             ApplyPaginationStats(total);
+            RebuildStats(items);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void RebuildStats(IEnumerable<HotelVoucher> items)
+    {
+        var list = items.ToList();
+        Stats.Clear();
+        Stats.Add(new HotelListStatItem { Label = "عدد السندات", Value = list.Count.ToString("N0"), AccentColor = "#1565C0" });
+        Stats.Add(new HotelListStatItem { Label = "قبض", Value = list.Where(v => v.Type == HotelVoucherType.Receipt).Sum(v => v.Amount).ToString("N0"), AccentColor = "#2E7D32" });
+        Stats.Add(new HotelListStatItem { Label = "صرف", Value = list.Where(v => v.Type == HotelVoucherType.Payment).Sum(v => v.Amount).ToString("N0"), AccentColor = "#C62828" });
     }
 
     [RelayCommand]

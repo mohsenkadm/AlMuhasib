@@ -39,7 +39,7 @@ public sealed class HotelGlobalSearchService : IHotelGlobalSearchService
             .Take(perKind)
             .Select(g => new GlobalSearchHit
             {
-                Kind = GlobalSearchKind.Customer,
+                Kind = GlobalSearchKind.HotelGuest,
                 EntityId = g.Id,
                 Title = g.FullName,
                 Subtitle = g.Phone,
@@ -53,7 +53,7 @@ public sealed class HotelGlobalSearchService : IHotelGlobalSearchService
             .Take(perKind)
             .Select(r => new GlobalSearchHit
             {
-                Kind = GlobalSearchKind.Product,
+                Kind = GlobalSearchKind.HotelRoom,
                 EntityId = r.Id,
                 Title = r.RoomNumber,
                 Subtitle = r.Floor.Name,
@@ -70,7 +70,7 @@ public sealed class HotelGlobalSearchService : IHotelGlobalSearchService
             .Take(perKind)
             .Select(r => new GlobalSearchHit
             {
-                Kind = GlobalSearchKind.SalesInvoice,
+                Kind = GlobalSearchKind.HotelReservation,
                 EntityId = r.Id,
                 Title = r.ReservationNumber,
                 Subtitle = r.Room != null

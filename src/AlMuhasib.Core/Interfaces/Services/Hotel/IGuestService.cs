@@ -12,6 +12,7 @@ public interface IGuestService
         string? searchTerm = null,
         CancellationToken cancellationToken = default);
     Task<IReadOnlyList<GuestListItem>> SearchAsync(string term, int maxResults = 50, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ReservationListItem>> GetReservationsByGuestIdAsync(int guestId, int maxResults = 10, CancellationToken cancellationToken = default);
     Task<Guest> CreateAsync(Guest guest, CancellationToken cancellationToken = default);
     Task<Guest> UpdateAsync(Guest guest, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default);

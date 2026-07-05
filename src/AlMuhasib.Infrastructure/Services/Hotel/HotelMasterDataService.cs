@@ -113,11 +113,11 @@ public sealed class HotelMasterDataService : IHotelMasterDataService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var checkedInGuestNames = await context.Reservations
+        var checkedInReservations = await context.Reservations
             .AsNoTracking()
             .Where(r => r.Status == ReservationStatus.CheckedIn && r.RoomId != null)
-            .Select(r => new { RoomId = r.RoomId!.Value, r.Guest.FullName })
-            .ToDictionaryAsync(x => x.RoomId, x => x.FullName, cancellationToken);
+            .Select(r => new { RoomId = r.RoomId!.Value, r.Id, r.GuestId, r.Guest.FullName })
+            .ToDictionaryAsync(x => x.RoomId, x => x, cancellationToken);
 
         var rooms = await context.Rooms
             .AsNoTracking()
@@ -136,7 +136,9 @@ public sealed class HotelMasterDataService : IHotelMasterDataService
             Status = r.Status,
             Capacity = r.RoomType.Capacity,
             BasePrice = r.RoomType.BasePrice,
-            CurrentGuestName = checkedInGuestNames.GetValueOrDefault(r.Id)
+            CurrentGuestName = checkedInReservations.GetValueOrDefault(r.Id)?.FullName,
+            CurrentGuestId = checkedInReservations.GetValueOrDefault(r.Id)?.GuestId,
+            CurrentReservationId = checkedInReservations.GetValueOrDefault(r.Id)?.Id
         }).ToList();
     }
 

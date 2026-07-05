@@ -12,12 +12,13 @@ using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.Hotel;
 
-public partial class HotelHousekeepingViewModel : ViewModelBase
+public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
 {
     private readonly IHousekeepingService _housekeepingService;
     private readonly IHotelMasterDataService _masterDataService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly HotelEntityNavigationHelper _navigation;
 
     public ObservableCollection<HousekeepingTaskRow> Tasks { get; } = [];
     public ObservableCollection<HotelListStatItem> Stats { get; } = [];
@@ -25,6 +26,7 @@ public partial class HotelHousekeepingViewModel : ViewModelBase
     [ObservableProperty] private HousekeepingTaskRow? _selectedTask;
     [ObservableProperty] private HousekeepingStatus? _statusFilter;
     [ObservableProperty] private string _assignedFilter = string.Empty;
+    [ObservableProperty] private HousekeepingTaskRow? _previewTask;
 
     public IReadOnlyList<HousekeepingStatusFilterOption> StatusFilterOptions { get; } =
     [
@@ -39,12 +41,14 @@ public partial class HotelHousekeepingViewModel : ViewModelBase
         IHousekeepingService housekeepingService,
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        MainWindowViewModel mainWindow)
     {
         _housekeepingService = housekeepingService;
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "النظافة";
     }
 
@@ -56,6 +60,25 @@ public partial class HotelHousekeepingViewModel : ViewModelBase
 
     partial void OnStatusFilterChanged(HousekeepingStatus? value) => _ = LoadTasksAsync();
     partial void OnAssignedFilterChanged(string value) => _ = LoadTasksAsync();
+
+    partial void OnSelectedTaskChanged(HousekeepingTaskRow? value)
+    {
+        if (value is null)
+        {
+            ClosePreview();
+            PreviewTask = null;
+            return;
+        }
+
+        PreviewTask = value;
+        SetPreviewHeader($"غرفة {value.RoomNumber}", value.StatusLabel, MaterialDesignThemes.Wpf.PackIconKind.Broom);
+    }
+
+    protected override void OnPreviewClosed()
+    {
+        SelectedTask = null;
+        PreviewTask = null;
+    }
 
     [RelayCommand]
     private async Task LoadTasksAsync()
@@ -208,6 +231,16 @@ public partial class HotelHousekeepingViewModel : ViewModelBase
             return;
 
         await UpdateStatusAsync(row.Id, row.PendingStatus);
+    }
+
+    [RelayCommand]
+    private async Task OpenRoomFromTaskAsync(HousekeepingTaskRow? task)
+    {
+        task ??= PreviewTask ?? SelectedTask;
+        if (task is null)
+            return;
+
+        await _navigation.OpenRoomsAsync(task.RoomId);
     }
 }
 

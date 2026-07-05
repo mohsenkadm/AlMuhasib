@@ -37,6 +37,9 @@ public class GlobalSearchResultItem
             GlobalSearchKind.Voucher => PackIconKind.FileDocument,
             GlobalSearchKind.Installment => PackIconKind.CalendarClock,
             GlobalSearchKind.OverdueCustomer => PackIconKind.ClockAlert,
+            GlobalSearchKind.HotelGuest => PackIconKind.AccountGroup,
+            GlobalSearchKind.HotelRoom => PackIconKind.Door,
+            GlobalSearchKind.HotelReservation => PackIconKind.CalendarCheck,
             _ => PackIconKind.Magnify
         },
         Category = hit.Kind switch
@@ -49,6 +52,9 @@ public class GlobalSearchResultItem
             GlobalSearchKind.Voucher => "سندات",
             GlobalSearchKind.Installment => "أقساط",
             GlobalSearchKind.OverdueCustomer => "متأخرون",
+            GlobalSearchKind.HotelGuest => "نزلاء",
+            GlobalSearchKind.HotelRoom => "غرف",
+            GlobalSearchKind.HotelReservation => "حجوزات",
             _ => "أخرى"
         },
         EntityHit = hit

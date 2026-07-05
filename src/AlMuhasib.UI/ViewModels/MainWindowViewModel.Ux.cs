@@ -240,6 +240,22 @@ public partial class MainWindowViewModel
             return;
         }
 
+        if (item.EntityHit.EntityId is int hotelEntityId)
+        {
+            switch (item.EntityHit.Kind)
+            {
+                case GlobalSearchKind.HotelGuest:
+                    HotelNavigationBridge.PendingGuestId = hotelEntityId;
+                    break;
+                case GlobalSearchKind.HotelRoom:
+                    HotelNavigationBridge.PendingRoomId = hotelEntityId;
+                    break;
+                case GlobalSearchKind.HotelReservation:
+                    HotelNavigationBridge.PendingReservationId = hotelEntityId;
+                    break;
+            }
+        }
+
         var screen = item.EntityHit.ScreenName ?? string.Empty;
         var menu = FlattenMenuItems().FirstOrDefault(m => m.ScreenName == screen);
         if (menu is not null)

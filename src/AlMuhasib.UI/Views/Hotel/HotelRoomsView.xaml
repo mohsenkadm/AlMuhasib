@@ -6,245 +6,217 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <controls:HotelListPageShell PageTitle="إدارة الغرف"
+                                 ListTitle="قائمة الغرف"
+                                 ShowStatsBar="True"
+                                 StatsItemsSource="{Binding Stats}"
+                                 HasPreviewSelection="{Binding HasPreviewSelection}"
+                                 PreviewTitle="{Binding PreviewTitle}"
+                                 PreviewSubtitle="{Binding PreviewSubtitle}"
+                                 PreviewIconKind="{Binding PreviewIconKind}"
+                                 PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
 
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+        <controls:HotelListPageShell.ListHeaderExtra>
+            <StackPanel Orientation="Horizontal">
+                <ToggleButton IsChecked="{Binding IsGridView}" ToolTip="عرض شبكة"
+                              Style="{StaticResource MaterialDesignFlatButton}" Foreground="White" Margin="0,0,8,0">
+                    <md:PackIcon Kind="ViewGrid" Width="18" Height="18"/>
+                </ToggleButton>
+                <controls:ListViewModeToggle OnDarkBackground="True"/>
+            </StackPanel>
+        </controls:HotelListPageShell.ListHeaderExtra>
+
+        <controls:HotelListPageShell.ToolbarContent>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding OpenAddDialogCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                        md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0" IsEnabled="{Binding CanAdd}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Door" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="غرفة جديدة"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding LoadRoomsCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="تحديث"/>
+                    </StackPanel>
+                </Button>
+                <ComboBox md:HintAssist.Hint="فلتر الحالة" ItemsSource="{Binding StatusFilterOptions}"
+                          SelectedItem="{Binding StatusFilter}" Width="160" Margin="8,0,0,0"/>
+                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             TargetDataGrid="{Binding ElementName=RoomsGrid}"
+                                             Margin="4,0,0,0"
+                                             VerticalAlignment="Center"/>
+                <TextBox md:HintAssist.Hint="بحث..."
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}"
+                         MinWidth="220" Margin="16,0,0,0"/>
+            </StackPanel>
+        </controls:HotelListPageShell.ToolbarContent>
+
+        <controls:HotelListPageShell.ListContent>
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="إدارة الغرف" FontSize="16" FontWeight="Bold"
-                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
-                <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <Button Command="{Binding OpenAddDialogCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0" IsEnabled="{Binding CanAdd}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Door" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="غرفة جديدة"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding LoadRoomsCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تحديث"/>
-                        </StackPanel>
-                    </Button>
-                    <ComboBox md:HintAssist.Hint="فلتر الحالة" ItemsSource="{Binding StatusFilterOptions}"
-                              SelectedItem="{Binding StatusFilter}" Width="160" Margin="8,0,0,0"/>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=RoomsGrid}"
-                                                 Margin="4,0,0,0"
-                                                 VerticalAlignment="Center"/>
-                    <TextBox md:HintAssist.Hint="بحث..."
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FilledTextBox}"
-                             MinWidth="220" Margin="16,0,0,0"/>
-                </StackPanel>
-            </Grid>
-        </md:Card>
-
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="قائمة الغرف" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ToggleButton IsChecked="{Binding IsGridView}" ToolTip="عرض شبكة"
-                                          Style="{StaticResource MaterialDesignFlatButton}" Foreground="White" Margin="0,0,8,0">
-                                <md:PackIcon Kind="ViewGrid" Width="18" Height="18"/>
-                            </ToggleButton>
-                            <controls:ListViewModeToggle OnDarkBackground="True"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <controls:HotelListStatsBar Grid.Row="0" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
-
-                    <DataGrid x:Name="RoomsGrid"
-                              Grid.Row="1"
-                              Margin="8"
-                              ItemsSource="{Binding Rooms}"
-                              SelectedItem="{Binding SelectedRoom}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
-                              Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
-                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="رقم الغرفة" Binding="{Binding RoomNumber}" Width="110" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber"/>
-                            <DataGridTextColumn Header="الطابق" Binding="{Binding FloorName}" Width="120" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FloorName"/>
-                            <DataGridTextColumn Header="النوع" Binding="{Binding RoomTypeName}" Width="*" MinWidth="120"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomTypeName"/>
-                            <DataGridTemplateColumn Header="الحالة" Width="250"
-                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <controls:HotelStatusBadge Label="{Binding StatusLabel}" Color="{Binding StatusColor}" Margin="0,0,6,0"/>
-                                            <ComboBox Width="120"
-                                                      ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                      SelectedValuePath="Value"
-                                                      SelectedValue="{Binding PendingStatus, Mode=TwoWay}"
-                                                      DisplayMemberPath="Label"
-                                                      Style="{StaticResource FilledComboBox}"/>
-                                            <Button Style="{StaticResource TableSecondaryIconButton}"
-                                                    Command="{Binding DataContext.ChangeRoomStatusCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    Margin="4,0,0,0">
-                                                <md:PackIcon Kind="CheckBold" Width="16" Height="16"/>
-                                            </Button>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="النزيل الحالي" Binding="{Binding CurrentGuestName}" Width="*" MinWidth="140"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"
-                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrentGuestName"/>
-                            <DataGridTemplateColumn Header="إجراءات" Width="120" MinWidth="120"
-                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
-                                <DataGridTemplateColumn.CellStyle>
-                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
-                                </DataGridTemplateColumn.CellStyle>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Style="{StaticResource TableEditIconButton}"
-                                                    Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}">
-                                                <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
-                                            </Button>
-                                            <Button Style="{StaticResource TableDeleteIconButton}"
-                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}">
-                                                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                            </Button>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="12">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCardView}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ScrollViewer.Style>
-                        <ItemsControl ItemsSource="{Binding Rooms}"
-                                      ItemTemplate="{StaticResource HotelRoomCardTemplate}"
-                                      ItemsPanel="{StaticResource MasterDataCardWrapPanel}"/>
-                    </ScrollViewer>
-
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="12">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsGridView}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ScrollViewer.Style>
-                        <ItemsControl ItemsSource="{Binding Rooms}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                <DataGrid x:Name="RoomsGrid"
+                          ItemsSource="{Binding Rooms}"
+                          SelectedItem="{Binding SelectedRoom}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Style="{StaticResource HotelListDataGrid}"
+                          Margin="8"
+                          Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="رقم الغرفة" Width="110" MinWidth="90"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomNumber">
+                            <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border Width="88" Height="72" Margin="4" CornerRadius="8"
-                                            Cursor="Hand"
-                                            ToolTip="{Binding RoomNumber}"
-                                            Background="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}">
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <TextBlock Text="{Binding RoomNumber}" FontWeight="Bold" Foreground="White" FontSize="16" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding StatusLabel}" FontSize="10" Foreground="#EEFFFFFF" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="80"/>
-                                        </StackPanel>
-                                    </Border>
+                                    <controls:HotelEntityLink LinkText="{Binding RoomNumber}"
+                                                              Command="{Binding DataContext.SelectRoomCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                              CommandParameter="{Binding}"
+                                                              ToolTipText="عرض تفاصيل الغرفة"/>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="الطابق" Binding="{Binding FloorName}" Width="120" MinWidth="90"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FloorName"/>
+                        <DataGridTextColumn Header="النوع" Binding="{Binding RoomTypeName}" Width="*" MinWidth="120"
+                                            ElementStyle="{StaticResource HotelDataGridTextElement}"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoomTypeName"/>
+                        <DataGridTemplateColumn Header="الحالة" Width="250" behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <controls:HotelStatusBadge Label="{Binding StatusLabel}" Color="{Binding StatusColor}" Margin="0,0,6,0"/>
+                                        <ComboBox Width="120"
+                                                  ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                  SelectedValuePath="Value"
+                                                  SelectedValue="{Binding PendingStatus, Mode=TwoWay}"
+                                                  DisplayMemberPath="Label"
+                                                  Style="{StaticResource FilledComboBox}"/>
+                                        <Button Style="{StaticResource TableSecondaryIconButton}"
+                                                Command="{Binding DataContext.ChangeRoomStatusCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="4,0,0,0">
+                                            <md:PackIcon Kind="CheckBold" Width="16" Height="16"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="النزيل الحالي" Width="*" MinWidth="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrentGuestName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <controls:HotelEntityLink LinkText="{Binding CurrentGuestName}"
+                                                              Command="{Binding DataContext.OpenGuestFromRoomLinkCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                              CommandParameter="{Binding}"
+                                                              ToolTipText="فتح ملف النزيل"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="إجراءات" Width="120" MinWidth="120" behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource TableEditIconButton}"
+                                                Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableDeleteIconButton}"
+                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
 
-                <controls:PaginationBar Grid.Row="2"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                              Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ItemsControl ItemsSource="{Binding Rooms}"
+                                  ItemTemplate="{StaticResource HotelRoomCardTemplate}"
+                                  ItemsPanel="{StaticResource MasterDataCardWrapPanel}"/>
+                </ScrollViewer>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                              Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ItemsControl ItemsSource="{Binding Rooms}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="88" Height="72" Margin="4" CornerRadius="8"
+                                        Cursor="Hand"
+                                        ToolTip="{Binding RoomNumber}"
+                                        Background="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding RoomNumber}" FontWeight="Bold" Foreground="White" FontSize="16" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding StatusLabel}" FontSize="10" Foreground="#EEFFFFFF" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="80"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
-        </md:Card>
+        </controls:HotelListPageShell.ListContent>
 
-        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
-            <md:DialogHost.DialogContent>
-                <controls:HotelFormDialog Title="{Binding DialogTitle}"
-                                          IconKind="Door"
-                                          SaveCommand="{Binding SaveCommand}"
-                                          CloseCommand="{Binding CloseDialogCommand}"
-                                          IsBusy="{Binding IsBusy}">
-                    <controls:HotelFormDialog.DialogContent>
-                        <StackPanel>
-                            <TextBox md:HintAssist.Hint="رقم الغرفة *"
-                                     Text="{Binding EditRoomNumber, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                            <ComboBox md:HintAssist.Hint="الطابق *"
-                                      ItemsSource="{Binding Floors}"
-                                      SelectedValuePath="Id"
-                                      SelectedValue="{Binding EditFloorId}"
-                                      DisplayMemberPath="Name"
-                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <ComboBox md:HintAssist.Hint="نوع الغرفة *"
-                                      ItemsSource="{Binding RoomTypes}"
-                                      SelectedValuePath="Id"
-                                      SelectedValue="{Binding EditRoomTypeId}"
-                                      DisplayMemberPath="Name"
-                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <ComboBox md:HintAssist.Hint="الحالة"
-                                      ItemsSource="{Binding StatusOptions}"
-                                      SelectedValuePath="Value"
-                                      SelectedValue="{Binding EditStatus}"
-                                      DisplayMemberPath="Label"
-                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <TextBox md:HintAssist.Hint="ملاحظات"
-                                     Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                        </StackPanel>
-                    </controls:HotelFormDialog.DialogContent>
-                </controls:HotelFormDialog>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
-    </Grid>
+        <controls:HotelListPageShell.PreviewSummaryContent>
+            <StackPanel Margin="12,0" DataContext="{Binding DetailRoom}">
+                <controls:HotelStatusBadge Label="{Binding StatusLabel}" Color="{Binding StatusColor}" HorizontalAlignment="Right" Margin="0,0,0,12"/>
+                <TextBlock Text="الطابق" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                <TextBlock Text="{Binding FloorName}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                <TextBlock Text="نوع الغرفة" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                <TextBlock Text="{Binding RoomTypeName}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                <TextBlock Text="النزيل الحالي" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                <TextBlock Text="{Binding CurrentGuestName}" Style="{StaticResource HotelPreviewFieldValue}"/>
+                <TextBlock Text="ملاحظات" Style="{StaticResource HotelPreviewFieldLabel}"/>
+                <TextBlock Text="{Binding Notes}" Style="{StaticResource HotelPreviewFieldValue}"/>
+            </StackPanel>
+        </controls:HotelListPageShell.PreviewSummaryContent>
+
+        <controls:HotelListPageShell.PreviewActionsContent>
+            <WrapPanel Margin="12,0">
+                <Button Content="تعديل" Command="{Binding OpenEditDialogCommand}" CommandParameter="{Binding SelectedRoom}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="ملف النزيل" Command="{Binding OpenGuestFromRoomCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+                <Button Content="الحجز النشط" Command="{Binding OpenReservationFromRoomCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,8"/>
+            </WrapPanel>
+        </controls:HotelListPageShell.PreviewActionsContent>
+    </controls:HotelListPageShell>
+
+    <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Style="{StaticResource ModernDialogHost}">
+        <md:DialogHost.DialogContent>
+            <controls:HotelFormDialog Title="{Binding DialogTitle}"
+                                      IconKind="Door"
+                                      SaveCommand="{Binding SaveCommand}"
+                                      CloseCommand="{Binding CloseDialogCommand}"
+                                      IsBusy="{Binding IsBusy}">
+                <controls:HotelFormDialog.DialogContent>
+                    <StackPanel>
+                        <TextBox md:HintAssist.Hint="رقم الغرفة *" Text="{Binding EditRoomNumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <ComboBox md:HintAssist.Hint="الطابق *" ItemsSource="{Binding Floors}" SelectedValuePath="Id" SelectedValue="{Binding EditFloorId}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <ComboBox md:HintAssist.Hint="نوع الغرفة *" ItemsSource="{Binding RoomTypes}" SelectedValuePath="Id" SelectedValue="{Binding EditRoomTypeId}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <ComboBox md:HintAssist.Hint="الحالة" ItemsSource="{Binding StatusOptions}" SelectedValuePath="Value" SelectedValue="{Binding EditStatus}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="ملاحظات" Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    </StackPanel>
+                </controls:HotelFormDialog.DialogContent>
+            </controls:HotelFormDialog>
+        </md:DialogHost.DialogContent>
+    </md:DialogHost>
 </UserControl>

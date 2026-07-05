@@ -30,6 +30,12 @@
             <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
             <converters:RestaurantEnumLabelConverter x:Key="RestaurantEnumLabelConverter" />
             <converters:PositiveIntToVisibilityConverter x:Key="PositiveIntToVisibilityConverter" />
+            <converters:ReservationStatusLabelConverter x:Key="ReservationStatusLabelConverter" />
+            <converters:ReservationStatusColorConverter x:Key="ReservationStatusColorConverter" />
+            <converters:RoomStatusLabelConverter x:Key="RoomStatusLabelConverter" />
+            <converters:RoomStatusColorConverter x:Key="RoomStatusColorConverter" />
+            <converters:HousekeepingStatusLabelConverter x:Key="HousekeepingStatusLabelConverter" />
+            <converters:HousekeepingStatusColorConverter x:Key="HousekeepingStatusColorConverter" />
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />

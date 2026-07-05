@@ -1388,6 +1388,71 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
     </Style>
 
+    <!-- ===== Hotel UX — روابط الكيانات ولوحة المعاينة ===== -->
+    <Style x:Key="HotelEntityLinkButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="2,1"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <ContentPresenter x:Name="LinkText"
+                                      Content="{TemplateBinding Content}"
+                                      ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      TextBlock.Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                      TextBlock.FontWeight="SemiBold"
+                                      TextBlock.TextDecorations="None"
+                                      TextBlock.TextTrimming="CharacterEllipsis"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="LinkText" Property="TextDecorations" Value="Underline"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="LinkText" Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                            <Setter TargetName="LinkText" Property="FontWeight" Value="Normal"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="HotelPreviewPanelBorder" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <Style x:Key="HotelPreviewPanelHeader" TargetType="Border">
+        <Setter Property="Padding" Value="14,12"/>
+        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+    </Style>
+
+    <Style x:Key="HotelPreviewTabControl" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8,0"/>
+    </Style>
+
+    <Style x:Key="HotelPreviewFieldLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+    </Style>
+
+    <Style x:Key="HotelPreviewFieldValue" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+    <SolidColorBrush x:Key="HotelSummaryFooterBrush" Color="#F5F7FA"/>
+
     <!-- فواتير — جدول البنود -->
     <Style x:Key="InvoiceQtyStepButton" TargetType="Button">
         <Setter Property="Width" Value="28"/>

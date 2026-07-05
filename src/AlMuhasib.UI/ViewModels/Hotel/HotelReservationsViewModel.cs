@@ -3,16 +3,16 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Core.Models.Hotel;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
-using System.Linq;
 using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.Hotel;
 
-public partial class HotelReservationsViewModel : PagedViewModelBase
+public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
 {
     private readonly IReservationService _reservationService;
     private readonly IReservationPaymentService _paymentService;
@@ -21,10 +21,12 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly MainWindowViewModel _mainWindow;
+    private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
 
     public ObservableCollection<ReservationListItem> Reservations { get; } = [];
     public ObservableCollection<HotelCashBoxOption> CashBoxes { get; } = [];
+    public ObservableCollection<HotelListStatItem> Stats { get; } = [];
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private DateTime? _checkInFrom;
@@ -46,8 +48,8 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
     [ObservableProperty] private string _paymentSummary = string.Empty;
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private ReservationListItem? _reservationToDelete;
-    [ObservableProperty] private bool _isDetailDialogOpen;
     [ObservableProperty] private HotelReservationDetailDisplay? _detailReservation;
+    [ObservableProperty] private bool _isCardView;
 
     public IReadOnlyList<ReservationStatusFilterOption> ReservationStatusFilterOptions { get; } =
     [
@@ -58,6 +60,8 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         new ReservationStatusFilterOption(ReservationStatus.Cancelled, "ملغى"),
         new ReservationStatusFilterOption(ReservationStatus.NoShow, "لم يحضر")
     ];
+
+    public bool IsTableView => !IsCardView;
 
     public HotelReservationsViewModel(
         IReservationService reservationService,
@@ -75,6 +79,7 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         _currentUserService = currentUserService;
         _toast = toast;
         _mainWindow = mainWindow;
+        _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "الحجوزات";
     }
 
@@ -83,12 +88,58 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         LoadPermissions(_currentUserService, HotelPermissionRegistry.Reservations);
         await LoadCashBoxesAsync();
         await LoadReservationsAsync();
+        await ApplyPendingSelectionAsync();
     }
 
-    protected override void OnColumnFiltersChanged()
+    private async Task ApplyPendingSelectionAsync()
     {
-        _ = ReloadFromFirstPageAsync();
+        if (HotelNavigationBridge.PendingReservationId is not int pendingId)
+            return;
+
+        HotelNavigationBridge.PendingReservationId = null;
+        var item = Reservations.FirstOrDefault(r => r.Id == pendingId);
+        if (item is null)
+        {
+            var reservation = await _reservationService.GetByIdAsync(pendingId, includeDetails: false);
+            if (reservation is null)
+                return;
+
+            item = new ReservationListItem
+            {
+                Id = reservation.Id,
+                GuestId = reservation.GuestId,
+                RoomId = reservation.RoomId,
+                ReservationNumber = reservation.ReservationNumber,
+                GuestName = reservation.Guest?.FullName ?? string.Empty,
+                RoomNumber = reservation.Room?.RoomNumber,
+                Status = reservation.Status,
+                CheckInDate = reservation.CheckInDate,
+                CheckOutDate = reservation.CheckOutDate
+            };
+        }
+
+        SelectedReservation = item;
+        await LoadPreviewAsync(item);
     }
+
+    protected override void OnPreviewClosed()
+    {
+        SelectedReservation = null;
+        DetailReservation = null;
+    }
+
+    partial void OnSelectedReservationChanged(ReservationListItem? value)
+    {
+        if (value is null)
+        {
+            ClosePreview();
+            return;
+        }
+
+        _ = LoadPreviewAsync(value);
+    }
+
+    protected override void OnColumnFiltersChanged() => _ = ReloadFromFirstPageAsync();
 
     partial void OnSearchTextChanged(string value)
     {
@@ -146,13 +197,11 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
                 MasterDataColumnFilterHelper.ApplyClientPagination(
                     filteredAll, Reservations,
                     CurrentPage, PageSize,
-                    out var filteredTotalCount, out _, out _
-                );
+                    out var filteredTotalCount, out _, out _);
 
                 ApplyPaginationStats(filteredTotalCount);
-                FilteredReservationsCount = Reservations.Count;
-                FilteredTotalAmount = Reservations.Sum(i => i.TotalAmount);
-                FilteredRemainingAmount = Reservations.Sum(i => i.RemainingAmount);
+                UpdateFilteredTotals(Reservations);
+                RebuildStats(filteredAll);
                 return;
             }
 
@@ -162,14 +211,46 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
                 Reservations.Add(item);
 
             ApplyPaginationStats(total);
-            FilteredReservationsCount = items.Count;
-            FilteredTotalAmount = items.Sum(i => i.TotalAmount);
-            FilteredRemainingAmount = items.Sum(i => i.RemainingAmount);
+            UpdateFilteredTotals(items);
+            RebuildStats(items);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void UpdateFilteredTotals(IEnumerable<ReservationListItem> items)
+    {
+        var list = items.ToList();
+        FilteredReservationsCount = list.Count;
+        FilteredTotalAmount = list.Sum(i => i.TotalAmount);
+        FilteredRemainingAmount = list.Sum(i => i.RemainingAmount);
+    }
+
+    private void RebuildStats(IReadOnlyCollection<ReservationListItem> items)
+    {
+        Stats.Clear();
+        Stats.Add(new HotelListStatItem { Label = "إجمالي", Value = items.Count.ToString("N0"), AccentColor = "#1565C0" });
+        Stats.Add(new HotelListStatItem { Label = "مسجل", Value = items.Count(i => i.Status == ReservationStatus.CheckedIn).ToString("N0"), AccentColor = "#2E7D32" });
+        Stats.Add(new HotelListStatItem { Label = "مؤكد", Value = items.Count(i => i.Status == ReservationStatus.Confirmed).ToString("N0"), AccentColor = "#1565C0" });
+        Stats.Add(new HotelListStatItem { Label = "متبقي", Value = items.Sum(i => i.RemainingAmount).ToString("N0"), AccentColor = "#C62828" });
+    }
+
+    private async Task LoadPreviewAsync(ReservationListItem item)
+    {
+        var reservation = await _reservationService.GetByIdAsync(item.Id);
+        if (reservation is null)
+        {
+            _toast.ShowError("الحجز غير موجود");
+            return;
+        }
+
+        DetailReservation = HotelReservationDetailDisplay.FromEntity(reservation);
+        SetPreviewHeader(
+            reservation.ReservationNumber,
+            reservation.Guest?.FullName ?? "—",
+            PackIconKind.CalendarCheck);
     }
 
     [RelayCommand]
@@ -183,8 +264,7 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         if (item is null || !CanEdit)
             return;
 
-        HotelReservationNavigationBridge.PendingEditReservationId = item.Id;
-        await _mainWindow.OpenTabAsync(typeof(HotelReservationFormViewModel), $"تعديل {item.ReservationNumber}", PackIconKind.FileDocumentEdit, activateIfExists: false);
+        await _navigation.OpenEditReservationAsync(item.Id, item.ReservationNumber);
     }
 
     [RelayCommand]
@@ -194,23 +274,29 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         if (item is null)
             return;
 
-        var reservation = await _reservationService.GetByIdAsync(item.Id);
-        if (reservation is null)
-        {
-            _toast.ShowError("الحجز غير موجود");
-            return;
-        }
-
         SelectedReservation = item;
-        DetailReservation = HotelReservationDetailDisplay.FromEntity(reservation);
-        IsDetailDialogOpen = true;
+        await LoadPreviewAsync(item);
     }
 
     [RelayCommand]
-    private void CloseDetailDialog()
+    private async Task OpenGuestFromReservationAsync(int? guestId)
     {
-        IsDetailDialogOpen = false;
-        DetailReservation = null;
+        if (guestId is null or <= 0)
+            return;
+
+        await _navigation.OpenGuestsAsync(guestId);
+    }
+
+    [RelayCommand]
+    private async Task OpenRoomFromReservationAsync(int? roomId)
+    {
+        if (roomId is null or <= 0)
+        {
+            _toast.ShowWarning("لا توجد غرفة مرتبطة بهذا الحجز");
+            return;
+        }
+
+        await _navigation.OpenRoomsAsync(roomId);
     }
 
     [RelayCommand]
@@ -228,16 +314,11 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         if (SelectedReservation is null)
             return;
 
-        IsDetailDialogOpen = false;
         await EditReservationAsync(SelectedReservation);
     }
 
     [RelayCommand]
-    private async Task DetailOpenCheckInOutAsync()
-    {
-        IsDetailDialogOpen = false;
-        await _mainWindow.OpenTabAsync(typeof(HotelCheckInOutViewModel), "تسجيل دخول/خروج", PackIconKind.Login);
-    }
+    private async Task DetailOpenCheckInOutAsync() => await _navigation.OpenCheckInOutAsync();
 
     [RelayCommand]
     private void DetailOpenPayment()
@@ -245,15 +326,25 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
         if (SelectedReservation is null)
             return;
 
-        IsDetailDialogOpen = false;
         OpenPaymentDialog(SelectedReservation);
     }
 
     [RelayCommand]
     private async Task DetailOpenRoomAsync()
     {
-        IsDetailDialogOpen = false;
-        await _mainWindow.OpenTabAsync(typeof(HotelRoomsViewModel), "الغرف", PackIconKind.Door);
+        if (DetailReservation?.RoomId is int roomId)
+            await _navigation.OpenRoomsAsync(roomId);
+        else
+            _toast.ShowWarning("لا توجد غرفة مرتبطة");
+    }
+
+    [RelayCommand]
+    private async Task DetailOpenGuestAsync()
+    {
+        if (DetailReservation is null)
+            return;
+
+        await _navigation.OpenGuestsAsync(DetailReservation.GuestId);
     }
 
     [RelayCommand]
@@ -280,6 +371,7 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
             await _reservationService.DeleteAsync(ReservationToDelete.Id, _currentUserService.Username ?? "System");
             IsDeleteDialogOpen = false;
             ReservationToDelete = null;
+            ClosePreview();
             _toast.ShowSuccess("تم حذف الحجز");
             await LoadReservationsAsync();
         }
@@ -331,6 +423,8 @@ public partial class HotelReservationsViewModel : PagedViewModelBase
             IsPaymentDialogOpen = false;
             _toast.ShowSuccess("تم تسجيل الدفعة بنجاح");
             await LoadReservationsAsync();
+            if (SelectedReservation is not null)
+                await LoadPreviewAsync(SelectedReservation);
         }
         catch (Exception ex)
         {

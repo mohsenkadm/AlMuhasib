@@ -70,6 +70,20 @@ public sealed class HotelGuestService : IGuestService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ReservationListItem>> GetReservationsByGuestIdAsync(
+        int guestId,
+        int maxResults = 10,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await HotelReservationAmountHelper.ProjectListItems(
+                context.Reservations.AsNoTracking()
+                    .Where(r => r.GuestId == guestId))
+            .OrderByDescending(r => r.CheckInDate)
+            .Take(maxResults)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Guest> CreateAsync(Guest guest, CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
