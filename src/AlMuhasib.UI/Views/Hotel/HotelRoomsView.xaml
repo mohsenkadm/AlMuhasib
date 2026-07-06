@@ -6,6 +6,7 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
+    <Grid>
     <controls:HotelListPageShell PageTitle="إدارة الغرف"
                                  ListTitle="قائمة الغرف"
                                  ShowStatsBar="True"
@@ -47,7 +48,6 @@
                 <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                              ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=RoomsGrid}"
                                              Margin="4,0,0,0"
                                              VerticalAlignment="Center"/>
                 <TextBox md:HintAssist.Hint="بحث..."
@@ -59,8 +59,7 @@
 
         <controls:HotelListPageShell.ListContent>
             <Grid>
-                <DataGrid x:Name="RoomsGrid"
-                          ItemsSource="{Binding Rooms}"
+                <DataGrid ItemsSource="{Binding Rooms}"
                           SelectedItem="{Binding SelectedRoom}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
@@ -219,4 +218,5 @@
             </controls:HotelFormDialog>
         </md:DialogHost.DialogContent>
     </md:DialogHost>
+    </Grid>
 </UserControl>

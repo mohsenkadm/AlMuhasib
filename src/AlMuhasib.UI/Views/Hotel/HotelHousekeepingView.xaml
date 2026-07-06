@@ -35,15 +35,13 @@
                 <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                              ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=HousekeepingGrid}"
                                              Margin="4,0,0,0"
                                              VerticalAlignment="Center"/>
             </StackPanel>
         </controls:HotelListPageShell.ToolbarContent>
 
         <controls:HotelListPageShell.ListContent>
-            <DataGrid x:Name="HousekeepingGrid"
-                      Margin="8"
+            <DataGrid Margin="8"
                       ItemsSource="{Binding Tasks}"
                       SelectedItem="{Binding SelectedTask}"
                       AutoGenerateColumns="False"

@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
-             x:Name="Root"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
@@ -19,11 +18,11 @@
         <!-- Toolbar -->
         <md:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16">
             <StackPanel>
-                <TextBlock Text="{Binding PageTitle, ElementName=Root}"
+                <TextBlock Text="{Binding PageTitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
                            FontSize="16" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryHueMidBrush}"
                            Margin="0,0,0,12"/>
-                <ContentPresenter Content="{Binding ToolbarContent, ElementName=Root}"/>
+                <ContentPresenter Content="{Binding ToolbarContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"/>
             </StackPanel>
         </md:Card>
 
@@ -32,7 +31,7 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="{Binding PreviewPanelWidth, ElementName=Root}"/>
+                    <ColumnDefinition Width="{Binding PreviewPanelWidth, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"/>
                 </Grid.ColumnDefinitions>
 
                 <Grid Grid.Column="0">
@@ -51,44 +50,44 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="{Binding ListTitle, ElementName=Root}"
+                                       Text="{Binding ListTitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
                                        FontSize="15" FontWeight="Bold" Foreground="White"
                                        VerticalAlignment="Center"/>
                             <ContentPresenter Grid.Column="1"
-                                              Content="{Binding ListHeaderExtra, ElementName=Root}"
+                                              Content="{Binding ListHeaderExtra, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
                                               VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
 
                     <controls:HotelListStatsBar Grid.Row="1"
                                                 Margin="16,12,16,4"
-                                                ItemsSource="{Binding StatsItemsSource, ElementName=Root}"
-                                                Visibility="{Binding ShowStatsBar, ElementName=Root, Converter={StaticResource BoolVis}}"/>
+                                                ItemsSource="{Binding StatsItemsSource, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                Visibility="{Binding ShowStatsBar, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Converter={StaticResource BoolVis}}"/>
 
                     <ContentPresenter Grid.Row="2"
-                                      Content="{Binding ListContent, ElementName=Root}"
+                                      Content="{Binding ListContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
                                       Margin="0"/>
 
                     <ContentPresenter Grid.Row="3"
-                                      Content="{Binding ListFooterContent, ElementName=Root}"
-                                      Visibility="{Binding ListFooterContent, ElementName=Root, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                      Content="{Binding ListFooterContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                      Visibility="{Binding ListFooterContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Converter={StaticResource NullToCollapsedConverter}}"/>
 
                     <controls:PaginationBar Grid.Row="4"
-                                            Visibility="{Binding ShowPagination, ElementName=Root, Converter={StaticResource BoolVis}}"/>
+                                            Visibility="{Binding ShowPagination, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Converter={StaticResource BoolVis}}"/>
                 </Grid>
 
                 <controls:HotelEntityPreviewPanel Grid.Column="1"
-                                                    HasSelection="{Binding HasPreviewSelection, ElementName=Root}"
-                                                    Title="{Binding PreviewTitle, ElementName=Root}"
-                                                    Subtitle="{Binding PreviewSubtitle, ElementName=Root}"
-                                                    IconKind="{Binding PreviewIconKind, ElementName=Root}"
-                                                    SelectedTabIndex="{Binding PreviewSelectedTab, ElementName=Root, Mode=TwoWay}"
-                                                    SummaryContent="{Binding PreviewSummaryContent, ElementName=Root}"
-                                                    HistoryContent="{Binding PreviewHistoryContent, ElementName=Root}"
-                                                    ActionsContent="{Binding PreviewActionsContent, ElementName=Root}"
-                                                    CloseCommand="{Binding ClosePreviewCommand, ElementName=Root}"
-                                                    ShowCloseButton="{Binding ShowPreviewCloseButton, ElementName=Root}"
-                                                    Visibility="{Binding ShowPreviewPanel, ElementName=Root, Converter={StaticResource BoolVis}}"/>
+                                                    HasSelection="{Binding HasPreviewSelection, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    Title="{Binding PreviewTitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    Subtitle="{Binding PreviewSubtitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    IconKind="{Binding PreviewIconKind, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    SelectedTabIndex="{Binding PreviewSelectedTab, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Mode=TwoWay}"
+                                                    SummaryContent="{Binding PreviewSummaryContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    HistoryContent="{Binding PreviewHistoryContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    ActionsContent="{Binding PreviewActionsContent, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    CloseCommand="{Binding ClosePreviewCommand, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    ShowCloseButton="{Binding ShowPreviewCloseButton, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                    Visibility="{Binding ShowPreviewPanel, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Converter={StaticResource BoolVis}}"/>
             </Grid>
         </md:Card>
     </Grid>

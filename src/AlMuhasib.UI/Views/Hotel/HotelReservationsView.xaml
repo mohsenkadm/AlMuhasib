@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
+    <Grid>
     <controls:HotelListPageShell PageTitle="إدارة الحجوزات"
                                  ListTitle="الحجوزات"
                                  ShowStatsBar="True"
@@ -48,7 +49,6 @@
                 <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                              ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=ReservationsGrid}"
                                              Margin="4,0,0,0"
                                              VerticalAlignment="Center"/>
                 <CheckBox Content="غير مسددة" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center"/>
@@ -56,8 +56,7 @@
         </controls:HotelListPageShell.ToolbarContent>
 
         <controls:HotelListPageShell.ListContent>
-            <DataGrid x:Name="ReservationsGrid"
-                      ItemsSource="{Binding Reservations}"
+            <DataGrid ItemsSource="{Binding Reservations}"
                       SelectedItem="{Binding SelectedReservation}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
@@ -302,4 +301,5 @@
             </controls:HotelFormDialog>
         </md:DialogHost.DialogContent>
     </md:DialogHost>
+    </Grid>
 </UserControl>
