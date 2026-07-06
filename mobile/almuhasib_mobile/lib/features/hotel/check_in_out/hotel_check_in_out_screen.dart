@@ -11,32 +11,22 @@ import '../controllers/hotel_check_in_out_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelCheckInOutScreen extends StatefulWidget {
-  const HotelCheckInOutScreen({super.key});
+class HotelCheckInOutScreen extends GetView<HotelCheckInOutController> {
+  const HotelCheckInOutScreen({super.key}) : super(tag: 'hotel_check_in_out');
 
-  @override
-  State<HotelCheckInOutScreen> createState() => _HotelCheckInOutScreenState();
-}
-
-class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
-  late final HotelCheckInOutController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelCheckInOutController(), tag: 'hotel_check_in_out');
-  }
-
-  Future<void> _performCheckIn(HotelReservation reservation) async {
+  Future<void> _performCheckIn(
+    BuildContext context,
+    HotelReservation reservation,
+  ) async {
     try {
-      await _controller.checkIn(reservation);
-      if (mounted) {
+      await controller.checkIn(reservation);
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('hotel_check_in_success'.tr())),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
@@ -44,16 +34,19 @@ class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
     }
   }
 
-  Future<void> _performCheckOut(HotelReservation reservation) async {
+  Future<void> _performCheckOut(
+    BuildContext context,
+    HotelReservation reservation,
+  ) async {
     try {
-      await _controller.checkOut(reservation);
-      if (mounted) {
+      await controller.checkOut(reservation);
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('hotel_check_out_success'.tr())),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
@@ -92,19 +85,19 @@ class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
             ),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: _controller.load,
+                onRefresh: controller.load,
                 child: Obx(() {
-                  if (_controller.isLoading.value) {
+                  if (controller.isLoading.value) {
                     return const ListShimmer();
                   }
-                  final error = _controller.error.value;
+                  final error = controller.error.value;
                   if (error != null) {
                     return ErrorStateWidget(
                       message: error.toString(),
-                      onRetry: _controller.load,
+                      onRetry: controller.load,
                     );
                   }
-                  final reservations = _controller.reservations.value;
+                  final reservations = controller.reservations.value;
                   final today = DateTime.now();
                   final arrivals = reservations
                       .where((r) =>
@@ -125,13 +118,13 @@ class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
                         items: arrivals,
                         emptyMessage: 'hotel_no_arrivals'.tr(),
                         actionLabel: 'hotel_check_in'.tr(),
-                        onAction: _performCheckIn,
+                        onAction: (r) => _performCheckIn(context, r),
                       ),
                       _ReservationList(
                         items: departures,
                         emptyMessage: 'hotel_no_departures'.tr(),
                         actionLabel: 'hotel_check_out'.tr(),
-                        onAction: _performCheckOut,
+                        onAction: (r) => _performCheckOut(context, r),
                       ),
                     ],
                   );

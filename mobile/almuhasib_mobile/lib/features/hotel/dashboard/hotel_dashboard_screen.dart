@@ -13,21 +13,8 @@ import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_dashboard_controller.dart';
 import '../models/hotel_models.dart';
 
-class HotelDashboardScreen extends StatefulWidget {
-  const HotelDashboardScreen({super.key});
-
-  @override
-  State<HotelDashboardScreen> createState() => _HotelDashboardScreenState();
-}
-
-class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
-  late final HotelDashboardController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelDashboardController(), tag: 'hotel_dashboard');
-  }
+class HotelDashboardScreen extends GetView<HotelDashboardController> {
+  const HotelDashboardScreen({super.key}) : super(tag: 'hotel_dashboard');
 
   @override
   Widget build(BuildContext context) {
@@ -45,20 +32,20 @@ class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _controller.load,
+              onRefresh: controller.load,
               edgeOffset: 120,
               child: Obx(() {
-                if (_controller.isLoading.value) {
+                if (controller.isLoading.value) {
                   return const DashboardShimmer();
                 }
-                final error = _controller.error.value;
+                final error = controller.error.value;
                 if (error != null) {
                   return ErrorStateWidget(
                     message: AppExceptionHandler.messageFor(error),
-                    onRetry: _controller.load,
+                    onRetry: controller.load,
                   );
                 }
-                final data = _controller.data.value;
+                final data = controller.data.value;
                 if (data == null) {
                   return const SizedBox.shrink();
                 }

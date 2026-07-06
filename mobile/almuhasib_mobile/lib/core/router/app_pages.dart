@@ -1,5 +1,10 @@
 import 'package:get/get.dart';
 
+import '../bindings/accounting_feature_bindings.dart';
+import '../bindings/accounting_shell_binding.dart';
+import '../bindings/auth_binding.dart';
+import '../bindings/car_bindings.dart';
+import '../bindings/hotel_bindings.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/car/car_shell.dart';
 import '../../features/car/contracts/car_contract_detail_screen.dart';
@@ -56,6 +61,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.onboarding,
       page: () => const OnboardingScreen(),
+      binding: AuthBinding(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -63,6 +69,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginScreen(),
+      binding: AuthBinding(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -97,6 +104,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.home,
       page: () => const MainShellPage(),
+      binding: AccountingShellBinding(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -104,16 +112,19 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.reports,
       page: () => const MainShellPage(initialTab: 1),
+      binding: AccountingShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.data,
       page: () => const MainShellPage(initialTab: 2),
+      binding: AccountingShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.settings,
       page: () => const MainShellPage(initialTab: 3),
+      binding: AccountingShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
@@ -121,6 +132,7 @@ abstract final class AppPages {
       page: () => ReportDetailScreen(
         reportType: Get.parameters['type']!,
       ),
+      binding: ReportDetailBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -128,6 +140,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.dataList,
       page: () => DataListScreen(listType: Get.parameters['type']!),
+      binding: DataListBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -135,6 +148,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.invoiceNew,
       page: () => const InvoiceWizardScreen(),
+      binding: InvoiceWizardBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -142,13 +156,15 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.invoiceDetail,
       page: () => InvoiceDetailScreen(syncId: Get.parameters['syncId']!),
+      binding: InvoiceDetailBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
     ),
     GetPage(
       name: AppRoutes.customerNew,
-      page: () => const CustomerFormScreen(),
+      page: () => CustomerFormScreen(),
+      binding: CustomerFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -156,6 +172,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.customerEdit,
       page: () => CustomerFormScreen(syncId: Get.parameters['syncId']),
+      binding: CustomerFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -174,6 +191,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.productNew,
       page: () => const ProductFormScreen(),
+      binding: ProductFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -181,6 +199,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.productEdit,
       page: () => ProductFormScreen(syncId: Get.parameters['syncId']),
+      binding: ProductFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -199,6 +218,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.supplierNew,
       page: () => const SupplierFormScreen(),
+      binding: SupplierFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -206,6 +226,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.supplierEdit,
       page: () => SupplierFormScreen(syncId: Get.parameters['syncId']),
+      binding: SupplierFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -224,6 +245,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.investorNew,
       page: () => const InvestorFormScreen(),
+      binding: InvestorFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -231,6 +253,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.investorEdit,
       page: () => InvestorFormScreen(syncId: Get.parameters['syncId']),
+      binding: InvestorFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -249,6 +272,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.hotelHome,
       page: () => const HotelShellPage(),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -256,36 +280,45 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.hotelReservations,
       page: () => const HotelShellPage(initialTab: 1),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.hotelRooms,
       page: () => const HotelShellPage(initialTab: 2),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.hotelOperations,
       page: () => const HotelShellPage(initialTab: 3),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.hotelGuests,
-      page: () => const HotelShellPage(initialTab: 4),
+      page: () => const HotelShellPage(initialTab: 3),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.hotelRestaurant,
-      page: () => const HotelShellPage(initialTab: 5),
+      page: () => const RestaurantHubScreen(),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
     ),
     GetPage(
       name: AppRoutes.hotelSettings,
-      page: () => const HotelShellPage(initialTab: 6),
+      page: () => const HotelShellPage(initialTab: 4),
+      binding: HotelShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.hotelReservationNew,
       page: () => const HotelReservationFormScreen(),
+      binding: HotelReservationFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -298,6 +331,7 @@ abstract final class AppPages {
             ? Get.arguments as HotelReservation
             : null,
       ),
+      binding: HotelReservationDetailBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -305,6 +339,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.hotelGuestNew,
       page: () => const HotelGuestFormScreen(),
+      binding: HotelGuestFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -314,6 +349,7 @@ abstract final class AppPages {
       page: () => HotelGuestFormScreen(
         guest: Get.arguments is HotelGuest ? Get.arguments as HotelGuest : null,
       ),
+      binding: HotelGuestFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -321,6 +357,7 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.carHome,
       page: () => const CarShellPage(),
+      binding: CarShellBinding(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -328,26 +365,31 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.carContracts,
       page: () => const CarShellPage(initialTab: 1),
+      binding: CarShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.carPayments,
       page: () => const CarShellPage(initialTab: 2),
+      binding: CarShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.carReports,
       page: () => const CarShellPage(initialTab: 3),
+      binding: CarShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.carSettings,
       page: () => const CarShellPage(initialTab: 4),
+      binding: CarShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.carContractNew,
       page: () => const CarContractFormScreen(),
+      binding: CarContractFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -357,6 +399,7 @@ abstract final class AppPages {
       page: () => CarContractDetailScreen(
         syncId: Get.parameters['syncId']!,
       ),
+      binding: CarContractDetailBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

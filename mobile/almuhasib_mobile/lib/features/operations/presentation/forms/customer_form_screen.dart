@@ -6,15 +6,13 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../controllers/customer_form_controller.dart';
 import '../../../../shared/widgets/design_system/design_system.dart';
 
-class CustomerFormScreen extends StatelessWidget {
-  const CustomerFormScreen({super.key, this.syncId});
+class CustomerFormScreen extends GetView<CustomerFormController> {
+  CustomerFormScreen({super.key, this.syncId});
 
   final String? syncId;
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(CustomerFormController(syncId: syncId));
-
     return AppFormPage(
       title: controller.isEdit ? 'edit_customer'.tr() : 'add_customer'.tr(),
       formKey: controller.formKey,

@@ -11,21 +11,8 @@ import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_guests_controller.dart';
 import '../models/hotel_models.dart';
 
-class HotelGuestsScreen extends StatefulWidget {
-  const HotelGuestsScreen({super.key});
-
-  @override
-  State<HotelGuestsScreen> createState() => _HotelGuestsScreenState();
-}
-
-class _HotelGuestsScreenState extends State<HotelGuestsScreen> {
-  late final HotelGuestsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelGuestsController(), tag: 'hotel_guests');
-  }
+class HotelGuestsScreen extends GetView<HotelGuestsController> {
+  const HotelGuestsScreen({super.key}) : super(tag: 'hotel_guests');
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +23,7 @@ class _HotelGuestsScreenState extends State<HotelGuestsScreen> {
         onPressed: () async {
           final saved = await Get.toNamed<bool>(AppRoutes.hotelGuestNew);
           if (saved == true) {
-            _controller.load();
+            controller.load();
           }
         },
         child: const Icon(Icons.person_add_outlined),
@@ -54,31 +41,31 @@ class _HotelGuestsScreenState extends State<HotelGuestsScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: SearchFilterBar(
-              onSearchChanged: _controller.updateSearch,
+              onSearchChanged: controller.updateSearch,
             ),
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _controller.load,
+              onRefresh: controller.load,
               child: Obx(() {
-                if (_controller.isLoading.value) {
+                if (controller.isLoading.value) {
                   return const ListShimmer();
                 }
-                final error = _controller.error.value;
+                final error = controller.error.value;
                 if (error != null) {
                   return ErrorStateWidget(
                     message: AppExceptionHandler.messageFor(error),
-                    onRetry: _controller.load,
+                    onRetry: controller.load,
                   );
                 }
-                final page = _controller.page.value;
+                final page = controller.page.value;
                 if (page == null || page.items.isEmpty) {
                   return ListView(
                     children: [
                       SizedBox(
                         height: MediaQuery.sizeOf(context).height * 0.4,
                         child: EmptyStateWidget(
-                          message: _controller.search.value.isEmpty
+                          message: controller.search.value.isEmpty
                               ? 'no_data'.tr()
                               : 'no_search_results'.tr(),
                         ),
@@ -100,7 +87,7 @@ class _HotelGuestsScreenState extends State<HotelGuestsScreen> {
                             arguments: guest,
                           );
                           if (saved == true) {
-                            _controller.load();
+                            controller.load();
                           }
                         },
                         leading: CircleAvatar(

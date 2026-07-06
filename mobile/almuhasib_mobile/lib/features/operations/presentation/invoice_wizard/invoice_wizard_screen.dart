@@ -8,20 +8,8 @@ import '../../../../shared/widgets/form_section_card.dart';
 import '../../../../shared/widgets/sticky_summary_bar.dart';
 import '../../controllers/invoice_wizard_controller.dart';
 
-class InvoiceWizardScreen extends StatelessWidget {
+class InvoiceWizardScreen extends GetView<InvoiceWizardController> {
   const InvoiceWizardScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(InvoiceWizardController());
-    return _InvoiceWizardView(controller: controller);
-  }
-}
-
-class _InvoiceWizardView extends StatelessWidget {
-  const _InvoiceWizardView({required this.controller});
-
-  final InvoiceWizardController controller;
 
   @override
   Widget build(BuildContext context) {

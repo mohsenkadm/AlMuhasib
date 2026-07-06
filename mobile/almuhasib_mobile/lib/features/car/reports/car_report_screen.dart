@@ -9,13 +9,10 @@ import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_report_controller.dart';
 import '../models/car_models.dart';
 
-class CarReportScreen extends StatelessWidget {
-  const CarReportScreen({super.key});
+class CarReportScreen extends GetView<CarReportController> {
+  const CarReportScreen({super.key}) : super(tag: 'car_report');
 
-  Future<void> _pickFrom(
-    BuildContext context,
-    CarReportController controller,
-  ) async {
+  Future<void> _pickFrom(BuildContext context) async {
     final d = await showDatePicker(
       context: context,
       initialDate: controller.from.value,
@@ -25,10 +22,7 @@ class CarReportScreen extends StatelessWidget {
     if (d != null) controller.setFrom(d);
   }
 
-  Future<void> _pickTo(
-    BuildContext context,
-    CarReportController controller,
-  ) async {
+  Future<void> _pickTo(BuildContext context) async {
     final d = await showDatePicker(
       context: context,
       initialDate: controller.to.value,
@@ -40,8 +34,6 @@ class CarReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(CarReportController(), tag: 'car_report');
-
     return AppPageScaffold(
       title: 'car_report_title'.tr(),
       body: Column(
@@ -53,7 +45,7 @@ class CarReportScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _pickFrom(context, controller),
+                      onPressed: () => _pickFrom(context),
                       icon: const Icon(Icons.date_range_rounded),
                       label: Text(formatDate(controller.from.value)),
                     ),
@@ -61,7 +53,7 @@ class CarReportScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _pickTo(context, controller),
+                      onPressed: () => _pickTo(context),
                       icon: const Icon(Icons.event_rounded),
                       label: Text(formatDate(controller.to.value)),
                     ),

@@ -6,6 +6,7 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/getx/app_services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_routes.dart';
+import '../controllers/dashboard_controller.dart';
 import '../../../shared/models/dashboard_models.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
@@ -13,40 +14,11 @@ import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
-class DashboardController extends GetxController {
-  final isLoading = true.obs;
-  final Rxn<Object> error = Rxn<Object>();
-  final Rxn<DashboardData> data = Rxn<DashboardData>();
-
-  String get companyName =>
-      AppServices.prefs.companyName ?? 'app_name'.tr();
-
-  @override
-  void onInit() {
-    super.onInit();
-    reload();
-  }
-
-  Future<void> reload() async {
-    isLoading.value = true;
-    error.value = null;
-    try {
-      data.value = await AppServices.dashboard.getDashboard();
-    } catch (e) {
-      error.value = e;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-}
-
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends GetView<DashboardController> {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(DashboardController(), tag: 'dashboard');
-
     return Obx(() {
       final isOffline = AppServices.connectivity.isOffline.value;
 

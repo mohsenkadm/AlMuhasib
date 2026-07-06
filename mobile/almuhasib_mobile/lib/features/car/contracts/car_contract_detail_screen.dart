@@ -7,15 +7,13 @@ import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../controllers/car_contract_detail_controller.dart';
 
-class CarContractDetailScreen extends StatelessWidget {
-  const CarContractDetailScreen({super.key, required this.syncId});
+class CarContractDetailScreen extends GetView<CarContractDetailController> {
+  const CarContractDetailScreen({super.key, required this.syncId})
+      : super(tag: 'car_contract_detail');
 
   final String syncId;
 
-  Future<void> _pay(
-    BuildContext context,
-    CarContractDetailController controller,
-  ) async {
+  Future<void> _pay(BuildContext context) async {
     final amountCtrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -55,12 +53,6 @@ class CarContractDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tag = 'car_contract_detail_$syncId';
-    final controller = Get.put(
-      CarContractDetailController(syncId: syncId),
-      tag: tag,
-    );
-
     return Scaffold(
       appBar: AppBar(title: Text('car_contract_detail'.tr())),
       floatingActionButton: Obx(() {
@@ -68,7 +60,7 @@ class CarContractDetailScreen extends StatelessWidget {
           return const SizedBox.shrink();
         }
         return FloatingActionButton.extended(
-          onPressed: () => _pay(context, controller),
+          onPressed: () => _pay(context),
           icon: const Icon(Icons.payments),
           label: Text('car_record_payment'.tr()),
         );

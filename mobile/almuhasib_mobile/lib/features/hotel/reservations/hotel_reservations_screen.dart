@@ -10,14 +10,11 @@ import '../controllers/hotel_reservations_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelReservationsScreen extends StatelessWidget {
-  const HotelReservationsScreen({super.key});
+class HotelReservationsScreen extends GetView<HotelReservationsController> {
+  const HotelReservationsScreen({super.key}) : super(tag: 'hotel_reservations');
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(HotelReservationsController(), tag: 'hotel_reservations');
-
     return Obx(
       () => AppListPage<HotelReservation>(
         title: 'hotel_reservations_title'.tr(),

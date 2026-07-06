@@ -1,32 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide Trans;
 
-import 'hotel_check_in_out_screen.dart';
-import 'hotel_guests_screen.dart';
+import '../check_in_out/hotel_check_in_out_screen.dart';
+import '../controllers/hotel_operations_hub_controller.dart';
+import '../guests/hotel_guests_screen.dart';
 
-class HotelOperationsHubScreen extends StatefulWidget {
+class HotelOperationsHubScreen extends GetView<HotelOperationsHubController> {
   const HotelOperationsHubScreen({super.key});
-
-  @override
-  State<HotelOperationsHubScreen> createState() =>
-      _HotelOperationsHubScreenState();
-}
-
-class _HotelOperationsHubScreenState extends State<HotelOperationsHubScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +16,7 @@ class _HotelOperationsHubScreenState extends State<HotelOperationsHubScreen>
         Material(
           color: Theme.of(context).colorScheme.surface,
           child: TabBar(
-            controller: _tabController,
+            controller: controller.tabController,
             tabs: [
               Tab(text: 'hotel_nav_operations'.tr()),
               Tab(text: 'hotel_nav_guests'.tr()),
@@ -44,7 +25,7 @@ class _HotelOperationsHubScreenState extends State<HotelOperationsHubScreen>
         ),
         Expanded(
           child: TabBarView(
-            controller: _tabController,
+            controller: controller.tabController,
             children: const [
               HotelCheckInOutScreen(),
               HotelGuestsScreen(),

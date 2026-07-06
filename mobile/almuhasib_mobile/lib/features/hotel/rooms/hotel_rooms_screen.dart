@@ -11,21 +11,8 @@ import '../controllers/hotel_rooms_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelRoomsScreen extends StatefulWidget {
-  const HotelRoomsScreen({super.key});
-
-  @override
-  State<HotelRoomsScreen> createState() => _HotelRoomsScreenState();
-}
-
-class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
-  late final HotelRoomsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelRoomsController(), tag: 'hotel_rooms');
-  }
+class HotelRoomsScreen extends GetView<HotelRoomsController> {
+  const HotelRoomsScreen({super.key}) : super(tag: 'hotel_rooms');
 
   @override
   Widget build(BuildContext context) {
@@ -40,19 +27,19 @@ class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _controller.load,
+              onRefresh: controller.load,
               child: Obx(() {
-                if (_controller.isLoading.value) {
+                if (controller.isLoading.value) {
                   return const ListShimmer();
                 }
-                final error = _controller.error.value;
+                final error = controller.error.value;
                 if (error != null) {
                   return ErrorStateWidget(
                     message: AppExceptionHandler.messageFor(error),
-                    onRetry: _controller.load,
+                    onRetry: controller.load,
                   );
                 }
-                final rooms = _controller.rooms.value;
+                final rooms = controller.rooms.value;
                 if (rooms.isEmpty) {
                   return ListView(
                     children: [

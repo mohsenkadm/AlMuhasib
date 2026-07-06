@@ -9,14 +9,11 @@ import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_payments_controller.dart';
 import '../models/car_models.dart';
 
-class CarPaymentsScreen extends StatelessWidget {
-  const CarPaymentsScreen({super.key});
+class CarPaymentsScreen extends GetView<CarPaymentsController> {
+  const CarPaymentsScreen({super.key}) : super(tag: 'car_payments');
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(CarPaymentsController(), tag: 'car_payments');
-
     return Obx(
       () => AppListPage<CarContractListItem>(
         title: 'car_payments_title'.tr(),

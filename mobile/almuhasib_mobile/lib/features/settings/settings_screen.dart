@@ -9,12 +9,11 @@ import '../../core/services/app_info_service.dart';
 import '../../shared/widgets/app_animations.dart';
 import 'settings_controller.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends GetView<SettingsController> {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SettingsController(), tag: 'settings');
     final prefs = AppServices.prefs;
 
     return Scaffold(

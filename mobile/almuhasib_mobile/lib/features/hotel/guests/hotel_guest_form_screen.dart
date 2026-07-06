@@ -6,22 +6,11 @@ import '../../../shared/widgets/form_section_card.dart';
 import '../controllers/hotel_guest_form_controller.dart';
 import '../models/hotel_models.dart';
 
-class HotelGuestFormScreen extends StatelessWidget {
-  const HotelGuestFormScreen({super.key, this.guest});
+class HotelGuestFormScreen extends GetView<HotelGuestFormController> {
+  const HotelGuestFormScreen({super.key, this.guest})
+      : super(tag: 'hotel_guest_form');
 
   final HotelGuest? guest;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(HotelGuestFormController(guest: guest));
-    return _HotelGuestFormView(controller: controller);
-  }
-}
-
-class _HotelGuestFormView extends StatelessWidget {
-  const _HotelGuestFormView({required this.controller});
-
-  final HotelGuestFormController controller;
 
   @override
   Widget build(BuildContext context) {

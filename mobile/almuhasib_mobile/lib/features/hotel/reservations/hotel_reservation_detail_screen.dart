@@ -9,32 +9,16 @@ import '../controllers/hotel_reservation_detail_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelReservationDetailScreen extends StatelessWidget {
+class HotelReservationDetailScreen
+    extends GetView<HotelReservationDetailController> {
   const HotelReservationDetailScreen({
     super.key,
     required this.syncId,
     this.reservation,
-  });
+  }) : super(tag: 'hotel_reservation_detail');
 
   final String syncId;
   final HotelReservation? reservation;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(
-      HotelReservationDetailController(
-        syncId: syncId,
-        initialReservation: reservation,
-      ),
-    );
-    return _HotelReservationDetailView(controller: controller);
-  }
-}
-
-class _HotelReservationDetailView extends StatelessWidget {
-  const _HotelReservationDetailView({required this.controller});
-
-  final HotelReservationDetailController controller;
 
   @override
   Widget build(BuildContext context) {

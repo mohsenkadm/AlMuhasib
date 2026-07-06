@@ -11,13 +11,11 @@ import '../data/restaurant_pos_controller.dart';
 import '../models/restaurant_models.dart';
 import '../reports/restaurant_reports_screen.dart';
 
-class RestaurantHubScreen extends StatelessWidget {
-  const RestaurantHubScreen({super.key});
+class RestaurantHubScreen extends GetView<RestaurantPosController> {
+  const RestaurantHubScreen({super.key}) : super(tag: 'restaurant_hub');
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(RestaurantPosController(), tag: 'restaurant_hub');
     return _RestaurantHubView(controller: controller);
   }
 }

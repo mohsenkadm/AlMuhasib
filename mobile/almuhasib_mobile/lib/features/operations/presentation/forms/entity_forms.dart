@@ -5,22 +5,10 @@ import 'package:get/get.dart' hide Trans;
 import '../../controllers/entity_form_controllers.dart';
 import '../../../../shared/widgets/form_section_card.dart';
 
-class SupplierFormScreen extends StatelessWidget {
+class SupplierFormScreen extends GetView<SupplierFormController> {
   const SupplierFormScreen({super.key, this.syncId});
 
   final String? syncId;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(SupplierFormController(syncId: syncId));
-    return _SupplierFormView(controller: controller);
-  }
-}
-
-class _SupplierFormView extends StatelessWidget {
-  const _SupplierFormView({required this.controller});
-
-  final SupplierFormController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -77,22 +65,10 @@ class _SupplierFormView extends StatelessWidget {
   }
 }
 
-class InvestorFormScreen extends StatelessWidget {
+class InvestorFormScreen extends GetView<InvestorFormController> {
   const InvestorFormScreen({super.key, this.syncId});
 
   final String? syncId;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(InvestorFormController(syncId: syncId));
-    return _InvestorFormView(controller: controller);
-  }
-}
-
-class _InvestorFormView extends StatelessWidget {
-  const _InvestorFormView({required this.controller});
-
-  final InvestorFormController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -150,22 +126,10 @@ class _InvestorFormView extends StatelessWidget {
   }
 }
 
-class ProductFormScreen extends StatelessWidget {
+class ProductFormScreen extends GetView<ProductFormController> {
   const ProductFormScreen({super.key, this.syncId});
 
   final String? syncId;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(ProductFormController(syncId: syncId));
-    return _ProductFormView(controller: controller);
-  }
-}
-
-class _ProductFormView extends StatelessWidget {
-  const _ProductFormView({required this.controller});
-
-  final ProductFormController controller;
 
   @override
   Widget build(BuildContext context) {

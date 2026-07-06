@@ -12,13 +12,11 @@ import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/car_dashboard_controller.dart';
 
-class CarDashboardScreen extends StatelessWidget {
-  const CarDashboardScreen({super.key});
+class CarDashboardScreen extends GetView<CarDashboardController> {
+  const CarDashboardScreen({super.key}) : super(tag: 'car_dashboard');
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(CarDashboardController(), tag: 'car_dashboard');
     final profile = SystemProfile.of(AppServices.prefs.systemType);
 
     return AppPageScaffold(

@@ -6,14 +6,11 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_contract_form_controller.dart';
 
-class CarContractFormScreen extends StatelessWidget {
-  const CarContractFormScreen({super.key});
+class CarContractFormScreen extends GetView<CarContractFormController> {
+  const CarContractFormScreen({super.key}) : super(tag: 'car_contract_form');
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(CarContractFormController(), tag: 'car_contract_form');
-
     return AppFormPage(
       title: 'car_new_contract'.tr(),
       formKey: controller.formKey,
