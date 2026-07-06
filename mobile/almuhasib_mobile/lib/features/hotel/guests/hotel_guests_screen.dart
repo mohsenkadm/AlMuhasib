@@ -5,7 +5,6 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/router/app_routes.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
-import '../../../shared/widgets/search_filter_bar.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_guests_controller.dart';
@@ -40,7 +39,7 @@ class HotelGuestsScreen extends GetView<HotelGuestsController> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: SearchFilterBar(
+            child: AppFilterBar(
               onSearchChanged: controller.updateSearch,
             ),
           ),

@@ -6,31 +6,12 @@ import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
+import '../../../shared/widgets/search_filter_bar.dart';
 import '../controllers/car_report_controller.dart';
 import '../models/car_models.dart';
 
 class CarReportScreen extends GetView<CarReportController> {
   const CarReportScreen({super.key}) : super(tag: 'car_report');
-
-  Future<void> _pickFrom(BuildContext context) async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: controller.from.value,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (d != null) controller.setFrom(d);
-  }
-
-  Future<void> _pickTo(BuildContext context) async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: controller.to.value,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (d != null) controller.setTo(d);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,28 +19,25 @@ class CarReportScreen extends GetView<CarReportController> {
       title: 'car_report_title'.tr(),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Obx(
-              () => Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _pickFrom(context),
-                      icon: const Icon(Icons.date_range_rounded),
-                      label: Text(formatDate(controller.from.value)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _pickTo(context),
-                      icon: const Icon(Icons.event_rounded),
-                      label: Text(formatDate(controller.to.value)),
-                    ),
-                  ),
-                ],
-              ),
+          Obx(
+            () => AppFilterBar(
+              showDateRange: true,
+              from: controller.from.value,
+              to: controller.to.value,
+              onPickFrom: controller.pickFromDate,
+              onPickTo: controller.pickToDate,
+              filterChips: [
+                FilterChipOption(
+                  id: 'Active',
+                  label: 'filter_status_active'.tr(),
+                ),
+                FilterChipOption(
+                  id: 'Completed',
+                  label: 'filter_status_completed'.tr(),
+                ),
+              ],
+              onFilterSelected: controller.updateStatusFilter,
+              onClear: controller.clearFilters,
             ),
           ),
           Obx(() {

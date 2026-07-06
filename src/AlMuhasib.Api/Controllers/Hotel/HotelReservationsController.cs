@@ -18,7 +18,13 @@ public sealed class HotelReservationsController : HotelApiControllerBase
 
     [HttpGet]
     public async Task<ActionResult<PagedResult<HotelReservationListDto>>> GetReservations(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null, CancellationToken ct = default)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? status = null,
+        CancellationToken ct = default)
     {
         if (await EnsureHotelTenantAsync(ct) is { } err) return err;
 
@@ -31,6 +37,15 @@ public sealed class HotelReservationsController : HotelApiControllerBase
             var term = search.Trim();
             query = query.Where(r => r.ReservationNumber.Contains(term) || r.GuestName.Contains(term) || (r.RoomNumber != null && r.RoomNumber.Contains(term)));
         }
+
+        if (from.HasValue)
+            query = query.Where(r => r.CheckInDate >= from.Value.Date);
+
+        if (to.HasValue)
+            query = query.Where(r => r.CheckInDate <= to.Value.Date);
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ReservationStatus>(status, true, out var statusEnum))
+            query = query.Where(r => r.Status == statusEnum);
 
         var total = await query.CountAsync(ct);
         var items = await query.OrderByDescending(r => r.CheckInDate)

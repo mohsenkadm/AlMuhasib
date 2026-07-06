@@ -21,6 +21,9 @@ public sealed class CarContractsController : CarApiControllerBase
         [FromQuery] int pageSize = 50,
         [FromQuery] string? search = null,
         [FromQuery] string? status = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] bool? hasRemaining = null,
         CancellationToken ct = default)
     {
         if (await EnsureCarTenantAsync(ct) is { } err) return err;
@@ -45,6 +48,15 @@ public sealed class CarContractsController : CarApiControllerBase
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CarContractStatus>(status, true, out var statusEnum))
             query = query.Where(c => c.Status == statusEnum);
+
+        if (from.HasValue)
+            query = query.Where(c => c.ContractDate >= from.Value.Date);
+
+        if (to.HasValue)
+            query = query.Where(c => c.ContractDate <= to.Value.Date);
+
+        if (hasRemaining == true)
+            query = query.Where(c => c.RemainingAmount > 0);
 
         var items = await query
             .OrderByDescending(c => c.ContractDate)

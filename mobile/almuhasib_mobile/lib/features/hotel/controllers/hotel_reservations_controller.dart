@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/getx/app_services.dart';
@@ -5,6 +6,9 @@ import '../models/hotel_models.dart';
 
 class HotelReservationsController extends GetxController {
   final search = ''.obs;
+  final statusFilter = RxnString();
+  final from = DateTime.now().subtract(const Duration(days: 90)).obs;
+  final to = DateTime.now().add(const Duration(days: 90)).obs;
   final isLoading = true.obs;
   final error = Rxn<Object>();
   final page = Rxn<HotelReservationPage>();
@@ -17,8 +21,49 @@ class HotelReservationsController extends GetxController {
     load();
   }
 
-  void updateSearch(String value) {
-    search.value = value;
+  void updateSearch(String value) => search.value = value;
+
+  void updateStatusFilter(String? status) {
+    statusFilter.value = status;
+    load();
+  }
+
+  Future<void> pickFromDate() async {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final picked = await showDatePicker(
+      context: ctx,
+      initialDate: from.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      from.value = picked;
+      load();
+    }
+  }
+
+  Future<void> pickToDate() async {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final picked = await showDatePicker(
+      context: ctx,
+      initialDate: to.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      to.value = picked;
+      load();
+    }
+  }
+
+  void clearFilters() {
+    search.value = '';
+    statusFilter.value = null;
+    from.value = DateTime.now().subtract(const Duration(days: 90));
+    to.value = DateTime.now().add(const Duration(days: 90));
+    load();
   }
 
   Future<void> load() async {
@@ -27,6 +72,9 @@ class HotelReservationsController extends GetxController {
     try {
       page.value = await AppServices.hotel.getReservations(
         search: search.value,
+        from: from.value,
+        to: to.value,
+        status: statusFilter.value,
         pageSize: 50,
       );
       items.assignAll(page.value?.items ?? []);

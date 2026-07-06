@@ -88,17 +88,12 @@ class _PosPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = _RestaurantHubView.accent;
-    final selectedCategory =
-        menu.categories.isNotEmpty ? menu.categories.first.syncId : '';
-    final items = menu.items
-        .where((item) => item.categorySyncId == selectedCategory)
-        .toList();
+    final accent = SystemProfile.ofInt(AppServices.prefs.systemType).primary;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Obx(
             () => SegmentedButton<int>(
               segments: [
@@ -121,53 +116,87 @@ class _PosPanel extends StatelessWidget {
             ),
           ),
         ),
+        if (menu.categories.length > 1)
+          SizedBox(
+            height: 44,
+            child: Obx(
+              () => ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                itemCount: menu.categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final category = menu.categories[index];
+                  final selected =
+                      controller.selectedCategoryId.value == category.syncId;
+                  return FilterChip(
+                    label: Text(category.name),
+                    selected: selected,
+                    onSelected: (_) =>
+                        controller.selectCategory(category.syncId),
+                  );
+                },
+              ),
+            ),
+          ),
         Expanded(
           flex: 2,
-          child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 1.4,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return Hero(
-                tag: 'menu_${item.syncId}',
-                child: Material(
-                  color: accent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
+          child: Obx(() {
+            final selectedCategory = controller.selectedCategoryId.value.isNotEmpty
+                ? controller.selectedCategoryId.value
+                : (menu.categories.isNotEmpty
+                    ? menu.categories.first.syncId
+                    : '');
+            final items = menu.items
+                .where((item) => item.categorySyncId == selectedCategory)
+                .toList();
+
+            return GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1.4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Hero(
+                  tag: 'menu_${item.syncId}',
+                  child: Material(
+                    color: accent.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => controller.addToCart(item),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            item.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            NumberFormat('#,###').format(item.salePrice),
-                            style: const TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.bold,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => controller.addToCart(item),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item.name,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              NumberFormat('#,###').format(item.salePrice),
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            );
+          }),
         ),
         Obx(
           () => AnimatedContainer(

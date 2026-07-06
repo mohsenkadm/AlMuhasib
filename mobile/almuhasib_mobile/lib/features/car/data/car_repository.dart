@@ -16,6 +16,9 @@ class CarRepository {
   Future<List<CarContractListItem>> getContracts({
     String? search,
     String? status,
+    DateTime? from,
+    DateTime? to,
+    bool? hasRemaining,
     int page = 1,
     int pageSize = 50,
   }) {
@@ -24,6 +27,9 @@ class CarRepository {
       queryParameters: {
         if (search != null && search.isNotEmpty) 'search': search,
         if (status != null && status.isNotEmpty) 'status': status,
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+        if (hasRemaining == true) 'hasRemaining': true,
         'page': page,
         'pageSize': pageSize,
       },

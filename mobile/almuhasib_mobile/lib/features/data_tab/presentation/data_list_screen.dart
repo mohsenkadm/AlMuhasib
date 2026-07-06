@@ -23,12 +23,13 @@ class DataListScreen extends GetView<DataListController> {
 
   @override
   Widget build(BuildContext context) {
-    final invoiceFilters = listType == 'invoices'
+    final isInvoices = listType == 'invoices';
+    final invoiceTypeFilters = isInvoices
         ? [
-            const FilterChipOption(id: '0', label: 'شراء'),
-            const FilterChipOption(id: '1', label: 'بيع'),
-            const FilterChipOption(id: '2', label: 'قسط'),
-            const FilterChipOption(id: '3', label: 'مرتجع'),
+            FilterChipOption(id: '0', label: 'purchase'.tr()),
+            FilterChipOption(id: '1', label: 'sale'.tr()),
+            FilterChipOption(id: '2', label: 'installment'.tr()),
+            FilterChipOption(id: '3', label: 'purchase_return'.tr()),
           ]
         : <FilterChipOption>[];
 
@@ -47,42 +48,22 @@ class DataListScreen extends GetView<DataListController> {
             : null,
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: SearchFilterBar(
-                onSearchChanged: controller.updateSearch,
-                filterChips: invoiceFilters,
-                onFilterSelected: listType == 'invoices'
-                    ? controller.updateInvoiceTypeFilter
-                    : null,
-              ),
+            AppFilterBar(
+              onSearchChanged: controller.updateSearch,
+              filterChips: invoiceTypeFilters,
+              onFilterSelected:
+                  isInvoices ? controller.updateInvoiceTypeFilter : null,
+              showDateRange: isInvoices,
+              from: isInvoices ? controller.from.value : null,
+              to: isInvoices ? controller.to.value : null,
+              onPickFrom: isInvoices
+                  ? () => controller.pickFromDate(context)
+                  : null,
+              onPickTo:
+                  isInvoices ? () => controller.pickToDate(context) : null,
+              onClear: isInvoices ? controller.clearFilters : null,
             ),
-            if (listType == 'invoices')
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => controller.pickFromDate(context),
-                        child: Text(
-                          '${'from_date'.tr()}\n${formatDate(controller.from.value)}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => controller.pickToDate(context),
-                        child: Text(
-                          '${'to_date'.tr()}\n${formatDate(controller.to.value)}',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            if (isInvoices) _PaymentMethodFilters(controller: controller),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: controller.reload,
@@ -96,6 +77,56 @@ class DataListScreen extends GetView<DataListController> {
         ),
       );
     });
+  }
+}
+
+class _PaymentMethodFilters extends StatelessWidget {
+  const _PaymentMethodFilters({required this.controller});
+
+  final DataListController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [
+      FilterChipOption(id: '0', label: 'cash'.tr()),
+      FilterChipOption(id: '1', label: 'credit'.tr()),
+      FilterChipOption(id: '2', label: 'installment'.tr()),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'payment_method'.tr(),
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: chips.map((chip) {
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: Obx(() {
+                    final selected =
+                        controller.paymentFilter.value?.toString() == chip.id;
+                    return FilterChip(
+                      label: Text(chip.label),
+                      selected: selected,
+                      onSelected: (_) => controller.updatePaymentFilter(
+                        selected ? null : chip.id,
+                      ),
+                    );
+                  }),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

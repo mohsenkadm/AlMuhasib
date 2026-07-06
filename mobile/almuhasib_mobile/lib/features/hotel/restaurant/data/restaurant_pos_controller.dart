@@ -13,6 +13,19 @@ class RestaurantPosController extends RestaurantController
   final currentOrder = Rxn<RestaurantOrder>();
   final cart = RxMap<RestaurantMenuItem, double>({});
   final orderType = 0.obs;
+  final selectedCategoryId = ''.obs;
+
+  @override
+  Future<void> loadMenu() async {
+    await super.loadMenu();
+    final categories = menu.value?.categories ?? [];
+    if (categories.isNotEmpty &&
+        !categories.any((c) => c.syncId == selectedCategoryId.value)) {
+      selectedCategoryId.value = categories.first.syncId;
+    }
+  }
+
+  void selectCategory(String syncId) => selectedCategoryId.value = syncId;
 
   double get cartTotal => cart.entries.fold(
         0.0,

@@ -34,10 +34,13 @@ class HotelRepository {
     );
   }
 
-  Future<List<HotelRoom>> getRooms() {
+  Future<List<HotelRoom>> getRooms({String? status}) {
     _apiClient.updateBaseUrl();
     return _apiClient.get(
       '/api/hotel/rooms',
+      queryParameters: {
+        if (status != null && status.isNotEmpty) 'status': status,
+      },
       parser: (data) => (data as List<dynamic>? ?? [])
           .map((e) => HotelRoom.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -86,6 +89,9 @@ class HotelRepository {
     int page = 1,
     int pageSize = 20,
     String search = '',
+    DateTime? from,
+    DateTime? to,
+    String? status,
   }) {
     _apiClient.updateBaseUrl();
     return _apiClient.get(
@@ -94,6 +100,9 @@ class HotelRepository {
         'page': page,
         'pageSize': pageSize,
         if (search.isNotEmpty) 'search': search,
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+        if (status != null && status.isNotEmpty) 'status': status,
       },
       parser: (data) => HotelReservationPage.fromJson(
         data as Map<String, dynamic>,

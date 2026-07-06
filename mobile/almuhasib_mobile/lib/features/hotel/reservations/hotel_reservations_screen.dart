@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
+import '../../../shared/widgets/search_filter_bar.dart';
 import '../controllers/hotel_reservations_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
@@ -23,12 +24,39 @@ class HotelReservationsScreen extends GetView<HotelReservationsController> {
         items: controller.items,
         onRefresh: controller.load,
         onRetry: controller.load,
-        onSearchChanged: controller.updateSearch,
         fabLabel: 'hotel_new_reservation'.tr(),
         onFab: () => Get.toNamed(AppRoutes.hotelReservationNew),
         emptyMessage: controller.search.value.isEmpty
             ? 'no_data'.tr()
             : 'no_search_results'.tr(),
+        filterPanel: AppFilterBar(
+          onSearchChanged: controller.updateSearch,
+          showDateRange: true,
+          from: controller.from.value,
+          to: controller.to.value,
+          onPickFrom: controller.pickFromDate,
+          onPickTo: controller.pickToDate,
+          filterChips: [
+            FilterChipOption(
+              id: 'Confirmed',
+              label: 'hotel_status_confirmed'.tr(),
+            ),
+            FilterChipOption(
+              id: 'CheckedIn',
+              label: 'hotel_status_checked_in'.tr(),
+            ),
+            FilterChipOption(
+              id: 'CheckedOut',
+              label: 'hotel_status_checked_out'.tr(),
+            ),
+            FilterChipOption(
+              id: 'Cancelled',
+              label: 'hotel_status_cancelled'.tr(),
+            ),
+          ],
+          onFilterSelected: controller.updateStatusFilter,
+          onClear: controller.clearFilters,
+        ),
         itemBuilder: (context, reservation, index) {
           final statusColor = hotelReservationStatusColor(reservation.status);
           return AppEntityCard(

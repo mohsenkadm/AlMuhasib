@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
+import '../../../shared/widgets/search_filter_bar.dart';
 import '../controllers/car_contracts_controller.dart';
 import '../models/car_models.dart';
 
@@ -22,13 +23,31 @@ class CarContractsScreen extends GetView<CarContractsController> {
         items: controller.items,
         onRefresh: controller.load,
         onRetry: controller.load,
-        searchController: controller.searchController,
-        onSearch: controller.load,
-        useSearchFilterBar: false,
         fabLabel: 'car_new_contract'.tr(),
         onFab: () => Get.toNamed(AppRoutes.carContractNew),
         emptyMessage: 'car_no_contracts'.tr(),
         emptyIcon: Icons.description_outlined,
+        filterPanel: AppFilterBar(
+          onSearchChanged: controller.updateSearch,
+          showDateRange: true,
+          from: controller.from.value,
+          to: controller.to.value,
+          onPickFrom: controller.pickFromDate,
+          onPickTo: controller.pickToDate,
+          filterChips: [
+            FilterChipOption(id: 'Active', label: 'filter_status_active'.tr()),
+            FilterChipOption(
+              id: 'Completed',
+              label: 'filter_status_completed'.tr(),
+            ),
+            FilterChipOption(
+              id: 'Cancelled',
+              label: 'filter_status_cancelled'.tr(),
+            ),
+          ],
+          onFilterSelected: controller.updateStatusFilter,
+          onClear: controller.clearFilters,
+        ),
         itemBuilder: (context, c, index) => AppEntityCard(
           title: c.contractNumber,
           subtitle: '${c.buyerName} • ${c.plateNumber}',

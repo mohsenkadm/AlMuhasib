@@ -1,3 +1,4 @@
+export 'app_filter_bar.dart';
 export 'app_async_body.dart';
 export 'app_detail_page.dart';
 export 'app_entity_card.dart';

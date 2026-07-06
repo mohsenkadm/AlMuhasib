@@ -127,7 +127,7 @@ class ReportsRepository {
     _apiClient.updateBaseUrl();
     return _apiClient.get(
       '/api/reports/balance-sheet',
-      queryParameters: {'date': date.toIso8601String()},
+      queryParameters: {'asOfDate': date.toIso8601String()},
       parser: (data) =>
           BalanceSheetResult.fromJson(data as Map<String, dynamic>),
     );

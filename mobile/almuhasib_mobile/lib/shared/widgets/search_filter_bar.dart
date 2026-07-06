@@ -39,8 +39,15 @@ class SearchFilterBar extends StatelessWidget {
                           onPressed: controller.clear,
                         )
                       : null,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
                   filled: true,
+                  fillColor: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.5),
                 ),
                 onChanged: controller.onChanged,
               ),

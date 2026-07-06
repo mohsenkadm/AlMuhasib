@@ -18,8 +18,8 @@ class CarPaymentsController extends GetxController {
     isLoading.value = true;
     error.value = null;
     try {
-      final all = await AppServices.car.getContracts();
-      unpaid.value = all.where((c) => c.remainingAmount > 0).toList();
+      final all = await AppServices.car.getContracts(hasRemaining: true);
+      unpaid.value = all;
     } catch (e) {
       error.value = e;
     } finally {

@@ -65,6 +65,20 @@ class DataListController extends GetxController {
     reload();
   }
 
+  void updatePaymentFilter(String? id) {
+    paymentFilter.value = id == null ? null : int.tryParse(id);
+    reload();
+  }
+
+  void clearFilters() {
+    search.value = '';
+    invoiceTypeFilter.value = null;
+    paymentFilter.value = null;
+    from.value = DateTime.now().subtract(const Duration(days: 90));
+    to.value = DateTime.now();
+    reload();
+  }
+
   Future<void> pickFromDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,

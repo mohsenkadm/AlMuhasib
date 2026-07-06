@@ -31,6 +31,7 @@ class AppListPage<T> extends StatelessWidget {
     this.actions,
     this.padding,
     this.useSearchFilterBar = true,
+    this.filterPanel,
   });
 
   final String title;
@@ -53,6 +54,7 @@ class AppListPage<T> extends StatelessWidget {
   final List<Widget>? actions;
   final EdgeInsets? padding;
   final bool useSearchFilterBar;
+  final Widget? filterPanel;
 
   List<T> get _resolvedItems => staticItems ?? items?.toList() ?? [];
 
@@ -129,7 +131,9 @@ class AppListPage<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppStandardAppBar(title: title, subtitle: subtitle, actions: actions),
-          if (searchController != null || onSearchChanged != null)
+          if (filterPanel != null)
+            filterPanel!
+          else if (searchController != null || onSearchChanged != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,

@@ -23,7 +23,7 @@ class HotelRoomsScreen extends GetView<HotelRoomsController> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: _StatusLegend().fadeSlideIn(),
+            child: _StatusLegend(controller: controller).fadeSlideIn(),
           ),
           Expanded(
             child: RefreshIndicator(
@@ -141,6 +141,10 @@ class _RoomCard extends StatelessWidget {
 }
 
 class _StatusLegend extends StatelessWidget {
+  const _StatusLegend({required this.controller});
+
+  final HotelRoomsController controller;
+
   @override
   Widget build(BuildContext context) {
     final statuses = [
@@ -150,27 +154,40 @@ class _StatusLegend extends StatelessWidget {
       HotelRoomStatus.maintenance,
     ];
 
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: statuses.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final status = statuses[index];
-          final color = hotelRoomStatusColor(status);
-          return Chip(
-            avatar: CircleAvatar(backgroundColor: color, radius: 6),
-            label: Text(
-              hotelRoomStatusLabel(status),
-              style: const TextStyle(fontSize: 11),
-            ),
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-          );
-        },
-      ),
-    );
+    return Obx(() {
+      final selected = controller.statusFilter.value;
+      return SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: statuses.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              final isAll = selected == null;
+              return FilterChip(
+                label: Text('filter_all'.tr()),
+                selected: isAll,
+                onSelected: (_) => controller.clearStatusFilter(),
+              );
+            }
+            final status = statuses[index - 1];
+            final color = hotelRoomStatusColor(status);
+            final isSelected = selected == status;
+            return FilterChip(
+              avatar: CircleAvatar(backgroundColor: color, radius: 6),
+              label: Text(
+                hotelRoomStatusLabel(status),
+                style: const TextStyle(fontSize: 11),
+              ),
+              selected: isSelected,
+              onSelected: (_) => controller.updateStatusFilter(
+                isSelected ? null : status,
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }
