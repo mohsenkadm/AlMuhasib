@@ -12,7 +12,10 @@ import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
 class HotelCheckInOutScreen extends GetView<HotelCheckInOutController> {
-  const HotelCheckInOutScreen({super.key}) : super(tag: 'hotel_check_in_out');
+  const HotelCheckInOutScreen({super.key});
+
+  @override
+  final String? tag = 'hotel_check_in_out';
 
   Future<void> _performCheckIn(
     BuildContext context,

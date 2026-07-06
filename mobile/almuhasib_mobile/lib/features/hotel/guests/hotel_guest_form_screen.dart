@@ -7,8 +7,10 @@ import '../controllers/hotel_guest_form_controller.dart';
 import '../models/hotel_models.dart';
 
 class HotelGuestFormScreen extends GetView<HotelGuestFormController> {
-  const HotelGuestFormScreen({super.key, this.guest})
-      : super(tag: 'hotel_guest_form');
+  const HotelGuestFormScreen({super.key, this.guest});
+
+  @override
+  final String? tag = 'hotel_guest_form';
 
   final HotelGuest? guest;
 

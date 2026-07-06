@@ -7,8 +7,10 @@ import '../controllers/hotel_reservation_form_controller.dart';
 import '../models/hotel_models.dart';
 
 class HotelReservationFormScreen extends GetView<HotelReservationFormController> {
-  const HotelReservationFormScreen({super.key})
-      : super(tag: 'hotel_reservation_form');
+  const HotelReservationFormScreen({super.key});
+
+  @override
+  final String? tag = 'hotel_reservation_form';
 
   @override
   Widget build(BuildContext context) {

@@ -8,8 +8,10 @@ import '../../../shared/widgets/common_widgets.dart';
 import '../controllers/car_contract_detail_controller.dart';
 
 class CarContractDetailScreen extends GetView<CarContractDetailController> {
-  const CarContractDetailScreen({super.key, required this.syncId})
-      : super(tag: 'car_contract_detail');
+  const CarContractDetailScreen({super.key, required this.syncId});
+
+  @override
+  final String? tag = 'car_contract_detail';
 
   final String syncId;
 

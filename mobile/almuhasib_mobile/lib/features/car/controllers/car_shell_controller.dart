@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../core/router/app_routes.dart';
+import '../../../core/router/app_routes.dart';
 
 class CarShellController extends GetxController {
   final currentIndex = 0.obs;

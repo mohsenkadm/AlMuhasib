@@ -16,10 +16,12 @@ import '../../../shared/widgets/shimmer_widgets.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 
 class DataListScreen extends GetView<DataListController> {
-  DataListScreen({super.key, required this.listType})
-      : super(tag: 'data_list_$listType');
+  DataListScreen({super.key, required this.listType});
 
   final String listType;
+
+  @override
+  String? get tag => 'data_list_$listType';
 
   @override
   Widget build(BuildContext context) {
@@ -243,10 +245,12 @@ class EntityDetailScreen extends StatelessWidget {
 }
 
 class InvoiceDetailScreen extends GetView<InvoiceDetailController> {
-  InvoiceDetailScreen({super.key, required this.syncId})
-      : super(tag: 'invoice_$syncId');
+  InvoiceDetailScreen({super.key, required this.syncId});
 
   final String syncId;
+
+  @override
+  String? get tag => 'invoice_$syncId';
 
   @override
   Widget build(BuildContext context) {

@@ -26,7 +26,7 @@ class AppSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
     final primary = profile.primary;
     final secondary = profile.secondary;
 
@@ -109,7 +109,7 @@ class AppStandardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
     return AppBar(
       leading: leading,
       title: subtitle == null

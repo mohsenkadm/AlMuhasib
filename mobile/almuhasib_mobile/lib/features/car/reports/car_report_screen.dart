@@ -11,7 +11,10 @@ import '../controllers/car_report_controller.dart';
 import '../models/car_models.dart';
 
 class CarReportScreen extends GetView<CarReportController> {
-  const CarReportScreen({super.key}) : super(tag: 'car_report');
+  const CarReportScreen({super.key});
+
+  @override
+  final String? tag = 'car_report';
 
   @override
   Widget build(BuildContext context) {

@@ -7,7 +7,10 @@ import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_contract_form_controller.dart';
 
 class CarContractFormScreen extends GetView<CarContractFormController> {
-  const CarContractFormScreen({super.key}) : super(tag: 'car_contract_form');
+  const CarContractFormScreen({super.key});
+
+  @override
+  final String? tag = 'car_contract_form';
 
   @override
   Widget build(BuildContext context) {

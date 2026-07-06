@@ -12,10 +12,12 @@ import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
 class ReportDetailScreen extends GetView<ReportDetailController> {
-  ReportDetailScreen({super.key, required this.reportType})
-      : super(tag: 'report_$reportType');
+  ReportDetailScreen({super.key, required this.reportType});
 
   final String reportType;
+
+  @override
+  String? get tag => 'report_$reportType';
 
   @override
   Widget build(BuildContext context) {

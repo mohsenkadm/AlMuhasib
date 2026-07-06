@@ -11,7 +11,10 @@ import '../controllers/car_contracts_controller.dart';
 import '../models/car_models.dart';
 
 class CarContractsScreen extends GetView<CarContractsController> {
-  const CarContractsScreen({super.key}) : super(tag: 'car_contracts');
+  const CarContractsScreen({super.key});
+
+  @override
+  final String? tag = 'car_contracts';
 
   @override
   Widget build(BuildContext context) {

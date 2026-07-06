@@ -12,7 +12,10 @@ import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
 class HotelRoomsScreen extends GetView<HotelRoomsController> {
-  const HotelRoomsScreen({super.key}) : super(tag: 'hotel_rooms');
+  const HotelRoomsScreen({super.key});
+
+  @override
+  final String? tag = 'hotel_rooms';
 
   @override
   Widget build(BuildContext context) {

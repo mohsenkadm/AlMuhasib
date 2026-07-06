@@ -14,6 +14,7 @@ class ReportsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profile = AppServices.prefs.systemProfile;
     final reports = [
       _ReportItem('sales', 'report_sales', Icons.point_of_sale, AppColors.success),
       _ReportItem('purchases', 'report_purchases', Icons.shopping_bag_outlined, profile.primary),
@@ -25,8 +26,6 @@ class ReportsScreen extends StatelessWidget {
       _ReportItem('warehouse', 'report_warehouse', Icons.warehouse_outlined, profile.secondary),
       _ReportItem('top_products', 'report_top_products', Icons.star_outline, AppColors.warning),
     ];
-
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
 
     return AppPageScaffold(
       title: 'reports_title'.tr(),

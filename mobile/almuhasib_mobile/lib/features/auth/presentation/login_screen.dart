@@ -15,7 +15,7 @@ class LoginScreen extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
 
     return Scaffold(
       body: Container(

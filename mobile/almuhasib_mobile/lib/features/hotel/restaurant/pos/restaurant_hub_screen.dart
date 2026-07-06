@@ -12,7 +12,10 @@ import '../models/restaurant_models.dart';
 import '../reports/restaurant_reports_screen.dart';
 
 class RestaurantHubScreen extends GetView<RestaurantPosController> {
-  const RestaurantHubScreen({super.key}) : super(tag: 'restaurant_hub');
+  const RestaurantHubScreen({super.key});
+
+  @override
+  final String? tag = 'restaurant_hub';
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +30,7 @@ class _RestaurantHubView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +91,7 @@ class _PosPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = SystemProfile.ofInt(AppServices.prefs.systemType).primary;
+    final accent = AppServices.prefs.systemProfile.primary;
 
     return Column(
       children: [

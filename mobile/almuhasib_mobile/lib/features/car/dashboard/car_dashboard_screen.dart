@@ -13,7 +13,10 @@ import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/car_dashboard_controller.dart';
 
 class CarDashboardScreen extends GetView<CarDashboardController> {
-  const CarDashboardScreen({super.key}) : super(tag: 'car_dashboard');
+  const CarDashboardScreen({super.key});
+
+  @override
+  final String? tag = 'car_dashboard';
 
   @override
   Widget build(BuildContext context) {

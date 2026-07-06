@@ -15,7 +15,10 @@ class HotelReservationDetailScreen
     super.key,
     required this.syncId,
     this.reservation,
-  }) : super(tag: 'hotel_reservation_detail');
+  });
+
+  @override
+  final String? tag = 'hotel_reservation_detail';
 
   final String syncId;
   final HotelReservation? reservation;

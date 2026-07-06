@@ -8,7 +8,10 @@ import '../../shared/widgets/app_animations.dart';
 import 'onboarding_controller.dart';
 
 class OnboardingScreen extends GetView<OnboardingController> {
-  const OnboardingScreen({super.key}) : super(tag: 'onboarding');
+  const OnboardingScreen({super.key});
+
+  @override
+  final String? tag = 'onboarding';
 
   static const _slides = [
     _OnboardingSlideData(

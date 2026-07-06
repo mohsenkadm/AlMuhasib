@@ -18,7 +18,7 @@ class MainShellPage extends GetView<MainShellController> {
   @override
   Widget build(BuildContext context) {
     controller.syncTab(initialTab);
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
 
     return Obx(
       () => Scaffold(

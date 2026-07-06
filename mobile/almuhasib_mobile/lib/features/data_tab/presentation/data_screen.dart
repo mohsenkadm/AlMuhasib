@@ -14,7 +14,7 @@ class DataScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
     final items = [
       _DataItem('customers', 'customers', Icons.people_outline, profile.primary),
       _DataItem('products', 'products', Icons.inventory_2_outlined, profile.accent),

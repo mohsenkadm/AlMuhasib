@@ -10,7 +10,10 @@ import '../controllers/car_payments_controller.dart';
 import '../models/car_models.dart';
 
 class CarPaymentsScreen extends GetView<CarPaymentsController> {
-  const CarPaymentsScreen({super.key}) : super(tag: 'car_payments');
+  const CarPaymentsScreen({super.key});
+
+  @override
+  final String? tag = 'car_payments';
 
   @override
   Widget build(BuildContext context) {

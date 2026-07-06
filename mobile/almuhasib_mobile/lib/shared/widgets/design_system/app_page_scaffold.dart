@@ -40,7 +40,7 @@ class AppPageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
     final content = child ?? body ?? const SizedBox.shrink();
 
     return Obx(() {

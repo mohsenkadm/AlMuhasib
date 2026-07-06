@@ -18,7 +18,7 @@ class RestaurantReportsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+    final profile = AppServices.prefs.systemProfile;
 
     return Obx(() {
       if (controller.isProfitLoading.value) {
