@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -49,33 +50,48 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.splashGradient),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fade,
-            child: ScaleTransition(
-              scale: _scale,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppLogoMark(size: 96).scaleIn(),
-                  const SizedBox(height: 24),
-                  Text(
-                    'المحاسب',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(),
+              FadeTransition(
+                opacity: _fade,
+                child: ScaleTransition(
+                  scale: _scale,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppLogoMark(size: 96).scaleIn(),
+                      const SizedBox(height: 24),
+                      Text(
+                        'app_name'.tr(),
+                        style:
+                            Theme.of(context).textTheme.displaySmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'splash_tagline'.tr(),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'تقاريرك في جيبك',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                        ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const Spacer(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+                child: LinearProgressIndicator(
+                  minHeight: 3,
+                  backgroundColor: Colors.white24,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),

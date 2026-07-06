@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
 import '../../../core/router/app_routes.dart';
-import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/app_animations.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_payments_controller.dart';
+import '../models/car_models.dart';
 
 class CarPaymentsScreen extends StatelessWidget {
   const CarPaymentsScreen({super.key});
@@ -14,42 +17,29 @@ class CarPaymentsScreen extends StatelessWidget {
     final controller =
         Get.put(CarPaymentsController(), tag: 'car_payments');
 
-    return Scaffold(
-      appBar: AppBar(title: Text('car_payments_title'.tr())),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (controller.unpaid.isEmpty) {
-          return EmptyStateWidget(
-            message: 'car_no_unpaid'.tr(),
-            icon: Icons.payments_outlined,
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: controller.load,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-            itemCount: controller.unpaid.length,
-            itemBuilder: (context, i) {
-              final c = controller.unpaid[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GradientCard(
-                  child: ListTile(
-                    title: Text(c.contractNumber),
-                    subtitle: Text(c.buyerName),
-                    trailing: Text('${c.remainingAmount}'),
-                    onTap: () => Get.toNamed(
-                      AppRoutes.carContractDetailPath(c.syncId),
-                    ),
-                  ),
+    return Obx(
+      () => AppListPage<CarContractListItem>(
+        title: 'car_payments_title'.tr(),
+        isLoading: controller.isLoading,
+        error: controller.error,
+        items: controller.unpaid,
+        onRefresh: controller.load,
+        onRetry: controller.load,
+        emptyMessage: 'car_no_unpaid'.tr(),
+        emptyIcon: Icons.payments_outlined,
+        itemBuilder: (context, c, index) => AppEntityCard(
+          title: c.contractNumber,
+          subtitle: c.buyerName,
+          trailing: Text(
+            formatCurrency(c.remainingAmount),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.error,
                 ),
-              );
-            },
           ),
-        );
-      }),
+          onTap: () => Get.toNamed(AppRoutes.carContractDetailPath(c.syncId)),
+        ).fadeSlideIn(delayMs: index * 40),
+      ),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../../../shared/models/dashboard_models.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 
 class DashboardController extends GetxController {
@@ -62,7 +63,9 @@ class DashboardScreen extends StatelessWidget {
                     ? const DashboardShimmer()
                     : controller.error.value != null
                         ? ErrorStateWidget(
-                            message: controller.error.value.toString(),
+                            message: AppExceptionHandler.messageFor(
+                              controller.error.value,
+                            ),
                             onRetry: controller.reload,
                           )
                         : _DashboardBody(

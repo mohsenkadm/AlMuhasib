@@ -8,6 +8,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_dashboard_controller.dart';
 import '../models/hotel_models.dart';
@@ -53,7 +54,7 @@ class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
                 final error = _controller.error.value;
                 if (error != null) {
                   return ErrorStateWidget(
-                    message: error.toString(),
+                    message: AppExceptionHandler.messageFor(error),
                     onRetry: _controller.load,
                   );
                 }
@@ -186,10 +187,24 @@ class _HotelDashboardBody extends StatelessWidget {
           ],
         ).fadeSlideIn(delayMs: 240),
         const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: () => Get.offNamed(AppRoutes.hotelOperations),
-          icon: const Icon(Icons.login_rounded),
-          label: Text('hotel_go_check_in'.tr()),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => Get.offNamed(AppRoutes.hotelOperations),
+                icon: const Icon(Icons.login_rounded),
+                label: Text('hotel_go_check_in'.tr()),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.hotelRestaurant),
+                icon: const Icon(Icons.restaurant_rounded),
+                label: Text('hotel_nav_restaurant'.tr()),
+              ),
+            ),
+          ],
         ).fadeSlideIn(delayMs: 280),
       ],
     );

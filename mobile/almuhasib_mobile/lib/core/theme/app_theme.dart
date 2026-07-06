@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_colors.dart';
+import 'app_spacing.dart';
 
 abstract final class AppTheme {
   static ThemeData light({Color? seedColor, Color? accentColor}) {
@@ -22,7 +23,7 @@ abstract final class AppTheme {
         color: AppColors.surfaceLightCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.cardRadius),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
         ),
       ),
@@ -80,7 +81,7 @@ abstract final class AppTheme {
         color: AppColors.surfaceDarkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.cardRadius),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
         ),
       ),

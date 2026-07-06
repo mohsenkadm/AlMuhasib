@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_report_controller.dart';
+import '../models/car_models.dart';
 
 class CarReportScreen extends StatelessWidget {
   const CarReportScreen({super.key});
@@ -39,8 +42,8 @@ class CarReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(CarReportController(), tag: 'car_report');
 
-    return Scaffold(
-      appBar: AppBar(title: Text('car_report_title'.tr())),
+    return AppPageScaffold(
+      title: 'car_report_title'.tr(),
       body: Column(
         children: [
           Padding(
@@ -49,16 +52,18 @@ class CarReportScreen extends StatelessWidget {
               () => Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: () => _pickFrom(context, controller),
-                      child: Text(formatDate(controller.from.value)),
+                      icon: const Icon(Icons.date_range_rounded),
+                      label: Text(formatDate(controller.from.value)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: () => _pickTo(context, controller),
-                      child: Text(formatDate(controller.to.value)),
+                      icon: const Icon(Icons.event_rounded),
+                      label: Text(formatDate(controller.to.value)),
                     ),
                   ),
                 ],
@@ -67,37 +72,54 @@ class CarReportScreen extends StatelessWidget {
           ),
           Obx(() {
             if (controller.isLoading.value) {
-              return const SizedBox.shrink();
+              return const LinearProgressIndicator(minHeight: 3);
             }
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GradientCard(
-                child: ListTile(
-                  title: Text('car_report_total'.tr()),
-                  trailing: Text(formatCurrency(controller.total)),
+              child: AppEntityCard(
+                title: 'car_report_total'.tr(),
+                trailing: Text(
+                  formatCurrency(controller.total),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
               ),
             );
           }),
           Expanded(
             child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-                itemCount: controller.rows.length,
-                itemBuilder: (context, i) {
-                  final r = controller.rows[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: GradientCard(
-                      child: ListTile(
-                        title: Text(r.contractNumber),
-                        subtitle: Text(formatDate(r.contractDate)),
+              return AppAsyncBody<List<CarContractListItem>>(
+                isLoading: controller.isLoading.value,
+                error: controller.error.value,
+                data: controller.rows,
+                onRetry: controller.load,
+                showEmptyWhenNull: false,
+                builder: (context, rows) {
+                  if (rows.isEmpty) {
+                    return ListView(
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.35,
+                          child: EmptyStateWidget(
+                            message: 'no_data'.tr(),
+                            onRetry: controller.load,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+                    itemCount: rows.length,
+                    itemBuilder: (context, i) {
+                      final r = rows[i];
+                      return AppEntityCard(
+                        title: r.contractNumber,
+                        subtitle: formatDate(r.contractDate),
                         trailing: Text(formatCurrency(r.carPrice)),
-                      ),
-                    ),
+                      ).fadeSlideIn(delayMs: i * 30);
+                    },
                   );
                 },
               );

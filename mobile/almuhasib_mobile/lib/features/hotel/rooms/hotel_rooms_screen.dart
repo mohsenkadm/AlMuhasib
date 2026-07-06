@@ -5,6 +5,7 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_rooms_controller.dart';
 import '../models/hotel_models.dart';
@@ -28,29 +29,15 @@ class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.paddingOf(context).top;
-
-    return Scaffold(
+    return AppPageScaffold(
+      title: 'hotel_rooms_title'.tr(),
+      subtitle: 'hotel_rooms_subtitle'.tr(),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: topPadding + 8),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'hotel_rooms_title'.tr(),
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            child: _StatusLegend().fadeSlideIn(),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'hotel_rooms_subtitle'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _StatusLegend().fadeSlideIn(),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _controller.load,
@@ -61,7 +48,7 @@ class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
                 final error = _controller.error.value;
                 if (error != null) {
                   return ErrorStateWidget(
-                    message: error.toString(),
+                    message: AppExceptionHandler.messageFor(error),
                     onRetry: _controller.load,
                   );
                 }

@@ -305,5 +305,17 @@
   "amount": "المبلغ",
   "save": "حفظ",
   "cancel": "إلغاء",
-  "search": "بحث"
+  "search": "بحث",
+  "error": "خطأ",
+  "success": "تم بنجاح",
+  "confirm": "تأكيد",
+  "conflict_title": "تعارض في البيانات",
+  "conflict_generic": "تعذر حفظ البيانات بسبب تعارض. حاول مرة أخرى.",
+  "offline_action_blocked": "يتطلب التطبيق اتصالاً بالإنترنت للمتابعة",
+  "car_contract_details": "بيانات العقد",
+  "car_payment_details": "بيانات الدفع",
+  "new_customer": "عميل جديد",
+  "new_product": "منتج جديد",
+  "delete_confirm_title": "تأكيد الحذف",
+  "delete_confirm_message": "هل أنت متأكد من هذا الإجراء؟"
 }

@@ -198,19 +198,44 @@ class ConnectivityBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isOffline) return const SizedBox.shrink();
     return Material(
+      elevation: 2,
       color: AppColors.warning,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              const Icon(Icons.wifi_off, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'offline'.tr(),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'offline'.tr(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      'offline_action_blocked'.tr(),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../core/config/system_profile.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
 import '../../features/reports/presentation/reports_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../shared/widgets/animated_bottom_nav.dart';
-import '../../core/router/app_routes.dart';
 
 class MainShellController extends GetxController {
   MainShellController({int initialTab = 0}) : currentIndex = initialTab.obs;
@@ -39,6 +41,7 @@ class MainShellPage extends StatelessWidget {
       Get.put(MainShellController(initialTab: initialTab), tag: tag);
     }
     final controller = Get.find<MainShellController>(tag: tag);
+    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
 
     return Obx(
       () => Scaffold(
@@ -55,6 +58,8 @@ class MainShellPage extends StatelessWidget {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          accentColor: profile.accent,
+          primaryColor: profile.primary,
           items: const [
             BottomNavItem(
               icon: Icons.home_outlined,

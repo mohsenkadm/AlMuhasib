@@ -5,8 +5,8 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/getx/app_services.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/mobile_models.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/lookup_picker_sheet.dart';
-import '../../../shared/widgets/sticky_summary_bar.dart';
 
 class WizardLineItem {
   WizardLineItem({
@@ -130,23 +130,23 @@ class InvoiceWizardController extends GetxController {
     if (ctx == null) return;
 
     if (warehouse.value == null) {
-      showErrorSnackbar(ctx, 'select_warehouse'.tr());
+      AppExceptionHandler.showError('select_warehouse'.tr());
       return;
     }
     if (needsCustomer && customer.value == null) {
-      showErrorSnackbar(ctx, 'select_customer'.tr());
+      AppExceptionHandler.showError('select_customer'.tr());
       return;
     }
     if (needsSupplier && supplier.value == null) {
-      showErrorSnackbar(ctx, 'select_supplier'.tr());
+      AppExceptionHandler.showError('select_supplier'.tr());
       return;
     }
     if (paymentMethod.value == 0 && cashBox.value == null) {
-      showErrorSnackbar(ctx, 'select_cashbox'.tr());
+      AppExceptionHandler.showError('select_cashbox'.tr());
       return;
     }
     if (items.isEmpty) {
-      showErrorSnackbar(ctx, 'add_line_item'.tr());
+      AppExceptionHandler.showError('add_line_item'.tr());
       return;
     }
 
@@ -186,16 +186,15 @@ class InvoiceWizardController extends GetxController {
         ),
       );
       if (response.conflicts.isNotEmpty) {
-        showErrorSnackbar(ctx, response.message);
+        AppExceptionHandler.showConflicts(response.conflicts);
         return;
       }
-      showSuccessSnackbar(
-        ctx,
+      AppExceptionHandler.showSuccess(
         '${response.message} ${response.invoiceNumber ?? ''}',
       );
       Get.back(result: true);
     } catch (e) {
-      showErrorSnackbar(ctx, e.toString());
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }

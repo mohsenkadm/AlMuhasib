@@ -246,5 +246,17 @@
   "profit_invoice_details": "Profit by Invoice",
   "error_load": "Failed to load data",
   "required": "Required",
-  "search": "Search"
+  "search": "Search",
+  "error": "Error",
+  "success": "Success",
+  "confirm": "Confirm",
+  "conflict_title": "Data conflict",
+  "conflict_generic": "Could not save due to a conflict. Please try again.",
+  "offline_action_blocked": "An internet connection is required to continue",
+  "car_contract_details": "Contract details",
+  "car_payment_details": "Payment details",
+  "new_customer": "New customer",
+  "new_product": "New product",
+  "delete_confirm_title": "Confirm deletion",
+  "delete_confirm_message": "Are you sure you want to proceed?"
 }

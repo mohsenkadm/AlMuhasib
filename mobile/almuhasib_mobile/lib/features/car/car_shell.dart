@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../core/config/system_profile.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/car/contracts/car_contracts_screen.dart';
 import '../../features/car/dashboard/car_dashboard_screen.dart';
 import '../../features/car/payments/car_payments_screen.dart';
 import '../../features/car/reports/car_report_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../shared/widgets/animated_bottom_nav.dart';
-import '../../core/router/app_routes.dart';
 
 class CarShellController extends GetxController {
   CarShellController({int initialTab = 0}) : currentIndex = initialTab.obs;
@@ -41,6 +43,7 @@ class CarShellPage extends StatelessWidget {
       Get.put(CarShellController(initialTab: initialTab), tag: tag);
     }
     final controller = Get.find<CarShellController>(tag: tag);
+    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
 
     return Obx(
       () => Scaffold(
@@ -58,6 +61,8 @@ class CarShellPage extends StatelessWidget {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          accentColor: profile.accent,
+          primaryColor: profile.primary,
           items: const [
             BottomNavItem(
               icon: Icons.dashboard_outlined,
@@ -85,7 +90,6 @@ class CarShellPage extends StatelessWidget {
               labelKey: 'car_nav_settings',
             ),
           ],
-          accentColor: Color(0xFFFF8F00),
         ),
       ),
     );

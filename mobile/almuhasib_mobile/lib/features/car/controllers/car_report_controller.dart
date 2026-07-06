@@ -7,6 +7,7 @@ class CarReportController extends GetxController {
   final from = DateTime.now().subtract(const Duration(days: 30)).obs;
   final to = DateTime.now().obs;
   final isLoading = false.obs;
+  final error = Rxn<Object>();
   final rows = <CarContractListItem>[].obs;
 
   @override
@@ -17,11 +18,14 @@ class CarReportController extends GetxController {
 
   Future<void> load() async {
     isLoading.value = true;
+    error.value = null;
     try {
       rows.value = await AppServices.car.getReport(
         from: from.value,
         to: to.value,
       );
+    } catch (e) {
+      error.value = e;
     } finally {
       isLoading.value = false;
     }

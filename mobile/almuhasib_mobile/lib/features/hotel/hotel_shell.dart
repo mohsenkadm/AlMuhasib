@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
+import '../../core/config/system_profile.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
-import '../../features/hotel/guests/hotel_guests_screen.dart';
+import '../../features/hotel/operations/hotel_operations_hub_screen.dart';
 import '../../features/hotel/reservations/hotel_reservations_screen.dart';
-import '../../features/hotel/restaurant/pos/restaurant_hub_screen.dart';
 import '../../features/hotel/rooms/hotel_rooms_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../shared/widgets/animated_bottom_nav.dart';
-import '../../core/router/app_routes.dart';
 
 class HotelShellController extends GetxController {
   HotelShellController({int initialTab = 0}) : currentIndex = initialTab.obs;
@@ -21,8 +21,6 @@ class HotelShellController extends GetxController {
     AppRoutes.hotelReservations,
     AppRoutes.hotelRooms,
     AppRoutes.hotelOperations,
-    AppRoutes.hotelGuests,
-    AppRoutes.hotelRestaurant,
     AppRoutes.hotelSettings,
   ];
 
@@ -45,6 +43,7 @@ class HotelShellPage extends StatelessWidget {
       Get.put(HotelShellController(initialTab: initialTab), tag: tag);
     }
     final controller = Get.find<HotelShellController>(tag: tag);
+    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
 
     return Obx(
       () => Scaffold(
@@ -55,15 +54,15 @@ class HotelShellPage extends StatelessWidget {
             HotelDashboardScreen(),
             HotelReservationsScreen(),
             HotelRoomsScreen(),
-            HotelCheckInOutScreen(),
-            HotelGuestsScreen(),
-            RestaurantHubScreen(),
+            HotelOperationsHubScreen(),
             SettingsScreen(),
           ],
         ),
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          accentColor: profile.accent,
+          primaryColor: profile.primary,
           items: const [
             BottomNavItem(
               icon: Icons.hotel_outlined,
@@ -81,19 +80,9 @@ class HotelShellPage extends StatelessWidget {
               labelKey: 'hotel_nav_rooms',
             ),
             BottomNavItem(
-              icon: Icons.login_outlined,
-              activeIcon: Icons.login_rounded,
+              icon: Icons.swap_horiz_rounded,
+              activeIcon: Icons.swap_horiz_rounded,
               labelKey: 'hotel_nav_operations',
-            ),
-            BottomNavItem(
-              icon: Icons.people_outline_rounded,
-              activeIcon: Icons.people_rounded,
-              labelKey: 'hotel_nav_guests',
-            ),
-            BottomNavItem(
-              icon: Icons.restaurant_outlined,
-              activeIcon: Icons.restaurant_rounded,
-              labelKey: 'hotel_nav_restaurant',
             ),
             BottomNavItem(
               icon: Icons.settings_outlined,
@@ -101,8 +90,6 @@ class HotelShellPage extends StatelessWidget {
               labelKey: 'hotel_nav_settings',
             ),
           ],
-          accentColor: Color(0xFFFFB74D),
-          primaryColor: Color(0xFF00897B),
         ),
       ),
     );

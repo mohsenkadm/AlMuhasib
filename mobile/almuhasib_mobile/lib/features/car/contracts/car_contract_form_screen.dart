@@ -2,7 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
-import '../../../shared/widgets/common_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_contract_form_controller.dart';
 
 class CarContractFormScreen extends StatelessWidget {
@@ -13,81 +14,74 @@ class CarContractFormScreen extends StatelessWidget {
     final controller =
         Get.put(CarContractFormController(), tag: 'car_contract_form');
 
-    return Scaffold(
-      appBar: AppBar(title: Text('car_new_contract'.tr())),
-      body: Form(
-        key: controller.formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+    return AppFormPage(
+      title: 'car_new_contract'.tr(),
+      formKey: controller.formKey,
+      saveLabel: 'save'.tr(),
+      onSave: controller.save,
+      isSaving: controller.saving,
+      sections: [
+        AppFormSection(
+          title: 'car_contract_details'.tr(),
           children: [
-            GradientCard(
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: controller.contractNumber,
-                    decoration: InputDecoration(
-                      labelText: 'car_contract_number'.tr(),
-                    ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'required'.tr() : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.sellerName,
-                    decoration: InputDecoration(labelText: 'car_seller'.tr()),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'required'.tr() : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.buyerName,
-                    decoration: InputDecoration(labelText: 'car_buyer'.tr()),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'required'.tr() : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.plateNumber,
-                    decoration: InputDecoration(labelText: 'car_plate'.tr()),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.carType,
-                    decoration: InputDecoration(labelText: 'car_type'.tr()),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.carPrice,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'car_price'.tr()),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'required'.tr() : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller.amountReceived,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'car_received'.tr()),
-                  ),
-                ],
-              ),
+            AppTextField(
+              controller: controller.contractNumber,
+              label: 'car_contract_number'.tr(),
+              prefixIcon: Icons.tag_rounded,
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'required'.tr() : null,
             ),
-            const SizedBox(height: 20),
-            Obx(
-              () => FilledButton(
-                onPressed: controller.saving.value ? null : controller.save,
-                child: controller.saving.value
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text('save'.tr()),
-              ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: controller.sellerName,
+              label: 'car_seller'.tr(),
+              prefixIcon: Icons.person_outline_rounded,
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'required'.tr() : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: controller.buyerName,
+              label: 'car_buyer'.tr(),
+              prefixIcon: Icons.person_rounded,
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'required'.tr() : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: controller.plateNumber,
+              label: 'car_plate'.tr(),
+              prefixIcon: Icons.confirmation_number_outlined,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: controller.carType,
+              label: 'car_type'.tr(),
+              prefixIcon: Icons.directions_car_outlined,
             ),
           ],
         ),
-      ),
+        AppFormSection(
+          title: 'car_payment_details'.tr(),
+          children: [
+            AppTextField(
+              controller: controller.carPrice,
+              label: 'car_price'.tr(),
+              prefixIcon: Icons.payments_outlined,
+              keyboardType: TextInputType.number,
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'required'.tr() : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: controller.amountReceived,
+              label: 'car_received'.tr(),
+              prefixIcon: Icons.account_balance_wallet_outlined,
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

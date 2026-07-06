@@ -5,8 +5,8 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/getx/app_services.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/mobile_models.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/lookup_picker_sheet.dart';
-import '../../../shared/widgets/sticky_summary_bar.dart';
 
 class SupplierFormController extends GetxController {
   SupplierFormController({this.syncId});
@@ -40,17 +40,14 @@ class SupplierFormController extends GetxController {
               : notesController.text.trim(),
         ),
       );
-      final ctx = Get.context;
-      if (ctx == null) return;
       if (response.conflicts.isNotEmpty) {
-        showErrorSnackbar(ctx, response.message);
+        AppExceptionHandler.showConflicts(response.conflicts);
         return;
       }
-      showSuccessSnackbar(ctx, response.message);
+      AppExceptionHandler.showSuccess(response.message);
       Get.back(result: true);
     } catch (e) {
-      final ctx = Get.context;
-      if (ctx != null) showErrorSnackbar(ctx, e.toString());
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }
@@ -94,14 +91,10 @@ class InvestorFormController extends GetxController {
           openingBalance: double.tryParse(openingBalanceController.text) ?? 0,
         ),
       );
-      final ctx = Get.context;
-      if (ctx != null) {
-        showSuccessSnackbar(ctx, response.message);
-        Get.back(result: true);
-      }
+      AppExceptionHandler.showSuccess(response.message);
+      Get.back(result: true);
     } catch (e) {
-      final ctx = Get.context;
-      if (ctx != null) showErrorSnackbar(ctx, e.toString());
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }
@@ -146,7 +139,7 @@ class ProductFormController extends GetxController {
     final ctx = Get.context;
     if (ctx == null) return;
     if (category.value == null) {
-      showErrorSnackbar(ctx, 'select_category'.tr());
+      AppExceptionHandler.showError('select_category'.tr());
       return;
     }
     saving.value = true;
@@ -164,10 +157,14 @@ class ProductFormController extends GetxController {
               : descriptionController.text.trim(),
         ),
       );
-      showSuccessSnackbar(ctx, response.message);
+      if (response.conflicts.isNotEmpty) {
+        AppExceptionHandler.showConflicts(response.conflicts);
+        return;
+      }
+      AppExceptionHandler.showSuccess(response.message);
       Get.back(result: true);
     } catch (e) {
-      showErrorSnackbar(ctx, e.toString());
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }

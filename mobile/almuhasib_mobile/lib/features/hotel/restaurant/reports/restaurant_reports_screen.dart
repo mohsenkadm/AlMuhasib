@@ -1,7 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
+import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/config/system_profile.dart';
+import '../../../../core/getx/app_services.dart';
+import '../../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/widgets/design_system/design_system.dart';
+import '../../../../shared/widgets/shimmer_widgets.dart';
 import '../data/restaurant_controller.dart';
 
 class RestaurantReportsScreen extends StatelessWidget {
@@ -11,15 +18,18 @@ class RestaurantReportsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF00897B);
+    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
 
     return Obx(() {
       if (controller.isProfitLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const ListShimmer(itemCount: 5);
       }
       final error = controller.profitError.value;
       if (error != null) {
-        return Center(child: Text('$error'));
+        return ErrorStateWidget(
+          message: AppExceptionHandler.messageFor(error),
+          onRetry: controller.loadProfit,
+        );
       }
       final summary = controller.profit.value;
       if (summary == null) {
@@ -31,31 +41,31 @@ class RestaurantReportsScreen extends StatelessWidget {
           _StatCard(
             title: 'restaurant_revenue'.tr(),
             value: NumberFormat('#,###').format(summary.revenue),
-            color: accent,
+            color: profile.primary,
           ),
           const SizedBox(height: 12),
           _StatCard(
             title: 'restaurant_cogs'.tr(),
             value: NumberFormat('#,###').format(summary.cogs),
-            color: Colors.orange,
+            color: AppColors.warning,
           ),
           const SizedBox(height: 12),
           _StatCard(
             title: 'restaurant_profit'.tr(),
             value: NumberFormat('#,###').format(summary.grossProfit),
-            color: Colors.green,
+            color: AppColors.success,
           ),
           const SizedBox(height: 12),
           _StatCard(
             title: 'restaurant_margin'.tr(),
             value: '${summary.marginPercent.toStringAsFixed(1)}%',
-            color: Colors.blue,
+            color: profile.accent,
           ),
           const SizedBox(height: 12),
           _StatCard(
             title: 'restaurant_orders_count'.tr(),
             value: '${summary.orderCount}',
-            color: Colors.purple,
+            color: profile.secondary,
           ),
         ],
       );
@@ -76,38 +86,20 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(4),
-              ),
+    return AppEntityCard(
+      title: title,
+      trailing: Text(
+        value,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      ),
+      leading: Container(
+        width: 4,
+        height: 48,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(4),
         ),
       ),
     );

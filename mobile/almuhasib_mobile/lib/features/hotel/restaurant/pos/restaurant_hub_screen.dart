@@ -2,6 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../../core/config/system_profile.dart';
+import '../../../../core/getx/app_services.dart';
+import '../../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/widgets/design_system/design_system.dart';
+import '../../../../shared/widgets/shimmer_widgets.dart';
 import '../data/restaurant_pos_controller.dart';
 import '../models/restaurant_models.dart';
 import '../reports/restaurant_reports_screen.dart';
@@ -22,14 +27,20 @@ class _RestaurantHubView extends StatelessWidget {
 
   final RestaurantPosController controller;
 
-  static const accent = Color(0xFF00897B);
-
   @override
   Widget build(BuildContext context) {
+    final profile = SystemProfile.ofInt(AppServices.prefs.systemType);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('restaurant_title'.tr()),
-        backgroundColor: accent,
+        flexibleSpace: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [profile.primary, profile.secondary],
+            ),
+          ),
+        ),
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: controller.tabController,
@@ -48,11 +59,14 @@ class _RestaurantHubView extends StatelessWidget {
         children: [
           Obx(() {
             if (controller.isMenuLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const ListShimmer();
             }
             final error = controller.menuError.value;
             if (error != null) {
-              return Center(child: Text('$error'));
+              return ErrorStateWidget(
+                message: AppExceptionHandler.messageFor(error),
+                onRetry: controller.loadMenu,
+              );
             }
             final menu = controller.menu.value;
             if (menu == null) {

@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../models/car_models.dart';
 
 class CarContractFormController extends GetxController {
@@ -45,7 +47,10 @@ class CarContractFormController extends GetxController {
           amountReceived: double.tryParse(amountReceived.text) ?? 0,
         ),
       );
+      AppExceptionHandler.showSuccess('settings_saved'.tr());
       Get.offNamed(AppRoutes.carContractDetailPath(syncId));
+    } catch (e) {
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }
