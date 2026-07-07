@@ -1,0 +1,70 @@
+<UserControl x:Class="AlMuhasib.UI.Views.CarTrade.CarTradeReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <ScrollViewer Padding="24">
+        <StackPanel>
+            <TextBlock Text="تقارير بيع وشراء السيارات" FontSize="20" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,16"/>
+            <WrapPanel Margin="0,0,0,12">
+                <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,8"/>
+                <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"/>
+                <Button Content="تحديث" Command="{Binding LoadReportCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Background="#E65100" Margin="0,0,8,8"/>
+                <Button Content="Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanExport}" Margin="0,0,8,8"/>
+                <Button Content="طباعة" Command="{Binding PrintReportCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanPrint}"/>
+            </WrapPanel>
+            <UniformGrid Columns="3" Margin="0,0,0,12">
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="عمليات شراء: "/><Run Text="{Binding BuyCount}" FontWeight="Bold" Foreground="#2E7D32"/></TextBlock></md:Card>
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="عمليات بيع: "/><Run Text="{Binding SellCount}" FontWeight="Bold" Foreground="#E65100"/></TextBlock></md:Card>
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="المتبقي: "/><Run Text="{Binding TotalRemaining, StringFormat=N0}" FontWeight="Bold" Foreground="#C62828"/></TextBlock></md:Card>
+            </UniformGrid>
+            <UniformGrid Columns="3" Margin="0,0,0,16">
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="قيمة الشراء: "/><Run Text="{Binding TotalBuyValue, StringFormat=N0}" FontWeight="Bold"/></TextBlock></md:Card>
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="قيمة البيع: "/><Run Text="{Binding TotalSellValue, StringFormat=N0}" FontWeight="Bold"/></TextBlock></md:Card>
+                <md:Card Padding="12" Margin="4"><TextBlock><Run Text="المحصّل: "/><Run Text="{Binding TotalPaid, StringFormat=N0}" FontWeight="Bold"/></TextBlock></md:Card>
+            </UniformGrid>
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <md:Card Grid.Column="0" Padding="8" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="الشراء الشهري" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <lvc:CartesianChart Series="{Binding MonthlyBuySeries}" XAxes="{Binding MonthlyXAxes}" YAxes="{Binding MonthlyYAxes}" Height="200"/>
+                    </StackPanel>
+                </md:Card>
+                <md:Card Grid.Column="1" Padding="8" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="البيع الشهري" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <lvc:CartesianChart Series="{Binding MonthlySellSeries}" XAxes="{Binding MonthlyXAxes}" YAxes="{Binding MonthlyYAxes}" Height="200"/>
+                    </StackPanel>
+                </md:Card>
+                <md:Card Grid.Column="2" Padding="8" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="المحصّل مقابل المتبقي" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <lvc:PieChart Series="{Binding AmountSeries}" Height="200"/>
+                    </StackPanel>
+                </md:Card>
+            </Grid>
+            <md:Card Padding="8" Margin="4,0,4,8">
+                <lvc:PieChart Series="{Binding TypeSeries}" Height="180"/>
+            </md:Card>
+            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="400">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم العملية" Binding="{Binding TransactionNumber}" Width="110"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding TransactionDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                    <DataGridTextColumn Header="النوع" Binding="{Binding TradeType}" Width="70"/>
+                    <DataGridTextColumn Header="السيارة" Binding="{Binding CarName}" Width="*"/>
+                    <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"/>
+                    <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="90"/>
+                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

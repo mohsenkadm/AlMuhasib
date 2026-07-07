@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="اختيار نوع النظام"
-        Height="560" Width="1120"
+        Height="560" Width="1280"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -32,12 +32,14 @@
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <Grid MinWidth="960">
+                <Grid MinWidth="1180">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="16"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
@@ -73,7 +75,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border x:Name="HotelCard" Grid.Column="4" CornerRadius="14" BorderThickness="2"
+                    <Border x:Name="HotelCard" Grid.Column="6" CornerRadius="14" BorderThickness="2"
                             BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnHotelSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
@@ -85,7 +87,23 @@
                                        Foreground="#263238" HorizontalAlignment="Center"/>
                             <TextBlock Text="حجوزات الغرف، تسجيل الدخول والخروج، النظافة، الصندوق والتقارير"
                                        TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C"
-                                       Margin="0,8,0,0" MaxWidth="260"/>
+                                       Margin="0,8,0,0" MaxWidth="240"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="CarTradeCard" Grid.Column="4" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            MouseLeftButtonUp="OnCarTradeSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                            <Border Width="80" Height="80" CornerRadius="40" Background="#FFF3E0" Margin="0,0,0,14">
+                                <md:PackIcon Kind="SwapHorizontal" Width="40" Height="40"
+                                             Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="بيع وشراء السيارات" FontSize="18" FontWeight="Bold"
+                                       Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="إدارة عمليات الشراء والبيع مع التسديد وكشف الحساب والتقارير"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C"
+                                       Margin="0,8,0,0" MaxWidth="240"/>
                         </StackPanel>
                     </Border>
                 </Grid>

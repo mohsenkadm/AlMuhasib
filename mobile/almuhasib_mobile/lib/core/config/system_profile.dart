@@ -140,11 +140,43 @@ class SystemProfile {
         ),
       ],
     ),
+    ApplicationSystemType.carTrading: SystemProfile(
+      type: ApplicationSystemType.carTrading,
+      nameKey: 'system_car_trade_name',
+      taglineKey: 'system_car_trade_tagline',
+      icon: Icons.swap_horiz_rounded,
+      primary: Color(0xFFE65100),
+      secondary: Color(0xFFFF8F00),
+      accent: Color(0xFFFFB300),
+      homeRoute: '/car-trade/home',
+      launchRoute: '/launch/car-trade',
+      onboardingSlides: [
+        SystemOnboardingSlide(
+          icon: Icons.swap_horiz_outlined,
+          titleKey: 'onboarding_car_trade_title_1',
+          descKey: 'onboarding_car_trade_desc_1',
+          colors: [Color(0xFFE65100), Color(0xFFFF8F00)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.payments_outlined,
+          titleKey: 'onboarding_car_trade_title_2',
+          descKey: 'onboarding_car_trade_desc_2',
+          colors: [Color(0xFFBF360C), Color(0xFFE65100)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.sync_outlined,
+          titleKey: 'onboarding_car_trade_title_3',
+          descKey: 'onboarding_car_trade_desc_3',
+          colors: [Color(0xFF4E342E), Color(0xFFFF8F00)],
+        ),
+      ],
+    ),
   };
 }
 
 const accountingRoutePrefixes = ['/home', '/reports', '/data', '/settings'];
 const carRoutePrefixes = ['/car'];
+const carTradeRoutePrefixes = ['/car-trade'];
 const hotelRoutePrefixes = ['/hotel'];
 
 bool routeBelongsToSystem(String path, ApplicationSystemType type) {
@@ -155,6 +187,7 @@ bool routeBelongsToSystem(String path, ApplicationSystemType type) {
     ApplicationSystemType.accounting => matches(accountingRoutePrefixes),
     ApplicationSystemType.carContracts => matches(carRoutePrefixes),
     ApplicationSystemType.hotelManagement => matches(hotelRoutePrefixes),
+    ApplicationSystemType.carTrading => matches(carTradeRoutePrefixes),
   };
 }
 

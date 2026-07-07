@@ -2,7 +2,8 @@
 enum ApplicationSystemType {
   accounting(0),
   carContracts(1),
-  hotelManagement(2);
+  hotelManagement(2),
+  carTrading(3);
 
   const ApplicationSystemType(this.value);
 

@@ -10,6 +10,8 @@
         xmlns:views="clr-namespace:AlMuhasib.UI.Views"
         xmlns:carViews="clr-namespace:AlMuhasib.UI.Views.Car"
         xmlns:carVm="clr-namespace:AlMuhasib.UI.ViewModels.Car"
+        xmlns:carTradeViews="clr-namespace:AlMuhasib.UI.Views.CarTrade"
+        xmlns:carTradeVm="clr-namespace:AlMuhasib.UI.ViewModels.CarTrade"
         xmlns:hotelViews="clr-namespace:AlMuhasib.UI.Views.Hotel"
         xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
@@ -1130,6 +1132,21 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type carVm:CarContractsReportViewModel}">
                             <carViews:CarContractsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carTradeVm:CarTradeDashboardViewModel}">
+                            <carTradeViews:CarTradeDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carTradeVm:CarTradeFormViewModel}">
+                            <carTradeViews:CarTradeFormView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carTradeVm:CarTradeListViewModel}">
+                            <carTradeViews:CarTradeListView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carTradeVm:CarTradeReportsViewModel}">
+                            <carTradeViews:CarTradeReportsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type carTradeVm:CarTradePartyStatementViewModel}">
+                            <carTradeViews:CarTradePartyStatementView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type hotelVm:HotelDashboardViewModel}">
                             <hotelViews:HotelDashboardView />

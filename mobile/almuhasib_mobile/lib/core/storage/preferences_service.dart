@@ -60,6 +60,8 @@ class PreferencesService {
 
   bool get isCarTenant => systemType == ApplicationSystemType.carContracts;
 
+  bool get isCarTradeTenant => systemType == ApplicationSystemType.carTrading;
+
   bool get isHotelTenant =>
       systemType == ApplicationSystemType.hotelManagement;
 

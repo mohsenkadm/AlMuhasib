@@ -21,6 +21,9 @@ public partial class SystemSelectionWindow : Window
     private void OnCarSelected(object sender, MouseButtonEventArgs e) =>
         SelectSystem(ApplicationSystemType.CarContracts, CarCard, "#2E7D32", "#E8F5E9");
 
+    private void OnCarTradeSelected(object sender, MouseButtonEventArgs e) =>
+        SelectSystem(ApplicationSystemType.CarTrading, CarTradeCard, "#E65100", "#FFF3E0");
+
     private void OnHotelSelected(object sender, MouseButtonEventArgs e) =>
         SelectSystem(ApplicationSystemType.HotelManagement, HotelCard, "#6A1B9A", "#F3E5F5");
 
@@ -31,6 +34,7 @@ public partial class SystemSelectionWindow : Window
 
         ResetCard(AccountingCard);
         ResetCard(CarCard);
+        ResetCard(CarTradeCard);
         ResetCard(HotelCard);
 
         card.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent)!);

@@ -4,10 +4,12 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Infrastructure.Data.Car;
+using AlMuhasib.Infrastructure.Data.CarTrade;
 using AlMuhasib.Infrastructure.Data.Hotel;
 using AlMuhasib.Infrastructure.Repositories;
 using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.Infrastructure.Services.Car;
+using AlMuhasib.Infrastructure.Services.CarTrade;
 using AlMuhasib.Infrastructure.Services.Hotel;
 using AlMuhasib.Infrastructure.Services.Hotel.Restaurant;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +34,9 @@ public static class DependencyInjection
                 break;
             case ApplicationSystemType.HotelManagement:
                 RegisterHotelInfrastructure(services, connectionString);
+                break;
+            case ApplicationSystemType.CarTrading:
+                RegisterCarTradeInfrastructure(services, connectionString);
                 break;
             default:
                 RegisterAccountingInfrastructure(services, connectionString);
@@ -152,6 +157,32 @@ public static class DependencyInjection
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, HotelSyncService>();
+        services.AddHttpClient("CloudSync");
+    }
+
+    private static void RegisterCarTradeInfrastructure(IServiceCollection services, string connectionString)
+    {
+        services.AddDbContextFactory<CarTradeDbContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                b => b.MigrationsAssembly(typeof(CarTradeDbContext).Assembly.FullName)));
+
+        services.AddScoped<IUnitOfWork, CarTradeUnitOfWork>();
+        services.AddScoped<IAuthService, CarTradeAuthService>();
+        services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddSingleton<IDatabaseMigrationService, CarTradeDatabaseMigrationService>();
+        services.AddScoped<ICarTradeService, CarTradeService>();
+        services.AddScoped<ICarTradeReportService, CarTradeReportService>();
+        services.AddScoped<IGlobalSearchService, CarTradeGlobalSearchService>();
+        services.AddScoped<IAuditLogService, CarTradeAuditLogService>();
+        services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
+        services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
+        services.AddScoped<IUserTaskService, NoOpUserTaskService>();
+        services.AddScoped<IUserNoteService, NoOpUserNoteService>();
+        services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, CarTradeSyncService>();
         services.AddHttpClient("CloudSync");
     }
 }

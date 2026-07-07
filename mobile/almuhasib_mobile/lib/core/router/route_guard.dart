@@ -14,7 +14,8 @@ class RouteGuard {
       path == AppRoutes.about ||
       path == AppRoutes.privacy ||
       path == AppRoutes.hotelSettings ||
-      path == AppRoutes.carSettings;
+      path == AppRoutes.carSettings ||
+      path == AppRoutes.carTradeSettings;
 
   static bool _isLaunchRoute(String path) => path.startsWith('/launch');
 
