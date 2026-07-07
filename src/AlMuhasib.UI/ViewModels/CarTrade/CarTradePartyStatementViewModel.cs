@@ -122,4 +122,35 @@ public partial class CarTradePartyStatementViewModel : ViewModelBase
         _exportService.ExportToExcel(dialog.FileName, "كشف حساب طرف", headers, data);
         _toast.ShowSuccess("تم تصدير الملف بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintStatement()
+    {
+        if (!CanPrint || Rows.Count == 0)
+            return;
+
+        var cols = new[] { "التاريخ", "رقم العملية", "النوع", "السيارة", "الإجمالي", "المدفوع", "المتبقي", "الدور" };
+        var tableRows = Rows.Select(r => new object[]
+        {
+            r.TransactionDate.ToString("yyyy/MM/dd"), r.TransactionNumber, r.TradeType, r.CarName,
+            r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.PartyRole
+        }).ToList();
+
+        var summary = new List<string>
+        {
+            $"الطرف: {PartyName}",
+            $"الهاتف: {PartyPhone}",
+            $"إجمالي المدين: {TotalDebit}",
+            $"إجمالي الدائن: {TotalCredit}",
+            $"الرصيد النهائي: {Balance}"
+        };
+
+        if (DateFrom.HasValue || DateTo.HasValue)
+        {
+            summary.Insert(0,
+                $"الفترة: {DateFrom?.ToString("yyyy/MM/dd") ?? "—"} إلى {DateTo?.ToString("yyyy/MM/dd") ?? "—"}");
+        }
+
+        _exportService.PrintTable($"كشف حساب — {PartyName}", cols, tableRows, summary);
+    }
 }

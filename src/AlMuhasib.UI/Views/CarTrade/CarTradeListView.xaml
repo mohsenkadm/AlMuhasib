@@ -371,6 +371,19 @@
                                                 <DataGridTextColumn Header="قبل" Binding="{Binding RemainingBefore}" Width="90"/>
                                                 <DataGridTextColumn Header="بعد" Binding="{Binding RemainingAfter}" Width="90"/>
                                                 <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"/>
+                                                <DataGridTemplateColumn Header="طباعة" Width="72">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Command="{Binding DataContext.PrintPaymentReceiptCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource FlatButton}"
+                                                                    ToolTip="طباعة وصل التسديد"
+                                                                    IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                                <md:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
                                             </DataGrid.Columns>
                                         </DataGrid>
                                     </StackPanel>

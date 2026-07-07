@@ -41,6 +41,7 @@
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
                                     md:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadStatementCommand}" Margin="0,0,12,0"/>
+                        <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintStatementCommand}" IsEnabled="{Binding CanPrint}" Margin="0,0,12,0"/>
                         <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportExcelCommand}" IsEnabled="{Binding CanExport}"/>
                     </StackPanel>
                 </Border>

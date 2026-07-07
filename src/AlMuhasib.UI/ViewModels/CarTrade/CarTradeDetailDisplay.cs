@@ -81,6 +81,7 @@ public sealed class CarTradeDetailDisplay
 
 public sealed class CarTradePaymentDisplay
 {
+    public int PaymentId { get; init; }
     public string PaymentDate { get; init; } = string.Empty;
     public string Amount { get; init; } = string.Empty;
     public string RemainingBefore { get; init; } = string.Empty;
@@ -89,6 +90,7 @@ public sealed class CarTradePaymentDisplay
 
     public static CarTradePaymentDisplay FromEntity(CarTradePayment payment) => new()
     {
+        PaymentId = payment.Id,
         PaymentDate = payment.PaymentDate.ToString("yyyy/MM/dd"),
         Amount = payment.Amount.ToString("N0"),
         RemainingBefore = payment.RemainingBefore.ToString("N0"),

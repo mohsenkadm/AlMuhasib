@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
@@ -20,6 +21,13 @@ class CarTradeReportScreen extends GetView<CarTradeReportController> {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: 'car_trade_report_title'.tr(),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+          tooltip: 'car_trade_party_statement_title'.tr(),
+          onPressed: () => Get.toNamed(AppRoutes.carTradePartyStatement),
+        ),
+      ],
       body: Column(
         children: [
           Obx(

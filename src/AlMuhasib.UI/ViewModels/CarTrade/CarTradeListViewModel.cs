@@ -195,6 +195,29 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     }
 
     [RelayCommand]
+    private async Task PrintPaymentReceiptAsync(CarTradePaymentDisplay? payment)
+    {
+        if (payment is null || DetailTransaction is null || !CanPrint)
+            return;
+
+        var transaction = await _tradeService.GetByIdAsync(DetailTransaction.Id);
+        if (transaction is null)
+        {
+            _toast.ShowError("العملية غير موجودة");
+            return;
+        }
+
+        var entityPayment = transaction.Payments.FirstOrDefault(p => p.Id == payment.PaymentId);
+        if (entityPayment is null)
+        {
+            _toast.ShowError("حركة التسديد غير موجودة");
+            return;
+        }
+
+        _printService.PrintPaymentReceipt(transaction, entityPayment);
+    }
+
+    [RelayCommand]
     private async Task DetailPrintAsync()
     {
         if (DetailTransaction is null)

@@ -248,3 +248,76 @@ double _num(dynamic v) {
   if (v is num) return v.toDouble();
   return double.tryParse(v?.toString() ?? '') ?? 0;
 }
+
+class CarTradePartyStatementRow {
+  CarTradePartyStatementRow({
+    required this.transactionDate,
+    required this.transactionNumber,
+    required this.tradeType,
+    required this.carName,
+    required this.totalAmount,
+    required this.amountPaid,
+    required this.remainingAmount,
+    required this.partyRole,
+  });
+
+  factory CarTradePartyStatementRow.fromJson(Map<String, dynamic> json) {
+    return CarTradePartyStatementRow(
+      transactionDate:
+          DateTime.tryParse(json['transactionDate'] as String? ?? '') ??
+              DateTime.now(),
+      transactionNumber: json['transactionNumber'] as String? ?? '',
+      tradeType: json['tradeType'] as String? ?? '',
+      carName: json['carName'] as String? ?? '',
+      totalAmount: _num(json['totalAmount']),
+      amountPaid: _num(json['amountPaid']),
+      remainingAmount: _num(json['remainingAmount']),
+      partyRole: json['partyRole'] as String? ?? '',
+    );
+  }
+
+  final DateTime transactionDate;
+  final String transactionNumber;
+  final String tradeType;
+  final String carName;
+  final double totalAmount;
+  final double amountPaid;
+  final double remainingAmount;
+  final String partyRole;
+}
+
+class CarTradePartyStatementDto {
+  CarTradePartyStatementDto({
+    required this.partyName,
+    required this.partyPhone,
+    required this.totalDebit,
+    required this.totalCredit,
+    required this.balance,
+    this.rows = const [],
+  });
+
+  factory CarTradePartyStatementDto.fromJson(Map<String, dynamic> json) {
+    return CarTradePartyStatementDto(
+      partyName: json['partyName'] as String? ?? '',
+      partyPhone: json['partyPhone'] as String? ?? '',
+      totalDebit: _num(json['totalDebit']),
+      totalCredit: _num(json['totalCredit']),
+      balance: _num(json['balance']),
+      rows: (json['rows'] as List<dynamic>?)
+              ?.map(
+                (e) => CarTradePartyStatementRow.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList() ??
+          [],
+    );
+  }
+
+  final String partyName;
+  final String partyPhone;
+  final double totalDebit;
+  final double totalCredit;
+  final double balance;
+  final List<CarTradePartyStatementRow> rows;
+}
