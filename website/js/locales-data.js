@@ -2,8 +2,8 @@
 window.LOCALES = {
   ar: {
     meta: {
-      title: "المحاسب — منصة محاسبة، فنادق، مطاعم، وعقود سيارات",
-      description: "منصة أعمال عربية متكاملة: محاسبة ومبيعات، إدارة فنادق ومطاعم، عقود سيارات، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
+      title: "المحاسب — منصة محاسبة، فنادق، مطاعم، وعقود وبيع سيارات",
+      description: "منصة أعمال عربية متكاملة: محاسبة ومبيعات، إدارة فنادق ومطاعم، عقود وبيع وشراء سيارات، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
     },
     nav: {
       systems: "الأنظمة", features: "المنصة", how: "كيف يعمل", videos: "الفيديوهات",
@@ -25,7 +25,7 @@ window.LOCALES = {
       badge: "منصة متعددة الأنظمة",
       title: "المحاسب",
       subtitle: "منصة أعمال متكاملة —",
-      rotateWords: ["محاسبة", "فنادق", "سيارات"],
+      rotateWords: ["محاسبة", "فنادق", "سيارات", "بيع وشراء"],
       desc: "ثلاثة أنظمة سطح مكتب + تطبيق جوال + مزامنة سحابية — عربي، أوفلاين، وجاهز للنمو.",
       cta_download: "حمّل النظام مجاناً",
       cta_systems: "استكشف الأنظمة",
@@ -107,7 +107,7 @@ window.LOCALES = {
         },
         {
           id: "car",
-          label: "السيارات",
+          label: "عقود السيارات",
           badge: "عقود بيع",
           tagline: "نظام عقود بيع السيارات",
           desc: "عقود بيع، مدفوعات، تقارير Excel، طباعة احترافية، ولوحة KPI — لمعارض ومكاتب بيع السيارات.",
@@ -133,20 +133,47 @@ window.LOCALES = {
           ]
         },
         {
+          id: "car-trade",
+          label: "بيع وشراء",
+          badge: "تجاري",
+          tagline: "نظام بيع وشراء السيارات",
+          desc: "عمليات شراء وبيع، مدفوعات جزئية وكاملة، كشف حساب الأطراف، تقارير وطباعة — لمعارض وتجار السيارات.",
+          screenshot: "assets/desktop-car.png",
+          screenshotCaption: "نظام بيع وشراء السيارات — لوحة العمليات",
+          highlights: [
+            "لوحة KPI — عمليات اليوم والشهر",
+            "عملية جديدة — بيانات السيارة والبائع والمشتري",
+            "دفع كامل أو جزئي مع متابعة المتبقي",
+            "تسديدات ووصولات لكل دفعة",
+            "كشف حساب للأطراف بالأجل",
+            "تقارير مع تصدير Excel وطباعة",
+            "صلاحيات ومزامنة سحابية",
+            "قاعدة بيانات منفصلة عن الأنظمة الأخرى"
+          ],
+          features: [
+            { icon: "car", title: "العمليات", desc: "شراء وبيع مع تفاصيل المركبة" },
+            { icon: "voucher", title: "المدفوعات", desc: "تسديدات ووصولات لكل عملية" },
+            { icon: "chart", title: "التقارير", desc: "تقرير العمليات وكشف الحساب" },
+            { icon: "receipt", title: "الطباعة", desc: "وصول معاملات وتسديدات" },
+            { icon: "shield", title: "الصلاحيات", desc: "تحكم بالوصول لكل شاشة" },
+            { icon: "cloud", title: "المزامنة", desc: "تطبيق جوال وAPI سحابي" }
+          ]
+        },
+        {
           id: "mobile",
           label: "الجوال",
           badge: "متاح الآن",
-          tagline: "تطبيق جوال — 3 أنظمة",
-          desc: "تطبيق Flutter يتصل بالـ API السحابي: تقارير، إنشاء بيانات، فواتير، حجوزات، عقود — حسب نوع نظامك.",
+          tagline: "تطبيق جوال — 4 أنظمة",
+          desc: "تطبيق Flutter يتصل بالـ API السحابي: تقارير، إنشاء بيانات، فواتير، حجوزات، عقود، وعمليات بيع وشراء — حسب نوع نظامك.",
           screenshot: "assets/mobile-app.png",
           screenshotCaption: "تطبيق المحاسب — لوحة التقارير",
           highlights: [
-            "3 profiles: محاسبة، فندق، سيارات",
+            "4 profiles: محاسبة، فندق، عقود، بيع وشراء",
             "9+ تقارير محاسبة + KPI فندقي",
             "إنشاء عملاء، منتجات، فواتير (5 خطوات)",
             "حجوزات، غرف، check-in/out للفندق",
             "عقود ومدفوعات للسيارات",
-            "مطعم: كاشير وتقارير F&B",
+            "عمليات بيع وشراء وكشف حساب طرف",
             "عربي/إنجليزي + وضع داكن",
             "إشعارات OneSignal"
           ],
@@ -154,7 +181,7 @@ window.LOCALES = {
             { icon: "chart", title: "تقارير لحظية", desc: "مبيعات، أرباح، مخزون، إشغال" },
             { icon: "receipt", title: "فواتير جوال", desc: "معالج 5 خطوات للفواتير" },
             { icon: "hotel", title: "فندق جوال", desc: "حجوزات، غرف، ووصول" },
-            { icon: "car", title: "سيارات جوال", desc: "عقود ومدفوعات" },
+            { icon: "car", title: "سيارات جوال", desc: "عقود، عمليات، ومدفوعات" },
             { icon: "cloud", title: "API آمن", desc: "JWT وmulti-tenant" },
             { icon: "shield", title: "صلاحيات", desc: "حسب حساب التطبيق" }
           ]
@@ -170,15 +197,16 @@ window.LOCALES = {
     },
     mobile: {
       badge: "متاح الآن",
-      title: "تطبيق جوال — 3 أنظمة",
-      desc: "تطبيق Flutter متصل بالـ API السحابي: تقارير لحظية، إنشاء فواتير وبيانات، وإدارة فندق أو عقود سيارات — من أي مكان.",
+      title: "تطبيق جوال — 4 أنظمة",
+      desc: "تطبيق Flutter متصل بالـ API السحابي: تقارير لحظية، إنشاء فواتير وبيانات، وإدارة فندق أو سيارات — من أي مكان.",
       points: [
         "محاسبة: تقارير، فواتير، عملاء، منتجات",
         "فندق: حجوزات، غرف، check-in، مطعم",
-        "سيارات: عقود، مدفوعات، تقارير",
+        "عقود سيارات: عقود، مدفوعات، تقارير",
+        "بيع وشراء: عمليات، مدفوعات، كشف حساب",
         "مزامنة آمنة JWT + multi-tenant"
       ],
-      profiles: { accounting: "محاسبة", hotel: "فندق", car: "سيارات" },
+      profiles: { accounting: "محاسبة", hotel: "فندق", car: "عقود", carTrade: "بيع وشراء" },
       appName: "المحاسب", greeting: "مرحباً — بياناتك متزامنة",
       cards: { sales: "تقرير المبيعات", statement: "كشف حساب", stock: "المخزون", overdue: "حجوزات اليوم" },
       nav: { home: "الرئيسية", reports: "التقارير", data: "البيانات" },
@@ -202,16 +230,16 @@ window.LOCALES = {
       title: "ابدأ في دقائق",
       steps: [
         { num: "01", title: "نزّل النظام", desc: "ملف ZIP من GitHub — Windows 10/11" },
-        { num: "02", title: "اختر نظامك", desc: "محاسبة، فندق، أو عقود سيارات عند الإعداد" },
-        { num: "03", title: "اعمل أوفلاين", desc: "فواتير، حجوزات، أو عقود — بدون إنترنت" }
+        { num: "02", title: "اختر نظامك", desc: "محاسبة، فندق، عقود سيارات، أو بيع وشراء عند الإعداد" },
+        { num: "03", title: "اعمل أوفلاين", desc: "فواتير، حجوزات، عقود، أو عمليات — بدون إنترنت" }
       ]
     },
     cloud: {
-      title: "مزامنة سحابية — 3 أنظمة",
-      desc: "اربط Desktop مع Cloud API: محاسبة، فنادق (ومطعم)، وعقود سيارات — Push/Pull مع عزل بيانات كل عميل.",
+      title: "مزامنة سحابية — 4 أنظمة",
+      desc: "اربط Desktop مع Cloud API: محاسبة، فنادق، عقود سيارات، وبيع وشراء — Push/Pull مع عزل بيانات كل عميل.",
       points: [
-        "مزامنة حسب نوع النظام (Accounting / Hotel / Car)",
-        "فواتير، حجوزات، عقود، ومطعم",
+        "مزامنة حسب نوع النظام (Accounting / Hotel / Car / CarTrade)",
+        "فواتير، حجوزات، عقود، عمليات، ومطعم",
         "تعارضات ذكية + حذف ناعم",
         "REST API + JWT للتطبيق الجوال",
         "لوحة مطور — tenants وتراخيص",
@@ -224,7 +252,8 @@ window.LOCALES = {
         { label: "المحاسبة", items: ["المبيعات والمشتريات", "الأرباح", "كشف حساب", "المخزون", "الأقساط المتأخرة", "الموازنة اليومية"] },
         { label: "الفندق", items: ["الإشغال", "الإيرادات", "تدقيق ليلي", "وصول/مغادرة"] },
         { label: "المطعم", items: ["مبيعات F&B", "قنوات البيع", "أكثر الأصناف", "ربحية المطعم"] },
-        { label: "السيارات", items: ["تقرير العقود", "محصّل/متبقي", "تصدير Excel"] }
+        { label: "السيارات", items: ["تقرير العقود", "محصّل/متبقي", "تصدير Excel"] },
+        { label: "بيع وشراء", items: ["تقرير العمليات", "كشف حساب طرف", "وصولات التسديد"] }
       ]
     },
     download: {
@@ -237,10 +266,10 @@ window.LOCALES = {
       title: "أسئلة شائعة",
       items: [
         { q: "هل يعمل بدون إنترنت؟", a: "نعم. كل الأنظمة أوفلاين بالكامل. الإنترنت للمزامنة والتحديثات فقط." },
-        { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول أو من لوحة المطور: محاسبة للمحلات، فندق للضيافة، سيارات لمعارض البيع." },
+        { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول أو من لوحة المطور: محاسبة للمحلات، فندق للضيافة، عقود أو بيع وشراء لمعارض السيارات." },
         { q: "هل الفندق يشمل المطعم؟", a: "نعم — POS، KDS، مخزون مطبخ، طاولات، وتقارير F&B مدمجة في نظام الفندق." },
-        { q: "هل يدعم عقود السيارات؟", a: "نعم — نظام مستقل للعقود والمدفوعات والتقارير مع تطبيق جوال." },
-        { q: "هل التطبيق الجوال جاهز؟", a: "نعم — يدعم 3 profiles حسب نوع حسابك: محاسبة، فندق، أو سيارات." },
+        { q: "هل يدعم أنظمة السيارات؟", a: "نعم — نظام عقود ونظام بيع وشراء مستقلان، كل منهما مع تطبيق جوال وقاعدة بيانات منفصلة." },
+        { q: "هل التطبيق الجوال جاهز؟", a: "نعم — يدعم 4 profiles حسب نوع حسابك: محاسبة، فندق، عقود، أو بيع وشراء." },
         { q: "كيف أحدّث النظام؟", a: "من داخل التطبيق — يقرأ version.json من GitHub." },
         { q: "هل البيانات آمنة؟", a: "نسخ احتياطي، صلاحيات، سجل تدقيق، وعزل multi-tenant في السحابة." }
       ]
@@ -250,8 +279,8 @@ window.LOCALES = {
   },
   en: {
     meta: {
-      title: "AlMuhasib — Accounting, Hotels, Restaurants & Car Contracts",
-      description: "Integrated Arabic business platform: accounting, hotel PMS & F&B, car contracts, mobile app, and cloud sync. Fully offline."
+      title: "AlMuhasib — Accounting, Hotels, Restaurants & Car Systems",
+      description: "Integrated Arabic business platform: accounting, hotel PMS & F&B, car contracts & trading, mobile app, and cloud sync. Fully offline."
     },
     nav: {
       systems: "Systems", features: "Platform", how: "How it works", videos: "Videos",
@@ -272,7 +301,7 @@ window.LOCALES = {
       badge: "Multi-system platform",
       title: "AlMuhasib",
       subtitle: "Integrated business platform —",
-      rotateWords: ["Accounting", "Hotels", "Cars"],
+      rotateWords: ["Accounting", "Hotels", "Cars", "Buy & Sell"],
       desc: "Three desktop systems + mobile app + cloud sync — Arabic, offline-first, built to scale.",
       cta_download: "Download free",
       cta_systems: "Explore systems",
@@ -349,7 +378,7 @@ window.LOCALES = {
           ]
         },
         {
-          id: "car", label: "Cars", badge: "Sales contracts",
+          id: "car", label: "Car Contracts", badge: "Sales contracts",
           tagline: "Car sales contracts system",
           desc: "Sales contracts, payments, Excel reports, professional printing, KPI dashboard — for dealerships.",
           screenshot: "assets/desktop-car.png",
@@ -374,18 +403,43 @@ window.LOCALES = {
           ]
         },
         {
+          id: "car-trade", label: "Buy & Sell", badge: "Trading",
+          tagline: "Car buy & sell system",
+          desc: "Buy/sell transactions, partial or full payments, party statements, reports and printing — for car traders.",
+          screenshot: "assets/desktop-car.png",
+          screenshotCaption: "Car trading — transactions dashboard",
+          highlights: [
+            "KPI dashboard — today & month transactions",
+            "New transaction — vehicle, seller, buyer details",
+            "Full or partial payment with balance tracking",
+            "Settlements and payment receipts",
+            "Party account statements on credit",
+            "Reports with Excel export & print",
+            "Permissions & cloud sync",
+            "Isolated database from other systems"
+          ],
+          features: [
+            { icon: "car", title: "Transactions", desc: "Buy & sell with vehicle details" },
+            { icon: "voucher", title: "Payments", desc: "Settlements & receipts" },
+            { icon: "chart", title: "Reports", desc: "Transactions & party statements" },
+            { icon: "receipt", title: "Printing", desc: "Transaction & payment receipts" },
+            { icon: "shield", title: "Permissions", desc: "Screen-level access" },
+            { icon: "cloud", title: "Cloud sync", desc: "Mobile app & API" }
+          ]
+        },
+        {
           id: "mobile", label: "Mobile", badge: "Available now",
-          tagline: "Mobile app — 3 systems",
-          desc: "Flutter app on cloud API: reports, data entry, invoices, reservations, contracts — by your system type.",
+          tagline: "Mobile app — 4 systems",
+          desc: "Flutter app on cloud API: reports, data entry, invoices, reservations, contracts, and car trading — by your system type.",
           screenshot: "assets/mobile-app.png",
           screenshotCaption: "AlMuhasib mobile — reports hub",
           highlights: [
-            "3 profiles: accounting, hotel, cars",
+            "4 profiles: accounting, hotel, contracts, buy & sell",
             "9+ accounting reports + hotel KPIs",
             "Create customers, products, 5-step invoices",
             "Reservations, rooms, check-in for hotel",
             "Contracts & payments for cars",
-            "Restaurant POS & F&B reports",
+            "Buy/sell transactions & party statements",
             "Arabic/English + dark mode",
             "OneSignal notifications"
           ],
@@ -393,7 +447,7 @@ window.LOCALES = {
             { icon: "chart", title: "Live reports", desc: "Sales, profit, stock, occupancy" },
             { icon: "receipt", title: "Mobile invoices", desc: "5-step invoice wizard" },
             { icon: "hotel", title: "Hotel mobile", desc: "Bookings, rooms, check-in" },
-            { icon: "car", title: "Cars mobile", desc: "Contracts & payments" },
+            { icon: "car", title: "Cars mobile", desc: "Contracts, trading & payments" },
             { icon: "cloud", title: "Secure API", desc: "JWT multi-tenant" },
             { icon: "shield", title: "Permissions", desc: "Per app account" }
           ]
@@ -409,15 +463,16 @@ window.LOCALES = {
     },
     mobile: {
       badge: "Available now",
-      title: "Mobile app — 3 systems",
+      title: "Mobile app — 4 systems",
       desc: "Flutter app on cloud API: live reports, invoice creation, hotel or car management — anywhere.",
       points: [
         "Accounting: reports, invoices, customers, products",
         "Hotel: reservations, rooms, check-in, restaurant",
-        "Cars: contracts, payments, reports",
+        "Car contracts: contracts, payments, reports",
+        "Car trading: transactions, payments, party statements",
         "Secure JWT + multi-tenant sync"
       ],
-      profiles: { accounting: "Accounting", hotel: "Hotel", car: "Cars" },
+      profiles: { accounting: "Accounting", hotel: "Hotel", car: "Contracts", carTrade: "Buy & Sell" },
       appName: "AlMuhasib", greeting: "Welcome — data synced",
       cards: { sales: "Sales report", statement: "Statement", stock: "Stock", overdue: "Today's bookings" },
       nav: { home: "Home", reports: "Reports", data: "Data" },
@@ -441,16 +496,16 @@ window.LOCALES = {
       title: "Get started in minutes",
       steps: [
         { num: "01", title: "Download", desc: "ZIP from GitHub — Windows 10/11" },
-        { num: "02", title: "Pick your system", desc: "Accounting, hotel, or car contracts at setup" },
-        { num: "03", title: "Work offline", desc: "Invoices, bookings, or contracts — no internet" }
+        { num: "02", title: "Pick your system", desc: "Accounting, hotel, car contracts, or buy & sell at setup" },
+        { num: "03", title: "Work offline", desc: "Invoices, bookings, contracts, or transactions — no internet" }
       ]
     },
     cloud: {
-      title: "Cloud sync — 3 systems",
-      desc: "Connect Desktop to Cloud API: accounting, hotels ( & restaurant), car contracts — Push/Pull with tenant isolation.",
+      title: "Cloud sync — 4 systems",
+      desc: "Connect Desktop to Cloud API: accounting, hotels, car contracts, and car trading — Push/Pull with tenant isolation.",
       points: [
-        "Sync by system type (Accounting / Hotel / Car)",
-        "Invoices, reservations, contracts, restaurant",
+        "Sync by system type (Accounting / Hotel / Car / CarTrade)",
+        "Invoices, reservations, contracts, transactions, restaurant",
         "Smart conflicts + soft delete",
         "REST API + JWT for mobile",
         "Developer admin — tenants & licenses",
@@ -463,7 +518,8 @@ window.LOCALES = {
         { label: "Accounting", items: ["Sales & purchases", "Profit", "Statements", "Inventory", "Overdue installments", "Daily balance"] },
         { label: "Hotel", items: ["Occupancy", "Revenue", "Night audit", "Arrivals/departures"] },
         { label: "Restaurant", items: ["F&B sales", "Channels", "Top items", "F&B profit"] },
-        { label: "Cars", items: ["Contracts report", "Collected/remaining", "Excel export"] }
+        { label: "Cars", items: ["Contracts report", "Collected/remaining", "Excel export"] },
+        { label: "Buy & Sell", items: ["Transactions report", "Party statement", "Payment receipts"] }
       ]
     },
     download: {
@@ -475,10 +531,10 @@ window.LOCALES = {
       title: "FAQ",
       items: [
         { q: "Works offline?", a: "Yes. All systems are fully offline. Internet for sync and updates only." },
-        { q: "How to pick a system?", a: "At first setup or via admin: accounting for retail, hotel for hospitality, cars for dealerships." },
+        { q: "How to pick a system?", a: "At first setup or via admin: accounting for retail, hotel for hospitality, car contracts or buy & sell for dealerships." },
         { q: "Does hotel include restaurant?", a: "Yes — POS, KDS, kitchen stock, tables, and F&B reports are built in." },
-        { q: "Car contracts support?", a: "Yes — dedicated system with mobile app." },
-        { q: "Is mobile ready?", a: "Yes — 3 profiles by account type: accounting, hotel, or cars." },
+        { q: "Car systems support?", a: "Yes — car contracts and car buy/sell, each with mobile app and isolated database." },
+        { q: "Is mobile ready?", a: "Yes — 4 profiles by account type: accounting, hotel, car contracts, or buy & sell." },
         { q: "How to update?", a: "In-app check reads version.json from GitHub." },
         { q: "Data safe?", a: "Backup, permissions, audit log, multi-tenant cloud isolation." }
       ]
