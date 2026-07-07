@@ -7,6 +7,7 @@ import '../storage/preferences_service.dart';
 import '../storage/secure_storage_service.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/car/data/car_repository.dart';
+import '../../features/car_trade/data/car_trade_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/data_tab/data/data_repository.dart';
 import '../../features/hotel/data/hotel_repository.dart';
@@ -66,6 +67,7 @@ class AppServices {
     );
     Get.put<HotelRepository>(HotelRepository(apiClient), permanent: true);
     Get.put<CarRepository>(CarRepository(apiClient), permanent: true);
+    Get.put<CarTradeRepository>(CarTradeRepository(apiClient), permanent: true);
     Get.put<RestaurantRepository>(
       RestaurantRepository(apiClient),
       permanent: true,
@@ -90,6 +92,7 @@ class AppServices {
       Get.find<MobileOperationsRepository>();
   static HotelRepository get hotel => Get.find<HotelRepository>();
   static CarRepository get car => Get.find<CarRepository>();
+  static CarTradeRepository get carTrade => Get.find<CarTradeRepository>();
   static RestaurantRepository get restaurant => Get.find<RestaurantRepository>();
   static AppInfoService get appInfo => Get.find<AppInfoService>();
 }

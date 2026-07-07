@@ -9,6 +9,7 @@ public static class SystemConnectionStrings
     public const string AccountingDatabase = "AlMuhasibDb";
     public const string CarContractsDatabase = "AlMuhasibCarContractsDb";
     public const string HotelsDatabase = "AlMuhasibHotelsDb";
+    public const string CarTradingDatabase = "AlMuhasibCarTradingDb";
 
     public static string Build(IConfiguration configuration, ApplicationSystemType systemType)
     {
@@ -19,6 +20,7 @@ public static class SystemConnectionStrings
         {
             ApplicationSystemType.CarContracts => CarContractsDatabase,
             ApplicationSystemType.HotelManagement => HotelsDatabase,
+            ApplicationSystemType.CarTrading => CarTradingDatabase,
             _ => AccountingDatabase
         };
 

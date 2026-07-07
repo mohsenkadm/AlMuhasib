@@ -4,6 +4,7 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const launchAccounting = '/launch/accounting';
   static const launchCar = '/launch/car';
+  static const launchCarTrade = '/launch/car-trade';
   static const launchHotel = '/launch/hotel';
 
   static const home = '/home';
@@ -46,6 +47,14 @@ abstract final class AppRoutes {
   static const carPayments = '/car/payments';
   static const carReports = '/car/reports';
   static const carSettings = '/car/settings';
+
+  static const carTradeHome = '/car-trade/home';
+  static const carTradeTransactions = '/car-trade/transactions';
+  static const carTradeTransactionNew = '/car-trade/transactions/new';
+  static const carTradeTransactionDetail = '/car-trade/transactions/:syncId';
+  static const carTradePayments = '/car-trade/payments';
+  static const carTradeReports = '/car-trade/reports';
+  static const carTradeSettings = '/car-trade/settings';
 
   static const profile = '/profile';
   static const about = '/about';
@@ -90,4 +99,6 @@ abstract final class AppRoutes {
       '/hotel/guests/$syncId/edit';
   static String carContractDetailPath(String syncId) =>
       '/car/contracts/$syncId';
+  static String carTradeTransactionDetailPath(String syncId) =>
+      '/car-trade/transactions/$syncId';
 }

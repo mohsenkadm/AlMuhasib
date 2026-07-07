@@ -101,6 +101,9 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveCarSaleContractAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.CarSaleContracts, syncId, ct);
 
+    public async Task<int?> ResolveCarTradeTransactionAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.CarTradeTransactions, syncId, ct);
+
     public async Task<int> ResolveTransferAccountAsync(TransferAccountType type, Guid syncId, CancellationToken ct) =>
         type switch
         {

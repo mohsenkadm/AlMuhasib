@@ -21,11 +21,15 @@ public static class ScreenPermissionRegistry
 
     public static bool IsCarContracts => _registry?.IsCarContracts == true;
 
+    public static bool IsCarTrading => _registry?.IsCarTrading == true;
+
     public static bool IsHotelManagement => _registry?.IsHotelManagement == true;
 
     public static IReadOnlyList<(string Name, string Label)> AllScreens =>
         IsHotelManagement
             ? HotelPermissionRegistryScreens
+            : IsCarTrading
+                ? CarTradePermissionRegistryScreens
             : IsCarContracts
                 ? CarPermissionRegistryScreens
                 : AccountingScreens;
@@ -40,6 +44,21 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (SystemUpdate, "تحديث النظام")
+    ];
+
+    private static IReadOnlyList<(string Name, string Label)> CarTradePermissionRegistryScreens { get; } =
+    [
+        (CarTradePermissionRegistry.Dashboard, "لوحة التحكم"),
+        (CarTradePermissionRegistry.CarTradeForm, "عملية جديدة"),
+        (CarTradePermissionRegistry.CarTradeList, "العمليات"),
+        (CarTradePermissionRegistry.CarTradeReports, "التقارير"),
+        (CarTradePermissionRegistry.CarTradePartyStatement, "كشف حساب طرف"),
+        (CarTradePermissionRegistry.Users, "المستخدمون"),
+        (CarTradePermissionRegistry.Permissions, "الصلاحيات"),
+        (CarTradePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
+        (CarTradePermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (CarTradePermissionRegistry.CloudSync, "المزامنة السحابية"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -110,6 +129,8 @@ public static class ScreenPermissionRegistry
     public static string GetScreenName(Type viewModelType) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetScreenName(viewModelType)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetScreenName(viewModelType)
             : IsCarContracts
                 ? CarPermissionRegistry.GetScreenName(viewModelType)
                 : GetAccountingScreenName(viewModelType);
@@ -120,6 +141,8 @@ public static class ScreenPermissionRegistry
     public static Type? GetDefaultViewModelType(string screenName) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetDefaultViewModelType(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetDefaultViewModelType(screenName)
                 : GetAccountingDefaultViewModelType(screenName);
@@ -130,6 +153,8 @@ public static class ScreenPermissionRegistry
     public static string GetLabel(string screenName) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetLabel(screenName)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetLabel(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetLabel(screenName)
                 : GetAccountingLabel(screenName);

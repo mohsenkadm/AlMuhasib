@@ -58,6 +58,9 @@ public sealed class SyncDataBundle
 
     public List<CarSaleContractSyncDto> CarSaleContracts { get; set; } = [];
     public List<CarContractPaymentSyncDto> CarContractPayments { get; set; } = [];
+
+    public List<CarTradeTransactionSyncDto> CarTradeTransactions { get; set; } = [];
+    public List<CarTradePaymentSyncDto> CarTradePayments { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

@@ -4,6 +4,7 @@ import '../bindings/accounting_feature_bindings.dart';
 import '../bindings/accounting_shell_binding.dart';
 import '../bindings/auth_binding.dart';
 import '../bindings/car_bindings.dart';
+import '../bindings/car_trade_bindings.dart';
 import '../bindings/hotel_bindings.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/car/car_shell.dart';
@@ -13,6 +14,9 @@ import '../../features/car/contracts/car_contracts_screen.dart';
 import '../../features/car/dashboard/car_dashboard_screen.dart';
 import '../../features/car/payments/car_payments_screen.dart';
 import '../../features/car/reports/car_report_screen.dart';
+import '../../features/car_trade/car_trade_shell.dart';
+import '../../features/car_trade/transactions/car_trade_transaction_detail_screen.dart';
+import '../../features/car_trade/transactions/car_trade_transaction_form_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_list_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
@@ -87,6 +91,15 @@ abstract final class AppPages {
       name: AppRoutes.launchCar,
       page: () => const SystemLaunchScreen(
         systemType: ApplicationSystemType.carContracts,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.launchCarTrade,
+      page: () => const SystemLaunchScreen(
+        systemType: ApplicationSystemType.carTrading,
       ),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
@@ -400,6 +413,56 @@ abstract final class AppPages {
         syncId: Get.parameters['syncId']!,
       ),
       binding: CarContractDetailBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carTradeHome,
+      page: () => const CarTradeShellPage(),
+      binding: CarTradeShellBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carTradeTransactions,
+      page: () => const CarTradeShellPage(initialTab: 1),
+      binding: CarTradeShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carTradePayments,
+      page: () => const CarTradeShellPage(initialTab: 2),
+      binding: CarTradeShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carTradeReports,
+      page: () => const CarTradeShellPage(initialTab: 3),
+      binding: CarTradeShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carTradeSettings,
+      page: () => const CarTradeShellPage(initialTab: 4),
+      binding: CarTradeShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.carTradeTransactionNew,
+      page: () => const CarTradeTransactionFormScreen(),
+      binding: CarTradeTransactionFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.carTradeTransactionDetail,
+      page: () => CarTradeTransactionDetailScreen(
+        syncId: Get.parameters['syncId']!,
+      ),
+      binding: CarTradeTransactionDetailBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

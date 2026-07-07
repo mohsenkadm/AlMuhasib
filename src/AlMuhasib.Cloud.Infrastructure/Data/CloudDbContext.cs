@@ -72,6 +72,8 @@ public class CloudDbContext : DbContext
     public DbSet<CloudRestaurantStockMovement> RestaurantStockMovements => Set<CloudRestaurantStockMovement>();
     public DbSet<CloudCarSaleContract> CarSaleContracts => Set<CloudCarSaleContract>();
     public DbSet<CloudCarContractPayment> CarContractPayments => Set<CloudCarContractPayment>();
+    public DbSet<CloudCarTradeTransaction> CarTradeTransactions => Set<CloudCarTradeTransaction>();
+    public DbSet<CloudCarTradePayment> CarTradePayments => Set<CloudCarTradePayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
