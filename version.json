@@ -2,9 +2,9 @@
     "version":  "1.14.0",
     "releaseDate":  "2026-07-08",
     "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.0/AlMuhasib-1.14.0.zip",
-    "sha256":  "",
-    "sizeBytes":  0,
-    "releaseNotes":  "نظام بيع وشراء السيارات كنظام رابع معزول، سير عمل شراء-أولاً ومخزون وبيع ودفعات مزدوجة، تحسينات عقود السيارات، إعادة تصميم تطبيق الموبايل بـ GetX، وتحسينات واجهة الفنادق والتصدير",
+    "sha256":  "6B5721DECFE720AFCCC2F9BD5713E984B2A38C832EF8FD5AF008398D16BA88B3",
+    "sizeBytes":  93839303,
+    "releaseNotes":  "نظام بيع وشراء السيارات، سير عمل الشراء والبيع والدفعات المزدوجة، تحسينات عقود السيارات، إعادة تصميم تطبيق الموبايل، وتحسينات واجهة الفنادق والتصدير",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }
