@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using AlMuhasib.Core.Entities.Car;
@@ -10,6 +11,8 @@ namespace AlMuhasib.UI.Services;
 
 public sealed class CarContractPrintService : ICarContractPrintService
 {
+    private const double A4PageHeight = 1122.5;
+
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar-IQ");
     private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
     private static readonly Brush HeaderBg = new SolidColorBrush(Color.FromRgb(0xD9, 0xD9, 0xD9));
@@ -38,15 +41,95 @@ public sealed class CarContractPrintService : ICarContractPrintService
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
+        var brandingHeight = MeasureBrandingHeaderHeight(doc);
 
         doc.Blocks.Add(BuildTitleRow(contract));
         doc.Blocks.Add(BuildPartiesRow(contract));
         doc.Blocks.Add(BuildDetailsRow(contract));
         doc.Blocks.Add(BuildNotesRow(contract));
         doc.Blocks.Add(BuildTermsBlock());
+        doc.Blocks.Add(BuildBottomSpacer(contract, doc, brandingHeight));
         doc.Blocks.Add(BuildSignaturesRow(contract));
 
         return doc;
+    }
+
+    private static Block BuildBottomSpacer(CarSaleContract contract, FlowDocument template, double brandingHeight)
+    {
+        var mainDoc = CreateMeasuringDocument(template);
+        mainDoc.Blocks.Add(BuildTitleRow(contract));
+        mainDoc.Blocks.Add(BuildPartiesRow(contract));
+        mainDoc.Blocks.Add(BuildDetailsRow(contract));
+        mainDoc.Blocks.Add(BuildNotesRow(contract));
+        mainDoc.Blocks.Add(BuildTermsBlock());
+
+        var footerDoc = CreateMeasuringDocument(template);
+        footerDoc.Blocks.Add(BuildSignaturesRow(contract));
+
+        var mainHeight = MeasureDocumentHeight(mainDoc);
+        var footerHeight = MeasureDocumentHeight(footerDoc);
+        var availableHeight = A4PageHeight
+                              - template.PagePadding.Top
+                              - template.PagePadding.Bottom
+                              - brandingHeight;
+        var spacerHeight = Math.Max(12, availableHeight - mainHeight - footerHeight);
+
+        return new BlockUIContainer(new Border
+        {
+            Height = spacerHeight,
+            Background = Brushes.Transparent
+        });
+    }
+
+    private static FlowDocument CreateMeasuringDocument(FlowDocument template)
+    {
+        var pageWidth = PrintBrandingFlowDocumentHelper.DefaultPrintPageWidth;
+        var contentWidth = pageWidth - template.PagePadding.Left - template.PagePadding.Right;
+
+        return new FlowDocument
+        {
+            FontFamily = template.FontFamily,
+            FontSize = template.FontSize,
+            FlowDirection = template.FlowDirection,
+            PagePadding = new Thickness(0),
+            PageWidth = pageWidth,
+            ColumnWidth = contentWidth
+        };
+    }
+
+    private static double MeasureBrandingHeaderHeight(FlowDocument document)
+    {
+        var brandingDoc = CreateMeasuringDocument(document);
+        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(brandingDoc);
+        return MeasureDocumentHeight(brandingDoc);
+    }
+
+    private static double MeasureDocumentHeight(FlowDocument document)
+    {
+        const double measurePageHeight = 100_000;
+        var pageWidth = document.PageWidth > 0
+            ? document.PageWidth
+            : PrintBrandingFlowDocumentHelper.DefaultPrintPageWidth;
+
+        document.PageWidth = pageWidth;
+        document.PageHeight = measurePageHeight;
+
+        if (document.ColumnWidth <= 0)
+            document.ColumnWidth = pageWidth - document.PagePadding.Left - document.PagePadding.Right;
+
+        var viewer = new FlowDocumentScrollViewer
+        {
+            Document = document,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+        };
+
+        var width = document.ColumnWidth;
+        viewer.Measure(new Size(width, measurePageHeight));
+        viewer.Arrange(new Rect(0, 0, width, measurePageHeight));
+        viewer.UpdateLayout();
+
+        return Math.Max(0, viewer.DesiredSize.Height);
     }
 
     private static Block BuildTitleRow(CarSaleContract contract)
@@ -225,7 +308,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         }
 
         table.RowGroups[0].Rows.Add(row);
-        return WrapBlock(table, new Thickness(0, 16, 0, 0));
+        return WrapBlock(table, new Thickness(0, 8, 0, 0));
     }
 
     private static UIElement CreateSignatureBlock(string label, string? name)
@@ -247,14 +330,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
             FontSize = 11,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 16)
+            Margin = new Thickness(0, 0, 0, 24)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Height = 1,
-            Width = 120
+            Width = 130,
+            Margin = new Thickness(0, 0, 0, 4)
         });
         return panel;
     }

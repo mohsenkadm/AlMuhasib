@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.14.1",
-    "releaseDate":  "2026-07-08",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.1/AlMuhasib-1.14.1.zip",
-    "sha256":  "BECA3811180E52ADDE8921322B625792679BF38C0F73946C3CBFC7311B312471",
-    "sizeBytes":  93840336,
-    "releaseNotes":  "إصلاح تطبيق تحديث قاعدة بيانات عقود السيارات تلقائياً عند التحديث (حقول السعر المتفق عليه وأسماء الشاهدين)",
+    "version":  "1.14.2",
+    "releaseDate":  "2026-07-09",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.2/AlMuhasib-1.14.2.zip",
+    "sha256":  "",
+    "sizeBytes":  0,
+    "releaseNotes":  "إرجاع زر فاتورة المشتريات وإحصائيات لوحة التحكم، تحسين طباعة عقود السيارات (توقيعات في أسفل الصفحة)، وإصلاح خطأ معاينة الطباعة",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

@@ -104,13 +104,11 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _totalInventoryValue;
 
     public DashboardViewModel(IDashboardService dashboardService, ISmartAlertService smartAlertService,
-        MainWindowViewModel mainWindow, IUserPreferencesService userPreferences,
-        ICurrentUserService currentUserService)
+        MainWindowViewModel mainWindow, ICurrentUserService currentUserService)
     {
         _dashboardService = dashboardService;
         _smartAlertService = smartAlertService;
         _mainWindow = mainWindow;
-        _userPreferences = userPreferences;
         _currentUserService = currentUserService;
         PageTitle = "لوحة التحكم";
         IsBusy = true;
