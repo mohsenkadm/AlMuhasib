@@ -624,19 +624,19 @@ public sealed class CarTradeService : ICarTradeService
         Notes = t.Notes
     };
 
-    internal static string GetTradeTypeLabel(CarTradeType type) => type switch
+    public static string GetTradeTypeLabel(CarTradeType type) => type switch
     {
         CarTradeType.Sell => "بيع",
         _ => "شراء"
     };
 
-    internal static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
+    public static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
     {
         CarTradePaymentMode.FullCash => "نقدي",
         _ => "آجل"
     };
 
-    internal static string GetStatusLabel(CarTradeStatus status) => status switch
+    public static string GetStatusLabel(CarTradeStatus status) => status switch
     {
         CarTradeStatus.Completed => "مكتمل",
         CarTradeStatus.Cancelled => "ملغى",

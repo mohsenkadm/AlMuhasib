@@ -371,7 +371,6 @@ public sealed class CarTradeDetailDto : CarTradeListDto
     public string BuyerName { get; set; } = string.Empty;
     public string BuyerPhone { get; set; } = string.Empty;
     public decimal PurchasePrice { get; set; }
-    public decimal SalePrice { get; set; }
     public string Notes { get; set; } = string.Empty;
     public List<CarTradePaymentDto> Payments { get; set; } = [];
 }
