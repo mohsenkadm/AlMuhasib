@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AlMuhasib.Cloud.Infrastructure.Migrations
+namespace AlMuhasib.Infrastructure.Data.Car.Migrations
 {
     /// <inheritdoc />
     public partial class CarContractAgreedPriceAndWitnesses : Migration
