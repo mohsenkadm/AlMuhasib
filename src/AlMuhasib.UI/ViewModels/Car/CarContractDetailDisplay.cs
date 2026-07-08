@@ -30,6 +30,8 @@ public sealed class CarContractDetailDisplay
     public string AmountReceived { get; init; } = string.Empty;
     public string RemainingAmount { get; init; } = string.Empty;
     public string CarPriceInWords { get; init; } = string.Empty;
+    public string WitnessOneName { get; init; } = string.Empty;
+    public string WitnessTwoName { get; init; } = string.Empty;
     public string Notes { get; init; } = string.Empty;
 
     public static CarContractDetailDisplay FromEntity(CarSaleContract c) => new()
@@ -55,10 +57,12 @@ public sealed class CarContractDetailDisplay
         CarModel = Display(c.CarModel),
         CarColor = Display(c.CarColor),
         ChassisNumber = Display(c.ChassisNumber),
-        CarPrice = c.CarPrice.ToString("N0"),
-        AmountReceived = c.AmountReceived.ToString("N0"),
-        RemainingAmount = c.RemainingAmount.ToString("N0"),
+        CarPrice = c.IsAgreedPrice ? "المبلغ المتفق عليه" : $"{c.CarPrice:N0} دولار",
+        AmountReceived = c.IsAgreedPrice ? "المبلغ المتفق عليه" : $"{c.AmountReceived:N0} دولار",
+        RemainingAmount = c.IsAgreedPrice ? "المبلغ المتفق عليه" : $"{c.RemainingAmount:N0} دولار",
         CarPriceInWords = Display(c.CarPriceInWords),
+        WitnessOneName = Display(c.WitnessOneName),
+        WitnessTwoName = Display(c.WitnessTwoName),
         Notes = Display(c.Notes)
     };
 
