@@ -2,7 +2,6 @@ using AlMuhasib.Core.Entities.CarTrade;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
