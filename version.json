@@ -2,8 +2,8 @@
     "version":  "1.14.2",
     "releaseDate":  "2026-07-09",
     "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.2/AlMuhasib-1.14.2.zip",
-    "sha256":  "",
-    "sizeBytes":  0,
+    "sha256":  "EDF0B32CDCD6B91D0985637A2D1FC6F9F6F697A0E8357D33F3EF2868E9B9E23F",
+    "sizeBytes":  93841060,
     "releaseNotes":  "إرجاع زر فاتورة المشتريات وإحصائيات لوحة التحكم، تحسين طباعة عقود السيارات (توقيعات في أسفل الصفحة)، وإصلاح خطأ معاينة الطباعة",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
