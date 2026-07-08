@@ -1,6 +1,5 @@
 using AlMuhasib.Core.Entities.CarTrade;
 using AlMuhasib.Core.Enums;
-using AlMuhasib.Infrastructure.Services;
 using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.CarTrade;
@@ -41,8 +40,8 @@ public sealed class CarTradeDetailDisplay
         Id = t.Id,
         TransactionNumber = t.TransactionNumber,
         TransactionDate = t.TransactionDate.ToString("yyyy/MM/dd"),
-        TradeType = CarTradeService.GetTradeTypeLabel(t.TradeType),
-        Status = CarTradeService.GetStatusLabel(t.Status),
+        TradeType = GetTradeTypeLabel(t.TradeType),
+        Status = GetStatusLabel(t.Status),
         SoldStatus = t.IsSold ? "مباعة" : "متوفرة",
         IsSold = t.IsSold,
         CarName = Display(t.CarName),
@@ -57,10 +56,10 @@ public sealed class CarTradeDetailDisplay
         PurchasePrice = t.PurchasePrice.ToString("N0"),
         SalePrice = t.SalePrice.ToString("N0"),
         TotalAmount = t.TotalAmount.ToString("N0"),
-        PaymentMode = CarTradeService.GetPaymentModeLabel(t.PaymentMode),
+        PaymentMode = GetPaymentModeLabel(t.PaymentMode),
         AmountPaid = t.AmountPaid.ToString("N0"),
         RemainingAmount = t.RemainingAmount.ToString("N0"),
-        SalePaymentMode = CarTradeService.GetPaymentModeLabel(t.SalePaymentMode),
+        SalePaymentMode = GetPaymentModeLabel(t.SalePaymentMode),
         SaleAmountPaid = t.SaleAmountPaid.ToString("N0"),
         SaleRemainingAmount = t.SaleRemainingAmount.ToString("N0"),
         SaleDate = t.SaleDate?.ToString("yyyy/MM/dd") ?? "—",
@@ -71,6 +70,25 @@ public sealed class CarTradeDetailDisplay
 
     private static string Display(string? value) =>
         string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+
+    private static string GetTradeTypeLabel(CarTradeType type) => type switch
+    {
+        CarTradeType.Sell => "بيع",
+        _ => "شراء"
+    };
+
+    private static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
+    {
+        CarTradePaymentMode.FullCash => "نقدي",
+        _ => "آجل"
+    };
+
+    private static string GetStatusLabel(CarTradeStatus status) => status switch
+    {
+        CarTradeStatus.Completed => "مكتمل",
+        CarTradeStatus.Cancelled => "ملغى",
+        _ => "نشط"
+    };
 }
 
 public sealed class CarTradePaymentDisplay
