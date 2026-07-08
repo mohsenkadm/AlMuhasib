@@ -28,20 +28,15 @@ public sealed class CarTradeReportsController : CarTradeApiControllerBase
     {
         if (await EnsureCarTradeTenantAsync(ct) is { } err) return err;
 
-        var query = Db.CarTradeTransactions.AsNoTracking().Where(t => t.TenantId == TenantId);
+        var query = Db.CarTradeTransactions.AsNoTracking()
+            .Where(t => t.TenantId == TenantId && t.TradeType == CarTradeType.Buy);
 
         if (from.HasValue)
             query = query.Where(t => t.TransactionDate >= from.Value.Date);
         if (to.HasValue)
             query = query.Where(t => t.TransactionDate <= to.Value.Date);
-        if (!string.IsNullOrWhiteSpace(tradeType) && Enum.TryParse<CarTradeType>(tradeType, true, out var tradeTypeEnum))
-            query = query.Where(t => t.TradeType == tradeTypeEnum);
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CarTradeStatus>(status, true, out var statusEnum))
-            query = query.Where(t => t.Status == statusEnum);
-        if (!string.IsNullOrWhiteSpace(paymentMode) && Enum.TryParse<CarTradePaymentMode>(paymentMode, true, out var paymentModeEnum))
-            query = query.Where(t => t.PaymentMode == paymentModeEnum);
         if (unpaidOnly == true)
-            query = query.Where(t => t.RemainingAmount > 0);
+            query = query.Where(t => t.RemainingAmount > 0 || t.SaleRemainingAmount > 0);
 
         var items = await query
             .OrderByDescending(t => t.TransactionDate)
@@ -49,32 +44,32 @@ public sealed class CarTradeReportsController : CarTradeApiControllerBase
             .ToListAsync(ct);
 
         var rows = items.Select(CarTradeMapper.ToListItem).ToList();
-        var buys = items.Where(t => t.TradeType == CarTradeType.Buy).ToList();
-        var sells = items.Where(t => t.TradeType == CarTradeType.Sell).ToList();
+        var sold = items.Where(t => t.IsSold).ToList();
 
         return Ok(new CarTradeTransactionsReportDto
         {
             Rows = rows,
-            BuyCount = buys.Count,
-            SellCount = sells.Count,
-            TotalBuyValue = buys.Sum(t => t.TotalAmount),
-            TotalSellValue = sells.Sum(t => t.TotalAmount),
-            TotalPaid = rows.Sum(r => r.AmountPaid),
-            TotalRemaining = rows.Sum(r => r.RemainingAmount),
-            MonthlyBuy = buys
+            BuyCount = items.Count,
+            SellCount = sold.Count,
+            TotalBuyValue = items.Sum(t => t.PurchasePrice),
+            TotalSellValue = sold.Sum(t => t.SalePrice),
+            TotalPaid = items.Sum(t => t.AmountPaid) + sold.Sum(t => t.SaleAmountPaid),
+            TotalRemaining = items.Sum(t => t.RemainingAmount),
+            MonthlyBuy = items
                 .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .ToList(),
-            MonthlySell = sells
-                .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
+            MonthlySell = sold
+                .Where(t => t.SaleDate.HasValue)
+                .GroupBy(t => new DateTime(t.SaleDate!.Value.Year, t.SaleDate.Value.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .ToList(),
             CollectedVsRemaining =
             [
-                new NameAmountPoint { Name = "Collected", Amount = rows.Sum(r => r.AmountPaid) },
-                new NameAmountPoint { Name = "Remaining", Amount = rows.Sum(r => r.RemainingAmount) }
+                new NameAmountPoint { Name = "SellerDebt", Amount = items.Sum(t => t.RemainingAmount) },
+                new NameAmountPoint { Name = "BuyerDebt", Amount = sold.Sum(t => t.SaleRemainingAmount) }
             ],
             ByCarType = items
                 .GroupBy(t => string.IsNullOrWhiteSpace(t.CarType) ? "Unspecified" : t.CarType)
@@ -98,51 +93,55 @@ public sealed class CarTradeReportsController : CarTradeApiControllerBase
             return BadRequest("Party name is required.");
 
         var trimmedPartyName = partyName.Trim();
-        var query = Db.CarTradeTransactions.AsNoTracking()
-            .Where(t => t.TenantId == TenantId && t.Status != CarTradeStatus.Cancelled && t.RemainingAmount > 0);
-
-        if (from.HasValue)
-            query = query.Where(t => t.TransactionDate >= from.Value.Date);
-        if (to.HasValue)
-            query = query.Where(t => t.TransactionDate <= to.Value.Date);
-
-        var transactions = await query.ToListAsync(ct);
+        var transactions = await Db.CarTradeTransactions.AsNoTracking()
+            .Where(t => t.TenantId == TenantId && t.Status != CarTradeStatus.Cancelled && t.TradeType == CarTradeType.Buy)
+            .ToListAsync(ct);
         var rows = new List<CarTradePartyStatementRowDto>();
 
         foreach (var t in transactions)
         {
-            if (t.TradeType == CarTradeType.Buy &&
+            if (t.RemainingAmount > 0 &&
                 string.Equals(t.SellerName.Trim(), trimmedPartyName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrWhiteSpace(partyPhone) ||
-                 string.Equals(t.SellerPhone.Trim(), partyPhone.Trim(), StringComparison.OrdinalIgnoreCase)))
+                 string.Equals(t.SellerPhone.Trim(), partyPhone.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+                (!from.HasValue || t.TransactionDate.Date >= from.Value.Date) &&
+                (!to.HasValue || t.TransactionDate.Date <= to.Value.Date))
             {
                 rows.Add(new CarTradePartyStatementRowDto
                 {
                     TransactionDate = t.TransactionDate,
                     TransactionNumber = t.TransactionNumber,
-                    TradeType = t.TradeType.ToString(),
+                    TradeType = "Buy",
                     CarName = t.CarName,
-                    TotalAmount = t.TotalAmount,
+                    TotalAmount = t.PurchasePrice,
                     AmountPaid = t.AmountPaid,
                     RemainingAmount = t.RemainingAmount,
-                    PartyRole = "Seller"
+                    PartyRole = "Seller",
+                    DebtKind = "SellerDebt"
                 });
             }
-            else if (t.TradeType == CarTradeType.Sell &&
-                     string.Equals(t.BuyerName.Trim(), trimmedPartyName, StringComparison.OrdinalIgnoreCase) &&
-                     (string.IsNullOrWhiteSpace(partyPhone) ||
-                      string.Equals(t.BuyerPhone.Trim(), partyPhone.Trim(), StringComparison.OrdinalIgnoreCase)))
+
+            if (t.IsSold && t.SaleRemainingAmount > 0 &&
+                string.Equals(t.BuyerName.Trim(), trimmedPartyName, StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(partyPhone) ||
+                 string.Equals(t.BuyerPhone.Trim(), partyPhone.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
+                var saleDate = t.SaleDate ?? t.TransactionDate;
+                if ((from.HasValue && saleDate.Date < from.Value.Date) ||
+                    (to.HasValue && saleDate.Date > to.Value.Date))
+                    continue;
+
                 rows.Add(new CarTradePartyStatementRowDto
                 {
-                    TransactionDate = t.TransactionDate,
+                    TransactionDate = saleDate,
                     TransactionNumber = t.TransactionNumber,
-                    TradeType = t.TradeType.ToString(),
+                    TradeType = "Sell",
                     CarName = t.CarName,
-                    TotalAmount = t.TotalAmount,
-                    AmountPaid = t.AmountPaid,
-                    RemainingAmount = t.RemainingAmount,
-                    PartyRole = "Buyer"
+                    TotalAmount = t.SalePrice,
+                    AmountPaid = t.SaleAmountPaid,
+                    RemainingAmount = t.SaleRemainingAmount,
+                    PartyRole = "Buyer",
+                    DebtKind = "BuyerDebt"
                 });
             }
         }
@@ -189,6 +188,7 @@ public sealed class CarTradePartyStatementRowDto
     public decimal AmountPaid { get; set; }
     public decimal RemainingAmount { get; set; }
     public string PartyRole { get; set; } = string.Empty;
+    public string DebtKind { get; set; } = string.Empty;
 }
 
 public sealed class CarTradePartyStatementDto

@@ -139,6 +139,11 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("PaymentKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
 
@@ -240,6 +245,9 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSold")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -260,6 +268,22 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("RemainingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SaleAmountPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("SaleDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SalePaymentMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("SaleRemainingAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -318,6 +342,8 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("IsSold");
 
                     b.HasIndex("Status");
 

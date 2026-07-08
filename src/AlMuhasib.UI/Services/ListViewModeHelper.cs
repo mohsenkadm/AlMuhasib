@@ -16,6 +16,7 @@ public static class ListViewModeKeys
     public const string HotelGuests = "HotelGuests";
     public const string HotelRatePlans = "HotelRatePlans";
     public const string HotelHousekeeping = "HotelHousekeeping";
+    public const string CarTradeTransactions = "CarTradeTransactions";
 }
 
 public static class ListViewModeHelper

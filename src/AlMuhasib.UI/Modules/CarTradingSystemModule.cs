@@ -17,10 +17,10 @@ public sealed class CarTradingSystemModule : ISystemModule
     public IReadOnlyList<(string Name, string Label)> PermissionScreens { get; } =
     [
         (CarTradePermissionRegistry.Dashboard, "لوحة التحكم"),
-        (CarTradePermissionRegistry.CarTradeForm, "عملية جديدة"),
+        (CarTradePermissionRegistry.CarTradeForm, "شراء سيارة"),
         (CarTradePermissionRegistry.CarTradeList, "العمليات"),
         (CarTradePermissionRegistry.CarTradeReports, "التقارير"),
-        (CarTradePermissionRegistry.CarTradePartyStatement, "كشف حساب طرف"),
+        (CarTradePermissionRegistry.CarTradePartyStatement, "كشف الحساب"),
         (CarTradePermissionRegistry.Users, "المستخدمون"),
         (CarTradePermissionRegistry.Permissions, "الصلاحيات"),
         (CarTradePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
@@ -40,8 +40,8 @@ public sealed class CarTradingSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
-            Title = "عملية جديدة",
-            Icon = PackIconKind.SwapHorizontal,
+            Title = "شراء سيارة",
+            Icon = PackIconKind.CarArrowRight,
             ViewModelType = typeof(CarTradeFormViewModel),
             ScreenName = CarTradePermissionRegistry.CarTradeForm
         },
@@ -61,7 +61,7 @@ public sealed class CarTradingSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
-            Title = "كشف حساب طرف",
+            Title = "كشف الحساب",
             Icon = PackIconKind.AccountCash,
             ViewModelType = typeof(CarTradePartyStatementViewModel),
             ScreenName = CarTradePermissionRegistry.CarTradePartyStatement

@@ -581,6 +581,12 @@ public class CloudCarTradeTransaction : CloudBaseEntity
     public CarTradeStatus Status { get; set; } = CarTradeStatus.Active;
     public string Notes { get; set; } = string.Empty;
 
+    public bool IsSold { get; set; }
+    public DateTime? SaleDate { get; set; }
+    public CarTradePaymentMode SalePaymentMode { get; set; } = CarTradePaymentMode.FullCash;
+    public decimal SaleAmountPaid { get; set; }
+    public decimal SaleRemainingAmount { get; set; }
+
     public ICollection<CloudCarTradePayment> Payments { get; set; } = [];
 }
 
@@ -588,6 +594,8 @@ public class CloudCarTradePayment : CloudBaseEntity
 {
     public int TransactionId { get; set; }
     public CloudCarTradeTransaction Transaction { get; set; } = null!;
+
+    public CarTradePaymentKind PaymentKind { get; set; } = CarTradePaymentKind.Purchase;
 
     public DateTime PaymentDate { get; set; } = DateTime.Today;
     public decimal Amount { get; set; }

@@ -199,19 +199,33 @@ public sealed class CarTradeTransactionsController : CarTradeApiControllerBase
         if (transaction is null) return NotFound();
         if (transaction.Status == CarTradeStatus.Cancelled)
             return BadRequest("Cannot record payment on a cancelled transaction.");
-        if (request.Amount > transaction.RemainingAmount)
+
+        var isSalePayment = string.Equals(request.PaymentKind, nameof(CarTradePaymentKind.Sale), StringComparison.OrdinalIgnoreCase);
+        var remaining = isSalePayment ? transaction.SaleRemainingAmount : transaction.RemainingAmount;
+        if (request.Amount > remaining)
             return BadRequest("Payment amount exceeds remaining balance.");
 
-        var remainingBefore = transaction.RemainingAmount;
-        transaction.AmountPaid += request.Amount;
-        transaction.RemainingAmount = transaction.TotalAmount - transaction.AmountPaid;
-        if (transaction.RemainingAmount < 0) transaction.RemainingAmount = 0;
+        var remainingBefore = remaining;
+        if (isSalePayment)
+        {
+            transaction.SaleAmountPaid += request.Amount;
+            transaction.SaleRemainingAmount = transaction.SalePrice - transaction.SaleAmountPaid;
+            if (transaction.SaleRemainingAmount < 0) transaction.SaleRemainingAmount = 0;
+            transaction.SalePaymentMode = transaction.SaleRemainingAmount <= 0
+                ? CarTradePaymentMode.FullCash
+                : CarTradePaymentMode.Partial;
+        }
+        else
+        {
+            transaction.AmountPaid += request.Amount;
+            transaction.RemainingAmount = transaction.TotalAmount - transaction.AmountPaid;
+            if (transaction.RemainingAmount < 0) transaction.RemainingAmount = 0;
+            transaction.PaymentMode = transaction.RemainingAmount <= 0
+                ? CarTradePaymentMode.FullCash
+                : CarTradePaymentMode.Partial;
+            CarTradeMapper.UpdateStatus(transaction);
+        }
 
-        transaction.PaymentMode = transaction.RemainingAmount <= 0
-            ? CarTradePaymentMode.FullCash
-            : CarTradePaymentMode.Partial;
-
-        CarTradeMapper.UpdateStatus(transaction);
         transaction.UpdatedAt = DateTime.UtcNow;
         transaction.UpdatedBy = User.Identity?.Name ?? "mobile";
 
@@ -220,11 +234,12 @@ public sealed class CarTradeTransactionsController : CarTradeApiControllerBase
             TenantId = TenantId,
             SyncId = Guid.NewGuid(),
             TransactionId = transaction.Id,
+            PaymentKind = isSalePayment ? CarTradePaymentKind.Sale : CarTradePaymentKind.Purchase,
             PaymentDate = request.PaymentDate,
             Amount = request.Amount,
             Notes = request.Notes ?? string.Empty,
             RemainingBefore = remainingBefore,
-            RemainingAfter = transaction.RemainingAmount,
+            RemainingAfter = isSalePayment ? transaction.SaleRemainingAmount : transaction.RemainingAmount,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = User.Identity?.Name ?? "mobile"
         };
@@ -232,6 +247,33 @@ public sealed class CarTradeTransactionsController : CarTradeApiControllerBase
         await Db.SaveChangesAsync(ct);
 
         return Ok(new { payment.SyncId });
+    }
+
+    [HttpPost("{syncId:guid}/sell")]
+    public async Task<IActionResult> SellCar(Guid syncId, [FromBody] CarTradeSellRequest request, CancellationToken ct)
+    {
+        if (await EnsureCarTradeTenantAsync(ct) is { } err) return err;
+        if (string.IsNullOrWhiteSpace(request.BuyerName))
+            return BadRequest("Buyer name is required.");
+        if (request.SalePrice <= 0)
+            return BadRequest("Sale price must be greater than zero.");
+
+        var transaction = await Db.CarTradeTransactions
+            .FirstOrDefaultAsync(t => t.TenantId == TenantId && t.SyncId == syncId, ct);
+        if (transaction is null) return NotFound();
+        if (transaction.IsSold) return BadRequest("Car is already sold.");
+
+        transaction.BuyerName = request.BuyerName.Trim();
+        transaction.BuyerPhone = request.BuyerPhone?.Trim() ?? string.Empty;
+        transaction.SalePrice = request.SalePrice;
+        transaction.SaleDate = request.SaleDate.Date;
+        transaction.SalePaymentMode = request.SalePaymentMode;
+        transaction.IsSold = true;
+        CarTradeMapper.ApplySaleAmounts(transaction, request.SaleAmountPaid);
+        transaction.UpdatedAt = DateTime.UtcNow;
+        transaction.UpdatedBy = User.Identity?.Name ?? "mobile";
+        await Db.SaveChangesAsync(ct);
+        return Ok();
     }
 
     private async Task<string> GenerateTransactionNumberAsync(CancellationToken ct)
@@ -286,6 +328,18 @@ public sealed class CarTradePaymentRequest
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; } = DateTime.Today;
     public string? Notes { get; set; }
+    public string? PaymentKind { get; set; }
+}
+
+public sealed class CarTradeSellRequest
+{
+    public string BuyerName { get; set; } = string.Empty;
+    public string? BuyerPhone { get; set; }
+    public decimal SalePrice { get; set; }
+    public CarTradePaymentMode SalePaymentMode { get; set; } = CarTradePaymentMode.FullCash;
+    public decimal SaleAmountPaid { get; set; }
+    public DateTime SaleDate { get; set; } = DateTime.Today;
+    public string? Notes { get; set; }
 }
 
 public class CarTradeListDto
@@ -300,6 +354,10 @@ public class CarTradeListDto
     public decimal TotalAmount { get; set; }
     public decimal AmountPaid { get; set; }
     public decimal RemainingAmount { get; set; }
+    public bool IsSold { get; set; }
+    public decimal SalePrice { get; set; }
+    public decimal SaleAmountPaid { get; set; }
+    public decimal SaleRemainingAmount { get; set; }
     public string PaymentMode { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
 }
@@ -321,6 +379,7 @@ public sealed class CarTradeDetailDto : CarTradeListDto
 public sealed class CarTradePaymentDto
 {
     public Guid SyncId { get; set; }
+    public string PaymentKind { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; }
     public string Notes { get; set; } = string.Empty;
@@ -340,6 +399,10 @@ internal static class CarTradeMapper
         TotalAmount = t.TotalAmount,
         AmountPaid = t.AmountPaid,
         RemainingAmount = t.RemainingAmount,
+        IsSold = t.IsSold,
+        SalePrice = t.SalePrice,
+        SaleAmountPaid = t.SaleAmountPaid,
+        SaleRemainingAmount = t.SaleRemainingAmount,
         PaymentMode = t.PaymentMode.ToString(),
         Status = t.Status.ToString()
     };
@@ -376,6 +439,7 @@ internal static class CarTradeMapper
                 .Select(p => new CarTradePaymentDto
                 {
                     SyncId = p.SyncId,
+                    PaymentKind = p.PaymentKind.ToString(),
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,
                     Notes = p.Notes
@@ -409,21 +473,34 @@ internal static class CarTradeMapper
 
     public static void ApplyAmounts(CloudCarTradeTransaction transaction)
     {
-        transaction.TotalAmount = transaction.TradeType == CarTradeType.Buy
-            ? transaction.PurchasePrice
-            : transaction.SalePrice;
+        transaction.TotalAmount = transaction.PurchasePrice;
 
         if (transaction.PaymentMode == CarTradePaymentMode.FullCash)
-            transaction.AmountPaid = transaction.TotalAmount;
+            transaction.AmountPaid = transaction.PurchasePrice;
 
-        if (transaction.AmountPaid > transaction.TotalAmount)
-            transaction.AmountPaid = transaction.TotalAmount;
+        if (transaction.AmountPaid > transaction.PurchasePrice)
+            transaction.AmountPaid = transaction.PurchasePrice;
 
-        transaction.RemainingAmount = transaction.TotalAmount - transaction.AmountPaid;
+        transaction.RemainingAmount = transaction.PurchasePrice - transaction.AmountPaid;
         if (transaction.RemainingAmount < 0)
             transaction.RemainingAmount = 0;
 
         UpdateStatus(transaction);
+    }
+
+    public static void ApplySaleAmounts(CloudCarTradeTransaction transaction, decimal saleAmountPaid)
+    {
+        if (transaction.SalePaymentMode == CarTradePaymentMode.FullCash)
+            transaction.SaleAmountPaid = transaction.SalePrice;
+        else
+            transaction.SaleAmountPaid = saleAmountPaid;
+
+        if (transaction.SaleAmountPaid > transaction.SalePrice)
+            transaction.SaleAmountPaid = transaction.SalePrice;
+
+        transaction.SaleRemainingAmount = transaction.SalePrice - transaction.SaleAmountPaid;
+        if (transaction.SaleRemainingAmount < 0)
+            transaction.SaleRemainingAmount = 0;
     }
 
     public static void UpdateStatus(CloudCarTradeTransaction transaction)
