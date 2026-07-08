@@ -12,12 +12,20 @@ using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels.CarTrade;
 
+public enum CarTradePaymentDialogKind
+{
+    None,
+    Purchase,
+    Sale
+}
+
 public partial class CarTradeListViewModel : PagedViewModelBase
 {
     private readonly ICarTradeService _tradeService;
     private readonly ICarTradePrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
     private readonly IToastNotificationService _toast;
     private readonly MainWindowViewModel _mainWindow;
     private System.Timers.Timer? _debounceTimer;
@@ -28,30 +36,50 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     [ObservableProperty] private DateTime? _dateFrom;
     [ObservableProperty] private DateTime? _dateTo;
     [ObservableProperty] private CarTradeStatusFilter _statusFilter = CarTradeStatusFilter.All;
-    [ObservableProperty] private CarTradeType? _tradeTypeFilter;
+    [ObservableProperty] private CarTradeSoldFilter _soldFilter = CarTradeSoldFilter.All;
     [ObservableProperty] private bool _unpaidOnly;
+    [ObservableProperty] private bool _isCardView;
     [ObservableProperty] private CarTradeListItem? _selectedTransaction;
     [ObservableProperty] private bool _isPaymentDialogOpen;
+    [ObservableProperty] private CarTradePaymentDialogKind _paymentDialogKind;
     [ObservableProperty] private decimal _paymentAmount;
     [ObservableProperty] private DateTime _paymentDate = DateTime.Today;
     [ObservableProperty] private string _paymentNotes = string.Empty;
+    [ObservableProperty] private string _paymentDialogTitle = string.Empty;
+    [ObservableProperty] private string _paymentTransactionSummary = string.Empty;
+    [ObservableProperty] private bool _isSellDialogOpen;
+    [ObservableProperty] private string _sellBuyerName = string.Empty;
+    [ObservableProperty] private string _sellBuyerPhone = string.Empty;
+    [ObservableProperty] private decimal _sellPrice;
+    [ObservableProperty] private CarTradePaymentMode _sellPaymentMode = CarTradePaymentMode.FullCash;
+    [ObservableProperty] private decimal _sellAmountPaid;
+    [ObservableProperty] private decimal _sellRemainingAmount;
+    [ObservableProperty] private DateTime _sellDate = DateTime.Today;
+    [ObservableProperty] private string _sellNotes = string.Empty;
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private CarTradeListItem? _transactionToDelete;
     [ObservableProperty] private bool _isDetailDialogOpen;
     [ObservableProperty] private CarTradeDetailDisplay? _detailTransaction;
-    [ObservableProperty] private string _paymentTransactionSummary = string.Empty;
     [ObservableProperty] private int _summaryTotalCount;
-    [ObservableProperty] private int _summaryBuyCount;
-    [ObservableProperty] private int _summarySellCount;
+    [ObservableProperty] private int _summaryAvailableCount;
+    [ObservableProperty] private int _summarySoldCount;
     [ObservableProperty] private decimal _summaryTotalAmount;
     [ObservableProperty] private decimal _summaryTotalPaid;
     [ObservableProperty] private decimal _summaryTotalRemaining;
+    [ObservableProperty] private decimal _summarySaleRemaining;
+
+    public bool IsSellCash => SellPaymentMode == CarTradePaymentMode.FullCash;
+    public bool IsSellCredit => SellPaymentMode == CarTradePaymentMode.Partial;
+    public bool IsSoldFilterAll => SoldFilter == CarTradeSoldFilter.All;
+    public bool IsSoldFilterAvailable => SoldFilter == CarTradeSoldFilter.Available;
+    public bool IsSoldFilterSold => SoldFilter == CarTradeSoldFilter.Sold;
 
     public CarTradeListViewModel(
         ICarTradeService tradeService,
         ICarTradePrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences,
         IToastNotificationService toast,
         MainWindowViewModel mainWindow)
     {
@@ -59,6 +87,7 @@ public partial class CarTradeListViewModel : PagedViewModelBase
         _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
         _toast = toast;
         _mainWindow = mainWindow;
         PageTitle = "العمليات";
@@ -67,8 +96,12 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, CarTradePermissionRegistry.CarTradeList);
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.CarTradeTransactions);
         await LoadTransactionsAsync();
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.CarTradeTransactions, value);
 
     partial void OnSearchTextChanged(string value)
     {
@@ -89,8 +122,24 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     partial void OnDateFromChanged(DateTime? value) => _ = ReloadFromFirstPageAsync();
     partial void OnDateToChanged(DateTime? value) => _ = ReloadFromFirstPageAsync();
     partial void OnStatusFilterChanged(CarTradeStatusFilter value) => _ = ReloadFromFirstPageAsync();
-    partial void OnTradeTypeFilterChanged(CarTradeType? value) => _ = ReloadFromFirstPageAsync();
+    partial void OnSoldFilterChanged(CarTradeSoldFilter value)
+    {
+        OnPropertyChanged(nameof(IsSoldFilterAll));
+        OnPropertyChanged(nameof(IsSoldFilterAvailable));
+        OnPropertyChanged(nameof(IsSoldFilterSold));
+        _ = ReloadFromFirstPageAsync();
+    }
     partial void OnUnpaidOnlyChanged(bool value) => _ = ReloadFromFirstPageAsync();
+
+    partial void OnSellPriceChanged(decimal value) => RecalculateSellAmounts();
+    partial void OnSellPaymentModeChanged(CarTradePaymentMode value)
+    {
+        RecalculateSellAmounts();
+        OnPropertyChanged(nameof(IsSellCash));
+        OnPropertyChanged(nameof(IsSellCredit));
+    }
+
+    partial void OnSellAmountPaidChanged(decimal value) => RecalculateSellAmounts();
 
     protected override void OnColumnFiltersChanged()
     {
@@ -146,22 +195,23 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     private void UpdateSummaryStats(IReadOnlyList<CarTradeListItem> rows)
     {
         SummaryTotalCount = rows.Count;
-        SummaryBuyCount = rows.Count(r => r.TradeTypeValue == CarTradeType.Buy);
-        SummarySellCount = rows.Count(r => r.TradeTypeValue == CarTradeType.Sell);
-        SummaryTotalAmount = rows.Sum(r => r.TotalAmount);
-        SummaryTotalPaid = rows.Sum(r => r.AmountPaid);
+        SummaryAvailableCount = rows.Count(r => !r.IsSold);
+        SummarySoldCount = rows.Count(r => r.IsSold);
+        SummaryTotalAmount = rows.Sum(r => r.PurchasePrice);
+        SummaryTotalPaid = rows.Sum(r => r.AmountPaid) + rows.Sum(r => r.SaleAmountPaid);
         SummaryTotalRemaining = rows.Sum(r => r.RemainingAmount);
+        SummarySaleRemaining = rows.Sum(r => r.SaleRemainingAmount);
     }
 
     [RelayCommand]
     private async Task OpenNewTransactionAsync() =>
-        await _mainWindow.OpenTabAsync(typeof(CarTradeFormViewModel), "عملية جديدة", PackIconKind.SwapHorizontal, activateIfExists: false);
+        await _mainWindow.OpenTabAsync(typeof(CarTradeFormViewModel), "شراء سيارة", PackIconKind.CarArrowRight, activateIfExists: false);
 
     [RelayCommand]
     private async Task EditTransactionAsync(CarTradeListItem? item)
     {
         item ??= SelectedTransaction;
-        if (item is null || !CanEdit)
+        if (item is null || !CanEdit || item.IsSold)
             return;
 
         CarTradeNavigationBridge.PendingEditTransactionId = item.Id;
@@ -257,22 +307,54 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     }
 
     [RelayCommand]
-    private void OpenPaymentDialog(CarTradeListItem? item)
+    private void SetSoldFilterAll() => SoldFilter = CarTradeSoldFilter.All;
+
+    [RelayCommand]
+    private void SetSoldFilterAvailable() => SoldFilter = CarTradeSoldFilter.Available;
+
+    [RelayCommand]
+    private void SetSoldFilterSold() => SoldFilter = CarTradeSoldFilter.Sold;
+
+    [RelayCommand]
+    private void OpenPurchasePaymentDialog(CarTradeListItem? item)
     {
         item ??= SelectedTransaction;
-        if (item is null || !CanEdit || item.RemainingAmount <= 0)
+        if (item is null || !CanEdit || !item.CanPaySeller)
             return;
 
         SelectedTransaction = item;
+        PaymentDialogKind = CarTradePaymentDialogKind.Purchase;
+        PaymentDialogTitle = "تسديد للبائع";
         PaymentAmount = item.RemainingAmount;
         PaymentDate = DateTime.Today;
         PaymentNotes = string.Empty;
-        PaymentTransactionSummary = $"عملية {item.TransactionNumber} — {item.CarName} (متبقي: {item.RemainingAmount:N0})";
+        PaymentTransactionSummary = $"عملية {item.TransactionNumber} — {item.CarName} — متبقي للبائع: {item.RemainingAmount:N0}";
         IsPaymentDialogOpen = true;
     }
 
     [RelayCommand]
-    private void ClosePaymentDialog() => IsPaymentDialogOpen = false;
+    private void OpenSalePaymentDialog(CarTradeListItem? item)
+    {
+        item ??= SelectedTransaction;
+        if (item is null || !CanEdit || !item.CanPayBuyer)
+            return;
+
+        SelectedTransaction = item;
+        PaymentDialogKind = CarTradePaymentDialogKind.Sale;
+        PaymentDialogTitle = "تسديد من المشتري";
+        PaymentAmount = item.SaleRemainingAmount;
+        PaymentDate = DateTime.Today;
+        PaymentNotes = string.Empty;
+        PaymentTransactionSummary = $"عملية {item.TransactionNumber} — {item.CarName} — متبقي على المشتري: {item.SaleRemainingAmount:N0}";
+        IsPaymentDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void ClosePaymentDialog()
+    {
+        IsPaymentDialogOpen = false;
+        PaymentDialogKind = CarTradePaymentDialogKind.None;
+    }
 
     [RelayCommand]
     private async Task SubmitPaymentAsync()
@@ -288,19 +370,130 @@ public partial class CarTradeListViewModel : PagedViewModelBase
 
         try
         {
-            await _tradeService.RecordPaymentAsync(
-                SelectedTransaction.Id, PaymentAmount, PaymentDate, PaymentNotes);
+            var paymentKind = PaymentDialogKind;
+            if (paymentKind == CarTradePaymentDialogKind.Sale)
+            {
+                await _tradeService.RecordSalePaymentAsync(
+                    SelectedTransaction.Id, PaymentAmount, PaymentDate, PaymentNotes);
+            }
+            else
+            {
+                await _tradeService.RecordPurchasePaymentAsync(
+                    SelectedTransaction.Id, PaymentAmount, PaymentDate, PaymentNotes);
+            }
+
             IsPaymentDialogOpen = false;
+            PaymentDialogKind = CarTradePaymentDialogKind.None;
             _toast.ShowSuccess("تم تسجيل التسديد بنجاح");
 
             if (CanPrint)
             {
                 var updated = await _tradeService.GetByIdAsync(SelectedTransaction.Id);
-                var payment = updated?.Payments.OrderByDescending(p => p.PaymentDate).ThenByDescending(p => p.Id).FirstOrDefault();
+                var kind = paymentKind == CarTradePaymentDialogKind.Sale
+                    ? CarTradePaymentKind.Sale
+                    : CarTradePaymentKind.Purchase;
+                var payment = updated?.Payments
+                    .Where(p => p.PaymentKind == kind)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .ThenByDescending(p => p.Id)
+                    .FirstOrDefault();
                 if (updated is not null && payment is not null)
                     _printService.PrintPaymentReceipt(updated, payment);
             }
 
+            await LoadTransactionsAsync();
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSellDialog(CarTradeListItem? item)
+    {
+        item ??= SelectedTransaction;
+        if (item is null || !CanEdit || !item.CanSell)
+            return;
+
+        SelectedTransaction = item;
+        SellBuyerName = string.Empty;
+        SellBuyerPhone = string.Empty;
+        SellPrice = 0;
+        SellPaymentMode = CarTradePaymentMode.FullCash;
+        SellAmountPaid = 0;
+        SellRemainingAmount = 0;
+        SellDate = DateTime.Today;
+        SellNotes = string.Empty;
+        IsSellDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseSellDialog() => IsSellDialogOpen = false;
+
+    [RelayCommand]
+    private void SetSellCash()
+    {
+        SellPaymentMode = CarTradePaymentMode.FullCash;
+        RecalculateSellAmounts();
+    }
+
+    [RelayCommand]
+    private void SetSellCredit()
+    {
+        SellPaymentMode = CarTradePaymentMode.Partial;
+        RecalculateSellAmounts();
+    }
+
+    private void RecalculateSellAmounts()
+    {
+        if (SellPaymentMode == CarTradePaymentMode.FullCash)
+            SellAmountPaid = SellPrice;
+        else if (SellAmountPaid > SellPrice)
+            SellAmountPaid = SellPrice;
+
+        SellRemainingAmount = Math.Max(0, SellPrice - SellAmountPaid);
+    }
+
+    [RelayCommand]
+    private async Task SubmitSellAsync()
+    {
+        if (SelectedTransaction is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(SellBuyerName))
+        {
+            _toast.ShowWarning("اسم المشتري مطلوب");
+            return;
+        }
+
+        if (SellPrice <= 0)
+        {
+            _toast.ShowWarning("سعر البيع يجب أن يكون أكبر من صفر");
+            return;
+        }
+
+        if (SellAmountPaid > SellPrice)
+        {
+            _toast.ShowWarning("المبلغ المدفوع أكبر من سعر البيع");
+            return;
+        }
+
+        try
+        {
+            await _tradeService.SellCarAsync(SelectedTransaction.Id, new CarTradeSellRequest
+            {
+                BuyerName = SellBuyerName,
+                BuyerPhone = SellBuyerPhone,
+                SalePrice = SellPrice,
+                SalePaymentMode = SellPaymentMode,
+                SaleAmountPaid = SellAmountPaid,
+                SaleDate = SellDate,
+                Notes = SellNotes
+            });
+
+            IsSellDialogOpen = false;
+            _toast.ShowSuccess("تم تسجيل بيع السيارة بنجاح");
             await LoadTransactionsAsync();
         }
         catch (Exception ex)
@@ -351,11 +544,12 @@ public partial class CarTradeListViewModel : PagedViewModelBase
         if (dialog.ShowDialog() != true)
             return;
 
-        var headers = new[] { "رقم العملية", "التاريخ", "النوع", "السيارة", "البائع", "المشتري", "الإجمالي", "المدفوع", "المتبقي", "الحالة" };
+        var headers = new[] { "رقم العملية", "التاريخ", "السيارة", "البائع", "المشتري", "حالة البيع", "سعر الشراء", "متبقي بائع", "سعر البيع", "متبقي مشتري", "الحالة" };
         var data = rows.Select(r => new object?[]
         {
-            r.TransactionNumber, r.TransactionDate.ToString("yyyy/MM/dd"), r.TradeType, r.CarName,
-            r.SellerName, r.BuyerName, r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.Status
+            r.TransactionNumber, r.TransactionDate.ToString("yyyy/MM/dd"), r.CarName,
+            r.SellerName, r.BuyerName, r.SoldStatus, r.PurchasePrice, r.RemainingAmount,
+            r.IsSold ? r.SalePrice : null, r.SaleRemainingAmount, r.Status
         }).ToList();
 
         _exportService.ExportToExcel(dialog.FileName, "العمليات", headers, data);
@@ -368,7 +562,7 @@ public partial class CarTradeListViewModel : PagedViewModelBase
         DateFrom = DateFrom,
         DateTo = DateTo,
         StatusFilter = StatusFilter,
-        TradeType = TradeTypeFilter,
-        UnpaidOnly = UnpaidOnly
+        UnpaidOnly = UnpaidOnly,
+        SoldFilter = SoldFilter
     };
 }

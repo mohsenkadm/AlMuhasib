@@ -102,6 +102,11 @@ internal static class CarTradeSyncMapper
             PaymentMode = t.PaymentMode,
             AmountPaid = t.AmountPaid,
             RemainingAmount = t.RemainingAmount,
+            IsSold = t.IsSold,
+            SaleDate = t.SaleDate,
+            SalePaymentMode = t.SalePaymentMode,
+            SaleAmountPaid = t.SaleAmountPaid,
+            SaleRemainingAmount = t.SaleRemainingAmount,
             Status = t.Status,
             Notes = t.Notes
         };
@@ -114,6 +119,7 @@ internal static class CarTradeSyncMapper
         Dictionary<int, Guid> transactionMap) => new()
     {
         TransactionSyncId = transactionMap[p.TransactionId],
+        PaymentKind = p.PaymentKind,
         PaymentDate = p.PaymentDate,
         Amount = p.Amount,
         Notes = p.Notes,
@@ -164,6 +170,11 @@ internal static class CarTradeSyncMapper
             existing.PaymentMode = dto.PaymentMode;
             existing.AmountPaid = dto.AmountPaid;
             existing.RemainingAmount = dto.RemainingAmount;
+            existing.IsSold = dto.IsSold;
+            existing.SaleDate = dto.SaleDate;
+            existing.SalePaymentMode = dto.SalePaymentMode;
+            existing.SaleAmountPaid = dto.SaleAmountPaid;
+            existing.SaleRemainingAmount = dto.SaleRemainingAmount;
             existing.Status = dto.Status;
             existing.Notes = dto.Notes;
             ApplyBase(existing, dto);
@@ -194,6 +205,7 @@ internal static class CarTradeSyncMapper
             }
 
             existing.TransactionId = transactionId;
+            existing.PaymentKind = dto.PaymentKind;
             existing.PaymentDate = dto.PaymentDate;
             existing.Amount = dto.Amount;
             existing.Notes = dto.Notes;

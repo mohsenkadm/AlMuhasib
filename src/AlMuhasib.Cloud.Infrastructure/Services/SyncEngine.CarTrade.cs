@@ -92,6 +92,8 @@ public sealed partial class SyncEngine
         BuyerName = e.BuyerName, BuyerPhone = e.BuyerPhone,
         PurchasePrice = e.PurchasePrice, SalePrice = e.SalePrice, TotalAmount = e.TotalAmount,
         PaymentMode = e.PaymentMode, AmountPaid = e.AmountPaid, RemainingAmount = e.RemainingAmount,
+        IsSold = e.IsSold, SaleDate = e.SaleDate, SalePaymentMode = e.SalePaymentMode,
+        SaleAmountPaid = e.SaleAmountPaid, SaleRemainingAmount = e.SaleRemainingAmount,
         Status = e.Status, Notes = e.Notes
     };
 
@@ -119,6 +121,11 @@ public sealed partial class SyncEngine
         existing.PaymentMode = dto.PaymentMode;
         existing.AmountPaid = dto.AmountPaid;
         existing.RemainingAmount = dto.RemainingAmount;
+        existing.IsSold = dto.IsSold;
+        existing.SaleDate = dto.SaleDate;
+        existing.SalePaymentMode = dto.SalePaymentMode;
+        existing.SaleAmountPaid = dto.SaleAmountPaid;
+        existing.SaleRemainingAmount = dto.SaleRemainingAmount;
         existing.Status = dto.Status;
         existing.Notes = dto.Notes;
         return 1;
@@ -131,6 +138,7 @@ public sealed partial class SyncEngine
         if (existing is null) { existing = new CloudCarTradePayment { TenantId = tenantId }; _db.CarTradePayments.Add(existing); }
         if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
         existing.TransactionId = transactionId;
+        existing.PaymentKind = dto.PaymentKind;
         existing.PaymentDate = dto.PaymentDate;
         existing.Amount = dto.Amount;
         existing.Notes = dto.Notes;

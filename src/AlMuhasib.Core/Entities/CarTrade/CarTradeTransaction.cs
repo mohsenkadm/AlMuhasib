@@ -27,6 +27,12 @@ public class CarTradeTransaction : BaseEntity
     public decimal AmountPaid { get; set; }
     public decimal RemainingAmount { get; set; }
 
+    public bool IsSold { get; set; }
+    public DateTime? SaleDate { get; set; }
+    public CarTradePaymentMode SalePaymentMode { get; set; } = CarTradePaymentMode.FullCash;
+    public decimal SaleAmountPaid { get; set; }
+    public decimal SaleRemainingAmount { get; set; }
+
     public CarTradeStatus Status { get; set; } = CarTradeStatus.Active;
     public string Notes { get; set; } = string.Empty;
 

@@ -24,7 +24,11 @@ public sealed class CarTradeDatabaseMigrationService : IDatabaseMigrationService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
         if (pending.Count > 0)
+        {
             await db.Database.MigrateAsync(cancellationToken);
+            if (pending.Any(m => m.Contains("CarTradeSaleWorkflow", StringComparison.OrdinalIgnoreCase)))
+                await CarTradeLegacyDataMigrator.MigrateAsync(db, cancellationToken);
+        }
         return pending;
     }
 }

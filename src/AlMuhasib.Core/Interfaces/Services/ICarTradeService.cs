@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities.CarTrade;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Models.CarTrade;
 
 namespace AlMuhasib.Core.Interfaces.Services;
@@ -19,10 +20,17 @@ public interface ICarTradeService
     Task<CarTradeTransaction> CreateAsync(CarTradeTransaction transaction, CancellationToken cancellationToken = default);
     Task<CarTradeTransaction> UpdateAsync(CarTradeTransaction transaction, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
+
     Task<CarTradeTransaction> RecordPaymentAsync(int transactionId, decimal amount, DateTime paymentDate, string? notes, CancellationToken cancellationToken = default);
+    Task<CarTradeTransaction> RecordPurchasePaymentAsync(int transactionId, decimal amount, DateTime paymentDate, string? notes, CancellationToken cancellationToken = default);
+    Task<CarTradeTransaction> RecordSalePaymentAsync(int transactionId, decimal amount, DateTime paymentDate, string? notes, CancellationToken cancellationToken = default);
+    Task<CarTradeTransaction> SellCarAsync(int transactionId, CarTradeSellRequest request, CancellationToken cancellationToken = default);
+
     Task<CarTradeDashboardStats> GetDashboardStatsAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetPartyNamesAsync(string? search, CancellationToken cancellationToken = default);
     Task<CarTradePartyStatementData> GetPartyStatementAsync(CarTradePartyStatementFilter filter, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CarTradeDebtSummaryRow>> GetSellerDebtsSummaryAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CarTradeDebtSummaryRow>> GetBuyerDebtsSummaryAsync(CancellationToken cancellationToken = default);
 }
 
 public interface ICarTradeReportService
