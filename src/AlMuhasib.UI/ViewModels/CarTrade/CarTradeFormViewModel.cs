@@ -2,6 +2,7 @@ using AlMuhasib.Core.Entities.CarTrade;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,7 +21,6 @@ public partial class CarTradeFormViewModel : ViewModelBase
 
     [ObservableProperty] private DateTime _transactionDate = DateTime.Today;
     [ObservableProperty] private string _transactionNumber = "يُنشأ تلقائياً";
-    [ObservableProperty] private CarTradeType _tradeType = CarTradeType.Buy;
     [ObservableProperty] private string _carName = string.Empty;
     [ObservableProperty] private string _carColor = string.Empty;
     [ObservableProperty] private string _plateNumber = string.Empty;
@@ -28,10 +28,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
     [ObservableProperty] private string _carType = string.Empty;
     [ObservableProperty] private string _sellerName = string.Empty;
     [ObservableProperty] private string _sellerPhone = string.Empty;
-    [ObservableProperty] private string _buyerName = string.Empty;
-    [ObservableProperty] private string _buyerPhone = string.Empty;
     [ObservableProperty] private decimal _purchasePrice;
-    [ObservableProperty] private decimal _salePrice;
     [ObservableProperty] private CarTradePaymentMode _paymentMode = CarTradePaymentMode.FullCash;
     [ObservableProperty] private decimal _amountPaid;
     [ObservableProperty] private decimal _remainingAmount;
@@ -40,10 +37,8 @@ public partial class CarTradeFormViewModel : ViewModelBase
 
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => IsEditMode ? CanEdit : CanAdd;
-    public bool IsBuy => TradeType == CarTradeType.Buy;
-    public bool IsSell => TradeType == CarTradeType.Sell;
-    public bool IsFullCash => PaymentMode == CarTradePaymentMode.FullCash;
-    public bool IsPartial => PaymentMode == CarTradePaymentMode.Partial;
+    public bool IsCash => PaymentMode == CarTradePaymentMode.FullCash;
+    public bool IsCredit => PaymentMode == CarTradePaymentMode.Partial;
 
     public CarTradeFormViewModel(
         ICarTradeService tradeService,
@@ -57,7 +52,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _toast = toast;
         _mainWindow = mainWindow;
-        PageTitle = "عملية جديدة";
+        PageTitle = "شراء سيارة للمعرض";
     }
 
     public override async Task InitializeAsync()
@@ -85,11 +80,16 @@ public partial class CarTradeFormViewModel : ViewModelBase
             return;
         }
 
+        if (transaction.IsSold)
+        {
+            _toast.ShowWarning("لا يمكن تعديل عملية شراء بعد بيع السيارة");
+            return;
+        }
+
         _editId = transaction.Id;
-        PageTitle = "تعديل عملية";
+        PageTitle = "تعديل عملية شراء";
         TransactionDate = transaction.TransactionDate;
         TransactionNumber = transaction.TransactionNumber;
-        TradeType = transaction.TradeType;
         CarName = transaction.CarName;
         CarColor = transaction.CarColor;
         PlateNumber = transaction.PlateNumber;
@@ -97,10 +97,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
         CarType = transaction.CarType;
         SellerName = transaction.SellerName;
         SellerPhone = transaction.SellerPhone;
-        BuyerName = transaction.BuyerName;
-        BuyerPhone = transaction.BuyerPhone;
         PurchasePrice = transaction.PurchasePrice;
-        SalePrice = transaction.SalePrice;
         PaymentMode = transaction.PaymentMode;
         AmountPaid = transaction.AmountPaid;
         RemainingAmount = transaction.RemainingAmount;
@@ -108,58 +105,36 @@ public partial class CarTradeFormViewModel : ViewModelBase
         NotifyStateChanged();
     }
 
-    partial void OnTradeTypeChanged(CarTradeType value)
-    {
-        RecalculateAmounts();
-        OnPropertyChanged(nameof(IsBuy));
-        OnPropertyChanged(nameof(IsSell));
-    }
-
     partial void OnPurchasePriceChanged(decimal value) => RecalculateAmounts();
-    partial void OnSalePriceChanged(decimal value) => RecalculateAmounts();
+
     partial void OnPaymentModeChanged(CarTradePaymentMode value)
     {
         RecalculateAmounts();
-        OnPropertyChanged(nameof(IsFullCash));
-        OnPropertyChanged(nameof(IsPartial));
+        OnPropertyChanged(nameof(IsCash));
+        OnPropertyChanged(nameof(IsCredit));
     }
 
     partial void OnAmountPaidChanged(decimal value) => RecalculateAmounts();
 
     private void RecalculateAmounts()
     {
-        var total = TradeType == CarTradeType.Buy ? PurchasePrice : SalePrice;
         if (PaymentMode == CarTradePaymentMode.FullCash)
-            AmountPaid = total;
-        else if (AmountPaid > total)
-            AmountPaid = total;
+            AmountPaid = PurchasePrice;
+        else if (AmountPaid > PurchasePrice)
+            AmountPaid = PurchasePrice;
 
-        RemainingAmount = Math.Max(0, total - AmountPaid);
+        RemainingAmount = Math.Max(0, PurchasePrice - AmountPaid);
     }
 
     [RelayCommand]
-    private void SetBuy()
-    {
-        TradeType = CarTradeType.Buy;
-        RecalculateAmounts();
-    }
-
-    [RelayCommand]
-    private void SetSell()
-    {
-        TradeType = CarTradeType.Sell;
-        RecalculateAmounts();
-    }
-
-    [RelayCommand]
-    private void SetFullCash()
+    private void SetCash()
     {
         PaymentMode = CarTradePaymentMode.FullCash;
         RecalculateAmounts();
     }
 
     [RelayCommand]
-    private void SetPartial()
+    private void SetCredit()
     {
         PaymentMode = CarTradePaymentMode.Partial;
         RecalculateAmounts();
@@ -199,7 +174,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
             else
             {
                 saved = await _tradeService.CreateAsync(entity);
-                _toast.ShowSuccess("تم حفظ العملية بنجاح");
+                _toast.ShowSuccess("تم حفظ عملية الشراء بنجاح");
                 ResetForNewTransaction();
             }
 
@@ -223,10 +198,9 @@ public partial class CarTradeFormViewModel : ViewModelBase
     private void ResetForNewTransaction()
     {
         _editId = null;
-        PageTitle = "عملية جديدة";
+        PageTitle = "شراء سيارة للمعرض";
         TransactionDate = DateTime.Today;
         TransactionNumber = "يُنشأ تلقائياً";
-        TradeType = CarTradeType.Buy;
         CarName = string.Empty;
         CarColor = string.Empty;
         PlateNumber = string.Empty;
@@ -234,10 +208,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
         CarType = string.Empty;
         SellerName = string.Empty;
         SellerPhone = string.Empty;
-        BuyerName = string.Empty;
-        BuyerPhone = string.Empty;
         PurchasePrice = 0;
-        SalePrice = 0;
         PaymentMode = CarTradePaymentMode.FullCash;
         AmountPaid = 0;
         RemainingAmount = 0;
@@ -251,21 +222,10 @@ public partial class CarTradeFormViewModel : ViewModelBase
     private bool Validate(out string error)
     {
         if (string.IsNullOrWhiteSpace(CarName)) { error = "اسم السيارة مطلوب"; return false; }
-        if (TradeType == CarTradeType.Buy)
-        {
-            if (string.IsNullOrWhiteSpace(SellerName)) { error = "اسم البائع مطلوب عند الشراء"; return false; }
-            if (PurchasePrice <= 0) { error = "سعر الشراء يجب أن يكون أكبر من صفر"; return false; }
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(BuyerName)) { error = "اسم المشتري مطلوب عند البيع"; return false; }
-            if (SalePrice <= 0) { error = "سعر البيع يجب أن يكون أكبر من صفر"; return false; }
-        }
-
+        if (string.IsNullOrWhiteSpace(SellerName)) { error = "اسم البائع مطلوب"; return false; }
+        if (PurchasePrice <= 0) { error = "سعر الشراء يجب أن يكون أكبر من صفر"; return false; }
         if (AmountPaid < 0) { error = "المبلغ المدفوع غير صالح"; return false; }
-
-        var total = TradeType == CarTradeType.Buy ? PurchasePrice : SalePrice;
-        if (AmountPaid > total) { error = "المبلغ المدفوع أكبر من إجمالي العملية"; return false; }
+        if (AmountPaid > PurchasePrice) { error = "المبلغ المدفوع أكبر من سعر الشراء"; return false; }
 
         error = string.Empty;
         return true;
@@ -274,7 +234,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
     private CarTradeTransaction BuildEntity() => new()
     {
         TransactionDate = TransactionDate,
-        TradeType = TradeType,
+        TradeType = CarTradeType.Buy,
         CarName = CarName.Trim(),
         CarColor = CarColor.Trim(),
         PlateNumber = PlateNumber.Trim(),
@@ -282,10 +242,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
         CarType = CarType.Trim(),
         SellerName = SellerName.Trim(),
         SellerPhone = SellerPhone.Trim(),
-        BuyerName = BuyerName.Trim(),
-        BuyerPhone = BuyerPhone.Trim(),
         PurchasePrice = PurchasePrice,
-        SalePrice = SalePrice,
         PaymentMode = PaymentMode,
         AmountPaid = AmountPaid,
         RemainingAmount = RemainingAmount,
@@ -296,9 +253,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(IsEditMode));
         OnPropertyChanged(nameof(CanSave));
-        OnPropertyChanged(nameof(IsBuy));
-        OnPropertyChanged(nameof(IsSell));
-        OnPropertyChanged(nameof(IsFullCash));
-        OnPropertyChanged(nameof(IsPartial));
+        OnPropertyChanged(nameof(IsCash));
+        OnPropertyChanged(nameof(IsCredit));
     }
 }

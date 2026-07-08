@@ -44,7 +44,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         doc.Blocks.Add(BuildDetailsRow(contract));
         doc.Blocks.Add(BuildNotesRow(contract));
         doc.Blocks.Add(BuildTermsBlock());
-        doc.Blocks.Add(BuildSignaturesRow());
+        doc.Blocks.Add(BuildSignaturesRow(contract));
 
         return doc;
     }
@@ -142,10 +142,10 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var moneyBlock = CreateStackedFieldBlock([
             SectionLabel("العنوان"),
             FieldLine("العنوان", contract.AnnualOwnerAddress),
-            FieldLine("سعر السيارة", FormatMoney(contract.CarPrice)),
-            FieldLine("السعر كتابة", contract.CarPriceInWords),
+            FieldLine("سعر السيارة", FormatContractPrice(contract)),
+            FieldLine("السعر كتابة", FormatContractPriceInWords(contract)),
             FieldLine("المبلغ الواصل", FormatMoney(contract.AmountReceived)),
-            FieldLine("المتبقي", FormatMoney(contract.RemainingAmount))
+            FieldLine("المتبقي", FormatContractRemaining(contract))
         ]);
 
         var row = new TableRow();
@@ -194,7 +194,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         return section;
     }
 
-    private static Block BuildSignaturesRow()
+    private static Block BuildSignaturesRow(CarSaleContract contract)
     {
         var table = CreateTable(4, 1, [1, 1, 1, 1]);
         var labels = new[]
@@ -204,11 +204,18 @@ public sealed class CarContractPrintService : ICarContractPrintService
             "الشاهد",
             "توقيع الطرف الثاني المشتري"
         };
+        var names = new[]
+        {
+            contract.SellerName,
+            contract.WitnessOneName,
+            contract.WitnessTwoName,
+            contract.BuyerName
+        };
 
         var row = new TableRow();
-        foreach (var label in labels)
+        for (var i = 0; i < labels.Length; i++)
         {
-            row.Cells.Add(new TableCell(new BlockUIContainer(CreateSignatureBlock(label)))
+            row.Cells.Add(new TableCell(new BlockUIContainer(CreateSignatureBlock(labels[i], names[i])))
             {
                 BorderBrush = BorderBrush,
                 BorderThickness = new Thickness(0.5),
@@ -221,7 +228,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         return WrapBlock(table, new Thickness(0, 16, 0, 0));
     }
 
-    private static UIElement CreateSignatureBlock(string label)
+    private static UIElement CreateSignatureBlock(string label, string? name)
     {
         var panel = new System.Windows.Controls.StackPanel
         {
@@ -233,7 +240,14 @@ public sealed class CarContractPrintService : ICarContractPrintService
             FontWeight = FontWeights.SemiBold,
             FontSize = 11,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 28)
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
+            FontSize = 11,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 16)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
@@ -388,7 +402,16 @@ public sealed class CarContractPrintService : ICarContractPrintService
         date.HasValue ? date.Value.ToString("yyyy/MM/dd", ArabicCulture) : string.Empty;
 
     private static string FormatMoney(decimal amount) =>
-        amount.ToString("N0", ArabicCulture);
+        $"{amount.ToString("N0", ArabicCulture)} دولار";
+
+    private static string FormatContractPrice(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : FormatMoney(contract.CarPrice);
+
+    private static string FormatContractPriceInWords(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : contract.CarPriceInWords;
+
+    private static string FormatContractRemaining(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : FormatMoney(contract.RemainingAmount);
 
     private static string Dots(int count) => new('.', count);
 }

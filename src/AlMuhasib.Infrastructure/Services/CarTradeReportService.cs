@@ -28,34 +28,36 @@ public sealed class CarTradeReportService : ICarTradeReportService
             .Where(t => rows.Select(r => r.Id).Contains(t.Id))
             .ToListAsync(cancellationToken);
 
-        var buys = rows.Where(r => r.TradeTypeValue == Core.Enums.CarTradeType.Buy).ToList();
-        var sells = rows.Where(r => r.TradeTypeValue == Core.Enums.CarTradeType.Sell).ToList();
+        var buys = rows;
+        var sold = rows.Where(r => r.IsSold).ToList();
 
         return new CarTradeReportData
         {
             Rows = rows.ToList(),
             BuyCount = buys.Count,
-            SellCount = sells.Count,
-            TotalBuyValue = buys.Sum(r => r.TotalAmount),
-            TotalSellValue = sells.Sum(r => r.TotalAmount),
-            TotalPaid = rows.Sum(r => r.AmountPaid),
+            SellCount = sold.Count,
+            AvailableCount = rows.Count(r => !r.IsSold),
+            SoldCount = sold.Count,
+            TotalBuyValue = buys.Sum(r => r.PurchasePrice),
+            TotalSellValue = sold.Sum(r => r.SalePrice),
+            TotalPaid = rows.Sum(r => r.AmountPaid) + sold.Sum(r => r.SaleAmountPaid),
             TotalRemaining = rows.Sum(r => r.RemainingAmount),
+            TotalSaleRemaining = sold.Sum(r => r.SaleRemainingAmount),
             MonthlyBuy = transactions
-                .Where(t => t.TradeType == Core.Enums.CarTradeType.Buy)
                 .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .ToList(),
             MonthlySell = transactions
-                .Where(t => t.TradeType == Core.Enums.CarTradeType.Sell)
-                .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
+                .Where(t => t.IsSold && t.SaleDate.HasValue)
+                .GroupBy(t => new DateTime(t.SaleDate!.Value.Year, t.SaleDate.Value.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .ToList(),
             CollectedVsRemaining =
             [
-                new NameAmountPoint { Name = "المحصّل", Amount = rows.Sum(r => r.AmountPaid) },
-                new NameAmountPoint { Name = "المتبقي", Amount = rows.Sum(r => r.RemainingAmount) }
+                new NameAmountPoint { Name = "ديون بائعين", Amount = rows.Sum(r => r.RemainingAmount) },
+                new NameAmountPoint { Name = "ديون مشترين", Amount = sold.Sum(r => r.SaleRemainingAmount) }
             ],
             ByCarType = transactions
                 .GroupBy(t => string.IsNullOrWhiteSpace(t.CarType) ? "غير محدد" : t.CarType)

@@ -16,6 +16,7 @@ public partial class CarTradePartyStatementViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
 
+    [ObservableProperty] private int _selectedTabIndex;
     [ObservableProperty] private string _partySearchText = string.Empty;
     [ObservableProperty] private string? _selectedPartyName;
     [ObservableProperty] private DateTime? _dateFrom;
@@ -28,6 +29,8 @@ public partial class CarTradePartyStatementViewModel : ViewModelBase
 
     public ObservableCollection<string> PartyNames { get; } = [];
     public ObservableCollection<CarTradePartyStatementRow> Rows { get; } = [];
+    public ObservableCollection<CarTradeDebtSummaryRow> SellerDebts { get; } = [];
+    public ObservableCollection<CarTradeDebtSummaryRow> BuyerDebts { get; } = [];
 
     public CarTradePartyStatementViewModel(
         ICarTradeService tradeService,
@@ -39,16 +42,44 @@ public partial class CarTradePartyStatementViewModel : ViewModelBase
         _exportService = exportService;
         _currentUserService = currentUserService;
         _toast = toast;
-        PageTitle = "كشف حساب طرف";
+        PageTitle = "كشف الحساب";
     }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, CarTradePermissionRegistry.CarTradePartyStatement);
+        await LoadDebtSummariesAsync();
         await LoadPartyNamesAsync();
     }
 
     partial void OnPartySearchTextChanged(string value) => _ = LoadPartyNamesAsync();
+
+    [RelayCommand]
+    private async Task LoadDebtSummariesAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var sellers = await _tradeService.GetSellerDebtsSummaryAsync();
+            var buyers = await _tradeService.GetBuyerDebtsSummaryAsync();
+
+            SellerDebts.Clear();
+            foreach (var row in sellers)
+                SellerDebts.Add(row);
+
+            BuyerDebts.Clear();
+            foreach (var row in buyers)
+                BuyerDebts.Add(row);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 
     [RelayCommand]
     private async Task LoadPartyNamesAsync()
@@ -101,39 +132,67 @@ public partial class CarTradePartyStatementViewModel : ViewModelBase
     [RelayCommand]
     private void ExportExcel()
     {
-        if (!CanExport || Rows.Count == 0)
+        if (!CanExport)
             return;
+
+        if (SelectedTabIndex == 0 && SellerDebts.Count == 0 ||
+            SelectedTabIndex == 1 && BuyerDebts.Count == 0)
+        {
+            if (Rows.Count == 0)
+                return;
+        }
 
         var dialog = new SaveFileDialog
         {
             Filter = "Excel (*.xlsx)|*.xlsx",
-            FileName = $"CarTradePartyStatement_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+            FileName = $"CarTradeStatement_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
         };
         if (dialog.ShowDialog() != true)
             return;
 
-        var headers = new[] { "التاريخ", "رقم العملية", "النوع", "السيارة", "الإجمالي", "المدفوع", "المتبقي", "الدور" };
-        var data = Rows.Select(r => new object?[]
+        if (SelectedTabIndex == 2 && Rows.Count > 0)
         {
-            r.TransactionDate.ToString("yyyy/MM/dd"), r.TransactionNumber, r.TradeType, r.CarName,
-            r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.PartyRole
-        }).ToList();
+            var headers = new[] { "التاريخ", "رقم العملية", "النوع", "السيارة", "الإجمالي", "المدفوع", "المتبقي", "الدور", "نوع الدين" };
+            var data = Rows.Select(r => new object?[]
+            {
+                r.TransactionDate.ToString("yyyy/MM/dd"), r.TransactionNumber, r.TradeType, r.CarName,
+                r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.PartyRole, r.DebtKind
+            }).ToList();
+            _exportService.ExportToExcel(dialog.FileName, "كشف طرف", headers, data);
+        }
+        else if (SelectedTabIndex == 0)
+        {
+            var headers = new[] { "البائع", "الهاتف", "عدد العمليات", "الإجمالي", "المدفوع", "المتبقي" };
+            var data = SellerDebts.Select(r => new object?[]
+            {
+                r.PartyName, r.PartyPhone, r.TransactionCount, r.TotalAmount, r.AmountPaid, r.RemainingAmount
+            }).ToList();
+            _exportService.ExportToExcel(dialog.FileName, "ديون البائعين", headers, data);
+        }
+        else
+        {
+            var headers = new[] { "المشتري", "الهاتف", "عدد العمليات", "الإجمالي", "المدفوع", "المتبقي" };
+            var data = BuyerDebts.Select(r => new object?[]
+            {
+                r.PartyName, r.PartyPhone, r.TransactionCount, r.TotalAmount, r.AmountPaid, r.RemainingAmount
+            }).ToList();
+            _exportService.ExportToExcel(dialog.FileName, "ديون المشترين", headers, data);
+        }
 
-        _exportService.ExportToExcel(dialog.FileName, "كشف حساب طرف", headers, data);
         _toast.ShowSuccess("تم تصدير الملف بنجاح");
     }
 
     [RelayCommand]
     private void PrintStatement()
     {
-        if (!CanPrint || Rows.Count == 0)
+        if (!CanPrint || SelectedTabIndex != 2 || Rows.Count == 0)
             return;
 
-        var cols = new[] { "التاريخ", "رقم العملية", "النوع", "السيارة", "الإجمالي", "المدفوع", "المتبقي", "الدور" };
+        var cols = new[] { "التاريخ", "رقم العملية", "النوع", "السيارة", "الإجمالي", "المدفوع", "المتبقي", "الدور", "نوع الدين" };
         var tableRows = Rows.Select(r => new object[]
         {
             r.TransactionDate.ToString("yyyy/MM/dd"), r.TransactionNumber, r.TradeType, r.CarName,
-            r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.PartyRole
+            r.TotalAmount, r.AmountPaid, r.RemainingAmount, r.PartyRole, r.DebtKind
         }).ToList();
 
         var summary = new List<string>

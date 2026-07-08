@@ -27,6 +27,12 @@ public sealed class CarTradeTransactionSyncDto : SyncDtoBase
     public decimal AmountPaid { get; set; }
     public decimal RemainingAmount { get; set; }
 
+    public bool IsSold { get; set; }
+    public DateTime? SaleDate { get; set; }
+    public CarTradePaymentMode SalePaymentMode { get; set; } = CarTradePaymentMode.FullCash;
+    public decimal SaleAmountPaid { get; set; }
+    public decimal SaleRemainingAmount { get; set; }
+
     public CarTradeStatus Status { get; set; } = CarTradeStatus.Active;
     public string Notes { get; set; } = string.Empty;
 }
@@ -34,6 +40,7 @@ public sealed class CarTradeTransactionSyncDto : SyncDtoBase
 public sealed class CarTradePaymentSyncDto : SyncDtoBase
 {
     public Guid TransactionSyncId { get; set; }
+    public CarTradePaymentKind PaymentKind { get; set; } = CarTradePaymentKind.Purchase;
     public DateTime PaymentDate { get; set; } = DateTime.Today;
     public decimal Amount { get; set; }
     public string Notes { get; set; } = string.Empty;

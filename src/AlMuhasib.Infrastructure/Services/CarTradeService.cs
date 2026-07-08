@@ -60,10 +60,12 @@ public sealed class CarTradeService : ICarTradeService
 
     public async Task<CarTradeTransaction> CreateAsync(CarTradeTransaction transaction, CancellationToken cancellationToken = default)
     {
-        ValidateTransaction(transaction);
+        transaction.TradeType = CarTradeType.Buy;
+        transaction.IsSold = false;
+        ValidatePurchaseTransaction(transaction);
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         transaction.TransactionNumber = await CarTradeNumberHelper.GenerateNextAsync(context);
-        ApplyAmounts(transaction);
+        ApplyPurchaseAmounts(transaction);
         await context.CarTradeTransactions.AddAsync(transaction, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return transaction;
@@ -71,14 +73,17 @@ public sealed class CarTradeService : ICarTradeService
 
     public async Task<CarTradeTransaction> UpdateAsync(CarTradeTransaction transaction, CancellationToken cancellationToken = default)
     {
-        ValidateTransaction(transaction);
+        ValidatePurchaseTransaction(transaction);
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var existing = await context.CarTradeTransactions.FirstOrDefaultAsync(t => t.Id == transaction.Id, cancellationToken)
             ?? throw new InvalidOperationException("العملية غير موجودة");
 
-        MapTransaction(existing, transaction);
-        ApplyAmounts(existing);
-        UpdateStatus(existing);
+        if (existing.IsSold)
+            throw new InvalidOperationException("لا يمكن تعديل بيانات الشراء بعد بيع السيارة");
+
+        MapPurchaseTransaction(existing, transaction);
+        ApplyPurchaseAmounts(existing);
+        UpdatePurchaseStatus(existing);
         await context.SaveChangesAsync(cancellationToken);
         return existing;
     }
@@ -93,7 +98,15 @@ public sealed class CarTradeService : ICarTradeService
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<CarTradeTransaction> RecordPaymentAsync(
+    public Task<CarTradeTransaction> RecordPaymentAsync(
+        int transactionId,
+        decimal amount,
+        DateTime paymentDate,
+        string? notes,
+        CancellationToken cancellationToken = default) =>
+        RecordPurchasePaymentAsync(transactionId, amount, paymentDate, notes, cancellationToken);
+
+    public async Task<CarTradeTransaction> RecordPurchasePaymentAsync(
         int transactionId,
         decimal amount,
         DateTime paymentDate,
@@ -111,11 +124,11 @@ public sealed class CarTradeService : ICarTradeService
             throw new InvalidOperationException("لا يمكن تسديد عملية ملغاة");
 
         if (amount > transaction.RemainingAmount)
-            throw new InvalidOperationException("مبلغ التسديد أكبر من المبلغ المتبقي");
+            throw new InvalidOperationException("مبلغ التسديد أكبر من المبلغ المتبقي للبائع");
 
         var remainingBefore = transaction.RemainingAmount;
         transaction.AmountPaid += amount;
-        transaction.RemainingAmount = transaction.TotalAmount - transaction.AmountPaid;
+        transaction.RemainingAmount = transaction.PurchasePrice - transaction.AmountPaid;
         if (transaction.RemainingAmount < 0)
             transaction.RemainingAmount = 0;
 
@@ -123,11 +136,12 @@ public sealed class CarTradeService : ICarTradeService
             ? CarTradePaymentMode.FullCash
             : CarTradePaymentMode.Partial;
 
-        UpdateStatus(transaction);
+        UpdatePurchaseStatus(transaction);
 
         await context.CarTradePayments.AddAsync(new CarTradePayment
         {
             TransactionId = transaction.Id,
+            PaymentKind = CarTradePaymentKind.Purchase,
             PaymentDate = paymentDate,
             Amount = amount,
             Notes = notes ?? string.Empty,
@@ -139,6 +153,91 @@ public sealed class CarTradeService : ICarTradeService
         return transaction;
     }
 
+    public async Task<CarTradeTransaction> RecordSalePaymentAsync(
+        int transactionId,
+        decimal amount,
+        DateTime paymentDate,
+        string? notes,
+        CancellationToken cancellationToken = default)
+    {
+        if (amount <= 0)
+            throw new InvalidOperationException("مبلغ التسديد يجب أن يكون أكبر من صفر");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var transaction = await context.CarTradeTransactions.FirstOrDefaultAsync(t => t.Id == transactionId, cancellationToken)
+            ?? throw new InvalidOperationException("العملية غير موجودة");
+
+        if (!transaction.IsSold)
+            throw new InvalidOperationException("السيارة غير مباعة بعد");
+
+        if (transaction.Status == CarTradeStatus.Cancelled)
+            throw new InvalidOperationException("لا يمكن تسديد عملية ملغاة");
+
+        if (amount > transaction.SaleRemainingAmount)
+            throw new InvalidOperationException("مبلغ التسديد أكبر من المبلغ المتبقي على المشتري");
+
+        var remainingBefore = transaction.SaleRemainingAmount;
+        transaction.SaleAmountPaid += amount;
+        transaction.SaleRemainingAmount = transaction.SalePrice - transaction.SaleAmountPaid;
+        if (transaction.SaleRemainingAmount < 0)
+            transaction.SaleRemainingAmount = 0;
+
+        transaction.SalePaymentMode = transaction.SaleRemainingAmount <= 0
+            ? CarTradePaymentMode.FullCash
+            : CarTradePaymentMode.Partial;
+
+        await context.CarTradePayments.AddAsync(new CarTradePayment
+        {
+            TransactionId = transaction.Id,
+            PaymentKind = CarTradePaymentKind.Sale,
+            PaymentDate = paymentDate,
+            Amount = amount,
+            Notes = notes ?? string.Empty,
+            RemainingBefore = remainingBefore,
+            RemainingAfter = transaction.SaleRemainingAmount
+        }, cancellationToken);
+
+        await context.SaveChangesAsync(cancellationToken);
+        return transaction;
+    }
+
+    public async Task<CarTradeTransaction> SellCarAsync(
+        int transactionId,
+        CarTradeSellRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.BuyerName))
+            throw new InvalidOperationException("اسم المشتري مطلوب");
+        if (request.SalePrice <= 0)
+            throw new InvalidOperationException("سعر البيع يجب أن يكون أكبر من صفر");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var transaction = await context.CarTradeTransactions.FirstOrDefaultAsync(t => t.Id == transactionId, cancellationToken)
+            ?? throw new InvalidOperationException("العملية غير موجودة");
+
+        if (transaction.IsSold)
+            throw new InvalidOperationException("السيارة مباعة مسبقاً");
+
+        if (transaction.Status == CarTradeStatus.Cancelled)
+            throw new InvalidOperationException("لا يمكن بيع عملية ملغاة");
+
+        transaction.BuyerName = request.BuyerName.Trim();
+        transaction.BuyerPhone = request.BuyerPhone?.Trim() ?? string.Empty;
+        transaction.SalePrice = request.SalePrice;
+        transaction.SaleDate = request.SaleDate.Date;
+        transaction.SalePaymentMode = request.SalePaymentMode;
+        transaction.IsSold = true;
+
+        if (!string.IsNullOrWhiteSpace(request.Notes))
+            transaction.Notes = string.IsNullOrWhiteSpace(transaction.Notes)
+                ? request.Notes.Trim()
+                : $"{transaction.Notes.Trim()}\n{request.Notes.Trim()}";
+
+        ApplySaleAmounts(transaction, request.SaleAmountPaid);
+        await context.SaveChangesAsync(cancellationToken);
+        return transaction;
+    }
+
     public async Task<CarTradeDashboardStats> GetDashboardStatsAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -146,41 +245,43 @@ public sealed class CarTradeService : ICarTradeService
         var monthStart = new DateTime(today.Year, today.Month, 1);
 
         var transactions = await context.CarTradeTransactions
-            .Where(t => t.Status != CarTradeStatus.Cancelled)
+            .Where(t => t.Status != CarTradeStatus.Cancelled && t.TradeType == CarTradeType.Buy)
             .ToListAsync(cancellationToken);
 
-        var buys = transactions.Where(t => t.TradeType == CarTradeType.Buy).ToList();
-        var sells = transactions.Where(t => t.TradeType == CarTradeType.Sell).ToList();
+        var sold = transactions.Where(t => t.IsSold).ToList();
 
         return new CarTradeDashboardStats
         {
             TodayTransactions = transactions.Count(t => t.TransactionDate.Date == today),
             MonthTransactions = transactions.Count(t => t.TransactionDate.Date >= monthStart),
             TotalTransactions = transactions.Count,
-            UnpaidTransactions = transactions.Count(t => t.RemainingAmount > 0),
-            BuyCount = buys.Count,
-            SellCount = sells.Count,
-            TotalBuyValue = buys.Sum(t => t.TotalAmount),
-            TotalSellValue = sells.Sum(t => t.TotalAmount),
-            TotalPaid = transactions.Sum(t => t.AmountPaid),
+            UnpaidTransactions = transactions.Count(t => t.RemainingAmount > 0 || t.SaleRemainingAmount > 0),
+            BuyCount = transactions.Count,
+            SellCount = sold.Count,
+            AvailableCount = transactions.Count(t => !t.IsSold),
+            SoldCount = sold.Count,
+            TotalBuyValue = transactions.Sum(t => t.PurchasePrice),
+            TotalSellValue = sold.Sum(t => t.SalePrice),
+            TotalPaid = transactions.Sum(t => t.AmountPaid) + sold.Sum(t => t.SaleAmountPaid),
             TotalRemaining = transactions.Sum(t => t.RemainingAmount),
-            MonthlyBuy = buys
+            TotalSaleRemaining = sold.Sum(t => t.SaleRemainingAmount),
+            MonthlyBuy = transactions
                 .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .TakeLast(12)
                 .ToList(),
-            MonthlySell = sells
-                .GroupBy(t => new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1))
+            MonthlySell = sold
+                .Where(t => t.SaleDate.HasValue)
+                .GroupBy(t => new DateTime(t.SaleDate!.Value.Year, t.SaleDate.Value.Month, 1))
                 .OrderBy(g => g.Key)
                 .Select(g => new NameCountPoint { Name = g.Key.ToString("yyyy/MM"), Count = g.Count() })
                 .TakeLast(12)
                 .ToList(),
             PaymentStatusChart =
             [
-                new NameAmountPoint { Name = "مسدد بالكامل", Amount = transactions.Count(t => t.RemainingAmount <= 0) },
-                new NameAmountPoint { Name = "تسديد جزئي", Amount = transactions.Count(t => t.RemainingAmount > 0 && t.AmountPaid > 0) },
-                new NameAmountPoint { Name = "غير مسدد", Amount = transactions.Count(t => t.AmountPaid <= 0 && t.RemainingAmount > 0) }
+                new NameAmountPoint { Name = "ديون بائعين", Amount = transactions.Sum(t => t.RemainingAmount) },
+                new NameAmountPoint { Name = "ديون مشترين", Amount = sold.Sum(t => t.SaleRemainingAmount) }
             ],
             TopCarTypes = transactions
                 .GroupBy(t => string.IsNullOrWhiteSpace(t.CarType) ? "غير محدد" : t.CarType)
@@ -206,7 +307,7 @@ public sealed class CarTradeService : ICarTradeService
             .ToListAsync(cancellationToken);
 
         var buyers = await context.CarTradeTransactions
-            .Where(t => t.Status != CarTradeStatus.Cancelled && t.RemainingAmount > 0 && t.TradeType == CarTradeType.Sell)
+            .Where(t => t.Status != CarTradeStatus.Cancelled && t.IsSold && t.SaleRemainingAmount > 0)
             .Select(t => t.BuyerName)
             .ToListAsync(cancellationToken);
 
@@ -235,52 +336,51 @@ public sealed class CarTradeService : ICarTradeService
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var partyName = filter.PartyName.Trim();
-
-        var query = context.CarTradeTransactions
-            .Where(t => t.Status != CarTradeStatus.Cancelled && t.RemainingAmount > 0);
-
-        if (filter.DateFrom.HasValue)
-            query = query.Where(t => t.TransactionDate >= filter.DateFrom.Value.Date);
-        if (filter.DateTo.HasValue)
-            query = query.Where(t => t.TransactionDate <= filter.DateTo.Value.Date);
-
-        var transactions = await query.ToListAsync(cancellationToken);
+        var transactions = await context.CarTradeTransactions
+            .Where(t => t.Status != CarTradeStatus.Cancelled && t.TradeType == CarTradeType.Buy)
+            .ToListAsync(cancellationToken);
 
         var rows = new List<CarTradePartyStatementRow>();
         foreach (var t in transactions)
         {
-            if (t.TradeType == CarTradeType.Buy &&
+            if (t.RemainingAmount > 0 &&
                 string.Equals(t.SellerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrWhiteSpace(filter.PartyPhone) ||
-                 string.Equals(t.SellerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)))
+                 string.Equals(t.SellerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+                IsWithinDateRange(t.TransactionDate, filter.DateFrom, filter.DateTo))
             {
                 rows.Add(new CarTradePartyStatementRow
                 {
                     TransactionDate = t.TransactionDate,
                     TransactionNumber = t.TransactionNumber,
-                    TradeType = GetTradeTypeLabel(t.TradeType),
+                    TradeType = "شراء",
                     CarName = t.CarName,
-                    TotalAmount = t.TotalAmount,
+                    TotalAmount = t.PurchasePrice,
                     AmountPaid = t.AmountPaid,
                     RemainingAmount = t.RemainingAmount,
-                    PartyRole = "بائع"
+                    PartyRole = "بائع",
+                    DebtKind = "دين بائع"
                 });
             }
-            else if (t.TradeType == CarTradeType.Sell &&
-                     string.Equals(t.BuyerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
-                     (string.IsNullOrWhiteSpace(filter.PartyPhone) ||
-                      string.Equals(t.BuyerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)))
+
+            if (t.IsSold &&
+                t.SaleRemainingAmount > 0 &&
+                string.Equals(t.BuyerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(filter.PartyPhone) ||
+                 string.Equals(t.BuyerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+                IsWithinDateRange(t.SaleDate ?? t.TransactionDate, filter.DateFrom, filter.DateTo))
             {
                 rows.Add(new CarTradePartyStatementRow
                 {
-                    TransactionDate = t.TransactionDate,
+                    TransactionDate = t.SaleDate ?? t.TransactionDate,
                     TransactionNumber = t.TransactionNumber,
-                    TradeType = GetTradeTypeLabel(t.TradeType),
+                    TradeType = "بيع",
                     CarName = t.CarName,
-                    TotalAmount = t.TotalAmount,
-                    AmountPaid = t.AmountPaid,
-                    RemainingAmount = t.RemainingAmount,
-                    PartyRole = "مشتري"
+                    TotalAmount = t.SalePrice,
+                    AmountPaid = t.SaleAmountPaid,
+                    RemainingAmount = t.SaleRemainingAmount,
+                    PartyRole = "مشتري",
+                    DebtKind = "دين مشتري"
                 });
             }
         }
@@ -301,9 +401,70 @@ public sealed class CarTradeService : ICarTradeService
         };
     }
 
+    public async Task<IReadOnlyList<CarTradeDebtSummaryRow>> GetSellerDebtsSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var transactions = await context.CarTradeTransactions
+            .Where(t => t.Status != CarTradeStatus.Cancelled &&
+                        t.TradeType == CarTradeType.Buy &&
+                        t.RemainingAmount > 0 &&
+                        !string.IsNullOrWhiteSpace(t.SellerName))
+            .ToListAsync(cancellationToken);
+
+        return transactions
+            .GroupBy(t => new { Name = t.SellerName.Trim(), Phone = t.SellerPhone.Trim() })
+            .Select(g => new CarTradeDebtSummaryRow
+            {
+                PartyName = g.Key.Name,
+                PartyPhone = g.Key.Phone,
+                TransactionCount = g.Count(),
+                TotalAmount = g.Sum(t => t.PurchasePrice),
+                AmountPaid = g.Sum(t => t.AmountPaid),
+                RemainingAmount = g.Sum(t => t.RemainingAmount)
+            })
+            .OrderByDescending(r => r.RemainingAmount)
+            .ThenBy(r => r.PartyName)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<CarTradeDebtSummaryRow>> GetBuyerDebtsSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var transactions = await context.CarTradeTransactions
+            .Where(t => t.Status != CarTradeStatus.Cancelled &&
+                        t.IsSold &&
+                        t.SaleRemainingAmount > 0 &&
+                        !string.IsNullOrWhiteSpace(t.BuyerName))
+            .ToListAsync(cancellationToken);
+
+        return transactions
+            .GroupBy(t => new { Name = t.BuyerName.Trim(), Phone = t.BuyerPhone.Trim() })
+            .Select(g => new CarTradeDebtSummaryRow
+            {
+                PartyName = g.Key.Name,
+                PartyPhone = g.Key.Phone,
+                TransactionCount = g.Count(),
+                TotalAmount = g.Sum(t => t.SalePrice),
+                AmountPaid = g.Sum(t => t.SaleAmountPaid),
+                RemainingAmount = g.Sum(t => t.SaleRemainingAmount)
+            })
+            .OrderByDescending(r => r.RemainingAmount)
+            .ThenBy(r => r.PartyName)
+            .ToList();
+    }
+
+    private static bool IsWithinDateRange(DateTime date, DateTime? from, DateTime? to)
+    {
+        if (from.HasValue && date.Date < from.Value.Date)
+            return false;
+        if (to.HasValue && date.Date > to.Value.Date)
+            return false;
+        return true;
+    }
+
     private static IQueryable<CarTradeTransaction> BuildQuery(CarTradeDbContext context, CarTradeFilter filter)
     {
-        var query = context.CarTradeTransactions.AsQueryable();
+        var query = context.CarTradeTransactions.Where(t => t.TradeType == CarTradeType.Buy);
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
@@ -339,36 +500,40 @@ public sealed class CarTradeService : ICarTradeService
             query = query.Where(t => t.PaymentMode == filter.PaymentMode.Value);
 
         if (filter.UnpaidOnly)
-            query = query.Where(t => t.RemainingAmount > 0);
+            query = query.Where(t => t.RemainingAmount > 0 || t.SaleRemainingAmount > 0);
+
+        query = filter.SoldFilter switch
+        {
+            CarTradeSoldFilter.Available => query.Where(t => !t.IsSold),
+            CarTradeSoldFilter.Sold => query.Where(t => t.IsSold),
+            _ => query
+        };
 
         return query;
     }
 
-    private static void ValidateTransaction(CarTradeTransaction transaction)
+    private static void ValidatePurchaseTransaction(CarTradeTransaction transaction)
     {
         if (string.IsNullOrWhiteSpace(transaction.CarName))
             throw new InvalidOperationException("اسم السيارة مطلوب");
 
-        if (transaction.TradeType == CarTradeType.Buy)
-        {
-            if (string.IsNullOrWhiteSpace(transaction.SellerName))
-                throw new InvalidOperationException("اسم البائع مطلوب عند الشراء");
-            if (transaction.PurchasePrice <= 0)
-                throw new InvalidOperationException("سعر الشراء يجب أن يكون أكبر من صفر");
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(transaction.BuyerName))
-                throw new InvalidOperationException("اسم المشتري مطلوب عند البيع");
-            if (transaction.SalePrice <= 0)
-                throw new InvalidOperationException("سعر البيع يجب أن يكون أكبر من صفر");
-        }
+        if (string.IsNullOrWhiteSpace(transaction.SellerName))
+            throw new InvalidOperationException("اسم البائع مطلوب");
+
+        if (transaction.PurchasePrice <= 0)
+            throw new InvalidOperationException("سعر الشراء يجب أن يكون أكبر من صفر");
+
+        if (transaction.AmountPaid < 0)
+            throw new InvalidOperationException("المبلغ المدفوع غير صالح");
+
+        if (transaction.AmountPaid > transaction.PurchasePrice)
+            throw new InvalidOperationException("المبلغ المدفوع أكبر من سعر الشراء");
     }
 
-    private static void MapTransaction(CarTradeTransaction target, CarTradeTransaction source)
+    private static void MapPurchaseTransaction(CarTradeTransaction target, CarTradeTransaction source)
     {
         target.TransactionDate = source.TransactionDate;
-        target.TradeType = source.TradeType;
+        target.TradeType = CarTradeType.Buy;
         target.CarName = source.CarName;
         target.CarColor = source.CarColor;
         target.PlateNumber = source.PlateNumber;
@@ -376,36 +541,48 @@ public sealed class CarTradeService : ICarTradeService
         target.CarType = source.CarType;
         target.SellerName = source.SellerName;
         target.SellerPhone = source.SellerPhone;
-        target.BuyerName = source.BuyerName;
-        target.BuyerPhone = source.BuyerPhone;
         target.PurchasePrice = source.PurchasePrice;
-        target.SalePrice = source.SalePrice;
         target.PaymentMode = source.PaymentMode;
         target.AmountPaid = source.AmountPaid;
         target.Notes = source.Notes;
-        target.Status = source.Status;
     }
 
-    internal static void ApplyAmounts(CarTradeTransaction transaction)
+    internal static void ApplyPurchaseAmounts(CarTradeTransaction transaction)
     {
-        transaction.TotalAmount = transaction.TradeType == CarTradeType.Buy
-            ? transaction.PurchasePrice
-            : transaction.SalePrice;
+        transaction.TotalAmount = transaction.PurchasePrice;
 
         if (transaction.PaymentMode == CarTradePaymentMode.FullCash)
-            transaction.AmountPaid = transaction.TotalAmount;
+            transaction.AmountPaid = transaction.PurchasePrice;
 
-        if (transaction.AmountPaid > transaction.TotalAmount)
-            transaction.AmountPaid = transaction.TotalAmount;
+        if (transaction.AmountPaid > transaction.PurchasePrice)
+            transaction.AmountPaid = transaction.PurchasePrice;
 
-        transaction.RemainingAmount = transaction.TotalAmount - transaction.AmountPaid;
+        transaction.RemainingAmount = transaction.PurchasePrice - transaction.AmountPaid;
         if (transaction.RemainingAmount < 0)
             transaction.RemainingAmount = 0;
 
-        UpdateStatus(transaction);
+        UpdatePurchaseStatus(transaction);
     }
 
-    private static void UpdateStatus(CarTradeTransaction transaction)
+    internal static void ApplySaleAmounts(CarTradeTransaction transaction, decimal saleAmountPaid)
+    {
+        if (transaction.SalePaymentMode == CarTradePaymentMode.FullCash)
+            transaction.SaleAmountPaid = transaction.SalePrice;
+        else
+            transaction.SaleAmountPaid = saleAmountPaid;
+
+        if (transaction.SaleAmountPaid > transaction.SalePrice)
+            transaction.SaleAmountPaid = transaction.SalePrice;
+
+        transaction.SaleRemainingAmount = transaction.SalePrice - transaction.SaleAmountPaid;
+        if (transaction.SaleRemainingAmount < 0)
+            transaction.SaleRemainingAmount = 0;
+
+        if (transaction.SaleRemainingAmount <= 0)
+            transaction.SalePaymentMode = CarTradePaymentMode.FullCash;
+    }
+
+    private static void UpdatePurchaseStatus(CarTradeTransaction transaction)
     {
         if (transaction.Status == CarTradeStatus.Cancelled)
             return;
@@ -437,26 +614,35 @@ public sealed class CarTradeService : ICarTradeService
         PaymentMode = GetPaymentModeLabel(t.PaymentMode),
         AmountPaid = t.AmountPaid,
         RemainingAmount = t.RemainingAmount,
+        IsSold = t.IsSold,
+        SoldStatus = t.IsSold ? "مباعة" : "متوفرة",
+        SaleDate = t.SaleDate,
+        SalePaymentMode = GetPaymentModeLabel(t.SalePaymentMode),
+        SaleAmountPaid = t.SaleAmountPaid,
+        SaleRemainingAmount = t.SaleRemainingAmount,
         Status = GetStatusLabel(t.Status),
         Notes = t.Notes
     };
 
-    internal static string GetTradeTypeLabel(CarTradeType type) => type switch
+    public static string GetTradeTypeLabel(CarTradeType type) => type switch
     {
         CarTradeType.Sell => "بيع",
         _ => "شراء"
     };
 
-    internal static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
+    public static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
     {
-        CarTradePaymentMode.FullCash => "نقد كامل",
-        _ => "دفع جزئي"
+        CarTradePaymentMode.FullCash => "نقدي",
+        _ => "آجل"
     };
 
-    internal static string GetStatusLabel(CarTradeStatus status) => status switch
+    public static string GetStatusLabel(CarTradeStatus status) => status switch
     {
         CarTradeStatus.Completed => "مكتمل",
         CarTradeStatus.Cancelled => "ملغى",
         _ => "نشط"
     };
+
+    // Backward-compatible alias used by sync mapper.
+    internal static void ApplyAmounts(CarTradeTransaction transaction) => ApplyPurchaseAmounts(transaction);
 }

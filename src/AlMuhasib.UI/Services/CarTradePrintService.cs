@@ -69,7 +69,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
-        var title = new Paragraph(new Run("وصل تسديد"))
+        var title = new Paragraph(new Run(payment.PaymentKind == CarTradePaymentKind.Sale ? "وصل تسديد من مشتري" : "وصل تسديد للبائع"))
         {
             FontSize = 20,
             FontWeight = FontWeights.Bold,
@@ -81,10 +81,12 @@ public sealed class CarTradePrintService : ICarTradePrintService
 
         var table = CreateTable(2, 6);
         AddRow(table, 0, "رقم العملية", transaction.TransactionNumber, "التاريخ", payment.PaymentDate.ToString("yyyy/MM/dd", ArabicCulture));
-        AddRow(table, 1, "نوع العملية", GetTradeTypeLabel(transaction.TradeType), "اسم السيارة", transaction.CarName);
-        AddRow(table, 2, "الطرف", GetPartyName(transaction), "المبلغ المسدد", FormatMoney(payment.Amount));
+        AddRow(table, 1, "نوع العملية", transaction.IsSold ? "بيع" : "شراء", "اسم السيارة", transaction.CarName);
+        AddRow(table, 2, "الطرف", GetPaymentPartyName(transaction, payment), "المبلغ المسدد", FormatMoney(payment.Amount));
         AddRow(table, 3, "المتبقي قبل", FormatMoney(payment.RemainingBefore), "المتبقي بعد", FormatMoney(payment.RemainingAfter));
-        AddRow(table, 4, "إجمالي العملية", FormatMoney(transaction.TotalAmount), "المدفوع الكلي", FormatMoney(transaction.AmountPaid));
+        var total = payment.PaymentKind == CarTradePaymentKind.Sale ? transaction.SalePrice : transaction.PurchasePrice;
+        var paid = payment.PaymentKind == CarTradePaymentKind.Sale ? transaction.SaleAmountPaid : transaction.AmountPaid;
+        AddRow(table, 4, "إجمالي العملية", FormatMoney(total), "المدفوع الكلي", FormatMoney(paid));
         if (!string.IsNullOrWhiteSpace(payment.Notes))
             AddRow(table, 5, "ملاحظات", payment.Notes, string.Empty, string.Empty);
 
@@ -108,7 +110,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
             Padding = new Thickness(6, 4, 6, 4)
         };
 
-        var titleCell = new TableCell(new Paragraph(new Run(GetTradeTypeLabel(transaction.TradeType) + " سيارة"))
+        var titleCell = new TableCell(new Paragraph(new Run(transaction.IsSold ? "بيع سيارة" : "شراء سيارة"))
         {
             FontSize = 20,
             FontWeight = FontWeights.Bold,
@@ -385,12 +387,12 @@ public sealed class CarTradePrintService : ICarTradePrintService
 
     private static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
     {
-        CarTradePaymentMode.FullCash => "نقد كامل",
-        _ => "دفع جزئي"
+        CarTradePaymentMode.FullCash => "نقدي",
+        _ => "آجل"
     };
 
-    private static string GetPartyName(CarTradeTransaction transaction) =>
-        transaction.TradeType == CarTradeType.Buy
-            ? transaction.SellerName
-            : transaction.BuyerName;
+    private static string GetPaymentPartyName(CarTradeTransaction transaction, CarTradePayment payment) =>
+        payment.PaymentKind == CarTradePaymentKind.Sale
+            ? transaction.BuyerName
+            : transaction.SellerName;
 }

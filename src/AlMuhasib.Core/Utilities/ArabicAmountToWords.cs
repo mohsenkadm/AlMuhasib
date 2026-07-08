@@ -19,7 +19,7 @@ public static class ArabicAmountToWords
         "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"
     ];
 
-    public static string Convert(decimal amount, string currencyName = "دينار")
+    public static string Convert(decimal amount, string currencyName = "دينار", string fractionUnitName = "فلس")
     {
         if (amount == 0)
             return $"صفر {currencyName} فقط لا غير";
@@ -32,7 +32,7 @@ public static class ArabicAmountToWords
 
         var result = $"{words} {currencyName}";
         if (fraction > 0)
-            result += $" و {ConvertWhole(fraction)} فلس";
+            result += $" و {ConvertWhole(fraction)} {fractionUnitName}";
 
         return $"{result} فقط لا غير";
     }

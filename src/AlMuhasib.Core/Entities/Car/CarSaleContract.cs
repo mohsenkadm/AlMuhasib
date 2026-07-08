@@ -29,9 +29,13 @@ public class CarSaleContract : BaseEntity
     public string ChassisNumber { get; set; } = string.Empty;
 
     public decimal CarPrice { get; set; }
+    public bool IsAgreedPrice { get; set; }
     public string CarPriceInWords { get; set; } = string.Empty;
     public decimal AmountReceived { get; set; }
     public decimal RemainingAmount { get; set; }
+
+    public string WitnessOneName { get; set; } = string.Empty;
+    public string WitnessTwoName { get; set; } = string.Empty;
 
     public string Notes { get; set; } = string.Empty;
     public CarContractStatus Status { get; set; } = CarContractStatus.Active;

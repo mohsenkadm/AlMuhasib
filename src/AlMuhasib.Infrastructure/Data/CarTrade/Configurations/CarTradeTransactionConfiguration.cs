@@ -30,15 +30,19 @@ public class CarTradeTransactionConfiguration : IEntityTypeConfiguration<CarTrad
         builder.Property(t => t.TotalAmount).HasPrecision(18, 2);
         builder.Property(t => t.AmountPaid).HasPrecision(18, 2);
         builder.Property(t => t.RemainingAmount).HasPrecision(18, 2);
+        builder.Property(t => t.SaleAmountPaid).HasPrecision(18, 2);
+        builder.Property(t => t.SaleRemainingAmount).HasPrecision(18, 2);
         builder.Property(t => t.Notes).HasMaxLength(2000);
 
         builder.Property(t => t.TradeType).HasConversion<string>().HasMaxLength(20);
         builder.Property(t => t.PaymentMode).HasConversion<string>().HasMaxLength(20);
+        builder.Property(t => t.SalePaymentMode).HasConversion<string>().HasMaxLength(20);
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
 
         builder.HasIndex(t => t.TransactionDate);
         builder.HasIndex(t => t.TradeType);
         builder.HasIndex(t => t.Status);
+        builder.HasIndex(t => t.IsSold);
     }
 }
 
@@ -52,6 +56,7 @@ public class CarTradePaymentConfiguration : IEntityTypeConfiguration<CarTradePay
         builder.Property(p => p.RemainingBefore).HasPrecision(18, 2);
         builder.Property(p => p.RemainingAfter).HasPrecision(18, 2);
         builder.Property(p => p.Notes).HasMaxLength(1000);
+        builder.Property(p => p.PaymentKind).HasConversion<string>().HasMaxLength(20);
 
         builder.HasOne(p => p.Transaction)
             .WithMany(t => t.Payments)

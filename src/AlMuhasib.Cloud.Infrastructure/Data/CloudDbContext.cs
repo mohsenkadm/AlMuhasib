@@ -111,6 +111,8 @@ public class CloudDbContext : DbContext
             e.Property(c => c.CarColor).HasMaxLength(50);
             e.Property(c => c.ChassisNumber).HasMaxLength(100);
             e.Property(c => c.CarPriceInWords).HasMaxLength(1000);
+            e.Property(c => c.WitnessOneName).HasMaxLength(200);
+            e.Property(c => c.WitnessTwoName).HasMaxLength(200);
             e.Property(c => c.Notes).HasMaxLength(2000);
             e.Property(c => c.CarPrice).HasPrecision(18, 2);
             e.Property(c => c.AmountReceived).HasPrecision(18, 2);

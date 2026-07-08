@@ -38,11 +38,16 @@ public partial class CarContractFormViewModel : ViewModelBase
     [ObservableProperty] private string _carColor = string.Empty;
     [ObservableProperty] private string _chassisNumber = string.Empty;
     [ObservableProperty] private decimal _carPrice;
+    [ObservableProperty] private bool _isAgreedPrice;
     [ObservableProperty] private string _carPriceInWords = string.Empty;
     [ObservableProperty] private decimal _amountReceived;
     [ObservableProperty] private decimal _remainingAmount;
+    [ObservableProperty] private string _witnessOneName = string.Empty;
+    [ObservableProperty] private string _witnessTwoName = string.Empty;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private bool _isSaving;
+
+    public bool IsPriceEntryEnabled => !IsAgreedPrice;
 
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => IsEditMode ? CanEdit : CanAdd;
@@ -109,21 +114,50 @@ public partial class CarContractFormViewModel : ViewModelBase
         CarColor = contract.CarColor;
         ChassisNumber = contract.ChassisNumber;
         CarPrice = contract.CarPrice;
+        IsAgreedPrice = contract.IsAgreedPrice;
         AmountReceived = contract.AmountReceived;
         RemainingAmount = contract.RemainingAmount;
         CarPriceInWords = contract.CarPriceInWords;
+        WitnessOneName = contract.WitnessOneName;
+        WitnessTwoName = contract.WitnessTwoName;
         Notes = contract.Notes;
         NotifySaveStateChanged();
     }
 
     partial void OnCarPriceChanged(decimal value)
     {
-        CarPriceInWords = ArabicAmountToWords.Convert(value);
-        RemainingAmount = Math.Max(0, value - AmountReceived);
+        if (!IsAgreedPrice)
+        {
+            CarPriceInWords = ArabicAmountToWords.Convert(value, "دولار", "سنت");
+            RemainingAmount = Math.Max(0, value - AmountReceived);
+        }
     }
 
-    partial void OnAmountReceivedChanged(decimal value) =>
-        RemainingAmount = Math.Max(0, CarPrice - value);
+    partial void OnIsAgreedPriceChanged(bool value)
+    {
+        if (value)
+        {
+            CarPrice = 0;
+            AmountReceived = 0;
+            RemainingAmount = 0;
+            CarPriceInWords = "المبلغ المتفق عليه";
+        }
+        else
+        {
+            CarPriceInWords = CarPrice > 0
+                ? ArabicAmountToWords.Convert(CarPrice, "دولار", "سنت")
+                : string.Empty;
+            RemainingAmount = Math.Max(0, CarPrice - AmountReceived);
+        }
+
+        OnPropertyChanged(nameof(IsPriceEntryEnabled));
+    }
+
+    partial void OnAmountReceivedChanged(decimal value)
+    {
+        if (!IsAgreedPrice)
+            RemainingAmount = Math.Max(0, CarPrice - value);
+    }
 
     [RelayCommand]
     private Task SaveAsync() => SaveInternalAsync(false);
@@ -204,9 +238,12 @@ public partial class CarContractFormViewModel : ViewModelBase
         CarColor = string.Empty;
         ChassisNumber = string.Empty;
         CarPrice = 0;
+        IsAgreedPrice = false;
         CarPriceInWords = string.Empty;
         AmountReceived = 0;
         RemainingAmount = 0;
+        WitnessOneName = string.Empty;
+        WitnessTwoName = string.Empty;
         Notes = string.Empty;
         NotifySaveStateChanged();
     }
@@ -218,9 +255,9 @@ public partial class CarContractFormViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(SellerName)) { error = "اسم البائع مطلوب"; return false; }
         if (string.IsNullOrWhiteSpace(BuyerName)) { error = "اسم المشتري مطلوب"; return false; }
-        if (CarPrice <= 0) { error = "سعر السيارة يجب أن يكون أكبر من صفر"; return false; }
-        if (AmountReceived < 0) { error = "المبلغ الواصل غير صالح"; return false; }
-        if (AmountReceived > CarPrice) { error = "المبلغ الواصل أكبر من سعر السيارة"; return false; }
+        if (!IsAgreedPrice && CarPrice <= 0) { error = "سعر السيارة يجب أن يكون أكبر من صفر"; return false; }
+        if (!IsAgreedPrice && AmountReceived < 0) { error = "المبلغ الواصل غير صالح"; return false; }
+        if (!IsAgreedPrice && AmountReceived > CarPrice) { error = "المبلغ الواصل أكبر من سعر السيارة"; return false; }
         error = string.Empty;
         return true;
     }
@@ -246,9 +283,12 @@ public partial class CarContractFormViewModel : ViewModelBase
         CarColor = CarColor.Trim(),
         ChassisNumber = ChassisNumber.Trim(),
         CarPrice = CarPrice,
+        IsAgreedPrice = IsAgreedPrice,
         CarPriceInWords = CarPriceInWords,
         AmountReceived = AmountReceived,
         RemainingAmount = RemainingAmount,
+        WitnessOneName = WitnessOneName.Trim(),
+        WitnessTwoName = WitnessTwoName.Trim(),
         Notes = Notes.Trim()
     };
 
