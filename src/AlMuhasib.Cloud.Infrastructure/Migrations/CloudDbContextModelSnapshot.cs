@@ -278,6 +278,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsAgreedPrice")
+                        .HasColumnType("bit");
+
                     b.Property<string>("CarPriceInWords")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -359,6 +362,16 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("WitnessOneName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("WitnessTwoName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

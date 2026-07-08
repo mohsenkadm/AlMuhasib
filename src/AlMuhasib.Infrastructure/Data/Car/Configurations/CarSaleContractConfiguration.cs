@@ -34,9 +34,12 @@ public class CarSaleContractConfiguration : IEntityTypeConfiguration<CarSaleCont
         builder.Property(c => c.ChassisNumber).HasMaxLength(100);
 
         builder.Property(c => c.CarPrice).HasPrecision(18, 2);
+        builder.Property(c => c.IsAgreedPrice).HasDefaultValue(false);
         builder.Property(c => c.AmountReceived).HasPrecision(18, 2);
         builder.Property(c => c.RemainingAmount).HasPrecision(18, 2);
         builder.Property(c => c.CarPriceInWords).HasMaxLength(1000);
+        builder.Property(c => c.WitnessOneName).HasMaxLength(200);
+        builder.Property(c => c.WitnessTwoName).HasMaxLength(200);
         builder.Property(c => c.Notes).HasMaxLength(2000);
 
         builder.Property(c => c.Status).HasConversion<string>().HasMaxLength(20);

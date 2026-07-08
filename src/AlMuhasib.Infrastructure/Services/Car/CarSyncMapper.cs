@@ -104,9 +104,12 @@ internal static class CarSyncMapper
             CarColor = c.CarColor,
             ChassisNumber = c.ChassisNumber,
             CarPrice = c.CarPrice,
+            IsAgreedPrice = c.IsAgreedPrice,
             CarPriceInWords = c.CarPriceInWords,
             AmountReceived = c.AmountReceived,
             RemainingAmount = c.RemainingAmount,
+            WitnessOneName = c.WitnessOneName,
+            WitnessTwoName = c.WitnessTwoName,
             Notes = c.Notes,
             Status = c.Status
         };
@@ -171,9 +174,12 @@ internal static class CarSyncMapper
             existing.CarColor = dto.CarColor;
             existing.ChassisNumber = dto.ChassisNumber;
             existing.CarPrice = dto.CarPrice;
+            existing.IsAgreedPrice = dto.IsAgreedPrice;
             existing.CarPriceInWords = dto.CarPriceInWords;
             existing.AmountReceived = dto.AmountReceived;
             existing.RemainingAmount = dto.RemainingAmount;
+            existing.WitnessOneName = dto.WitnessOneName;
+            existing.WitnessTwoName = dto.WitnessTwoName;
             existing.Notes = dto.Notes;
             existing.Status = dto.Status;
             ApplyBase(existing, dto);
