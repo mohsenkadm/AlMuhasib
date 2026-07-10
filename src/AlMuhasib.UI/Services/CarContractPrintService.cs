@@ -12,6 +12,8 @@ namespace AlMuhasib.UI.Services;
 public sealed class CarContractPrintService : ICarContractPrintService
 {
     private const double A4PageHeight = 1122.5;
+    /// <summary>Buffer so measurement error never pushes content onto a second page.</summary>
+    private const double PageFitSafety = 24;
 
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar-IQ");
     private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
@@ -35,9 +37,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12,
+            FontSize = 11,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(36, 20, 36, 28)
+            PagePadding = new Thickness(28, 12, 28, 14)
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
@@ -71,8 +73,11 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var availableHeight = A4PageHeight
                               - template.PagePadding.Top
                               - template.PagePadding.Bottom
-                              - brandingHeight;
-        var spacerHeight = Math.Max(12, availableHeight - mainHeight - footerHeight);
+                              - brandingHeight
+                              - PageFitSafety;
+
+        // Only push signatures down when everything still fits on one page.
+        var spacerHeight = Math.Max(0, availableHeight - mainHeight - footerHeight);
 
         return new BlockUIContainer(new Border
         {
@@ -145,15 +150,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(6, 4, 6, 4)
+            Padding = new Thickness(4, 2, 4, 2)
         };
 
         var titleCell = new TableCell(new Paragraph(new Run("عقد بيع وشراء"))
         {
-            FontSize = 20,
+            FontSize = 17,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 8, 0, 8)
+            Margin = new Thickness(0, 4, 0, 4)
         })
         {
             BorderBrush = BorderBrush,
@@ -168,7 +173,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(6, 4, 6, 4),
+            Padding = new Thickness(4, 2, 4, 2),
             TextAlignment = TextAlignment.Left
         };
 
@@ -177,7 +182,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         row.Cells.Add(dateCell);
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildPartiesRow(CarSaleContract contract)
@@ -201,11 +206,11 @@ public sealed class CarContractPrintService : ICarContractPrintService
         ]);
 
         var row = new TableRow();
-        row.Cells.Add(WrapCell(sellerBox, padding: new Thickness(0, 0, 6, 0)));
-        row.Cells.Add(WrapCell(buyerBox, padding: new Thickness(6, 0, 0, 0)));
+        row.Cells.Add(WrapCell(sellerBox, padding: new Thickness(0, 0, 4, 0)));
+        row.Cells.Add(WrapCell(buyerBox, padding: new Thickness(4, 0, 0, 0)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildDetailsRow(CarSaleContract contract)
@@ -232,11 +237,11 @@ public sealed class CarContractPrintService : ICarContractPrintService
         ]);
 
         var row = new TableRow();
-        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(10, 8, 16, 8)));
-        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(16, 8, 10, 8)));
+        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(8, 5, 12, 5)));
+        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(12, 5, 8, 5)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildNotesRow(CarSaleContract contract)
@@ -249,28 +254,28 @@ public sealed class CarContractPrintService : ICarContractPrintService
     {
         var section = new Section
         {
-            Margin = new Thickness(0, 8, 0, 12),
+            Margin = new Thickness(0, 4, 0, 4),
             FlowDirection = FlowDirection.RightToLeft
         };
 
         section.Blocks.Add(new Paragraph(new Run(CarContractPrintTerms.Title))
         {
             FontWeight = FontWeights.Bold,
-            FontSize = 13,
+            FontSize = 12,
             TextAlignment = TextAlignment.Center,
             FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(0, 0, 0, 4)
         });
 
         foreach (var clause in CarContractPrintTerms.Clauses)
         {
             section.Blocks.Add(new Paragraph(new Run(clause))
             {
-                FontSize = 10.5,
+                FontSize = 9.5,
                 TextAlignment = TextAlignment.Left,
                 FlowDirection = FlowDirection.RightToLeft,
-                LineHeight = 20,
-                Margin = new Thickness(0, 0, 0, 6)
+                LineHeight = 15,
+                Margin = new Thickness(0, 0, 0, 3)
             });
         }
 
@@ -302,13 +307,13 @@ public sealed class CarContractPrintService : ICarContractPrintService
             {
                 BorderBrush = BorderBrush,
                 BorderThickness = new Thickness(0.5),
-                Padding = new Thickness(6, 8, 6, 8),
+                Padding = new Thickness(4, 5, 4, 5),
                 TextAlignment = TextAlignment.Center
             });
         }
 
         table.RowGroups[0].Rows.Add(row);
-        return WrapBlock(table, new Thickness(0, 8, 0, 0));
+        return WrapBlock(table, new Thickness(0, 2, 0, 0));
     }
 
     private static UIElement CreateSignatureBlock(string label, string? name)
@@ -321,24 +326,24 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             Text = label,
             FontWeight = FontWeights.SemiBold,
-            FontSize = 11,
+            FontSize = 10,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(0, 0, 0, 4)
         });
         panel.Children.Add(new System.Windows.Controls.TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
-            FontSize = 11,
+            Text = string.IsNullOrWhiteSpace(name) ? Dots(18) : name.Trim(),
+            FontSize = 10,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 24)
+            Margin = new Thickness(0, 0, 0, 14)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Height = 1,
-            Width = 130,
-            Margin = new Thickness(0, 0, 0, 4)
+            Width = 120,
+            Margin = new Thickness(0, 0, 0, 2)
         });
         return panel;
     }
@@ -375,15 +380,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(title))
         {
             FontWeight = FontWeights.Bold,
-            FontSize = 13,
+            FontSize = 12,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 2)
+            Margin = new Thickness(0, 1, 0, 1)
         })
         {
             Background = HeaderBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
-            Padding = new Thickness(4, 6, 4, 6)
+            Padding = new Thickness(3, 4, 3, 4)
         });
         headerTable.RowGroups[0].Rows.Add(headerRow);
         section.Blocks.Add(headerTable);
@@ -399,7 +404,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Background = LightBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 0, 1, 1),
-            Padding = new Thickness(10, 8, 10, 10)
+            Padding = new Thickness(8, 5, 8, 6)
         });
         bodyTable.RowGroups[0].Rows.Add(bodyRow);
         section.Blocks.Add(bodyTable);
@@ -418,9 +423,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
     private static Paragraph SectionLabel(string text) => new(new Run(text))
     {
         FontWeight = FontWeights.Bold,
-        FontSize = 12,
+        FontSize = 11,
         TextAlignment = TextAlignment.Center,
-        Margin = new Thickness(0, 0, 0, 6)
+        Margin = new Thickness(0, 0, 0, 3)
     };
 
     private static Paragraph FieldLine(
@@ -431,7 +436,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         bool fullWidth = false)
     {
         var display = string.IsNullOrWhiteSpace(value) ? Dots(fullWidth ? 64 : 28) : value.Trim();
-        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 5), LineHeight = 18 };
+        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 2), LineHeight = 15 };
 
         if (!string.IsNullOrWhiteSpace(label))
         {
@@ -444,7 +449,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         paragraph.Inlines.Add(new Run(display)
         {
             FontWeight = boldValue ? FontWeights.Bold : FontWeights.Normal,
-            FontSize = boldValue ? 13 : 12
+            FontSize = boldValue ? 12 : 11
         });
 
         if (centerValue)
