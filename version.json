@@ -2,8 +2,8 @@
     "version":  "1.14.3",
     "releaseDate":  "2026-07-10",
     "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.3/AlMuhasib-1.14.3.zip",
-    "sha256":  "",
-    "sizeBytes":  0,
+    "sha256":  "89A279BF1A72EDF33732F1F60339EE9C395610794505EFF010110D9DFDCA4030",
+    "sizeBytes":  93840847,
     "releaseNotes":  "طباعة عقد السيارات على صفحة واحدة فقط مع ضغط التخطيط وضبط مسافة التوقيعات",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
