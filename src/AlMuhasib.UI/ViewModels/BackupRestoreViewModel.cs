@@ -33,6 +33,8 @@ public partial class BackupRestoreViewModel : ViewModelBase
 
     public ObservableCollection<string> RecentBackups { get; } = [];
 
+    [ObservableProperty] private bool _isBackupSupported = true;
+
     public BackupRestoreViewModel(
         IBackupService backupService,
         IUserPreferencesService preferences,
@@ -47,6 +49,12 @@ public partial class BackupRestoreViewModel : ViewModelBase
     public override Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Backup");
+        IsBackupSupported = _backupService.IsBackupSupported;
+        if (!IsBackupSupported)
+        {
+            StatusMessage = "النسخ الاحتياطي متاح على الحاسبة الرئيسية فقط.";
+            return Task.CompletedTask;
+        }
         BackupFolder = _preferences.Current.Backup.BackupFolderPath
             ?? _backupService.GetDefaultBackupDirectory();
         AutoBackupEnabled = _preferences.Current.Backup.AutoBackupEnabled;

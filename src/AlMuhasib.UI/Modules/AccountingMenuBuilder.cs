@@ -228,6 +228,13 @@ public static class AccountingMenuBuilder
             },
             new NavigationMenuItem
             {
+                Title = "ربط الحاسبات",
+                Icon = PackIconKind.LanConnect,
+                ViewModelType = typeof(NetworkConnectionSettingsViewModel),
+                ScreenName = ScreenPermissionRegistry.NetworkConnection
+            },
+            new NavigationMenuItem
+            {
                 Title = "المزامنة السحابية",
                 Icon = PackIconKind.CloudSync,
                 ViewModelType = typeof(CloudSyncSettingsViewModel),

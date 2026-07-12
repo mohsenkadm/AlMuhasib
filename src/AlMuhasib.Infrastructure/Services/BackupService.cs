@@ -10,15 +10,28 @@ public class BackupService : IBackupService
 {
     private readonly IConfiguration _configuration;
     private readonly ISystemProfileService _systemProfile;
+    private readonly INetworkConnectionService _networkConnectionService;
 
-    public BackupService(IConfiguration configuration, ISystemProfileService systemProfile)
+    public BackupService(
+        IConfiguration configuration,
+        ISystemProfileService systemProfile,
+        INetworkConnectionService networkConnectionService)
     {
         _configuration = configuration;
         _systemProfile = systemProfile;
+        _networkConnectionService = networkConnectionService;
+    }
+
+    public bool IsBackupSupported => !_systemProfile.IsBranchClient;
+
+    private void EnsureBackupSupported()
+    {
+        if (_systemProfile.IsBranchClient)
+            throw new InvalidOperationException("النسخ الاحتياطي متاح على الحاسبة الرئيسية فقط.");
     }
 
     private string GetActiveConnectionString() =>
-        SystemConnectionStrings.Build(_configuration, _systemProfile.ActiveSystem);
+        SystemConnectionStrings.Build(_configuration, _systemProfile, _networkConnectionService);
 
     public string GetDefaultBackupDirectory()
     {
@@ -33,6 +46,7 @@ public class BackupService : IBackupService
 
     public async Task<string> BackupDatabaseAsync(string destinationPath)
     {
+        EnsureBackupSupported();
         var connectionString = GetActiveConnectionString();
         var builder = new SqlConnectionStringBuilder(connectionString);
         var databaseName = builder.InitialCatalog;
@@ -67,6 +81,7 @@ public class BackupService : IBackupService
 
     public async Task RestoreDatabaseAsync(string backupFilePath)
     {
+        EnsureBackupSupported();
         if (!File.Exists(backupFilePath))
             throw new FileNotFoundException("ملف النسخ الاحتياطي غير موجود.", backupFilePath);
 

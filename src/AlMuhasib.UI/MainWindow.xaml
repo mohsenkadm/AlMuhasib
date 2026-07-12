@@ -1379,6 +1379,9 @@
                         <DataTemplate DataType="{x:Type vm:CloudSyncSettingsViewModel}">
                             <views:CloudSyncSettingsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:NetworkConnectionSettingsViewModel}">
+                            <views:NetworkConnectionSettingsView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:DeveloperSystemSwitchViewModel}">
                             <views:DeveloperSystemSwitchView />
                         </DataTemplate>

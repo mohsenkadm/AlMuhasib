@@ -25,21 +25,26 @@ public static class DependencyInjection
         IConfiguration configuration,
         ISystemProfileService systemProfile)
     {
-        var connectionString = SystemConnectionStrings.Build(configuration, systemProfile.ActiveSystem);
+        var networkConnectionService = new NetworkConnectionService();
+        services.AddSingleton<INetworkConnectionService>(networkConnectionService);
+        services.AddSingleton<IMainServerHostingService, MainServerHostingService>();
+
+        var connectionString = SystemConnectionStrings.Build(configuration, systemProfile, networkConnectionService);
+        var isBranchClient = systemProfile.IsBranchClient;
 
         switch (systemProfile.ActiveSystem)
         {
             case ApplicationSystemType.CarContracts:
-                RegisterCarInfrastructure(services, connectionString);
+                RegisterCarInfrastructure(services, connectionString, isBranchClient);
                 break;
             case ApplicationSystemType.HotelManagement:
-                RegisterHotelInfrastructure(services, connectionString);
+                RegisterHotelInfrastructure(services, connectionString, isBranchClient);
                 break;
             case ApplicationSystemType.CarTrading:
-                RegisterCarTradeInfrastructure(services, connectionString);
+                RegisterCarTradeInfrastructure(services, connectionString, isBranchClient);
                 break;
             default:
-                RegisterAccountingInfrastructure(services, connectionString);
+                RegisterAccountingInfrastructure(services, connectionString, isBranchClient);
                 break;
         }
 
@@ -47,7 +52,7 @@ public static class DependencyInjection
         return services;
     }
 
-    private static void RegisterAccountingInfrastructure(IServiceCollection services, string connectionString)
+    private static void RegisterAccountingInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<AppDbContext>(options =>
             options.UseSqlServer(
@@ -68,7 +73,10 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAccountingValidationService, AccountingValidationService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
-        services.AddSingleton<IDatabaseMigrationService, DatabaseMigrationService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, DatabaseMigrationService>();
         services.AddScoped<IGlobalSearchService, GlobalSearchService>();
         services.AddScoped<ISmartAlertService, SmartAlertService>();
         services.AddScoped<ICollectionDashboardService, CollectionDashboardService>();
@@ -87,7 +95,7 @@ public static class DependencyInjection
         services.AddHttpClient("CloudSync");
     }
 
-    private static void RegisterCarInfrastructure(IServiceCollection services, string connectionString)
+    private static void RegisterCarInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<CarDbContext>(options =>
             options.UseSqlServer(
@@ -97,7 +105,10 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, CarUnitOfWork>();
         services.AddScoped<IAuthService, CarAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
-        services.AddSingleton<IDatabaseMigrationService, CarDatabaseMigrationService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, CarDatabaseMigrationService>();
         services.AddScoped<ICarContractService, CarContractService>();
         services.AddScoped<ICarContractReportService, CarContractReportService>();
         services.AddScoped<IGlobalSearchService, CarGlobalSearchService>();
@@ -113,7 +124,7 @@ public static class DependencyInjection
         services.AddHttpClient("CloudSync");
     }
 
-    private static void RegisterHotelInfrastructure(IServiceCollection services, string connectionString)
+    private static void RegisterHotelInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<HotelDbContext>(options =>
             options.UseSqlServer(
@@ -123,7 +134,10 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, HotelUnitOfWork>();
         services.AddScoped<IAuthService, HotelAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
-        services.AddSingleton<IDatabaseMigrationService, HotelDatabaseMigrationService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, HotelDatabaseMigrationService>();
         services.AddScoped<IGlobalSearchService, HotelGlobalSearchService>();
         services.AddScoped<IHotelGlobalSearchService, HotelGlobalSearchService>();
         services.AddScoped<IAuditLogService, HotelAuditLogService>();
@@ -160,7 +174,7 @@ public static class DependencyInjection
         services.AddHttpClient("CloudSync");
     }
 
-    private static void RegisterCarTradeInfrastructure(IServiceCollection services, string connectionString)
+    private static void RegisterCarTradeInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<CarTradeDbContext>(options =>
             options.UseSqlServer(
@@ -170,7 +184,10 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, CarTradeUnitOfWork>();
         services.AddScoped<IAuthService, CarTradeAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
-        services.AddSingleton<IDatabaseMigrationService, CarTradeDatabaseMigrationService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, CarTradeDatabaseMigrationService>();
         services.AddScoped<ICarTradeService, CarTradeService>();
         services.AddScoped<ICarTradeReportService, CarTradeReportService>();
         services.AddScoped<IGlobalSearchService, CarTradeGlobalSearchService>();
