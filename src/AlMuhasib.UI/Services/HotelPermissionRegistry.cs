@@ -58,6 +58,7 @@ public static class HotelPermissionRegistry
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
         [typeof(BackupRestoreViewModel)] = Backup,
         [typeof(CloudSyncSettingsViewModel)] = CloudSync,
+        [typeof(NetworkConnectionSettingsViewModel)] = ScreenPermissionRegistry.NetworkConnection,
         [typeof(SystemUpdateViewModel)] = ScreenPermissionRegistry.SystemUpdate
     };
 
@@ -88,6 +89,7 @@ public static class HotelPermissionRegistry
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
         [Backup] = typeof(BackupRestoreViewModel),
         [CloudSync] = typeof(CloudSyncSettingsViewModel),
+        [ScreenPermissionRegistry.NetworkConnection] = typeof(NetworkConnectionSettingsViewModel),
         [ScreenPermissionRegistry.SystemUpdate] = typeof(SystemUpdateViewModel)
     };
 
@@ -118,6 +120,7 @@ public static class HotelPermissionRegistry
         [PrintSettings] = "إعدادات الطباعة",
         [Backup] = "النسخ الاحتياطي",
         [CloudSync] = "المزامنة السحابية",
+        [ScreenPermissionRegistry.NetworkConnection] = "ربط الحاسبات",
         [ScreenPermissionRegistry.SystemUpdate] = "تحديث النظام"
     };
 

@@ -60,6 +60,10 @@
     <None Update="Assets\Brand\qayd-icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="..\..\scripts\configure-sql-express.ps1">
+      <Link>scripts\configure-sql-express.ps1</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="CopyUpdaterExecutable" AfterTargets="Build" DependsOnTargets="ResolveProjectReferences">

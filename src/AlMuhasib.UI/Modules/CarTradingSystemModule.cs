@@ -26,6 +26,7 @@ public sealed class CarTradingSystemModule : ISystemModule
         (CarTradePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarTradePermissionRegistry.Backup, "النسخ الاحتياطي"),
         (CarTradePermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (ScreenPermissionRegistry.SystemUpdate, "تحديث النظام")
     ];
 
@@ -93,6 +94,13 @@ public sealed class CarTradingSystemModule : ISystemModule
             Icon = PackIconKind.DatabaseCog,
             ViewModelType = typeof(BackupRestoreViewModel),
             ScreenName = CarTradePermissionRegistry.Backup
+        },
+        new NavigationMenuItem
+        {
+            Title = "ربط الحاسبات",
+            Icon = PackIconKind.LanConnect,
+            ViewModelType = typeof(NetworkConnectionSettingsViewModel),
+            ScreenName = ScreenPermissionRegistry.NetworkConnection
         },
         new NavigationMenuItem
         {

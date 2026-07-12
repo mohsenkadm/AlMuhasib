@@ -334,8 +334,38 @@ public partial class MainWindowViewModel : ObservableObject
     {
         MenuItems.Clear();
         foreach (var item in _moduleRegistry.ActiveModule.BuildMenuItems())
-            MenuItems.Add(item);
+        {
+            if (!_backupService.IsBackupSupported && IsRestrictedForBranchClient(item))
+                continue;
+
+            if (item.IsGroupHeader)
+            {
+                var filtered = new NavigationMenuItem
+                {
+                    Title = item.Title,
+                    Icon = item.Icon,
+                    IsGroupHeader = true,
+                    IsExpanded = item.IsExpanded,
+                    ScreenName = item.ScreenName
+                };
+                foreach (var child in item.Children)
+                {
+                    if (!_backupService.IsBackupSupported && IsRestrictedForBranchClient(child))
+                        continue;
+                    filtered.Children.Add(child);
+                }
+                if (filtered.Children.Count > 0)
+                    MenuItems.Add(filtered);
+            }
+            else
+            {
+                MenuItems.Add(item);
+            }
+        }
     }
+
+    private static bool IsRestrictedForBranchClient(NavigationMenuItem item) =>
+        item.ScreenName is "Backup" or "CloudSync";
 
     private bool _suppressNavigation;
     private bool _isTabSwitchInternal;

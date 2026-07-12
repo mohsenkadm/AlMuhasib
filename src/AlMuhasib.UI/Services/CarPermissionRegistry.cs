@@ -24,6 +24,7 @@ public static class CarPermissionRegistry
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
         [typeof(BackupRestoreViewModel)] = Backup,
+        [typeof(NetworkConnectionSettingsViewModel)] = ScreenPermissionRegistry.NetworkConnection,
         [typeof(SystemUpdateViewModel)] = ScreenPermissionRegistry.SystemUpdate
     };
 
@@ -37,6 +38,7 @@ public static class CarPermissionRegistry
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
         [Backup] = typeof(BackupRestoreViewModel),
+        [ScreenPermissionRegistry.NetworkConnection] = typeof(NetworkConnectionSettingsViewModel),
         [ScreenPermissionRegistry.SystemUpdate] = typeof(SystemUpdateViewModel)
     };
 
@@ -50,6 +52,7 @@ public static class CarPermissionRegistry
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",
         [Backup] = "النسخ الاحتياطي",
+        [ScreenPermissionRegistry.NetworkConnection] = "ربط الحاسبات",
         [ScreenPermissionRegistry.SystemUpdate] = "تحديث النظام"
     };
 
