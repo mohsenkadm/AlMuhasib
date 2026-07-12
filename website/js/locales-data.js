@@ -3,11 +3,11 @@ window.LOCALES = {
   ar: {
     meta: {
       title: "المحاسب — منصة محاسبة، فنادق، مطاعم، وعقود سيارات",
-      description: "منصة أعمال عربية متكاملة: محاسبة ومبيعات، إدارة فنادق ومطاعم، عقود سيارات، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
+      description: "منصة أعمال عربية متكاملة: محاسبة، فنادق، عقود سيارات، ربط فروع عبر الشبكة المحلية، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
     },
     nav: {
       systems: "الأنظمة", features: "المنصة", how: "كيف يعمل", videos: "الفيديوهات",
-      reports: "التقارير", cloud: "السحابة", mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
+      reports: "التقارير", cloud: "السحابة", network: "ربط الفروع", mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
     },
     support: { btn: "خدمة العملاء — واتساب", btnShort: "واتساب", float: "دعم واتساب", phoneLabel: "رقم الدعم:" },
     videos: {
@@ -22,11 +22,11 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "منصة متعددة الأنظمة",
+      badge: "جديد: ربط الفروع عبر الشبكة",
       title: "المحاسب",
       subtitle: "منصة أعمال متكاملة —",
       rotateWords: ["محاسبة", "فنادق", "سيارات"],
-      desc: "ثلاثة أنظمة سطح مكتب + تطبيق جوال + مزامنة سحابية — عربي، أوفلاين، وجاهز للنمو.",
+      desc: "أنظمة سطح مكتب + ربط حاسبات رئيسية وفرعية عبر WiFi + تطبيق جوال + مزامنة سحابية — عربي، أوفلاين، وجاهز للنمو.",
       cta_download: "حمّل النظام مجاناً",
       cta_systems: "استكشف الأنظمة",
       cta_features: "مميزات المنصة",
@@ -58,7 +58,8 @@ window.LOCALES = {
             "سندات قبض/صرف، مصاريف، وقاصات",
             "مستثمرون وتوزيع أرباح",
             "مساعد ذكي — تنبيهات مخزون وأقساط",
-            "25+ تقرير تحليلي شامل"
+            "25+ تقرير تحليلي شامل",
+            "ربط فروع عبر الشبكة المحلية — حاسبة رئيسية وفرعية"
           ],
           features: [
             { icon: "receipt", title: "فواتير متكاملة", desc: "بيع، شراء، أقساط، ومرتجعات بكل التفاصيل" },
@@ -85,7 +86,8 @@ window.LOCALES = {
             "ملفات نزلاء وتاريخ إقامات",
             "نظافة Housekeeping وإدارة حالة الغرف",
             "صندوق فندقي ومصاريف",
-            "تقارير إشغال وإيرادات وتدقيق ليلي"
+            "تقارير إشغال وإيرادات وتدقيق ليلي",
+            "ربط فروع الاستقبال عبر WiFi/LAN"
           ],
           restaurant: {
             title: "مطعم الفندق F&B",
@@ -121,7 +123,8 @@ window.LOCALES = {
             "تقرير شامل مع تصدير Excel",
             "طباعة عقود بإعدادات مخصصة",
             "صلاحيات مستخدمين",
-            "نسخ احتياطي محلي"
+            "نسخ احتياطي محلي",
+            "ربط فروع المعرض بالحاسبة الرئيسية"
           ],
           features: [
             { icon: "car", title: "العقود", desc: "إنشاء وتتبع عقود البيع" },
@@ -189,6 +192,7 @@ window.LOCALES = {
       subtitle: "ما يجمع كل الأنظمة — بنية تحتية موثوقة",
       items: [
         { icon: "offline", title: "100% أوفلاين", desc: "يعمل بدون إنترنت — المزامنة اختيارية" },
+        { icon: "network", title: "ربط الفروع", desc: "حاسبة رئيسية + فروع عبر WiFi — اتصال مباشر بدون مزامنة" },
         { icon: "shield", title: "صلاحيات دقيقة", desc: "تحكم بكل شاشة: إضافة، تعديل، حذف، طباعة" },
         { icon: "cloud", title: "مزامنة سحابية", desc: "Push/Pull ثنائي الاتجاه — multi-tenant" },
         { icon: "backup", title: "نسخ احتياطي", desc: "نسخ واستعادة محلية بنقرة" },
@@ -202,9 +206,30 @@ window.LOCALES = {
       title: "ابدأ في دقائق",
       steps: [
         { num: "01", title: "نزّل النظام", desc: "ملف ZIP من GitHub — Windows 10/11" },
-        { num: "02", title: "اختر نظامك", desc: "محاسبة، فندق، أو عقود سيارات عند الإعداد" },
-        { num: "03", title: "اعمل أوفلاين", desc: "فواتير، حجوزات، أو عقود — بدون إنترنت" }
+        { num: "02", title: "اختر نظامك ونوع الحاسبة", desc: "محاسبة، فندق، أو سيارات — رئيسية أو فرعية" },
+        { num: "03", title: "اعمل أوفلاين أو عبر الشبكة", desc: "قاعدة محلية أو اتصال مباشر بالحاسبة الرئيسية" }
       ]
+    },
+    network: {
+      badge: "جديد",
+      title: "ربط الحاسبات الرئيسية والفرعية",
+      desc: "اربط عدة حواسيب على نفس الشبكة (WiFi أو Ethernet) بقاعدة بيانات واحدة على الحاسبة الرئيسية — بدون مزامنة وبدون إنترنت.",
+      points: [
+        "يدعم كل الأنظمة: محاسبة، فنادق، عقود سيارات، وبيع وشراء",
+        "اكتشاف تلقائي للحاسبة الرئيسية على الشبكة المحلية",
+        "رمز ربط آمن + مستخدم SQL مخصص للفروع",
+        "الفرعية لا تنشئ قاعدة بيانات — اتصال مباشر فوري",
+        "تعديل إعدادات الربط بسهولة من داخل التطبيق",
+        "متوافق مع العملاء الحاليين — الوضع المستقل يبقى كما هو"
+      ],
+      diagram: {
+        main: "حاسبة رئيسية",
+        mainHint: "قاعدة البيانات",
+        branch1: "فرع 1",
+        branch2: "فرع 2",
+        branch3: "فرع 3",
+        caption: "اكتشاف تلقائي على الشبكة + رمز ربط آمن"
+      }
     },
     cloud: {
       title: "مزامنة سحابية — 3 أنظمة",
@@ -236,7 +261,9 @@ window.LOCALES = {
     faq: {
       title: "أسئلة شائعة",
       items: [
-        { q: "هل يعمل بدون إنترنت؟", a: "نعم. كل الأنظمة أوفلاين بالكامل. الإنترنت للمزامنة والتحديثات فقط." },
+        { q: "هل يعمل بدون إنترنت؟", a: "نعم. كل الأنظمة أوفلاين بالكامل. الإنترنت للمزامنة السحابية والتحديثات فقط — ربط الفروع المحلي لا يحتاج إنترنت." },
+        { q: "كيف أربط فرعاً بالحاسبة الرئيسية؟", a: "عند التنصيب اختر «حاسبة فرعية»، ابحث عن الرئيسية على الشبكة أو أدخل IP، ثم أدخل رمز الربط. يمكن تعديل الإعدادات لاحقاً من «ربط الحاسبات»." },
+        { q: "هل ربط الفروع يحتاج مزامنة؟", a: "لا. الفرعية تتصل مباشرة بقاعدة البيانات على الرئيسية عبر WiFi/LAN — مثل عدة مستخدمين على نفس السيرفر." },
         { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول أو من لوحة المطور: محاسبة للمحلات، فندق للضيافة، سيارات لمعارض البيع." },
         { q: "هل الفندق يشمل المطعم؟", a: "نعم — POS، KDS، مخزون مطبخ، طاولات، وتقارير F&B مدمجة في نظام الفندق." },
         { q: "هل يدعم عقود السيارات؟", a: "نعم — نظام مستقل للعقود والمدفوعات والتقارير مع تطبيق جوال." },
@@ -251,11 +278,11 @@ window.LOCALES = {
   en: {
     meta: {
       title: "AlMuhasib — Accounting, Hotels, Restaurants & Car Contracts",
-      description: "Integrated Arabic business platform: accounting, hotel PMS & F&B, car contracts, mobile app, and cloud sync. Fully offline."
+      description: "Integrated Arabic business platform: accounting, hotels, car contracts, LAN branch linking, mobile app, and cloud sync. Fully offline."
     },
     nav: {
       systems: "Systems", features: "Platform", how: "How it works", videos: "Videos",
-      reports: "Reports", cloud: "Cloud", mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
+      reports: "Reports", cloud: "Cloud", network: "Branch linking", mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
     },
     support: { btn: "Customer support — WhatsApp", btnShort: "WhatsApp", float: "WhatsApp support", phoneLabel: "Support number:" },
     videos: {
@@ -269,11 +296,11 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "Multi-system platform",
+      badge: "New: LAN branch linking",
       title: "AlMuhasib",
       subtitle: "Integrated business platform —",
       rotateWords: ["Accounting", "Hotels", "Cars"],
-      desc: "Three desktop systems + mobile app + cloud sync — Arabic, offline-first, built to scale.",
+      desc: "Desktop systems + main/branch LAN linking over WiFi + mobile app + cloud sync — Arabic, offline-first, built to scale.",
       cta_download: "Download free",
       cta_systems: "Explore systems",
       cta_features: "Platform features",
@@ -303,7 +330,8 @@ window.LOCALES = {
             "Receipts, expenses, cash boxes",
             "Investors & profit distribution",
             "Smart alerts — stock & installments",
-            "25+ analytical reports"
+            "25+ analytical reports",
+            "LAN branch linking — main & branch PCs"
           ],
           features: [
             { icon: "receipt", title: "Full invoicing", desc: "Sales, purchases, installments, returns" },
@@ -428,6 +456,7 @@ window.LOCALES = {
       subtitle: "What powers every system — reliable infrastructure",
       items: [
         { icon: "offline", title: "100% offline", desc: "Works without internet — sync optional" },
+        { icon: "network", title: "Branch linking", desc: "Main PC + branches over WiFi — direct DB, no sync" },
         { icon: "shield", title: "Fine permissions", desc: "Per-screen add, edit, delete, print" },
         { icon: "cloud", title: "Cloud sync", desc: "Two-way Push/Pull — multi-tenant" },
         { icon: "backup", title: "Backup", desc: "Local backup & restore" },
@@ -441,9 +470,30 @@ window.LOCALES = {
       title: "Get started in minutes",
       steps: [
         { num: "01", title: "Download", desc: "ZIP from GitHub — Windows 10/11" },
-        { num: "02", title: "Pick your system", desc: "Accounting, hotel, or car contracts at setup" },
-        { num: "03", title: "Work offline", desc: "Invoices, bookings, or contracts — no internet" }
+        { num: "02", title: "Pick system & PC role", desc: "Accounting, hotel, or cars — main or branch PC" },
+        { num: "03", title: "Work offline or on LAN", desc: "Local database or direct link to main server" }
       ]
+    },
+    network: {
+      badge: "New",
+      title: "Main & branch PC linking",
+      desc: "Connect multiple PCs on the same network (WiFi or Ethernet) to one database on the main computer — no sync, no internet required.",
+      points: [
+        "Works for all systems: accounting, hotels, car contracts, car trading",
+        "Auto-discover the main PC on your local network",
+        "Secure pairing code + dedicated SQL user for branches",
+        "Branch PCs never create a local database — instant direct access",
+        "Edit connection settings anytime in the app",
+        "Fully backward compatible — existing standalone installs unchanged"
+      ],
+      diagram: {
+        main: "Main PC",
+        mainHint: "Database host",
+        branch1: "Branch 1",
+        branch2: "Branch 2",
+        branch3: "Branch 3",
+        caption: "Network auto-discovery + secure pairing code"
+      }
     },
     cloud: {
       title: "Cloud sync — 3 systems",
@@ -474,7 +524,9 @@ window.LOCALES = {
     faq: {
       title: "FAQ",
       items: [
-        { q: "Works offline?", a: "Yes. All systems are fully offline. Internet for sync and updates only." },
+        { q: "Works offline?", a: "Yes. All systems are fully offline. Internet is for cloud sync and updates only — LAN branch linking needs no internet." },
+        { q: "How to link a branch PC?", a: "At setup choose Branch PC, discover the main server on your network or enter its IP, then enter the pairing code. Change settings anytime under Network Linking." },
+        { q: "Does branch linking use sync?", a: "No. Branch PCs connect directly to the main database over WiFi/LAN — like multiple users on one SQL Server." },
         { q: "How to pick a system?", a: "At first setup or via admin: accounting for retail, hotel for hospitality, cars for dealerships." },
         { q: "Does hotel include restaurant?", a: "Yes — POS, KDS, kitchen stock, tables, and F&B reports are built in." },
         { q: "Car contracts support?", a: "Yes — dedicated system with mobile app." },

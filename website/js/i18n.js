@@ -84,6 +84,11 @@ const I18N = {
       cloudPoints.innerHTML = this.strings.cloud.points.map(p => `<li>${p}</li>`).join('');
     }
 
+    const networkPoints = document.getElementById('network-points');
+    if (networkPoints && this.strings.network?.points) {
+      networkPoints.innerHTML = this.strings.network.points.map(p => `<li>${p}</li>`).join('');
+    }
+
     const mobilePoints = document.getElementById('mobile-points');
     if (mobilePoints && this.strings.mobile?.points) {
       mobilePoints.innerHTML = this.strings.mobile.points.map(p => `<li>${p}</li>`).join('');
