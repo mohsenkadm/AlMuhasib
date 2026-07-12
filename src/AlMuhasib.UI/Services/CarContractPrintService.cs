@@ -11,14 +11,11 @@ namespace AlMuhasib.UI.Services;
 
 public sealed class CarContractPrintService : ICarContractPrintService
 {
-    private const double A4PageHeight = 1122.5;
-    /// <summary>Buffer so measurement error never pushes content onto a second page.</summary>
-    private const double PageFitSafety = 24;
-
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar-IQ");
     private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
     private static readonly Brush HeaderBg = new SolidColorBrush(Color.FromRgb(0xD9, 0xD9, 0xD9));
     private static readonly Brush LightBg = new SolidColorBrush(Color.FromRgb(0xF7, 0xF7, 0xF7));
+    private static readonly Brush TermsTitleBg = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
 
     public void PrintContract(CarSaleContract contract, int copies = 5)
     {
@@ -37,104 +34,21 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 11,
+            FontSize = 12.5,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(28, 12, 28, 14)
+            PagePadding = new Thickness(28, 10, 28, 40)
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
-        var brandingHeight = MeasureBrandingHeaderHeight(doc);
 
         doc.Blocks.Add(BuildTitleRow(contract));
         doc.Blocks.Add(BuildPartiesRow(contract));
         doc.Blocks.Add(BuildDetailsRow(contract));
         doc.Blocks.Add(BuildNotesRow(contract));
         doc.Blocks.Add(BuildTermsBlock());
-        doc.Blocks.Add(BuildBottomSpacer(contract, doc, brandingHeight));
         doc.Blocks.Add(BuildSignaturesRow(contract));
 
         return doc;
-    }
-
-    private static Block BuildBottomSpacer(CarSaleContract contract, FlowDocument template, double brandingHeight)
-    {
-        var mainDoc = CreateMeasuringDocument(template);
-        mainDoc.Blocks.Add(BuildTitleRow(contract));
-        mainDoc.Blocks.Add(BuildPartiesRow(contract));
-        mainDoc.Blocks.Add(BuildDetailsRow(contract));
-        mainDoc.Blocks.Add(BuildNotesRow(contract));
-        mainDoc.Blocks.Add(BuildTermsBlock());
-
-        var footerDoc = CreateMeasuringDocument(template);
-        footerDoc.Blocks.Add(BuildSignaturesRow(contract));
-
-        var mainHeight = MeasureDocumentHeight(mainDoc);
-        var footerHeight = MeasureDocumentHeight(footerDoc);
-        var availableHeight = A4PageHeight
-                              - template.PagePadding.Top
-                              - template.PagePadding.Bottom
-                              - brandingHeight
-                              - PageFitSafety;
-
-        // Only push signatures down when everything still fits on one page.
-        var spacerHeight = Math.Max(0, availableHeight - mainHeight - footerHeight);
-
-        return new BlockUIContainer(new Border
-        {
-            Height = spacerHeight,
-            Background = Brushes.Transparent
-        });
-    }
-
-    private static FlowDocument CreateMeasuringDocument(FlowDocument template)
-    {
-        var pageWidth = PrintBrandingFlowDocumentHelper.DefaultPrintPageWidth;
-        var contentWidth = pageWidth - template.PagePadding.Left - template.PagePadding.Right;
-
-        return new FlowDocument
-        {
-            FontFamily = template.FontFamily,
-            FontSize = template.FontSize,
-            FlowDirection = template.FlowDirection,
-            PagePadding = new Thickness(0),
-            PageWidth = pageWidth,
-            ColumnWidth = contentWidth
-        };
-    }
-
-    private static double MeasureBrandingHeaderHeight(FlowDocument document)
-    {
-        var brandingDoc = CreateMeasuringDocument(document);
-        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(brandingDoc);
-        return MeasureDocumentHeight(brandingDoc);
-    }
-
-    private static double MeasureDocumentHeight(FlowDocument document)
-    {
-        const double measurePageHeight = 100_000;
-        var pageWidth = document.PageWidth > 0
-            ? document.PageWidth
-            : PrintBrandingFlowDocumentHelper.DefaultPrintPageWidth;
-
-        document.PageWidth = pageWidth;
-        document.PageHeight = measurePageHeight;
-
-        if (document.ColumnWidth <= 0)
-            document.ColumnWidth = pageWidth - document.PagePadding.Left - document.PagePadding.Right;
-
-        var viewer = new FlowDocumentScrollViewer
-        {
-            Document = document,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-        };
-
-        var width = document.ColumnWidth;
-        viewer.Measure(new Size(width, measurePageHeight));
-        viewer.Arrange(new Rect(0, 0, width, measurePageHeight));
-        viewer.UpdateLayout();
-
-        return Math.Max(0, viewer.DesiredSize.Height);
     }
 
     private static Block BuildTitleRow(CarSaleContract contract)
@@ -155,7 +69,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
 
         var titleCell = new TableCell(new Paragraph(new Run("عقد بيع وشراء"))
         {
-            FontSize = 17,
+            FontSize = 19,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 4, 0, 4)
@@ -252,34 +166,66 @@ public sealed class CarContractPrintService : ICarContractPrintService
 
     private static Block BuildTermsBlock()
     {
-        var section = new Section
+        var body = new Section
         {
-            Margin = new Thickness(0, 4, 0, 4),
+            Margin = new Thickness(0),
             FlowDirection = FlowDirection.RightToLeft
         };
 
-        section.Blocks.Add(new Paragraph(new Run(CarContractPrintTerms.Title))
+        for (var i = 0; i < CarContractPrintTerms.Clauses.Length; i++)
         {
-            FontWeight = FontWeights.Bold,
-            FontSize = 12,
-            TextAlignment = TextAlignment.Center,
-            FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Thickness(0, 0, 0, 4)
-        });
-
-        foreach (var clause in CarContractPrintTerms.Clauses)
-        {
-            section.Blocks.Add(new Paragraph(new Run(clause))
+            var paragraph = new Paragraph
             {
-                FontSize = 9.5,
-                TextAlignment = TextAlignment.Left,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Justify,
                 FlowDirection = FlowDirection.RightToLeft,
-                LineHeight = 15,
-                Margin = new Thickness(0, 0, 0, 3)
+                LineHeight = 19,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            paragraph.Inlines.Add(new Run($"{i + 1}. ")
+            {
+                FontWeight = FontWeights.ExtraBold,
+                FontSize = 12.5
             });
+            paragraph.Inlines.Add(new Run(CarContractPrintTerms.Clauses[i])
+            {
+                FontWeight = FontWeights.Bold
+            });
+            body.Blocks.Add(paragraph);
         }
 
-        return section;
+        var titleCell = new TableCell(new Paragraph(new Run(CarContractPrintTerms.Title))
+        {
+            FontWeight = FontWeights.ExtraBold,
+            FontSize = 14.5,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 2, 0, 2)
+        })
+        {
+            Background = TermsTitleBg,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(1, 1, 1, 0),
+            Padding = new Thickness(6, 6, 6, 6)
+        };
+
+        var bodyCell = new TableCell(body)
+        {
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(1),
+            Background = LightBg,
+            Padding = new Thickness(10, 8, 10, 8)
+        };
+
+        var table = CreateTable(1, 0);
+        var titleRow = new TableRow();
+        titleRow.Cells.Add(titleCell);
+        var bodyRow = new TableRow();
+        bodyRow.Cells.Add(bodyCell);
+        table.RowGroups[0].Rows.Add(titleRow);
+        table.RowGroups[0].Rows.Add(bodyRow);
+
+        return WrapBlock(table, new Thickness(0, 6, 0, 0));
     }
 
     private static Block BuildSignaturesRow(CarSaleContract contract)
@@ -313,7 +259,8 @@ public sealed class CarContractPrintService : ICarContractPrintService
         }
 
         table.RowGroups[0].Rows.Add(row);
-        return WrapBlock(table, new Thickness(0, 2, 0, 0));
+        // Gap between terms and signature boxes.
+        return WrapBlock(table, new Thickness(0, 36, 0, 0));
     }
 
     private static UIElement CreateSignatureBlock(string label, string? name)
@@ -326,16 +273,16 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             Text = label,
             FontWeight = FontWeights.SemiBold,
-            FontSize = 10,
+            FontSize = 11.5,
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 0, 0, 4)
         });
         panel.Children.Add(new System.Windows.Controls.TextBlock
         {
             Text = string.IsNullOrWhiteSpace(name) ? Dots(18) : name.Trim(),
-            FontSize = 10,
+            FontSize = 11.5,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 14)
+            Margin = new Thickness(0, 0, 0, 16)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
@@ -380,7 +327,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(title))
         {
             FontWeight = FontWeights.Bold,
-            FontSize = 12,
+            FontSize = 13.5,
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 1, 0, 1)
         })
@@ -388,7 +335,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Background = HeaderBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
-            Padding = new Thickness(3, 4, 3, 4)
+            Padding = new Thickness(3, 5, 3, 5)
         });
         headerTable.RowGroups[0].Rows.Add(headerRow);
         section.Blocks.Add(headerTable);
@@ -423,9 +370,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
     private static Paragraph SectionLabel(string text) => new(new Run(text))
     {
         FontWeight = FontWeights.Bold,
-        FontSize = 11,
+        FontSize = 12.5,
         TextAlignment = TextAlignment.Center,
-        Margin = new Thickness(0, 0, 0, 3)
+        Margin = new Thickness(0, 0, 0, 4)
     };
 
     private static Paragraph FieldLine(
@@ -436,7 +383,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         bool fullWidth = false)
     {
         var display = string.IsNullOrWhiteSpace(value) ? Dots(fullWidth ? 64 : 28) : value.Trim();
-        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 2), LineHeight = 15 };
+        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 3), LineHeight = 17 };
 
         if (!string.IsNullOrWhiteSpace(label))
         {
@@ -449,7 +396,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         paragraph.Inlines.Add(new Run(display)
         {
             FontWeight = boldValue ? FontWeights.Bold : FontWeights.Normal,
-            FontSize = boldValue ? 12 : 11
+            FontSize = boldValue ? 13.5 : 12.5
         });
 
         if (centerValue)
