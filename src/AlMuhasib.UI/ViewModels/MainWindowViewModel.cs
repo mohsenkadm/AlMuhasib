@@ -214,6 +214,7 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceNavigationBridge.CopyToSalesInvoiceAsync = CopyToSalesInvoiceAsync;
         InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync = CopyToPurchaseInvoiceAsync;
         InvoiceNavigationBridge.ReturnSalesInvoiceAsync = ReturnSalesInvoiceAsync;
+        InvoiceNavigationBridge.ReturnPurchaseInvoiceAsync = ReturnPurchaseInvoiceAsync;
         InvoiceNavigationBridge.EditSalesInvoiceAsync = EditSalesInvoiceAsync;
         InvoiceNavigationBridge.EditPurchaseInvoiceAsync = EditPurchaseInvoiceAsync;
         InvoiceNavigationBridge.EditInstallmentInvoiceAsync = EditInstallmentInvoiceAsync;
@@ -277,6 +278,32 @@ public partial class MainWindowViewModel : ObservableObject
 
         InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = invoiceId;
         await OpenTabAsync(typeof(SalesInvoiceViewModel), "مرتجع مبيعات", PackIconKind.KeyboardReturn, activateIfExists: false);
+    }
+
+    private async Task ReturnPurchaseInvoiceAsync(int invoiceId)
+    {
+        if (!_userPreferences.Current.FeatureFlags.PurchaseReturns)
+        {
+            _toast.ShowWarning("فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
+        {
+            ActivateTab(existing);
+            await purchaseVm.LoadAsReturnFromInvoiceAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة جديدة.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "مرتجع مشتريات", PackIconKind.KeyboardReturn, activateIfExists: false);
     }
 
     private async Task EditInstallmentInvoiceAsync(int invoiceId)
@@ -469,7 +496,11 @@ public partial class MainWindowViewModel : ObservableObject
         PageTitle = item.Title;
 
         if (item.ViewModelType is not null)
-            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon);
+        {
+            if (string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
+                InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
+            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon, activateIfExists: false);
+        }
     }
 
     public void ToggleReportFlyout(NavigationMenuItem category)

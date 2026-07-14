@@ -14,7 +14,7 @@ public partial class NetworkConnectionSettingsView
             SqlPasswordBox.Password = vm.SqlPassword;
     }
 
-    private void SqlPasswordBox_OnPasswordChanged(object sender, System.Windows.Controls.PasswordChangedEventArgs e)
+    private void SqlPasswordBox_OnPasswordChanged(object sender, System.Windows.RoutedEventArgs e)
     {
         if (DataContext is ViewModels.NetworkConnectionSettingsViewModel vm && sender is System.Windows.Controls.PasswordBox pb)
             vm.SqlPassword = pb.Password;

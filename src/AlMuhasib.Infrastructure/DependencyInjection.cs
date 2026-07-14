@@ -87,6 +87,9 @@ public static class DependencyInjection
         services.AddScoped<ICustomerCreditService, CustomerCreditService>();
         services.AddScoped<ILocalQueryService, LocalQueryService>();
         services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
+        services.AddScoped<IProductUnitService, ProductUnitService>();
+        services.AddScoped<IProductBatchService, ProductBatchService>();
+        services.AddScoped<IProductSerialService, ProductSerialService>();
         services.AddScoped<IUserLoginLogService, UserLoginLogService>();
         services.AddScoped<IDataImportService, DataImportService>();
         services.AddScoped<IDemoDataService, DemoDataService>();

@@ -45,14 +45,15 @@ internal static class InvoiceDetailMapper
             {
                 InvoiceType.Sale => "فاتورة مبيعات",
                 InvoiceType.Purchase => "فاتورة مشتريات",
+                InvoiceType.PurchaseReturn => "مرتجع مشتريات",
                 InvoiceType.Installment => "فاتورة أقساط",
                 _ => "تفاصيل الفاتورة"
             },
             InvoiceNumber = invoice.InvoiceNumber,
             DateText = invoice.Date.ToString("yyyy/MM/dd"),
             CreditDueDateText = invoice.CreditDueDate?.ToString("yyyy/MM/dd"),
-            PartyLabel = invoice.InvoiceType == InvoiceType.Purchase ? "المورد" : "العميل",
-            PartyName = invoice.InvoiceType == InvoiceType.Purchase
+            PartyLabel = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn ? "المورد" : "العميل",
+            PartyName = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? invoice.Supplier?.Name ?? "—"
                 : invoice.Customer?.Name ?? "—",
             WarehouseName = invoice.Warehouse?.Name ?? "—",

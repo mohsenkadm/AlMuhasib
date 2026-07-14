@@ -69,6 +69,13 @@ public static class AccountingMenuBuilder
             },
             new()
             {
+                Title = "مرتجع مشتريات",
+                Icon = PackIconKind.KeyboardReturn,
+                ViewModelType = typeof(PurchaseInvoiceViewModel),
+                ScreenName = "PurchaseReturn"
+            },
+            new()
+            {
                 Title = "فاتورة مبيعات",
                 Icon = PackIconKind.CashRegister,
                 ViewModelType = typeof(SalesInvoiceViewModel),

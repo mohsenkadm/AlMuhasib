@@ -139,7 +139,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IInvoiceTemplateService templateService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IFeatureFlagService featureFlags,
+        IProductUnitService productUnitService,
+        IProductBatchService productBatchService,
+        IProductSerialService productSerialService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -162,6 +166,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
+        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService);
     }
 
     private void ScheduleDraftSave()
@@ -363,8 +368,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
             };
+            ApplyActiveLabelsToRow(row);
+            InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson, ActiveCustomFieldLabels);
             WireItemRow(row);
             Items.Add(row);
+            _ = LoadRowFeatureDataAsync(row);
         }
 
         if (!Items.Any())
@@ -412,6 +420,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private void AddRow()
     {
         var row = new InvoiceItemRow();
+        ApplyActiveLabelsToRow(row);
         WireItemRow(row);
         Items.Add(row);
     }
@@ -521,6 +530,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == SelectedWarehouse.Id)?.Quantity ?? 0;
             else
                 row.AvailableStock = stocks.Sum(s => s.Quantity);
+
+            await LoadRowFeatureDataAsync(row);
         }
         catch { row.StockInfo = string.Empty; }
     }
@@ -677,15 +688,32 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                     productId = matchedProduct?.Id;
                 }
 
+                var displayQty = row.Quantity;
+                var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
+                var lineTotal = displayQty * row.UnitPrice;
+                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
-                    Quantity = row.Quantity,
-                    UnitPrice = row.UnitPrice,
-                    TotalPrice = row.TotalPrice
+                    Quantity = stockQty,
+                    UnitPrice = unitPriceForStorage,
+                    TotalPrice = lineTotal,
+                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
                 });
+            }
+
+            if (ShowSerialNumbers)
+            {
+                foreach (var row in validItems.Where(r => r.ProductId.HasValue && Math.Abs(r.Quantity) >= 1))
+                {
+                    if (string.IsNullOrWhiteSpace(row.SerialNumber) && !IsReturnMode)
+                    {
+                        ErrorMessage = $"أدخل الرقم التسلسلي للصنف «{row.ItemName}»";
+                        return;
+                    }
+                }
             }
 
             Invoice saved;
@@ -697,6 +725,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             else
             {
                 saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+            }
+
+            try
+            {
+                await ApplyFeatureSideEffectsOnSaveAsync(validItems, invoiceItems);
+            }
+            catch (Exception sideEx)
+            {
+                BeautifulMessageDialog.ShowWarning($"حُفظت الفاتورة مع تحذير الميزات: {sideEx.Message}");
             }
 
             _savedInvoice = saved;

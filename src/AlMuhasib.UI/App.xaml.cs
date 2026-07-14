@@ -155,6 +155,7 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
         services.AddSingleton<ISoundService, SoundService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<IDeveloperAccessService, DeveloperAccessService>();

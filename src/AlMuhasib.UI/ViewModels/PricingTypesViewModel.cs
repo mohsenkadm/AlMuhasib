@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

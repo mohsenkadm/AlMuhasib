@@ -12,9 +12,11 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 {
     private readonly IUserPreferencesService _preferences;
+    private readonly IFeatureFlagService _featureFlags;
     private readonly IBackupService _backupService;
     private readonly IBusinessSettingsService _businessSettingsService;
     private readonly IPricingTypeService _pricingTypeService;
+    private readonly IServiceProvider _services;
 
     [ObservableProperty] private bool _installmentRemindersEnabled = true;
     [ObservableProperty] private bool _reminderPlaySound = true;
@@ -53,17 +55,28 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
     public BusinessFeaturesSettingsViewModel(
         IUserPreferencesService preferences,
+        IFeatureFlagService featureFlags,
         IBackupService backupService,
         ICurrentUserService currentUserService,
         IBusinessSettingsService businessSettingsService,
-        IPricingTypeService pricingTypeService)
+        IPricingTypeService pricingTypeService,
+        IServiceProvider services)
     {
         _preferences = preferences;
+        _featureFlags = featureFlags;
         _backupService = backupService;
         _businessSettingsService = businessSettingsService;
         _pricingTypeService = pricingTypeService;
+        _services = services;
         PageTitle = "إعدادات الميزات";
         LoadPermissions(currentUserService, "BusinessFeatures");
+    }
+
+    private void RefreshFeatureUi()
+    {
+        _featureFlags.NotifyFlagsChanged();
+        if (_services.GetService(typeof(MainWindowViewModel)) is MainWindowViewModel main)
+            main.RefreshMenuVisibility();
     }
 
     public override async Task InitializeAsync()
@@ -183,6 +196,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            RefreshFeatureUi();
             StatusMessage = $"حُفظت محلياً مع تحذير مزامنة الإعدادات: {ex.Message}";
             BeautifulMessageDialog.ShowWarning($"تم الحفظ محلياً لكن تعذّر تحديث قاعدة البيانات: {ex.Message}");
             SaveSuccessPulse = true;
@@ -191,9 +205,10 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             return;
         }
 
-        StatusMessage = "تم حفظ الإعدادات بنجاح";
+        RefreshFeatureUi();
+        StatusMessage = "تم تفعيل/إلغاء الميزات؛ القوائم والحقول المرتبطة تحدّثت";
         SaveSuccessPulse = true;
-        BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الميزات");
+        BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الميزات — القوائم والحقول المرتبطة تحدّثت");
         await Task.Delay(1200);
         SaveSuccessPulse = false;
     }

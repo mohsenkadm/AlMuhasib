@@ -10,6 +10,7 @@ public static class InvoiceNumberHelper
     public static string GetPrefix(InvoiceType type) => type switch
     {
         InvoiceType.Purchase => "PUR",
+        InvoiceType.PurchaseReturn => "PRT",
         InvoiceType.Sale => "SAL",
         InvoiceType.Installment => "INS",
         _ => "INV"

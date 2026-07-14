@@ -387,14 +387,15 @@
                                    OverlayBackground="#80000000">
             <materialDesign:DialogHost.DialogContent>
                 <Border MinWidth="450"
-                        MaxWidth="520"
+                        MaxWidth="560"
+                        MaxHeight="680"
                         Padding="24"
                         Background="White"
                         CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" /> <!-- Title -->
-                            <RowDefinition Height="Auto" /> <!-- Form -->
+                            <RowDefinition Height="*" /> <!-- Form -->
                             <RowDefinition Height="Auto" /> <!-- Error -->
                             <RowDefinition Height="Auto" /> <!-- Buttons -->
                         </Grid.RowDefinitions>
@@ -408,7 +409,8 @@
                                    Margin="0,0,0,20" />
 
                         <!-- Form -->
-                        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+                        <StackPanel>
 
                             <!-- Product Name -->
                             <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
@@ -445,7 +447,104 @@
                                      MinHeight="80"
                                      MaxHeight="120"
                                      VerticalScrollBarVisibility="Auto" />
+
+                            <!-- Units of measure (feature-gated) -->
+                            <Border Margin="0,16,0,0" Padding="12" Background="#FFF8E1" CornerRadius="8"
+                                    Visibility="{Binding ShowUnitsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="وحدات القياس" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding EditUnits}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,4">
+                                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                                        <Button Content="افتراضي" Style="{StaticResource OutlinedButton}" Margin="0,0,4,0"
+                                                                Command="{Binding DataContext.SetDefaultProductUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                        <Button Content="حذف" Style="{StaticResource OutlinedButton}"
+                                                                Command="{Binding DataContext.DeleteProductUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding UnitName}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text=" × " VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding ConversionFactor, StringFormat=N2}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text=" (افتراضي)" Foreground="#F9A825" FontSize="11" VerticalAlignment="Center"
+                                                                   Visibility="{Binding IsDefault, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding NewUnitName, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="اسم الوحدة" Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <TextBox Grid.Column="1" Text="{Binding NewUnitFactor, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="المعامل" Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="2" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding AddProductUnitCommand}" Padding="12,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Batches / expiry (feature-gated) -->
+                            <Border Margin="0,12,0,0" Padding="12" Background="#E8F5E9" CornerRadius="8"
+                                    Visibility="{Binding ShowBatchesSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="الدفعات وتواريخ الانتهاء" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="تُضاف الدفعات تلقائياً من فاتورة المشتريات عند تفعيل الميزة."
+                                               FontSize="12" Foreground="#616161" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                    <ItemsControl ItemsSource="{Binding EditBatches}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Margin="0,0,0,3" FontSize="12">
+                                                    <Run Text="{Binding BatchNumber, TargetNullValue=بدون رقم}"/>
+                                                    <Run Text=" | انتهاء: "/>
+                                                    <Run Text="{Binding ExpiryDate, StringFormat=yyyy/MM/dd, TargetNullValue=-}"/>
+                                                    <Run Text=" | كمية: "/>
+                                                    <Run Text="{Binding Quantity, StringFormat=N0}"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Serials (feature-gated) -->
+                            <Border Margin="0,12,0,0" Padding="12" Background="#F3E5F5" CornerRadius="8"
+                                    Visibility="{Binding ShowSerialsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="الأرقام التسلسلية" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding EditSerials}" MaxHeight="120">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock FontSize="12" Margin="0,0,0,2">
+                                                    <Run Text="{Binding SerialNumber}" FontFamily="Consolas"/>
+                                                    <Run Text="{Binding IsSold, StringFormat=' — {0}'}" Foreground="#9E9E9E"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding NewSerialText, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="سيريال أو عدة أرقام مفصولة بفاصلة"
+                                                 Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding AddProductSerialsCommand}" Padding="12,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
+                        </ScrollViewer>
 
                         <!-- Error Message -->
                         <TextBlock Grid.Row="2"

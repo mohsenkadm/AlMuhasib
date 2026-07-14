@@ -8,6 +8,7 @@ using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Network;
 using AlMuhasib.Infrastructure.Security;
 using AlMuhasib.Infrastructure.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace AlMuhasib.UI.Windows;
 
@@ -27,9 +28,9 @@ public partial class SetupWizardHostWindow : Window
 
     public SetupWizardHostWindow()
     {
+        var appSettingsPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
         var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile(appSettingsPath, optional: true)
             .Build();
 
         _mainServerHostingService = new MainServerHostingService(configuration);
