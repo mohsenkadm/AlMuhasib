@@ -16,7 +16,9 @@ public static class InvoiceProductMergeHelper
             if (pick.Quantity <= 0)
                 continue;
 
-            var existing = items.FirstOrDefault(i => i.ProductId == pick.Product.Id);
+            var existing = items.FirstOrDefault(i =>
+                i.ProductId == pick.Product.Id &&
+                i.PricingTypeId == pick.PricingTypeId);
             if (existing is not null)
             {
                 existing.Quantity += pick.Quantity;
@@ -29,7 +31,9 @@ public static class InvoiceProductMergeHelper
             {
                 SelectedProduct = pick.Product,
                 Quantity = pick.Quantity,
-                UnitPrice = pick.SuggestedUnitPrice
+                UnitPrice = pick.SuggestedUnitPrice,
+                PricingTypeId = pick.PricingTypeId,
+                PricingTypeName = pick.PricingTypeName ?? string.Empty
             };
             wireRow(row);
             items.Add(row);

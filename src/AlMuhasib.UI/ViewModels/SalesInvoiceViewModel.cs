@@ -137,7 +137,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IInvoiceDraftService draftService,
         IRecentActivityService recentActivity,
         IInvoiceTemplateService templateService,
-        IInvoiceQueueService queueService)
+        IInvoiceQueueService queueService,
+        IProductPriceService productPriceService,
+        IUserPreferencesService userPreferences)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -152,7 +154,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
         PageTitle = "فاتورة مبيعات";
 
-        ProductPicker = new ProductPickerViewModel(_unitOfWork);
+        ProductPicker = new ProductPickerViewModel(
+            _unitOfWork,
+            productPriceService,
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
@@ -675,6 +680,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
+                    PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = row.Quantity,
                     UnitPrice = row.UnitPrice,

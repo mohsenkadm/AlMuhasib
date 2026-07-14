@@ -12,6 +12,12 @@ public partial class InvoiceItemRow : ObservableObject
     private int? _productId;
 
     [ObservableProperty]
+    private int? _pricingTypeId;
+
+    [ObservableProperty]
+    private string _pricingTypeName = string.Empty;
+
+    [ObservableProperty]
     private string _itemName = string.Empty;
 
     [ObservableProperty]

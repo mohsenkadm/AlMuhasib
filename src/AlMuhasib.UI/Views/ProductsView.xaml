@@ -261,13 +261,80 @@
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8"
                                   Visibility="{Binding IsCardView, Converter={StaticResource BoolToVis}}">
-                        <ItemsControl ItemsSource="{Binding Products}"
-                                        ItemTemplate="{StaticResource ProductCardTemplate}">
+                        <ItemsControl ItemsSource="{Binding ProductCards}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource MasterDataEntityCardBorder}" Width="268" Margin="0,0,10,10">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,0,8">
+                                                <materialDesign:PackIcon Kind="PackageVariant" Width="20" Height="20" Foreground="#388E3C"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                                                    <Run Text="التصنيف: "/><Run Text="{Binding CategoryName}"/>
+                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas">
+                                                    <Run Text="الباركود: "/><Run Text="{Binding Barcode, TargetNullValue=—}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <ItemsControl Grid.Row="3" ItemsSource="{Binding Prices}" Margin="0,6,0,6"
+                                                          Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#F1F8E9" CornerRadius="8" Padding="8,6" Margin="0,0,0,6">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding PricingTypeName}" FontWeight="SemiBold" FontSize="12"/>
+                                                                    <TextBlock FontSize="11" Foreground="#546E7A">
+                                                                        <Run Text="بيع: "/><Run Text="{Binding SalePriceText}" FontWeight="Bold"/>
+                                                                        <Run Text="  |  شراء: "/><Run Text="{Binding PurchasePriceText}" FontWeight="Bold"/>
+                                                                    </TextBlock>
+                                                                </StackPanel>
+                                                                <Button Grid.Column="1"
+                                                                        Command="{Binding DataContext.OpenEditPriceDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource TableEditIconButton}"
+                                                                        ToolTip="تعديل السعر"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <StackPanel Grid.Row="4" Orientation="Horizontal">
+                                                <Button Command="{Binding DataContext.OpenAddPriceDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource FlatButton}" Margin="0,0,6,0"
+                                                        Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
+                                                        Content="إضافة سعر"/>
+                                                <Button Command="{Binding DataContext.OpenEditProductFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableEditIconButton}"/>
+                                                <Button Command="{Binding DataContext.ConfirmDeleteFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableDeleteIconButton}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
                 </Grid>
@@ -479,6 +546,39 @@
                                     Content="إلغاء"
                                     Style="{StaticResource OutlinedButton}"
                                     Padding="24,8" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <materialDesign:DialogHost IsOpen="{Binding IsPriceEditDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="420" Padding="24" Background="White" CornerRadius="16">
+                    <StackPanel>
+                        <TextBlock Text="تعديل سعر المنتج" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding PriceEditProductName}" FontSize="14" Foreground="#546E7A" Margin="0,0,0,16"/>
+                        <ComboBox materialDesign:HintAssist.Hint="نوع التسعير"
+                                  ItemsSource="{Binding PricingTypes}"
+                                  SelectedItem="{Binding EditPricingType}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource MaterialDesignFilledComboBox}"
+                                  Margin="0,0,0,12"/>
+                        <TextBox materialDesign:HintAssist.Hint="سعر البيع"
+                                 Text="{Binding EditSalePrice, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox materialDesign:HintAssist.Hint="سعر الشراء"
+                                 Text="{Binding EditPurchasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding PriceEditError}" Foreground="#C62828" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="حفظ" Command="{Binding SaveProductPriceCommand}"
+                                    Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Padding="24,8"/>
+                            <Button Content="إلغاء" Command="{Binding CancelPriceEditCommand}"
+                                    Style="{StaticResource OutlinedButton}" Padding="24,8"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>

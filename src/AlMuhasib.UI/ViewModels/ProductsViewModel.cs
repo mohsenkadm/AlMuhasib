@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -21,10 +22,14 @@ public partial class ProductsViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IBarcodeLabelService _barcodeLabelService;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IProductPriceService _productPriceService;
+    private readonly bool _pricingEnabled;
 
     // ── Collections ────────────────────────────────────────
     public ObservableCollection<Product> Products { get; } = [];
+    public ObservableCollection<ProductCardDisplay> ProductCards { get; } = [];
     public ObservableCollection<Category> Categories { get; } = [];
+    public ObservableCollection<PricingType> PricingTypes { get; } = [];
 
     // ── Filter / Search ────────────────────────────────────
     [ObservableProperty]
@@ -89,7 +94,31 @@ public partial class ProductsViewModel : ViewModelBase
     [ObservableProperty]
     private Product? _productToDelete;
 
+    // ── Price edit dialog ──────────────────────────────────
+    [ObservableProperty]
+    private bool _isPriceEditDialogOpen;
+
+    [ObservableProperty]
+    private string _priceEditProductName = string.Empty;
+
+    [ObservableProperty]
+    private PricingType? _editPricingType;
+
+    [ObservableProperty]
+    private decimal _editSalePrice;
+
+    [ObservableProperty]
+    private decimal _editPurchasePrice;
+
+    [ObservableProperty]
+    private string _priceEditError = string.Empty;
+
+    [ObservableProperty]
+    private bool _showPricingOnCards;
+
     private int? _editingProductId;
+    private int? _editingPriceProductId;
+    private int? _editingProductPriceId;
     private System.Timers.Timer? _debounceTimer;
 
     public ProductsViewModel(
@@ -99,7 +128,8 @@ public partial class ProductsViewModel : ViewModelBase
         IExportService exportService,
         ICurrentUserService currentUserService,
         IBarcodeLabelService barcodeLabelService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IProductPriceService productPriceService)
     {
         _productService = productService;
         _unitOfWork = unitOfWork;
@@ -108,6 +138,9 @@ public partial class ProductsViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _barcodeLabelService = barcodeLabelService;
         _userPreferences = userPreferences;
+        _productPriceService = productPriceService;
+        _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        ShowPricingOnCards = _pricingEnabled;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
@@ -156,6 +189,7 @@ public partial class ProductsViewModel : ViewModelBase
             TotalCount = filteredTotal;
             TotalPages = filteredPages;
             PaginationText = filteredText;
+            await RebuildProductCardsAsync(Products);
             return;
         }
 
@@ -172,6 +206,49 @@ public partial class ProductsViewModel : ViewModelBase
         Products.Clear();
         foreach (var p in items)
             Products.Add(p);
+
+        await RebuildProductCardsAsync(items);
+    }
+
+    private async Task RebuildProductCardsAsync(IEnumerable<Product> items)
+    {
+        ProductCards.Clear();
+        var list = items.ToList();
+        Dictionary<int, List<ProductPrice>> pricesByProduct = new();
+
+        if (_pricingEnabled && list.Count > 0)
+        {
+            if (PricingTypes.Count == 0)
+            {
+                foreach (var t in await _unitOfWork.PricingTypes.GetAllAsync())
+                    PricingTypes.Add(t);
+            }
+
+            var prices = await _productPriceService.GetByProductIdsAsync(list.Select(p => p.Id));
+            pricesByProduct = prices.GroupBy(p => p.ProductId).ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        foreach (var product in list)
+        {
+            var card = new ProductCardDisplay { Product = product };
+            if (pricesByProduct.TryGetValue(product.Id, out var productPrices))
+            {
+                foreach (var price in productPrices)
+                {
+                    card.Prices.Add(new ProductPriceCardLine
+                    {
+                        ProductPriceId = price.Id,
+                        ProductId = product.Id,
+                        PricingTypeId = price.PricingTypeId,
+                        PricingTypeName = price.PricingType?.Name ?? "",
+                        SalePrice = price.SalePrice,
+                        PurchasePrice = price.PurchasePrice
+                    });
+                }
+            }
+
+            ProductCards.Add(card);
+        }
     }
 
     protected override void OnColumnFiltersChanged()
@@ -543,4 +620,80 @@ public partial class ProductsViewModel : ViewModelBase
 
     partial void OnIsCardViewChanged(bool value) =>
         ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Products, value);
+
+    [RelayCommand]
+    private void OpenEditPriceDialog(ProductPriceCardLine? line)
+    {
+        if (line is null || !_pricingEnabled) return;
+        _editingPriceProductId = line.ProductId;
+        _editingProductPriceId = line.ProductPriceId;
+        PriceEditProductName = Products.FirstOrDefault(p => p.Id == line.ProductId)?.Name
+                               ?? ProductCards.FirstOrDefault(c => c.Product.Id == line.ProductId)?.Name
+                               ?? "";
+        EditPricingType = PricingTypes.FirstOrDefault(t => t.Id == line.PricingTypeId);
+        EditSalePrice = line.SalePrice;
+        EditPurchasePrice = line.PurchasePrice;
+        PriceEditError = string.Empty;
+        IsPriceEditDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void OpenAddPriceDialog(ProductCardDisplay? card)
+    {
+        if (card is null || !_pricingEnabled) return;
+        _editingPriceProductId = card.Product.Id;
+        _editingProductPriceId = null;
+        PriceEditProductName = card.Name;
+        EditPricingType = PricingTypes.FirstOrDefault(t => t.IsDefault) ?? PricingTypes.FirstOrDefault();
+        EditSalePrice = 0;
+        EditPurchasePrice = 0;
+        PriceEditError = string.Empty;
+        IsPriceEditDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task SaveProductPrice()
+    {
+        if (_editingPriceProductId is null || EditPricingType is null)
+        {
+            PriceEditError = "اختر نوع التسعير";
+            return;
+        }
+
+        try
+        {
+            await _productPriceService.UpsertAsync(new ProductPrice
+            {
+                Id = _editingProductPriceId ?? 0,
+                ProductId = _editingPriceProductId.Value,
+                PricingTypeId = EditPricingType.Id,
+                SalePrice = EditSalePrice,
+                PurchasePrice = EditPurchasePrice
+            });
+            IsPriceEditDialogOpen = false;
+            await LoadProductsAsync();
+            BeautifulMessageDialog.ShowSuccess("تم حفظ السعر");
+        }
+        catch (Exception ex)
+        {
+            PriceEditError = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelPriceEdit() => IsPriceEditDialogOpen = false;
+
+    [RelayCommand]
+    private void OpenEditProductFromCard(ProductCardDisplay? card)
+    {
+        if (card?.Product is not null)
+            OpenEditDialog(card.Product);
+    }
+
+    [RelayCommand]
+    private void ConfirmDeleteFromCard(ProductCardDisplay? card)
+    {
+        if (card?.Product is not null)
+            ConfirmDelete(card.Product);
+    }
 }

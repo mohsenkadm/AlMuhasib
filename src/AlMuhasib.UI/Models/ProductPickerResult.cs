@@ -7,4 +7,6 @@ public sealed class ProductPickerResult
     public required Product Product { get; init; }
     public decimal Quantity { get; init; }
     public decimal SuggestedUnitPrice { get; init; }
+    public int? PricingTypeId { get; init; }
+    public string? PricingTypeName { get; init; }
 }

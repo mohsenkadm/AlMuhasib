@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,6 +15,14 @@ public enum InvoicePickerMode
     Sale,
     Purchase,
     Installment
+}
+
+public partial class ProductPricingOption : ObservableObject
+{
+    public int PricingTypeId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public decimal Price { get; init; }
+    public string Display => $"{Name} — {Price:N0}";
 }
 
 public partial class ProductPickerDisplayItem : ObservableObject
@@ -36,21 +45,45 @@ public partial class ProductPickerDisplayItem : ObservableObject
     [ObservableProperty]
     private string _stockLabel = string.Empty;
 
+    [ObservableProperty]
+    private bool _pricingEnabled;
+
+    public ObservableCollection<ProductPricingOption> PricingOptions { get; } = [];
+
+    [ObservableProperty]
+    private ProductPricingOption? _selectedPricingOption;
+
     public bool IsSelected => Quantity > 0;
 
+    public string SelectedPriceLabel =>
+        SelectedPricingOption is null ? string.Empty : $"السعر: {SelectedPricingOption.Price:N0}";
+
     partial void OnQuantityChanged(decimal value) => OnPropertyChanged(nameof(IsSelected));
+
+    partial void OnSelectedPricingOptionChanged(ProductPricingOption? value)
+    {
+        OnPropertyChanged(nameof(SelectedPriceLabel));
+        PricingSelectionChanged?.Invoke(this);
+    }
+
+    public event Action<ProductPickerDisplayItem>? PricingSelectionChanged;
 }
 
 public partial class ProductPickerViewModel : ObservableObject
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductPriceService? _productPriceService;
+    private readonly bool _pricingEnabled;
     private readonly Dictionary<int, decimal> _quantities = new();
+    private readonly Dictionary<int, int> _selectedPricingTypeIds = new();
     private List<Product> _allProducts = [];
     private List<Category> _categories = [];
     private Dictionary<int, string> _categoryNames = [];
     private Dictionary<int, decimal> _stockByProduct = [];
     private Dictionary<int, decimal> _suggestedPrices = [];
+    private Dictionary<int, List<ProductPricingOption>> _pricesByProduct = [];
     private int? _warehouseId;
+    private InvoicePickerMode _mode;
 
     public ObservableCollection<Category> Categories { get; } = [];
     public ObservableCollection<ProductPickerDisplayItem> DisplayProducts { get; } = [];
@@ -70,58 +103,55 @@ public partial class ProductPickerViewModel : ObservableObject
     [ObservableProperty]
     private bool _isAllCategoriesSelected = true;
 
+    [ObservableProperty]
+    private bool _isPricingMode;
+
     public event Action? Confirmed;
     public event Action? Cancelled;
 
-    public ProductPickerViewModel(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public ProductPickerViewModel(
+        IUnitOfWork unitOfWork,
+        IProductPriceService? productPriceService = null,
+        bool pricingEnabled = false)
+    {
+        _unitOfWork = unitOfWork;
+        _productPriceService = productPriceService;
+        _pricingEnabled = pricingEnabled;
+        IsPricingMode = pricingEnabled;
+    }
 
     public async Task InitializeAsync(int? warehouseId, InvoicePickerMode mode)
     {
         _warehouseId = warehouseId;
+        _mode = mode;
         _quantities.Clear();
-        _suggestedPrices.Clear();
+        _selectedPricingTypeIds.Clear();
+        SearchText = string.Empty;
+        SelectedCategory = null;
+        IsAllCategoriesSelected = true;
 
-        var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
-        _allProducts = products;
-
-        _categories = (await _unitOfWork.Categories.GetAllAsync()).ToList();
+        _categories = (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name).ToList();
         _categoryNames = _categories.ToDictionary(c => c.Id, c => c.Name);
-
         Categories.Clear();
-        foreach (var c in _categories.OrderBy(c => c.Name))
+        foreach (var c in _categories)
             Categories.Add(c);
 
+        _allProducts = (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name).ToList();
         await LoadStockAsync();
         await LoadSuggestedPricesAsync(mode);
-
-        IsAllCategoriesSelected = true;
-        SelectedCategory = null;
-        SearchText = string.Empty;
-        RefreshDisplayProducts();
-        UpdateSummary();
-    }
-
-    public void SeedFromInvoiceItems(IEnumerable<InvoiceItemRow> rows)
-    {
-        foreach (var row in rows)
-        {
-            if (row.ProductId is not { } id || id <= 0)
-                continue;
-
-            _quantities[id] = _quantities.GetValueOrDefault(id) + Math.Max(0, row.Quantity);
-        }
+        if (_pricingEnabled && _productPriceService is not null)
+            await LoadProductPricesAsync(mode);
 
         RefreshDisplayProducts();
         UpdateSummary();
     }
 
+    partial void OnSearchTextChanged(string value) => RefreshDisplayProducts();
     partial void OnSelectedCategoryChanged(Category? value)
     {
         IsAllCategoriesSelected = value is null;
         RefreshDisplayProducts();
     }
-
-    partial void OnSearchTextChanged(string value) => RefreshDisplayProducts();
 
     [RelayCommand]
     private void SelectAllCategories()
@@ -131,29 +161,22 @@ public partial class ProductPickerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectCategory(Category? category)
+    private void AddProduct(ProductPickerDisplayItem item)
     {
-        SelectedCategory = category;
-        IsAllCategoriesSelected = category is null;
-    }
-
-    [RelayCommand]
-    private void AddProduct(ProductPickerDisplayItem? item)
-    {
-        if (item is null)
-            return;
-
-        _quantities[item.ProductId] = _quantities.GetValueOrDefault(item.ProductId) + 1;
+        if (item is null) return;
+        EnsurePricingSelection(item);
+        var current = _quantities.GetValueOrDefault(item.ProductId);
+        _quantities[item.ProductId] = current + 1;
+        if (item.SelectedPricingOption is not null)
+            _selectedPricingTypeIds[item.ProductId] = item.SelectedPricingOption.PricingTypeId;
         SyncItemQuantity(item.ProductId);
         UpdateSummary();
     }
 
     [RelayCommand]
-    private void RemoveProduct(ProductPickerDisplayItem? item)
+    private void RemoveProduct(ProductPickerDisplayItem item)
     {
-        if (item is null)
-            return;
-
+        if (item is null) return;
         var current = _quantities.GetValueOrDefault(item.ProductId);
         if (current <= 1)
             _quantities.Remove(item.ProductId);
@@ -174,10 +197,7 @@ public partial class ProductPickerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Confirm()
-    {
-        Confirmed?.Invoke();
-    }
+    private void Confirm() => Confirmed?.Invoke();
 
     [RelayCommand]
     private void Cancel() => Cancelled?.Invoke();
@@ -194,15 +214,41 @@ public partial class ProductPickerViewModel : ObservableObject
             if (product is null)
                 continue;
 
+            int? pricingTypeId = null;
+            string? pricingTypeName = null;
+            decimal suggested = _suggestedPrices.GetValueOrDefault(productId);
+
+            if (_pricingEnabled &&
+                _pricesByProduct.TryGetValue(productId, out var options) &&
+                options.Count > 0)
+            {
+                var selectedTypeId = _selectedPricingTypeIds.GetValueOrDefault(productId);
+                var option = options.FirstOrDefault(o => o.PricingTypeId == selectedTypeId)
+                             ?? options.First();
+                pricingTypeId = option.PricingTypeId;
+                pricingTypeName = option.Name;
+                suggested = option.Price;
+            }
+
             results.Add(new ProductPickerResult
             {
                 Product = product,
                 Quantity = qty,
-                SuggestedUnitPrice = _suggestedPrices.GetValueOrDefault(productId)
+                SuggestedUnitPrice = suggested,
+                PricingTypeId = pricingTypeId,
+                PricingTypeName = pricingTypeName
             });
         }
 
         return results;
+    }
+
+    private void EnsurePricingSelection(ProductPickerDisplayItem item)
+    {
+        if (!_pricingEnabled || item.SelectedPricingOption is not null)
+            return;
+        if (item.PricingOptions.Count > 0)
+            item.SelectedPricingOption = item.PricingOptions[0];
     }
 
     private async Task LoadStockAsync()
@@ -219,6 +265,7 @@ public partial class ProductPickerViewModel : ObservableObject
 
     private async Task LoadSuggestedPricesAsync(InvoicePickerMode mode)
     {
+        _suggestedPrices.Clear();
         if (mode == InvoicePickerMode.Purchase)
         {
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(_ => true);
@@ -248,6 +295,26 @@ public partial class ProductPickerViewModel : ObservableObject
         }
     }
 
+    private async Task LoadProductPricesAsync(InvoicePickerMode mode)
+    {
+        _pricesByProduct.Clear();
+        if (_productPriceService is null)
+            return;
+
+        var productIds = _allProducts.Select(p => p.Id);
+        var prices = await _productPriceService.GetByProductIdsAsync(productIds);
+        foreach (var group in prices.GroupBy(p => p.ProductId))
+        {
+            var options = group.Select(p => new ProductPricingOption
+            {
+                PricingTypeId = p.PricingTypeId,
+                Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
+                Price = mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice
+            }).ToList();
+            _pricesByProduct[group.Key] = options;
+        }
+    }
+
     private void RefreshDisplayProducts()
     {
         var term = SearchText?.Trim() ?? string.Empty;
@@ -272,10 +339,30 @@ public partial class ProductPickerViewModel : ObservableObject
             var item = new ProductPickerDisplayItem(product, catName)
             {
                 Quantity = _quantities.GetValueOrDefault(product.Id),
-                StockLabel = FormatStock(product.Id)
+                StockLabel = FormatStock(product.Id),
+                PricingEnabled = _pricingEnabled
             };
+
+            if (_pricesByProduct.TryGetValue(product.Id, out var options))
+            {
+                foreach (var option in options)
+                    item.PricingOptions.Add(option);
+
+                var selectedId = _selectedPricingTypeIds.GetValueOrDefault(product.Id);
+                item.SelectedPricingOption = options.FirstOrDefault(o => o.PricingTypeId == selectedId)
+                                            ?? options.FirstOrDefault();
+            }
+
+            item.PricingSelectionChanged += OnPricingSelectionChanged;
             DisplayProducts.Add(item);
         }
+    }
+
+    private void OnPricingSelectionChanged(ProductPickerDisplayItem item)
+    {
+        if (item.SelectedPricingOption is null)
+            return;
+        _selectedPricingTypeIds[item.ProductId] = item.SelectedPricingOption.PricingTypeId;
     }
 
     private void SyncItemQuantity(int productId)
@@ -300,8 +387,8 @@ public partial class ProductPickerViewModel : ObservableObject
     private string FormatStock(int productId)
     {
         if (!_stockByProduct.TryGetValue(productId, out var qty))
-            return "رصيد: 0";
+            return "رصيد المخزن: 0";
 
-        return $"رصيد: {qty:N0}";
+        return $"رصيد المخزن: {qty:N0}";
     }
 }

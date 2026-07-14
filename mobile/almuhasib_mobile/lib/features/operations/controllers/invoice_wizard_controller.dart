@@ -5,12 +5,14 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/getx/app_services.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/mobile_models.dart';
+import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/lookup_picker_sheet.dart';
 
 class WizardLineItem {
   WizardLineItem({
     this.productSyncId,
+    this.pricingTypeSyncId,
     required this.itemName,
     required this.quantity,
     required this.unitPrice,
@@ -18,6 +20,7 @@ class WizardLineItem {
   });
 
   final String? productSyncId;
+  final String? pricingTypeSyncId;
   final String itemName;
   double quantity;
   double unitPrice;
@@ -41,6 +44,22 @@ class InvoiceWizardController extends GetxController {
   final installmentCount = 6.obs;
   final installmentStart = DateTime.now().obs;
   final saving = false.obs;
+  final productPricingEnabled = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadBusinessSettings();
+  }
+
+  Future<void> _loadBusinessSettings() async {
+    try {
+      final settings = await AppServices.data.getBusinessSettings();
+      productPricingEnabled.value = settings.productPricingEnabled;
+    } catch (_) {
+      productPricingEnabled.value = false;
+    }
+  }
 
   bool get needsCustomer =>
       invoiceType.value == 1 || invoiceType.value == 2;
@@ -50,6 +69,9 @@ class InvoiceWizardController extends GetxController {
 
   bool get needsInstallmentPlan =>
       paymentMethod.value == 2 || invoiceType.value == 2;
+
+  bool get _usesSalePrice =>
+      invoiceType.value == 1 || invoiceType.value == 2;
 
   double get subtotal => items.fold(
         0.0,
@@ -91,12 +113,67 @@ class InvoiceWizardController extends GetxController {
       loadItems: (search) => AppServices.data.getProducts(search: search),
     );
     if (product == null) return;
+
+    String? pricingTypeSyncId;
+    var unitPrice = 0.0;
+
+    if (productPricingEnabled.value && product.prices.isNotEmpty) {
+      final selectedPrice = await _pickProductPrice(ctx, product);
+      if (selectedPrice == null) return;
+      pricingTypeSyncId = selectedPrice.pricingTypeSyncId;
+      unitPrice = _usesSalePrice
+          ? selectedPrice.salePrice
+          : selectedPrice.purchasePrice;
+    }
+
     items.add(
       WizardLineItem(
         productSyncId: product.syncId,
+        pricingTypeSyncId: pricingTypeSyncId,
         itemName: product.name,
         quantity: 1,
-        unitPrice: 0,
+        unitPrice: unitPrice,
+      ),
+    );
+  }
+
+  Future<ProductPriceLookupItem?> _pickProductPrice(
+    BuildContext context,
+    ProductLookupItem product,
+  ) async {
+    if (product.prices.length == 1) return product.prices.first;
+
+    return showModalBottomSheet<ProductPriceLookupItem>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Text(
+                'select_pricing_type'.tr(),
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+            ),
+            ...product.prices.map(
+              (price) => ListTile(
+                title: Text(price.pricingTypeName),
+                subtitle: Text(
+                  '${'sale_price'.tr()}: ${formatCurrency(price.salePrice)} • ${'purchase_price'.tr()}: ${formatCurrency(price.purchasePrice)}',
+                ),
+                trailing: price.isDefaultPricingType
+                    ? AppStatusChip(
+                        label: 'pricing_type_default'.tr(),
+                        tone: AppStatusTone.info,
+                      )
+                    : null,
+                onTap: () => Navigator.pop(ctx, price),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -170,6 +247,7 @@ class InvoiceWizardController extends GetxController {
               .map(
                 (item) => CreateInvoiceItemRequest(
                   productSyncId: item.productSyncId,
+                  pricingTypeSyncId: item.pricingTypeSyncId,
                   itemName: item.itemName,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,

@@ -145,7 +145,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         IWhatsAppShareService whatsAppShare,
         IInvoiceTemplateService templateService,
         IInvoiceDraftService draftService,
-        IInvoiceQueueService queueService)
+        IInvoiceQueueService queueService,
+        IProductPriceService productPriceService,
+        IUserPreferencesService userPreferences)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -160,7 +162,10 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
         PageTitle = "فاتورة أقساط";
 
-        ProductPicker = new ProductPickerViewModel(_unitOfWork);
+        ProductPicker = new ProductPickerViewModel(
+            _unitOfWork,
+            productPriceService,
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
@@ -548,6 +553,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
+                    PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = row.Quantity,
                     UnitPrice = row.UnitPrice,

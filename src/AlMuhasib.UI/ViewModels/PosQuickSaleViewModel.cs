@@ -21,9 +21,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IRecentActivityService _recentActivity;
     private readonly IFavoriteProductsService _favoriteProducts;
     private readonly ISoundService _sound;
+    private readonly IProductPriceService _productPriceService;
 
     private List<Product> _allProducts = [];
     private Dictionary<int, decimal> _suggestedPrices = [];
+    private Dictionary<int, int> _defaultPricingTypeByProduct = [];
+    private readonly bool _pricingEnabled;
 
     public ObservableCollection<Product> FilteredProducts { get; } = [];
     public ObservableCollection<Product> FavoriteProducts { get; } = [];
@@ -46,7 +49,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IUserPreferencesService userPreferences,
         IRecentActivityService recentActivity,
         IFavoriteProductsService favoriteProducts,
-        ISoundService sound)
+        ISoundService sound,
+        IProductPriceService productPriceService)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -55,6 +59,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _userPreferences = userPreferences;
         _recentActivity = recentActivity;
         _favoriteProducts = favoriteProducts;
+        _productPriceService = productPriceService;
+        _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
 
         CartLines.CollectionChanged += OnCartChanged;
@@ -76,6 +82,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             _allProducts = products;
 
             await LoadSuggestedPricesAsync();
+            if (_pricingEnabled)
+                await LoadCatalogPricesAsync();
 
             Warehouses.Clear();
             foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
@@ -253,6 +261,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             var items = CartLines.Select(line => new InvoiceItem
             {
                 ProductId = line.ProductId,
+                PricingTypeId = line.PricingTypeId,
                 ItemName = line.ProductName,
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
@@ -286,13 +295,14 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private void AddOrIncrementProduct(Product product)
     {
         var price = _suggestedPrices.GetValueOrDefault(product.Id);
+        int? pricingTypeId = _defaultPricingTypeByProduct.TryGetValue(product.Id, out var tid) ? tid : null;
         if (price <= 0)
         {
             BeautifulMessageDialog.ShowWarning($"لا يوجد سعر سابق لـ «{product.Name}» — أدخل السعر من السلة");
             price = 0;
         }
 
-        var existing = CartLines.FirstOrDefault(l => l.ProductId == product.Id);
+        var existing = CartLines.FirstOrDefault(l => l.ProductId == product.Id && l.PricingTypeId == pricingTypeId);
         if (existing is not null)
         {
             existing.Quantity += 1;
@@ -300,7 +310,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return;
         }
 
-        CartLines.Add(PosCartLine.FromProduct(product, price));
+        CartLines.Add(PosCartLine.FromProduct(product, price, 1m, pricingTypeId));
         StatusMessage = $"أُضيف {product.Name}";
     }
 
@@ -343,6 +353,18 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 .OrderByDescending(i => i.Id)
                 .FirstOrDefault();
             _suggestedPrices[product.Id] = lastSale?.UnitPrice ?? 0;
+        }
+    }
+
+    private async Task LoadCatalogPricesAsync()
+    {
+        _defaultPricingTypeByProduct.Clear();
+        var prices = await _productPriceService.GetByProductIdsAsync(_allProducts.Select(p => p.Id));
+        foreach (var group in prices.GroupBy(p => p.ProductId))
+        {
+            var preferred = group.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? group.First();
+            _suggestedPrices[group.Key] = preferred.SalePrice;
+            _defaultPricingTypeByProduct[group.Key] = preferred.PricingTypeId;
         }
     }
 

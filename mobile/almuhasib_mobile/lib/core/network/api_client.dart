@@ -168,6 +168,18 @@ class ApiClient {
     }
   }
 
+  Future<T> delete<T>(
+    String path, {
+    required T Function(dynamic data) parser,
+  }) async {
+    try {
+      final response = await _dio.delete(path);
+      return parser(response.data);
+    } on DioException catch (e) {
+      throw _mapError(e);
+    }
+  }
+
   ApiException _mapError(DioException e) {
     final data = e.response?.data;
     if (data is Map<String, dynamic>) {
