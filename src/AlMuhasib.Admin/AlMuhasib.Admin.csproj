@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>almuhasib-admin-desktop-license-7c3e9a2b</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
