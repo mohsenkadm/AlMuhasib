@@ -101,41 +101,63 @@
                         </StackPanel>
 
                         <StackPanel Visibility="{Binding IsDineIn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,12">
-                            <TextBlock Text="اختر الطاولة" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBlock Text="اختر الطاولة" FontWeight="Bold" FontSize="13" Margin="0,0,0,4"/>
+                            <TextBlock Text="المشغولة (برتقالي) = استئناف الطلب" FontSize="10" Opacity="0.7" Margin="0,0,0,8" TextWrapping="Wrap"/>
                             <ItemsControl ItemsSource="{Binding Tables}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" Padding="0" Margin="4">
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
-                                                    <Setter Property="Width" Value="68"/>
-                                                    <Setter Property="Height" Value="68"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border x:Name="Tile" CornerRadius="10" Background="#00897B">
-                                                                    <TextBlock Text="{Binding TableNumber}" Foreground="White" FontWeight="Bold" FontSize="16"
-                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:RestaurantTableStatus.Occupied}">
-                                                                        <Setter TargetName="Tile" Property="Background" Value="#E65100"/>
-                                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding DataContext.SelectedTable.Id, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="{Binding Id}">
-                                                                        <Setter TargetName="Tile" Property="BorderBrush" Value="White"/>
-                                                                        <Setter TargetName="Tile" Property="BorderThickness" Value="3"/>
-                                                                    </DataTrigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </Button.Style>
+                                        <Button Style="{StaticResource RestaurantPosTableButton}"
+                                                Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding TableNumber}" Foreground="White" FontWeight="Bold" FontSize="16"
+                                                           HorizontalAlignment="Center"/>
+                                                <TextBlock FontSize="9" Foreground="#E0FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="متاحة"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:RestaurantTableStatus.Occupied}">
+                                                                    <Setter Property="Text" Value="استئناف"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,12" Visibility="{Binding OpenOrdersCount, Converter={StaticResource PositiveIntToVisibilityConverter}}">
+                            <TextBlock Text="طلبات مفتوحة" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding OpenOrders}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Margin="0,0,0,6" Padding="10,8" HorizontalContentAlignment="Stretch"
+                                                Style="{StaticResource FlatButton}"
+                                                Command="{Binding DataContext.ResumeOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding OrderNumber}" FontWeight="SemiBold" FontSize="12"/>
+                                                    <TextBlock FontSize="10" Opacity="0.75">
+                                                        <Run Text="{Binding Table.TableNumber, StringFormat='طاولة {0}', Mode=OneWay}"/>
+                                                        <Run Text=" · "/>
+                                                        <Run Text="{Binding TotalAmount, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <md:PackIcon Grid.Column="1" Kind="PlayCircleOutline" VerticalAlignment="Center" Foreground="#00897B"/>
+                                            </Grid>
                                         </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -260,6 +282,15 @@
 
             <!-- Cart -->
             <md:Card Grid.Column="2" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="16">
+                <md:Card.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.35"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </md:Card.Triggers>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -386,22 +417,16 @@
                             <ComboBox md:HintAssist.Hint="الصندوق" ItemsSource="{Binding CashBoxes}"
                                       SelectedValuePath="Id" SelectedValue="{Binding PaymentCashBoxId}"
                                       DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <TextBox md:HintAssist.Hint="المبلغ المدفوع" Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"/>
-                            <TextBlock Margin="0,0,0,12">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ChangeDue, Mode=OneWay}" Value="0">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                                <Run Text="الباقي:"/>
-                                <Run Text="{Binding ChangeDue, StringFormat='{}{0:N0} د.ع', Mode=OneWay}" FontWeight="Bold" Foreground="#2E7D32"/>
-                            </TextBlock>
+                            <TextBox md:HintAssist.Hint="المبلغ المستلم" Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"
+                                     IsEnabled="{Binding IsCashPayment}"/>
+                            <Border Background="#E8F5E9" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding ShowChangeDue, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock>
+                                    <Run Text="الباقي للعميل:"/>
+                                    <Run Text="{Binding ChangeDue, StringFormat='{}{0:N0} د.ع', Mode=OneWay}" FontWeight="Bold" Foreground="#2E7D32"/>
+                                </TextBlock>
+                            </Border>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
