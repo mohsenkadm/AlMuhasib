@@ -30,6 +30,7 @@ public sealed class InvoiceItemSyncDto : SyncDtoBase
 {
     public Guid InvoiceSyncId { get; set; }
     public Guid? ProductSyncId { get; set; }
+    public Guid? PricingTypeSyncId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }

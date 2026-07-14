@@ -127,7 +127,7 @@ public sealed class NetworkConnectionService : INetworkConnectionService
         if (_current is null || !_current.IsConfigured)
             return Task.FromResult(NetworkConnectionTestResult.Fail("لم يتم إعداد الربط بعد."));
 
-        return TestConnectionAsync(_current, cancellationToken);
+        return TestConnectionAsync(_current, null, cancellationToken);
     }
 
     public void SaveBranchProfile(NetworkConnectionProfile profile)

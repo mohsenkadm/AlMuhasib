@@ -49,6 +49,8 @@ public partial class MainWindowViewModel
     private static bool IsFeatureFlagVisible(NavigationMenuItem item, BusinessFeatureFlags flags) => item.ViewModelType switch
     {
         var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
+        var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
+        var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
         _ => true
     };
 

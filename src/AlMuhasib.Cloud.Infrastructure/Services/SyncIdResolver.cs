@@ -44,6 +44,9 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveExpenseTypeAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.ExpenseTypes, syncId, ct);
 
+    public async Task<int?> ResolvePricingTypeAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.PricingTypes, syncId, ct);
+
     public async Task<int?> ResolveInvoiceAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.Invoices, syncId, ct);
 

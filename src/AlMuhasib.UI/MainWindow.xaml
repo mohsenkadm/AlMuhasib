@@ -1217,6 +1217,12 @@
                         <DataTemplate DataType="{x:Type vm:CategoriesViewModel}">
                             <views:CategoriesView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PricingTypesViewModel}">
+                            <views:PricingTypesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductPricingViewModel}">
+                            <views:ProductPricingView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CustomersViewModel}">
                             <views:CustomersView />
                         </DataTemplate>

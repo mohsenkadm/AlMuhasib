@@ -1,0 +1,197 @@
+<UserControl x:Class="AlMuhasib.UI.Views.ProductPricingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,12" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="تسعير منتجات" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <WrapPanel>
+                    <Button Command="{Binding AddRowCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,8"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="صف جديد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SaveAllCommand}" Style="{StaticResource PrimaryButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8"
+                            IsEnabled="{Binding CanEdit}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ التسعير"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ExportTemplateCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanExport}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileDownloadOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="استخراج قالب Excel"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ExportToExcelCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanExport}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تصدير Excel"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ImportFromExcelCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileUploadOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="استيراد Excel"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,8"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                </WrapPanel>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="16" Margin="0,0,0,12" md:ElevationAssist.Elevation="Dp1">
+            <WrapPanel>
+                <TextBox md:HintAssist.Hint="بحث داخل الجدول"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" MinWidth="200" Margin="0,0,8,8"/>
+                <ComboBox md:HintAssist.Hint="التصنيف"
+                          ItemsSource="{Binding Categories}"
+                          SelectedItem="{Binding FilterCategory}"
+                          DisplayMemberPath="Name"
+                          Style="{StaticResource MaterialDesignFilledComboBox}"
+                          MinWidth="160" Margin="0,0,8,8"/>
+                <ComboBox md:HintAssist.Hint="نوع التسعير"
+                          ItemsSource="{Binding PricingTypes}"
+                          SelectedItem="{Binding FilterPricingType}"
+                          DisplayMemberPath="Name"
+                          Style="{StaticResource MaterialDesignFilledComboBox}"
+                          MinWidth="150" Margin="0,0,8,8"/>
+                <TextBox md:HintAssist.Hint="أدنى بيع"
+                         Text="{Binding MinSalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Width="100" Margin="0,0,8,8"/>
+                <TextBox md:HintAssist.Hint="أقصى بيع"
+                         Text="{Binding MaxSalePriceText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Width="100" Margin="0,0,8,8"/>
+                <TextBox md:HintAssist.Hint="أدنى شراء"
+                         Text="{Binding MinPurchasePriceText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Width="100" Margin="0,0,8,8"/>
+                <TextBox md:HintAssist.Hint="أقصى شراء"
+                         Text="{Binding MaxPurchasePriceText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Width="100" Margin="0,0,8,8"/>
+                <Button Content="تطبيق الفلاتر" Command="{Binding ApplyFiltersCommand}"
+                        Style="{StaticResource PrimaryButton}" md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8"/>
+                <Button Content="مسح" Command="{Binding ClearFiltersCommand}"
+                        Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8"/>
+                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                               ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                               ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                               TargetDataGrid="{Binding ElementName=PricingGrid}"
+                                               Margin="0,0,8,8"/>
+            </WrapPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
+                    <TextBlock Text="إدخال سريع داخل الجدول — منتج + نوع تسعير + سعر بيع وشراء"
+                               FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                </Border>
+                <DataGrid x:Name="PricingGrid" Grid.Row="1"
+                          ItemsSource="{Binding Rows}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="المنتج" Width="2*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding AvailableProducts}"
+                                              SelectedItem="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"
+                                              IsEditable="True"
+                                              IsTextSearchEnabled="True"
+                                              StaysOpenOnEdit="True"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="نوع التسعير" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PricingTypeName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding AvailablePricingTypes}"
+                                              SelectedItem="{Binding SelectedPricingType, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="سعر البيع" Binding="{Binding SalePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalePrice"/>
+                        <DataGridTextColumn Header="سعر الشراء" Binding="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasePrice"/>
+                        <DataGridTemplateColumn Header="حذف" Width="80"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource TableDeleteIconButton}"
+                                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="360">
+                    <StackPanel>
+                        <TextBlock Text="تأكيد الحذف" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Text="هل تريد حذف سعر المنتج المحدد؟" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}" Margin="0,0,8,0"
+                                    Style="{StaticResource MaterialDesignRaisedButton}" Background="#C62828" Foreground="White"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

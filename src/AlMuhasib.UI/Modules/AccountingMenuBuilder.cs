@@ -34,6 +34,20 @@ public static class AccountingMenuBuilder
             },
             new()
             {
+                Title = "أنواع التسعير",
+                Icon = PackIconKind.CashMultiple,
+                ViewModelType = typeof(PricingTypesViewModel),
+                ScreenName = "PricingTypes"
+            },
+            new()
+            {
+                Title = "تسعير منتجات",
+                Icon = PackIconKind.TagTextOutline,
+                ViewModelType = typeof(ProductPricingViewModel),
+                ScreenName = "ProductPricing"
+            },
+            new()
+            {
                 Title = "العملاء",
                 Icon = PackIconKind.AccountGroup,
                 ViewModelType = typeof(CustomersViewModel),

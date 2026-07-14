@@ -20,6 +20,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
+    private readonly IProductPriceService _productPriceService;
+    private readonly IUserPreferencesService _userPreferences;
+    private readonly bool _updateProductPriceOnPurchase;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -106,7 +109,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         IExportService exportService,
         IInvoiceTemplateService templateService,
         IInvoiceDraftService draftService,
-        IInvoiceQueueService queueService)
+        IInvoiceQueueService queueService,
+        IProductPriceService productPriceService,
+        IUserPreferencesService userPreferences)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -115,10 +120,17 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         _templateService = templateService;
         _draftService = draftService;
         _queueService = queueService;
+        _productPriceService = productPriceService;
+        _userPreferences = userPreferences;
+        _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
+            && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
 
         PageTitle = "فاتورة مشتريات";
 
-        ProductPicker = new ProductPickerViewModel(_unitOfWork);
+        ProductPicker = new ProductPickerViewModel(
+            _unitOfWork,
+            productPriceService,
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
@@ -471,6 +483,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
+                    PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = row.Quantity,
                     UnitPrice = row.UnitPrice,
@@ -487,6 +500,17 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             else
             {
                 saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+
+                if (_updateProductPriceOnPurchase)
+                {
+                    foreach (var item in invoiceItems.Where(i => i.ProductId is > 0 && i.PricingTypeId is > 0))
+                    {
+                        await _productPriceService.UpdatePurchasePriceAsync(
+                            item.ProductId!.Value,
+                            item.PricingTypeId!.Value,
+                            item.UnitPrice);
+                    }
+                }
             }
 
             _savedInvoice = saved;

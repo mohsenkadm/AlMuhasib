@@ -185,6 +185,8 @@ public partial class App : Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ProductsViewModel>();
         services.AddTransient<CategoriesViewModel>();
+        services.AddTransient<PricingTypesViewModel>();
+        services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();

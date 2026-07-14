@@ -47,6 +47,9 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<PrintBrandingSettings>? _printBrandingSettings;
     private IRepository<UserTask>? _userTasks;
     private IRepository<UserNote>? _userNotes;
+    private IRepository<PricingType>? _pricingTypes;
+    private IRepository<ProductPrice>? _productPrices;
+    private IRepository<BusinessSettings>? _businessSettings;
 
     public IRepository<User> Users => _users ??= new Repository<User>(_contextFactory, GetActiveContext);
     public IRepository<Permission> Permissions => _permissions ??= new Repository<Permission>(_contextFactory, GetActiveContext);
@@ -76,6 +79,9 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<PrintBrandingSettings> PrintBrandingSettings => _printBrandingSettings ??= new Repository<PrintBrandingSettings>(_contextFactory, GetActiveContext);
     public IRepository<UserTask> UserTasks => _userTasks ??= new Repository<UserTask>(_contextFactory, GetActiveContext);
     public IRepository<UserNote> UserNotes => _userNotes ??= new Repository<UserNote>(_contextFactory, GetActiveContext);
+    public IRepository<PricingType> PricingTypes => _pricingTypes ??= new Repository<PricingType>(_contextFactory, GetActiveContext);
+    public IRepository<ProductPrice> ProductPrices => _productPrices ??= new Repository<ProductPrice>(_contextFactory, GetActiveContext);
+    public IRepository<BusinessSettings> BusinessSettings => _businessSettings ??= new Repository<BusinessSettings>(_contextFactory, GetActiveContext);
 
     public async Task<int> SaveChangesAsync()
     {
