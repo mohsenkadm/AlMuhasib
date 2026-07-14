@@ -11,6 +11,7 @@ using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.Windows;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -41,6 +42,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IRecentActivityService _recentActivity;
     private readonly IAuditLogService _auditLogService;
     private readonly IHelpSupportService _helpSupport;
+    private readonly IDesktopLicenseService _desktopLicense;
     private bool _investorsLookupDirty;
 
     /// <summary>
@@ -132,6 +134,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<ReportMenuEntry> ReportFlyoutItems { get; } = [];
 
+    [ObservableProperty]
+    private bool _showTrialBanner;
+
+    [ObservableProperty]
+    private string _trialBannerText = string.Empty;
+
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
         SystemModuleRegistry moduleRegistry,
         CurrentUserService currentUserService, IAuthService authService,
@@ -154,7 +162,8 @@ public partial class MainWindowViewModel : ObservableObject
         IVoiceRecognitionService voiceRecognition,
         VoiceCommandCatalog voiceCommandCatalog,
         VoiceCommandMatcher voiceCommandMatcher,
-        VoiceCommandExecutor voiceCommandExecutor)
+        VoiceCommandExecutor voiceCommandExecutor,
+        IDesktopLicenseService desktopLicense)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -173,6 +182,7 @@ public partial class MainWindowViewModel : ObservableObject
         _auditLogService = auditLogService;
         _smartAlertService = smartAlertService;
         _helpSupport = helpSupport;
+        _desktopLicense = desktopLicense;
         _notificationCenter = notificationCenter;
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
@@ -195,6 +205,7 @@ public partial class MainWindowViewModel : ObservableObject
         _themeService.ApplyFromPreferences();
         ApplyMenuVisibilityFromPreferences();
         LoadWorkspaceProfile();
+        RefreshTrialBanner();
         UpdateDateTime();
         StartClock();
         _ = RefreshRecentActivitiesAsync();
@@ -387,6 +398,27 @@ public partial class MainWindowViewModel : ObservableObject
         _suppressNavigation = true;
         SelectedMenuItem = MenuItems[0];
         _suppressNavigation = false;
+    }
+
+    private void RefreshTrialBanner()
+    {
+        var status = _desktopLicense.GetStatus();
+        ShowTrialBanner = status.ShowsTrialBanner;
+        TrialBannerText = status.ShowsTrialBanner
+            ? $"نسخة تجريبية — متبقي {status.DaysRemaining ?? 0} يوماً. فعّل النظام مدى الحياة عند الحاجة."
+            : string.Empty;
+    }
+
+    [RelayCommand]
+    private void OpenDesktopActivation()
+    {
+        var status = _desktopLicense.GetStatus();
+        var window = new DesktopActivationWindow(_desktopLicense, status, allowDismissWhileValid: true)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+        RefreshTrialBanner();
     }
 
     [RelayCommand]
