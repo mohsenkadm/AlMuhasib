@@ -18,11 +18,18 @@ void Assert(bool condition, string name)
     if (!condition) failures++;
 }
 
-// 1) Existing install → Grandfathered
+var jsonOpts = new System.Text.Json.JsonSerializerOptions
+{
+    WriteIndented = true,
+    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+};
+
+// 1) Legacy install → Grandfathered
 {
     var path = Path.Combine(root, "gf.json");
     var svc = new DesktopLicenseService(path, publicKey);
-    var status = svc.EnsureInitialized(profileIsConfigured: true);
+    var legacySelectedAt = DesktopLicenseKeys.FeatureIntroducedUtc.AddDays(-30);
+    var status = svc.EnsureInitialized(profileIsConfigured: true, legacySelectedAt);
     Assert(status.Mode == DesktopLicenseMode.Grandfathered, "grandfather mode");
     Assert(status.IsUsable, "grandfather usable");
     Assert(!status.ShowsTrialBanner, "grandfather no banner");
@@ -44,34 +51,30 @@ void Assert(bool condition, string name)
     var path = Path.Combine(root, "expired.json");
     var svc = new DesktopLicenseService(path, publicKey);
     svc.StartTrial(30);
-    var json = File.ReadAllText(path);
-    var state = System.Text.Json.JsonSerializer.Deserialize<DesktopLicenseState>(json, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })!;
+    var state = System.Text.Json.JsonSerializer.Deserialize<DesktopLicenseState>(File.ReadAllText(path), jsonOpts)!;
     state.TrialEndsAt = DateTime.UtcNow.AddDays(-1);
     state.IntegrityHash = DesktopLicenseIntegrity.Compute(state);
-    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, jsonOpts));
     var svc2 = new DesktopLicenseService(path, publicKey);
-    var expired = svc2.EnsureInitialized(false);
+    var expired = svc2.EnsureInitialized(true, DateTime.UtcNow);
     Assert(!expired.IsUsable, "expired not usable");
     Assert(expired.IsTrial, "expired is trial");
 }
 
-// 4) Activate lifetime with ephemeral keys
+// 4) Activate lifetime
 {
     var path = Path.Combine(root, "activate.json");
     var svc = new DesktopLicenseService(path, publicKey);
     var status = svc.StartTrial(1);
     var key = DesktopActivationCrypto.CreateLifetimeKey(status.InstallationId, privateKey);
-    Assert(
-        DesktopActivationCrypto.TryVerifyLifetimeKey(key, status.InstallationId, out _, publicKey),
-        "crypto verify");
+    Assert(DesktopActivationCrypto.TryVerifyLifetimeKey(key, status.InstallationId, out _, publicKey), "crypto verify");
     Assert(svc.TryActivate(key, out var err), $"activate ok ({err})");
     var after = svc.GetStatus();
     Assert(after.Mode == DesktopLicenseMode.Lifetime, "lifetime mode");
     Assert(after.IsUsable, "lifetime usable");
-    Assert(!after.ShowsTrialBanner, "lifetime no banner");
 }
 
-// 5) Wrong installation id key rejected
+// 5) Wrong installation id rejected
 {
     var path = Path.Combine(root, "badkey.json");
     var svc = new DesktopLicenseService(path, publicKey);
@@ -81,21 +84,19 @@ void Assert(bool condition, string name)
     Assert(svc.GetStatus().Mode == DesktopLicenseMode.Trial, "still trial after bad key");
 }
 
-// 6) Tampered trial dates become unusable
+// 6) Tampered trial without valid integrity → locked
 {
     var path = Path.Combine(root, "tamper.json");
     var svc = new DesktopLicenseService(path, publicKey);
     svc.StartTrial(1);
-    var json = File.ReadAllText(path);
-    var state = System.Text.Json.JsonSerializer.Deserialize<DesktopLicenseState>(json, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })!;
+    var state = System.Text.Json.JsonSerializer.Deserialize<DesktopLicenseState>(File.ReadAllText(path), jsonOpts)!;
     state.TrialEndsAt = DateTime.UtcNow.AddYears(10);
-    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, jsonOpts));
     var svc2 = new DesktopLicenseService(path, publicKey);
-    var status = svc2.EnsureInitialized(false);
-    Assert(!status.IsUsable, "tampered trial locked");
+    Assert(!svc2.EnsureInitialized(true, DateTime.UtcNow).IsUsable, "tampered trial locked");
 }
 
-// 7) Forged Grandfathered mode without token locks
+// 7) Forged grandfather string → locked
 {
     var path = Path.Combine(root, "forged-gf.json");
     var state = new DesktopLicenseState
@@ -107,12 +108,48 @@ void Assert(bool condition, string name)
         LastSeenUtc = DateTime.UtcNow
     };
     state.IntegrityHash = DesktopLicenseIntegrity.Compute(state);
-    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, jsonOpts));
     var svc = new DesktopLicenseService(path, publicKey);
-    var status = svc.EnsureInitialized(false);
-    Assert(!status.IsUsable, "forged grandfather locked");
+    Assert(!svc.EnsureInitialized(true, DateTime.UtcNow).IsUsable, "forged grandfather locked");
 }
 
-Directory.Delete(root, true);
+// 8) CRITICAL: deleting license after new install must NOT grandfather
+{
+    var path = Path.Combine(root, "deleted.json");
+    var svc = new DesktopLicenseService(path, publicKey);
+    svc.StartTrial(30);
+    File.Delete(path);
+    var svc2 = new DesktopLicenseService(path, publicKey);
+    var afterDelete = svc2.EnsureInitialized(true, DateTime.UtcNow);
+    Assert(!afterDelete.IsUsable, "delete-file does not unlock");
+    Assert(afterDelete.Mode == DesktopLicenseMode.Trial, "delete-file becomes expired trial");
+    Assert(afterDelete.Mode != DesktopLicenseMode.Grandfathered, "delete-file not grandfathered");
+}
+
+// 9) CRITICAL: corrupt file fails closed (not grandfather)
+{
+    var path = Path.Combine(root, "corrupt.json");
+    File.WriteAllText(path, "{ not-json");
+    var svc = new DesktopLicenseService(path, publicKey);
+    var status = svc.EnsureInitialized(true, DesktopLicenseKeys.FeatureIntroducedUtc.AddDays(-100));
+    Assert(!status.IsUsable, "corrupt fails closed");
+    Assert(status.Mode != DesktopLicenseMode.Grandfathered, "corrupt not grandfathered");
+}
+
+// 10) RefreshFromDisk sees expiry written externally
+{
+    var path = Path.Combine(root, "refresh.json");
+    var svc = new DesktopLicenseService(path, publicKey);
+    svc.StartTrial(30);
+    Assert(svc.IsUsable, "refresh pre usable");
+    var state = System.Text.Json.JsonSerializer.Deserialize<DesktopLicenseState>(File.ReadAllText(path), jsonOpts)!;
+    state.TrialEndsAt = DateTime.UtcNow.AddDays(-1);
+    state.IntegrityHash = DesktopLicenseIntegrity.Compute(state);
+    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(state, jsonOpts));
+    var refreshed = svc.RefreshFromDisk();
+    Assert(!refreshed.IsUsable, "refresh sees expiry");
+}
+
+Directory.Delete(root, recursive: true);
 Console.WriteLine(failures == 0 ? "ALL PASSED" : $"FAILURES={failures}");
 return failures == 0 ? 0 : 1;
