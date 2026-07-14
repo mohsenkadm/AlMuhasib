@@ -17,6 +17,7 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
     private readonly string _path;
     private readonly string _publicKeySpkiBase64;
     private DesktopLicenseState? _state;
+    private bool _corruptLoad;
 
     public DesktopLicenseService()
         : this(Path.Combine(
@@ -40,8 +41,9 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
 
     public bool IsUsable => GetStatus().IsUsable;
 
-    public DesktopLicenseStatus EnsureInitialized(bool profileIsConfigured)
+    public DesktopLicenseStatus EnsureInitialized(bool profileIsConfigured, DateTime? profileSelectedAtUtc = null)
     {
+        _corruptLoad = false;
         if (TryLoad(out var existing) && existing is not null)
         {
             _state = existing;
@@ -49,7 +51,26 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
             return ToStatus(existing);
         }
 
-        if (profileIsConfigured)
+        if (File.Exists(_path) || _corruptLoad)
+        {
+            // Corrupt / unreadable file: fail closed — never heal into Grandfathered.
+            QuarantineCorruptFile();
+            return PersistExpiredTrial(Guid.NewGuid());
+        }
+
+        if (!profileIsConfigured)
+        {
+            return new DesktopLicenseStatus
+            {
+                InstallationId = Guid.Empty,
+                Mode = DesktopLicenseMode.Trial,
+                IsUsable = true,
+                IsTrial = false,
+                Summary = "بانتظار إعداد النظام"
+            };
+        }
+
+        if (IsLegacyProfile(profileSelectedAtUtc))
         {
             var installationId = Guid.NewGuid();
             var grandfathered = new DesktopLicenseState
@@ -65,14 +86,8 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
             return ToStatus(grandfathered);
         }
 
-        return new DesktopLicenseStatus
-        {
-            InstallationId = Guid.Empty,
-            Mode = DesktopLicenseMode.Trial,
-            IsUsable = true,
-            IsTrial = false,
-            Summary = "بانتظار إعداد النظام"
-        };
+        // New / post-feature install with missing license file (e.g. deleted after trial).
+        return PersistExpiredTrial(Guid.NewGuid());
     }
 
     public DesktopLicenseStatus StartTrial(int trialDays = IDesktopLicenseService.DefaultTrialDays)
@@ -116,6 +131,26 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
         return ToStatus(_state!);
     }
 
+    public DesktopLicenseStatus RefreshFromDisk()
+    {
+        _state = null;
+        _corruptLoad = false;
+        if (!TryLoad(out _state) || _state is null)
+        {
+            return new DesktopLicenseStatus
+            {
+                InstallationId = Guid.Empty,
+                Mode = DesktopLicenseMode.Trial,
+                IsUsable = false,
+                IsTrial = true,
+                Summary = "لا يوجد ترخيص"
+            };
+        }
+
+        NormalizeLoadedState(_state);
+        return ToStatus(_state);
+    }
+
     public bool TryActivate(string activationKey, out string? error)
     {
         var status = GetStatus();
@@ -141,6 +176,48 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
         Persist(state);
         error = null;
         return true;
+    }
+
+    private static bool IsLegacyProfile(DateTime? profileSelectedAtUtc)
+    {
+        if (!profileSelectedAtUtc.HasValue)
+            return false;
+
+        var selected = profileSelectedAtUtc.Value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(profileSelectedAtUtc.Value, DateTimeKind.Utc)
+            : profileSelectedAtUtc.Value.ToUniversalTime();
+
+        return selected < DesktopLicenseKeys.FeatureIntroducedUtc;
+    }
+
+    private DesktopLicenseStatus PersistExpiredTrial(Guid installationId)
+    {
+        var state = new DesktopLicenseState
+        {
+            InstallationId = installationId,
+            Mode = DesktopLicenseMode.Trial,
+            TrialStartedAt = DateTime.UtcNow.AddDays(-IDesktopLicenseService.DefaultTrialDays),
+            TrialEndsAt = DateTime.UtcNow.AddDays(-1),
+            LastSeenUtc = DateTime.UtcNow
+        };
+        state.IntegrityHash = DesktopLicenseIntegrity.Compute(state);
+        Persist(state);
+        return ToStatus(state);
+    }
+
+    private void QuarantineCorruptFile()
+    {
+        try
+        {
+            if (!File.Exists(_path))
+                return;
+            var quarantine = _path + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            File.Move(_path, quarantine, overwrite: true);
+        }
+        catch
+        {
+            // ignore quarantine failures
+        }
     }
 
     private void NormalizeLoadedState(DesktopLicenseState state)
@@ -172,7 +249,6 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
             }
             else
             {
-                // Tamper or corruption of a trial (or forged mode): force expired trial lock.
                 state.Mode = DesktopLicenseMode.Trial;
                 state.TrialEndsAt = DateTime.UtcNow.AddDays(-1);
                 state.ActivationPayload = null;
@@ -238,6 +314,7 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
     private bool TryLoad(out DesktopLicenseState? state)
     {
         state = null;
+        _corruptLoad = false;
         if (!File.Exists(_path))
             return false;
 
@@ -246,12 +323,17 @@ public sealed class DesktopLicenseService : IDesktopLicenseService
             var json = File.ReadAllText(_path);
             state = JsonSerializer.Deserialize<DesktopLicenseState>(json, JsonOptions);
             if (state is null || state.InstallationId == Guid.Empty)
+            {
+                _corruptLoad = true;
                 return false;
+            }
+
             _state = state;
             return true;
         }
         catch
         {
+            _corruptLoad = true;
             return false;
         }
     }

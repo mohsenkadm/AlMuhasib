@@ -310,30 +310,26 @@ public partial class App : Application
                     return;
                 }
 
+                // Start trial before saving the profile so a crash between steps never
+                // greets the next launch as a "legacy" install without a license file.
+                _desktopLicense.StartTrial();
+
                 _systemProfile.SaveSelection(
                     wizard.SelectedSystem.Value,
                     wizard.SelectedDeploymentMode,
                     wizard.BranchDisplayName);
-
-                // New installs only: start the desktop trial after first successful setup.
-                _desktopLicense.StartTrial();
             }
             else
             {
-                // Existing configured installs without a license file become Grandfathered (lifetime).
-                _desktopLicense.EnsureInitialized(profileIsConfigured: true);
+                // Legacy profiles (SelectedAt before FeatureIntroducedUtc) without a
+                // license file are grandfathered once. Newer installs fail closed.
+                _desktopLicense.EnsureInitialized(
+                    profileIsConfigured: true,
+                    profileSelectedAtUtc: _systemProfile.Current.SelectedAt);
             }
 
-            var licenseStatus = _desktopLicense.GetStatus();
-            if (!licenseStatus.IsUsable)
-            {
-                var activation = new DesktopActivationWindow(_desktopLicense, licenseStatus, allowDismissWhileValid: false);
-                if (activation.ShowDialog() != true || !_desktopLicense.IsUsable)
-                {
-                    Shutdown();
-                    return;
-                }
-            }
+            if (!EnsureLicenseUsableOrShutdown())
+                return;
 
             EnsureServiceProvider();
 
@@ -669,8 +665,30 @@ public partial class App : Application
         _isLoggingOut = false;
         mainVm.IsExitConfirmed = false;
 
+        // Re-check license after logout in case the trial expired during the session.
+        if (!EnsureLicenseUsableOrShutdown(forceDiskRefresh: true))
+            return;
+
         // Restart the login → dashboard cycle
         await ShowLoginAndMainWindowAsync();
+    }
+
+    /// <returns>false when the app is shutting down due to an unusable license.</returns>
+    private bool EnsureLicenseUsableOrShutdown(bool forceDiskRefresh = false)
+    {
+        var licenseStatus = forceDiskRefresh
+            ? _desktopLicense.RefreshFromDisk()
+            : _desktopLicense.GetStatus();
+
+        if (licenseStatus.IsUsable)
+            return true;
+
+        var activation = new DesktopActivationWindow(_desktopLicense, licenseStatus, allowDismissWhileValid: false);
+        if (activation.ShowDialog() == true && _desktopLicense.IsUsable)
+            return true;
+
+        Shutdown();
+        return false;
     }
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
