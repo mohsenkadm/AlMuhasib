@@ -129,7 +129,11 @@ public partial class ProductsViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         IBarcodeLabelService barcodeLabelService,
         IUserPreferencesService userPreferences,
-        IProductPriceService productPriceService)
+        IProductPriceService productPriceService,
+        IFeatureFlagService featureFlags,
+        IProductUnitService productUnitService,
+        IProductBatchService productBatchService,
+        IProductSerialService productSerialService)
     {
         _productService = productService;
         _unitOfWork = unitOfWork;
@@ -144,6 +148,7 @@ public partial class ProductsViewModel : ViewModelBase
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
+        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService);
     }
 
     public override async Task InitializeAsync()
@@ -344,11 +349,12 @@ public partial class ProductsViewModel : ViewModelBase
         EditBarcode = string.Empty;
         EditCategory = null;
         DialogError = string.Empty;
+        ClearFeatureEditCollections();
         IsDialogOpen = true;
     }
 
     [RelayCommand]
-    private void OpenEditDialog(Product product)
+    private async Task OpenEditDialog(Product product)
     {
         if (product is null) return;
 
@@ -360,6 +366,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditBarcode = product.Barcode ?? string.Empty;
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         DialogError = string.Empty;
+        await LoadFeatureDataForProductAsync(product.Id);
         IsDialogOpen = true;
     }
 
@@ -404,7 +411,14 @@ public partial class ProductsViewModel : ViewModelBase
                     CategoryId = EditCategory.Id
                 };
 
-                await _productService.CreateAsync(product);
+                var created = await _productService.CreateAsync(product);
+                _editingProductId = created.Id;
+                IsEditMode = true;
+                DialogTitle = "تعديل المنتج";
+                await LoadFeatureDataForProductAsync(created.Id);
+                BeautifulMessageDialog.ShowSuccess("تم حفظ المنتج — يمكنك الآن إضافة الوحدات/الدفعات/السيريالات إن كانت مفعّلة");
+                await LoadProductsAsync();
+                return;
             }
 
             IsDialogOpen = false;

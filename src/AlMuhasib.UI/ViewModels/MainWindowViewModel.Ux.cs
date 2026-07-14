@@ -46,13 +46,19 @@ public partial class MainWindowViewModel
 
     public void ApplyMenuVisibilityFromPreferences() => RefreshMenuVisibility();
 
-    private static bool IsFeatureFlagVisible(NavigationMenuItem item, BusinessFeatureFlags flags) => item.ViewModelType switch
+    private static bool IsFeatureFlagVisible(NavigationMenuItem item, BusinessFeatureFlags flags)
     {
-        var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
-        var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
-        var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
-        _ => true
-    };
+        if (string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
+            return flags.PurchaseReturns;
+
+        return item.ViewModelType switch
+        {
+            var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
+            var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
+            var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
+            _ => true
+        };
+    }
 
     [RelayCommand]
     private void ToggleMenuCustomizer()

@@ -276,6 +276,47 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
+                                <DataGridTemplateColumn Header="الوحدة" Width="100"
+                                                        Visibility="{Binding DataContext.ShowUnitsOfMeasure, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableUnits}"
+                                                      SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="UnitName"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="رقم الدفعة" Width="100"
+                                                        Visibility="{Binding DataContext.ShowExpiryTracking, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="تاريخ الانتهاء" Width="120"
+                                                        Visibility="{Binding DataContext.ShowExpiryTracking, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="سيريال" Width="120"
+                                                        Visibility="{Binding DataContext.ShowSerialNumbers, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="أرقام مفصولة بفاصلة عند شراء أكثر من قطعة"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <!-- Quantity -->
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>

@@ -146,6 +146,22 @@ public partial class ProductPickerViewModel : ObservableObject
         UpdateSummary();
     }
 
+    /// <summary>يملأ كميات المنتقي من بنود الفاتورة الحالية.</summary>
+    public void SeedFromInvoiceItems(IEnumerable<InvoiceItemRow> items)
+    {
+        foreach (var row in items.Where(i => i.ProductId is > 0 && i.Quantity != 0))
+        {
+            var id = row.ProductId!.Value;
+            _quantities[id] = _quantities.GetValueOrDefault(id) + Math.Abs(row.Quantity);
+            if (row.PricingTypeId is int pricingTypeId)
+                _selectedPricingTypeIds[id] = pricingTypeId;
+        }
+
+        foreach (var productId in _quantities.Keys.ToList())
+            SyncItemQuantity(productId);
+        UpdateSummary();
+    }
+
     partial void OnSearchTextChanged(string value) => RefreshDisplayProducts();
     partial void OnSelectedCategoryChanged(Category? value)
     {

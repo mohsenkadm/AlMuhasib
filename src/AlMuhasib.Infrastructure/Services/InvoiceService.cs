@@ -45,7 +45,7 @@ public class InvoiceService : IInvoiceService
 
             decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType);
             invoice.RoundingAmount = roundingAmount;
-            invoice.RoundingType = invoice.InvoiceType == InvoiceType.Purchase
+            invoice.RoundingType = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? RoundingType.RoundUp
                 : RoundingType.RoundDown;
             invoice.NetAmount = netAmount + roundingAmount;
@@ -77,7 +77,8 @@ public class InvoiceService : IInvoiceService
             }
             await context.SaveChangesAsync();
 
-            if (!skipStockUpdate && (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.Sale || invoice.InvoiceType == InvoiceType.Installment))
+            if (!skipStockUpdate && invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
+                or InvoiceType.Sale or InvoiceType.Installment)
             {
                 foreach (var item in itemsList.Where(i => i.ProductId.HasValue))
                 {
@@ -108,11 +109,17 @@ public class InvoiceService : IInvoiceService
                     }
                     else
                     {
+                        // Sale / Installment / PurchaseReturn: decrease stock
                         if (stock is not null)
                         {
                             stock.Quantity -= item.Quantity;
                             stock.UpdatedBy = username;
                             stock.UpdatedAt = DateTime.UtcNow;
+                        }
+                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                        {
+                            throw new InvalidOperationException(
+                                $"لا يوجد رصيد كافٍ لإرجاع المنتج (#{item.ProductId}) من المخزن");
                         }
                     }
                 }
@@ -126,6 +133,8 @@ public class InvoiceService : IInvoiceService
                 {
                     if (invoice.InvoiceType == InvoiceType.Purchase)
                         cashBox.Balance -= invoice.NetAmount;
+                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                        cashBox.Balance += invoice.NetAmount; // استرداد نقد من المورد
                     else
                         cashBox.Balance += invoice.NetAmount;
 
@@ -227,7 +236,7 @@ public class InvoiceService : IInvoiceService
         decimal remainder = netAmount % roundingStep;
         if (remainder == 0) return 0m;
 
-        if (invoiceType == InvoiceType.Purchase)
+        if (invoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn)
             return roundingStep - remainder;
         else
             return -remainder;
@@ -340,6 +349,8 @@ public class InvoiceService : IInvoiceService
                 {
                     if (invoice.InvoiceType == InvoiceType.Purchase)
                         cashBox.Balance += invoice.NetAmount;
+                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                        cashBox.Balance -= invoice.NetAmount;
                     else
                         cashBox.Balance -= invoice.NetAmount;
 
@@ -359,6 +370,8 @@ public class InvoiceService : IInvoiceService
                 {
                     if (invoice.InvoiceType == InvoiceType.Purchase)
                         stock.Quantity -= item.Quantity;
+                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                        stock.Quantity += item.Quantity;
                     else
                         stock.Quantity += item.Quantity;
 
