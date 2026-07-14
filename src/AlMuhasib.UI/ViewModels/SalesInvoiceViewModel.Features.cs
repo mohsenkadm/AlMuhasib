@@ -67,6 +67,13 @@ public partial class SalesInvoiceViewModel
             ApplyActiveLabelsToRow(row);
     }
 
+    private void RestoreCustomFieldHeadersFromJson(string json)
+    {
+        var labels = InvoiceCustomFieldsHelper.ExtractPublicLabels(json);
+        if (labels.Count == 0) return;
+        ApplyCustomFieldLabels(labels);
+    }
+
     private void ApplyActiveLabelsToRow(InvoiceItemRow row)
     {
         row.CustomField1Label = CustomField1Header;
@@ -93,8 +100,18 @@ public partial class SalesInvoiceViewModel
             row.AvailableBatches.Clear();
             foreach (var b in batches)
                 row.AvailableBatches.Add(b);
+            if (row.BatchId is int existingBatchId)
+                row.SelectedBatch = batches.FirstOrDefault(b => b.Id == existingBatchId) ?? row.SelectedBatch;
             if (row.SelectedBatch is null && batches.Count > 0)
                 row.SelectedBatch = batches[0];
+        }
+
+        if (ShowSerialNumbers && _productSerialService is not null)
+        {
+            var available = await _productSerialService.GetAvailableAsync(productId, SelectedWarehouse?.Id);
+            // إن لم يُدخل المستخدم سيريالاً وكان متاحاً واحد فقط، اقترحه تلقائياً
+            if (string.IsNullOrWhiteSpace(row.SerialNumber) && available.Count == 1)
+                row.SerialNumber = available[0].SerialNumber;
         }
     }
 

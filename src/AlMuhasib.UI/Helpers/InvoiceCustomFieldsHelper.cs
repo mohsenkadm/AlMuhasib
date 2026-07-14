@@ -90,4 +90,27 @@ public static class InvoiceCustomFieldsHelper
 
     public static decimal ToStockQuantity(InvoiceItemRow row) =>
         row.Quantity * (row.UnitConversionFactor <= 0 ? 1m : row.UnitConversionFactor);
+
+    /// <summary>يعيد تسميات الحقول العامة (غير المفاتيح الداخلية __*) من JSON محفوظ.</summary>
+    public static IReadOnlyList<string> ExtractPublicLabels(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return [];
+
+        try
+        {
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
+            if (dict is null || dict.Count == 0)
+                return [];
+
+            return dict.Keys
+                .Where(k => !k.StartsWith("__", StringComparison.Ordinal))
+                .Take(2)
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
 }
