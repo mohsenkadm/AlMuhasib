@@ -64,6 +64,7 @@
     <Grid x:Name="RootLayoutGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -372,8 +373,28 @@
             </Grid>
         </Border>
 
+        <!-- Trial banner (new installs only while trial is active) -->
+        <Border Grid.Row="1"
+                Background="#FFF8E1"
+                BorderBrush="#FFE082"
+                BorderThickness="0,0,0,1"
+                Padding="16,8"
+                Visibility="{Binding ShowTrialBanner, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Left"
+                        Content="إدخال مفتاح التفعيل"
+                        Command="{Binding OpenDesktopActivationCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="32" Padding="14,0" Margin="12,0,0,0"/>
+                <TextBlock VerticalAlignment="Center"
+                           FontSize="13"
+                           Foreground="#5D4037"
+                           Text="{Binding TrialBannerText}"/>
+            </DockPanel>
+        </Border>
+
         <!-- Body: sidebar + report flyout + main -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -1661,7 +1682,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- EXIT DIALOG OVERLAY                          -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Grid.RowSpan="2"
+        <Grid Grid.Row="0" Grid.RowSpan="3"
               Visibility="{Binding IsExitDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1000">
 
@@ -1867,7 +1888,7 @@
 
         <!-- جولة التعريف بالميزات -->
         <Grid Visibility="{Binding IsFeatureTourOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
-              Grid.RowSpan="2" Panel.ZIndex="2100">
+              Grid.RowSpan="3" Panel.ZIndex="2100">
             <Border Background="#99000000"/>
             <materialDesign:Card HorizontalAlignment="Center" VerticalAlignment="Center"
                                  MinWidth="400" MaxWidth="480" Padding="28,24"
@@ -1914,7 +1935,7 @@
         </Grid>
 
         <!-- المساعد الذكي -->
-        <Grid Grid.Row="1" Grid.RowSpan="1"
+        <Grid Grid.Row="1" Grid.RowSpan="2"
               Visibility="{Binding IsSmartAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="2050">
             <Border Background="#66000000" MouseLeftButtonDown="SmartAssistantBackdrop_Click"/>
@@ -2032,18 +2053,18 @@
 
         <!-- بحث شامل Ctrl+K -->
         <controls:GlobalSearchOverlay x:Name="GlobalSearchOverlay"
-                                      Grid.RowSpan="2"
+                                      Grid.RowSpan="3"
                                       Panel.ZIndex="2000"
                                       Visibility="{Binding IsGlobalSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <controls:VoiceAssistantOverlay x:Name="VoiceAssistantOverlay"
-                                        Grid.RowSpan="2"
+                                        Grid.RowSpan="3"
                                         Panel.ZIndex="2300"
                                         DataContext="{Binding}"
                                         Visibility="{Binding IsVoiceAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <controls:CustomerQuickStatementOverlay x:Name="QuickStatementOverlay"
-                                                Grid.RowSpan="2"
+                                                Grid.RowSpan="3"
                                                 Panel.ZIndex="2100"
                                                 DataContext="{Binding}"
                                                 Visibility="{Binding IsQuickStatementOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -2056,7 +2077,7 @@
                DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
                StaysOpen="False"
                AllowsTransparency="True"
-               Grid.RowSpan="2"
+               Grid.RowSpan="3"
                Panel.ZIndex="1990">
             <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
                     MinWidth="380" MaxWidth="520" MinHeight="200" MaxHeight="440"
@@ -2126,7 +2147,7 @@
                DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
                StaysOpen="False"
                AllowsTransparency="True"
-               Grid.RowSpan="2"
+               Grid.RowSpan="3"
                Panel.ZIndex="1985">
             <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
                     MinWidth="380" MaxWidth="520" MinHeight="280" MaxHeight="520"
@@ -2211,7 +2232,7 @@
         </Popup>
 
         <!-- Tasks panel dropdown -->
-        <Grid Grid.RowSpan="2"
+        <Grid Grid.RowSpan="3"
               Panel.ZIndex="2201"
               Visibility="{Binding IsTasksPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="TasksBackdrop_Click"/>
@@ -2255,7 +2276,7 @@
         </Grid>
 
         <!-- Notes panel dropdown -->
-        <Grid Grid.RowSpan="2"
+        <Grid Grid.RowSpan="3"
               Panel.ZIndex="2201"
               Visibility="{Binding IsNotesPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="NotesBackdrop_Click"/>
@@ -2299,7 +2320,7 @@
         </Grid>
 
         <!-- Notification Center dropdown -->
-        <Grid Grid.RowSpan="2"
+        <Grid Grid.RowSpan="3"
               Panel.ZIndex="2200"
               Visibility="{Binding IsNotificationPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="NotificationBackdrop_Click"/>
@@ -2343,7 +2364,7 @@
         </Grid>
 
         <!-- Open Recent Excel panel -->
-        <Grid Grid.RowSpan="2"
+        <Grid Grid.RowSpan="3"
               Panel.ZIndex="2202"
               Visibility="{Binding IsOpenRecentExcelPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#55000000" MouseLeftButtonDown="OpenRecentExcelBackdrop_Click"/>
@@ -2392,7 +2413,7 @@
         </Grid>
 
         <!-- Bottom notification reminder -->
-        <Border Grid.RowSpan="2"
+        <Border Grid.RowSpan="3"
                 Panel.ZIndex="2150"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
