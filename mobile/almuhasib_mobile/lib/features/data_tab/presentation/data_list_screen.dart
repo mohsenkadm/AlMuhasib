@@ -4,6 +4,7 @@ import 'package:get/get.dart' hide Trans;
 
 import '../controllers/data_list_controller.dart';
 import '../controllers/invoice_detail_controller.dart';
+import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/utils/formatters.dart';
@@ -161,7 +162,31 @@ class _DataListBody extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = controller.items[index];
         Widget tile;
-        if (item is LookupItem && listType != 'invoices') {
+        if (item is ProductLookupItem) {
+          final priceSummary = item.prices.isEmpty
+              ? null
+              : item.prices
+                  .map(
+                    (p) =>
+                        '${p.pricingTypeName}: ${formatCurrency(p.salePrice)}',
+                  )
+                  .take(2)
+                  .join(' • ');
+          tile = EntityListTile(
+            name: item.name,
+            subtitle: [
+              item.categoryName,
+              if (item.barcode != null && item.barcode!.isNotEmpty) item.barcode!,
+              if (priceSummary != null) priceSummary,
+            ].join(' • '),
+            onTap: () {
+              final route = controller.detailRouteFor(item);
+              if (route != null) {
+                Get.toNamed(route, arguments: item);
+              }
+            },
+          );
+        } else if (item is LookupItem && listType != 'invoices') {
           tile = EntityListTile(
             name: item.name,
             subtitle: item.extra,
@@ -171,12 +196,6 @@ class _DataListBody extends StatelessWidget {
                 Get.toNamed(route, arguments: item);
               }
             },
-          );
-        } else if (item is ProductLookupItem) {
-          tile = EntityListTile(
-            name: item.name,
-            subtitle:
-                '${item.categoryName}${item.barcode != null ? ' • ${item.barcode}' : ''}',
           );
         } else if (item is InvoiceDetailResponse) {
           tile = EntityListTile(
@@ -195,7 +214,7 @@ class _DataListBody extends StatelessWidget {
   }
 }
 
-class EntityDetailScreen extends StatelessWidget {
+class EntityDetailScreen extends StatefulWidget {
   const EntityDetailScreen({
     super.key,
     required this.entityType,
@@ -207,39 +226,133 @@ class EntityDetailScreen extends StatelessWidget {
   final String syncId;
   final String name;
 
-  String get _editRoute => switch (entityType) {
-        'customer' => AppRoutes.customerEditPath(syncId),
-        'product' => AppRoutes.productEditPath(syncId),
-        'supplier' => AppRoutes.supplierEditPath(syncId),
-        'investor' => AppRoutes.investorEditPath(syncId),
-        _ => AppRoutes.customerEditPath(syncId),
+  @override
+  State<EntityDetailScreen> createState() => _EntityDetailScreenState();
+}
+
+class _EntityDetailScreenState extends State<EntityDetailScreen> {
+  ProductLookupItem? _product;
+  bool _loadingProduct = false;
+
+  String get _editRoute => switch (widget.entityType) {
+        'customer' => AppRoutes.customerEditPath(widget.syncId),
+        'product' => AppRoutes.productEditPath(widget.syncId),
+        'supplier' => AppRoutes.supplierEditPath(widget.syncId),
+        'investor' => AppRoutes.investorEditPath(widget.syncId),
+        _ => AppRoutes.customerEditPath(widget.syncId),
       };
 
   @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    if (widget.entityType == 'product') {
+      if (args is ProductLookupItem) {
+        _product = args;
+      } else {
+        _loadProduct();
+      }
+    }
+  }
+
+  Future<void> _loadProduct() async {
+    setState(() => _loadingProduct = true);
+    try {
+      final products = await AppServices.data.getProducts();
+      for (final p in products) {
+        if (p.syncId == widget.syncId) {
+          if (mounted) setState(() => _product = p);
+          break;
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loadingProduct = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = _product;
+    final displayName =
+        widget.name.isNotEmpty ? widget.name : (product?.name ?? '');
+
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          GradientCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(title: Text(displayName)),
+      body: _loadingProduct
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
               children: [
-                Text(name, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text('SyncId: $syncId'),
+                GradientCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      if (product != null) ...[
+                        Text('${'category'.tr()}: ${product.categoryName}'),
+                        if (product.barcode != null &&
+                            product.barcode!.isNotEmpty)
+                          Text('${'barcode'.tr()}: ${product.barcode}'),
+                      ] else
+                        Text('SyncId: ${widget.syncId}'),
+                    ],
+                  ),
+                ),
+                if (product != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'product_prices'.tr(),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  if (product.prices.isEmpty)
+                    Text('no_product_prices'.tr())
+                  else
+                    ...product.prices.map(
+                      (price) => Card(
+                        child: ListTile(
+                          title: Text(price.pricingTypeName),
+                          subtitle: Text(
+                            '${'sale_price'.tr()}: ${formatCurrency(price.salePrice)} • ${'purchase_price'.tr()}: ${formatCurrency(price.purchasePrice)}',
+                          ),
+                          trailing: const Icon(Icons.edit_outlined),
+                          onTap: () async {
+                            final refreshed = await Get.toNamed<bool>(
+                              AppRoutes.productPriceEditPath(price.syncId),
+                              arguments: price,
+                            );
+                            if (refreshed == true) _loadProduct();
+                          },
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final refreshed = await Get.toNamed<bool>(
+                        AppRoutes.productPriceNew,
+                        arguments: product.syncId,
+                      );
+                      if (refreshed == true) _loadProduct();
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text('add_product_price'.tr()),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () =>
+                      Get.toNamed(_editRoute, arguments: product),
+                  icon: const Icon(Icons.edit),
+                  label: Text('edit'.tr()),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => Get.toNamed(_editRoute),
-            icon: const Icon(Icons.edit),
-            label: Text('edit'.tr()),
-          ),
-        ],
-      ),
     );
   }
 }

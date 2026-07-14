@@ -19,6 +19,8 @@ public sealed class ProductLookupItem : LookupItem
 public sealed class ProductPriceLookupItem
 {
     public Guid SyncId { get; set; }
+    public Guid ProductSyncId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
     public Guid PricingTypeSyncId { get; set; }
     public string PricingTypeName { get; set; } = string.Empty;
     public bool IsDefaultPricingType { get; set; }

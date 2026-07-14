@@ -88,6 +88,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 Item = new ProductPriceLookupItem
                 {
                     SyncId = p.SyncId,
+                    ProductSyncId = p.Product.SyncId,
+                    ProductName = p.Product.Name,
                     PricingTypeSyncId = p.PricingType.SyncId,
                     PricingTypeName = p.PricingType.Name,
                     IsDefaultPricingType = p.PricingType.IsDefault,
@@ -145,6 +147,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             .Select(p => new ProductPriceLookupItem
             {
                 SyncId = p.SyncId,
+                ProductSyncId = p.Product.SyncId,
+                ProductName = p.Product.Name,
                 PricingTypeSyncId = p.PricingType.SyncId,
                 PricingTypeName = p.PricingType.Name,
                 IsDefaultPricingType = p.PricingType.IsDefault,
