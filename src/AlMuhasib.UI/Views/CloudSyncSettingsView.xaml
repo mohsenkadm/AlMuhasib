@@ -35,6 +35,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Hero header -->
@@ -127,8 +129,35 @@
                 </Border>
             </UniformGrid>
 
+            <!-- Sync progress -->
+            <Border Grid.Row="2" Style="{StaticResource SyncSectionCard}" Padding="18,16"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding SyncProgressMessage}"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Column="1" Text="{Binding SyncRemainingText}"
+                                   FontSize="13" FontWeight="SemiBold" Foreground="#1565C0"
+                                   VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </Grid>
+                    <ProgressBar Height="10" Minimum="0" Maximum="100"
+                                 Value="{Binding SyncProgressPercent}"
+                                 IsIndeterminate="False"
+                                 Foreground="#1565C0"
+                                 Background="#E3F2FD"/>
+                    <TextBlock Text="{Binding SyncProgressPercent, StringFormat={}{0:0}%}"
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                               HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
             <!-- Error / status banner -->
-            <Border Grid.Row="2" CornerRadius="12" Padding="14,12" Margin="0,0,0,16"
+            <Border Grid.Row="3" CornerRadius="12" Padding="14,12" Margin="0,0,0,16"
                     Visibility="{Binding HasSyncError, Converter={StaticResource BoolVis}}">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -144,7 +173,7 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="2" CornerRadius="12" Padding="14,12" Margin="0,0,0,16"
+            <Border Grid.Row="3" CornerRadius="12" Padding="14,12" Margin="0,0,0,16"
                     Background="#E8F5E9" BorderBrush="#C8E6C9" BorderThickness="1"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolVis}}">
                 <StackPanel Orientation="Horizontal">
@@ -154,8 +183,73 @@
                 </StackPanel>
             </Border>
 
+            <!-- Conflicts details -->
+            <Border Grid.Row="4" Style="{StaticResource SyncSectionCard}"
+                    Visibility="{Binding HasConflicts, Converter={StaticResource BoolVis}}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <materialDesign:PackIcon Kind="AlertOutline" Width="22" Height="22"
+                                                         Foreground="#E65100" VerticalAlignment="Center"/>
+                                <TextBlock Text="تفاصيل التعارضات" FontSize="17" FontWeight="Bold"
+                                           Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" FontSize="12.5"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="التعارض يعني أن السحابة رفضت تحديث سجل محلي (مثلاً لأن نسخة السحابة أحدث، أو لأن سجلاً مرتبطاً غير موجود بعد). السجلات المقبولة رُفعت بنجاح."/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Command="{Binding CopyDiagnosticsCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="14,8" VerticalAlignment="Top" Margin="12,0,0,0"
+                                ToolTip="نسخ تقرير التشخيص الكامل للتحليل">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ContentCopy" Width="18" Height="18"
+                                                         VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="نسخ التشخيص" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock Text="{Binding CopyFeedback}" FontSize="12" Foreground="#2E7D32"
+                               Margin="0,0,0,10" TextWrapping="Wrap"
+                               Visibility="{Binding HasCopyFeedback, Converter={StaticResource BoolVis}}"/>
+
+                    <ItemsControl ItemsSource="{Binding Conflicts}" MaxHeight="280">
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FFF8E1" BorderBrush="#FFE082" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold" FontSize="13"
+                                                   Text="{Binding EntityTypeArabic}" Foreground="#E65100"/>
+                                        <TextBlock Text="{Binding ReasonArabic}" TextWrapping="Wrap"
+                                                   FontSize="12.5" Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock FontSize="11" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Text="{Binding SyncId, StringFormat=SyncId: {0}}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <!-- Connection settings -->
-            <Border Grid.Row="3" Style="{StaticResource SyncSectionCard}">
+            <Border Grid.Row="5" Style="{StaticResource SyncSectionCard}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                         <materialDesign:PackIcon Kind="ServerNetwork" Width="22" Height="22"
@@ -211,7 +305,7 @@
             </Border>
 
             <!-- Actions -->
-            <Border Grid.Row="4" Style="{StaticResource SyncSectionCard}" Margin="0">
+            <Border Grid.Row="6" Style="{StaticResource SyncSectionCard}" Margin="0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -227,7 +321,7 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button Command="{Binding SaveCommand}" Margin="0,0,8,0"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" Padding="16,8"
-                                >
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ContentSaveOutline" Width="18" Height="18"
                                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -236,7 +330,7 @@
                         </Button>
                         <Button Command="{Binding TestConnectionCommand}" Margin="0,0,8,0"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" Padding="16,8"
-                                >
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="LanConnect" Width="18" Height="18"
                                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -244,7 +338,8 @@
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding SyncNowCommand}" Style="{StaticResource AccentButton}"
-                                Padding="20,8">
+                                Padding="20,8"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CloudUpload" Width="18" Height="18"
                                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -253,17 +348,6 @@
                         </Button>
                     </StackPanel>
                 </Grid>
-            </Border>
-
-            <!-- Busy overlay -->
-            <Border Grid.Row="0" Grid.RowSpan="5" Background="#66000000" CornerRadius="12"
-                    Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                 Value="0" IsIndeterminate="True" Width="48" Height="48"/>
-                    <TextBlock Text="جاري المزامنة..." Foreground="White" FontSize="15" FontWeight="SemiBold"
-                               HorizontalAlignment="Center" Margin="0,14,0,0"/>
-                </StackPanel>
             </Border>
         </Grid>
     </ScrollViewer>
