@@ -14,16 +14,19 @@ abstract final class EnvConfig {
   static bool get isOneSignalConfigured =>
       oneSignalAppId.isNotEmpty && oneSignalAppId != 'your-onesignal-app-id';
 
+  static const String productionApiUrl =
+      'https://mohsenkadmapple-001-site1.dtempurl.com';
+
   static String defaultApiUrl() {
     if (kIsWeb) {
-      return dotenv.env['DEFAULT_API_URL_OTHER'] ?? 'http://localhost:5265';
+      return dotenv.env['DEFAULT_API_URL_OTHER'] ?? productionApiUrl;
     }
     if (Platform.isAndroid) {
-      return dotenv.env['DEFAULT_API_URL_ANDROID'] ?? 'http://10.0.2.2:5265';
+      return dotenv.env['DEFAULT_API_URL_ANDROID'] ?? productionApiUrl;
     }
     if (Platform.isIOS) {
-      return dotenv.env['DEFAULT_API_URL_IOS'] ?? 'http://127.0.0.1:5265';
+      return dotenv.env['DEFAULT_API_URL_IOS'] ?? productionApiUrl;
     }
-    return dotenv.env['DEFAULT_API_URL_OTHER'] ?? 'http://localhost:5265';
+    return dotenv.env['DEFAULT_API_URL_OTHER'] ?? productionApiUrl;
   }
 }

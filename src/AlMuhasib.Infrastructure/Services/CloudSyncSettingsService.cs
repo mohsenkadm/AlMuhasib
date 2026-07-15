@@ -7,7 +7,7 @@ namespace AlMuhasib.Infrastructure.Services;
 
 public sealed class CloudSyncSettingsService : ICloudSyncSettingsService
 {
-    private const string DefaultLocalApiUrl = "http://localhost:5265";
+    private const string DefaultLocalApiUrl = "https://mohsenkadmapple-001-site1.dtempurl.com";
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
 
     public CloudSyncSettingsService(IDbContextFactory<AppDbContext> contextFactory)

@@ -164,7 +164,7 @@
                                    Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <TextBox materialDesign:HintAssist.Hint="عنوان API (مثال: http://localhost:5265)"
+                    <TextBox materialDesign:HintAssist.Hint="عنوان API (مثال: https://mohsenkadmapple-001-site1.dtempurl.com)"
                              Text="{Binding ApiBaseUrl, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,14" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
 
