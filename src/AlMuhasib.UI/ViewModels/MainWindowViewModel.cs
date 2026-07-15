@@ -11,6 +11,7 @@ using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.Windows;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -41,6 +42,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IRecentActivityService _recentActivity;
     private readonly IAuditLogService _auditLogService;
     private readonly IHelpSupportService _helpSupport;
+    private readonly IDesktopLicenseService _desktopLicense;
     private bool _investorsLookupDirty;
 
     /// <summary>
@@ -132,6 +134,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<ReportMenuEntry> ReportFlyoutItems { get; } = [];
 
+    [ObservableProperty]
+    private bool _showTrialBanner;
+
+    [ObservableProperty]
+    private string _trialBannerText = string.Empty;
+
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
         SystemModuleRegistry moduleRegistry,
         CurrentUserService currentUserService, IAuthService authService,
@@ -154,7 +162,8 @@ public partial class MainWindowViewModel : ObservableObject
         IVoiceRecognitionService voiceRecognition,
         VoiceCommandCatalog voiceCommandCatalog,
         VoiceCommandMatcher voiceCommandMatcher,
-        VoiceCommandExecutor voiceCommandExecutor)
+        VoiceCommandExecutor voiceCommandExecutor,
+        IDesktopLicenseService desktopLicense)
     {
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
@@ -173,6 +182,7 @@ public partial class MainWindowViewModel : ObservableObject
         _auditLogService = auditLogService;
         _smartAlertService = smartAlertService;
         _helpSupport = helpSupport;
+        _desktopLicense = desktopLicense;
         _notificationCenter = notificationCenter;
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
@@ -195,6 +205,7 @@ public partial class MainWindowViewModel : ObservableObject
         _themeService.ApplyFromPreferences();
         ApplyMenuVisibilityFromPreferences();
         LoadWorkspaceProfile();
+        RefreshTrialBanner();
         UpdateDateTime();
         StartClock();
         _ = RefreshRecentActivitiesAsync();
@@ -203,6 +214,7 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceNavigationBridge.CopyToSalesInvoiceAsync = CopyToSalesInvoiceAsync;
         InvoiceNavigationBridge.CopyToPurchaseInvoiceAsync = CopyToPurchaseInvoiceAsync;
         InvoiceNavigationBridge.ReturnSalesInvoiceAsync = ReturnSalesInvoiceAsync;
+        InvoiceNavigationBridge.ReturnPurchaseInvoiceAsync = ReturnPurchaseInvoiceAsync;
         InvoiceNavigationBridge.EditSalesInvoiceAsync = EditSalesInvoiceAsync;
         InvoiceNavigationBridge.EditPurchaseInvoiceAsync = EditPurchaseInvoiceAsync;
         InvoiceNavigationBridge.EditInstallmentInvoiceAsync = EditInstallmentInvoiceAsync;
@@ -266,6 +278,32 @@ public partial class MainWindowViewModel : ObservableObject
 
         InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = invoiceId;
         await OpenTabAsync(typeof(SalesInvoiceViewModel), "مرتجع مبيعات", PackIconKind.KeyboardReturn, activateIfExists: false);
+    }
+
+    private async Task ReturnPurchaseInvoiceAsync(int invoiceId)
+    {
+        if (!_userPreferences.Current.FeatureFlags.PurchaseReturns)
+        {
+            _toast.ShowWarning("فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
+        {
+            ActivateTab(existing);
+            await purchaseVm.LoadAsReturnFromInvoiceAsync(invoiceId);
+            return;
+        }
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة جديدة.");
+            return;
+        }
+
+        InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId = invoiceId;
+        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "مرتجع مشتريات", PackIconKind.KeyboardReturn, activateIfExists: false);
     }
 
     private async Task EditInstallmentInvoiceAsync(int invoiceId)
@@ -389,6 +427,27 @@ public partial class MainWindowViewModel : ObservableObject
         _suppressNavigation = false;
     }
 
+    private void RefreshTrialBanner()
+    {
+        var status = _desktopLicense.GetStatus();
+        ShowTrialBanner = status.ShowsTrialBanner;
+        TrialBannerText = status.ShowsTrialBanner
+            ? $"نسخة تجريبية — متبقي {status.DaysRemaining ?? 0} يوماً. فعّل النظام مدى الحياة عند الحاجة."
+            : string.Empty;
+    }
+
+    [RelayCommand]
+    private void OpenDesktopActivation()
+    {
+        var status = _desktopLicense.GetStatus();
+        var window = new DesktopActivationWindow(_desktopLicense, status, allowDismissWhileValid: true)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+        RefreshTrialBanner();
+    }
+
     [RelayCommand]
     private void SelectMenuItem(NavigationMenuItem item)
     {
@@ -437,7 +496,11 @@ public partial class MainWindowViewModel : ObservableObject
         PageTitle = item.Title;
 
         if (item.ViewModelType is not null)
-            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon);
+        {
+            if (string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
+                InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
+            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon, activateIfExists: false);
+        }
     }
 
     public void ToggleReportFlyout(NavigationMenuItem category)

@@ -6,6 +6,9 @@ public static class SyncEntityOrder
     [
         SyncEntityType.Category,
         SyncEntityType.Product,
+        SyncEntityType.PricingType,
+        SyncEntityType.ProductPrice,
+        SyncEntityType.BusinessSettings,
         SyncEntityType.Warehouse,
         SyncEntityType.Customer,
         SyncEntityType.Supplier,

@@ -6,6 +6,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Data;
+using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
@@ -31,6 +32,7 @@ public partial class App : Application
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
 
     private readonly SystemProfileService _systemProfile = new();
+    private readonly DesktopLicenseService _desktopLicense = new();
     private ServiceProvider? _serviceProvider;
     public IServiceProvider Services => _serviceProvider ?? throw new InvalidOperationException("Application is not initialized.");
     private bool _isLoggingOut;
@@ -137,6 +139,7 @@ public partial class App : Application
 
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<ISystemProfileService>(_systemProfile);
+        services.AddSingleton<IDesktopLicenseService>(_desktopLicense);
         services.AddSingleton<SystemModuleRegistry>();
 
         services.Configure<AppUpdateOptions>(configuration.GetSection(AppUpdateOptions.SectionName));
@@ -152,6 +155,7 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
         services.AddSingleton<ISoundService, SoundService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<IDeveloperAccessService, DeveloperAccessService>();
@@ -185,6 +189,8 @@ public partial class App : Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ProductsViewModel>();
         services.AddTransient<CategoriesViewModel>();
+        services.AddTransient<PricingTypesViewModel>();
+        services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
@@ -308,6 +314,25 @@ public partial class App : Application
                     wizard.SelectedSystem.Value,
                     wizard.SelectedDeploymentMode,
                     wizard.BranchDisplayName);
+
+                // New installs only: start the desktop trial after first successful setup.
+                _desktopLicense.StartTrial();
+            }
+            else
+            {
+                // Existing configured installs without a license file become Grandfathered (lifetime).
+                _desktopLicense.EnsureInitialized(profileIsConfigured: true);
+            }
+
+            var licenseStatus = _desktopLicense.GetStatus();
+            if (!licenseStatus.IsUsable)
+            {
+                var activation = new DesktopActivationWindow(_desktopLicense, licenseStatus, allowDismissWhileValid: false);
+                if (activation.ShowDialog() != true || !_desktopLicense.IsUsable)
+                {
+                    Shutdown();
+                    return;
+                }
             }
 
             EnsureServiceProvider();

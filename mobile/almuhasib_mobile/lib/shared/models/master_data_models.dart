@@ -21,6 +21,41 @@ class LookupItem {
   final String? extra;
 }
 
+class ProductPriceLookupItem {
+  ProductPriceLookupItem({
+    required this.syncId,
+    required this.productSyncId,
+    required this.productName,
+    required this.pricingTypeSyncId,
+    required this.pricingTypeName,
+    this.isDefaultPricingType = false,
+    required this.salePrice,
+    required this.purchasePrice,
+  });
+
+  factory ProductPriceLookupItem.fromJson(Map<String, dynamic> json) {
+    return ProductPriceLookupItem(
+      syncId: json['syncId']?.toString() ?? '',
+      productSyncId: json['productSyncId']?.toString() ?? '',
+      productName: json['productName'] as String? ?? '',
+      pricingTypeSyncId: json['pricingTypeSyncId']?.toString() ?? '',
+      pricingTypeName: json['pricingTypeName'] as String? ?? '',
+      isDefaultPricingType: json['isDefaultPricingType'] as bool? ?? false,
+      salePrice: _num(json['salePrice']),
+      purchasePrice: _num(json['purchasePrice']),
+    );
+  }
+
+  final String syncId;
+  final String productSyncId;
+  final String productName;
+  final String pricingTypeSyncId;
+  final String pricingTypeName;
+  final bool isDefaultPricingType;
+  final double salePrice;
+  final double purchasePrice;
+}
+
 class ProductLookupItem extends LookupItem {
   ProductLookupItem({
     required super.id,
@@ -30,24 +65,84 @@ class ProductLookupItem extends LookupItem {
     this.barcode,
     required this.categorySyncId,
     required this.categoryName,
+    this.prices = const [],
   });
 
   factory ProductLookupItem.fromJson(Map<String, dynamic> json) {
+    final syncId = json['syncId']?.toString() ?? '';
+    final name = json['name'] as String? ?? '';
     return ProductLookupItem(
       id: json['id'] as int? ?? 0,
-      syncId: json['syncId']?.toString() ?? '',
-      name: json['name'] as String? ?? '',
+      syncId: syncId,
+      name: name,
       extra: json['extra'] as String?,
       barcode: json['barcode'] as String?,
       categorySyncId: json['categorySyncId'] as String? ?? '',
       categoryName: json['categoryName'] as String? ?? '',
+      prices: (json['prices'] as List<dynamic>? ?? []).map((e) {
+        final map = Map<String, dynamic>.from(e as Map);
+        map.putIfAbsent('productSyncId', () => syncId);
+        map.putIfAbsent('productName', () => name);
+        return ProductPriceLookupItem.fromJson(map);
+      }).toList(),
     );
   }
 
   final String? barcode;
   final String categorySyncId;
   final String categoryName;
+  final List<ProductPriceLookupItem> prices;
 }
+
+class PricingTypeLookupItem extends LookupItem {
+  PricingTypeLookupItem({
+    required super.id,
+    required super.syncId,
+    required super.name,
+    super.extra,
+    this.isDefault = false,
+    this.isActive = true,
+  });
+
+  factory PricingTypeLookupItem.fromJson(Map<String, dynamic> json) {
+    return PricingTypeLookupItem(
+      id: json['id'] as int? ?? 0,
+      syncId: json['syncId']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      extra: json['extra'] as String?,
+      isDefault: json['isDefault'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  final bool isDefault;
+  final bool isActive;
+}
+
+class BusinessSettings {
+  BusinessSettings({
+    required this.syncId,
+    required this.productPricingEnabled,
+    required this.updateProductPriceOnPurchase,
+  });
+
+  factory BusinessSettings.fromJson(Map<String, dynamic> json) {
+    return BusinessSettings(
+      syncId: json['syncId']?.toString() ?? '',
+      productPricingEnabled: json['productPricingEnabled'] as bool? ?? false,
+      updateProductPriceOnPurchase:
+          json['updateProductPriceOnPurchase'] as bool? ?? false,
+    );
+  }
+
+  final String syncId;
+  final bool productPricingEnabled;
+  final bool updateProductPriceOnPurchase;
+}
+
+/// Alias kept for clarity in pricing list/form screens.
+typedef ProductPrice = ProductPriceLookupItem;
+typedef PricingType = PricingTypeLookupItem;
 
 class InvoiceDetailResponse {
   InvoiceDetailResponse({

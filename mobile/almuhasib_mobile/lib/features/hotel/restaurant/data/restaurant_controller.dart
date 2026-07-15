@@ -11,6 +11,9 @@ class RestaurantController extends GetxController {
   final isProfitLoading = true.obs;
   final profitError = Rxn<Object>();
   final profit = Rxn<RestaurantProfitSummary>();
+  final channels = Rx<List<RestaurantChannelSales>>([]);
+  final topItems = Rx<List<RestaurantTopItem>>([]);
+  final overview = Rxn<RestaurantFinancialOverview>();
 
   final isAlertsLoading = true.obs;
   final alertsError = Rxn<Object>();
@@ -40,10 +43,18 @@ class RestaurantController extends GetxController {
     isProfitLoading.value = true;
     profitError.value = null;
     try {
-      profit.value = await AppServices.restaurant.getProfitSummary(
-        from: DateTime.now().subtract(const Duration(days: 30)),
-        to: DateTime.now(),
-      );
+      final from = DateTime.now().subtract(const Duration(days: 30));
+      final to = DateTime.now();
+      final results = await Future.wait([
+        AppServices.restaurant.getProfitSummary(from: from, to: to),
+        AppServices.restaurant.getChannelSales(from: from, to: to),
+        AppServices.restaurant.getTopItems(from: from, to: to),
+        AppServices.restaurant.getOverview(from: from, to: to),
+      ]);
+      profit.value = results[0] as RestaurantProfitSummary;
+      channels.value = results[1] as List<RestaurantChannelSales>;
+      topItems.value = results[2] as List<RestaurantTopItem>;
+      overview.value = results[3] as RestaurantFinancialOverview;
     } catch (e) {
       profitError.value = e;
     } finally {

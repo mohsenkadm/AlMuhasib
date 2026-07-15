@@ -15,6 +15,27 @@ public sealed class ProductSyncDto : SyncDtoBase
     public Guid CategorySyncId { get; set; }
 }
 
+public sealed class PricingTypeSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ProductPriceSyncDto : SyncDtoBase
+{
+    public Guid ProductSyncId { get; set; }
+    public Guid PricingTypeSyncId { get; set; }
+    public decimal SalePrice { get; set; }
+    public decimal PurchasePrice { get; set; }
+}
+
+public sealed class BusinessSettingsSyncDto : SyncDtoBase
+{
+    public bool ProductPricingEnabled { get; set; }
+    public bool UpdateProductPriceOnPurchase { get; set; }
+}
+
 public sealed class WarehouseSyncDto : SyncDtoBase
 {
     public string Name { get; set; } = string.Empty;

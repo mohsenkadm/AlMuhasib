@@ -127,4 +127,45 @@ class DataRepository {
           InvoiceDetailResponse.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<BusinessSettings> getBusinessSettings() {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/business-settings',
+      parser: (data) =>
+          BusinessSettings.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<PricingTypeLookupItem>> getPricingTypes({String? search}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/master-data/pricing-types',
+      queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+      parser: (data) => (data as List<dynamic>)
+          .map((e) =>
+              PricingTypeLookupItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<ProductPriceLookupItem>> getProductPrices({
+    String? productSyncId,
+    String? pricingTypeSyncId,
+  }) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/master-data/product-prices',
+      queryParameters: {
+        if (productSyncId != null) 'productSyncId': productSyncId,
+        if (pricingTypeSyncId != null) 'pricingTypeSyncId': pricingTypeSyncId,
+      },
+      parser: (data) => (data as List<dynamic>)
+          .map((e) =>
+              ProductPriceLookupItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }

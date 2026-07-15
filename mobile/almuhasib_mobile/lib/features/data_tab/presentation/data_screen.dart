@@ -8,56 +8,82 @@ import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
+import '../controllers/data_hub_controller.dart';
 
-class DataScreen extends StatelessWidget {
+class DataScreen extends GetView<DataHubController> {
   const DataScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final profile = AppServices.prefs.systemProfile;
-    final items = [
-      _DataItem('customers', 'customers', Icons.people_outline, profile.primary),
-      _DataItem('products', 'products', Icons.inventory_2_outlined, profile.accent),
-      _DataItem('invoices', 'invoices', Icons.receipt_long, AppColors.success),
-      _DataItem('suppliers', 'suppliers', Icons.local_shipping_outlined, AppColors.warning),
-      _DataItem('investors', 'investors', Icons.savings_outlined, profile.secondary),
-      _DataItem('warehouses', 'warehouses', Icons.warehouse_outlined, profile.accent),
-    ];
-
-    return AppPageScaffold(
-      title: 'data_title'.tr(),
-      subtitle: 'data_subtitle'.tr(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showQuickActions(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text('quick_add'.tr()),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-        children: [
-          ...items.asMap().entries.map(
-            (entry) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AppEntityCard(
-                title: entry.value.titleKey.tr(),
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: entry.value.color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(entry.value.icon, color: entry.value.color),
-                ),
-                trailing: const Icon(Icons.chevron_left),
-                onTap: () => Get.toNamed(
-                  AppRoutes.dataListPath(entry.value.type),
-                ),
-              ).fadeSlideInList(index: entry.key),
-            ),
+    return Obx(() {
+      final items = <_DataItem>[
+        _DataItem('customers', 'customers', Icons.people_outline, profile.primary),
+        _DataItem('products', 'products', Icons.inventory_2_outlined, profile.accent),
+        _DataItem('invoices', 'invoices', Icons.receipt_long, AppColors.success),
+        _DataItem('suppliers', 'suppliers', Icons.local_shipping_outlined, AppColors.warning),
+        _DataItem('investors', 'investors', Icons.savings_outlined, profile.secondary),
+        _DataItem('warehouses', 'warehouses', Icons.warehouse_outlined, profile.accent),
+        if (controller.productPricingEnabled) ...[
+          _DataItem(
+            'pricing-types',
+            'pricing_types',
+            Icons.sell_outlined,
+            profile.primary,
+            route: AppRoutes.pricingTypes,
+          ),
+          _DataItem(
+            'product-prices',
+            'product_prices',
+            Icons.price_change_outlined,
+            profile.secondary,
+            route: AppRoutes.productPrices,
           ),
         ],
-      ),
-    );
+      ];
+
+      return AppPageScaffold(
+        title: 'data_title'.tr(),
+        subtitle: 'data_subtitle'.tr(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showQuickActions(context),
+          icon: const Icon(Icons.add_rounded),
+          label: Text('quick_add'.tr()),
+        ),
+        body: RefreshIndicator(
+          onRefresh: controller.load,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+            children: [
+              ...items.asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: AppEntityCard(
+                    title: entry.value.titleKey.tr(),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: entry.value.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(entry.value.icon, color: entry.value.color),
+                    ),
+                    trailing: const Icon(Icons.chevron_left),
+                    onTap: () {
+                      if (entry.value.route != null) {
+                        Get.toNamed(entry.value.route!);
+                      } else {
+                        Get.toNamed(AppRoutes.dataListPath(entry.value.type));
+                      }
+                    },
+                  ).fadeSlideInList(index: entry.key),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   void _showQuickActions(BuildContext context) {
@@ -92,6 +118,24 @@ class DataScreen extends StatelessWidget {
                 Get.toNamed(AppRoutes.productNew);
               },
             ),
+            if (controller.productPricingEnabled) ...[
+              ListTile(
+                leading: const Icon(Icons.sell_outlined),
+                title: Text('add_pricing_type'.tr()),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Get.toNamed(AppRoutes.pricingTypeNew);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.price_change_outlined),
+                title: Text('add_product_price'.tr()),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Get.toNamed(AppRoutes.productPriceNew);
+                },
+              ),
+            ],
           ],
         ),
       ),
@@ -100,10 +144,17 @@ class DataScreen extends StatelessWidget {
 }
 
 class _DataItem {
-  const _DataItem(this.type, this.titleKey, this.icon, this.color);
+  const _DataItem(
+    this.type,
+    this.titleKey,
+    this.icon,
+    this.color, {
+    this.route,
+  });
 
   final String type;
   final String titleKey;
   final IconData icon;
   final Color color;
+  final String? route;
 }

@@ -9,13 +9,14 @@ public interface IRestaurantOrderService
     Task<string> GenerateOrderNumberAsync(CancellationToken ct = default);
     Task<RestaurantOrder> CreateOrderAsync(RestaurantOrderType orderType, int? tableId, int? reservationId, int? roomId, CancellationToken ct = default);
     Task<RestaurantOrder?> GetOrderByIdAsync(int id, CancellationToken ct = default);
+    Task<RestaurantOrder?> GetOpenOrderByTableAsync(int tableId, CancellationToken ct = default);
     Task<IReadOnlyList<RestaurantOrder>> GetOpenOrdersAsync(CancellationToken ct = default);
     Task<IReadOnlyList<RestaurantOrder>> GetKitchenOrdersAsync(CancellationToken ct = default);
     Task AddLineAsync(int orderId, int menuItemId, decimal quantity, CancellationToken ct = default);
     Task UpdateLineQuantityAsync(int lineId, decimal quantity, CancellationToken ct = default);
     Task RemoveLineAsync(int lineId, CancellationToken ct = default);
     Task SetOrderDiscountAsync(int orderId, decimal discountAmount, CancellationToken ct = default);
-    Task<RestaurantOrder> CompleteAndPayAsync(int orderId, IReadOnlyList<RestaurantPaymentRequest> payments, bool overrideStock = false, CancellationToken ct = default);
+    Task<RestaurantPaymentResult> CompleteAndPayAsync(int orderId, IReadOnlyList<RestaurantPaymentRequest> payments, bool overrideStock = false, CancellationToken ct = default);
     Task CancelOrderAsync(int orderId, CancellationToken ct = default);
     Task UpdateKitchenStatusAsync(int orderId, RestaurantKitchenStatus status, CancellationToken ct = default);
     Task<IReadOnlyList<ActiveRoomForService>> GetActiveRoomsForServiceAsync(CancellationToken ct = default);
@@ -23,6 +24,7 @@ public interface IRestaurantOrderService
 
 public sealed class RestaurantPaymentRequest
 {
+    /// <summary>For cash: tendered amount (may exceed order total). For other methods: exact amount owed.</summary>
     public decimal Amount { get; set; }
     public RestaurantPaymentMethod PaymentMethod { get; set; }
     public int? HotelCashBoxId { get; set; }

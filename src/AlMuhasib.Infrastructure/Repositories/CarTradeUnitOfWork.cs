@@ -55,6 +55,9 @@ public sealed class CarTradeUnitOfWork : IUnitOfWork
     public IRepository<CustomerAttachment> CustomerAttachments => new UnsupportedCarRepository<CustomerAttachment>();
     public IRepository<UserTask> UserTasks => new UnsupportedCarRepository<UserTask>();
     public IRepository<UserNote> UserNotes => new UnsupportedCarRepository<UserNote>();
+    public IRepository<PricingType> PricingTypes => new UnsupportedCarRepository<PricingType>();
+    public IRepository<ProductPrice> ProductPrices => new UnsupportedCarRepository<ProductPrice>();
+    public IRepository<BusinessSettings> BusinessSettings => new UnsupportedCarRepository<BusinessSettings>();
 
     public async Task<int> SaveChangesAsync()
     {

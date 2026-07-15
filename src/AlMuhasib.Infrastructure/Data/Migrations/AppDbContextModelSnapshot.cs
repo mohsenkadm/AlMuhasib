@@ -172,6 +172,63 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.ToTable("BankAccounts", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.BusinessSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ProductPricingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("UpdateProductPriceOnPurchase")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
+
+                    b.ToTable("BusinessSettings", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.CapitalEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -403,7 +460,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CloudSyncSettings", (string)null);
+                    b.ToTable("CloudSyncSettings");
 
                     b.HasData(
                         new
@@ -577,7 +634,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("SyncId");
 
-                    b.ToTable("CustomerAttachments", (string)null);
+                    b.ToTable("CustomerAttachments");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Expense", b =>
@@ -1243,6 +1300,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<int?>("PricingTypeId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
@@ -1279,6 +1339,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("InvoiceId");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("PricingTypeId");
 
                     b.HasIndex("ProductId");
 
@@ -1371,6 +1433,70 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Permissions", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.PricingType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("SyncId");
+
+                    b.ToTable("PricingTypes", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.PrintBrandingSettings", b =>
@@ -1630,6 +1756,77 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("WarehouseId");
 
                     b.ToTable("ProductBatches", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PricingTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PurchasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("SalePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("PricingTypeId");
+
+                    b.HasIndex("SyncId");
+
+                    b.HasIndex("ProductId", "PricingTypeId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ProductPrices", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductSerial", b =>
@@ -1991,7 +2188,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("EntityType");
 
-                    b.ToTable("SyncStates", (string)null);
+                    b.ToTable("SyncStates");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Transfer", b =>
@@ -2887,12 +3084,19 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AlMuhasib.Core.Entities.PricingType", "PricingType")
+                        .WithMany()
+                        .HasForeignKey("PricingTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany("InvoiceItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Invoice");
+
+                    b.Navigation("PricingType");
 
                     b.Navigation("Product");
                 });
@@ -2936,6 +3140,25 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductPrice", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.PricingType", "PricingType")
+                        .WithMany("ProductPrices")
+                        .HasForeignKey("PricingTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
+                        .WithMany("ProductPrices")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PricingType");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductSerial", b =>
@@ -3162,9 +3385,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.PricingType", b =>
+                {
+                    b.Navigation("ProductPrices");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.Product", b =>
                 {
                     b.Navigation("InvoiceItems");
+
+                    b.Navigation("ProductPrices");
 
                     b.Navigation("WarehouseStocks");
                 });

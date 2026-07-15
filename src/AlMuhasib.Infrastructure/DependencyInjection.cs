@@ -64,6 +64,9 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IPricingTypeService, PricingTypeService>();
+        services.AddScoped<IProductPriceService, ProductPriceService>();
+        services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<ICashBankService, CashBankService>();
@@ -84,6 +87,9 @@ public static class DependencyInjection
         services.AddScoped<ICustomerCreditService, CustomerCreditService>();
         services.AddScoped<ILocalQueryService, LocalQueryService>();
         services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
+        services.AddScoped<IProductUnitService, ProductUnitService>();
+        services.AddScoped<IProductBatchService, ProductBatchService>();
+        services.AddScoped<IProductSerialService, ProductSerialService>();
         services.AddScoped<IUserLoginLogService, UserLoginLogService>();
         services.AddScoped<IDataImportService, DataImportService>();
         services.AddScoped<IDemoDataService, DemoDataService>();

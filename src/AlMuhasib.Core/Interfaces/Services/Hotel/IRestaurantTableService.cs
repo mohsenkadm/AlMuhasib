@@ -18,4 +18,6 @@ public interface IRestaurantReportService
     Task<IReadOnlyList<RestaurantChannelSales>> GetSalesByChannelAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<IReadOnlyList<RestaurantTopItem>> GetTopSellingItemsAsync(DateTime from, DateTime to, int limit = 10, CancellationToken ct = default);
     Task<RestaurantFinancialOverview> GetFinancialOverviewAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<IReadOnlyList<RestaurantDailySales>> GetDailySalesAsync(DateTime from, DateTime to, CancellationToken ct = default);
+    Task<IReadOnlyList<RestaurantPaymentBreakdown>> GetPaymentBreakdownAsync(DateTime from, DateTime to, CancellationToken ct = default);
 }

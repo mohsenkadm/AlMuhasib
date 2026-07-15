@@ -12,7 +12,11 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 {
     private readonly IUserPreferencesService _preferences;
+    private readonly IFeatureFlagService _featureFlags;
     private readonly IBackupService _backupService;
+    private readonly IBusinessSettingsService _businessSettingsService;
+    private readonly IPricingTypeService _pricingTypeService;
+    private readonly IServiceProvider _services;
 
     [ObservableProperty] private bool _installmentRemindersEnabled = true;
     [ObservableProperty] private bool _reminderPlaySound = true;
@@ -28,6 +32,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _unitsOfMeasure;
     [ObservableProperty] private bool _expiryTracking;
     [ObservableProperty] private bool _serialNumbers;
+    [ObservableProperty] private bool _productPricingEnabled;
+    [ObservableProperty] private bool _updateProductPriceOnPurchase;
 
     [ObservableProperty] private bool _templateMobileShop;
     [ObservableProperty] private bool _templateClothing;
@@ -43,24 +49,50 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
             AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure,
-            ExpiryTracking, SerialNumbers, TemplateMobileShop, TemplateClothing,
+            ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
+            TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
 
     public BusinessFeaturesSettingsViewModel(
         IUserPreferencesService preferences,
+        IFeatureFlagService featureFlags,
         IBackupService backupService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IBusinessSettingsService businessSettingsService,
+        IPricingTypeService pricingTypeService,
+        IServiceProvider services)
     {
         _preferences = preferences;
+        _featureFlags = featureFlags;
         _backupService = backupService;
+        _businessSettingsService = businessSettingsService;
+        _pricingTypeService = pricingTypeService;
+        _services = services;
         PageTitle = "إعدادات الميزات";
         LoadPermissions(currentUserService, "BusinessFeatures");
     }
 
-    public override Task InitializeAsync()
+    private void RefreshFeatureUi()
+    {
+        _featureFlags.NotifyFlagsChanged();
+        if (_services.GetService(typeof(MainWindowViewModel)) is MainWindowViewModel main)
+            main.RefreshMenuVisibility();
+    }
+
+    public override async Task InitializeAsync()
     {
         LoadFromPreferences();
-        return Task.CompletedTask;
+        try
+        {
+            var settings = await _businessSettingsService.GetOrCreateAsync();
+            ProductPricingEnabled = settings.ProductPricingEnabled || ProductPricingEnabled;
+            UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase || UpdateProductPriceOnPurchase;
+            NotifyFeaturesCount();
+        }
+        catch
+        {
+            // قاعدة البيانات قد لا تكون جاهزة بعد؛ نبقى على التفضيلات المحلية
+        }
     }
 
     private void LoadFromPreferences()
@@ -80,6 +112,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
         ExpiryTracking = p.FeatureFlags.ExpiryTracking;
         SerialNumbers = p.FeatureFlags.SerialNumbers;
+        ProductPricingEnabled = p.FeatureFlags.ProductPricingEnabled;
+        UpdateProductPriceOnPurchase = p.FeatureFlags.UpdateProductPriceOnPurchase;
 
         TemplateMobileShop = p.FeatureFlags.TemplateMobileShop;
         TemplateClothing = p.FeatureFlags.TemplateClothing;
@@ -104,6 +138,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
     partial void OnExpiryTrackingChanged(bool value) => NotifyFeaturesCount();
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
+    partial void OnProductPricingEnabledChanged(bool value) => NotifyFeaturesCount();
+    partial void OnUpdateProductPriceOnPurchaseChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateMobileShopChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
@@ -140,6 +176,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
             p.FeatureFlags.ExpiryTracking = ExpiryTracking;
             p.FeatureFlags.SerialNumbers = SerialNumbers;
+            p.FeatureFlags.ProductPricingEnabled = ProductPricingEnabled;
+            p.FeatureFlags.UpdateProductPriceOnPurchase = UpdateProductPriceOnPurchase;
 
             p.FeatureFlags.TemplateMobileShop = TemplateMobileShop;
             p.FeatureFlags.TemplateClothing = TemplateClothing;
@@ -150,9 +188,27 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.PosMinInstallmentAmount = Math.Max(0, PosMinInstallmentAmount);
         });
 
-        StatusMessage = "تم حفظ الإعدادات بنجاح";
+        try
+        {
+            await _businessSettingsService.SaveAsync(ProductPricingEnabled, UpdateProductPriceOnPurchase);
+            if (ProductPricingEnabled)
+                await _pricingTypeService.EnsureDefaultExistsAsync();
+        }
+        catch (Exception ex)
+        {
+            RefreshFeatureUi();
+            StatusMessage = $"حُفظت محلياً مع تحذير مزامنة الإعدادات: {ex.Message}";
+            BeautifulMessageDialog.ShowWarning($"تم الحفظ محلياً لكن تعذّر تحديث قاعدة البيانات: {ex.Message}");
+            SaveSuccessPulse = true;
+            await Task.Delay(1200);
+            SaveSuccessPulse = false;
+            return;
+        }
+
+        RefreshFeatureUi();
+        StatusMessage = "تم تفعيل/إلغاء الميزات؛ القوائم والحقول المرتبطة تحدّثت";
         SaveSuccessPulse = true;
-        BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الميزات");
+        BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الميزات — القوائم والحقول المرتبطة تحدّثت");
         await Task.Delay(1200);
         SaveSuccessPulse = false;
     }

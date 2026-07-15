@@ -82,6 +82,62 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.ToTable("BankAccounts");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBusinessSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ProductPricingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("UpdateProductPriceOnPurchase")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SyncId")
+                        .IsUnique();
+
+                    b.ToTable("BusinessSettings");
+                });
+
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudCapitalEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -2516,6 +2572,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("PricingTypeId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
@@ -2550,12 +2609,77 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InvoiceId");
 
+                    b.HasIndex("PricingTypeId");
+
                     b.HasIndex("ProductId");
 
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
                     b.ToTable("InvoiceItems");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudPricingType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name");
+
+                    b.HasIndex("TenantId", "SyncId")
+                        .IsUnique();
+
+                    b.ToTable("PricingTypes");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudPrintBrandingSettings", b =>
@@ -2723,6 +2847,78 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PricingTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PurchasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("SalePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PricingTypeId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TenantId", "SyncId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ProductId", "PricingTypeId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ProductPrices");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProfitDistribution", b =>
@@ -4432,11 +4628,18 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudPricingType", "PricingType")
+                        .WithMany()
+                        .HasForeignKey("PricingTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudProduct", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId");
 
                     b.Navigation("Invoice");
+
+                    b.Navigation("PricingType");
 
                     b.Navigation("Product");
                 });
@@ -4450,6 +4653,25 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductPrice", b =>
+                {
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudPricingType", "PricingType")
+                        .WithMany("ProductPrices")
+                        .HasForeignKey("PricingTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudProduct", "Product")
+                        .WithMany("ProductPrices")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PricingType");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProfitDistributionDetail", b =>
@@ -4627,6 +4849,16 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Navigation("InstallmentPlans");
 
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudPricingType", b =>
+                {
+                    b.Navigation("ProductPrices");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProduct", b =>
+                {
+                    b.Navigation("ProductPrices");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.Tenant", b =>

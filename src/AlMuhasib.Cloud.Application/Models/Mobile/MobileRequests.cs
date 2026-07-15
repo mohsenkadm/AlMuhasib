@@ -41,6 +41,7 @@ public sealed class CreateInvestorRequest
 public sealed class CreateInvoiceItemRequest
 {
     public Guid? ProductSyncId { get; set; }
+    public Guid? PricingTypeSyncId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
@@ -69,4 +70,27 @@ public sealed class CreateInvoiceRequest
     public string? Notes { get; set; }
     public List<CreateInvoiceItemRequest> Items { get; set; } = [];
     public CreateInstallmentPlanRequest? InstallmentPlan { get; set; }
+}
+
+public sealed class UpsertPricingTypeRequest
+{
+    public Guid? SyncId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class UpsertProductPriceRequest
+{
+    public Guid? SyncId { get; set; }
+    public Guid ProductSyncId { get; set; }
+    public Guid PricingTypeSyncId { get; set; }
+    public decimal SalePrice { get; set; }
+    public decimal PurchasePrice { get; set; }
+}
+
+public sealed class UpdateBusinessSettingsRequest
+{
+    public bool ProductPricingEnabled { get; set; }
+    public bool UpdateProductPriceOnPurchase { get; set; }
 }

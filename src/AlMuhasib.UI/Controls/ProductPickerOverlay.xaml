@@ -239,13 +239,23 @@
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
                                                                Foreground="#263238" TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Name}"/>
-                                                    <TextBlock Grid.Row="1" FontSize="10" Foreground="#90A4AE" Margin="0,4,0,6"
+                                                    <TextBlock Grid.Row="1" FontSize="10" Foreground="#90A4AE" Margin="0,2,0,2"
                                                                Text="{Binding CategoryName}"/>
-                                                    <Grid Grid.Row="2">
+                                                    <TextBlock Grid.Row="2" FontSize="10" Foreground="#1565C0" Margin="0,0,0,4"
+                                                               Text="{Binding StockLabel}" FontWeight="SemiBold"/>
+                                                    <ComboBox Grid.Row="3"
+                                                              ItemsSource="{Binding PricingOptions}"
+                                                              SelectedItem="{Binding SelectedPricingOption}"
+                                                              DisplayMemberPath="Display"
+                                                              Margin="0,0,0,6"
+                                                              Visibility="{Binding PricingEnabled, Converter={StaticResource BoolVis}}"/>
+                                                    <Grid Grid.Row="4">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="*"/>

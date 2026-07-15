@@ -6,6 +6,7 @@ using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Sync;
 using AlMuhasib.Sync.Dtos;
 using AlMuhasib.Sync.Requests;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +93,151 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         return PushSingleAsync(tenantId, bundle => bundle.Investors.Add(dto), syncId, ct);
     }
 
+    public Task<MobileWriteResponse> UpsertPricingTypeAsync(int tenantId, UpsertPricingTypeRequest request, string username, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ArgumentException("اسم نوع التسعير مطلوب");
+
+        var syncId = request.SyncId ?? Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var dto = new PricingTypeSyncDto
+        {
+            SyncId = syncId,
+            Name = request.Name.Trim(),
+            IsDefault = request.IsDefault,
+            IsActive = request.IsActive,
+            CreatedAt = now,
+            CreatedBy = username
+        };
+        return PushSingleAsync(tenantId, bundle => bundle.PricingTypes.Add(dto), syncId, ct);
+    }
+
+    public async Task<MobileWriteResponse> DeletePricingTypeAsync(int tenantId, Guid syncId, string username, CancellationToken ct = default)
+    {
+        var existing = await _db.PricingTypes.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.SyncId == syncId && !t.IsDeleted, ct);
+        if (existing is null)
+            return new MobileWriteResponse { SyncId = syncId, Message = "نوع التسعير غير موجود" };
+
+        if (existing.IsDefault)
+            throw new ArgumentException("لا يمكن حذف نوع التسعير الافتراضي");
+
+        var inUse = await _db.ProductPrices.IgnoreQueryFilters()
+            .AnyAsync(p => p.TenantId == tenantId && p.PricingTypeId == existing.Id && !p.IsDeleted, ct);
+        if (inUse)
+            throw new ArgumentException("نوع التسعير مستخدم في أسعار منتجات");
+
+        var now = DateTime.UtcNow;
+        var dto = new PricingTypeSyncDto
+        {
+            SyncId = existing.SyncId,
+            Name = existing.Name,
+            IsDefault = existing.IsDefault,
+            IsActive = existing.IsActive,
+            CreatedAt = existing.CreatedAt,
+            CreatedBy = existing.CreatedBy,
+            UpdatedAt = now,
+            UpdatedBy = username,
+            IsDeleted = true,
+            DeletedAt = now,
+            DeletedBy = username,
+            RowVersion = existing.RowVersion
+        };
+        return await PushSingleAsync(tenantId, bundle => bundle.PricingTypes.Add(dto), syncId, ct);
+    }
+
+    public Task<MobileWriteResponse> UpsertProductPriceAsync(int tenantId, UpsertProductPriceRequest request, string username, CancellationToken ct = default)
+    {
+        if (request.SalePrice < 0 || request.PurchasePrice < 0)
+            throw new ArgumentException("الأسعار لا يمكن أن تكون سالبة");
+
+        var syncId = request.SyncId ?? Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var dto = new ProductPriceSyncDto
+        {
+            SyncId = syncId,
+            ProductSyncId = request.ProductSyncId,
+            PricingTypeSyncId = request.PricingTypeSyncId,
+            SalePrice = request.SalePrice,
+            PurchasePrice = request.PurchasePrice,
+            CreatedAt = now,
+            CreatedBy = username
+        };
+        return PushSingleAsync(tenantId, bundle => bundle.ProductPrices.Add(dto), syncId, ct);
+    }
+
+    public async Task<MobileWriteResponse> DeleteProductPriceAsync(int tenantId, Guid syncId, string username, CancellationToken ct = default)
+    {
+        var existing = await _db.ProductPrices.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.SyncId == syncId && !p.IsDeleted, ct);
+        if (existing is null)
+            return new MobileWriteResponse { SyncId = syncId, Message = "سعر المنتج غير موجود" };
+
+        var product = await _db.Products.IgnoreQueryFilters()
+            .FirstAsync(p => p.Id == existing.ProductId, ct);
+        var pricingType = await _db.PricingTypes.IgnoreQueryFilters()
+            .FirstAsync(t => t.Id == existing.PricingTypeId, ct);
+
+        var now = DateTime.UtcNow;
+        var dto = new ProductPriceSyncDto
+        {
+            SyncId = existing.SyncId,
+            ProductSyncId = product.SyncId,
+            PricingTypeSyncId = pricingType.SyncId,
+            SalePrice = existing.SalePrice,
+            PurchasePrice = existing.PurchasePrice,
+            CreatedAt = existing.CreatedAt,
+            CreatedBy = existing.CreatedBy,
+            UpdatedAt = now,
+            UpdatedBy = username,
+            IsDeleted = true,
+            DeletedAt = now,
+            DeletedBy = username,
+            RowVersion = existing.RowVersion
+        };
+        return await PushSingleAsync(tenantId, bundle => bundle.ProductPrices.Add(dto), syncId, ct);
+    }
+
+    public async Task<BusinessSettingsDto> UpdateBusinessSettingsAsync(
+        int tenantId, UpdateBusinessSettingsRequest request, string username, CancellationToken ct = default)
+    {
+        var existing = await _db.BusinessSettings.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(s => s.TenantId == tenantId && !s.IsDeleted, ct);
+
+        var syncId = existing?.SyncId ?? ProductPricingSyncIds.BusinessSettings;
+        var now = DateTime.UtcNow;
+        var dto = new BusinessSettingsSyncDto
+        {
+            SyncId = syncId,
+            ProductPricingEnabled = request.ProductPricingEnabled,
+            UpdateProductPriceOnPurchase = request.UpdateProductPriceOnPurchase,
+            CreatedAt = existing?.CreatedAt ?? now,
+            CreatedBy = existing?.CreatedBy ?? username,
+            UpdatedAt = now,
+            UpdatedBy = username,
+            RowVersion = existing?.RowVersion
+        };
+
+        var response = await _syncEngine.PushAsync(tenantId, new SyncPushRequest
+        {
+            Data = new SyncDataBundle { BusinessSettings = [dto] }
+        }, ct);
+        if (response.Conflicts.Count > 0)
+            throw new InvalidOperationException(response.Conflicts[0].Reason);
+
+        if (request.ProductPricingEnabled)
+            await EnsureDefaultPricingTypeAsync(tenantId, username, ct);
+
+        var saved = await _db.BusinessSettings.AsNoTracking()
+            .FirstAsync(s => s.TenantId == tenantId && s.SyncId == syncId, ct);
+        return new BusinessSettingsDto
+        {
+            SyncId = saved.SyncId,
+            ProductPricingEnabled = saved.ProductPricingEnabled,
+            UpdateProductPriceOnPurchase = saved.UpdateProductPriceOnPurchase
+        };
+    }
+
     public async Task<MobileWriteResponse> CreateInvoiceAsync(int tenantId, CreateInvoiceRequest request, string username, CancellationToken ct = default)
     {
         ValidateInvoiceRequest(request);
@@ -104,6 +250,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             return new CreateInvoiceItemRequest
             {
                 ProductSyncId = i.ProductSyncId,
+                PricingTypeSyncId = i.PricingTypeSyncId,
                 ItemName = string.IsNullOrWhiteSpace(i.ItemName) ? "بند" : i.ItemName.Trim(),
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
@@ -155,6 +302,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 SyncId = Guid.NewGuid(),
                 InvoiceSyncId = invoiceSyncId,
                 ProductSyncId = item.ProductSyncId,
+                PricingTypeSyncId = item.PricingTypeSyncId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
@@ -325,6 +473,80 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             }
         }
 
+        if (invoice.InvoiceType == InvoiceType.Purchase)
+            await ApplyPurchasePriceUpdatesAsync(tenantId, invoice, username, ct);
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task ApplyPurchasePriceUpdatesAsync(int tenantId, CloudInvoice invoice, string username, CancellationToken ct)
+    {
+        var settings = await _db.BusinessSettings.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.TenantId == tenantId && !s.IsDeleted, ct);
+        if (settings is null || !settings.UpdateProductPriceOnPurchase)
+            return;
+
+        foreach (var item in invoice.Items.Where(i => !i.IsDeleted && i.ProductId.HasValue && i.PricingTypeId.HasValue))
+        {
+            var price = await _db.ProductPrices.FirstOrDefaultAsync(p =>
+                p.TenantId == tenantId &&
+                p.ProductId == item.ProductId!.Value &&
+                p.PricingTypeId == item.PricingTypeId!.Value &&
+                !p.IsDeleted, ct);
+
+            if (price is null)
+            {
+                await _db.ProductPrices.AddAsync(new CloudProductPrice
+                {
+                    TenantId = tenantId,
+                    SyncId = Guid.NewGuid(),
+                    ProductId = item.ProductId!.Value,
+                    PricingTypeId = item.PricingTypeId!.Value,
+                    SalePrice = 0,
+                    PurchasePrice = item.UnitPrice,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = username
+                }, ct);
+            }
+            else
+            {
+                price.PurchasePrice = item.UnitPrice;
+                price.UpdatedAt = DateTime.UtcNow;
+                price.UpdatedBy = username;
+            }
+        }
+    }
+
+    private async Task EnsureDefaultPricingTypeAsync(int tenantId, string username, CancellationToken ct)
+    {
+        var hasDefault = await _db.PricingTypes.IgnoreQueryFilters()
+            .AnyAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.IsDefault, ct);
+        if (hasDefault)
+            return;
+
+        var existing = await _db.PricingTypes.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted &&
+                (t.SyncId == ProductPricingSyncIds.DefaultPricingType || t.Name == "سعر مفرد"), ct);
+        if (existing is not null)
+        {
+            existing.IsDefault = true;
+            existing.IsActive = true;
+            existing.UpdatedAt = DateTime.UtcNow;
+            existing.UpdatedBy = username;
+            await _db.SaveChangesAsync(ct);
+            return;
+        }
+
+        _db.PricingTypes.Add(new CloudPricingType
+        {
+            TenantId = tenantId,
+            SyncId = ProductPricingSyncIds.DefaultPricingType,
+            Name = "سعر مفرد",
+            IsDefault = true,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = username
+        });
         await _db.SaveChangesAsync(ct);
     }
 
