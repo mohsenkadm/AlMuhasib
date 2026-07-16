@@ -95,7 +95,7 @@ public static class DependencyInjection
         services.AddScoped<IDemoDataService, DemoDataService>();
         services.AddScoped<IUserTaskService, UserTaskService>();
         services.AddScoped<IUserNoteService, UserNoteService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<AppDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, SyncService>();
         services.AddHttpClient("CloudSync");
@@ -124,7 +124,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarSyncService>();
         services.AddHttpClient("CloudSync");
@@ -174,7 +174,7 @@ public static class DependencyInjection
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
 
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<HotelDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, HotelSyncService>();
         services.AddHttpClient("CloudSync");
@@ -203,7 +203,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarTradeDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarTradeSyncService>();
         services.AddHttpClient("CloudSync");

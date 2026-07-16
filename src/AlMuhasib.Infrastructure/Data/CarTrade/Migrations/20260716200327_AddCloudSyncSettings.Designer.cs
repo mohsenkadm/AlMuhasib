@@ -4,6 +4,7 @@ using AlMuhasib.Infrastructure.Data.CarTrade;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
 {
     [DbContext(typeof(CarTradeDbContext))]
-    partial class CarTradeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260716200327_AddCloudSyncSettings")]
+    partial class AddCloudSyncSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
