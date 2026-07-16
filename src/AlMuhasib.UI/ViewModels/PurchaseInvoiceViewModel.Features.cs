@@ -23,20 +23,63 @@ public partial class PurchaseInvoiceViewModel
         IProductBatchService productBatchService,
         IProductSerialService productSerialService)
     {
+        if (_featureFlags is not null)
+            _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
+
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         RefreshFeatureVisibility();
-        featureFlags.FlagsChanged += (_, _) => RefreshFeatureVisibility();
+        featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
+
+    private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
+        FeatureUiRefresh.Invoke(RefreshFeatureVisibility);
 
     private void RefreshFeatureVisibility()
     {
         if (_featureFlags is null) return;
+
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
+
+        if (!ShowUnitsOfMeasure)
+        {
+            foreach (var row in Items)
+            {
+                row.SelectedUnit = null;
+                row.AvailableUnits.Clear();
+                row.SelectedUnitName = string.Empty;
+                row.UnitConversionFactor = 1m;
+            }
+        }
+
+        if (!ShowExpiryTracking)
+        {
+            foreach (var row in Items)
+            {
+                row.SelectedBatch = null;
+                row.AvailableBatches.Clear();
+                row.BatchId = null;
+                row.BatchNumber = string.Empty;
+                row.ExpiryDate = null;
+            }
+        }
+
+        if (!ShowSerialNumbers)
+        {
+            foreach (var row in Items)
+                row.SerialNumber = string.Empty;
+        }
+
+        // إن أُطفئ مرتجع المشتريات أثناء وضع المرتجع: ألغِ الوضع فوراً
+        if (IsReturnMode && !_featureFlags.PurchaseReturns)
+        {
+            IsReturnMode = false;
+            PageTitle = "فاتورة مشتريات";
+        }
     }
 
     public void EnterReturnMode(string? reference = null)
@@ -59,6 +102,12 @@ public partial class PurchaseInvoiceViewModel
             foreach (var u in units)
                 row.AvailableUnits.Add(u);
             row.SelectedUnit ??= units.FirstOrDefault(u => u.IsDefault) ?? units.FirstOrDefault();
+        }
+        else
+        {
+            row.AvailableUnits.Clear();
+            row.SelectedUnit = null;
+            row.UnitConversionFactor = 1m;
         }
     }
 

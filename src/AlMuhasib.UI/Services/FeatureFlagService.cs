@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
+using AlMuhasib.UI.Helpers;
 
 namespace AlMuhasib.UI.Services;
 
@@ -28,5 +29,6 @@ public sealed class FeatureFlagService : IFeatureFlagService
 
     public event EventHandler? FlagsChanged;
 
-    public void NotifyFlagsChanged() => FlagsChanged?.Invoke(this, EventArgs.Empty);
+    public void NotifyFlagsChanged() =>
+        FeatureUiRefresh.Invoke(() => FlagsChanged?.Invoke(this, EventArgs.Empty));
 }

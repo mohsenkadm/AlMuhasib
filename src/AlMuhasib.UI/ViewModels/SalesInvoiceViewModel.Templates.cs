@@ -163,7 +163,11 @@ public partial class SalesInvoiceViewModel
 
         Notes = template.Notes ?? string.Empty;
 
+<<<<<<< Current (Your changes)
         ApplyCustomFieldLabels(template.CustomFieldLabels);
+=======
+        ApplyCustomFieldLabels(template.CustomFieldLabels, template.IndustryTag);
+>>>>>>> Incoming (Background Agent changes)
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
