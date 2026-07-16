@@ -74,6 +74,8 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     public bool IsSoldFilterAvailable => SoldFilter == CarTradeSoldFilter.Available;
     public bool IsSoldFilterSold => SoldFilter == CarTradeSoldFilter.Sold;
 
+    private bool _suppressSellAmountRecalc;
+
     public CarTradeListViewModel(
         ICarTradeService tradeService,
         ICarTradePrintService printService,
@@ -131,15 +133,66 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     }
     partial void OnUnpaidOnlyChanged(bool value) => _ = ReloadFromFirstPageAsync();
 
-    partial void OnSellPriceChanged(decimal value) => RecalculateSellAmounts();
+    partial void OnSellPriceChanged(decimal value)
+    {
+        if (_suppressSellAmountRecalc)
+            return;
+
+        if (SellPaymentMode == CarTradePaymentMode.FullCash)
+            SetSellAmountPaidInternal(SellPrice);
+        else if (SellAmountPaid > SellPrice)
+            SetSellAmountPaidInternal(SellPrice);
+
+        SellRemainingAmount = Math.Max(0, SellPrice - SellAmountPaid);
+    }
+
     partial void OnSellPaymentModeChanged(CarTradePaymentMode value)
     {
-        RecalculateSellAmounts();
+        if (_suppressSellAmountRecalc)
+            return;
+
+        if (value == CarTradePaymentMode.FullCash)
+            SetSellAmountPaidInternal(SellPrice);
+
+        SellRemainingAmount = Math.Max(0, SellPrice - SellAmountPaid);
         OnPropertyChanged(nameof(IsSellCash));
         OnPropertyChanged(nameof(IsSellCredit));
     }
 
-    partial void OnSellAmountPaidChanged(decimal value) => RecalculateSellAmounts();
+    partial void OnSellAmountPaidChanged(decimal value)
+    {
+        if (_suppressSellAmountRecalc)
+            return;
+
+        if (SellAmountPaid > SellPrice && SellPrice > 0)
+            SetSellAmountPaidInternal(SellPrice);
+
+        SyncSellPaymentModeFromPaidAmount();
+        SellRemainingAmount = Math.Max(0, SellPrice - SellAmountPaid);
+    }
+
+    private void SetSellAmountPaidInternal(decimal value)
+    {
+        _suppressSellAmountRecalc = true;
+        SellAmountPaid = value;
+        _suppressSellAmountRecalc = false;
+    }
+
+    private void SyncSellPaymentModeFromPaidAmount()
+    {
+        var newMode = SellPrice > 0 && SellAmountPaid >= SellPrice
+            ? CarTradePaymentMode.FullCash
+            : CarTradePaymentMode.Partial;
+
+        if (SellPaymentMode == newMode)
+            return;
+
+        _suppressSellAmountRecalc = true;
+        SellPaymentMode = newMode;
+        _suppressSellAmountRecalc = false;
+        OnPropertyChanged(nameof(IsSellCash));
+        OnPropertyChanged(nameof(IsSellCredit));
+    }
 
     protected override void OnColumnFiltersChanged()
     {
@@ -435,24 +488,19 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     private void SetSellCash()
     {
         SellPaymentMode = CarTradePaymentMode.FullCash;
-        RecalculateSellAmounts();
+        SetSellAmountPaidInternal(SellPrice);
+        SellRemainingAmount = 0;
+        OnPropertyChanged(nameof(IsSellCash));
+        OnPropertyChanged(nameof(IsSellCredit));
     }
 
     [RelayCommand]
     private void SetSellCredit()
     {
         SellPaymentMode = CarTradePaymentMode.Partial;
-        RecalculateSellAmounts();
-    }
-
-    private void RecalculateSellAmounts()
-    {
-        if (SellPaymentMode == CarTradePaymentMode.FullCash)
-            SellAmountPaid = SellPrice;
-        else if (SellAmountPaid > SellPrice)
-            SellAmountPaid = SellPrice;
-
         SellRemainingAmount = Math.Max(0, SellPrice - SellAmountPaid);
+        OnPropertyChanged(nameof(IsSellCash));
+        OnPropertyChanged(nameof(IsSellCredit));
     }
 
     [RelayCommand]

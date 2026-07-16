@@ -400,7 +400,9 @@
                             </UniformGrid>
                             <StackPanel Margin="0,0,0,12">
                                 <TextBlock Text="سعر البيع *" Style="{StaticResource FormFieldLabel}"/>
-                                <TextBox Text="{Binding SellPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Style="{StaticResource NumericTextBox}"/>
+                                <TextBox Text="{Binding SellPrice, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource NumericTextBox}"
+                                         FontSize="18" FontWeight="Bold" MinHeight="48"/>
                             </StackPanel>
                             <TextBlock Text="طريقة الدفع من المشتري" Style="{StaticResource FormFieldLabel}" Margin="0,0,0,8"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -410,11 +412,15 @@
                             <UniformGrid Columns="2" Margin="0,0,0,12">
                                 <StackPanel Margin="0,0,8,12">
                                     <TextBlock Text="المبلغ المدفوع" Style="{StaticResource FormFieldLabel}"/>
-                                    <TextBox Text="{Binding SellAmountPaid, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Style="{StaticResource NumericTextBox}" IsEnabled="{Binding IsSellCredit}" IsReadOnly="{Binding IsSellCash}"/>
+                                    <TextBox Text="{Binding SellAmountPaid, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource NumericTextBox}"
+                                             FontSize="16" FontWeight="SemiBold" MinHeight="48"/>
                                 </StackPanel>
                                 <StackPanel Margin="8,0,0,12">
                                     <TextBlock Text="المتبقي على المشتري" Style="{StaticResource FormFieldLabel}"/>
-                                    <TextBox Text="{Binding SellRemainingAmount, StringFormat=N0}" IsReadOnly="True" Style="{StaticResource FilledTextBox}" Background="#E3F2FD" Foreground="#1565C0" FontWeight="Bold"/>
+                                    <TextBox Text="{Binding SellRemainingAmount, StringFormat=N0}" IsReadOnly="True"
+                                             Style="{StaticResource FilledTextBox}" Background="#E3F2FD" Foreground="#1565C0"
+                                             FontSize="16" FontWeight="Bold" MinHeight="48"/>
                                 </StackPanel>
                             </UniformGrid>
                             <TextBlock Text="تاريخ البيع" Style="{StaticResource FormFieldLabel}"/>

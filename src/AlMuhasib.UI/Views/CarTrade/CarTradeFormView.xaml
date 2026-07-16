@@ -106,34 +106,39 @@
                             <md:PackIcon Kind="CashMultiple" Width="22" Height="22" Foreground="#2E7D32" VerticalAlignment="Center"/>
                             <TextBlock Text="سعر الشراء وطريقة الدفع" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
                         </StackPanel>
-                        <StackPanel Margin="0,0,0,12">
-                            <TextBlock Text="سعر الشراء *" Style="{StaticResource FormFieldLabel}"/>
-                            <TextBox Text="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                     Style="{StaticResource NumericTextBox}" MaxWidth="360" HorizontalAlignment="Right"/>
-                        </StackPanel>
-                        <TextBlock Text="طريقة الدفع للبائع" Style="{StaticResource FormFieldLabel}" Margin="0,0,0,8"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ToggleButton Content="نقدي" IsChecked="{Binding IsCash, Mode=OneWay}"
-                                          Command="{Binding SetCashCommand}" Margin="0,0,8,0" Padding="24,10"
-                                          Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
-                            <ToggleButton Content="آجل" IsChecked="{Binding IsCredit, Mode=OneWay}"
-                                          Command="{Binding SetCreditCommand}" Padding="24,10"
-                                          Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
-                        </StackPanel>
-                        <TextBlock Text="نقدي: دفع كامل المبلغ للبائع الآن. آجل: يمكن دفع جزء الآن والباقي لاحقاً من جدول العمليات."
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="سعر الشراء *" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource NumericTextBox}"
+                                         FontSize="18" FontWeight="Bold" MinHeight="48"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="طريقة الدفع للبائع" Style="{StaticResource FormFieldLabel}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <ToggleButton Content="نقدي" IsChecked="{Binding IsCash, Mode=OneWay}"
+                                                  Command="{Binding SetCashCommand}" Margin="0,0,8,0" Padding="24,10"
+                                                  Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
+                                    <ToggleButton Content="آجل" IsChecked="{Binding IsCredit, Mode=OneWay}"
+                                                  Command="{Binding SetCreditCommand}" Padding="24,10"
+                                                  Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </UniformGrid>
+                        <TextBlock Text="نقدي: دفع كامل المبلغ للبائع الآن. آجل: يمكن دفع جزء الآن والباقي لاحقاً من جدول العمليات. يمكنك تعديل المبلغ المدفوع يدوياً في الحالتين."
                                    FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,0,0,16" TextWrapping="Wrap"/>
                         <UniformGrid Columns="2" Margin="0,0,0,12">
                             <StackPanel Margin="0,0,8,12">
                                 <TextBlock Text="المبلغ المدفوع للبائع" Style="{StaticResource FormFieldLabel}"/>
-                                <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource NumericTextBox}"
-                                         IsEnabled="{Binding IsCredit}"
-                                         IsReadOnly="{Binding IsCash}"/>
+                                         FontSize="16" FontWeight="SemiBold" MinHeight="48"/>
                             </StackPanel>
                             <StackPanel Margin="8,0,0,12">
                                 <TextBlock Text="المبلغ المتبقي للبائع" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding RemainingAmount, StringFormat=N0}" IsReadOnly="True"
-                                         Style="{StaticResource FilledTextBox}" Background="#FFF3E0" Foreground="#C62828" FontWeight="Bold"/>
+                                         Style="{StaticResource FilledTextBox}" Background="#FFF3E0" Foreground="#C62828"
+                                         FontSize="16" FontWeight="Bold" MinHeight="48"/>
                             </StackPanel>
                         </UniformGrid>
                         <StackPanel>
