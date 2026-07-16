@@ -3,63 +3,121 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="كشف الحساب" FontSize="24" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,20"/>
 
                 <TabControl SelectedIndex="{Binding SelectedTabIndex}" md:ColorZoneAssist.Mode="PrimaryMid">
                     <TabItem Header="ديون البائعين">
-                        <md:Card md:ElevationAssist.Elevation="Dp2" Margin="0,12,0,0">
-                            <DataGrid ItemsSource="{Binding SellerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
-                                      AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="البائع" Binding="{Binding PartyName}" Width="*"/>
-                                    <DataGridTextColumn Header="الهاتف" Binding="{Binding PartyPhone}" Width="120"/>
-                                    <DataGridTextColumn Header="العمليات" Binding="{Binding TransactionCount}" Width="80"/>
-                                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"/>
-                                    <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"/>
-                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#C62828"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </md:Card>
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                             TargetDataGrid="{Binding ElementName=SellerDebtsGrid}"/>
+                            </StackPanel>
+                            <md:Card md:ElevationAssist.Elevation="Dp2">
+                                <DataGrid x:Name="SellerDebtsGrid"
+                                          ItemsSource="{Binding SellerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280"
+                                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="البائع" Binding="{Binding PartyName}" Width="*"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyName"/>
+                                        <DataGridTextColumn Header="الهاتف" Binding="{Binding PartyPhone}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyPhone"/>
+                                        <DataGridTextColumn Header="العمليات" Binding="{Binding TransactionCount}" Width="80"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransactionCount"/>
+                                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AmountPaid"/>
+                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#C62828"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="إجراء" Width="120"
+                                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="كشف تفصيلي"
+                                                            Style="{StaticResource FlatButton}"
+                                                            Command="{Binding DataContext.OpenPartyFromDebtCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </md:Card>
+                        </StackPanel>
                     </TabItem>
 
                     <TabItem Header="ديون المشترين">
-                        <md:Card md:ElevationAssist.Elevation="Dp2" Margin="0,12,0,0">
-                            <DataGrid ItemsSource="{Binding BuyerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
-                                      AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="المشتري" Binding="{Binding PartyName}" Width="*"/>
-                                    <DataGridTextColumn Header="الهاتف" Binding="{Binding PartyPhone}" Width="120"/>
-                                    <DataGridTextColumn Header="العمليات" Binding="{Binding TransactionCount}" Width="80"/>
-                                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"/>
-                                    <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"/>
-                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#1565C0"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </md:Card>
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                             TargetDataGrid="{Binding ElementName=BuyerDebtsGrid}"/>
+                            </StackPanel>
+                            <md:Card md:ElevationAssist.Elevation="Dp2">
+                                <DataGrid x:Name="BuyerDebtsGrid"
+                                          ItemsSource="{Binding BuyerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280"
+                                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="المشتري" Binding="{Binding PartyName}" Width="*"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyName"/>
+                                        <DataGridTextColumn Header="الهاتف" Binding="{Binding PartyPhone}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyPhone"/>
+                                        <DataGridTextColumn Header="العمليات" Binding="{Binding TransactionCount}" Width="80"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransactionCount"/>
+                                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AmountPaid"/>
+                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="إجراء" Width="120"
+                                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="كشف تفصيلي"
+                                                            Style="{StaticResource FlatButton}"
+                                                            Command="{Binding DataContext.OpenPartyFromDebtCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </md:Card>
+                        </StackPanel>
                     </TabItem>
 
                     <TabItem Header="كشف طرف تفصيلي">
@@ -76,36 +134,71 @@
                             </UniformGrid>
 
                             <Border Style="{StaticResource FilterBar}" Margin="0,0,0,12">
-                                <StackPanel Orientation="Horizontal">
-                                    <ComboBox Width="280" Margin="0,0,12,0"
+                                <WrapPanel>
+                                    <ComboBox Width="280" Margin="0,0,12,8"
                                               ItemsSource="{Binding PartyNames}"
                                               SelectedItem="{Binding SelectedPartyName, UpdateSourceTrigger=PropertyChanged}"
                                               Text="{Binding PartySearchText, UpdateSourceTrigger=PropertyChanged}"
                                               IsEditable="True" StaysOpenOnEdit="True"
+                                              IsTextSearchEnabled="True"
                                               md:ComboBoxAssist.ShowSelectedItem="True"
                                               Style="{StaticResource FilledComboBox}"
                                               md:HintAssist.Hint="الطرف (ابحث بالاسم)"/>
                                     <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
-                                                md:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
+                                                md:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,8"/>
                                     <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
-                                                md:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
-                                    <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadStatementCommand}" Margin="0,0,12,0"/>
-                                </StackPanel>
+                                                md:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,8"/>
+                                    <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadStatementCommand}" Margin="0,0,12,8"/>
+                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                   ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                   ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                   TargetDataGrid="{Binding ElementName=PartyStatementGrid}"
+                                                                   Margin="0,0,12,8"/>
+                                    <Button Content="تحديث الأسماء" Style="{StaticResource FlatButton}"
+                                            Command="{Binding RefreshPartyNamesCommand}" Margin="0,0,8,8"/>
+                                </WrapPanel>
                             </Border>
 
                             <md:Card md:ElevationAssist.Elevation="Dp2">
-                                <DataGrid ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
-                                          AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="240">
+                                <DataGrid x:Name="PartyStatementGrid"
+                                          ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="240"
+                                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="التاريخ" Binding="{Binding TransactionDate, StringFormat=yyyy/MM/dd}" Width="110"/>
-                                        <DataGridTextColumn Header="رقم العملية" Binding="{Binding TransactionNumber}" Width="120"/>
-                                        <DataGridTextColumn Header="النوع" Binding="{Binding TradeType}" Width="70"/>
-                                        <DataGridTextColumn Header="السيارة" Binding="{Binding CarName}" Width="*"/>
-                                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"/>
-                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="100"/>
-                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
-                                        <DataGridTextColumn Header="الدور" Binding="{Binding PartyRole}" Width="80"/>
-                                        <DataGridTextColumn Header="نوع الدين" Binding="{Binding DebtKind}" Width="100"/>
+                                        <DataGridTextColumn Header="التاريخ" Binding="{Binding TransactionDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransactionDate"/>
+                                        <DataGridTextColumn Header="رقم العملية" Binding="{Binding TransactionNumber}" Width="120"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransactionNumber"/>
+                                        <DataGridTextColumn Header="النوع" Binding="{Binding TradeType}" Width="70"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TradeType"/>
+                                        <DataGridTextColumn Header="السيارة" Binding="{Binding CarName}" Width="*"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CarName"/>
+                                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="100"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AmountPaid"/>
+                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                                        <DataGridTextColumn Header="الدور" Binding="{Binding PartyRole}" Width="80"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyRole"/>
+                                        <DataGridTextColumn Header="نوع الدين" Binding="{Binding DebtKind}" Width="100"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DebtKind"/>
+                                        <DataGridTemplateColumn Header="تسديد" Width="100"
+                                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Style="{StaticResource TableSecondaryIconButton}"
+                                                            Command="{Binding DataContext.OpenSettleDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="تسديد"
+                                                            IsEnabled="{Binding CanSettle}">
+                                                        <md:PackIcon Kind="CashPlus" Width="18" Height="18"/>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </md:Card>
@@ -121,5 +214,43 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
+
+        <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" CloseOnClickAway="False"
+                       Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="420" MaxWidth="480" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#E65100" Padding="20,14" CornerRadius="16,16,0,0">
+                            <TextBlock Text="{Binding PaymentDialogTitle}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="24,20,24,8">
+                            <TextBlock Text="{Binding PaymentSummary}" TextWrapping="Wrap" Margin="0,0,0,16" Foreground="#546E7A"/>
+                            <TextBlock Text="المبلغ المسدد *" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource NumericTextBox}" FontSize="18" FontWeight="Bold" MinHeight="48" Margin="0,0,0,12"/>
+                            <TextBlock Text="تاريخ التسديد" Style="{StaticResource FormFieldLabel}"/>
+                            <DatePicker SelectedDate="{Binding PaymentDate}" Style="{StaticResource MaterialDesignFilledDatePicker}" Margin="0,0,0,12"/>
+                            <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding PaymentNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" MinHeight="50" AcceptsReturn="True"/>
+                        </StackPanel>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="حفظ وطباعة وصل" Command="{Binding SubmitPaymentCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}" Background="#E65100"
+                                        md:ButtonAssist.CornerRadius="8" Padding="20,10" Margin="0,0,8,0"/>
+                                <Button Content="إلغاء" Command="{Binding ClosePaymentDialogCommand}"
+                                        Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
     </Grid>
 </UserControl>

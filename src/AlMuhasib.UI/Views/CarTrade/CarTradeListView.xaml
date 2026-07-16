@@ -115,6 +115,18 @@
                                 IsEnabled="{Binding CanPayBuyer}" Margin="2">
                             <md:PackIcon Kind="CashCheck" Width="18" Height="18"/>
                         </Button>
+                        <Button Style="{StaticResource TablePrintIconButton}"
+                                Command="{Binding DataContext.PrintPurchaseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" ToolTip="طباعة شراء"
+                                IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="2">
+                            <md:PackIcon Kind="PrinterOutline" Width="18" Height="18"/>
+                        </Button>
+                        <Button Style="{StaticResource TablePrintIconButton}"
+                                Command="{Binding DataContext.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" ToolTip="طباعة بيع"
+                                IsEnabled="{Binding IsSold}" Margin="2">
+                            <md:PackIcon Kind="PrinterCheck" Width="18" Height="18"/>
+                        </Button>
                         <Button Style="{StaticResource TableEditIconButton}"
                                 Command="{Binding DataContext.EditTransactionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" ToolTip="تعديل"
@@ -258,7 +270,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTemplateColumn Header="الإجراءات" Width="340" MinWidth="340"
+                            <DataGridTemplateColumn Header="الإجراءات" Width="390" MinWidth="390"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -290,10 +302,16 @@
                                                 <md:PackIcon Kind="CashCheck" Width="18" Height="18"/>
                                             </Button>
                                             <Button Style="{StaticResource TablePrintIconButton}"
-                                                    Command="{Binding DataContext.PrintTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}" ToolTip="طباعة"
+                                                    Command="{Binding DataContext.PrintPurchaseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" ToolTip="طباعة شراء"
                                                     IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                                <md:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                <md:PackIcon Kind="PrinterOutline" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Style="{StaticResource TablePrintIconButton}"
+                                                    Command="{Binding DataContext.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" ToolTip="طباعة بيع"
+                                                    IsEnabled="{Binding IsSold}">
+                                                <md:PackIcon Kind="PrinterCheck" Width="18" Height="18"/>
                                             </Button>
                                             <Button Style="{StaticResource TableEditIconButton}"
                                                     Command="{Binding DataContext.EditTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"

@@ -542,6 +542,14 @@ public partial class CarTradeListViewModel : PagedViewModelBase
 
             IsSellDialogOpen = false;
             _toast.ShowSuccess("تم تسجيل بيع السيارة بنجاح");
+
+            if (CanPrint)
+            {
+                var updated = await _tradeService.GetByIdAsync(SelectedTransaction.Id);
+                if (updated is not null)
+                    _printService.PrintSale(updated);
+            }
+
             await LoadTransactionsAsync();
         }
         catch (Exception ex)
@@ -551,7 +559,7 @@ public partial class CarTradeListViewModel : PagedViewModelBase
     }
 
     [RelayCommand]
-    private async Task PrintTransactionAsync(CarTradeListItem? item)
+    private async Task PrintPurchaseAsync(CarTradeListItem? item)
     {
         item ??= SelectedTransaction;
         if (item is null || !CanPrint)
@@ -559,7 +567,38 @@ public partial class CarTradeListViewModel : PagedViewModelBase
 
         var transaction = await _tradeService.GetByIdAsync(item.Id);
         if (transaction is not null)
-            _printService.PrintTransaction(transaction);
+            _printService.PrintPurchase(transaction);
+    }
+
+    [RelayCommand]
+    private async Task PrintSaleAsync(CarTradeListItem? item)
+    {
+        item ??= SelectedTransaction;
+        if (item is null || !CanPrint)
+            return;
+
+        if (!item.IsSold)
+        {
+            _toast.ShowWarning("السيارة غير مباعة بعد — لا يوجد وصل بيع");
+            return;
+        }
+
+        var transaction = await _tradeService.GetByIdAsync(item.Id);
+        if (transaction is not null)
+            _printService.PrintSale(transaction);
+    }
+
+    [RelayCommand]
+    private async Task PrintTransactionAsync(CarTradeListItem? item)
+    {
+        item ??= SelectedTransaction;
+        if (item is null || !CanPrint)
+            return;
+
+        if (item.IsSold)
+            await PrintSaleAsync(item);
+        else
+            await PrintPurchaseAsync(item);
     }
 
     [RelayCommand]
@@ -572,8 +611,13 @@ public partial class CarTradeListViewModel : PagedViewModelBase
         foreach (var row in rows)
         {
             var transaction = await _tradeService.GetByIdAsync(row.Id);
-            if (transaction is not null)
-                _printService.PrintTransaction(transaction, 1);
+            if (transaction is null)
+                continue;
+
+            if (transaction.IsSold)
+                _printService.PrintSale(transaction, 1);
+            else
+                _printService.PrintPurchase(transaction, 1);
         }
     }
 

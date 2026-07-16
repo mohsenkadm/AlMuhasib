@@ -226,7 +226,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
             }
 
             if (printAfterSave && CanPrint)
-                _printService.PrintTransaction(saved);
+                _printService.PrintPurchase(saved);
         }
         catch (DbUpdateConcurrencyException)
         {
