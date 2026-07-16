@@ -10,399 +10,461 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Loading -->
-        <Border Grid.RowSpan="2" Background="{DynamicResource BackgroundBrush}"
-                Visibility="{Binding IsLoaded, Converter={StaticResource InvBoolToVis}}" Panel.ZIndex="10">
+    <Grid>
+        <!-- Loading overlay -->
+        <Border Background="{DynamicResource BackgroundBrush}"
+                Visibility="{Binding IsLoaded, Converter={StaticResource InvBoolToVis}}" Panel.ZIndex="20">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري تحميل الكاشير..." Margin="0,12,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                <TextBlock Text="جاري تجهيز الكاشير..." Margin="0,12,0,0"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
 
-        <!-- Header -->
-        <Border Grid.Row="0" CornerRadius="14" Padding="20,14" Margin="0,0,0,12"
-                Background="{StaticResource RestaurantPosHeaderBrush}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="كاشير المطعم" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#CCFFFFFF" FontSize="12" VerticalAlignment="Center"/>
-                        <Border Background="#33FFFFFF" CornerRadius="6" Padding="8,2" Margin="12,0,0,0"
+        <Grid Margin="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ═══ Top bar ═══ -->
+            <Border Grid.Row="0" Style="{StaticResource RestaurantPosTopBar}" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Order type segmented -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton Style="{StaticResource RestaurantPosTypeChip}" Content="صالة"
+                                     GroupName="PosOrderType"
+                                     IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=DineIn, Mode=TwoWay}"/>
+                        <RadioButton Style="{StaticResource RestaurantPosTypeChip}" Content="سفري"
+                                     GroupName="PosOrderType"
+                                     IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Takeaway, Mode=TwoWay}"/>
+                        <RadioButton Style="{StaticResource RestaurantPosTypeChip}" Content="غرف"
+                                     GroupName="PosOrderType"
+                                     IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=RoomService, Mode=TwoWay}"/>
+                    </StackPanel>
+
+                    <!-- Context -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                        <Border Background="#22FFFFFF" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="MapMarkerOutline" Width="16" Height="16" Foreground="#E0FFFFFF" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding ContextLabel}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#33FFFFFF" CornerRadius="8" Padding="12,6"
                                 Visibility="{Binding HasActiveOrder, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Foreground="White" FontWeight="SemiBold">
-                                <Run Text="طلب #"/>
+                            <TextBlock Foreground="White" FontWeight="Bold">
                                 <Run Text="{Binding CurrentOrderNumber, Mode=OneWay}"/>
                             </TextBlock>
                         </Border>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#B3FFFFFF" FontSize="12"
+                                   VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"
+                                   MaxWidth="280"/>
                     </StackPanel>
+
+                    <!-- Compact metrics + new order -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource RestaurantPosMetricPill}" Margin="0,0,8,0">
+                            <TextBlock>
+                                <Run Text="مشغول " Foreground="#B3FFFFFF" FontSize="11"/>
+                                <Run Text="{Binding OccupiedTablesCount, Mode=OneWay}" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                            </TextBlock>
+                        </Border>
+                        <Button Command="{Binding StartNewOrderCommand}" Style="{StaticResource RestaurantPosGhostButton}"
+                                IsEnabled="{Binding CanAdd}" Margin="0,0,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Plus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="طلب جديد" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Read-only -->
+            <Border Grid.Row="1" Background="#FFF3E0" BorderBrush="#FFE082" BorderThickness="1" CornerRadius="8"
+                    Padding="12,8" Margin="0,0,0,10"
+                    Visibility="{Binding ShowReadOnlyBanner, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <md:PackIcon Kind="LockOutline" Foreground="#E65100" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding StatusMessage}" Margin="8,0,0,0" Foreground="#6D4C41" VerticalAlignment="Center"/>
                 </StackPanel>
-                <Border Grid.Column="1" Background="#26FFFFFF" CornerRadius="10" Padding="14,8" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="طاولات مشغولة" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding OccupiedTablesCount, Mode=OneWay}" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Background="#26FFFFFF" CornerRadius="10" Padding="14,8" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="السلة" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding CartLineCount, StringFormat='{}{0} صنف'}" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="3" Background="#26FFFFFF" CornerRadius="10" Padding="14,8">
-                    <StackPanel>
-                        <TextBlock Text="الإجمالي" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-        </Border>
+            </Border>
 
-        <!-- Read-only banner -->
-        <Border Grid.Row="1" Background="#FFF3E0" BorderBrush="#FFE082" BorderThickness="1" CornerRadius="8"
-                Padding="12,8" Margin="0,0,0,8" VerticalAlignment="Top" Panel.ZIndex="5"
-                Visibility="{Binding ShowReadOnlyBanner, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <StackPanel Orientation="Horizontal">
-                <md:PackIcon Kind="LockOutline" Foreground="#E65100" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding StatusMessage}" Margin="8,0,0,0" Foreground="#6D4C41" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
+            <!-- ═══ Main workspace: catalog | ticket ═══ -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="420"/>
+                    <ColumnDefinition Width="360" MinWidth="320" MaxWidth="420"/>
+                </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="1" Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240" MinWidth="200"/>
-                <ColumnDefinition Width="*" MinWidth="280"/>
-                <ColumnDefinition Width="380" MinWidth="320"/>
-            </Grid.ColumnDefinitions>
+                <!-- LEFT: Catalog -->
+                <Border Grid.Column="0" Style="{StaticResource RestaurantPosPanel}" Margin="0,0,10,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-            <!-- Sidebar -->
-            <md:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="14" Margin="0,0,8,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="نوع الطلب" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
-                        <StackPanel Margin="0,0,0,12">
-                            <RadioButton Content="صالة" GroupName="RestaurantOrderType" Margin="0,0,0,4"
-                                         IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=DineIn, Mode=TwoWay}"/>
-                            <RadioButton Content="سفري" GroupName="RestaurantOrderType" Margin="0,0,0,4"
-                                         IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Takeaway, Mode=TwoWay}"/>
-                            <RadioButton Content="خدمة غرف" GroupName="RestaurantOrderType"
-                                         IsChecked="{Binding SelectedOrderType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=RoomService, Mode=TwoWay}"/>
+                        <!-- Context strip: tables / rooms -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel Visibility="{Binding IsDineIn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DockPanel Margin="0,0,0,6">
+                                    <TextBlock Text="الطاولات" FontWeight="Bold" FontSize="13" DockPanel.Dock="Right"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="برتقالي = استئناف" FontSize="11" Opacity="0.55"
+                                               HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding Tables}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource RestaurantPosTableButton}"
+                                                        Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding TableNumber}" Foreground="White" FontWeight="Bold" FontSize="15"
+                                                                   HorizontalAlignment="Center"/>
+                                                        <TextBlock FontSize="9" Foreground="#E0FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="متاحة"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:RestaurantTableStatus.Occupied}">
+                                                                            <Setter Property="Text" Value="استئناف"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+
+                            <StackPanel Visibility="{Binding IsRoomService, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="الغرفة النشطة" FontWeight="Bold" FontSize="13" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding ActiveRooms}" SelectedItem="{Binding SelectedRoom}"
+                                          Style="{StaticResource FilledComboBox}" MaxWidth="420" HorizontalAlignment="Left" Width="320">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Run Text="{Binding RoomNumber, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                <Run Text=" — "/>
+                                                <Run Text="{Binding GuestName, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Visibility="{Binding IsDineIn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,12">
-                            <TextBlock Text="اختر الطاولة" FontWeight="Bold" FontSize="13" Margin="0,0,0,4"/>
-                            <TextBlock Text="المشغولة (برتقالي) = استئناف الطلب" FontSize="10" Opacity="0.7" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                            <ItemsControl ItemsSource="{Binding Tables}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Style="{StaticResource RestaurantPosTableButton}"
-                                                Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding TableNumber}" Foreground="White" FontWeight="Bold" FontSize="16"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock FontSize="9" Foreground="#E0FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Text" Value="متاحة"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:RestaurantTableStatus.Occupied}">
-                                                                    <Setter Property="Text" Value="استئناف"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
-                                            </StackPanel>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                        <!-- Categories + search -->
+                        <Grid Grid.Row="1" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="240"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,12,0">
+                                <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+                                         Style="{StaticResource RestaurantPosCategoryBar}">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
+                            <TextBox x:Name="SearchBox" Grid.Column="1"
+                                     md:HintAssist.Hint="بحث / باركود"
+                                     md:TextFieldAssist.HasClearButton="True"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     KeyDown="SearchBox_KeyDown"/>
+                        </Grid>
+
+                        <!-- Favorites -->
+                        <StackPanel Grid.Row="2" Margin="0,0,0,8"
+                                    Visibility="{Binding HasFavorites, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="الأكثر مبيعاً" FontSize="12" FontWeight="SemiBold" Opacity="0.65" Margin="0,0,0,6"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding FavoriteItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource RestaurantPosFavoriteChip}"
+                                                    Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding SalePrice, StringFormat='{}{0:N0}'}" Opacity="0.7"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
                         </StackPanel>
 
-                        <StackPanel Margin="0,0,0,12" Visibility="{Binding OpenOrdersCount, Converter={StaticResource PositiveIntToVisibilityConverter}}">
-                            <TextBlock Text="طلبات مفتوحة" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
-                            <ItemsControl ItemsSource="{Binding OpenOrders}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Margin="0,0,0,6" Padding="10,8" HorizontalContentAlignment="Stretch"
-                                                Style="{StaticResource FlatButton}"
-                                                Command="{Binding DataContext.ResumeOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
+                        <!-- Product grid -->
+                        <Grid Grid.Row="3">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                          Padding="0,0,4,0">
+                                <ItemsControl ItemsSource="{Binding MenuItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource RestaurantPosMenuTile}"
+                                                    Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding IsActive}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                                                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                                                               MaxHeight="48" VerticalAlignment="Center"/>
+                                                    <DockPanel Grid.Row="1" Margin="0,10,0,0">
+                                                        <TextBlock Text="غير متاح" FontSize="11" Foreground="#C62828"
+                                                                   DockPanel.Dock="Left"
+                                                                   Visibility="{Binding IsActive, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                                        <TextBlock Text="{Binding SalePrice, StringFormat='{}{0:N0} د.ع'}"
+                                                                   FontSize="15" FontWeight="Bold" Foreground="#00695C"
+                                                                   HorizontalAlignment="Left"/>
+                                                    </DockPanel>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Visibility="{Binding HasMenuItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <md:PackIcon Kind="FoodOff" Width="40" Height="40"
+                                             Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="لا توجد أصناف في هذه الفئة" Margin="0,10,0,0"
+                                           Foreground="{DynamicResource HintForegroundBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- RIGHT: Ticket -->
+                <Border Grid.Column="1" Style="{StaticResource RestaurantPosTicketPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Ticket header -->
+                        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding TicketTitle}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border Background="#E0F2F1" CornerRadius="8" Padding="10,4" HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding OrderTypeLabel}" Foreground="#00695C" FontWeight="SemiBold" FontSize="12"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Open orders chips -->
+                        <StackPanel Grid.Row="1" Margin="0,0,0,8"
+                                    Visibility="{Binding OpenOrdersCount, Converter={StaticResource PositiveIntToVisibilityConverter}}">
+                            <TextBlock Text="طلبات مفتوحة" FontSize="11" Opacity="0.6" Margin="0,0,0,6"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding OpenOrders}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource RestaurantPosOpenOrderChip}"
+                                                    Command="{Binding DataContext.ResumeOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
                                                 <StackPanel>
-                                                    <TextBlock Text="{Binding OrderNumber}" FontWeight="SemiBold" FontSize="12"/>
-                                                    <TextBlock FontSize="10" Opacity="0.75">
-                                                        <Run Text="{Binding Table.TableNumber, StringFormat='طاولة {0}', Mode=OneWay}"/>
-                                                        <Run Text=" · "/>
+                                                    <TextBlock Text="{Binding OrderNumber}" FontWeight="SemiBold" FontSize="11"/>
+                                                    <TextBlock FontSize="10" Opacity="0.7">
                                                         <Run Text="{Binding TotalAmount, StringFormat='{}{0:N0}', Mode=OneWay}"/>
                                                     </TextBlock>
                                                 </StackPanel>
-                                                <md:PackIcon Grid.Column="1" Kind="PlayCircleOutline" VerticalAlignment="Center" Foreground="#00897B"/>
-                                            </Grid>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-
-                        <StackPanel Visibility="{Binding IsRoomService, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,12">
-                            <TextBlock Text="الغرفة" FontWeight="Bold" FontSize="13" Margin="0,0,0,6"/>
-                            <ComboBox ItemsSource="{Binding ActiveRooms}" SelectedItem="{Binding SelectedRoom}"
-                                      DisplayMemberPath="RoomNumber" Style="{StaticResource FilledComboBox}"/>
-                        </StackPanel>
-
-                        <Button Command="{Binding StartNewOrderCommand}" Style="{StaticResource PrimaryButton}"
-                                md:ButtonAssist.CornerRadius="8" Margin="0,0,0,12" IsEnabled="{Binding CanAdd}">
-                            <StackPanel Orientation="Horizontal">
-                                <md:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="طلب جديد"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Separator Margin="0,4,0,12"/>
-                        <TextBlock Text="الفئات" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
-                        <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
-                                 BorderThickness="0" Background="Transparent">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="Margin" Value="0,0,0,6"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListBoxItem">
-                                                <Border x:Name="Chip" CornerRadius="8" Padding="10,8"
-                                                        Background="{Binding ColorHex, Converter={StaticResource HexToBrushConverter}}">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="Chip" Property="BorderBrush" Value="White"/>
-                                                        <Setter TargetName="Chip" Property="BorderThickness" Value="2"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"/>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-                </ScrollViewer>
-            </md:Card>
-
-            <!-- Products -->
-            <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="16" Margin="0,0,8,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="الأصناف السريعة" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
-                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,12">
-                        <ItemsControl ItemsSource="{Binding FavoriteItems}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Style="{StaticResource RestaurantPosMenuTile}" MinWidth="110" MinHeight="56"
-                                            Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding SalePrice, StringFormat='{}{0:N0}'}" FontSize="11" Opacity="0.75"/>
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <TextBox x:Name="SearchBox" Grid.Row="2" md:HintAssist.Hint="بحث بالاسم أو الباركود — Enter للإضافة"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12" KeyDown="SearchBox_KeyDown"/>
-
-                    <Grid Grid.Row="3">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding MenuItems}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Style="{StaticResource RestaurantPosMenuTile}"
-                                                Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                IsEnabled="{Binding IsActive}">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding SalePrice, StringFormat='{}{0:N0} د.ع'}" FontSize="12" Opacity="0.75" Margin="0,4,0,0"/>
-                                                <TextBlock Text="غير متاح" FontSize="10" Foreground="#C62828" Margin="0,4,0,0"
-                                                           Visibility="{Binding IsActive, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                        <TextBlock Text="لا توجد أصناف في هذه الفئة" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource HintForegroundBrush}" FontSize="14"
-                                   Visibility="{Binding HasMenuItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
-                    </Grid>
-                </Grid>
-            </md:Card>
-
-            <!-- Cart -->
-            <md:Card Grid.Column="2" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="16">
-                <md:Card.Triggers>
-                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.35"/>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </md:Card.Triggers>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Text="السلة" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
-
-                    <Grid Grid.Row="1">
-                        <DataGrid ItemsSource="{Binding CartLines}" AutoGenerateColumns="False"
-                                  CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column"
-                                  Style="{StaticResource ModernDataGrid}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="الصنف" Binding="{Binding ItemName}" Width="*" MinWidth="100"/>
-                                <DataGridTemplateColumn Header="الكمية" Width="110">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Style="{StaticResource TableSecondaryIconButton}" Content="−"
-                                                        Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}" IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                                <TextBlock Text="{Binding Quantity, StringFormat=N0}" VerticalAlignment="Center" Margin="8,0" MinWidth="24" TextAlignment="Center"/>
-                                                <Button Style="{StaticResource TableSecondaryIconButton}" Content="+"
-                                                        Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}" IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                            </StackPanel>
+                                            </Button>
                                         </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="المجموع" Binding="{Binding LineTotal, StringFormat=N0}" Width="80"/>
-                                <DataGridTemplateColumn Header="" Width="44">
-                                    <DataGridTemplateColumn.CellTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+
+                        <!-- Cart lines -->
+                        <Grid Grid.Row="2">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding IsCartEmpty, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <ItemsControl ItemsSource="{Binding CartLines}">
+                                    <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Style="{StaticResource TableDeleteIconButton}"
-                                                    Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                            <Border Style="{StaticResource RestaurantPosCartLine}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                        <TextBlock Text="{Binding ItemName}" FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding UnitPrice, StringFormat='{}{0:N0} د.ع'}"
+                                                                   FontSize="11" Opacity="0.55" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Background="#F5F5F5" CornerRadius="8" Padding="4,2" Margin="0,0,10,0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Style="{StaticResource RestaurantPosQtyButton}" Content="−"
+                                                                    Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                            <TextBlock Text="{Binding Quantity, StringFormat=N0}"
+                                                                       MinWidth="28" TextAlignment="Center"
+                                                                       VerticalAlignment="Center" FontWeight="Bold"/>
+                                                            <Button Style="{StaticResource RestaurantPosQtyButton}" Content="+"
+                                                                    Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding LineTotal, StringFormat='{}{0:N0}'}"
+                                                                   FontWeight="Bold" VerticalAlignment="Center" MinWidth="56"
+                                                                   TextAlignment="Left" Margin="0,0,4,0"/>
+                                                        <Button Style="{StaticResource RestaurantPosRemoveLineButton}"
+                                                                Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                IsEnabled="{Binding DataContext.CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                ToolTip="حذف">
+                                                            <md:PackIcon Kind="Close" Width="14" Height="14"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
                                         </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
-                                    Visibility="{Binding IsCartEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <md:PackIcon Kind="CartOutline" Width="48" Height="48" Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="السلة فارغة — أضف أصنافاً من القائمة" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource HintForegroundBrush}" TextAlignment="Center"/>
-                        </StackPanel>
-                    </Grid>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
 
-                    <Border Grid.Row="2" Background="{DynamicResource MaterialDesignDivider}" CornerRadius="8" Padding="12" Margin="0,12,0,12">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="المجموع الفرعي" Opacity="0.8"/>
-                                <TextBlock Grid.Column="1" Text="{Binding SubTotal, StringFormat='{}{0:N0} د.ع'}"/>
-                            </Grid>
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="100"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="الخصم" VerticalAlignment="Center" Opacity="0.8"/>
-                                <TextBox Grid.Column="1" Text="{Binding DiscountAmount, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource OutlinedTextBox}" IsEnabled="{Binding CanAdd}"/>
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="الإجمالي" FontWeight="Bold"/>
-                                <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold" FontSize="16"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <StackPanel Grid.Row="3" Orientation="Horizontal">
-                        <Button Command="{Binding OpenPaymentDialogCommand}" Style="{StaticResource PrimaryButton}"
-                                Height="44" Padding="20,0" md:ButtonAssist.CornerRadius="10" Margin="0,0,8,0"
-                                IsEnabled="{Binding CanAdd}">
-                            <StackPanel Orientation="Horizontal">
-                                <md:PackIcon Kind="CashCheck" Width="20" Height="20" VerticalAlignment="Center"/>
-                                <TextBlock Text="إتمام الدفع" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Visibility="{Binding IsCartEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <md:PackIcon Kind="ReceiptTextOutline" Width="44" Height="44"
+                                             Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="التذكرة فارغة" Margin="0,10,0,4" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="اختر صنفاً من القائمة لإضافته" FontSize="12" Opacity="0.6"
+                                           HorizontalAlignment="Center"/>
                             </StackPanel>
-                        </Button>
-                        <Button Command="{Binding CancelCurrentOrderCommand}" Style="{StaticResource FlatButton}"
-                                Height="44" Content="إلغاء الطلب" IsEnabled="{Binding CanAdd}"/>
-                    </StackPanel>
-                </Grid>
-            </md:Card>
+                        </Grid>
+
+                        <!-- Totals -->
+                        <Border Grid.Row="3" Style="{StaticResource RestaurantPosTotalsBox}" Margin="0,10,0,12">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding SubTotal, StringFormat='{}{0:N0} د.ع'}" DockPanel.Dock="Left" Opacity="0.85"/>
+                                    <TextBlock Text="المجموع الفرعي" Opacity="0.7"/>
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBox Width="96" DockPanel.Dock="Left"
+                                             Text="{Binding DiscountAmount, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource OutlinedTextBox}" IsEnabled="{Binding CanAdd}"
+                                             HorizontalContentAlignment="Center"/>
+                                    <TextBlock Text="الخصم" Opacity="0.7" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <Rectangle Height="1" Fill="#1A000000" Margin="0,0,0,10"/>
+                                <DockPanel>
+                                    <TextBlock Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
+                                               DockPanel.Dock="Left" FontSize="22" FontWeight="Bold" Foreground="#00695C"/>
+                                    <TextBlock Text="الإجمالي" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <TextBlock Margin="0,4,0,0" FontSize="11" Opacity="0.55"
+                                           Text="{Binding CartLineCount, StringFormat='{}{0} صنف'}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Actions -->
+                        <Grid Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Command="{Binding OpenPaymentDialogCommand}"
+                                    Style="{StaticResource RestaurantPosPayButton}"
+                                    IsEnabled="{Binding CanAdd}" Height="52">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="CashRegister" Width="22" Height="22" VerticalAlignment="Center"/>
+                                    <TextBlock Text="دفع" Margin="10,0,0,0" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="1" Command="{Binding CancelCurrentOrderCommand}"
+                                    Style="{StaticResource RestaurantPosCancelButton}"
+                                    Content="إلغاء" IsEnabled="{Binding CanAdd}"
+                                    Margin="8,0,0,0" Width="72" Height="52"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
+        <!-- Payment dialog -->
         <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" CloseOnClickAway="False"
-                       Style="{StaticResource ModernDialogHost}" Grid.RowSpan="2">
+                       Style="{StaticResource ModernDialogHost}" Panel.ZIndex="30">
             <md:DialogHost.DialogContent>
-                <md:Card Padding="24" MinWidth="400">
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="16" Padding="28" MinWidth="420"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="إتمام الدفع" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
-                        <TextBlock Margin="0,0,0,12" Opacity="0.8">
-                            <Run Text="المبلغ المستحق:"/>
-                            <Run Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold"/>
+                        <TextBlock Text="إتمام الدفع" FontSize="20" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock Margin="0,0,0,16" Opacity="0.75">
+                            <Run Text="المبلغ المستحق"/>
+                            <Run Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold" Foreground="#00695C"/>
                         </TextBlock>
 
-                        <Border Background="#E8F5E9" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                        <Border Background="#E8F5E9" CornerRadius="10" Padding="14" Margin="0,0,0,14"
                                 Visibility="{Binding IsRoomService, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="يُحاسَب على الغرفة — لا حاجة لدفع نقدي" TextWrapping="Wrap" Foreground="#2E7D32"/>
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Bed" Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="يُقيَّد على فاتورة الغرفة" TextWrapping="Wrap" Foreground="#2E7D32"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Border>
 
                         <StackPanel Visibility="{Binding ShowCashPaymentFields, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -417,25 +479,32 @@
                             <ComboBox md:HintAssist.Hint="الصندوق" ItemsSource="{Binding CashBoxes}"
                                       SelectedValuePath="Id" SelectedValue="{Binding PaymentCashBoxId}"
                                       DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
-                            <TextBox md:HintAssist.Hint="المبلغ المستلم" Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"
-                                     IsEnabled="{Binding IsCashPayment}"/>
-                            <Border Background="#E8F5E9" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                            <TextBox md:HintAssist.Hint="المبلغ المستلم"
+                                     Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"
+                                     IsEnabled="{Binding IsCashPayment}" FontSize="18" FontWeight="SemiBold"/>
+                            <Border Background="#E8F5E9" CornerRadius="10" Padding="14" Margin="0,0,0,16"
                                     Visibility="{Binding ShowChangeDue, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock>
-                                    <Run Text="الباقي للعميل:"/>
-                                    <Run Text="{Binding ChangeDue, StringFormat='{}{0:N0} د.ع', Mode=OneWay}" FontWeight="Bold" Foreground="#2E7D32"/>
-                                </TextBlock>
+                                <DockPanel>
+                                    <TextBlock Text="{Binding ChangeDue, StringFormat='{}{0:N0} د.ع', Mode=OneWay}"
+                                               DockPanel.Dock="Left" FontWeight="Bold" FontSize="18" Foreground="#2E7D32"/>
+                                    <TextBlock Text="الباقي للعميل" VerticalAlignment="Center" Foreground="#2E7D32"/>
+                                </DockPanel>
                             </Border>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <Button Content="تأكيد الدفع" Command="{Binding ConfirmPaymentCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}" md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
-                            <Button Content="إلغاء" Command="{Binding ClosePaymentDialogCommand}" Style="{StaticResource FlatButton}"/>
-                        </StackPanel>
+                                    Style="{StaticResource RestaurantPosPayButton}" Height="48" Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="إلغاء" Command="{Binding ClosePaymentDialogCommand}"
+                                    Style="{StaticResource RestaurantPosCancelButton}" Width="88" Height="48"/>
+                        </Grid>
                     </StackPanel>
-                </md:Card>
+                </Border>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
     </Grid>
