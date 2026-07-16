@@ -60,6 +60,7 @@ abstract final class AppRoutes {
   static const carTradeTransactionDetail = '/car-trade/transactions/:syncId';
   static const carTradePayments = '/car-trade/payments';
   static const carTradeReports = '/car-trade/reports';
+  static const carTradePartyStatement = '/car-trade/party-statement';
   static const carTradeSettings = '/car-trade/settings';
 
   static const profile = '/profile';

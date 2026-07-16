@@ -40,6 +40,8 @@ public partial class CarTradeFormViewModel : ViewModelBase
     public bool IsCash => PaymentMode == CarTradePaymentMode.FullCash;
     public bool IsCredit => PaymentMode == CarTradePaymentMode.Partial;
 
+    private bool _suppressAmountRecalc;
+
     public CarTradeFormViewModel(
         ICarTradeService tradeService,
         ICarTradePrintService printService,
@@ -105,39 +107,84 @@ public partial class CarTradeFormViewModel : ViewModelBase
         NotifyStateChanged();
     }
 
-    partial void OnPurchasePriceChanged(decimal value) => RecalculateAmounts();
+    partial void OnPurchasePriceChanged(decimal value)
+    {
+        if (_suppressAmountRecalc)
+            return;
+
+        if (PaymentMode == CarTradePaymentMode.FullCash)
+            SetAmountPaidInternal(PurchasePrice);
+        else if (AmountPaid > PurchasePrice)
+            SetAmountPaidInternal(PurchasePrice);
+
+        RemainingAmount = Math.Max(0, PurchasePrice - AmountPaid);
+    }
 
     partial void OnPaymentModeChanged(CarTradePaymentMode value)
     {
-        RecalculateAmounts();
+        if (_suppressAmountRecalc)
+            return;
+
+        if (value == CarTradePaymentMode.FullCash)
+            SetAmountPaidInternal(PurchasePrice);
+
+        RemainingAmount = Math.Max(0, PurchasePrice - AmountPaid);
         OnPropertyChanged(nameof(IsCash));
         OnPropertyChanged(nameof(IsCredit));
     }
 
-    partial void OnAmountPaidChanged(decimal value) => RecalculateAmounts();
-
-    private void RecalculateAmounts()
+    partial void OnAmountPaidChanged(decimal value)
     {
-        if (PaymentMode == CarTradePaymentMode.FullCash)
-            AmountPaid = PurchasePrice;
-        else if (AmountPaid > PurchasePrice)
-            AmountPaid = PurchasePrice;
+        if (_suppressAmountRecalc)
+            return;
 
+        if (AmountPaid > PurchasePrice && PurchasePrice > 0)
+            SetAmountPaidInternal(PurchasePrice);
+
+        SyncPaymentModeFromPaidAmount();
         RemainingAmount = Math.Max(0, PurchasePrice - AmountPaid);
+    }
+
+    private void SetAmountPaidInternal(decimal value)
+    {
+        _suppressAmountRecalc = true;
+        AmountPaid = value;
+        _suppressAmountRecalc = false;
+    }
+
+    private void SyncPaymentModeFromPaidAmount()
+    {
+        var newMode = PurchasePrice > 0 && AmountPaid >= PurchasePrice
+            ? CarTradePaymentMode.FullCash
+            : CarTradePaymentMode.Partial;
+
+        if (PaymentMode == newMode)
+            return;
+
+        _suppressAmountRecalc = true;
+        PaymentMode = newMode;
+        _suppressAmountRecalc = false;
+        OnPropertyChanged(nameof(IsCash));
+        OnPropertyChanged(nameof(IsCredit));
     }
 
     [RelayCommand]
     private void SetCash()
     {
         PaymentMode = CarTradePaymentMode.FullCash;
-        RecalculateAmounts();
+        SetAmountPaidInternal(PurchasePrice);
+        RemainingAmount = 0;
+        OnPropertyChanged(nameof(IsCash));
+        OnPropertyChanged(nameof(IsCredit));
     }
 
     [RelayCommand]
     private void SetCredit()
     {
         PaymentMode = CarTradePaymentMode.Partial;
-        RecalculateAmounts();
+        RemainingAmount = Math.Max(0, PurchasePrice - AmountPaid);
+        OnPropertyChanged(nameof(IsCash));
+        OnPropertyChanged(nameof(IsCredit));
     }
 
     [RelayCommand]
@@ -179,7 +226,7 @@ public partial class CarTradeFormViewModel : ViewModelBase
             }
 
             if (printAfterSave && CanPrint)
-                _printService.PrintTransaction(saved);
+                _printService.PrintPurchase(saved);
         }
         catch (DbUpdateConcurrencyException)
         {

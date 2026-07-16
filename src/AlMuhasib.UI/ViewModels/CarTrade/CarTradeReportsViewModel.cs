@@ -15,8 +15,6 @@ namespace AlMuhasib.UI.ViewModels.CarTrade;
 public partial class CarTradeReportsViewModel : ViewModelBase
 {
     private readonly ICarTradeReportService _reportService;
-    private readonly ICarTradeService _tradeService;
-    private readonly ICarTradePrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
@@ -41,15 +39,11 @@ public partial class CarTradeReportsViewModel : ViewModelBase
 
     public CarTradeReportsViewModel(
         ICarTradeReportService reportService,
-        ICarTradeService tradeService,
-        ICarTradePrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast)
     {
         _reportService = reportService;
-        _tradeService = tradeService;
-        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _toast = toast;
@@ -145,16 +139,31 @@ public partial class CarTradeReportsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task PrintReportAsync()
+    private void PrintReport()
     {
         if (!CanPrint || Rows.Count == 0)
             return;
 
-        foreach (var row in Rows)
+        var cols = new[] { "رقم العملية", "التاريخ", "النوع", "السيارة", "البائع", "المشتري", "الإجمالي", "المدفوع", "المتبقي" };
+        var tableRows = Rows.Select(r => new object[]
         {
-            var transaction = await _tradeService.GetByIdAsync(row.Id);
-            if (transaction is not null)
-                _printService.PrintTransaction(transaction, 1);
+            r.TransactionNumber, r.TransactionDate.ToString("yyyy/MM/dd"), r.TradeType, r.CarName,
+            r.SellerName, r.BuyerName, r.TotalAmount, r.AmountPaid, r.RemainingAmount
+        }).ToList();
+
+        var summary = new List<string>
+        {
+            $"عمليات شراء: {BuyCount} — القيمة: {TotalBuyValue:N0}",
+            $"عمليات بيع: {SellCount} — القيمة: {TotalSellValue:N0}",
+            $"المحصّل: {TotalPaid:N0} — المتبقي: {TotalRemaining:N0}"
+        };
+
+        if (DateFrom.HasValue || DateTo.HasValue)
+        {
+            summary.Insert(0,
+                $"الفترة: {DateFrom?.ToString("yyyy/MM/dd") ?? "—"} إلى {DateTo?.ToString("yyyy/MM/dd") ?? "—"}");
         }
+
+        _exportService.PrintTable("تقرير عمليات بيع وشراء السيارات", cols, tableRows, summary);
     }
 }

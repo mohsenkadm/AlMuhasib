@@ -14,13 +14,32 @@ public sealed class CarTradePrintService : ICarTradePrintService
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar-IQ");
     private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
     private static readonly Brush HeaderBg = new SolidColorBrush(Color.FromRgb(0xFF, 0xF3, 0xE0));
+    private static readonly Brush SaleHeaderBg = new SolidColorBrush(Color.FromRgb(0xE8, 0xF5, 0xE9));
     private static readonly Brush LightBg = new SolidColorBrush(Color.FromRgb(0xFA, 0xFA, 0xFA));
     private static readonly Brush AccentBrush = new SolidColorBrush(Color.FromRgb(0xE6, 0x51, 0x00));
+    private static readonly Brush SaleAccentBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32));
 
     public void PrintTransaction(CarTradeTransaction transaction, int copies = 1)
     {
-        var document = BuildTransactionDocument(transaction);
-        DocumentPrintHelper.PrintWithPreview(document, $"عملية {transaction.TransactionNumber}", defaultCopies: copies);
+        if (transaction.IsSold)
+            PrintSale(transaction, copies);
+        else
+            PrintPurchase(transaction, copies);
+    }
+
+    public void PrintPurchase(CarTradeTransaction transaction, int copies = 1)
+    {
+        var document = BuildPurchaseDocument(transaction);
+        DocumentPrintHelper.PrintWithPreview(document, $"شراء سيارة {transaction.TransactionNumber}", defaultCopies: copies);
+    }
+
+    public void PrintSale(CarTradeTransaction transaction, int copies = 1)
+    {
+        if (!transaction.IsSold)
+            throw new InvalidOperationException("لا يمكن طباعة وصل بيع لسيارة غير مباعة");
+
+        var document = BuildSaleDocument(transaction);
+        DocumentPrintHelper.PrintWithPreview(document, $"بيع سيارة {transaction.TransactionNumber}", defaultCopies: copies);
     }
 
     public void PrintPaymentReceipt(CarTradeTransaction transaction, CarTradePayment payment, int copies = 1)
@@ -35,87 +54,106 @@ public sealed class CarTradePrintService : ICarTradePrintService
             PrintTransaction(transaction, copiesEach);
     }
 
-    private static FlowDocument BuildTransactionDocument(CarTradeTransaction transaction)
+    private static FlowDocument BuildPurchaseDocument(CarTradeTransaction transaction)
     {
-        var doc = new FlowDocument
-        {
-            FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12,
-            FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(36, 20, 36, 28)
-        };
-
+        var doc = CreateDocument();
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
-        doc.Blocks.Add(BuildTitleBlock(transaction));
-        doc.Blocks.Add(BuildPartiesBlock(transaction));
+        doc.Blocks.Add(BuildTitleBlock(
+            "شراء سيارة",
+            transaction.TransactionDate,
+            transaction.TransactionNumber,
+            AccentBrush,
+            HeaderBg));
+        doc.Blocks.Add(BuildSinglePartyBlock("البائع", transaction.SellerName, transaction.SellerPhone, HeaderBg));
         doc.Blocks.Add(BuildCarBlock(transaction));
-        doc.Blocks.Add(BuildAmountsBlock(transaction));
+        doc.Blocks.Add(BuildPurchaseAmountsBlock(transaction));
         if (!string.IsNullOrWhiteSpace(transaction.Notes))
-            doc.Blocks.Add(BuildNotesBlock(transaction.Notes));
-        doc.Blocks.Add(BuildSignaturesBlock());
+            doc.Blocks.Add(BuildNotesBlock(transaction.Notes, HeaderBg));
+        doc.Blocks.Add(BuildSignaturesBlock("توقيع البائع", "توقيع المعرض"));
+        return doc;
+    }
 
+    private static FlowDocument BuildSaleDocument(CarTradeTransaction transaction)
+    {
+        var saleDate = transaction.SaleDate ?? transaction.TransactionDate;
+        var doc = CreateDocument();
+        PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
+        doc.Blocks.Add(BuildTitleBlock(
+            "بيع سيارة",
+            saleDate,
+            transaction.TransactionNumber,
+            SaleAccentBrush,
+            SaleHeaderBg));
+        doc.Blocks.Add(BuildPartiesBlock(transaction, SaleHeaderBg));
+        doc.Blocks.Add(BuildCarBlock(transaction));
+        doc.Blocks.Add(BuildSaleAmountsBlock(transaction));
+        if (!string.IsNullOrWhiteSpace(transaction.Notes))
+            doc.Blocks.Add(BuildNotesBlock(transaction.Notes, SaleHeaderBg));
+        doc.Blocks.Add(BuildSignaturesBlock("توقيع البائع (المعرض)", "توقيع المشتري"));
         return doc;
     }
 
     private static FlowDocument BuildPaymentDocument(CarTradeTransaction transaction, CarTradePayment payment)
     {
-        var doc = new FlowDocument
-        {
-            FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12,
-            FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(36, 20, 36, 28)
-        };
-
+        var doc = CreateDocument();
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
-        var title = new Paragraph(new Run(payment.PaymentKind == CarTradePaymentKind.Sale ? "وصل تسديد من مشتري" : "وصل تسديد للبائع"))
+        var isSale = payment.PaymentKind == CarTradePaymentKind.Sale;
+        var title = new Paragraph(new Run(isSale ? "وصل تسديد من مشتري" : "وصل تسديد للبائع"))
         {
             FontSize = 20,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Foreground = AccentBrush,
+            Foreground = isSale ? SaleAccentBrush : AccentBrush,
             Margin = new Thickness(0, 0, 0, 12)
         };
         doc.Blocks.Add(title);
 
         var table = CreateTable(2, 6);
         AddRow(table, 0, "رقم العملية", transaction.TransactionNumber, "التاريخ", payment.PaymentDate.ToString("yyyy/MM/dd", ArabicCulture));
-        AddRow(table, 1, "نوع العملية", transaction.IsSold ? "بيع" : "شراء", "اسم السيارة", transaction.CarName);
+        AddRow(table, 1, "نوع العملية", isSale ? "بيع" : "شراء", "اسم السيارة", transaction.CarName);
         AddRow(table, 2, "الطرف", GetPaymentPartyName(transaction, payment), "المبلغ المسدد", FormatMoney(payment.Amount));
         AddRow(table, 3, "المتبقي قبل", FormatMoney(payment.RemainingBefore), "المتبقي بعد", FormatMoney(payment.RemainingAfter));
-        var total = payment.PaymentKind == CarTradePaymentKind.Sale ? transaction.SalePrice : transaction.PurchasePrice;
-        var paid = payment.PaymentKind == CarTradePaymentKind.Sale ? transaction.SaleAmountPaid : transaction.AmountPaid;
+        var total = isSale ? transaction.SalePrice : transaction.PurchasePrice;
+        var paid = isSale ? transaction.SaleAmountPaid : transaction.AmountPaid;
         AddRow(table, 4, "إجمالي العملية", FormatMoney(total), "المدفوع الكلي", FormatMoney(paid));
         if (!string.IsNullOrWhiteSpace(payment.Notes))
             AddRow(table, 5, "ملاحظات", payment.Notes, string.Empty, string.Empty);
 
         doc.Blocks.Add(table);
-        doc.Blocks.Add(BuildSignaturesBlock());
-
+        doc.Blocks.Add(BuildSignaturesBlock("توقيع المستلم", "توقيع الدافع"));
         return doc;
     }
 
-    private static Block BuildTitleBlock(CarTradeTransaction transaction)
+    private static FlowDocument CreateDocument() => new()
+    {
+        FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
+        FontSize = 12,
+        FlowDirection = FlowDirection.RightToLeft,
+        PagePadding = new Thickness(36, 20, 36, 28)
+    };
+
+    private static Block BuildTitleBlock(string title, DateTime date, string number, Brush accent, Brush headerBg)
     {
         var table = CreateTable(3, 1, [2.2, 3.6, 2.2]);
         var row = new TableRow();
 
         var dayCell = new TableCell(CreateStackedFieldBlock([
-            FieldLine("اليوم", transaction.TransactionDate.ToString("dddd", ArabicCulture)),
+            FieldLine("اليوم", date.ToString("dddd", ArabicCulture)),
             FieldLine("الساعة", DateTime.Now.ToString("HH:mm", ArabicCulture))
         ]))
         {
             BorderBrush = BorderBrush,
-            Padding = new Thickness(6, 4, 6, 4)
+            Padding = new Thickness(6, 4, 6, 4),
+            Background = headerBg
         };
 
-        var titleCell = new TableCell(new Paragraph(new Run(transaction.IsSold ? "بيع سيارة" : "شراء سيارة"))
+        var titleCell = new TableCell(new Paragraph(new Run(title))
         {
             FontSize = 20,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Foreground = AccentBrush,
+            Foreground = accent,
             Margin = new Thickness(0, 8, 0, 8)
         })
         {
@@ -123,35 +161,44 @@ public sealed class CarTradePrintService : ICarTradePrintService
         };
 
         var dateCell = new TableCell(CreateStackedFieldBlock([
-            FieldLine("التاريخ", transaction.TransactionDate.ToString("yyyy/MM/dd", ArabicCulture)),
-            FieldLine(string.Empty, transaction.TransactionNumber, boldValue: true, centerValue: true)
+            FieldLine("التاريخ", date.ToString("yyyy/MM/dd", ArabicCulture)),
+            FieldLine(string.Empty, number, boldValue: true, centerValue: true)
         ]))
         {
             BorderBrush = BorderBrush,
             Padding = new Thickness(6, 4, 6, 4),
-            TextAlignment = TextAlignment.Left
+            TextAlignment = TextAlignment.Left,
+            Background = headerBg
         };
 
         row.Cells.Add(dayCell);
         row.Cells.Add(titleCell);
         row.Cells.Add(dateCell);
         table.RowGroups[0].Rows.Add(row);
-
         return WrapBlock(table, new Thickness(0, 0, 0, 10));
     }
 
-    private static Block BuildPartiesBlock(CarTradeTransaction transaction)
+    private static Block BuildSinglePartyBlock(string title, string name, string phone, Brush headerBg)
+    {
+        var section = CreatePartyBox(title, [
+            FieldLine("الاسم", name),
+            FieldLine("الهاتف", phone)
+        ], headerBg);
+        return WrapBlock(section, new Thickness(0, 0, 0, 10));
+    }
+
+    private static Block BuildPartiesBlock(CarTradeTransaction transaction, Brush headerBg)
     {
         var table = CreateTable(2, 1, [1, 1]);
         var row = new TableRow();
-        row.Cells.Add(WrapCell(CreatePartyBox("البائع", [
+        row.Cells.Add(WrapCell(CreatePartyBox("البائع (المعرض)", [
             FieldLine("الاسم", transaction.SellerName),
             FieldLine("الهاتف", transaction.SellerPhone)
-        ]), padding: new Thickness(0, 0, 6, 0)));
+        ], headerBg), padding: new Thickness(0, 0, 6, 0)));
         row.Cells.Add(WrapCell(CreatePartyBox("المشتري", [
             FieldLine("الاسم", transaction.BuyerName),
             FieldLine("الهاتف", transaction.BuyerPhone)
-        ]), padding: new Thickness(6, 0, 0, 0)));
+        ], headerBg), padding: new Thickness(6, 0, 0, 0)));
         table.RowGroups[0].Rows.Add(row);
         return WrapBlock(table, new Thickness(0, 0, 0, 10));
     }
@@ -180,18 +227,34 @@ public sealed class CarTradePrintService : ICarTradePrintService
         return WrapBlock(table, new Thickness(0, 0, 0, 10));
     }
 
-    private static Block BuildAmountsBlock(CarTradeTransaction transaction)
+    private static Block BuildPurchaseAmountsBlock(CarTradeTransaction transaction)
     {
         var block = CreateStackedFieldBlock([
-            SectionLabel("المبالغ المالية"),
+            SectionLabel("بيانات الشراء"),
             FieldLine("سعر الشراء", FormatMoney(transaction.PurchasePrice)),
-            FieldLine("سعر البيع", FormatMoney(transaction.SalePrice)),
-            FieldLine("إجمالي العملية", FormatMoney(transaction.TotalAmount)),
             FieldLine("طريقة الدفع", GetPaymentModeLabel(transaction.PaymentMode)),
-            FieldLine("المبلغ المدفوع", FormatMoney(transaction.AmountPaid)),
-            FieldLine("المبلغ المتبقي", FormatMoney(transaction.RemainingAmount))
+            FieldLine("المبلغ المدفوع للبائع", FormatMoney(transaction.AmountPaid)),
+            FieldLine("المبلغ المتبقي للبائع", FormatMoney(transaction.RemainingAmount))
         ]);
+        return WrapAmountBlock(block);
+    }
 
+    private static Block BuildSaleAmountsBlock(CarTradeTransaction transaction)
+    {
+        var block = CreateStackedFieldBlock([
+            SectionLabel("بيانات البيع"),
+            FieldLine("سعر الشراء (تكلفة)", FormatMoney(transaction.PurchasePrice)),
+            FieldLine("سعر البيع", FormatMoney(transaction.SalePrice)),
+            FieldLine("تاريخ البيع", (transaction.SaleDate ?? transaction.TransactionDate).ToString("yyyy/MM/dd", ArabicCulture)),
+            FieldLine("طريقة الدفع من المشتري", GetPaymentModeLabel(transaction.SalePaymentMode)),
+            FieldLine("المبلغ المدفوع من المشتري", FormatMoney(transaction.SaleAmountPaid)),
+            FieldLine("المبلغ المتبقي على المشتري", FormatMoney(transaction.SaleRemainingAmount))
+        ]);
+        return WrapAmountBlock(block);
+    }
+
+    private static Block WrapAmountBlock(Section block)
+    {
         var cell = new TableCell(block)
         {
             Background = LightBg,
@@ -205,7 +268,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
         return WrapBlock(table, new Thickness(0, 0, 0, 10));
     }
 
-    private static Block BuildNotesBlock(string notes)
+    private static Block BuildNotesBlock(string notes, Brush headerBg)
     {
         var paragraph = new Paragraph(new Run(notes.Trim()))
         {
@@ -225,7 +288,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
         var headerRow = new TableRow();
         headerRow.Cells.Add(new TableCell(SectionLabel("ملاحظات"))
         {
-            Background = HeaderBg,
+            Background = headerBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
             Padding = new Thickness(8, 6, 8, 6)
@@ -235,12 +298,12 @@ public sealed class CarTradePrintService : ICarTradePrintService
         return WrapBlock(table, new Thickness(0, 0, 0, 10));
     }
 
-    private static Block BuildSignaturesBlock()
+    private static Block BuildSignaturesBlock(string left, string right)
     {
         var table = CreateTable(2, 1, [1, 1]);
         var row = new TableRow();
-        row.Cells.Add(SignatureCell("توقيع البائع"));
-        row.Cells.Add(SignatureCell("توقيع المشتري"));
+        row.Cells.Add(SignatureCell(left));
+        row.Cells.Add(SignatureCell(right));
         table.RowGroups[0].Rows.Add(row);
         return WrapBlock(table, new Thickness(0, 16, 0, 0));
     }
@@ -290,7 +353,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
         return table;
     }
 
-    private static Block CreatePartyBox(string title, IEnumerable<Block> fieldBlocks)
+    private static Block CreatePartyBox(string title, IEnumerable<Block> fieldBlocks, Brush headerBg)
     {
         var section = new Section();
         var headerTable = CreateTable(1, 1);
@@ -303,7 +366,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
             Margin = new Thickness(0, 2, 0, 2)
         })
         {
-            Background = HeaderBg,
+            Background = headerBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
             Padding = new Thickness(4, 6, 4, 6)
@@ -378,12 +441,6 @@ public sealed class CarTradePrintService : ICarTradePrintService
 
     private static string FormatMoney(decimal amount) =>
         amount.ToString("N0", ArabicCulture) + " د.ع";
-
-    private static string GetTradeTypeLabel(CarTradeType type) => type switch
-    {
-        CarTradeType.Sell => "بيع",
-        _ => "شراء"
-    };
 
     private static string GetPaymentModeLabel(CarTradePaymentMode mode) => mode switch
     {
