@@ -10,28 +10,16 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsAgreedPrice",
-                table: "CarSaleContracts",
-                type: "bit",
-                nullable: false,
-                defaultValue: false);
+            migrationBuilder.Sql("""
+                IF COL_LENGTH('dbo.CarSaleContracts', 'IsAgreedPrice') IS NULL
+                    ALTER TABLE [dbo].[CarSaleContracts] ADD [IsAgreedPrice] bit NOT NULL CONSTRAINT [DF_CarSaleContracts_IsAgreedPrice] DEFAULT CAST(0 AS bit);
 
-            migrationBuilder.AddColumn<string>(
-                name: "WitnessOneName",
-                table: "CarSaleContracts",
-                type: "nvarchar(200)",
-                maxLength: 200,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH('dbo.CarSaleContracts', 'WitnessOneName') IS NULL
+                    ALTER TABLE [dbo].[CarSaleContracts] ADD [WitnessOneName] nvarchar(200) NOT NULL CONSTRAINT [DF_CarSaleContracts_WitnessOneName] DEFAULT N'';
 
-            migrationBuilder.AddColumn<string>(
-                name: "WitnessTwoName",
-                table: "CarSaleContracts",
-                type: "nvarchar(200)",
-                maxLength: 200,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH('dbo.CarSaleContracts', 'WitnessTwoName') IS NULL
+                    ALTER TABLE [dbo].[CarSaleContracts] ADD [WitnessTwoName] nvarchar(200) NOT NULL CONSTRAINT [DF_CarSaleContracts_WitnessTwoName] DEFAULT N'';
+                """);
         }
 
         /// <inheritdoc />

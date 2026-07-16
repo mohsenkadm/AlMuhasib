@@ -4,6 +4,9 @@ public enum SyncEntityType
 {
     Category,
     Product,
+    PricingType,
+    ProductPrice,
+    BusinessSettings,
     Warehouse,
     Customer,
     Supplier,

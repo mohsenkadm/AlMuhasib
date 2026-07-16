@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../features/dashboard/controllers/dashboard_controller.dart';
+import '../../features/data_tab/controllers/data_hub_controller.dart';
 import '../../features/settings/settings_controller.dart';
 import '../../features/shell/main_shell_controller.dart';
 
@@ -13,6 +14,9 @@ class AccountingShellBinding extends Bindings {
     }
     if (!Get.isRegistered<DashboardController>()) {
       Get.lazyPut<DashboardController>(() => DashboardController(), fenix: true);
+    }
+    if (!Get.isRegistered<DataHubController>()) {
+      Get.lazyPut<DataHubController>(() => DataHubController(), fenix: true);
     }
     if (!Get.isRegistered<SettingsController>()) {
       Get.lazyPut<SettingsController>(() => SettingsController(), fenix: true);

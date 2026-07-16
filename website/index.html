@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="المحاسب — منصة محاسبة، فنادق، مطاعم، وعقود سيارات"/>
-  <title>المحاسب</title>
+  <meta name="description" content="قيد — منصة محاسبة، فنادق، عقود وتجارة سيارات، ربط فروع عبر الشبكة، وتطبيق جوال"/>
+  <title>قيد</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -18,7 +18,7 @@
     <div class="container header-inner">
       <a href="#top" class="logo">
         <span class="logo-mark">م</span>
-        <span class="logo-text" data-i18n="hero.title">المحاسب</span>
+        <span class="logo-text" data-i18n="hero.title">قيد</span>
       </a>
       <button class="nav-toggle" aria-label="Menu">☰</button>
       <nav class="nav-links">
@@ -28,6 +28,7 @@
         <a href="#videos" data-i18n="nav.videos">الفيديوهات</a>
         <a href="#reports" data-i18n="nav.reports">التقارير</a>
         <a href="#cloud" data-i18n="nav.cloud">السحابة</a>
+        <a href="#network" data-i18n="nav.network">ربط الفروع</a>
         <a href="#mobile-app" data-i18n="nav.mobile">التطبيق</a>
         <a href="#download" data-i18n="nav.download">التنزيل</a>
         <a href="#faq" data-i18n="nav.faq">الأسئلة</a>
@@ -48,7 +49,7 @@
       <div class="container hero-grid">
         <div class="hero-content reveal">
           <span class="hero-badge" data-i18n="hero.badge">منصة متعددة الأنظمة</span>
-          <h1><span data-i18n="hero.title">المحاسب</span></h1>
+          <h1><span data-i18n="hero.title">قيد</span></h1>
           <p class="hero-sub">
             <span data-i18n="hero.subtitle">منصة أعمال متكاملة —</span>
             <span class="hero-rotate-wrap" id="hero-rotate-words" aria-live="polite"></span>
@@ -68,11 +69,11 @@
         <div class="hero-visual reveal">
           <div class="desktop-showcase float">
             <img src="assets/desktop-accounting.png" alt="" class="desktop-screenshot" id="desktop-screenshot" hidden/>
-            <div class="almuhasib-desktop" id="desktop-mock" aria-label="معاينة واجهة المحاسب">
+            <div class="almuhasib-desktop" id="desktop-mock" aria-label="معاينة واجهة قيد">
               <div class="ald-titlebar">
                 <div class="ald-win-btns"><span></span><span></span><span class="close"></span></div>
                 <span class="ald-page-title" data-i18n="desktop.pageTitle">لوحة التحكم</span>
-                <span class="ald-app-name">المحاسب — AlMuhasib</span>
+                <span class="ald-app-name">قيد — Qayd</span>
               </div>
               <div class="ald-body">
                 <aside class="ald-sidebar">
@@ -231,6 +232,46 @@
       </div>
     </section>
 
+    <section class="section section-alt" id="network">
+      <div class="container network-split reveal">
+        <div class="network-text">
+          <span class="network-badge" data-i18n="network.badge">جديد</span>
+          <h2 data-i18n="network.title">ربط الحاسبات الرئيسية والفرعية</h2>
+          <p data-i18n="network.desc">اتصال مباشر عبر WiFi أو الشبكة المحلية — بدون مزامنة</p>
+          <ul class="network-points" id="network-points"></ul>
+        </div>
+        <div class="network-visual">
+          <div class="network-flow">
+            <div class="network-node main">
+              <span class="network-node-icon">🖥️</span>
+              <strong data-i18n="network.diagram.main">حاسبة رئيسية</strong>
+              <small data-i18n="network.diagram.mainHint">قاعدة البيانات</small>
+            </div>
+            <div class="network-links" aria-hidden="true">
+              <span class="network-link"></span>
+              <span class="network-link"></span>
+              <span class="network-link"></span>
+            </div>
+            <div class="network-branches">
+              <div class="network-node branch">
+                <span class="network-node-icon">💻</span>
+                <strong data-i18n="network.diagram.branch1">فرع 1</strong>
+              </div>
+              <div class="network-node branch">
+                <span class="network-node-icon">💻</span>
+                <strong data-i18n="network.diagram.branch2">فرع 2</strong>
+              </div>
+              <div class="network-node branch">
+                <span class="network-node-icon">💻</span>
+                <strong data-i18n="network.diagram.branch3">فرع 3</strong>
+              </div>
+            </div>
+            <p class="network-flow-caption" data-i18n="network.diagram.caption">اكتشاف تلقائي على الشبكة + رمز ربط آمن</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section section-alt" id="mobile-app">
       <div class="container mobile-split reveal">
         <div class="mobile-text">
@@ -246,7 +287,7 @@
             <div class="phone-notch"></div>
             <div class="phone-screen">
               <div class="phone-header">
-                <span data-i18n="mobile.appName">المحاسب</span>
+                <span data-i18n="mobile.appName">قيد</span>
                 <span class="phone-api">API</span>
               </div>
               <div class="phone-greeting" data-i18n="mobile.greeting">مرحباً</div>
@@ -281,7 +322,7 @@
       <div class="container">
         <div class="download-card reveal">
           <div class="download-info">
-            <h2 data-i18n="download.title">حمّل المحاسب</h2>
+            <h2 data-i18n="download.title">حمّل قيد</h2>
             <p data-i18n="download.desc">من GitHub</p>
             <p class="dl-notes" id="dl-notes"></p>
             <dl class="dl-meta">

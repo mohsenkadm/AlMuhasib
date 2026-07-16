@@ -7,6 +7,9 @@ public interface ICloudMasterDataService
     Task<MasterDataBundle> GetAllAsync(CancellationToken ct = default);
     Task<List<LookupItem>> GetCategoriesAsync(string? search = null, CancellationToken ct = default);
     Task<List<ProductLookupItem>> GetProductsAsync(string? search = null, Guid? categorySyncId = null, string? barcode = null, CancellationToken ct = default);
+    Task<List<PricingTypeLookupItem>> GetPricingTypesAsync(string? search = null, CancellationToken ct = default);
+    Task<List<ProductPriceLookupItem>> GetProductPricesAsync(Guid? productSyncId = null, Guid? pricingTypeSyncId = null, CancellationToken ct = default);
+    Task<BusinessSettingsDto> GetBusinessSettingsAsync(CancellationToken ct = default);
     Task<List<LookupItem>> GetCustomersAsync(string? search = null, CancellationToken ct = default);
     Task<List<LookupItem>> GetSuppliersAsync(string? search = null, CancellationToken ct = default);
     Task<List<LookupItem>> GetWarehousesAsync(string? search = null, CancellationToken ct = default);

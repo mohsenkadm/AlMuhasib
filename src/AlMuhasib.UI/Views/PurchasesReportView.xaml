@@ -131,6 +131,10 @@
                                                         ToolTip="نسخ إلى فاتورة جديدة">
                                                     <materialDesign:PackIcon Kind="ContentCopy" Width="18" Height="18"/>
                                                 </Button>
+                                                <Button Style="{StaticResource TableSecondaryIconButton}" Command="{Binding DataContext.ReturnInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                        ToolTip="مرتجع مشتريات">
+                                                    <materialDesign:PackIcon Kind="KeyboardReturn" Width="18" Height="18"/>
+                                                </Button>
                                                 <Button Style="{StaticResource TableSecondaryIconButton}" Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
                                                         Visibility="{Binding IsCredit, Converter={StaticResource BoolToVis}}">
                                                     <materialDesign:PackIcon Kind="CashCheck" Width="18" Height="18"/>

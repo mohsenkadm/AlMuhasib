@@ -11,7 +11,11 @@ namespace AlMuhasib.Infrastructure.Services;
 public sealed class SyncApiClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     public SyncApiClient(IHttpClientFactory httpClientFactory)
     {
@@ -21,11 +25,15 @@ public sealed class SyncApiClient
     public async Task<TenantLoginResponse> LoginAsync(CloudSyncSettings settings, CancellationToken ct)
     {
         var client = CreateClient(settings.ApiBaseUrl);
-        var response = await client.PostAsJsonAsync("/api/auth/login", new TenantLoginRequest
-        {
-            Username = settings.Username,
-            Password = settings.Password
-        }, ct);
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new TenantLoginRequest
+            {
+                Username = settings.Username.Trim(),
+                Password = settings.Password
+            },
+            JsonOptions,
+            ct);
 
         await EnsureSuccessAsync(response, ct);
         return (await response.Content.ReadFromJsonAsync<TenantLoginResponse>(JsonOptions, ct))!;

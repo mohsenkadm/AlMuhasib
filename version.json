@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.13.0",
-    "releaseDate":  "2026-06-17",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.13.0/AlMuhasib-1.13.0.zip",
-    "sha256":  "",
-    "sizeBytes":  0,
-    "releaseNotes":  "المساعد الصوتي قيد، إعادة تصميم لوحة التحكم، تقرير تعبئة المخزون، مثبّت Windows (Inno Setup)، تحسينات طباعة الأقساط والتصدير، وتحديث الهوية البصرية",
+    "version":  "1.14.4",
+    "releaseDate":  "2026-07-12",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.4/AlMuhasib-1.14.4.zip",
+    "sha256":  "8610B67C34C3844830DB28A8DED6FEF9464400CB50E1935DB846DBB901EECF73",
+    "sizeBytes":  93840517,
+    "releaseNotes":  "تحسين طباعة عقد السيارات: بنود بارزة ومرتبة، توقيعات تحت البنود، تكبير الخط والهيدر، وإصلاح قص أسفل الصفحة عند الطباعة الورقية",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

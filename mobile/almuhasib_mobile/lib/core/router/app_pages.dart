@@ -21,6 +21,10 @@ import '../../features/car_trade/transactions/car_trade_transaction_form_screen.
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_list_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
+import '../../features/data_tab/presentation/pricing_type_form_screen.dart';
+import '../../features/data_tab/presentation/pricing_types_screen.dart';
+import '../../features/data_tab/presentation/product_price_form_screen.dart';
+import '../../features/data_tab/presentation/product_prices_screen.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
 import '../../features/hotel/guests/hotel_guest_form_screen.dart';
@@ -279,6 +283,54 @@ abstract final class AppPages {
         syncId: Get.parameters['syncId']!,
         name: Get.parameters['name'] ?? '',
       ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pricingTypes,
+      page: () => const PricingTypesScreen(),
+      binding: PricingTypesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pricingTypeNew,
+      page: () => const PricingTypeFormScreen(),
+      binding: PricingTypeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pricingTypeEdit,
+      page: () => PricingTypeFormScreen(syncId: Get.parameters['syncId']),
+      binding: PricingTypeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPrices,
+      page: () => const ProductPricesScreen(),
+      binding: ProductPricesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPriceNew,
+      page: () => const ProductPriceFormScreen(),
+      binding: ProductPriceFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPriceEdit,
+      page: () => ProductPriceFormScreen(syncId: Get.parameters['syncId']),
+      binding: ProductPriceFormBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

@@ -122,6 +122,7 @@ class CreateInvestorRequest {
 class CreateInvoiceItemRequest {
   CreateInvoiceItemRequest({
     this.productSyncId,
+    this.pricingTypeSyncId,
     required this.itemName,
     required this.quantity,
     required this.unitPrice,
@@ -130,6 +131,7 @@ class CreateInvoiceItemRequest {
 
   Map<String, dynamic> toJson() => {
         if (productSyncId != null) 'productSyncId': productSyncId,
+        if (pricingTypeSyncId != null) 'pricingTypeSyncId': pricingTypeSyncId,
         'itemName': itemName,
         'quantity': quantity,
         'unitPrice': unitPrice,
@@ -137,6 +139,7 @@ class CreateInvoiceItemRequest {
       };
 
   final String? productSyncId;
+  final String? pricingTypeSyncId;
   final String itemName;
   final double quantity;
   final double unitPrice;
@@ -207,4 +210,49 @@ class CreateInvoiceRequest {
   final String? notes;
   final List<CreateInvoiceItemRequest> items;
   final CreateInstallmentPlanRequest? installmentPlan;
+}
+
+class UpsertPricingTypeRequest {
+  UpsertPricingTypeRequest({
+    this.syncId,
+    required this.name,
+    this.isDefault = false,
+    this.isActive = true,
+  });
+
+  Map<String, dynamic> toJson() => {
+        if (syncId != null) 'syncId': syncId,
+        'name': name,
+        'isDefault': isDefault,
+        'isActive': isActive,
+      };
+
+  final String? syncId;
+  final String name;
+  final bool isDefault;
+  final bool isActive;
+}
+
+class UpsertProductPriceRequest {
+  UpsertProductPriceRequest({
+    this.syncId,
+    required this.productSyncId,
+    required this.pricingTypeSyncId,
+    required this.salePrice,
+    required this.purchasePrice,
+  });
+
+  Map<String, dynamic> toJson() => {
+        if (syncId != null) 'syncId': syncId,
+        'productSyncId': productSyncId,
+        'pricingTypeSyncId': pricingTypeSyncId,
+        'salePrice': salePrice,
+        'purchasePrice': purchasePrice,
+      };
+
+  final String? syncId;
+  final String productSyncId;
+  final String pricingTypeSyncId;
+  final double salePrice;
+  final double purchasePrice;
 }

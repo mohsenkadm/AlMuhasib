@@ -16,11 +16,11 @@ var app = builder.Build();
 
 await CloudDbSeeder.SeedAsync(app.Services);
 
-if (!app.Environment.IsDevelopment())
-{
+//if (!app.Environment.IsDevelopment())
+//{
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
-}
+//}
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();

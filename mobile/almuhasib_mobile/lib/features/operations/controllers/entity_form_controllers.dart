@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
 import '../../../core/getx/app_services.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/mobile_models.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
@@ -121,7 +122,51 @@ class ProductFormController extends GetxController {
   final descriptionController = TextEditingController();
 
   final category = Rxn<LookupItem>();
+  final prices = <ProductPriceLookupItem>[].obs;
   final saving = false.obs;
+
+  bool get isEdit => syncId != null && syncId!.isNotEmpty;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments;
+    if (args is ProductLookupItem) {
+      nameController.text = args.name;
+      barcodeController.text = args.barcode ?? '';
+      category.value = LookupItem(
+        id: 0,
+        syncId: args.categorySyncId,
+        name: args.categoryName,
+      );
+      prices.assignAll(args.prices);
+    } else if (isEdit) {
+      _loadPrices();
+    }
+  }
+
+  Future<void> _loadPrices() async {
+    try {
+      final loaded = await AppServices.data.getProductPrices(
+        productSyncId: syncId,
+      );
+      prices.assignAll(loaded);
+      final products = await AppServices.data.getProducts();
+      for (final p in products) {
+        if (p.syncId == syncId) {
+          nameController.text = p.name;
+          barcodeController.text = p.barcode ?? '';
+          category.value = LookupItem(
+            id: 0,
+            syncId: p.categorySyncId,
+            name: p.categoryName,
+          );
+          if (prices.isEmpty) prices.assignAll(p.prices);
+          break;
+        }
+      }
+    } catch (_) {}
+  }
 
   Future<void> pickCategory() async {
     final ctx = Get.context;
@@ -132,6 +177,22 @@ class ProductFormController extends GetxController {
       loadItems: (search) => AppServices.data.getCategories(search: search),
     );
     if (selected != null) category.value = selected;
+  }
+
+  Future<void> editPrice(ProductPriceLookupItem price) async {
+    final refreshed = await Get.toNamed<bool>(
+      AppRoutes.productPriceEditPath(price.syncId),
+      arguments: price,
+    );
+    if (refreshed == true) await _loadPrices();
+  }
+
+  Future<void> addPrice() async {
+    final refreshed = await Get.toNamed<bool>(
+      AppRoutes.productPriceNew,
+      arguments: syncId,
+    );
+    if (refreshed == true) await _loadPrices();
   }
 
   Future<void> save() async {

@@ -14,6 +14,7 @@ public static class ScreenPermissionRegistry
     public const string SystemUpdate = "SystemUpdate";
     public const string Reports = "Reports";
     public const string BalanceSheet = "BalanceSheet";
+    public const string NetworkConnection = "NetworkConnection";
 
     private static SystemModuleRegistry? _registry;
 
@@ -44,6 +45,7 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -59,6 +61,7 @@ public static class ScreenPermissionRegistry
         (CarTradePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarTradePermissionRegistry.Backup, "النسخ الاحتياطي"),
         (CarTradePermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -89,6 +92,7 @@ public static class ScreenPermissionRegistry
         (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (HotelPermissionRegistry.Backup, "النسخ الاحتياطي"),
         (HotelPermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -97,6 +101,8 @@ public static class ScreenPermissionRegistry
         (Dashboard, "لوحة التحكم"),
         ("Products", "المنتجات"),
         ("Categories", "تصنيفات المنتجات"),
+        ("PricingTypes", "أنواع التسعير"),
+        ("ProductPricing", "تسعير منتجات"),
         ("Customers", "العملاء"),
         ("Suppliers", "الموردون"),
         ("PurchaseInvoice", "فاتورة مشتريات"),
@@ -123,6 +129,7 @@ public static class ScreenPermissionRegistry
         ("PrintSettings", "إعدادات الطباعة"),
         ("Backup", "النسخ الاحتياطي"),
         ("CloudSync", "المزامنة السحابية"),
+        (NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام"),
     ];
 
@@ -167,6 +174,8 @@ public static class ScreenPermissionRegistry
         [typeof(DashboardViewModel)] = Dashboard,
         [typeof(ProductsViewModel)] = "Products",
         [typeof(CategoriesViewModel)] = "Categories",
+        [typeof(PricingTypesViewModel)] = "PricingTypes",
+        [typeof(ProductPricingViewModel)] = "ProductPricing",
         [typeof(CustomersViewModel)] = "Customers",
         [typeof(SuppliersViewModel)] = "Suppliers",
         [typeof(PurchaseInvoiceViewModel)] = "PurchaseInvoice",
@@ -219,6 +228,7 @@ public static class ScreenPermissionRegistry
         [typeof(PrintLayoutSettingsViewModel)] = "PrintSettings",
         [typeof(BackupRestoreViewModel)] = "Backup",
         [typeof(CloudSyncSettingsViewModel)] = "CloudSync",
+        [typeof(NetworkConnectionSettingsViewModel)] = NetworkConnection,
         [typeof(SystemUpdateViewModel)] = SystemUpdate,
     };
 
@@ -227,6 +237,8 @@ public static class ScreenPermissionRegistry
         [Dashboard] = typeof(DashboardViewModel),
         ["Products"] = typeof(ProductsViewModel),
         ["Categories"] = typeof(CategoriesViewModel),
+        ["PricingTypes"] = typeof(PricingTypesViewModel),
+        ["ProductPricing"] = typeof(ProductPricingViewModel),
         ["Customers"] = typeof(CustomersViewModel),
         ["Suppliers"] = typeof(SuppliersViewModel),
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
@@ -253,6 +265,7 @@ public static class ScreenPermissionRegistry
         ["PrintSettings"] = typeof(PrintLayoutSettingsViewModel),
         ["Backup"] = typeof(BackupRestoreViewModel),
         ["CloudSync"] = typeof(CloudSyncSettingsViewModel),
+        [NetworkConnection] = typeof(NetworkConnectionSettingsViewModel),
         [SystemUpdate] = typeof(SystemUpdateViewModel),
     };
 }

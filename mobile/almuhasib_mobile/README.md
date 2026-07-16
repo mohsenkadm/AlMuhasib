@@ -10,14 +10,20 @@
 - تشغيل `AlMuhasib.Api` محلياً
 - **IsMobileEnabled** مفعّل للمستأجر (Cloud Admin)
 
-## تشغيل الـ API
+## رابط الـ API الإنتاجي
+
+`https://mohsenkadmapple-001-site1.dtempurl.com`
+
+هذا هو الرابط الافتراضي في `.env` وداخل التطبيق. يمكن تغييره من **الإعدادات**.
+
+## تشغيل الـ API محلياً (اختياري)
 
 ```powershell
 cd src/AlMuhasib.Api
 dotnet run --launch-profile https
 ```
 
-- Swagger: https://localhost:7031/swagger (أو http://localhost:5265/swagger)
+- Swagger محلي: https://localhost:7031/swagger (أو http://localhost:5265/swagger)
 - بيانات تجريبية: `demo` / `demo123`
 
 ## إعداد التطبيق
@@ -30,15 +36,13 @@ flutter pub get
 
 عدّل `.env` وأضف `ONESIGNAL_APP_ID` من [OneSignal Dashboard](https://onesignal.com) لتفعيل الإشعارات.
 
-## عناوين API حسب البيئة
+## عناوين API
 
 | البيئة | العنوان الافتراضي |
 |--------|-------------------|
-| Android Emulator | `https://10.0.2.2:7031` |
-| iOS Simulator | `https://127.0.0.1:7031` |
-| جهاز حقيقي | IP جهازك + `:7031` |
+| الإنتاج (كل المنصات) | `https://mohsenkadmapple-001-site1.dtempurl.com` |
 
-يمكن تغيير الرابط من **الإعدادات** داخل التطبيق.
+للتطوير المحلي، غيّر قيم `DEFAULT_API_URL_*` في `.env` إلى عنوان جهازك.
 
 ## تشغيل التطبيق
 

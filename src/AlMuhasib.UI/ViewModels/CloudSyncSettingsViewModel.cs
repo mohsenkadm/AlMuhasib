@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+using System.Windows;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,6 +27,16 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
     [ObservableProperty] private string _connectionStatusText = "غير مُختبر";
     [ObservableProperty] private int _lastAcceptedCount;
     [ObservableProperty] private int _lastConflictCount;
+    [ObservableProperty] private double _syncProgressPercent;
+    [ObservableProperty] private string _syncProgressMessage = string.Empty;
+    [ObservableProperty] private string _syncRemainingText = string.Empty;
+    [ObservableProperty] private string _diagnosticsText = string.Empty;
+    [ObservableProperty] private string _copyFeedback = string.Empty;
+
+    public ObservableCollection<SyncConflictInfo> Conflicts { get; } = [];
+
+    /// <summary>True when the user typed in PasswordBox before/during async settings load.</summary>
+    public bool PasswordEditedByUser { get; set; }
 
     public CloudSyncSettingsViewModel(
         ICloudSyncSettingsService settingsService,
@@ -39,8 +51,14 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         LoadPermissions(currentUserService, "CloudSync");
     }
 
+    /// <summary>Fired after settings are loaded from the database so the view can sync PasswordBox.</summary>
+    public event Action? SettingsLoaded;
+
     public bool HasSyncError => !string.IsNullOrWhiteSpace(LastSyncError);
-    public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage) && !HasSyncError;
+    public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage) && !HasSyncError && !HasConflicts;
+    public bool HasConflicts => Conflicts.Count > 0;
+    public bool CanCopyDiagnostics => !string.IsNullOrWhiteSpace(DiagnosticsText);
+    public bool HasCopyFeedback => !string.IsNullOrWhiteSpace(CopyFeedback);
 
     public string LastSyncDisplay =>
         LastSuccessfulSyncAt.HasValue
@@ -72,11 +90,14 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         var settings = await _settingsService.GetAsync();
         ApiBaseUrl = settings.ApiBaseUrl;
         Username = settings.Username;
-        Password = settings.Password;
+        // Don't wipe a password the user already typed while this async load was in flight.
+        if (!PasswordEditedByUser)
+            Password = settings.Password;
         AutoSyncEnabled = settings.AutoSyncEnabled;
         AutoSyncIntervalMinutes = settings.AutoSyncIntervalMinutes;
         LastSuccessfulSyncAt = settings.LastSuccessfulSyncAt;
         LastSyncError = settings.LastSyncError;
+        SettingsLoaded?.Invoke();
     }
 
     partial void OnLastSyncErrorChanged(string? value)
@@ -85,6 +106,8 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasStatusMessage));
     }
     partial void OnStatusMessageChanged(string value) => OnPropertyChanged(nameof(HasStatusMessage));
+    partial void OnDiagnosticsTextChanged(string value) => OnPropertyChanged(nameof(CanCopyDiagnostics));
+    partial void OnCopyFeedbackChanged(string value) => OnPropertyChanged(nameof(HasCopyFeedback));
     partial void OnLastSuccessfulSyncAtChanged(DateTime? value)
     {
         OnPropertyChanged(nameof(LastSyncDisplay));
@@ -107,6 +130,9 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            SyncProgressMessage = "جاري حفظ الإعدادات...";
+            SyncProgressPercent = 50;
+            SyncRemainingText = string.Empty;
             var settings = await _settingsService.GetAsync();
             settings.ApiBaseUrl = ApiBaseUrl.Trim();
             settings.Username = Username.Trim();
@@ -129,6 +155,8 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+            SyncProgressPercent = 0;
+            SyncProgressMessage = string.Empty;
         }
     }
 
@@ -139,6 +167,9 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            SyncProgressMessage = "جاري اختبار الاتصال...";
+            SyncProgressPercent = 40;
+            SyncRemainingText = string.Empty;
             await SaveSettingsOnlyAsync();
             var status = await _syncService.TestConnectionAsync();
             IsConnectionOk = status.IsSuccess;
@@ -146,6 +177,8 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
             StatusMessage = status.IsSuccess ? "الاتصال ناجح — الترخيص فعّال" : status.Message;
             if (!status.IsSuccess)
                 LastSyncError = status.Message;
+            else
+                LastSyncError = null;
         }
         catch (Exception ex)
         {
@@ -157,6 +190,8 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+            SyncProgressPercent = 0;
+            SyncProgressMessage = string.Empty;
         }
     }
 
@@ -167,16 +202,44 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            Conflicts.Clear();
+            DiagnosticsText = string.Empty;
+            CopyFeedback = string.Empty;
+            LastSyncError = null;
+            SyncProgressPercent = 0;
+            SyncProgressMessage = "بدء المزامنة...";
+            SyncRemainingText = "متبقي 6 من 6";
+            OnPropertyChanged(nameof(HasConflicts));
+            OnPropertyChanged(nameof(HasStatusMessage));
+
             await SaveSettingsOnlyAsync();
-            var result = await _syncService.SyncNowAsync();
+
+            var progress = new Progress<SyncProgressUpdate>(update =>
+            {
+                SyncProgressPercent = update.Percent;
+                SyncProgressMessage = update.Message;
+                SyncRemainingText = $"متبقي {update.RemainingSteps} من {update.TotalSteps}";
+            });
+
+            var result = await _syncService.SyncNowAsync(progress);
             var settings = await _settingsService.GetAsync();
             LastSuccessfulSyncAt = settings.LastSuccessfulSyncAt;
             LastSyncError = settings.LastSyncError;
             LastAcceptedCount = result.AcceptedCount;
             LastConflictCount = result.ConflictCount;
+            DiagnosticsText = result.DiagnosticsText;
+            Conflicts.Clear();
+            foreach (var c in result.Conflicts)
+                Conflicts.Add(c);
+
+            OnPropertyChanged(nameof(HasConflicts));
+            OnPropertyChanged(nameof(HasStatusMessage));
+
             IsConnectionOk = true;
             ConnectionStatusText = "متصل";
-            StatusMessage = result.Message;
+            StatusMessage = result.IsSuccess ? result.Message : string.Empty;
+            if (!result.IsSuccess && string.IsNullOrWhiteSpace(LastSyncError))
+                LastSyncError = result.Message;
         }
         catch (Exception ex)
         {
@@ -184,21 +247,64 @@ public partial class CloudSyncSettingsViewModel : ViewModelBase
             ConnectionStatusText = "فشل المزامنة";
             StatusMessage = string.Empty;
             LastSyncError = ex.Message;
+            DiagnosticsText =
+                $"=== فشل المزامنة ==={Environment.NewLine}" +
+                $"TimeUtc: {DateTime.UtcNow:O}{Environment.NewLine}" +
+                $"ApiBaseUrl: {ApiBaseUrl}{Environment.NewLine}" +
+                $"Username: {Username}{Environment.NewLine}" +
+                $"Error: {ex}{Environment.NewLine}";
         }
         finally
         {
             IsBusy = false;
+            if (SyncProgressPercent < 100 && string.IsNullOrWhiteSpace(LastSyncError) && !HasConflicts)
+            {
+                SyncProgressPercent = 100;
+                SyncProgressMessage = "اكتملت";
+                SyncRemainingText = "متبقي 0 من 6";
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void CopyDiagnostics()
+    {
+        if (string.IsNullOrWhiteSpace(DiagnosticsText))
+            return;
+
+        try
+        {
+            Clipboard.SetText(DiagnosticsText);
+            CopyFeedback = "تم نسخ التشخيص — الصقه في المحادثة لإصلاح التعارضات";
+        }
+        catch (Exception ex)
+        {
+            CopyFeedback = $"تعذر النسخ: {ex.Message}";
         }
     }
 
     private async Task SaveSettingsOnlyAsync()
     {
         var settings = await _settingsService.GetAsync();
+        var credentialsChanged =
+            !string.Equals(settings.ApiBaseUrl?.Trim(), ApiBaseUrl.Trim(), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(settings.Username?.Trim(), Username.Trim(), StringComparison.Ordinal) ||
+            settings.Password != Password;
+
         settings.ApiBaseUrl = ApiBaseUrl.Trim();
         settings.Username = Username.Trim();
         settings.Password = Password;
         settings.AutoSyncEnabled = AutoSyncEnabled;
         settings.AutoSyncIntervalMinutes = AutoSyncIntervalMinutes;
+
+        // Avoid reusing a token issued for previous credentials/URL.
+        if (credentialsChanged)
+        {
+            settings.AccessToken = string.Empty;
+            settings.RefreshToken = string.Empty;
+            settings.AccessTokenExpiresAt = null;
+        }
+
         await _settingsService.SaveAsync(settings);
     }
 }

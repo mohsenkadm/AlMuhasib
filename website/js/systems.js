@@ -3,7 +3,7 @@ const SYSTEM_ACCENTS = {
   accounting: '#1565C0',
   hotel: '#00897B',
   car: '#E65100',
-  'car-trade': '#F57C00',
+  carTrade: '#558B2F',
   mobile: '#7B1FA2'
 };
 

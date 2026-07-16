@@ -313,6 +313,77 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
+                                <DataGridTemplateColumn Width="100" MinWidth="80"
+                                                        Visibility="{Binding DataContext.ShowCustomField1, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.CustomField1Header, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding CustomField1, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="{Binding CustomField1Label}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Width="100" MinWidth="80"
+                                                        Visibility="{Binding DataContext.ShowCustomField2, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.CustomField2Header, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding CustomField2, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="{Binding CustomField2Label}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="الوحدة" Width="100"
+                                                        Visibility="{Binding DataContext.ShowUnitsOfMeasure, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableUnits}"
+                                                      SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="UnitName"
+                                                      IsEditable="False"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="الدفعة" Width="110"
+                                                        Visibility="{Binding DataContext.ShowExpiryTracking, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableBatches}"
+                                                      SelectedItem="{Binding SelectedBatch, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="False">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <Run Text="{Binding BatchNumber, TargetNullValue=بدون}"/>
+                                                            <Run Text=" — "/>
+                                                            <Run Text="{Binding ExpiryDate, StringFormat=yyyy/MM/dd, TargetNullValue=-}"/>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="سيريال" Width="120"
+                                                        Visibility="{Binding DataContext.ShowSerialNumbers, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
 

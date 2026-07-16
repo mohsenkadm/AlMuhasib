@@ -1,0 +1,85 @@
+<Window x:Class="AlMuhasib.UI.Windows.DesktopActivationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="تفعيل النظام"
+        Width="560" SizeToContent="Height" MaxHeight="720"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FlowDirection="RightToLeft"
+        FontFamily="{DynamicResource AppFont}"
+        Background="{DynamicResource BackgroundBrush}">
+    <Border Padding="28" Background="{DynamicResource CardBrush}">
+        <StackPanel>
+            <TextBlock x:Name="TitleText"
+                       Text="انتهت الفترة التجريبية"
+                       FontSize="22" FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryHueMidBrush}"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock x:Name="MessageText"
+                       TextWrapping="Wrap"
+                       FontSize="14"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="0,0,0,18"
+                       Text="انتهت مدة تجربة برنامج قيد. أدخل مفتاح التفعيل مدى الحياة الذي يزوّدك به المطوّر للمتابعة."/>
+
+            <TextBlock Text="معرّف التنصيب" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="#F0F3F7" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
+                <DockPanel>
+                    <Button DockPanel.Dock="Left" Content="نسخ"
+                            Click="CopyId_Click"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="34" Padding="14,0" Margin="10,0,0,0"/>
+                    <TextBox x:Name="InstallationIdBox"
+                             IsReadOnly="True"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             FontFamily="Consolas"
+                             FontSize="13"
+                             TextWrapping="Wrap"
+                             VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <TextBlock Text="أرسل معرّف التنصيب للمطوّر ليولّد لك مفتاح تفعيل."
+                       FontSize="12"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="0,0,0,16"/>
+
+            <TextBlock Text="مفتاح التفعيل" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <TextBox x:Name="ActivationKeyBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="88"
+                     MaxHeight="140"
+                     VerticalScrollBarVisibility="Auto"
+                     materialDesign:HintAssist.Hint="الصق المفتاح هنا"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+
+            <TextBlock x:Name="ErrorText"
+                       Visibility="Collapsed"
+                       Foreground="#C62828"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       Margin="0,10,0,0"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,22,0,0">
+                <Button Content="تفعيل مدى الحياة"
+                        Click="Activate_Click"
+                        Style="{StaticResource PrimaryButton}"
+                        Height="40" Padding="22,0" Margin="0,0,10,0"/>
+                <Button x:Name="ContinueButton"
+                        Content="متابعة"
+                        Click="Continue_Click"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="40" Padding="22,0" Margin="0,0,10,0"
+                        Visibility="Collapsed"/>
+                <Button Content="إغلاق"
+                        Click="Close_Click"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="40" Padding="22,0"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

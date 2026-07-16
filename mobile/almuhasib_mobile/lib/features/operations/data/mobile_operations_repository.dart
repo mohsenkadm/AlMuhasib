@@ -55,4 +55,60 @@ class MobileOperationsRepository {
           MobileWriteResponse.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<MobileWriteResponse> upsertPricingType(UpsertPricingTypeRequest request) {
+    _apiClient.updateBaseUrl();
+    final syncId = request.syncId;
+    if (syncId != null && syncId.isNotEmpty) {
+      return _apiClient.put(
+        '/api/mobile/pricing-types/$syncId',
+        data: request.toJson(),
+        parser: (data) =>
+            MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+      );
+    }
+    return _apiClient.post(
+      '/api/mobile/pricing-types',
+      data: request.toJson(),
+      parser: (data) =>
+          MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<MobileWriteResponse> deletePricingType(String syncId) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.delete(
+      '/api/mobile/pricing-types/$syncId',
+      parser: (data) =>
+          MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<MobileWriteResponse> upsertProductPrice(UpsertProductPriceRequest request) {
+    _apiClient.updateBaseUrl();
+    final syncId = request.syncId;
+    if (syncId != null && syncId.isNotEmpty) {
+      return _apiClient.put(
+        '/api/mobile/product-prices/$syncId',
+        data: request.toJson(),
+        parser: (data) =>
+            MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+      );
+    }
+    return _apiClient.post(
+      '/api/mobile/product-prices',
+      data: request.toJson(),
+      parser: (data) =>
+          MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<MobileWriteResponse> deleteProductPrice(String syncId) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.delete(
+      '/api/mobile/product-prices/$syncId',
+      parser: (data) =>
+          MobileWriteResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

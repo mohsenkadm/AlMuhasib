@@ -50,6 +50,21 @@ public sealed partial class SyncEngine : ISyncEngine
             }
             await FlushAndCacheAsync(_db.Products, tenantId, request.Data.Products.Select(p => p.SyncId), resolver, ct);
 
+            foreach (var dto in request.Data.PricingTypes)
+                accepted += await UpsertPricingTypeAsync(tenantId, dto, response, ct);
+            await FlushAndCacheAsync(_db.PricingTypes, tenantId, request.Data.PricingTypes.Select(p => p.SyncId), resolver, ct);
+
+            foreach (var dto in request.Data.ProductPrices)
+            {
+                var productId = await resolver.ResolveProductAsync(dto.ProductSyncId, ct);
+                var pricingTypeId = await resolver.ResolvePricingTypeAsync(dto.PricingTypeSyncId, ct);
+                if (productId is null || pricingTypeId is null) { AddConflict(response, "ProductPrice", dto.SyncId, "FK not found"); continue; }
+                accepted += await UpsertProductPriceAsync(tenantId, dto, productId.Value, pricingTypeId.Value, response, ct);
+            }
+
+            foreach (var dto in request.Data.BusinessSettings)
+                accepted += await UpsertBusinessSettingsAsync(tenantId, dto, response, ct);
+
             foreach (var dto in request.Data.Warehouses)
                 accepted += await UpsertWarehouseAsync(tenantId, dto, response, ct);
 
@@ -107,7 +122,8 @@ public sealed partial class SyncEngine : ISyncEngine
                 var invoiceId = await resolver.ResolveInvoiceAsync(dto.InvoiceSyncId, ct);
                 if (invoiceId is null) { AddConflict(response, "InvoiceItem", dto.SyncId, "Invoice not found"); continue; }
                 var productId = await resolver.ResolveProductAsync(dto.ProductSyncId, ct);
-                accepted += await UpsertInvoiceItemAsync(tenantId, dto, invoiceId.Value, productId, response, ct);
+                var pricingTypeId = await resolver.ResolvePricingTypeAsync(dto.PricingTypeSyncId, ct);
+                accepted += await UpsertInvoiceItemAsync(tenantId, dto, invoiceId.Value, productId, pricingTypeId, response, ct);
             }
 
             foreach (var dto in request.Data.InstallmentPlans)
@@ -122,7 +138,14 @@ public sealed partial class SyncEngine : ISyncEngine
             foreach (var dto in request.Data.Installments)
             {
                 var planId = await resolver.ResolveInstallmentPlanAsync(dto.InstallmentPlanSyncId, ct);
-                if (planId is null) { AddConflict(response, "Installment", dto.SyncId, "Plan not found"); continue; }
+                if (planId is null)
+                {
+                    AddConflict(response, "Installment", dto.SyncId,
+                        dto.InstallmentPlanSyncId == Guid.Empty
+                            ? "Plan not found (InstallmentPlanSyncId is empty)"
+                            : $"Plan not found (InstallmentPlanSyncId={dto.InstallmentPlanSyncId:D})");
+                    continue;
+                }
                 var cashBoxId = await resolver.ResolveCashBoxAsync(dto.CashBoxSyncId, ct);
                 accepted += await UpsertInstallmentAsync(tenantId, dto, planId.Value, cashBoxId, response, ct);
             }
@@ -218,6 +241,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
         bundle.Categories = await PullEntitiesAsync(_db.Categories, tenantId, since, MapCategory, ct);
         bundle.Products = await PullProductsAsync(tenantId, since, ct);
+        bundle.PricingTypes = await PullEntitiesAsync(_db.PricingTypes, tenantId, since, MapPricingType, ct);
+        bundle.ProductPrices = await PullProductPricesAsync(tenantId, since, ct);
+        bundle.BusinessSettings = await PullEntitiesAsync(_db.BusinessSettings, tenantId, since, MapBusinessSettings, ct);
         bundle.Warehouses = await PullEntitiesAsync(_db.Warehouses, tenantId, since, MapWarehouse, ct);
         bundle.Customers = await PullEntitiesAsync(_db.Customers, tenantId, since, MapCustomer, ct);
         bundle.Suppliers = await PullEntitiesAsync(_db.Suppliers, tenantId, since, MapSupplier, ct);
@@ -357,6 +383,42 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Description = dto.Description;
         existing.Barcode = dto.Barcode;
         existing.CategoryId = categoryId;
+        return 1;
+    }
+
+    private async Task<int> UpsertPricingTypeAsync(int tenantId, PricingTypeSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.PricingTypes, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "PricingType", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudPricingType { TenantId = tenantId }; _db.PricingTypes.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.Name = dto.Name;
+        existing.IsDefault = dto.IsDefault;
+        existing.IsActive = dto.IsActive;
+        return 1;
+    }
+
+    private async Task<int> UpsertProductPriceAsync(int tenantId, ProductPriceSyncDto dto, int productId, int pricingTypeId, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.ProductPrices, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "ProductPrice", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudProductPrice { TenantId = tenantId }; _db.ProductPrices.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.ProductId = productId;
+        existing.PricingTypeId = pricingTypeId;
+        existing.SalePrice = dto.SalePrice;
+        existing.PurchasePrice = dto.PurchasePrice;
+        return 1;
+    }
+
+    private async Task<int> UpsertBusinessSettingsAsync(int tenantId, BusinessSettingsSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.BusinessSettings, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "BusinessSettings", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudBusinessSettings { TenantId = tenantId }; _db.BusinessSettings.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.ProductPricingEnabled = dto.ProductPricingEnabled;
+        existing.UpdateProductPriceOnPurchase = dto.UpdateProductPriceOnPurchase;
         return 1;
     }
 
@@ -512,7 +574,7 @@ public sealed partial class SyncEngine : ISyncEngine
         return 1;
     }
 
-    private async Task<int> UpsertInvoiceItemAsync(int tenantId, InvoiceItemSyncDto dto, int invoiceId, int? productId, SyncPushResponse response, CancellationToken ct)
+    private async Task<int> UpsertInvoiceItemAsync(int tenantId, InvoiceItemSyncDto dto, int invoiceId, int? productId, int? pricingTypeId, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.InvoiceItems, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "InvoiceItem", dto.SyncId, "Server version is newer"); return 0; }
@@ -520,6 +582,7 @@ public sealed partial class SyncEngine : ISyncEngine
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.InvoiceId = invoiceId;
         existing.ProductId = productId;
+        existing.PricingTypeId = pricingTypeId;
         existing.ItemName = dto.ItemName;
         existing.Quantity = dto.Quantity;
         existing.UnitPrice = dto.UnitPrice;
@@ -707,6 +770,23 @@ public sealed partial class SyncEngine : ISyncEngine
         }).ToList();
     }
 
+    private async Task<List<ProductPriceSyncDto>> PullProductPricesAsync(int tenantId, DateTime since, CancellationToken ct)
+    {
+        var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var types = await _db.PricingTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await _db.ProductPrices.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        return items.Select(p => new ProductPriceSyncDto
+        {
+            SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
+            IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
+            ProductSyncId = products.GetValueOrDefault(p.ProductId),
+            PricingTypeSyncId = types.GetValueOrDefault(p.PricingTypeId),
+            SalePrice = p.SalePrice,
+            PurchasePrice = p.PurchasePrice
+        }).ToList();
+    }
+
     private async Task<List<WarehouseStockSyncDto>> PullWarehouseStocksAsync(int tenantId, DateTime since, CancellationToken ct)
     {
         var wh = await _db.Warehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
@@ -751,6 +831,7 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var invoices = await _db.Invoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var pricingTypes = await _db.PricingTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var items = await _db.InvoiceItems.IgnoreQueryFilters()
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(i => new InvoiceItemSyncDto
@@ -759,6 +840,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
             InvoiceSyncId = invoices.GetValueOrDefault(i.InvoiceId),
             ProductSyncId = i.ProductId.HasValue ? products.GetValueOrDefault(i.ProductId.Value) : null,
+            PricingTypeSyncId = i.PricingTypeId.HasValue ? pricingTypes.GetValueOrDefault(i.PricingTypeId.Value) : null,
             ItemName = i.ItemName, Quantity = i.Quantity, UnitPrice = i.UnitPrice, TotalPrice = i.TotalPrice
         }).ToList();
     }
@@ -904,6 +986,21 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion, Name = e.Name
+    };
+
+    private static PricingTypeSyncDto MapPricingType(CloudPricingType e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        Name = e.Name, IsDefault = e.IsDefault, IsActive = e.IsActive
+    };
+
+    private static BusinessSettingsSyncDto MapBusinessSettings(CloudBusinessSettings e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        ProductPricingEnabled = e.ProductPricingEnabled,
+        UpdateProductPriceOnPurchase = e.UpdateProductPriceOnPurchase
     };
 
     private static WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()

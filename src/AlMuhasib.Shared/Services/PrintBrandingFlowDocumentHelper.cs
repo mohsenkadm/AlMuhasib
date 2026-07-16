@@ -150,7 +150,7 @@ public static class PrintBrandingFlowDocumentHelper
       var imageBlock = CreateFullWidthImageBlock(
           branding.HeaderImageData,
           doc,
-          maxHeight: imageOnlyHeader ? 200 : 150,
+          maxHeight: imageOnlyHeader ? 235 : 175,
           bleedTop: imageOnlyHeader);
       if (imageBlock is not null)
         blocks.Add(imageBlock);

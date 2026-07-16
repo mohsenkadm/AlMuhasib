@@ -27,7 +27,7 @@ const I18N = {
 
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.title = this.strings.meta?.title ?? 'AlMuhasib';
+    document.title = this.strings.meta?.title ?? 'قيد';
     const meta = document.querySelector('meta[name="description"]');
     if (meta && this.strings.meta?.description) meta.content = this.strings.meta.description;
 
@@ -82,6 +82,11 @@ const I18N = {
     const cloudPoints = document.getElementById('cloud-points');
     if (cloudPoints && this.strings.cloud?.points) {
       cloudPoints.innerHTML = this.strings.cloud.points.map(p => `<li>${p}</li>`).join('');
+    }
+
+    const networkPoints = document.getElementById('network-points');
+    if (networkPoints && this.strings.network?.points) {
+      networkPoints.innerHTML = this.strings.network.points.map(p => `<li>${p}</li>`).join('');
     }
 
     const mobilePoints = document.getElementById('mobile-points');

@@ -6,6 +6,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Data;
+using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
@@ -31,6 +32,7 @@ public partial class App : Application
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
 
     private readonly SystemProfileService _systemProfile = new();
+    private readonly DesktopLicenseService _desktopLicense = new();
     private ServiceProvider? _serviceProvider;
     public IServiceProvider Services => _serviceProvider ?? throw new InvalidOperationException("Application is not initialized.");
     private bool _isLoggingOut;
@@ -137,6 +139,7 @@ public partial class App : Application
 
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<ISystemProfileService>(_systemProfile);
+        services.AddSingleton<IDesktopLicenseService>(_desktopLicense);
         services.AddSingleton<SystemModuleRegistry>();
 
         services.Configure<AppUpdateOptions>(configuration.GetSection(AppUpdateOptions.SectionName));
@@ -152,6 +155,7 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
         services.AddSingleton<ISoundService, SoundService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<IDeveloperAccessService, DeveloperAccessService>();
@@ -185,6 +189,8 @@ public partial class App : Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ProductsViewModel>();
         services.AddTransient<CategoriesViewModel>();
+        services.AddTransient<PricingTypesViewModel>();
+        services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
@@ -238,6 +244,7 @@ public partial class App : Application
         services.AddTransient<WarehouseTransferViewModel>();
         services.AddTransient<PrintLayoutSettingsViewModel>();
         services.AddTransient<CloudSyncSettingsViewModel>();
+        services.AddTransient<NetworkConnectionSettingsViewModel>();
         services.AddTransient<SystemUpdateViewModel>();
         services.AddTransient<DeveloperSystemSwitchViewModel>();
         services.AddTransient<HelpVideosViewModel>();
@@ -296,14 +303,36 @@ public partial class App : Application
 
             if (_systemProfile.IsFirstRun)
             {
-                var selection = new SystemSelectionWindow();
-                if (selection.ShowDialog() != true || selection.SelectedSystem is null)
+                var wizard = new SetupWizardHostWindow();
+                if (wizard.ShowDialog() != true || wizard.SelectedSystem is null)
                 {
                     Shutdown();
                     return;
                 }
 
-                _systemProfile.SaveSelection(selection.SelectedSystem.Value);
+                _systemProfile.SaveSelection(
+                    wizard.SelectedSystem.Value,
+                    wizard.SelectedDeploymentMode,
+                    wizard.BranchDisplayName);
+
+                // New installs only: start the desktop trial after first successful setup.
+                _desktopLicense.StartTrial();
+            }
+            else
+            {
+                // Existing configured installs without a license file become Grandfathered (lifetime).
+                _desktopLicense.EnsureInitialized(profileIsConfigured: true);
+            }
+
+            var licenseStatus = _desktopLicense.GetStatus();
+            if (!licenseStatus.IsUsable)
+            {
+                var activation = new DesktopActivationWindow(_desktopLicense, licenseStatus, allowDismissWhileValid: false);
+                if (activation.ShowDialog() != true || !_desktopLicense.IsUsable)
+                {
+                    Shutdown();
+                    return;
+                }
             }
 
             EnsureServiceProvider();
@@ -391,30 +420,48 @@ public partial class App : Application
             splash.SetStatus("جاري الاتصال بقاعدة البيانات...");
             splash.SetProgress(0.45);
 
+            var isBranchClient = _systemProfile.IsBranchClient;
+
             await Task.Run(async () =>
             {
+                if (isBranchClient)
+                {
+                    var networkService = new AlMuhasib.Infrastructure.Services.NetworkConnectionService();
+                    var test = await networkService.TestCurrentConnectionAsync();
+                    if (!test.Success)
+                        throw new InvalidOperationException(test.Message);
+                }
+
                 using var scope = _serviceProvider.CreateScope();
                 var migrationService = scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
 
-                var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
-                if (pendingMigrations.Count > 0)
+                if (!isBranchClient)
                 {
-                    splash.SetStatus(
-                        pendingMigrations.Count == 1
-                            ? "جاري تطبيق تحديث قاعدة البيانات..."
-                            : $"جاري تطبيق {pendingMigrations.Count} تحديثات على قاعدة البيانات...");
-                    splash.SetProgress(0.52);
+                    var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
+                    if (pendingMigrations.Count > 0)
+                    {
+                        splash.SetStatus(
+                            pendingMigrations.Count == 1
+                                ? "جاري تطبيق تحديث قاعدة البيانات..."
+                                : $"جاري تطبيق {pendingMigrations.Count} تحديثات على قاعدة البيانات...");
+                        splash.SetProgress(0.52);
 
-                    var applied = await migrationService.ApplyPendingMigrationsAsync();
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                        var applied = await migrationService.ApplyPendingMigrationsAsync();
+                        System.Diagnostics.Debug.WriteLine(
+                            $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                    }
+
+                    splash.SetStatus("جاري تهيئة الحسابات والإعدادات...");
+                    splash.SetProgress(0.62);
+
+                    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+                    await authService.EnsureAdminAccountAsync();
                 }
-
-                splash.SetStatus("جاري تهيئة الحسابات والإعدادات...");
-                splash.SetProgress(0.62);
-
-                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-                await authService.EnsureAdminAccountAsync();
+                else
+                {
+                    splash.SetStatus("تم التحقق من الاتصال بالحاسبة الرئيسية...");
+                    splash.SetProgress(0.62);
+                }
 
                 var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();
                 await brandingService.RefreshProviderAsync();
@@ -513,13 +560,13 @@ public partial class App : Application
             bool needsSetup = false;
             try
             {
-                if (_systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
+                if (!_systemProfile.IsBranchClient && _systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
                 {
                     using var scope = _serviceProvider!.CreateScope();
                     var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     needsSetup = currentUser.IsAdmin && !await uow.CapitalEntries.AnyAsync();
                 }
-                else if (_systemProfile.ActiveSystem == ApplicationSystemType.HotelManagement)
+                else if (!_systemProfile.IsBranchClient && _systemProfile.ActiveSystem == ApplicationSystemType.HotelManagement)
                 {
                     using var scope = _serviceProvider!.CreateScope();
                     var hotelSettings = scope.ServiceProvider.GetRequiredService<IHotelSettingsService>();
@@ -572,6 +619,21 @@ public partial class App : Application
             }
 
             _serviceProvider.GetRequiredService<BackupSchedulerService>().Start();
+
+            if (_systemProfile.IsMainServer)
+            {
+                try
+                {
+                    var hosting = _serviceProvider.GetRequiredService<IMainServerHostingService>();
+                    await hosting.StartDiscoveryResponderAsync(
+                        _systemProfile.ActiveSystem,
+                        _systemProfile.ActiveDatabaseName);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Startup] Discovery responder error: {ex}");
+                }
+            }
 
             _ = mainVm.InitializeNotificationCenterAsync();
             _ = mainVm.InitializePersonalWorkspaceAsync();

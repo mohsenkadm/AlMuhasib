@@ -27,6 +27,9 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
+                    <CheckBox Content="تحديث تلقائي (15ث)" IsChecked="{Binding AutoRefreshEnabled}"
+                              VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding LastRefreshedText}" VerticalAlignment="Center" Opacity="0.7" FontSize="12" Margin="0,0,12,0"/>
                     <Button Command="{Binding MarkPreparingCommand}" Style="{StaticResource OutlinedButton}"
                             md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0"
                             IsEnabled="{Binding HasSelectedOrder}">

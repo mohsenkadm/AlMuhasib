@@ -54,6 +54,9 @@ public sealed class HotelUnitOfWork : IUnitOfWork
     public IRepository<CustomerAttachment> CustomerAttachments => new UnsupportedHotelRepository<CustomerAttachment>();
     public IRepository<UserTask> UserTasks => new UnsupportedHotelRepository<UserTask>();
     public IRepository<UserNote> UserNotes => new UnsupportedHotelRepository<UserNote>();
+    public IRepository<PricingType> PricingTypes => new UnsupportedHotelRepository<PricingType>();
+    public IRepository<ProductPrice> ProductPrices => new UnsupportedHotelRepository<ProductPrice>();
+    public IRepository<BusinessSettings> BusinessSettings => new UnsupportedHotelRepository<BusinessSettings>();
 
     public async Task<int> SaveChangesAsync()
     {

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
+import 'package:intl/intl.dart';
 
 import '../../../../core/config/system_profile.dart';
 import '../../../../core/getx/app_services.dart';
@@ -119,6 +120,41 @@ class _PosPanel extends StatelessWidget {
             ),
           ),
         ),
+        Obx(() {
+          if (controller.orderType.value == 0) {
+            return _TablePicker(controller: controller, accent: accent);
+          }
+          if (controller.orderType.value == 2) {
+            return _RoomPicker(controller: controller);
+          }
+          return const SizedBox.shrink();
+        }),
+        Obx(() {
+          if (controller.openOrders.value.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          return SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              itemCount: controller.openOrders.value.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final order = controller.openOrders.value[index];
+                return ActionChip(
+                  avatar: const Icon(Icons.play_circle_outline, size: 18),
+                  label: Text(
+                    order.tableNumber != null
+                        ? '${order.orderNumber} · ${order.tableNumber}'
+                        : order.orderNumber,
+                  ),
+                  onPressed: () => controller.resumeOrder(order),
+                );
+              },
+            ),
+          );
+        }),
         if (menu.categories.length > 1)
           SizedBox(
             height: 44,
@@ -226,12 +262,15 @@ class _PosPanel extends StatelessWidget {
                       Text(
                         '${controller.cart.length} ${'restaurant_items'.tr()}',
                       ),
-                      Text(
-                        NumberFormat('#,###').format(controller.cartTotal),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 220),
+                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
                               fontWeight: FontWeight.bold,
                               color: accent,
                             ),
+                        child: Text(
+                          NumberFormat('#,###').format(controller.cartTotal),
+                        ),
                       ),
                     ],
                   ),
@@ -247,6 +286,100 @@ class _PosPanel extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _TablePicker extends StatelessWidget {
+  const _TablePicker({required this.controller, required this.accent});
+
+  final RestaurantPosController controller;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final list = controller.tables.value;
+      if (list.isEmpty) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: Text('restaurant_no_tables'.tr()),
+        );
+      }
+      return SizedBox(
+        height: 56,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final table = list[index];
+            final selected =
+                controller.selectedTableSyncId.value == table.syncId;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: ChoiceChip(
+                selected: selected,
+                label: Text(
+                  table.isOccupied
+                      ? '${table.tableNumber} ★'
+                      : table.tableNumber,
+                ),
+                selectedColor: table.isOccupied
+                    ? Colors.deepOrange.shade200
+                    : accent.withValues(alpha: 0.25),
+                onSelected: (_) => controller.selectTable(table),
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+}
+
+class _RoomPicker extends StatelessWidget {
+  const _RoomPicker({required this.controller});
+
+  final RestaurantPosController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final rooms = controller.activeRooms.value;
+      if (rooms.isEmpty) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: Text('restaurant_no_rooms'.tr()),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: DropdownButtonFormField<String>(
+          value: controller.selectedReservationSyncId.value.isEmpty
+              ? null
+              : controller.selectedReservationSyncId.value,
+          decoration: InputDecoration(
+            labelText: 'restaurant_select_room'.tr(),
+            border: const OutlineInputBorder(),
+            isDense: true,
+          ),
+          items: rooms
+              .map(
+                (r) => DropdownMenuItem(
+                  value: r.reservationSyncId,
+                  child: Text('${r.roomNumber} — ${r.guestName}'),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            final room = rooms.firstWhere((r) => r.reservationSyncId == value);
+            controller.selectRoom(room);
+          },
+        ),
+      );
+    });
   }
 }
 

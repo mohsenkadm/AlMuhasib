@@ -40,6 +40,55 @@ public sealed class MobileOperationsController : ControllerBase
         [FromBody] CreateInvestorRequest request, CancellationToken ct)
         => await UpsertAsync(request, _mobileWrite.UpsertInvestorAsync, ct);
 
+    [HttpPost("pricing-types")]
+    public async Task<ActionResult<MobileWriteResponse>> CreatePricingType(
+        [FromBody] UpsertPricingTypeRequest request, CancellationToken ct)
+        => await UpsertAsync(request, _mobileWrite.UpsertPricingTypeAsync, ct);
+
+    [HttpPut("pricing-types/{syncId:guid}")]
+    public async Task<ActionResult<MobileWriteResponse>> UpdatePricingType(
+        Guid syncId, [FromBody] UpsertPricingTypeRequest request, CancellationToken ct)
+    {
+        request.SyncId = syncId;
+        return await UpsertAsync(request, _mobileWrite.UpsertPricingTypeAsync, ct);
+    }
+
+    [HttpDelete("pricing-types/{syncId:guid}")]
+    public async Task<ActionResult<MobileWriteResponse>> DeletePricingType(Guid syncId, CancellationToken ct)
+    {
+        var tenantId = ResolveTenant();
+        try
+        {
+            var result = await _mobileWrite.DeletePricingTypeAsync(tenantId, syncId, Username, ct);
+            return result.Conflicts.Count > 0 ? Conflict(result) : Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("product-prices")]
+    public async Task<ActionResult<MobileWriteResponse>> CreateProductPrice(
+        [FromBody] UpsertProductPriceRequest request, CancellationToken ct)
+        => await UpsertAsync(request, _mobileWrite.UpsertProductPriceAsync, ct);
+
+    [HttpPut("product-prices/{syncId:guid}")]
+    public async Task<ActionResult<MobileWriteResponse>> UpdateProductPrice(
+        Guid syncId, [FromBody] UpsertProductPriceRequest request, CancellationToken ct)
+    {
+        request.SyncId = syncId;
+        return await UpsertAsync(request, _mobileWrite.UpsertProductPriceAsync, ct);
+    }
+
+    [HttpDelete("product-prices/{syncId:guid}")]
+    public async Task<ActionResult<MobileWriteResponse>> DeleteProductPrice(Guid syncId, CancellationToken ct)
+    {
+        var tenantId = ResolveTenant();
+        var result = await _mobileWrite.DeleteProductPriceAsync(tenantId, syncId, Username, ct);
+        return result.Conflicts.Count > 0 ? Conflict(result) : Ok(result);
+    }
+
     [HttpPost("invoices")]
     public async Task<ActionResult<MobileWriteResponse>> CreateInvoice(
         [FromBody] CreateInvoiceRequest request, CancellationToken ct)
@@ -62,8 +111,15 @@ public sealed class MobileOperationsController : ControllerBase
         CancellationToken ct)
     {
         var tenantId = ResolveTenant();
-        var result = await action(tenantId, request, Username, ct);
-        return result.Conflicts.Count > 0 ? Conflict(result) : Ok(result);
+        try
+        {
+            var result = await action(tenantId, request, Username, ct);
+            return result.Conflicts.Count > 0 ? Conflict(result) : Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     private int ResolveTenant()

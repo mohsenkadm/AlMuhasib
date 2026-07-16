@@ -32,6 +32,9 @@ public interface IUnitOfWork : IDisposable
     IRepository<PrintBrandingSettings> PrintBrandingSettings { get; }
     IRepository<UserTask> UserTasks { get; }
     IRepository<UserNote> UserNotes { get; }
+    IRepository<PricingType> PricingTypes { get; }
+    IRepository<ProductPrice> ProductPrices { get; }
+    IRepository<BusinessSettings> BusinessSettings { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

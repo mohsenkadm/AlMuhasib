@@ -26,6 +26,12 @@ abstract final class AppRoutes {
   static const investorNew = '/data/investor/new';
   static const investorEdit = '/data/investor/:syncId/edit';
   static const investorDetail = '/data/investor/:syncId';
+  static const pricingTypes = '/data/pricing-types';
+  static const pricingTypeNew = '/data/pricing-types/new';
+  static const pricingTypeEdit = '/data/pricing-types/:syncId/edit';
+  static const productPrices = '/data/product-prices';
+  static const productPriceNew = '/data/product-prices/new';
+  static const productPriceEdit = '/data/product-prices/:syncId/edit';
   static const settings = '/settings';
 
   static const hotelHome = '/hotel/home';
@@ -93,6 +99,11 @@ abstract final class AppRoutes {
     if (name == null || name.isEmpty) return base;
     return '$base?name=${Uri.encodeComponent(name)}';
   }
+
+  static String pricingTypeEditPath(String syncId) =>
+      '/data/pricing-types/$syncId/edit';
+  static String productPriceEditPath(String syncId) =>
+      '/data/product-prices/$syncId/edit';
 
   static String hotelReservationDetailPath(String syncId) =>
       '/hotel/reservations/$syncId';
