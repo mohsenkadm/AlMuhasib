@@ -704,12 +704,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 });
             }
 
-<<<<<<< Current (Your changes)
-            if (ShowSerialNumbers)
-=======
             // اقرأ العلم الحي — لا تعتمد على حالة قديمة إن تغيّرت الميزات أثناء فتح الشاشة
             if (_featureFlags?.SerialNumbers == true)
->>>>>>> Incoming (Background Agent changes)
             {
                 foreach (var row in validItems.Where(r => r.ProductId.HasValue && Math.Abs(r.Quantity) >= 1))
                 {
