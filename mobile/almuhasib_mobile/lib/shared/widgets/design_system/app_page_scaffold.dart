@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/config/system_profile.dart';
 import '../../../core/getx/app_services.dart';
 import '../common_widgets.dart';
 import 'app_sliver_app_bar.dart';

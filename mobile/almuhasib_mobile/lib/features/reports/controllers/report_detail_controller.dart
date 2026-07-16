@@ -165,7 +165,7 @@ class ReportDetailController extends GetxController {
   }
 
   bool get showDateFilter =>
-      !{'overdue', 'warehouse', 'balance_sheet'}.contains(reportType);
+      !{'overdue', 'warehouse'}.contains(reportType);
 
   bool get singleDate => reportType == 'balance_sheet';
 }

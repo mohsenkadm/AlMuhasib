@@ -15,12 +15,17 @@ class CarDashboardController extends GetxController {
   }
 
   Future<void> load() async {
-    isLoading.value = true;
+    final hasData = data.value != null;
+    if (!hasData) {
+      isLoading.value = true;
+    }
     error.value = null;
     try {
       data.value = await AppServices.car.getDashboard();
     } catch (e) {
-      error.value = e;
+      if (!hasData) {
+        error.value = e;
+      }
     } finally {
       isLoading.value = false;
     }

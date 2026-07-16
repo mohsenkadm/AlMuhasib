@@ -33,6 +33,7 @@ abstract final class AppRoutes {
   static const productPriceNew = '/data/product-prices/new';
   static const productPriceEdit = '/data/product-prices/:syncId/edit';
   static const settings = '/settings';
+  static const notifications = '/notifications';
 
   static const hotelHome = '/hotel/home';
   static const hotelReservations = '/hotel/reservations';

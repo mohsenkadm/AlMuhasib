@@ -49,7 +49,14 @@ class InvoiceWizardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadBusinessSettings();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await Future.wait([
+      _loadBusinessSettings(),
+      _preloadDefaults(),
+    ]);
   }
 
   Future<void> _loadBusinessSettings() async {
@@ -58,6 +65,56 @@ class InvoiceWizardController extends GetxController {
       productPricingEnabled.value = settings.productPricingEnabled;
     } catch (_) {
       productPricingEnabled.value = false;
+    }
+  }
+
+  Future<void> _preloadDefaults() async {
+    try {
+      final warehouses = await AppServices.data.getWarehouses();
+      if (warehouses.length == 1) {
+        warehouse.value = warehouses.first;
+      }
+      final cashBoxes = await AppServices.data.getCashBoxes();
+      if (cashBoxes.length == 1) {
+        cashBox.value = cashBoxes.first;
+      }
+    } catch (_) {}
+  }
+
+  bool validateCurrentStep() {
+    switch (step.value) {
+      case 1:
+        if (warehouse.value == null) {
+          AppExceptionHandler.showError('select_warehouse'.tr());
+          return false;
+        }
+        if (needsCustomer && customer.value == null) {
+          AppExceptionHandler.showError('select_customer'.tr());
+          return false;
+        }
+        if (needsSupplier && supplier.value == null) {
+          AppExceptionHandler.showError('select_supplier'.tr());
+          return false;
+        }
+        return true;
+      case 2:
+        if (items.isEmpty) {
+          AppExceptionHandler.showError('add_line_item'.tr());
+          return false;
+        }
+        if (items.any((item) => item.quantity <= 0)) {
+          AppExceptionHandler.showError('invalid_quantity'.tr());
+          return false;
+        }
+        return true;
+      case 3:
+        if (paymentMethod.value == 0 && cashBox.value == null) {
+          AppExceptionHandler.showError('select_cashbox'.tr());
+          return false;
+        }
+        return true;
+      default:
+        return true;
     }
   }
 
@@ -279,6 +336,7 @@ class InvoiceWizardController extends GetxController {
   }
 
   void next() {
+    if (!validateCurrentStep()) return;
     if (step.value < 4) {
       step.value++;
     } else {

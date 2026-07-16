@@ -6,6 +6,7 @@ import 'package:get/get.dart' hide Trans;
 
 import 'core/getx/app_services.dart';
 import 'core/router/app_pages.dart';
+import 'core/router/app_routes.dart';
 import 'core/router/route_guard.dart';
 
 class AlMuhasibApp extends StatelessWidget {
@@ -14,36 +15,34 @@ class AlMuhasibApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = AppServices.theme;
+    final themes = themeController.themes;
 
-    return Obx(
-      () {
-        final themes = themeController.themes;
-        return GetMaterialApp(
-          title: 'app_name'.tr(),
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          theme: themes.$1,
-          darkTheme: themes.$2,
-          themeMode: themeController.themeMode.value,
-          initialRoute: AppPages.initial,
-          getPages: AppPages.routes,
-          routingCallback: (routing) {
-            if (routing?.current == null) return;
-            final redirect = RouteGuard.redirect(routing!.current);
-            if (redirect != null && redirect != routing.current) {
-              Get.offAllNamed(redirect);
-            }
-          },
-          builder: (context, child) {
-            return Directionality(
-              textDirection: context.locale.languageCode == 'ar'
-                  ? ui.TextDirection.rtl
-                  : ui.TextDirection.ltr,
-              child: child ?? const SizedBox.shrink(),
-            );
-          },
+    return GetMaterialApp(
+      title: 'app_name'.tr(),
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
+      theme: themes.$1,
+      darkTheme: themes.$2,
+      themeMode: themeController.themeMode.value,
+      initialRoute: AppPages.initial,
+      getPages: AppPages.routes,
+      routingCallback: (routing) {
+        if (routing?.current == null) return;
+        // Splash owns its branded exit sequence.
+        if (routing!.current == AppRoutes.splash) return;
+        final redirect = RouteGuard.redirect(routing.current);
+        if (redirect != null && redirect != routing.current) {
+          Get.offAllNamed(redirect);
+        }
+      },
+      builder: (context, child) {
+        return Directionality(
+          textDirection: context.locale.languageCode == 'ar'
+              ? ui.TextDirection.rtl
+              : ui.TextDirection.ltr,
+          child: child ?? const SizedBox.shrink(),
         );
       },
     );

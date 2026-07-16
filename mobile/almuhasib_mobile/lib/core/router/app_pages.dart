@@ -37,6 +37,7 @@ import '../../features/hotel/reservations/hotel_reservation_form_screen.dart';
 import '../../features/hotel/reservations/hotel_reservations_screen.dart';
 import '../../features/hotel/restaurant/pos/restaurant_hub_screen.dart';
 import '../../features/hotel/rooms/hotel_rooms_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/operations/presentation/forms/customer_form_screen.dart';
 import '../../features/operations/presentation/forms/entity_forms.dart';
@@ -63,7 +64,6 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashScreen(),
-      middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
     ),
@@ -531,6 +531,13 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.profile,
       page: () => const ProfileScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsScreen(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

@@ -47,75 +47,95 @@ class HotelGuestsScreen extends GetView<HotelGuestsController> {
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.load,
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const ListShimmer();
-                }
-                final error = controller.error.value;
-                if (error != null) {
-                  return ErrorStateWidget(
-                    message: AppExceptionHandler.messageFor(error),
-                    onRetry: controller.load,
-                  );
-                }
-                final page = controller.page.value;
-                if (page == null || page.items.isEmpty) {
-                  return ListView(
+            child: Obx(() {
+              final page = controller.page.value;
+              final isLoading = controller.isLoading.value;
+              final error = controller.error.value;
+              final items = page?.items ?? const <HotelGuest>[];
+
+              if (items.isNotEmpty) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final guest = items[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          onTap: () async {
+                            final saved = await Get.toNamed<bool>(
+                              AppRoutes.hotelGuestEditPath(guest.syncId),
+                              arguments: guest,
+                            );
+                            if (saved == true) {
+                              controller.load();
+                            }
+                          },
+                          leading: CircleAvatar(
+                            child: Text(
+                              guest.fullName.isNotEmpty
+                                  ? guest.fullName[0]
+                                  : '?',
+                            ),
+                          ),
+                          title: Text(guest.fullName),
+                          subtitle: Text(
+                            [
+                              if (guest.phone != null && guest.phone!.isNotEmpty)
+                                guest.phone!,
+                              if (guest.idNumber != null &&
+                                  guest.idNumber!.isNotEmpty)
+                                guest.idNumber!,
+                            ].join(' • '),
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                        ),
+                      ).fadeSlideInList(index: index);
+                    },
+                  ),
+                );
+              }
+
+              if (isLoading) return const ListShimmer();
+
+              if (error != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(
                         height: MediaQuery.sizeOf(context).height * 0.4,
-                        child: EmptyStateWidget(
-                          message: controller.search.value.isEmpty
-                              ? 'no_data'.tr()
-                              : 'no_search_results'.tr(),
+                        child: ErrorStateWidget(
+                          message: AppExceptionHandler.messageFor(error),
+                          onRetry: controller.load,
                         ),
                       ),
                     ],
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                  itemCount: page.items.length,
-                  itemBuilder: (context, index) {
-                    final guest = page.items[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        onTap: () async {
-                          final saved = await Get.toNamed<bool>(
-                            AppRoutes.hotelGuestEditPath(guest.syncId),
-                            arguments: guest,
-                          );
-                          if (saved == true) {
-                            controller.load();
-                          }
-                        },
-                        leading: CircleAvatar(
-                          child: Text(
-                            guest.fullName.isNotEmpty
-                                ? guest.fullName[0]
-                                : '?',
-                          ),
-                        ),
-                        title: Text(guest.fullName),
-                        subtitle: Text(
-                          [
-                            if (guest.phone != null && guest.phone!.isNotEmpty)
-                              guest.phone!,
-                            if (guest.idNumber != null &&
-                                guest.idNumber!.isNotEmpty)
-                              guest.idNumber!,
-                          ].join(' • '),
-                        ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                      ),
-                    ).fadeSlideInList(index: index);
-                  },
+                  ),
                 );
-              }),
-            ),
+              }
+
+              return RefreshIndicator(
+                onRefresh: controller.load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.4,
+                      child: EmptyStateWidget(
+                        message: controller.search.value.isEmpty
+                            ? 'no_data'.tr()
+                            : 'no_search_results'.tr(),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),

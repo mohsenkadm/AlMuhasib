@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
-        android:label="المحاسب"
+        android:label="قيد"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
@@ -26,6 +26,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- OneSignal default small notification icon -->
+        <meta-data
+            android:name="com.onesignal.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_onesignal_default"/>
+        <meta-data
+            android:name="com.onesignal.NotificationAccentColor.DEFAULT"
+            android:value="FF0448A4"/>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>

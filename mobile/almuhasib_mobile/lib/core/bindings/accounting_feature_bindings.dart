@@ -18,6 +18,7 @@ class DataListBinding extends Bindings {
     Get.lazyPut(
       () => DataListController(listType: type),
       tag: 'data_list_$type',
+      fenix: true,
     );
   }
 }
@@ -36,7 +37,7 @@ class ReportDetailBinding extends Bindings {
 class InvoiceWizardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => InvoiceWizardController());
+    Get.lazyPut(() => InvoiceWizardController(), fenix: true);
   }
 }
 
@@ -44,7 +45,7 @@ class CustomerFormBinding extends Bindings {
   @override
   void dependencies() {
     final syncId = Get.parameters['syncId'];
-    Get.lazyPut(() => CustomerFormController(syncId: syncId));
+    Get.lazyPut(() => CustomerFormController(syncId: syncId), fenix: true);
   }
 }
 
@@ -52,7 +53,7 @@ class SupplierFormBinding extends Bindings {
   @override
   void dependencies() {
     final syncId = Get.parameters['syncId'];
-    Get.lazyPut(() => SupplierFormController(syncId: syncId));
+    Get.lazyPut(() => SupplierFormController(syncId: syncId), fenix: true);
   }
 }
 
@@ -60,7 +61,7 @@ class ProductFormBinding extends Bindings {
   @override
   void dependencies() {
     final syncId = Get.parameters['syncId'];
-    Get.lazyPut(() => ProductFormController(syncId: syncId));
+    Get.lazyPut(() => ProductFormController(syncId: syncId), fenix: true);
   }
 }
 
@@ -68,7 +69,7 @@ class InvestorFormBinding extends Bindings {
   @override
   void dependencies() {
     final syncId = Get.parameters['syncId'];
-    Get.lazyPut(() => InvestorFormController(syncId: syncId));
+    Get.lazyPut(() => InvestorFormController(syncId: syncId), fenix: true);
   }
 }
 
@@ -97,7 +98,10 @@ class PricingTypeFormBinding extends Bindings {
   @override
   void dependencies() {
     final syncId = Get.parameters['syncId'];
-    Get.lazyPut(() => PricingTypeFormController(syncId: syncId));
+    Get.lazyPut(
+      () => PricingTypeFormController(syncId: syncId),
+      fenix: true,
+    );
   }
 }
 
@@ -123,6 +127,7 @@ class ProductPriceFormBinding extends Bindings {
         syncId: syncId,
         prefillProductSyncId: prefill,
       ),
+      fenix: true,
     );
   }
 }

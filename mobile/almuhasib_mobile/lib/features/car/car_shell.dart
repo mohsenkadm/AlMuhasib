@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../core/config/system_profile.dart';
 import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/car/contracts/car_contracts_screen.dart';
 import '../../features/car/dashboard/car_dashboard_screen.dart';
 import '../../features/car/payments/car_payments_screen.dart';
@@ -37,6 +37,7 @@ class CarShellPage extends GetView<CarShellController> {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          onFabTap: () => Get.toNamed(AppRoutes.carContractNew),
           accentColor: profile.accent,
           primaryColor: profile.primary,
           items: const [

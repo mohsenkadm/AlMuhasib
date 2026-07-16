@@ -29,47 +29,66 @@ class HotelRoomsScreen extends GetView<HotelRoomsController> {
             child: _StatusLegend(controller: controller).fadeSlideIn(),
           ),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.load,
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const ListShimmer();
-                }
-                final error = controller.error.value;
-                if (error != null) {
-                  return ErrorStateWidget(
-                    message: AppExceptionHandler.messageFor(error),
-                    onRetry: controller.load,
-                  );
-                }
-                final rooms = controller.rooms.value;
-                if (rooms.isEmpty) {
-                  return ListView(
+            child: Obx(() {
+              final rooms = controller.rooms.value;
+              final isLoading = controller.isLoading.value;
+              final error = controller.error.value;
+
+              if (rooms.isNotEmpty) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: rooms.length,
+                    itemBuilder: (context, index) {
+                      return _RoomCard(room: rooms[index])
+                          .fadeSlideInList(index: index);
+                    },
+                  ),
+                );
+              }
+
+              if (isLoading) return const ListShimmer();
+
+              if (error != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(
-                        height: MediaQuery.sizeOf(context).height * 0.35,
-                        child: EmptyStateWidget(message: 'no_data'.tr()),
+                        height: MediaQuery.sizeOf(context).height * 0.45,
+                        child: ErrorStateWidget(
+                          message: AppExceptionHandler.messageFor(error),
+                          onRetry: controller.load,
+                        ),
                       ),
                     ],
-                  );
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
                   ),
-                  itemCount: rooms.length,
-                  itemBuilder: (context, index) {
-                    return _RoomCard(room: rooms[index])
-                        .fadeSlideInList(index: index);
-                  },
                 );
-              }),
-            ),
+              }
+
+              return RefreshIndicator(
+                onRefresh: controller.load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.35,
+                      child: EmptyStateWidget(message: 'no_data'.tr()),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),

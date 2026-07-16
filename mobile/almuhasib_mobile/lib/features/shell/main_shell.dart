@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../core/config/system_profile.dart';
 import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
 import '../../features/reports/presentation/reports_screen.dart';
@@ -35,6 +35,7 @@ class MainShellPage extends GetView<MainShellController> {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          onFabTap: () => Get.toNamed(AppRoutes.invoiceNew),
           accentColor: profile.accent,
           primaryColor: profile.primary,
           items: const [

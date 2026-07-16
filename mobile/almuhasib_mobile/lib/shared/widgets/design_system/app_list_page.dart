@@ -121,17 +121,22 @@ class AppListPage<T> extends StatelessWidget {
           );
 
     return Scaffold(
-      floatingActionButton: onFab == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: onFab,
-              icon: Icon(fabIcon),
-              label: Text(fabLabel ?? ''),
-            ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppStandardAppBar(title: title, subtitle: subtitle, actions: actions),
+          AppStandardAppBar(
+            title: title,
+            subtitle: subtitle,
+            actions: [
+              ...?actions,
+              if (onFab != null)
+                IconButton(
+                  tooltip: fabLabel,
+                  onPressed: onFab,
+                  icon: Icon(fabIcon),
+                ),
+            ],
+          ),
           if (filterPanel != null)
             filterPanel!
           else if (searchController != null || onSearchChanged != null)

@@ -2,10 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/getx/app_services.dart';
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../controllers/car_trade_transaction_detail_controller.dart';
+import '../widgets/car_trade_labels.dart';
 
 class CarTradeTransactionDetailScreen
     extends GetView<CarTradeTransactionDetailController> {
@@ -18,26 +22,54 @@ class CarTradeTransactionDetailScreen
 
   Future<void> _pay(BuildContext context) async {
     final amountCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final ok = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('car_trade_record_payment'.tr()),
-        content: TextField(
-          controller: amountCtrl,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: 'amount'.tr()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('cancel'.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('save'.tr()),
-          ),
-        ],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.viewInsetsOf(ctx).bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'car_trade_record_payment'.tr(),
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountCtrl,
+                autofocus: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'amount'.tr(),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('save'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('cancel'.tr()),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (ok != true) {
       amountCtrl.dispose();
@@ -56,76 +88,208 @@ class CarTradeTransactionDetailScreen
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('car_trade_transaction_detail'.tr())),
-      floatingActionButton: Obx(() {
-        if (controller.transaction.value == null) {
-          return const SizedBox.shrink();
-        }
-        return FloatingActionButton.extended(
-          onPressed: () => _pay(context),
-          icon: const Icon(Icons.payments),
-          label: Text('car_trade_record_payment'.tr()),
+    return Obx(() {
+      if (controller.isLoading.value && controller.transaction.value == null) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
         );
-      }),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (controller.error.value != null) {
-          return ErrorStateWidget(
-            message: 'error_load'.tr(),
+      }
+      if (controller.error.value != null &&
+          controller.transaction.value == null) {
+        return Scaffold(
+          appBar: AppBar(title: Text('car_trade_transaction_detail'.tr())),
+          body: ErrorStateWidget(
+            message: AppExceptionHandler.messageFor(controller.error.value),
             onRetry: controller.load,
-          );
-        }
-        final transaction = controller.transaction.value;
-        if (transaction == null) return const SizedBox.shrink();
-        return ListView(
-          padding: const EdgeInsets.all(20),
+          ),
+        );
+      }
+
+      final transaction = controller.transaction.value;
+      if (transaction == null) {
+        return Scaffold(
+          appBar: AppBar(title: Text('car_trade_transaction_detail'.tr())),
+          body: EmptyStateWidget(message: 'no_data'.tr()),
+        );
+      }
+
+      final buy = transaction.isBuy;
+
+      return AppDetailPage(
+        title: 'car_trade_transaction_detail'.tr(),
+        subtitle: transaction.transactionNumber,
+        onRefresh: controller.load,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _pay(context),
+          icon: const Icon(Icons.payments_rounded),
+          label: Text('car_trade_record_payment'.tr()),
+        ),
+        header: Column(
           children: [
-            GradientCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.transactionNumber,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text('${transaction.tradeType} • ${transaction.carName}'),
-                  Text(transaction.plateNumber),
-                  const Divider(height: 24),
-                  _row('car_trade_buyer'.tr(), transaction.buyerName),
-                  _row('car_trade_seller'.tr(), transaction.sellerName),
-                  _row(
-                    'car_trade_total_amount'.tr(),
-                    formatCurrency(transaction.totalAmount),
-                  ),
-                  _row(
-                    'car_trade_amount_paid'.tr(),
-                    formatCurrency(transaction.amountPaid),
-                  ),
-                  _row(
-                    'car_trade_remaining'.tr(),
-                    formatCurrency(transaction.remainingAmount),
-                  ),
-                ],
-              ),
+            AppBalanceHeroCard(
+              title: 'car_trade_total_amount'.tr(),
+              value: formatCurrency(transaction.totalAmount),
+              subtitle: 'car_trade_remaining'.tr(),
+              trendLabel: formatCurrency(transaction.remainingAmount),
+              trendPositive: transaction.remainingAmount <= 0,
+            ).fadeSlideIn(),
+            const SizedBox(height: 12),
+            AppKpiGrid(
+              childAspectRatio: 1.5,
+              items: [
+                AppKpiItem(
+                  title: 'car_trade_amount_paid'.tr(),
+                  value: formatCurrency(transaction.amountPaid),
+                  icon: Icons.payments_rounded,
+                  color: AppColors.success,
+                  compact: true,
+                ),
+                AppKpiItem(
+                  title: carTradeTypeLabel(transaction.tradeType),
+                  value: formatDate(transaction.transactionDate),
+                  icon: buy
+                      ? Icons.shopping_cart_outlined
+                      : Icons.sell_outlined,
+                  color: buy ? AppColors.moduleOrange : AppColors.moduleCyan,
+                  compact: true,
+                ),
+              ],
             ),
           ],
-        );
-      }),
-    );
+        ),
+        sections: [
+          AppDetailSection(
+            title: 'car_trade_transaction_details'.tr(),
+            children: [
+              _DetailRow(
+                label: 'car_trade_car_name'.tr(),
+                value: transaction.carName,
+              ),
+              _DetailRow(
+                label: 'car_trade_plate'.tr(),
+                value: transaction.plateNumber,
+              ),
+              _DetailRow(
+                label: 'car_trade_car_type'.tr(),
+                value: transaction.carType,
+              ),
+              if (transaction.carColor.isNotEmpty)
+                _DetailRow(
+                  label: 'car_trade_car_color'.tr(),
+                  value: transaction.carColor,
+                ),
+              if (transaction.chassisNumber.isNotEmpty)
+                _DetailRow(
+                  label: 'car_trade_chassis'.tr(),
+                  value: transaction.chassisNumber,
+                ),
+                  _DetailRow(
+                    label: 'car_trade_status'.tr(),
+                    value: transaction.status,
+                  ),
+            ],
+          ),
+          AppDetailSection(
+            title: 'car_trade_parties'.tr(),
+            children: [
+              _DetailRow(
+                label: 'car_trade_seller'.tr(),
+                value: transaction.sellerName,
+              ),
+              if (transaction.sellerPhone.isNotEmpty)
+                _DetailRow(
+                  label: 'car_trade_seller_phone'.tr(),
+                  value: transaction.sellerPhone,
+                ),
+              _DetailRow(
+                label: 'car_trade_buyer'.tr(),
+                value: transaction.buyerName,
+              ),
+              if (transaction.buyerPhone.isNotEmpty)
+                _DetailRow(
+                  label: 'car_trade_buyer_phone'.tr(),
+                  value: transaction.buyerPhone,
+                ),
+            ],
+          ),
+          if (transaction.payments.isNotEmpty)
+            AppDetailSection(
+              title: 'car_trade_payment_history'.tr(),
+              children: [
+                for (final payment in transaction.payments)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: AppEntityCard(
+                      title: formatCurrency(payment.amount),
+                      subtitle: formatDate(payment.paymentDate),
+                      leading: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.14),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.payments_rounded,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                      ),
+                      trailing: payment.notes.isEmpty
+                          ? null
+                          : Text(
+                              payment.notes,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                    ),
+                  ),
+              ],
+            ),
+          if (transaction.notes.isNotEmpty)
+            AppDetailSection(
+              title: 'notes'.tr(),
+              children: [Text(transaction.notes)],
+            ),
+        ],
+      );
+    });
   }
+}
 
-  Widget _row(String label, String value) {
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label),
-          Flexible(child: Text(value, textAlign: TextAlign.end)),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
         ],
       ),
     );

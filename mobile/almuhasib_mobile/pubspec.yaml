@@ -1,5 +1,5 @@
 name: almuhasib_mobile
-description: المحاسب — تطبيق جوال للتقارير ولوحة التحكم
+description: قيد — تطبيق جوال للتقارير ولوحة التحكم
 publish_to: 'none'
 version: 1.11.0+11
 
@@ -29,19 +29,36 @@ dependencies:
   uuid: ^4.5.1
   flutter_animate: ^4.5.2
   package_info_plus: ^8.3.0
+  flutter_native_splash: ^2.4.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  flutter_native_splash: ^2.4.5
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/qayd-icon.png
+  adaptive_icon_background: "#051020"
+  adaptive_icon_foreground: assets/images/qayd-icon.png
+  remove_alpha_ios: true
+  background_color_ios: "#051020"
 
 flutter_native_splash:
-  color: "#0D47A1"
-  color_dark: "#070B14"
+  color: "#051020"
+  color_dark: "#051020"
+  image: assets/images/qayd-icon.png
+  image_dark: assets/images/qayd-icon.png
   android_12:
-    color: "#0D47A1"
-    color_dark: "#070B14"
+    color: "#051020"
+    color_dark: "#051020"
+    image: assets/images/qayd-icon.png
+    image_dark: assets/images/qayd-icon.png
+  android: true
+  ios: true
+  fullscreen: true
 
 flutter:
   uses-material-design: true

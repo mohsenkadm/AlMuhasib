@@ -78,7 +78,7 @@ class CarTradeRepository {
     );
   }
 
-  Future<List<CarTradeTransactionListItem>> getReport({
+  Future<CarTradeReportDto> getReport({
     DateTime? from,
     DateTime? to,
     String? status,
@@ -92,17 +92,8 @@ class CarTradeRepository {
         if (status != null) 'status': status,
         if (tradeType != null) 'tradeType': tradeType,
       },
-      parser: (data) {
-        final map = data as Map<String, dynamic>;
-        final rows = map['rows'] as List<dynamic>? ?? [];
-        return rows
-            .map(
-              (e) => CarTradeTransactionListItem.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList();
-      },
+      parser: (data) =>
+          CarTradeReportDto.fromJson(data as Map<String, dynamic>),
     );
   }
 

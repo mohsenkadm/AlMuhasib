@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../features/car_trade/dashboard/car_trade_dashboard_screen.dart';
 import '../../features/car_trade/payments/car_trade_payments_screen.dart';
 import '../../features/car_trade/reports/car_trade_report_screen.dart';
@@ -36,6 +37,7 @@ class CarTradeShellPage extends GetView<CarTradeShellController> {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          onFabTap: () => Get.toNamed(AppRoutes.carTradeTransactionNew),
           accentColor: profile.accent,
           primaryColor: profile.primary,
           items: const [

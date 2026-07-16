@@ -10,4 +10,6 @@ abstract final class StorageKeys {
   static const tenantId = 'tenant_id';
   static const applicationSystemType = 'application_system_type';
   static const tenantName = 'tenant_name';
+  static const notificationInbox = 'notification_inbox';
+  static const reportFavorites = 'report_favorites';
 }

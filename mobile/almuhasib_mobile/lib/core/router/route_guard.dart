@@ -13,6 +13,7 @@ class RouteGuard {
       path == AppRoutes.settings ||
       path == AppRoutes.about ||
       path == AppRoutes.privacy ||
+      path == AppRoutes.notifications ||
       path == AppRoutes.hotelSettings ||
       path == AppRoutes.carSettings ||
       path == AppRoutes.carTradeSettings;
@@ -42,22 +43,18 @@ class RouteGuard {
     }
 
     if (auth.isAuthenticated.value &&
-        (isLogin || isOnboarding || isSplash)) {
+        (isLogin || isOnboarding)) {
       return prefs.launchRoute;
     }
+
+    // Splash is self-managed; never bounce authenticated users away mid-animation.
+    if (isSplash) return null;
 
     if (auth.isAuthenticated.value &&
         !_isLaunchRoute(path) &&
         !_isProfileRoute(path) &&
         !routeBelongsToSystem(path, prefs.systemType)) {
       return prefs.homeRoute;
-    }
-
-    if (!auth.isAuthenticated.value &&
-        !auth.isLoading.value &&
-        isSplash) {
-      if (!prefs.onboardingCompleted) return AppRoutes.onboarding;
-      return AppRoutes.login;
     }
 
     if (!auth.isAuthenticated.value && _isProfileRoute(path)) {

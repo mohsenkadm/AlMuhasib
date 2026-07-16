@@ -37,7 +37,7 @@ class AppServices {
     apiClient.updateBaseUrl();
     Get.put<ApiClient>(apiClient, permanent: true);
 
-    final notificationService = NotificationService(apiClient);
+    final notificationService = NotificationService(apiClient, prefs);
     Get.put<NotificationService>(notificationService, permanent: true);
 
     final authRepository = AuthRepository(

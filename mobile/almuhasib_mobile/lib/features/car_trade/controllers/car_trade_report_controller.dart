@@ -11,7 +11,9 @@ class CarTradeReportController extends GetxController {
   final tradeTypeFilter = RxnString();
   final isLoading = false.obs;
   final error = Rxn<Object>();
-  final rows = <CarTradeTransactionListItem>[].obs;
+  final report = Rxn<CarTradeReportDto>();
+
+  List<CarTradeTransactionListItem> get rows => report.value?.rows ?? const [];
 
   @override
   void onInit() {
@@ -23,7 +25,7 @@ class CarTradeReportController extends GetxController {
     isLoading.value = true;
     error.value = null;
     try {
-      rows.value = await AppServices.carTrade.getReport(
+      report.value = await AppServices.carTrade.getReport(
         from: from.value,
         to: to.value,
         status: statusFilter.value,
@@ -87,6 +89,4 @@ class CarTradeReportController extends GetxController {
     to.value = DateTime.now();
     load();
   }
-
-  double get total => rows.fold<double>(0, (s, r) => s + r.totalAmount);
 }

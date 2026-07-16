@@ -15,7 +15,12 @@ class HotelDashboardController extends GetxController {
   }
 
   Future<void> load() async {
-    isLoading.value = true;
+    final hasData = data.value != null;
+    // Avoid flipping isLoading when content is already on screen — that
+    // rebuilds the tree and can trigger semantics parentDataDirty storms.
+    if (!hasData) {
+      isLoading.value = true;
+    }
     error.value = null;
     try {
       final repo = AppServices.hotel;
@@ -26,7 +31,9 @@ class HotelDashboardController extends GetxController {
         data.value = HotelDashboardData(occupancy: occupancy);
       }
     } catch (e) {
-      error.value = e;
+      if (!hasData) {
+        error.value = e;
+      }
     } finally {
       isLoading.value = false;
     }

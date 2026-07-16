@@ -76,6 +76,19 @@ class PreferencesService {
   Future<void> setThemeMode(String mode) =>
       _prefs.setString(StorageKeys.themeMode, mode);
 
+  List<String> get notificationInboxJson =>
+      _prefs.getStringList(StorageKeys.notificationInbox) ?? const [];
+
+  Future<void> setNotificationInboxJson(List<String> items) =>
+      _prefs.setStringList(StorageKeys.notificationInbox, items);
+
+  List<String> get reportFavorites =>
+      _prefs.getStringList(StorageKeys.reportFavorites) ??
+      const ['sales', 'profit', 'balance_sheet'];
+
+  Future<void> setReportFavorites(List<String> ids) =>
+      _prefs.setStringList(StorageKeys.reportFavorites, ids);
+
   Future<void> clearSession() async {
     await _prefs.remove(StorageKeys.companyName);
     await _prefs.remove(StorageKeys.username);

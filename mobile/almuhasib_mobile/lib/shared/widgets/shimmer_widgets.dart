@@ -34,12 +34,18 @@ class ShimmerBox extends StatelessWidget {
 }
 
 class DashboardShimmer extends StatelessWidget {
-  const DashboardShimmer({super.key});
+  const DashboardShimmer({super.key, this.shrinkWrap = false});
+
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(20),
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       children: [
         const ShimmerBox(width: 180, height: 28),
         const SizedBox(height: 8),

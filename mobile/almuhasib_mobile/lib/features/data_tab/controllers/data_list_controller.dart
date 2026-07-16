@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
@@ -17,13 +19,21 @@ class DataListController extends GetxController {
   final search = ''.obs;
   final RxnInt invoiceTypeFilter = RxnInt();
   final RxnInt paymentFilter = RxnInt();
-  final from = DateTime.now().subtract(const Duration(days: 90)).obs;
+  final from = DateTime(DateTime.now().year - 2).obs;
   final to = DateTime.now().obs;
+
+  Timer? _searchDebounce;
 
   @override
   void onInit() {
     super.onInit();
     reload();
+  }
+
+  @override
+  void onClose() {
+    _searchDebounce?.cancel();
+    super.onClose();
   }
 
   Future<void> reload() async {
@@ -57,7 +67,8 @@ class DataListController extends GetxController {
 
   void updateSearch(String value) {
     search.value = value;
-    reload();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), reload);
   }
 
   void updateInvoiceTypeFilter(String? id) {
@@ -74,7 +85,7 @@ class DataListController extends GetxController {
     search.value = '';
     invoiceTypeFilter.value = null;
     paymentFilter.value = null;
-    from.value = DateTime.now().subtract(const Duration(days: 90));
+    from.value = DateTime(DateTime.now().year - 2);
     to.value = DateTime.now();
     reload();
   }

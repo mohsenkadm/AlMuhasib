@@ -11,8 +11,21 @@ class HotelOperationsHubScreen extends GetView<HotelOperationsHubController> {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.paddingOf(context).top;
+
     return Column(
       children: [
+        SizedBox(height: topPadding + 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              'hotel_operations_title'.tr(),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
+        ),
         Material(
           color: Theme.of(context).colorScheme.surface,
           child: TabBar(
