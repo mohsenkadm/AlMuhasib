@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -32,13 +33,19 @@ public partial class ProductsViewModel
         IProductBatchService productBatchService,
         IProductSerialService productSerialService)
     {
+        if (_featureFlags is not null)
+            _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
+
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         RefreshProductFeatureVisibility();
-        featureFlags.FlagsChanged += (_, _) => RefreshProductFeatureVisibility();
+        featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
+
+    private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
+        FeatureUiRefresh.Invoke(RefreshProductFeatureVisibility);
 
     private void RefreshProductFeatureVisibility()
     {
@@ -46,6 +53,15 @@ public partial class ProductsViewModel
         ShowUnitsSection = _featureFlags.UnitsOfMeasure;
         ShowBatchesSection = _featureFlags.ExpiryTracking;
         ShowSerialsSection = _featureFlags.SerialNumbers;
+
+        if (!ShowUnitsSection && !ShowBatchesSection && !ShowSerialsSection)
+            ClearFeatureEditCollections();
+        else
+        {
+            if (!ShowUnitsSection) EditUnits.Clear();
+            if (!ShowBatchesSection) EditBatches.Clear();
+            if (!ShowSerialsSection) EditSerials.Clear();
+        }
     }
 
     private void ClearFeatureEditCollections()

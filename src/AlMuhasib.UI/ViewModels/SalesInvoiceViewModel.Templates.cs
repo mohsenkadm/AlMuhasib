@@ -163,7 +163,7 @@ public partial class SalesInvoiceViewModel
 
         Notes = template.Notes ?? string.Empty;
 
-        ApplyCustomFieldLabels(template.CustomFieldLabels);
+        ApplyCustomFieldLabels(template.CustomFieldLabels, template.IndustryTag);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);

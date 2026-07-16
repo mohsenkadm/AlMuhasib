@@ -704,7 +704,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 });
             }
 
-            if (ShowSerialNumbers)
+            // اقرأ العلم الحي — لا تعتمد على حالة قديمة إن تغيّرت الميزات أثناء فتح الشاشة
+            if (_featureFlags?.SerialNumbers == true)
             {
                 foreach (var row in validItems.Where(r => r.ProductId.HasValue && Math.Abs(r.Quantity) >= 1))
                 {

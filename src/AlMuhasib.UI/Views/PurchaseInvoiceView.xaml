@@ -7,13 +7,16 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PurchaseInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             x:Name="Root">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <helpers:BindingProxy x:Key="InvoiceFeatureProxy" Data="{Binding}"/>
     </UserControl.Resources>
 
     <Grid>
@@ -277,7 +280,7 @@
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
                                 <DataGridTemplateColumn Header="الوحدة" Width="100"
-                                                        Visibility="{Binding DataContext.ShowUnitsOfMeasure, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="{Binding Data.ShowUnitsOfMeasure, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding AvailableUnits}"
@@ -288,7 +291,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="رقم الدفعة" Width="100"
-                                                        Visibility="{Binding DataContext.ShowExpiryTracking, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="{Binding Data.ShowExpiryTracking, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
@@ -298,7 +301,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="تاريخ الانتهاء" Width="120"
-                                                        Visibility="{Binding DataContext.ShowExpiryTracking, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="{Binding Data.ShowExpiryTracking, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"/>
@@ -307,7 +310,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="سيريال" Width="120"
-                                                        Visibility="{Binding DataContext.ShowSerialNumbers, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="{Binding Data.ShowSerialNumbers, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"

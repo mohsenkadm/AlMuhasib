@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -14,6 +13,7 @@ public partial class SalesInvoiceViewModel
     private IProductSerialService? _productSerialService;
 
     private readonly List<string> _activeCustomFieldLabels = [];
+    private string? _appliedIndustryTag;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowCustomField1))]
@@ -21,15 +21,25 @@ public partial class SalesInvoiceViewModel
     private string _customField1Header = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowCustomField1))]
     [NotifyPropertyChangedFor(nameof(ShowCustomField2))]
     private string _customField2Header = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowCustomField1))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomField2))]
+    private bool _marketTemplateFieldsEnabled;
 
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
 
-    public bool ShowCustomField1 => !string.IsNullOrWhiteSpace(CustomField1Header);
-    public bool ShowCustomField2 => !string.IsNullOrWhiteSpace(CustomField2Header);
+    public bool ShowCustomField1 =>
+        MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header);
+
+    public bool ShowCustomField2 =>
+        MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField2Header);
+
     public IReadOnlyList<string> ActiveCustomFieldLabels => _activeCustomFieldLabels;
 
     public void ConfigureFeatureServices(
@@ -38,24 +48,108 @@ public partial class SalesInvoiceViewModel
         IProductBatchService productBatchService,
         IProductSerialService productSerialService)
     {
+        if (_featureFlags is not null)
+            _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
+
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         RefreshFeatureVisibility();
-        featureFlags.FlagsChanged += (_, _) => RefreshFeatureVisibility();
+        featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
+
+    private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
+        FeatureUiRefresh.Invoke(RefreshFeatureVisibility);
 
     private void RefreshFeatureVisibility()
     {
         if (_featureFlags is null) return;
+
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
+
+        var industryStillEnabled = IsIndustryEnabled(_appliedIndustryTag);
+        MarketTemplateFieldsEnabled = _featureFlags.AnyMarketTemplateEnabled && industryStillEnabled;
+
+        if (!MarketTemplateFieldsEnabled)
+            ClearCustomFieldLabels();
+        else
+        {
+            // إعادة إشعار خصائص الظهور حتى تتحدّث أعمدة DataGrid فوراً
+            OnPropertyChanged(nameof(ShowCustomField1));
+            OnPropertyChanged(nameof(ShowCustomField2));
+        }
+
+        if (!ShowUnitsOfMeasure)
+            ClearRowUnits();
+        if (!ShowExpiryTracking)
+            ClearRowBatches();
+        if (!ShowSerialNumbers)
+            ClearRowSerials();
     }
 
-    private void ApplyCustomFieldLabels(IEnumerable<string>? labels)
+    private bool IsIndustryEnabled(string? industryTag) => industryTag switch
     {
+        null or "" => _featureFlags?.AnyMarketTemplateEnabled == true,
+        "mobile" => _featureFlags?.TemplateMobileShop == true,
+        "clothing" => _featureFlags?.TemplateClothing == true,
+        "construction" => _featureFlags?.TemplateConstruction == true,
+        "pharmacy" => _featureFlags?.TemplatePharmacy == true,
+        _ => _featureFlags?.AnyMarketTemplateEnabled == true
+    };
+
+    private void ClearCustomFieldLabels()
+    {
+        _activeCustomFieldLabels.Clear();
+        _appliedIndustryTag = null;
+        CustomField1Header = string.Empty;
+        CustomField2Header = string.Empty;
+        foreach (var row in Items)
+        {
+            row.CustomField1Label = string.Empty;
+            row.CustomField2Label = string.Empty;
+        }
+
+        OnPropertyChanged(nameof(ShowCustomField1));
+        OnPropertyChanged(nameof(ShowCustomField2));
+    }
+
+    private void ClearRowUnits()
+    {
+        foreach (var row in Items)
+        {
+            row.SelectedUnit = null;
+            row.AvailableUnits.Clear();
+            row.SelectedUnitName = string.Empty;
+            row.UnitConversionFactor = 1m;
+        }
+    }
+
+    private void ClearRowBatches()
+    {
+        foreach (var row in Items)
+        {
+            row.SelectedBatch = null;
+            row.AvailableBatches.Clear();
+            row.BatchId = null;
+            row.BatchNumber = string.Empty;
+            row.ExpiryDate = null;
+        }
+    }
+
+    private void ClearRowSerials()
+    {
+        foreach (var row in Items)
+            row.SerialNumber = string.Empty;
+    }
+
+    private void ApplyCustomFieldLabels(IEnumerable<string>? labels, string? industryTag = null)
+    {
+        if (!string.IsNullOrWhiteSpace(industryTag))
+            _appliedIndustryTag = industryTag;
+
         _activeCustomFieldLabels.Clear();
         if (labels is not null)
             _activeCustomFieldLabels.AddRange(labels.Where(l => !string.IsNullOrWhiteSpace(l)).Take(2));
@@ -63,15 +157,21 @@ public partial class SalesInvoiceViewModel
         CustomField1Header = _activeCustomFieldLabels.ElementAtOrDefault(0) ?? string.Empty;
         CustomField2Header = _activeCustomFieldLabels.ElementAtOrDefault(1) ?? string.Empty;
 
+        MarketTemplateFieldsEnabled = _featureFlags is null
+            || (IsIndustryEnabled(_appliedIndustryTag) && _featureFlags.AnyMarketTemplateEnabled);
+
         foreach (var row in Items)
             ApplyActiveLabelsToRow(row);
+
+        OnPropertyChanged(nameof(ShowCustomField1));
+        OnPropertyChanged(nameof(ShowCustomField2));
     }
 
     private void RestoreCustomFieldHeadersFromJson(string json)
     {
         var labels = InvoiceCustomFieldsHelper.ExtractPublicLabels(json);
         if (labels.Count == 0) return;
-        ApplyCustomFieldLabels(labels);
+        ApplyCustomFieldLabels(labels, _appliedIndustryTag);
     }
 
     private void ApplyActiveLabelsToRow(InvoiceItemRow row)
@@ -93,6 +193,12 @@ public partial class SalesInvoiceViewModel
                 row.AvailableUnits.Add(u);
             row.SelectedUnit ??= units.FirstOrDefault(u => u.IsDefault) ?? units.FirstOrDefault();
         }
+        else
+        {
+            row.AvailableUnits.Clear();
+            row.SelectedUnit = null;
+            row.UnitConversionFactor = 1m;
+        }
 
         if (ShowExpiryTracking && _productBatchService is not null && SelectedWarehouse is not null)
         {
@@ -105,13 +211,21 @@ public partial class SalesInvoiceViewModel
             if (row.SelectedBatch is null && batches.Count > 0)
                 row.SelectedBatch = batches[0];
         }
+        else
+        {
+            row.AvailableBatches.Clear();
+            row.SelectedBatch = null;
+        }
 
         if (ShowSerialNumbers && _productSerialService is not null)
         {
             var available = await _productSerialService.GetAvailableAsync(productId, SelectedWarehouse?.Id);
-            // إن لم يُدخل المستخدم سيريالاً وكان متاحاً واحد فقط، اقترحه تلقائياً
             if (string.IsNullOrWhiteSpace(row.SerialNumber) && available.Count == 1)
                 row.SerialNumber = available[0].SerialNumber;
+        }
+        else
+        {
+            row.SerialNumber = string.Empty;
         }
     }
 
