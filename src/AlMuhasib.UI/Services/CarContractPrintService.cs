@@ -282,6 +282,13 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Text = string.IsNullOrWhiteSpace(name) ? Dots(18) : name.Trim(),
             FontSize = 11.5,
             TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
+            FontSize = 11,
+            TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 0, 0, 16)
         });
         panel.Children.Add(new System.Windows.Controls.Border

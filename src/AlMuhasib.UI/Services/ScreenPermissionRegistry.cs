@@ -45,6 +45,7 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (CarPermissionRegistry.CloudSync, "المزامنة السحابية"),
         (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];

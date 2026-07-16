@@ -115,6 +115,18 @@
                                 IsEnabled="{Binding CanPayBuyer}" Margin="2">
                             <md:PackIcon Kind="CashCheck" Width="18" Height="18"/>
                         </Button>
+                        <Button Style="{StaticResource TablePrintIconButton}"
+                                Command="{Binding DataContext.PrintPurchaseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" ToolTip="طباعة شراء"
+                                IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="2">
+                            <md:PackIcon Kind="PrinterOutline" Width="18" Height="18"/>
+                        </Button>
+                        <Button Style="{StaticResource TablePrintIconButton}"
+                                Command="{Binding DataContext.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" ToolTip="طباعة بيع"
+                                IsEnabled="{Binding IsSold}" Margin="2">
+                            <md:PackIcon Kind="PrinterCheck" Width="18" Height="18"/>
+                        </Button>
                         <Button Style="{StaticResource TableEditIconButton}"
                                 Command="{Binding DataContext.EditTransactionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" ToolTip="تعديل"
@@ -258,7 +270,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTemplateColumn Header="الإجراءات" Width="340" MinWidth="340"
+                            <DataGridTemplateColumn Header="الإجراءات" Width="390" MinWidth="390"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -290,10 +302,16 @@
                                                 <md:PackIcon Kind="CashCheck" Width="18" Height="18"/>
                                             </Button>
                                             <Button Style="{StaticResource TablePrintIconButton}"
-                                                    Command="{Binding DataContext.PrintTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}" ToolTip="طباعة"
+                                                    Command="{Binding DataContext.PrintPurchaseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" ToolTip="طباعة شراء"
                                                     IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                                <md:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                <md:PackIcon Kind="PrinterOutline" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Style="{StaticResource TablePrintIconButton}"
+                                                    Command="{Binding DataContext.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" ToolTip="طباعة بيع"
+                                                    IsEnabled="{Binding IsSold}">
+                                                <md:PackIcon Kind="PrinterCheck" Width="18" Height="18"/>
                                             </Button>
                                             <Button Style="{StaticResource TableEditIconButton}"
                                                     Command="{Binding DataContext.EditTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
@@ -400,7 +418,9 @@
                             </UniformGrid>
                             <StackPanel Margin="0,0,0,12">
                                 <TextBlock Text="سعر البيع *" Style="{StaticResource FormFieldLabel}"/>
-                                <TextBox Text="{Binding SellPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Style="{StaticResource NumericTextBox}"/>
+                                <TextBox Text="{Binding SellPrice, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource NumericTextBox}"
+                                         FontSize="18" FontWeight="Bold" MinHeight="48"/>
                             </StackPanel>
                             <TextBlock Text="طريقة الدفع من المشتري" Style="{StaticResource FormFieldLabel}" Margin="0,0,0,8"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -410,11 +430,15 @@
                             <UniformGrid Columns="2" Margin="0,0,0,12">
                                 <StackPanel Margin="0,0,8,12">
                                     <TextBlock Text="المبلغ المدفوع" Style="{StaticResource FormFieldLabel}"/>
-                                    <TextBox Text="{Binding SellAmountPaid, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Style="{StaticResource NumericTextBox}" IsEnabled="{Binding IsSellCredit}" IsReadOnly="{Binding IsSellCash}"/>
+                                    <TextBox Text="{Binding SellAmountPaid, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource NumericTextBox}"
+                                             FontSize="16" FontWeight="SemiBold" MinHeight="48"/>
                                 </StackPanel>
                                 <StackPanel Margin="8,0,0,12">
                                     <TextBlock Text="المتبقي على المشتري" Style="{StaticResource FormFieldLabel}"/>
-                                    <TextBox Text="{Binding SellRemainingAmount, StringFormat=N0}" IsReadOnly="True" Style="{StaticResource FilledTextBox}" Background="#E3F2FD" Foreground="#1565C0" FontWeight="Bold"/>
+                                    <TextBox Text="{Binding SellRemainingAmount, StringFormat=N0}" IsReadOnly="True"
+                                             Style="{StaticResource FilledTextBox}" Background="#E3F2FD" Foreground="#1565C0"
+                                             FontSize="16" FontWeight="Bold" MinHeight="48"/>
                                 </StackPanel>
                             </UniformGrid>
                             <TextBlock Text="تاريخ البيع" Style="{StaticResource FormFieldLabel}"/>

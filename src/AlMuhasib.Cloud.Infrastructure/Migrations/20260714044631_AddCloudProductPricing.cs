@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -11,194 +10,115 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "PricingTypeId",
-                table: "InvoiceItems",
-                type: "int",
-                nullable: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "IsSold",
-                table: "CarTradeTransactions",
-                type: "bit",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "SaleAmountPaid",
-                table: "CarTradeTransactions",
-                type: "decimal(18,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "SaleDate",
-                table: "CarTradeTransactions",
-                type: "datetime2",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "SalePaymentMode",
-                table: "CarTradeTransactions",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "SaleRemainingAmount",
-                table: "CarTradeTransactions",
-                type: "decimal(18,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<int>(
-                name: "PaymentKind",
-                table: "CarTradePayments",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.CreateTable(
-                name: "BusinessSettings",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductPricingEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    UpdateProductPriceOnPurchase = table.Column<bool>(type: "bit", nullable: false),
-                    TenantId = table.Column<int>(type: "int", nullable: false),
-                    SyncId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BusinessSettings", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PricingTypes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    TenantId = table.Column<int>(type: "int", nullable: false),
-                    SyncId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PricingTypes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProductPrices",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    PricingTypeId = table.Column<int>(type: "int", nullable: false),
-                    SalePrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    PurchasePrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    TenantId = table.Column<int>(type: "int", nullable: false),
-                    SyncId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductPrices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductPrices_PricingTypes_PricingTypeId",
-                        column: x => x.PricingTypeId,
-                        principalTable: "PricingTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProductPrices_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InvoiceItems_PricingTypeId",
-                table: "InvoiceItems",
-                column: "PricingTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BusinessSettings_TenantId_SyncId",
-                table: "BusinessSettings",
-                columns: new[] { "TenantId", "SyncId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PricingTypes_TenantId_Name",
-                table: "PricingTypes",
-                columns: new[] { "TenantId", "Name" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PricingTypes_TenantId_SyncId",
-                table: "PricingTypes",
-                columns: new[] { "TenantId", "SyncId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductPrices_PricingTypeId",
-                table: "ProductPrices",
-                column: "PricingTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductPrices_ProductId",
-                table: "ProductPrices",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductPrices_TenantId_ProductId_PricingTypeId",
-                table: "ProductPrices",
-                columns: new[] { "TenantId", "ProductId", "PricingTypeId" },
-                unique: true,
-                filter: "[IsDeleted] = 0");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductPrices_TenantId_SyncId",
-                table: "ProductPrices",
-                columns: new[] { "TenantId", "SyncId" },
-                unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_InvoiceItems_PricingTypes_PricingTypeId",
-                table: "InvoiceItems",
-                column: "PricingTypeId",
-                principalTable: "PricingTypes",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
-
+            // Idempotent: previous failed runs may have applied some steps already
+            // (e.g. PricingTypeId added, then IsSold duplicate failed).
             migrationBuilder.Sql("""
+                IF COL_LENGTH('dbo.InvoiceItems', 'PricingTypeId') IS NULL
+                    ALTER TABLE [InvoiceItems] ADD [PricingTypeId] int NULL;
+
+                IF OBJECT_ID(N'[dbo].[BusinessSettings]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [BusinessSettings] (
+                        [Id] int NOT NULL IDENTITY,
+                        [ProductPricingEnabled] bit NOT NULL,
+                        [UpdateProductPriceOnPurchase] bit NOT NULL,
+                        [TenantId] int NOT NULL,
+                        [SyncId] uniqueidentifier NOT NULL,
+                        [CreatedAt] datetime2 NOT NULL,
+                        [CreatedBy] nvarchar(max) NOT NULL,
+                        [UpdatedAt] datetime2 NULL,
+                        [UpdatedBy] nvarchar(max) NULL,
+                        [IsDeleted] bit NOT NULL,
+                        [DeletedAt] datetime2 NULL,
+                        [DeletedBy] nvarchar(max) NULL,
+                        [RowVersion] rowversion NOT NULL,
+                        CONSTRAINT [PK_BusinessSettings] PRIMARY KEY ([Id])
+                    );
+                END;
+
+                IF OBJECT_ID(N'[dbo].[PricingTypes]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [PricingTypes] (
+                        [Id] int NOT NULL IDENTITY,
+                        [Name] nvarchar(200) NOT NULL,
+                        [IsDefault] bit NOT NULL,
+                        [IsActive] bit NOT NULL,
+                        [TenantId] int NOT NULL,
+                        [SyncId] uniqueidentifier NOT NULL,
+                        [CreatedAt] datetime2 NOT NULL,
+                        [CreatedBy] nvarchar(max) NOT NULL,
+                        [UpdatedAt] datetime2 NULL,
+                        [UpdatedBy] nvarchar(max) NULL,
+                        [IsDeleted] bit NOT NULL,
+                        [DeletedAt] datetime2 NULL,
+                        [DeletedBy] nvarchar(max) NULL,
+                        [RowVersion] rowversion NOT NULL,
+                        CONSTRAINT [PK_PricingTypes] PRIMARY KEY ([Id])
+                    );
+                END;
+
+                IF OBJECT_ID(N'[dbo].[ProductPrices]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [ProductPrices] (
+                        [Id] int NOT NULL IDENTITY,
+                        [ProductId] int NOT NULL,
+                        [PricingTypeId] int NOT NULL,
+                        [SalePrice] decimal(18,2) NOT NULL,
+                        [PurchasePrice] decimal(18,2) NOT NULL,
+                        [TenantId] int NOT NULL,
+                        [SyncId] uniqueidentifier NOT NULL,
+                        [CreatedAt] datetime2 NOT NULL,
+                        [CreatedBy] nvarchar(max) NOT NULL,
+                        [UpdatedAt] datetime2 NULL,
+                        [UpdatedBy] nvarchar(max) NULL,
+                        [IsDeleted] bit NOT NULL,
+                        [DeletedAt] datetime2 NULL,
+                        [DeletedBy] nvarchar(max) NULL,
+                        [RowVersion] rowversion NOT NULL,
+                        CONSTRAINT [PK_ProductPrices] PRIMARY KEY ([Id]),
+                        CONSTRAINT [FK_ProductPrices_PricingTypes_PricingTypeId]
+                            FOREIGN KEY ([PricingTypeId]) REFERENCES [PricingTypes] ([Id]) ON DELETE NO ACTION,
+                        CONSTRAINT [FK_ProductPrices_Products_ProductId]
+                            FOREIGN KEY ([ProductId]) REFERENCES [Products] ([Id]) ON DELETE NO ACTION
+                    );
+                END;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InvoiceItems_PricingTypeId' AND object_id = OBJECT_ID(N'[dbo].[InvoiceItems]'))
+                    CREATE INDEX [IX_InvoiceItems_PricingTypeId] ON [InvoiceItems] ([PricingTypeId]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessSettings_TenantId_SyncId' AND object_id = OBJECT_ID(N'[dbo].[BusinessSettings]'))
+                    CREATE UNIQUE INDEX [IX_BusinessSettings_TenantId_SyncId] ON [BusinessSettings] ([TenantId], [SyncId]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PricingTypes_TenantId_Name' AND object_id = OBJECT_ID(N'[dbo].[PricingTypes]'))
+                    CREATE INDEX [IX_PricingTypes_TenantId_Name] ON [PricingTypes] ([TenantId], [Name]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PricingTypes_TenantId_SyncId' AND object_id = OBJECT_ID(N'[dbo].[PricingTypes]'))
+                    CREATE UNIQUE INDEX [IX_PricingTypes_TenantId_SyncId] ON [PricingTypes] ([TenantId], [SyncId]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ProductPrices_PricingTypeId' AND object_id = OBJECT_ID(N'[dbo].[ProductPrices]'))
+                    CREATE INDEX [IX_ProductPrices_PricingTypeId] ON [ProductPrices] ([PricingTypeId]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ProductPrices_ProductId' AND object_id = OBJECT_ID(N'[dbo].[ProductPrices]'))
+                    CREATE INDEX [IX_ProductPrices_ProductId] ON [ProductPrices] ([ProductId]);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ProductPrices_TenantId_ProductId_PricingTypeId' AND object_id = OBJECT_ID(N'[dbo].[ProductPrices]'))
+                    CREATE UNIQUE INDEX [IX_ProductPrices_TenantId_ProductId_PricingTypeId]
+                        ON [ProductPrices] ([TenantId], [ProductId], [PricingTypeId])
+                        WHERE [IsDeleted] = 0;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ProductPrices_TenantId_SyncId' AND object_id = OBJECT_ID(N'[dbo].[ProductPrices]'))
+                    CREATE UNIQUE INDEX [IX_ProductPrices_TenantId_SyncId] ON [ProductPrices] ([TenantId], [SyncId]);
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.foreign_keys
+                    WHERE name = N'FK_InvoiceItems_PricingTypes_PricingTypeId'
+                      AND parent_object_id = OBJECT_ID(N'[dbo].[InvoiceItems]')
+                )
+                BEGIN
+                    ALTER TABLE [InvoiceItems] ADD CONSTRAINT [FK_InvoiceItems_PricingTypes_PricingTypeId]
+                        FOREIGN KEY ([PricingTypeId]) REFERENCES [PricingTypes] ([Id]) ON DELETE SET NULL;
+                END;
+
                 INSERT INTO PricingTypes (Name, IsDefault, IsActive, TenantId, SyncId, CreatedAt, CreatedBy, IsDeleted)
                 SELECT N'سعر مفرد', 1, 1, t.Id, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2026-07-01T00:00:00Z', N'System', 0
                 FROM Tenants t
@@ -221,50 +141,28 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_InvoiceItems_PricingTypes_PricingTypeId",
-                table: "InvoiceItems");
+            migrationBuilder.Sql("""
+                IF EXISTS (
+                    SELECT 1 FROM sys.foreign_keys
+                    WHERE name = N'FK_InvoiceItems_PricingTypes_PricingTypeId'
+                )
+                    ALTER TABLE [InvoiceItems] DROP CONSTRAINT [FK_InvoiceItems_PricingTypes_PricingTypeId];
 
-            migrationBuilder.DropTable(
-                name: "BusinessSettings");
+                IF OBJECT_ID(N'[dbo].[ProductPrices]', N'U') IS NOT NULL
+                    DROP TABLE [ProductPrices];
 
-            migrationBuilder.DropTable(
-                name: "ProductPrices");
+                IF OBJECT_ID(N'[dbo].[BusinessSettings]', N'U') IS NOT NULL
+                    DROP TABLE [BusinessSettings];
 
-            migrationBuilder.DropTable(
-                name: "PricingTypes");
+                IF OBJECT_ID(N'[dbo].[PricingTypes]', N'U') IS NOT NULL
+                    DROP TABLE [PricingTypes];
 
-            migrationBuilder.DropIndex(
-                name: "IX_InvoiceItems_PricingTypeId",
-                table: "InvoiceItems");
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InvoiceItems_PricingTypeId' AND object_id = OBJECT_ID(N'[dbo].[InvoiceItems]'))
+                    DROP INDEX [IX_InvoiceItems_PricingTypeId] ON [InvoiceItems];
 
-            migrationBuilder.DropColumn(
-                name: "PricingTypeId",
-                table: "InvoiceItems");
-
-            migrationBuilder.DropColumn(
-                name: "IsSold",
-                table: "CarTradeTransactions");
-
-            migrationBuilder.DropColumn(
-                name: "SaleAmountPaid",
-                table: "CarTradeTransactions");
-
-            migrationBuilder.DropColumn(
-                name: "SaleDate",
-                table: "CarTradeTransactions");
-
-            migrationBuilder.DropColumn(
-                name: "SalePaymentMode",
-                table: "CarTradeTransactions");
-
-            migrationBuilder.DropColumn(
-                name: "SaleRemainingAmount",
-                table: "CarTradeTransactions");
-
-            migrationBuilder.DropColumn(
-                name: "PaymentKind",
-                table: "CarTradePayments");
+                IF COL_LENGTH('dbo.InvoiceItems', 'PricingTypeId') IS NOT NULL
+                    ALTER TABLE [InvoiceItems] DROP COLUMN [PricingTypeId];
+                """);
         }
     }
 }

@@ -12,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlMuhasib.Infrastructure.Data.Car.Migrations
 {
     [DbContext(typeof(CarDbContext))]
-    [Migration("20260708100000_CarContractAgreedPriceAndWitnesses")]
+    [Migration("20260708083633_CarContractAgreedPriceAndWitnesses")]
     partial class CarContractAgreedPriceAndWitnesses
     {
+        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
@@ -241,11 +242,6 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<bool>("IsAgreedPrice")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("CarPriceInWords")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -283,6 +279,11 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
                     b.Property<string>("DeletedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsAgreedPrice")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -330,16 +331,6 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("WitnessOneName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("WitnessTwoName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -354,6 +345,16 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WitnessOneName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("WitnessTwoName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
@@ -713,4 +714,3 @@ namespace AlMuhasib.Infrastructure.Data.Car.Migrations
         }
     }
 }
-

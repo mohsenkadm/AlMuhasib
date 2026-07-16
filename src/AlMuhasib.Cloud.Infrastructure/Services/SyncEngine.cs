@@ -138,7 +138,14 @@ public sealed partial class SyncEngine : ISyncEngine
             foreach (var dto in request.Data.Installments)
             {
                 var planId = await resolver.ResolveInstallmentPlanAsync(dto.InstallmentPlanSyncId, ct);
-                if (planId is null) { AddConflict(response, "Installment", dto.SyncId, "Plan not found"); continue; }
+                if (planId is null)
+                {
+                    AddConflict(response, "Installment", dto.SyncId,
+                        dto.InstallmentPlanSyncId == Guid.Empty
+                            ? "Plan not found (InstallmentPlanSyncId is empty)"
+                            : $"Plan not found (InstallmentPlanSyncId={dto.InstallmentPlanSyncId:D})");
+                    continue;
+                }
                 var cashBoxId = await resolver.ResolveCashBoxAsync(dto.CashBoxSyncId, ct);
                 accepted += await UpsertInstallmentAsync(tenantId, dto, planId.Value, cashBoxId, response, ct);
             }

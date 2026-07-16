@@ -24,11 +24,11 @@ var app = builder.Build();
 
 await CloudDbSeeder.SeedAsync(app.Services);
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseCors("Admin");

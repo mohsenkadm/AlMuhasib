@@ -17,7 +17,7 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -139,13 +139,13 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PaymentKind")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("RemainingAfter")
                         .HasPrecision(18, 2)
@@ -271,6 +271,12 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<decimal>("SaleAmountPaid")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -283,17 +289,11 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<decimal>("SaleRemainingAmount")
+                    b.Property<decimal>("SalePrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<decimal>("SalePrice")
+                    b.Property<decimal>("SaleRemainingAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -357,6 +357,63 @@ namespace AlMuhasib.Infrastructure.Data.CarTrade.Migrations
                         .IsUnique();
 
                     b.ToTable("CarTradeTransactions", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.CloudSyncSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AccessTokenExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApiBaseUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("AutoSyncEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AutoSyncIntervalMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastSuccessfulSyncAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastSyncError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CloudSyncSettings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ApiBaseUrl = "",
+                            AutoSyncEnabled = false,
+                            AutoSyncIntervalMinutes = 15,
+                            Password = "",
+                            Username = ""
+                        });
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Permission", b =>

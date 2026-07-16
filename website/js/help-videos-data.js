@@ -1,6 +1,6 @@
 ﻿window.HELP_VIDEOS = {
   "supportWhatsApp": "07505496065",
-  "supportMessage": "السلام عليكم، أحتاج مساعدة في نظام المحاسب.",
+  "supportMessage": "السلام عليكم، أحتاج مساعدة في نظام قيد.",
   "defaultYoutubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
   "categories": [
     {

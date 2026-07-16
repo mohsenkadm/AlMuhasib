@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../features/car_trade/controllers/car_trade_dashboard_controller.dart';
 import '../../features/car_trade/controllers/car_trade_payments_controller.dart';
+import '../../features/car_trade/controllers/car_trade_party_statement_controller.dart';
 import '../../features/car_trade/controllers/car_trade_report_controller.dart';
 import '../../features/car_trade/controllers/car_trade_shell_controller.dart';
 import '../../features/car_trade/controllers/car_trade_transaction_detail_controller.dart';
@@ -72,6 +73,16 @@ class CarTradeTransactionDetailBinding extends Bindings {
         syncId: Get.parameters['syncId']!,
       ),
       tag: 'car_trade_transaction_detail',
+    );
+  }
+}
+
+class CarTradePartyStatementBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => CarTradePartyStatementController(),
+      tag: 'car_trade_party_statement',
     );
   }
 }

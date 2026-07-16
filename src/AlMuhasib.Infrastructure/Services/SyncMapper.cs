@@ -46,12 +46,18 @@ internal static class SyncMapper
         var changedStocks = warehouseStocks.Where(ShouldSync).ToList();
         var changedInvoices = invoices.Where(ShouldSync).ToList();
         var changedInvoiceItems = invoiceItems.Where(ShouldSync).ToList();
-        var changedPlans = installmentPlans.Where(ShouldSync).ToList();
         var changedVouchers = vouchers.Where(ShouldSync).ToList();
         var changedExpenses = expenses.Where(ShouldSync).ToList();
         var changedTransfers = transfers.Where(ShouldSync).ToList();
         var changedInstallments = installments.Where(ShouldSync).ToList();
         var changedDistDetails = profitDistributionDetails.Where(ShouldSync).ToList();
+
+        // Parent installment plans must travel with any changed installment, even if the plan itself
+        // was not modified since LastPushedAt — otherwise the cloud reports "Plan not found".
+        var referencedPlanIds = changedInstallments.Select(i => i.InstallmentPlanId).ToHashSet();
+        var plansToPush = installmentPlans
+            .Where(p => ShouldSync(p) || referencedPlanIds.Contains(p.Id))
+            .ToList();
 
         var referencedProductIds = changedStocks.Select(s => s.ProductId)
             .Concat(changedInvoiceItems.Where(i => i.ProductId.HasValue).Select(i => i.ProductId!.Value))
@@ -69,7 +75,7 @@ internal static class SyncMapper
             .Concat(changedInvoices.Select(i => i.WarehouseId))
             .ToHashSet();
         var referencedCustomerIds = changedInvoices.Where(i => i.CustomerId.HasValue).Select(i => i.CustomerId!.Value)
-            .Concat(changedPlans.Select(p => p.CustomerId))
+            .Concat(plansToPush.Select(p => p.CustomerId))
             .Concat(changedVouchers.Where(v => v.CustomerId.HasValue).Select(v => v.CustomerId!.Value))
             .Concat(customerAttachments.Where(ShouldSync).Select(a => a.CustomerId))
             .ToHashSet();
@@ -89,7 +95,7 @@ internal static class SyncMapper
             .ToHashSet();
         var referencedExpenseTypeIds = changedExpenses.Select(e => e.ExpenseTypeId).ToHashSet();
         var referencedInvoiceIds = changedInvoiceItems.Select(i => i.InvoiceId)
-            .Concat(changedPlans.Select(p => p.InvoiceId))
+            .Concat(plansToPush.Select(p => p.InvoiceId))
             .ToHashSet();
         var referencedDistIds = changedDistDetails.Select(d => d.ProfitDistributionId).ToHashSet();
 
@@ -132,13 +138,13 @@ internal static class SyncMapper
         bundle.InvoiceItems = changedInvoiceItems
             .Where(i => invMap.ContainsKey(i.InvoiceId))
             .Select(i => MapInvoiceItem(i, invMap, prMap, pricingTypeMap)).ToList();
-        bundle.InstallmentPlans = changedPlans
+        bundle.InstallmentPlans = plansToPush
             .Where(p => invMap.ContainsKey(p.InvoiceId) && custMap.ContainsKey(p.CustomerId))
             .Select(p => MapInstallmentPlan(p, invMap, custMap)).ToList();
 
         var planMap = installmentPlans.ToDictionary(p => p.Id, p => p.SyncId);
         bundle.Installments = changedInstallments
-            .Where(i => planMap.ContainsKey(i.InstallmentPlanId))
+            .Where(i => planMap.ContainsKey(i.InstallmentPlanId) && planMap[i.InstallmentPlanId] != Guid.Empty)
             .Select(i => MapInstallment(i, planMap, cbMap)).ToList();
 
         var investorMap = investors.ToDictionary(i => i.Id, i => i.SyncId);

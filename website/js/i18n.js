@@ -27,7 +27,7 @@ const I18N = {
 
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.title = this.strings.meta?.title ?? 'AlMuhasib';
+    document.title = this.strings.meta?.title ?? 'قيد';
     const meta = document.querySelector('meta[name="description"]');
     if (meta && this.strings.meta?.description) meta.content = this.strings.meta.description;
 

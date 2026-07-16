@@ -41,6 +41,8 @@ public interface ICarTradeReportService
 public interface ICarTradePrintService
 {
     void PrintTransaction(CarTradeTransaction transaction, int copies = 1);
+    void PrintPurchase(CarTradeTransaction transaction, int copies = 1);
+    void PrintSale(CarTradeTransaction transaction, int copies = 1);
     void PrintPaymentReceipt(CarTradeTransaction transaction, CarTradePayment payment, int copies = 1);
     void PrintTransactions(IEnumerable<CarTradeTransaction> transactions, int copiesEach = 1);
 }
