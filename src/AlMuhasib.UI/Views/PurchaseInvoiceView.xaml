@@ -7,7 +7,6 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
-             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PurchaseInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
@@ -16,7 +15,6 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <helpers:BindingProxy x:Key="InvoiceFeatureProxy" Data="{Binding}"/>
     </UserControl.Resources>
 
     <Grid>
@@ -279,8 +277,9 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
-                                <DataGridTemplateColumn Header="الوحدة" Width="100"
-                                                        Visibility="{Binding Data.ShowUnitsOfMeasure, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
+                                <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding AvailableUnits}"
@@ -290,8 +289,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="رقم الدفعة" Width="100"
-                                                        Visibility="{Binding Data.ShowExpiryTracking, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DataGridTemplateColumn x:Name="ColBatch" Header="رقم الدفعة" Width="100"
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
@@ -300,8 +299,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="تاريخ الانتهاء" Width="120"
-                                                        Visibility="{Binding Data.ShowExpiryTracking, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DataGridTemplateColumn x:Name="ColExpiry" Header="تاريخ الانتهاء" Width="120"
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"/>
@@ -309,8 +308,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="سيريال" Width="120"
-                                                        Visibility="{Binding Data.ShowSerialNumbers, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="120"
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"

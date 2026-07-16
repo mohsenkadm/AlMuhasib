@@ -92,12 +92,13 @@ public partial class SalesInvoiceViewModel
 
     private bool IsIndustryEnabled(string? industryTag) => industryTag switch
     {
-        null or "" => _featureFlags?.AnyMarketTemplateEnabled == true,
+        // بدون قالب مطبّق: لا تُظهر حقولاً مخصصة حتى يُختار قالب سوق مفعّل
+        null or "" => false,
         "mobile" => _featureFlags?.TemplateMobileShop == true,
         "clothing" => _featureFlags?.TemplateClothing == true,
         "construction" => _featureFlags?.TemplateConstruction == true,
         "pharmacy" => _featureFlags?.TemplatePharmacy == true,
-        _ => _featureFlags?.AnyMarketTemplateEnabled == true
+        _ => false
     };
 
     private void ClearCustomFieldLabels()

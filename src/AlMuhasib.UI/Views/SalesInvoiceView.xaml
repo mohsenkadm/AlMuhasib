@@ -8,7 +8,6 @@
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
-             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SalesInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
@@ -17,7 +16,6 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <helpers:BindingProxy x:Key="InvoiceFeatureProxy" Data="{Binding}"/>
     </UserControl.Resources>
 
     <Grid>
@@ -316,10 +314,11 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
+                                <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
                                 <DataGridTemplateColumn x:Name="ColCustomField1" Width="100" MinWidth="80"
-                                                        Visibility="{Binding Data.ShowCustomField1, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="{Binding Data.CustomField1Header, Source={StaticResource InvoiceFeatureProxy}}"/>
+                                        <TextBlock Text="{Binding DataContext.CustomField1Header, ElementName=Root}"/>
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -331,9 +330,9 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColCustomField2" Width="100" MinWidth="80"
-                                                        Visibility="{Binding Data.ShowCustomField2, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="{Binding Data.CustomField2Header, Source={StaticResource InvoiceFeatureProxy}}"/>
+                                        <TextBlock Text="{Binding DataContext.CustomField2Header, ElementName=Root}"/>
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -345,7 +344,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
-                                                        Visibility="{Binding Data.ShowUnitsOfMeasure, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding AvailableUnits}"
@@ -357,7 +356,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColBatch" Header="الدفعة" Width="110"
-                                                        Visibility="{Binding Data.ShowExpiryTracking, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding AvailableBatches}"
@@ -378,7 +377,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="120"
-                                                        Visibility="{Binding Data.ShowSerialNumbers, Source={StaticResource InvoiceFeatureProxy}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
