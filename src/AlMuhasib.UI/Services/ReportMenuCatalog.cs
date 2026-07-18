@@ -61,7 +61,8 @@ public static class ReportMenuCatalog
                 CategoryKey = cat.Key,
                 ScreenName = cat.Permission,
                 CategoryAccentColor = cat.Accent,
-                CategoryAccentLightColor = cat.AccentLight
+                CategoryAccentLightColor = cat.AccentLight,
+                FlyoutItemLabel = "تقرير"
             };
 
             foreach (var r in cat.Reports)
@@ -85,9 +86,8 @@ public static class ReportMenuCatalog
         if (!category.IsReportCategory)
             yield break;
 
-        var meta = Catalog.FirstOrDefault(c => c.Key == category.CategoryKey);
-        var accent = meta.Accent;
-        var accentLight = meta.AccentLight;
+        var accent = category.CategoryAccentColor;
+        var accentLight = category.CategoryAccentLightColor;
 
         foreach (var child in category.Children.Where(c => c.IsVisible && c.ViewModelType is not null))
         {

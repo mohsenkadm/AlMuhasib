@@ -141,7 +141,10 @@ public partial class MainWindowViewModel
         && item.ScreenName != "Dashboard";
 
     private static string GetMenuPreferenceKey(NavigationMenuItem item) =>
-        item.ViewModelType?.Name ?? item.ScreenName;
+        // مرتجع المشتريات يشارك ViewModel مع فاتورة المشتريات — نميّزه بـ ScreenName
+        string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase)
+            ? item.ScreenName
+            : item.ViewModelType?.Name ?? item.ScreenName;
 
     private bool CanMenuBeShownByPermissions(NavigationMenuItem item) =>
         item.ScreenName == ScreenPermissionRegistry.Dashboard
