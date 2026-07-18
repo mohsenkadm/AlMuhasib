@@ -711,11 +711,12 @@ public partial class MainWindowViewModel : ObservableObject
         _pendingTabOpen = null;
 
         var scope = _serviceProvider.CreateScope();
+        DocumentTab? tab = null;
         try
         {
             var viewModel = (ViewModelBase)scope.ServiceProvider.GetRequiredService(viewModelType);
 
-            var tab = new DocumentTab
+            tab = new DocumentTab
             {
                 Title = title,
                 Icon = icon,
@@ -734,10 +735,23 @@ public partial class MainWindowViewModel : ObservableObject
 
             await SafeInitializeTabAsync(viewModel);
         }
-        catch
+        catch (Exception ex)
         {
-            scope.Dispose();
-            throw;
+            if (tab is not null)
+            {
+                OpenTabs.Remove(tab);
+                tab.Dispose();
+                UpdateTabCloseStates();
+                UpdateTabPinStates();
+            }
+            else
+            {
+                scope.Dispose();
+            }
+
+            Debug.WriteLine($"[Tabs] OpenTabAsync failed for {viewModelType.Name}: {ex}");
+            BeautifulMessageDialog.ShowError(
+                $"تعذّر فتح الشاشة «{title}»:\n\n{ex.InnerException?.Message ?? ex.Message}");
         }
     }
 

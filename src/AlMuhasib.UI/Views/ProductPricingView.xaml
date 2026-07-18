@@ -125,12 +125,20 @@
                           ItemsSource="{Binding Rows}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
+                          CanUserSortColumns="False"
+                          IsReadOnly="False"
                           SelectionMode="Single"
+                          SelectionUnit="Cell"
                           HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Style>
+                        <Style TargetType="DataGrid" BasedOn="{StaticResource ModernDataGrid}">
+                            <Setter Property="IsReadOnly" Value="False"/>
+                            <Setter Property="SelectionUnit" Value="Cell"/>
+                        </Style>
+                    </DataGrid.Style>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="المنتج" Width="2*"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName">
@@ -155,10 +163,24 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="سعر البيع" Binding="{Binding SalePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="120"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalePrice"/>
-                        <DataGridTextColumn Header="سعر الشراء" Binding="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="120"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasePrice"/>
+                        <DataGridTemplateColumn Header="سعر البيع" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalePrice">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding SalePrice, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource NumericCellTextBox}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="سعر الشراء" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasePrice">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding PurchasePrice, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource NumericCellTextBox}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="حذف" Width="80"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
