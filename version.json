@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.14.4",
-    "releaseDate":  "2026-07-12",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.4/AlMuhasib-1.14.4.zip",
-    "sha256":  "8610B67C34C3844830DB28A8DED6FEF9464400CB50E1935DB846DBB901EECF73",
-    "sizeBytes":  93840517,
-    "releaseNotes":  "تحسين طباعة عقد السيارات: بنود بارزة ومرتبة، توقيعات تحت البنود، تكبير الخط والهيدر، وإصلاح قص أسفل الصفحة عند الطباعة الورقية",
+    "version":  "1.14.5",
+    "releaseDate":  "2026-07-18",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.5/AlMuhasib-1.14.5.zip",
+    "sha256":  "E61634A1C8C5FE0000B11755132C58112CA21E26D5D09A63D6238524F37CA38E",
+    "sizeBytes":  94076990,
+    "releaseNotes":  "إصلاح عرض كروت المنتجات والأيقونات، إصلاح تجمّد شاشة المنتجات والأسعار، تجميع قائمة المحاسبة، وتحسينات العقود وبيع السيارات والمزامنة السحابية",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }
