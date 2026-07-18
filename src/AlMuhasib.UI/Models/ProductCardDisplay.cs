@@ -19,10 +19,10 @@ public partial class ProductPriceCardLine : ObservableObject
 public partial class ProductCardDisplay : ObservableObject
 {
     public required Product Product { get; init; }
-    public string Name => Product.Name;
-    public string? Barcode => Product.Barcode;
-    public string? Description => Product.Description;
-    public string CategoryName => Product.Category?.Name ?? "—";
+    public string Name { get; init; } = string.Empty;
+    public string? Barcode { get; init; }
+    public string? Description { get; init; }
+    public string CategoryName { get; init; } = "—";
     public ObservableCollection<ProductPriceCardLine> Prices { get; } = [];
     public bool HasPrices => Prices.Count > 0;
 }

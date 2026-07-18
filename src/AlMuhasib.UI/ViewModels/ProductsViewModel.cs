@@ -272,7 +272,18 @@ public partial class ProductsViewModel : ViewModelBase
 
         foreach (var product in list)
         {
-            var card = new ProductCardDisplay { Product = product };
+            var categoryName = product.Category?.Name
+                ?? Categories.FirstOrDefault(c => c.Id == product.CategoryId)?.Name
+                ?? "—";
+
+            var card = new ProductCardDisplay
+            {
+                Product = product,
+                Name = product.Name,
+                Barcode = product.Barcode,
+                Description = product.Description,
+                CategoryName = categoryName
+            };
             if (pricesByProduct.TryGetValue(product.Id, out var productPrices))
             {
                 foreach (var price in productPrices)

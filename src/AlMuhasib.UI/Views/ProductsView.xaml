@@ -282,14 +282,15 @@
                                                 <materialDesign:PackIcon Kind="PackageVariant" Width="20" Height="20" Foreground="#388E3C"
                                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                            <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding Name, Mode=OneWay}"
+                                                       Style="{StaticResource MasterDataCardTitle}"
+                                                       ToolTip="{Binding Name, Mode=OneWay}"/>
                                             <StackPanel Grid.Row="2">
-                                                <TextBlock Style="{StaticResource MasterDataCardMeta}">
-                                                    <Run Text="التصنيف: "/><Run Text="{Binding CategoryName}"/>
-                                                </TextBlock>
-                                                <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas">
-                                                    <Run Text="الباركود: "/><Run Text="{Binding Barcode, TargetNullValue=—}"/>
-                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}"
+                                                           Text="{Binding CategoryName, Mode=OneWay, StringFormat=التصنيف: {0}}"/>
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
+                                                           Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"/>
                                             </StackPanel>
                                             <ItemsControl Grid.Row="3" ItemsSource="{Binding Prices}" Margin="0,6,0,6"
                                                           Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}">
@@ -302,17 +303,19 @@
                                                                     <ColumnDefinition Width="Auto"/>
                                                                 </Grid.ColumnDefinitions>
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding PricingTypeName}" FontWeight="SemiBold" FontSize="12"/>
-                                                                    <TextBlock FontSize="11" Foreground="#546E7A">
-                                                                        <Run Text="بيع: "/><Run Text="{Binding SalePriceText}" FontWeight="Bold"/>
-                                                                        <Run Text="  |  شراء: "/><Run Text="{Binding PurchasePriceText}" FontWeight="Bold"/>
-                                                                    </TextBlock>
+                                                                    <TextBlock Text="{Binding PricingTypeName, Mode=OneWay}" FontWeight="SemiBold" FontSize="12"/>
+                                                                    <TextBlock FontSize="11" Foreground="#546E7A"
+                                                                               Text="{Binding SalePriceText, Mode=OneWay, StringFormat=بيع: {0}}"/>
+                                                                    <TextBlock FontSize="11" Foreground="#546E7A"
+                                                                               Text="{Binding PurchasePriceText, Mode=OneWay, StringFormat=شراء: {0}}"/>
                                                                 </StackPanel>
                                                                 <Button Grid.Column="1"
                                                                         Command="{Binding DataContext.OpenEditPriceDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                         CommandParameter="{Binding}"
                                                                         Style="{StaticResource TableEditIconButton}"
-                                                                        ToolTip="تعديل السعر"/>
+                                                                        ToolTip="تعديل السعر">
+                                                                    <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                                </Button>
                                                             </Grid>
                                                         </Border>
                                                     </DataTemplate>
@@ -326,10 +329,14 @@
                                                         Content="إضافة سعر"/>
                                                 <Button Command="{Binding DataContext.OpenEditProductFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource TableEditIconButton}"/>
+                                                        Style="{StaticResource TableEditIconButton}">
+                                                    <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                </Button>
                                                 <Button Command="{Binding DataContext.ConfirmDeleteFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource TableDeleteIconButton}"/>
+                                                        Style="{StaticResource TableDeleteIconButton}">
+                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
