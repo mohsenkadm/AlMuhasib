@@ -37,7 +37,7 @@ public partial class NavigationMenuItem : ObservableObject
     [ObservableProperty]
     private bool _isMenuSectionLabel;
 
-    /// <summary>فئة تقارير تفتح لوحة جانبية بدل قائمة فرعية.</summary>
+    /// <summary>فئة تفتح لوحة جانبية (تقارير أو كروب قوائم) بدل قائمة فرعية.</summary>
     [ObservableProperty]
     private bool _isReportCategory;
 
@@ -49,6 +49,10 @@ public partial class NavigationMenuItem : ObservableObject
 
     [ObservableProperty]
     private string _categoryAccentLightColor = "#E3F2FD";
+
+    /// <summary>تسمية عنصر اللوحة الجانبية (مثل «تقرير» أو «شاشة»).</summary>
+    [ObservableProperty]
+    private string _flyoutItemLabel = "شاشة";
 
     public ObservableCollection<NavigationMenuItem> Children { get; } = [];
 }

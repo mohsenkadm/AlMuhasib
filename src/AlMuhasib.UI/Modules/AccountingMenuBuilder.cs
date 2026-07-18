@@ -11,168 +11,84 @@ public static class AccountingMenuBuilder
     {
         var items = new List<NavigationMenuItem>
         {
-            new()
-            {
-                Title = "لوحة التحكم",
-                Icon = PackIconKind.ViewDashboard,
-                ViewModelType = typeof(DashboardViewModel),
-                ScreenName = ScreenPermissionRegistry.Dashboard
-            },
-            new()
-            {
-                Title = "المنتجات",
-                Icon = PackIconKind.PackageVariantClosed,
-                ViewModelType = typeof(ProductsViewModel),
-                ScreenName = "Products"
-            },
-            new()
-            {
-                Title = "تصنيفات المنتجات",
-                Icon = PackIconKind.TagMultiple,
-                ViewModelType = typeof(CategoriesViewModel),
-                ScreenName = "Categories"
-            },
-            new()
-            {
-                Title = "أنواع التسعير",
-                Icon = PackIconKind.CashMultiple,
-                ViewModelType = typeof(PricingTypesViewModel),
-                ScreenName = "PricingTypes"
-            },
-            new()
-            {
-                Title = "تسعير منتجات",
-                Icon = PackIconKind.TagTextOutline,
-                ViewModelType = typeof(ProductPricingViewModel),
-                ScreenName = "ProductPricing"
-            },
-            new()
-            {
-                Title = "العملاء",
-                Icon = PackIconKind.AccountGroup,
-                ViewModelType = typeof(CustomersViewModel),
-                ScreenName = "Customers"
-            },
-            new()
-            {
-                Title = "الموردون",
-                Icon = PackIconKind.Factory,
-                ViewModelType = typeof(SuppliersViewModel),
-                ScreenName = "Suppliers"
-            },
-            new()
-            {
-                Title = "فاتورة مشتريات",
-                Icon = PackIconKind.CartArrowDown,
-                ViewModelType = typeof(PurchaseInvoiceViewModel),
-                ScreenName = "PurchaseInvoice"
-            },
-            new()
-            {
-                Title = "مرتجع مشتريات",
-                Icon = PackIconKind.KeyboardReturn,
-                ViewModelType = typeof(PurchaseInvoiceViewModel),
-                ScreenName = "PurchaseReturn"
-            },
-            new()
-            {
-                Title = "فاتورة مبيعات",
-                Icon = PackIconKind.CashRegister,
-                ViewModelType = typeof(SalesInvoiceViewModel),
-                ScreenName = "SaleInvoice"
-            },
-            new()
-            {
-                Title = "بيع سريع (POS)",
-                Icon = PackIconKind.PointOfSale,
-                ViewModelType = typeof(PosQuickSaleViewModel),
-                ScreenName = "SaleInvoice"
-            },
-            new()
-            {
-                Title = "فاتورة أقساط",
-                Icon = PackIconKind.CalendarClock,
-                ViewModelType = typeof(InstallmentInvoiceViewModel),
-                ScreenName = "InstallmentInvoice"
-            },
-            new()
-            {
-                Title = "لوحة التحصيل",
-                Icon = PackIconKind.CashMultiple,
-                ViewModelType = typeof(CollectionDashboardViewModel),
-                ScreenName = "Installments"
-            },
-            new()
-            {
-                Title = "الأقساط",
-                Icon = PackIconKind.CalendarMultipleCheck,
-                ViewModelType = typeof(InstallmentsViewModel),
-                ScreenName = "Installments"
-            },
-            new()
-            {
-                Title = "أرصدة الأقساط الافتتاحية",
-                Icon = PackIconKind.History,
-                ViewModelType = typeof(OpeningInstallmentBalanceViewModel),
-                ScreenName = "OpeningInstallments"
-            },
-            new()
-            {
-                Title = "السندات",
-                Icon = PackIconKind.FileDocumentOutline,
-                ViewModelType = typeof(VouchersViewModel),
-                ScreenName = "Vouchers"
-            },
-            new()
-            {
-                Title = "المصاريف",
-                Icon = PackIconKind.CashMinus,
-                ViewModelType = typeof(ExpenseViewModel),
-                ScreenName = "Expenses"
-            },
-            new()
-            {
-                Title = "القاصات والمصرف",
-                Icon = PackIconKind.Bank,
-                ViewModelType = typeof(CashBankViewModel),
-                ScreenName = "CashAndBank"
-            },
-            new()
-            {
-                Title = "المستثمرون",
-                Icon = PackIconKind.TrendingUp,
-                ViewModelType = typeof(InvestorsViewModel),
-                ScreenName = "Investors"
-            },
-            new()
-            {
-                Title = "أرصدة المستثمرين الافتتاحية",
-                Icon = PackIconKind.AccountCashOutline,
-                ViewModelType = typeof(OpeningInvestorsViewModel),
-                ScreenName = "OpeningInvestors"
-            },
-            new()
-            {
-                Title = "المخازن",
-                Icon = PackIconKind.Warehouse,
-                ViewModelType = typeof(WarehousesViewModel),
-                ScreenName = "Warehouses"
-            },
-            new()
-            {
-                Title = "الأرصدة الافتتاحية",
-                Icon = PackIconKind.PackageVariantClosedPlus,
-                ViewModelType = typeof(OpeningStockViewModel),
-                ScreenName = "OpeningStock"
-            },
-            new()
-            {
-                Title = "تسوية مخزنية",
-                Icon = PackIconKind.TuneVerticalVariant,
-                ViewModelType = typeof(StockAdjustmentViewModel),
-                ScreenName = "StockAdjustment"
-            },
-            new()
+            // شاشات مباشرة (ليست داخل كروب)
+            Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
+            Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
+            Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
+
+            // كروبات تفتح نافذة جانبية مثل التقارير
+            FlyoutGroup(
+                key: "inventory",
+                title: "المنتجات والمخزون",
+                icon: PackIconKind.PackageVariantClosed,
+                accent: "#2E7D32",
+                accentLight: "#E8F5E9",
+                [
+                    ("المنتجات", PackIconKind.PackageVariantClosed, typeof(ProductsViewModel), "Products"),
+                    ("تصنيفات المنتجات", PackIconKind.TagMultiple, typeof(CategoriesViewModel), "Categories"),
+                    ("أنواع التسعير", PackIconKind.CashMultiple, typeof(PricingTypesViewModel), "PricingTypes"),
+                    ("تسعير منتجات", PackIconKind.TagTextOutline, typeof(ProductPricingViewModel), "ProductPricing"),
+                    ("المخازن", PackIconKind.Warehouse, typeof(WarehousesViewModel), "Warehouses"),
+                    ("الأرصدة الافتتاحية", PackIconKind.PackageVariantClosedPlus, typeof(OpeningStockViewModel), "OpeningStock"),
+                    ("تسوية مخزنية", PackIconKind.TuneVerticalVariant, typeof(StockAdjustmentViewModel), "StockAdjustment"),
+                    ("نقل مخازن", PackIconKind.TruckDelivery, typeof(WarehouseTransferViewModel), "Warehouses"),
+                ]),
+            FlyoutGroup(
+                key: "partners",
+                title: "العملاء والموردين",
+                icon: PackIconKind.AccountGroup,
+                accent: "#0277BD",
+                accentLight: "#E1F5FE",
+                [
+                    ("العملاء", PackIconKind.AccountGroup, typeof(CustomersViewModel), "Customers"),
+                    ("الموردون", PackIconKind.Factory, typeof(SuppliersViewModel), "Suppliers"),
+                ]),
+            FlyoutGroup(
+                key: "purchases",
+                title: "المشتريات",
+                icon: PackIconKind.CartArrowDown,
+                accent: "#EF6C00",
+                accentLight: "#FFF3E0",
+                [
+                    ("فاتورة مشتريات", PackIconKind.CartArrowDown, typeof(PurchaseInvoiceViewModel), "PurchaseInvoice"),
+                    ("مرتجع مشتريات", PackIconKind.KeyboardReturn, typeof(PurchaseInvoiceViewModel), "PurchaseReturn"),
+                ]),
+            FlyoutGroup(
+                key: "installments",
+                title: "الأقساط والتحصيل",
+                icon: PackIconKind.CalendarMultipleCheck,
+                accent: "#6A1B9A",
+                accentLight: "#F3E5F5",
+                [
+                    ("فاتورة أقساط", PackIconKind.CalendarClock, typeof(InstallmentInvoiceViewModel), "InstallmentInvoice"),
+                    ("لوحة التحصيل", PackIconKind.CashMultiple, typeof(CollectionDashboardViewModel), "Installments"),
+                    ("الأقساط", PackIconKind.CalendarMultipleCheck, typeof(InstallmentsViewModel), "Installments"),
+                    ("أرصدة الأقساط الافتتاحية", PackIconKind.History, typeof(OpeningInstallmentBalanceViewModel), "OpeningInstallments"),
+                ]),
+            FlyoutGroup(
+                key: "finance",
+                title: "المالية والخزينة",
+                icon: PackIconKind.Bank,
+                accent: "#00838F",
+                accentLight: "#E0F7FA",
+                [
+                    ("السندات", PackIconKind.FileDocumentOutline, typeof(VouchersViewModel), "Vouchers"),
+                    ("المصاريف", PackIconKind.CashMinus, typeof(ExpenseViewModel), "Expenses"),
+                    ("القاصات والمصرف", PackIconKind.Bank, typeof(CashBankViewModel), "CashAndBank"),
+                    ("رأس المال", PackIconKind.Cash, typeof(CapitalAdjustmentViewModel), "Capital"),
+                ]),
+            FlyoutGroup(
+                key: "investors",
+                title: "المستثمرون",
+                icon: PackIconKind.TrendingUp,
+                accent: "#558B2F",
+                accentLight: "#F1F8E9",
+                [
+                    ("المستثمرون", PackIconKind.TrendingUp, typeof(InvestorsViewModel), "Investors"),
+                    ("أرصدة المستثمرين الافتتاحية", PackIconKind.AccountCashOutline, typeof(OpeningInvestorsViewModel), "OpeningInvestors"),
+                ]),
+
+            new NavigationMenuItem
             {
                 Title = "التقارير",
                 IsMenuSectionLabel = true,
@@ -182,104 +98,73 @@ public static class AccountingMenuBuilder
 
         items.AddRange(ReportMenuCatalog.CreateCategoryMenuItems());
 
-        items.AddRange(
-        [
-            new NavigationMenuItem
-            {
-                Title = "رأس المال",
-                Icon = PackIconKind.Cash,
-                ViewModelType = typeof(CapitalAdjustmentViewModel),
-                ScreenName = "Capital"
-            },
-            new NavigationMenuItem
-            {
-                Title = "سجل العمليات",
-                Icon = PackIconKind.History,
-                ViewModelType = typeof(AuditLogViewModel),
-                ScreenName = "AuditLog"
-            },
-            new NavigationMenuItem
-            {
-                Title = "المستخدمون",
-                Icon = PackIconKind.AccountMultiple,
-                ViewModelType = typeof(UsersViewModel),
-                ScreenName = "Users"
-            },
-            new NavigationMenuItem
-            {
-                Title = "الصلاحيات",
-                Icon = PackIconKind.ShieldKey,
-                ViewModelType = typeof(PermissionsViewModel),
-                ScreenName = "Permissions"
-            },
-            new NavigationMenuItem
-            {
-                Title = "معالج النقل",
-                Icon = PackIconKind.DatabaseImport,
-                ViewModelType = typeof(MigrationWizardViewModel),
-                ScreenName = "DataImport"
-            },
-            new NavigationMenuItem
-            {
-                Title = "نقل مخازن",
-                Icon = PackIconKind.TruckDelivery,
-                ViewModelType = typeof(WarehouseTransferViewModel),
-                ScreenName = "Warehouses"
-            },
-            new NavigationMenuItem
-            {
-                Title = "إعدادات الميزات",
-                Icon = PackIconKind.TuneVariant,
-                ViewModelType = typeof(BusinessFeaturesSettingsViewModel),
-                ScreenName = "BusinessFeatures"
-            },
-            new NavigationMenuItem
-            {
-                Title = "إعدادات الطباعة",
-                Icon = PackIconKind.PrinterSettings,
-                ViewModelType = typeof(PrintLayoutSettingsViewModel),
-                ScreenName = "PrintSettings"
-            },
-            new NavigationMenuItem
-            {
-                Title = "النسخ الاحتياطي",
-                Icon = PackIconKind.DatabaseCog,
-                ViewModelType = typeof(BackupRestoreViewModel),
-                ScreenName = "Backup"
-            },
-            new NavigationMenuItem
-            {
-                Title = "ربط الحاسبات",
-                Icon = PackIconKind.LanConnect,
-                ViewModelType = typeof(NetworkConnectionSettingsViewModel),
-                ScreenName = ScreenPermissionRegistry.NetworkConnection
-            },
-            new NavigationMenuItem
-            {
-                Title = "المزامنة السحابية",
-                Icon = PackIconKind.CloudSync,
-                ViewModelType = typeof(CloudSyncSettingsViewModel),
-                ScreenName = "CloudSync"
-            },
-            new NavigationMenuItem
-            {
-                Title = "تحديث النظام",
-                Icon = PackIconKind.CloudDownload,
-                ViewModelType = typeof(SystemUpdateViewModel),
-                ScreenName = ScreenPermissionRegistry.SystemUpdate
-            },
-            new NavigationMenuItem
-            {
-                Title = "تبديل النظام (مطور)",
-                Icon = PackIconKind.DeveloperBoard,
-                ViewModelType = typeof(DeveloperSystemSwitchViewModel),
-                ScreenName = ScreenPermissionRegistry.DeveloperSystem
-            }
-        ]);
+        items.Add(FlyoutGroup(
+            key: "system",
+            title: "النظام والإعدادات",
+            icon: PackIconKind.CogOutline,
+            accent: "#455A64",
+            accentLight: "#ECEFF1",
+            [
+                ("سجل العمليات", PackIconKind.History, typeof(AuditLogViewModel), "AuditLog"),
+                ("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), "Users"),
+                ("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), "Permissions"),
+                ("معالج النقل", PackIconKind.DatabaseImport, typeof(MigrationWizardViewModel), "DataImport"),
+                ("إعدادات الميزات", PackIconKind.TuneVariant, typeof(BusinessFeaturesSettingsViewModel), "BusinessFeatures"),
+                ("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), "PrintSettings"),
+                ("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), "Backup"),
+                ("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),
+                ("المزامنة السحابية", PackIconKind.CloudSync, typeof(CloudSyncSettingsViewModel), "CloudSync"),
+                ("تحديث النظام", PackIconKind.CloudDownload, typeof(SystemUpdateViewModel), ScreenPermissionRegistry.SystemUpdate),
+                ("تبديل النظام (مطور)", PackIconKind.DeveloperBoard, typeof(DeveloperSystemSwitchViewModel), ScreenPermissionRegistry.DeveloperSystem),
+            ]));
 
         if (items.Count > 0)
             items[0].IsSelected = true;
 
         return items;
+    }
+
+    private static NavigationMenuItem Item(string title, PackIconKind icon, Type viewModelType, string screenName) =>
+        new()
+        {
+            Title = title,
+            Icon = icon,
+            ViewModelType = viewModelType,
+            ScreenName = screenName
+        };
+
+    private static NavigationMenuItem FlyoutGroup(
+        string key,
+        string title,
+        PackIconKind icon,
+        string accent,
+        string accentLight,
+        (string Title, PackIconKind Icon, Type Vm, string Screen)[] children)
+    {
+        var group = new NavigationMenuItem
+        {
+            Title = title,
+            Icon = icon,
+            IsReportCategory = true,
+            CategoryKey = key,
+            ScreenName = $"MenuGroup:{key}",
+            CategoryAccentColor = accent,
+            CategoryAccentLightColor = accentLight,
+            FlyoutItemLabel = "شاشة"
+        };
+
+        foreach (var child in children)
+        {
+            group.Children.Add(new NavigationMenuItem
+            {
+                Title = child.Title,
+                Icon = child.Icon,
+                ViewModelType = child.Vm,
+                ScreenName = child.Screen,
+                IsSubItem = true
+            });
+        }
+
+        return group;
     }
 }

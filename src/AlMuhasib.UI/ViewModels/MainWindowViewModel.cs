@@ -132,6 +132,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private NavigationMenuItem? _activeReportCategory;
 
+    [ObservableProperty]
+    private string _activeFlyoutItemLabel = "شاشة";
+
     public ObservableCollection<ReportMenuEntry> ReportFlyoutItems { get; } = [];
 
     [ObservableProperty]
@@ -523,6 +526,9 @@ public partial class MainWindowViewModel : ObservableObject
         ActiveReportCategoryTitle = category.Title;
         ActiveReportCategoryIcon = category.Icon;
         ActiveReportCategoryAccent = category.CategoryAccentColor;
+        ActiveFlyoutItemLabel = string.IsNullOrWhiteSpace(category.FlyoutItemLabel)
+            ? "شاشة"
+            : category.FlyoutItemLabel;
 
         ReportFlyoutItems.Clear();
         foreach (var entry in ReportMenuCatalog.GetVisibleReports(category))
@@ -560,9 +566,12 @@ public partial class MainWindowViewModel : ObservableObject
         if (!TryAuthorizeScreen(entry.ViewModelType, out _))
             return;
 
+        if (string.Equals(entry.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
+            InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
+
         CloseReportFlyout();
         PageTitle = entry.Title;
-        await OpenTabAsync(entry.ViewModelType, entry.Title, entry.Icon);
+        await OpenTabAsync(entry.ViewModelType, entry.Title, entry.Icon, activateIfExists: false);
     }
 
     public bool TryAuthorizeScreen(Type viewModelType, out string? deniedMessage)
@@ -614,7 +623,8 @@ public partial class MainWindowViewModel : ObservableObject
                     if (child.ViewModelType is null)
                         continue;
 
-                    var childPermitted = _currentUserService.CanView(child.ScreenName);
+                    var childPermitted = child.ViewModelType == typeof(DeveloperSystemSwitchViewModel)
+                        || _currentUserService.CanView(child.ScreenName);
                     var childFeatureOk = IsFeatureFlagVisible(child, flags);
                     var childPrefOk = !IsCustomizableMenuItem(child) || !hidden.Contains(GetMenuPreferenceKey(child));
                     child.IsVisible = childPermitted && childFeatureOk && childPrefOk;
@@ -647,7 +657,13 @@ public partial class MainWindowViewModel : ObservableObject
 
         var reportsSection = MenuItems.FirstOrDefault(i => i.IsMenuSectionLabel && i.ScreenName == ScreenPermissionRegistry.Reports);
         if (reportsSection is not null)
-            reportsSection.IsVisible = MenuItems.Any(i => i.IsReportCategory && i.IsVisible);
+        {
+            // لا نخلط كروبات القوائم العادية مع فئات التقارير
+            reportsSection.IsVisible = MenuItems.Any(i =>
+                i.IsReportCategory
+                && i.IsVisible
+                && string.Equals(i.ScreenName, ScreenPermissionRegistry.Reports, StringComparison.OrdinalIgnoreCase));
+        }
 
         foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
             group.IsVisible = group.Children.Any(c => c.IsVisible);
