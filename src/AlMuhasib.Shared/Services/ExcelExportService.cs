@@ -841,13 +841,21 @@ public class ExcelExportService : IExportService
         return name.Trim();
     }
 
-    public void PrintThermalReceipt(InvoicePrintModel model)
+    public void PrintThermalReceipt(InvoicePrintModel model) =>
+        PrintThermalReceipt(model, null, null, true);
+
+    public void PrintThermalReceipt(InvoicePrintModel model, string? paperSize,
+        string? preferredPrinter, bool showPreview)
     {
-        var cols = new[] { "البند", "كمية", "المبلغ" };
-        var rows = model.Items.Select(i => new object[] { i.ItemName, i.Quantity, i.TotalPrice }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", model.GrandTotal });
-        PrintTable($"إيصال {model.InvoiceNumber}", cols, rows,
-            [$"العميل: {model.PartyName}", $"التاريخ: {model.Date:yyyy/MM/dd HH:mm}"]);
+        var sizeKey = PosReceiptPaperSizes.Normalize(paperSize);
+        var pageSize = PosReceiptPaperSizes.GetPageSize(sizeKey);
+        var doc = PosReceiptDocumentBuilder.Build(model, sizeKey);
+        DocumentPrintHelper.PrintDocument(
+            doc,
+            $"إيصال {model.InvoiceNumber}",
+            pageSize,
+            preferredPrinter,
+            showPreview);
     }
 
     public string ExportInstallmentContractToPdf(InvoicePrintModel model)

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows.Threading;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -22,14 +23,15 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IFavoriteProductsService _favoriteProducts;
     private readonly ISoundService _sound;
     private readonly IProductPriceService _productPriceService;
+    private readonly DispatcherTimer _searchDebounce;
 
     private List<Product> _allProducts = [];
     private Dictionary<int, decimal> _suggestedPrices = [];
     private Dictionary<int, int> _defaultPricingTypeByProduct = [];
     private readonly bool _pricingEnabled;
 
-    public ObservableCollection<Product> FilteredProducts { get; } = [];
-    public ObservableCollection<Product> FavoriteProducts { get; } = [];
+    public ObservableCollection<PosProductTile> FilteredProducts { get; } = [];
+    public ObservableCollection<PosProductTile> FavoriteProducts { get; } = [];
     public ObservableCollection<PosCartLine> CartLines { get; } = [];
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
@@ -37,10 +39,14 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private Warehouse? _selectedWarehouse;
     [ObservableProperty] private CashBox? _selectedCashBox;
+    [ObservableProperty] private decimal _subTotal;
     [ObservableProperty] private decimal _grandTotal;
+    [ObservableProperty] private decimal _paidAmount;
+    [ObservableProperty] private decimal _changeAmount;
     [ObservableProperty] private int _cartLineCount;
     [ObservableProperty] private string _statusMessage = "امسح الباركود أو ابحث بالاسم ثم Enter للإضافة";
     [ObservableProperty] private string? _lastSavedInvoiceNumber;
+    [ObservableProperty] private bool _printAfterSale = true;
 
     public PosQuickSaleViewModel(
         IUnitOfWork unitOfWork,
@@ -64,6 +70,13 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         PageTitle = "بيع سريع (POS)";
 
         CartLines.CollectionChanged += OnCartChanged;
+
+        _searchDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        _searchDebounce.Tick += (_, _) =>
+        {
+            _searchDebounce.Stop();
+            RefreshFilteredProducts();
+        };
     }
 
     public override async Task InitializeAsync()
@@ -99,6 +112,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == prefs.DefaultPosCashBoxId)
                               ?? CashBoxes.FirstOrDefault();
 
+            await LoadPosCustomersAsync();
+            await LoadHeldInvoicesAsync();
+
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
         }
@@ -109,20 +125,26 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ToggleFavorite(Product? product)
+    private void ToggleFavorite(PosProductTile? tile)
     {
-        if (product is null) return;
-        _favoriteProducts.ToggleFavorite(product.Id);
+        if (tile?.Product is null) return;
+        _favoriteProducts.ToggleFavorite(tile.Product.Id);
         RefreshFavoriteProducts();
-        StatusMessage = _favoriteProducts.IsFavorite(product.Id)
-            ? $"أُضيف «{product.Name}» للمفضلة"
-            : $"أُزيل «{product.Name}» من المفضلة";
+        RefreshFilteredProducts();
+        StatusMessage = _favoriteProducts.IsFavorite(tile.Product.Id)
+            ? $"أُضيف «{tile.Product.Name}» للمفضلة"
+            : $"أُزيل «{tile.Product.Name}» من المفضلة";
     }
 
-    partial void OnSearchTextChanged(string value) => RefreshFilteredProducts();
+    partial void OnSearchTextChanged(string value)
+    {
+        _searchDebounce.Stop();
+        _searchDebounce.Start();
+    }
 
     partial void OnSelectedWarehouseChanged(Warehouse? value) => PersistPosDefaults();
     partial void OnSelectedCashBoxChanged(CashBox? value) => PersistPosDefaults();
+    partial void OnPaidAmountChanged(decimal value) => RecalcChange();
 
     [RelayCommand]
     private void AddProductFromSearch()
@@ -146,7 +168,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         var first = FilteredProducts.FirstOrDefault();
         if (first is not null)
         {
-            AddOrIncrementProduct(first);
+            AddOrIncrementProduct(first.Product);
             SearchText = string.Empty;
         }
         else
@@ -154,10 +176,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AddProduct(Product? product)
+    private void AddProduct(PosProductTile? tile)
     {
-        if (product is null) return;
-        AddOrIncrementProduct(product);
+        if (tile?.Product is null) return;
+        AddOrIncrementProduct(tile.Product);
     }
 
     [RelayCommand]
@@ -190,11 +212,17 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (CartLines.Count == 0) return;
         if (!BeautifulMessageDialog.ShowConfirm("مسح كل بنود السلة؟")) return;
         CartLines.Clear();
+        PaidAmount = 0;
         StatusMessage = "تم مسح السلة";
     }
 
     [RelayCommand]
-    private async Task CompleteSaleAsync()
+    private async Task CompleteSaleAsync() => await CompleteSaleCoreAsync(printReceipt: PrintAfterSale);
+
+    [RelayCommand]
+    private async Task CompleteSaleAndPrintAsync() => await CompleteSaleCoreAsync(printReceipt: true);
+
+    private async Task CompleteSaleCoreAsync(bool printReceipt)
     {
         if (IsInstallmentMode)
         {
@@ -245,7 +273,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            int? customerId = _userPreferences.Current.DefaultSalesCustomerId;
+            int? customerId = SelectedPosCustomer?.Id ?? _userPreferences.Current.DefaultSalesCustomerId;
+            var cartSnapshot = CartLines.ToList();
+            var totalSnapshot = GrandTotal;
 
             var invoice = new Invoice
             {
@@ -258,7 +288,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 Notes = "بيع سريع POS"
             };
 
-            var items = CartLines.Select(line => new InvoiceItem
+            var items = cartSnapshot.Select(line => new InvoiceItem
             {
                 ProductId = line.ProductId,
                 PricingTypeId = line.PricingTypeId,
@@ -278,9 +308,26 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 typeof(PosQuickSaleViewModel));
 
             CartLines.Clear();
+            PaidAmount = 0;
             StatusMessage = $"تم البيع — {saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع";
-            BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة\nرقم: {saved.InvoiceNumber}\nالمبلغ: {saved.NetAmount:N0} د.ع");
+            _sound.Play(SoundEffect.Success);
+
+            if (printReceipt)
+            {
+                try
+                {
+                    PrintReceiptForInvoice(saved, cartSnapshot, totalSnapshot);
+                }
+                catch (Exception printEx)
+                {
+                    BeautifulMessageDialog.ShowWarning($"تم البيع لكن فشلت الطباعة:\n{printEx.Message}");
+                }
+            }
+            else
+            {
+                BeautifulMessageDialog.ShowSuccess(
+                    $"تم حفظ الفاتورة\nرقم: {saved.InvoiceNumber}\nالمبلغ: {saved.NetAmount:N0} د.ع");
+            }
         }
         catch (Exception ex)
         {
@@ -327,8 +374,15 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         }
 
         FilteredProducts.Clear();
-        foreach (var p in query.Take(24))
-            FilteredProducts.Add(p);
+        foreach (var p in query.Take(48))
+        {
+            FilteredProducts.Add(new PosProductTile
+            {
+                Product = p,
+                Price = _suggestedPrices.GetValueOrDefault(p.Id),
+                IsFavorite = _favoriteProducts.IsFavorite(p.Id)
+            });
+        }
     }
 
     private void RefreshFavoriteProducts()
@@ -338,7 +392,14 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         {
             var product = _allProducts.FirstOrDefault(p => p.Id == id);
             if (product is not null)
-                FavoriteProducts.Add(product);
+            {
+                FavoriteProducts.Add(new PosProductTile
+                {
+                    Product = product,
+                    Price = _suggestedPrices.GetValueOrDefault(product.Id),
+                    IsFavorite = true
+                });
+            }
         }
     }
 
@@ -381,8 +442,15 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     private void RecalcCartTotals()
     {
-        GrandTotal = CartLines.Sum(l => l.LineTotal);
+        SubTotal = CartLines.Sum(l => l.LineTotal);
+        GrandTotal = SubTotal;
         CartLineCount = CartLines.Count;
+        RecalcChange();
+    }
+
+    private void RecalcChange()
+    {
+        ChangeAmount = PaidAmount > 0 ? PaidAmount - GrandTotal : 0;
     }
 
     private void PersistPosDefaults()

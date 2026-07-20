@@ -46,7 +46,9 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
 
     [ObservableProperty] private string? _selectedPrinter;
     [ObservableProperty] private string _paperSize = "A4";
+    [ObservableProperty] private string _posReceiptPaperSize = "80mm";
     [ObservableProperty] private bool _showPrintPreview = true;
+    [ObservableProperty] private string _posReceiptPreviewHint = string.Empty;
 
     [ObservableProperty] private FlowDocument? _previewDocument;
 
@@ -235,15 +237,27 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         PrintPreferences.Load();
         SelectedPrinter = PrintPreferences.PreferredPrinter;
         PaperSize = PrintPreferences.PaperSize;
+        PosReceiptPaperSize = PrintPreferences.PosReceiptPaperSize;
         ShowPrintPreview = PrintPreferences.ShowPrintPreview;
+        UpdatePosReceiptPreviewHint();
     }
 
     private void SavePrinterPreferences()
     {
         PrintPreferences.PreferredPrinter = SelectedPrinter;
         PrintPreferences.PaperSize = PaperSize;
+        PrintPreferences.PosReceiptPaperSize = PosReceiptPaperSize;
         PrintPreferences.ShowPrintPreview = ShowPrintPreview;
         PrintPreferences.Save();
+    }
+
+    partial void OnPosReceiptPaperSizeChanged(string value) => UpdatePosReceiptPreviewHint();
+
+    private void UpdatePosReceiptPreviewHint()
+    {
+        var size = PosReceiptPaperSizes.GetPageSize(PosReceiptPaperSize);
+        PosReceiptPreviewHint =
+            $"{PosReceiptPaperSizes.GetDisplayLabel(PosReceiptPaperSize)} — عرض تقريبي {size.Width:0}px";
     }
 
     private static byte[]? PickImageBytes()
