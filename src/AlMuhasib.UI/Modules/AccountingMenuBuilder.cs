@@ -42,6 +42,7 @@ public static class AccountingMenuBuilder
                 [
                     ("العملاء", PackIconKind.AccountGroup, typeof(CustomersViewModel), "Customers"),
                     ("الموردون", PackIconKind.Factory, typeof(SuppliersViewModel), "Suppliers"),
+                    ("ملف الشخص", PackIconKind.AccountDetails, typeof(PersonProfileViewModel), "PersonProfile"),
                 ]),
             FlyoutGroup(
                 key: "purchases",

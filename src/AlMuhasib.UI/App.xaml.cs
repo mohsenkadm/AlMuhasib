@@ -193,6 +193,7 @@ public partial class App : Application
         services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<SuppliersViewModel>();
+        services.AddTransient<PersonProfileViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
         services.AddTransient<SalesInvoiceViewModel>();
         services.AddTransient<PosQuickSaleViewModel>();
