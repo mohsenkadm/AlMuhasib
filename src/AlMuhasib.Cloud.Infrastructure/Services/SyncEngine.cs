@@ -106,6 +106,24 @@ public sealed partial class SyncEngine : ISyncEngine
                 accepted += await UpsertWarehouseStockAsync(tenantId, dto, warehouseId.Value, productId.Value, response, ct);
             }
 
+            foreach (var dto in request.Data.WarehouseTransfers)
+            {
+                var fromWarehouseId = await resolver.ResolveWarehouseAsync(dto.FromWarehouseSyncId, ct);
+                var toWarehouseId = await resolver.ResolveWarehouseAsync(dto.ToWarehouseSyncId, ct);
+                if (fromWarehouseId is null || toWarehouseId is null) { AddConflict(response, "WarehouseTransfer", dto.SyncId, "FK not found"); continue; }
+                accepted += await UpsertWarehouseTransferAsync(tenantId, dto, fromWarehouseId.Value, toWarehouseId.Value, response, ct);
+            }
+            await FlushAndCacheAsync(_db.WarehouseTransfers, tenantId, request.Data.WarehouseTransfers.Select(t => t.SyncId), resolver, ct);
+
+            foreach (var dto in request.Data.WarehouseTransferItems)
+            {
+                var transferId = await resolver.ResolveWarehouseTransferAsync(dto.WarehouseTransferSyncId, ct);
+                if (transferId is null) { AddConflict(response, "WarehouseTransferItem", dto.SyncId, "WarehouseTransfer not found"); continue; }
+                var productId = await resolver.ResolveProductAsync(dto.ProductSyncId, ct);
+                if (productId is null) { AddConflict(response, "WarehouseTransferItem", dto.SyncId, "FK not found"); continue; }
+                accepted += await UpsertWarehouseTransferItemAsync(tenantId, dto, transferId.Value, productId.Value, response, ct);
+            }
+
             foreach (var dto in request.Data.Invoices)
             {
                 var warehouseId = await resolver.ResolveWarehouseAsync(dto.WarehouseSyncId, ct);
@@ -253,6 +271,8 @@ public sealed partial class SyncEngine : ISyncEngine
         bundle.ExpenseTypes = await PullEntitiesAsync(_db.ExpenseTypes, tenantId, since, MapExpenseType, ct);
         bundle.PrintBrandingSettings = await PullEntitiesAsync(_db.PrintBrandingSettings, tenantId, since, MapPrintBranding, ct);
         bundle.WarehouseStocks = await PullWarehouseStocksAsync(tenantId, since, ct);
+        bundle.WarehouseTransfers = await PullWarehouseTransfersAsync(tenantId, since, ct);
+        bundle.WarehouseTransferItems = await PullWarehouseTransferItemsAsync(tenantId, since, ct);
         bundle.Invoices = await PullInvoicesAsync(tenantId, since, ct);
         bundle.InvoiceItems = await PullInvoiceItemsAsync(tenantId, since, ct);
         bundle.InstallmentPlans = await PullInstallmentPlansAsync(tenantId, since, ct);
@@ -545,6 +565,32 @@ public sealed partial class SyncEngine : ISyncEngine
         return 1;
     }
 
+    private async Task<int> UpsertWarehouseTransferAsync(int tenantId, WarehouseTransferSyncDto dto, int fromWarehouseId, int toWarehouseId, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.WarehouseTransfers, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "WarehouseTransfer", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudWarehouseTransfer { TenantId = tenantId }; _db.WarehouseTransfers.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.TransferNumber = dto.TransferNumber;
+        existing.FromWarehouseId = fromWarehouseId;
+        existing.ToWarehouseId = toWarehouseId;
+        existing.Date = dto.Date;
+        existing.Notes = dto.Notes;
+        return 1;
+    }
+
+    private async Task<int> UpsertWarehouseTransferItemAsync(int tenantId, WarehouseTransferItemSyncDto dto, int warehouseTransferId, int productId, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.WarehouseTransferItems, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "WarehouseTransferItem", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudWarehouseTransferItem { TenantId = tenantId }; _db.WarehouseTransferItems.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.WarehouseTransferId = warehouseTransferId;
+        existing.ProductId = productId;
+        existing.Quantity = dto.Quantity;
+        return 1;
+    }
+
     private async Task<int> UpsertInvoiceAsync(int tenantId, InvoiceSyncDto dto, int warehouseId, int? customerId, int? supplierId, int? cashBoxId, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.Invoices, tenantId, dto.SyncId, ct);
@@ -799,6 +845,39 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = s.IsDeleted, DeletedAt = s.DeletedAt, DeletedBy = s.DeletedBy, RowVersion = s.RowVersion,
             WarehouseSyncId = wh.GetValueOrDefault(s.WarehouseId), ProductSyncId = pr.GetValueOrDefault(s.ProductId),
             Quantity = s.Quantity, OpeningQuantity = s.OpeningQuantity, UnitCost = s.UnitCost
+        }).ToList();
+    }
+
+    private async Task<List<WarehouseTransferSyncDto>> PullWarehouseTransfersAsync(int tenantId, DateTime since, CancellationToken ct)
+    {
+        var warehouses = await _db.Warehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var transfers = await _db.WarehouseTransfers.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        return transfers.Select(t => new WarehouseTransferSyncDto
+        {
+            SyncId = t.SyncId, CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
+            IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
+            TransferNumber = t.TransferNumber,
+            FromWarehouseSyncId = warehouses.GetValueOrDefault(t.FromWarehouseId),
+            ToWarehouseSyncId = warehouses.GetValueOrDefault(t.ToWarehouseId),
+            Date = t.Date,
+            Notes = t.Notes
+        }).ToList();
+    }
+
+    private async Task<List<WarehouseTransferItemSyncDto>> PullWarehouseTransferItemsAsync(int tenantId, DateTime since, CancellationToken ct)
+    {
+        var transfers = await _db.WarehouseTransfers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await _db.WarehouseTransferItems.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        return items.Select(i => new WarehouseTransferItemSyncDto
+        {
+            SyncId = i.SyncId, CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
+            IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
+            WarehouseTransferSyncId = transfers.GetValueOrDefault(i.WarehouseTransferId),
+            ProductSyncId = products.GetValueOrDefault(i.ProductId),
+            Quantity = i.Quantity
         }).ToList();
     }
 

@@ -6,7 +6,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../shared/models/mobile_models.dart';
 
-/// Centralized API error and conflict presentation (online-only).
+/// Centralized API error and conflict presentation.
+/// Offline writes are queued by [OfflineWriteService]; reads still require network.
 abstract final class AppExceptionHandler {
   static String messageFor(Object? error) {
     if (error == null) return 'error_network'.tr();

@@ -86,6 +86,24 @@ class SettingsScreen extends GetView<SettingsController> {
               );
             },
           ).fadeSlideIn(delayMs: 160),
+          Obx(() {
+            final count = AppServices.offlineQueue.pending.length;
+            return ListTile(
+              leading: Badge(
+                isLabelVisible: count > 0,
+                label: Text('$count'),
+                child: const Icon(Icons.cloud_sync_outlined),
+              ),
+              title: Text('pending_sync'.tr()),
+              subtitle: Text(
+                count == 0
+                    ? 'offline_queue_empty'.tr()
+                    : 'pending_sync_tap'.tr(args: ['$count']),
+              ),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () => Get.toNamed(AppRoutes.pendingSync),
+            );
+          }).fadeSlideIn(delayMs: 170),
           const SizedBox(height: 28),
           Text(
             'account_section'.tr(),

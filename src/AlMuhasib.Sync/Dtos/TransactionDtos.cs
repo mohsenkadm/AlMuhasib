@@ -137,3 +137,19 @@ public sealed class CustomerAttachmentSyncDto : SyncDtoBase
     public string? Description { get; set; }
     public byte[]? FileData { get; set; }
 }
+
+public sealed class WarehouseTransferSyncDto : SyncDtoBase
+{
+    public string TransferNumber { get; set; } = string.Empty;
+    public Guid FromWarehouseSyncId { get; set; }
+    public Guid ToWarehouseSyncId { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}
+
+public sealed class WarehouseTransferItemSyncDto : SyncDtoBase
+{
+    public Guid WarehouseTransferSyncId { get; set; }
+    public Guid ProductSyncId { get; set; }
+    public decimal Quantity { get; set; }
+}

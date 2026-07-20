@@ -18,6 +18,8 @@ public static class SyncEntityOrder
         SyncEntityType.ExpenseType,
         SyncEntityType.PrintBrandingSettings,
         SyncEntityType.WarehouseStock,
+        SyncEntityType.WarehouseTransfer,
+        SyncEntityType.WarehouseTransferItem,
         SyncEntityType.Invoice,
         SyncEntityType.InvoiceItem,
         SyncEntityType.InstallmentPlan,

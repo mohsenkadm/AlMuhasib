@@ -35,6 +35,8 @@ public class CloudDbContext : DbContext
     public DbSet<CloudExpenseType> ExpenseTypes => Set<CloudExpenseType>();
     public DbSet<CloudPrintBrandingSettings> PrintBrandingSettings => Set<CloudPrintBrandingSettings>();
     public DbSet<CloudWarehouseStock> WarehouseStocks => Set<CloudWarehouseStock>();
+    public DbSet<CloudWarehouseTransfer> WarehouseTransfers => Set<CloudWarehouseTransfer>();
+    public DbSet<CloudWarehouseTransferItem> WarehouseTransferItems => Set<CloudWarehouseTransferItem>();
     public DbSet<CloudInvoice> Invoices => Set<CloudInvoice>();
     public DbSet<CloudInvoiceItem> InvoiceItems => Set<CloudInvoiceItem>();
     public DbSet<CloudInstallmentPlan> InstallmentPlans => Set<CloudInstallmentPlan>();
@@ -124,6 +126,33 @@ public class CloudDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.PricingTypeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudWarehouseTransfer>(e =>
+        {
+            e.Property(x => x.TransferNumber).HasMaxLength(50);
+            e.Property(x => x.Notes).HasMaxLength(500);
+            e.HasOne(x => x.FromWarehouse)
+                .WithMany()
+                .HasForeignKey(x => x.FromWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ToWarehouse)
+                .WithMany()
+                .HasForeignKey(x => x.ToWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Items)
+                .WithOne(i => i.WarehouseTransfer)
+                .HasForeignKey(i => i.WarehouseTransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudWarehouseTransferItem>(e =>
+        {
+            e.Property(x => x.Quantity).HasPrecision(18, 2);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CloudCarSaleContract>(e =>

@@ -139,11 +139,17 @@ class _DashboardBody extends StatelessWidget {
               icon: Icons.shopping_cart_outlined,
               color: AppColors.moduleOrange,
             ).fadeSlideInList(index: 2),
-            KpiCard(
-              title: 'overdue_installments'.tr(),
-              value: '${data.overdueInstallmentsCount}',
-              icon: Icons.warning_amber_rounded,
-              color: AppColors.warning,
+            GestureDetector(
+              onTap: () => Get.toNamed(
+                AppRoutes.installments,
+                arguments: 'overdue',
+              ),
+              child: KpiCard(
+                title: 'overdue_installments'.tr(),
+                value: '${data.overdueInstallmentsCount}',
+                icon: Icons.warning_amber_rounded,
+                color: AppColors.warning,
+              ),
             ).fadeSlideInList(index: 3),
           ],
         ),
@@ -239,9 +245,17 @@ class _DashboardBody extends StatelessWidget {
                     formatCurrency(i.amount),
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
+                  onTap: () => Get.toNamed(
+                    AppRoutes.installments,
+                    arguments: 'upcoming',
+                  ),
                 ),
               ),
             ),
+        TextButton(
+          onPressed: () => Get.toNamed(AppRoutes.installments),
+          child: Text('view_all_installments'.tr()),
+        ),
         if (data.cashBoxes.isNotEmpty) ...[
           const SizedBox(height: 8),
           _SectionTitle(title: 'cash_boxes'.tr()),
