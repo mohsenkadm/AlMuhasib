@@ -1,3 +1,4 @@
+using System.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -21,6 +22,86 @@ public static class DocumentPrintHelper
 
         var preview = new PrintPreviewWindow(document, jobName, defaultCopies);
         preview.ShowDialog();
+    }
+
+    /// <summary>
+    /// Prints with optional preview and preferred printer. When preview is off, prints directly.
+    /// </summary>
+    public static void PrintDocument(
+        FlowDocument document,
+        string jobName,
+        Size? pageSize = null,
+        string? preferredPrinter = null,
+        bool showPreview = true,
+        int defaultCopies = 1)
+    {
+        var size = pageSize ?? new Size(DefaultPageWidth, DefaultPageHeight);
+        ApplyPageLayout(document, size);
+
+        if (showPreview)
+        {
+            var preview = new PrintPreviewWindow(document, jobName, defaultCopies);
+            preview.ShowDialog();
+            return;
+        }
+
+        PrintDirect(document, jobName, size, preferredPrinter, defaultCopies);
+    }
+
+    private static void PrintDirect(
+        FlowDocument document,
+        string jobName,
+        Size pageSize,
+        string? preferredPrinter,
+        int copies)
+    {
+        var printDialog = new PrintDialog();
+        var usedPreferred = false;
+        if (!string.IsNullOrWhiteSpace(preferredPrinter))
+        {
+            try
+            {
+                var server = new LocalPrintServer();
+                var queue = server.GetPrintQueues()
+                    .FirstOrDefault(q => q.FullName.Equals(preferredPrinter, StringComparison.OrdinalIgnoreCase)
+                                         || q.Name.Equals(preferredPrinter, StringComparison.OrdinalIgnoreCase));
+                if (queue is not null)
+                {
+                    printDialog.PrintQueue = queue;
+                    usedPreferred = true;
+                }
+            }
+            catch
+            {
+                // fall back to system print dialog
+            }
+        }
+
+        if (!usedPreferred && printDialog.ShowDialog() != true)
+            return;
+
+        var printableSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
+        // Prefer configured receipt width when the printer reports a wider area (common for thermal).
+        var effectiveWidth = pageSize.Width > 0 && pageSize.Width < printableSize.Width
+            ? pageSize.Width
+            : printableSize.Width;
+        var effectiveHeight = printableSize.Height > 0 ? printableSize.Height : pageSize.Height;
+        var effectiveSize = new Size(effectiveWidth, effectiveHeight);
+        ApplyPageLayout(document, effectiveSize);
+
+        var paginator = ((IDocumentPaginatorSource)document).DocumentPaginator;
+        paginator.PageSize = effectiveSize;
+
+        try
+        {
+            printDialog.PrintTicket.CopyCount = Math.Max(1, copies);
+            printDialog.PrintDocument(paginator, jobName);
+        }
+        catch
+        {
+            for (var i = 0; i < Math.Max(1, copies); i++)
+                printDialog.PrintDocument(paginator, jobName);
+        }
     }
 
     internal static void ApplyPageLayout(FlowDocument document, Size pageSize)

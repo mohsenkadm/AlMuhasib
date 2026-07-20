@@ -72,6 +72,7 @@ public partial class PosQuickSaleViewModel
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items, skipStockUpdate: true);
             CartLines.Clear();
+            PaidAmount = 0;
             StatusMessage = $"تم إيقاف الفاتورة {saved.InvoiceNumber}";
             await LoadHeldInvoicesAsync();
             BeautifulMessageDialog.ShowSuccess("تم إيقاف الفاتورة — يمكن استئنافها لاحقاً");
@@ -99,7 +100,7 @@ public partial class PosQuickSaleViewModel
     {
         if (!IsInstallmentMode)
         {
-            await CompleteSaleAsync();
+            await CompleteSaleCoreAsync(printReceipt: PrintAfterSale);
             return;
         }
 
@@ -134,6 +135,8 @@ public partial class PosQuickSaleViewModel
         IsBusy = true;
         try
         {
+            var cartSnapshot = CartLines.ToList();
+            var totalSnapshot = GrandTotal;
             var invoice = new Invoice
             {
                 InvoiceType = InvoiceType.Installment,
@@ -157,10 +160,27 @@ public partial class PosQuickSaleViewModel
             await installmentService.CreatePlanAsync(saved.Id, SelectedPosCustomer.Id, null,
                 saved.NetAmount, InstallmentCount, DateTime.Today.AddMonths(1));
 
+            LastSavedInvoiceNumber = saved.InvoiceNumber;
             CartLines.Clear();
+            PaidAmount = 0;
             StatusMessage = $"تقسيط — {saved.InvoiceNumber}";
-            _sound.Play(AlMuhasib.UI.Services.SoundEffect.Success);
-            BeautifulMessageDialog.ShowSuccess($"تم البيع بالتقسيط\n{saved.InvoiceNumber}");
+            _sound.Play(SoundEffect.Success);
+
+            if (PrintAfterSale)
+            {
+                try
+                {
+                    PrintReceiptForInvoice(saved, cartSnapshot, totalSnapshot);
+                }
+                catch (Exception printEx)
+                {
+                    BeautifulMessageDialog.ShowWarning($"تم البيع لكن فشلت الطباعة:\n{printEx.Message}");
+                }
+            }
+            else
+            {
+                BeautifulMessageDialog.ShowSuccess($"تم البيع بالتقسيط\n{saved.InvoiceNumber}");
+            }
         }
         catch (Exception ex)
         {
@@ -180,8 +200,19 @@ public partial class PosQuickSaleViewModel
             BeautifulMessageDialog.ShowWarning("لا توجد فاتورة محفوظة للطباعة");
             return;
         }
-        var inv = (await _unitOfWork.Invoices.FindAsync(i => i.InvoiceNumber == LastSavedInvoiceNumber)).FirstOrDefault();
-        if (inv is null) return;
+
+        var inv = (await _unitOfWork.Invoices.FindAsync(i => i.InvoiceNumber == LastSavedInvoiceNumber))
+            .FirstOrDefault();
+        if (inv is null)
+        {
+            BeautifulMessageDialog.ShowWarning("لم يُعثر على الفاتورة");
+            return;
+        }
+
+        // Ensure items are loaded
+        var items = inv.Items?.Count > 0
+            ? inv.Items
+            : (await _unitOfWork.InvoiceItems.FindAsync(i => i.InvoiceId == inv.Id)).ToList();
 
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
@@ -189,15 +220,42 @@ public partial class PosQuickSaleViewModel
         {
             InvoiceNumber = inv.InvoiceNumber,
             Date = inv.Date,
-            PartyName = inv.Customer?.Name ?? "—",
+            PartyName = inv.Customer?.Name ?? SelectedPosCustomer?.Name ?? "—",
+            PartyLabel = "العميل",
+            WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
-            Items = inv.Items.Select((it, idx) => new InvoicePrintItem
+            Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
                 ItemName = it.ItemName,
                 Quantity = it.Quantity,
                 UnitPrice = it.UnitPrice,
                 TotalPrice = it.TotalPrice
+            }).ToList()
+        });
+    }
+
+    private void PrintReceiptForInvoice(Invoice saved, IReadOnlyList<PosCartLine> cartSnapshot, decimal totalSnapshot)
+    {
+        using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
+        var export = scope.ServiceProvider.GetRequiredService<IExportService>();
+        export.PrintThermalReceipt(new InvoicePrintModel
+        {
+            InvoiceNumber = saved.InvoiceNumber,
+            Date = saved.Date,
+            PartyName = SelectedPosCustomer?.Name ?? "—",
+            PartyLabel = "العميل",
+            WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            Subtotal = totalSnapshot,
+            GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
+            Items = cartSnapshot.Select((l, idx) => new InvoicePrintItem
+            {
+                Number = idx + 1,
+                ItemName = l.ProductName,
+                Quantity = l.Quantity,
+                UnitPrice = l.UnitPrice,
+                TotalPrice = l.LineTotal
             }).ToList()
         });
     }

@@ -23,7 +23,7 @@ public interface IExportService
     /// <summary>Exports installment payment receipt to PDF and returns the full path.</summary>
     string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model);
 
-    /// <summary>طباعة إيصال حراري 80mm.</summary>
+    /// <summary>طباعة إيصال كاشير حسب حجم الورق (A4 / 80mm / 58mm / 50mm).</summary>
     void PrintThermalReceipt(InvoicePrintModel model);
 
     /// <summary>تصدير عقد تقسيط PDF.</summary>
