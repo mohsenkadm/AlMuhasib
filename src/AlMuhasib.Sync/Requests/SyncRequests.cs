@@ -18,6 +18,8 @@ public sealed class SyncDataBundle
     public List<ExpenseTypeSyncDto> ExpenseTypes { get; set; } = [];
     public List<PrintBrandingSettingsSyncDto> PrintBrandingSettings { get; set; } = [];
     public List<WarehouseStockSyncDto> WarehouseStocks { get; set; } = [];
+    public List<WarehouseTransferSyncDto> WarehouseTransfers { get; set; } = [];
+    public List<WarehouseTransferItemSyncDto> WarehouseTransferItems { get; set; } = [];
     public List<InvoiceSyncDto> Invoices { get; set; } = [];
     public List<InvoiceItemSyncDto> InvoiceItems { get; set; } = [];
     public List<InstallmentPlanSyncDto> InstallmentPlans { get; set; } = [];

@@ -16,6 +16,8 @@ public enum SyncEntityType
     ExpenseType,
     PrintBrandingSettings,
     WarehouseStock,
+    WarehouseTransfer,
+    WarehouseTransferItem,
     Invoice,
     InvoiceItem,
     InstallmentPlan,

@@ -94,6 +94,25 @@ public class CloudWarehouseStock : CloudBaseEntity
     public CloudWarehouse Warehouse { get; set; } = null!;
     public CloudProduct Product { get; set; } = null!;
 }
+public class CloudWarehouseTransfer : CloudBaseEntity
+{
+    public string TransferNumber { get; set; } = string.Empty;
+    public int FromWarehouseId { get; set; }
+    public int ToWarehouseId { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+    public CloudWarehouse FromWarehouse { get; set; } = null!;
+    public CloudWarehouse ToWarehouse { get; set; } = null!;
+    public ICollection<CloudWarehouseTransferItem> Items { get; set; } = [];
+}
+public class CloudWarehouseTransferItem : CloudBaseEntity
+{
+    public int WarehouseTransferId { get; set; }
+    public int ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public CloudWarehouseTransfer WarehouseTransfer { get; set; } = null!;
+    public CloudProduct Product { get; set; } = null!;
+}
 public class CloudInvoice : CloudBaseEntity
 {
     public string InvoiceNumber { get; set; } = string.Empty;

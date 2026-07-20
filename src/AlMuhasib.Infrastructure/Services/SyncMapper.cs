@@ -30,6 +30,8 @@ internal static class SyncMapper
         var invoices = await db.Invoices.IgnoreQueryFilters().ToListAsync(ct);
         var invoiceItems = await db.InvoiceItems.IgnoreQueryFilters().ToListAsync(ct);
         var warehouseStocks = await db.WarehouseStocks.IgnoreQueryFilters().ToListAsync(ct);
+        var warehouseTransfers = await db.WarehouseTransfers.IgnoreQueryFilters().ToListAsync(ct);
+        var warehouseTransferItems = await db.WarehouseTransferItems.IgnoreQueryFilters().ToListAsync(ct);
         var installmentPlans = await db.InstallmentPlans.IgnoreQueryFilters().ToListAsync(ct);
         var installments = await db.Installments.IgnoreQueryFilters().ToListAsync(ct);
         var vouchers = await db.Vouchers.IgnoreQueryFilters().ToListAsync(ct);
@@ -44,6 +46,7 @@ internal static class SyncMapper
 
         var catMap = categories.ToDictionary(c => c.Id, c => c.SyncId);
         var changedStocks = warehouseStocks.Where(ShouldSync).ToList();
+        var changedWarehouseTransferItems = warehouseTransferItems.Where(ShouldSync).ToList();
         var changedInvoices = invoices.Where(ShouldSync).ToList();
         var changedInvoiceItems = invoiceItems.Where(ShouldSync).ToList();
         var changedVouchers = vouchers.Where(ShouldSync).ToList();
@@ -59,8 +62,14 @@ internal static class SyncMapper
             .Where(p => ShouldSync(p) || referencedPlanIds.Contains(p.Id))
             .ToList();
 
+        var referencedTransferIds = changedWarehouseTransferItems.Select(i => i.WarehouseTransferId).ToHashSet();
+        var transfersToPush = warehouseTransfers
+            .Where(t => ShouldSync(t) || referencedTransferIds.Contains(t.Id))
+            .ToList();
+
         var referencedProductIds = changedStocks.Select(s => s.ProductId)
             .Concat(changedInvoiceItems.Where(i => i.ProductId.HasValue).Select(i => i.ProductId!.Value))
+            .Concat(changedWarehouseTransferItems.Select(i => i.ProductId))
             .Concat(productPrices.Where(ShouldSync).Select(p => p.ProductId))
             .ToHashSet();
         var referencedCategoryIds = products
@@ -73,6 +82,8 @@ internal static class SyncMapper
             .ToHashSet();
         var referencedWarehouseIds = changedStocks.Select(s => s.WarehouseId)
             .Concat(changedInvoices.Select(i => i.WarehouseId))
+            .Concat(transfersToPush.Select(t => t.FromWarehouseId))
+            .Concat(transfersToPush.Select(t => t.ToWarehouseId))
             .ToHashSet();
         var referencedCustomerIds = changedInvoices.Where(i => i.CustomerId.HasValue).Select(i => i.CustomerId!.Value)
             .Concat(plansToPush.Select(p => p.CustomerId))
@@ -125,6 +136,14 @@ internal static class SyncMapper
         bundle.WarehouseStocks = changedStocks
             .Where(s => whMap.ContainsKey(s.WarehouseId) && prMap.ContainsKey(s.ProductId))
             .Select(s => MapWarehouseStock(s, whMap, prMap)).ToList();
+
+        bundle.WarehouseTransfers = transfersToPush
+            .Where(t => whMap.ContainsKey(t.FromWarehouseId) && whMap.ContainsKey(t.ToWarehouseId))
+            .Select(t => MapWarehouseTransfer(t, whMap)).ToList();
+        var wtMap = warehouseTransfers.ToDictionary(t => t.Id, t => t.SyncId);
+        bundle.WarehouseTransferItems = changedWarehouseTransferItems
+            .Where(i => wtMap.ContainsKey(i.WarehouseTransferId) && prMap.ContainsKey(i.ProductId))
+            .Select(i => MapWarehouseTransferItem(i, wtMap, prMap)).ToList();
 
         var custMap = customers.ToDictionary(c => c.Id, c => c.SyncId);
         var supMap = suppliers.ToDictionary(s => s.Id, s => s.SyncId);
@@ -211,6 +230,9 @@ internal static class SyncMapper
         await UpsertPrintBrandingAsync(db, data.PrintBrandingSettings, ct);
 
         await UpsertWarehouseStocksAsync(db, data.WarehouseStocks, whBySync, prBySync, ct);
+
+        var wtMap = await UpsertWarehouseTransfersAsync(db, data.WarehouseTransfers, whBySync, ct);
+        await UpsertWarehouseTransferItemsAsync(db, data.WarehouseTransferItems, wtMap, prBySync, ct);
 
         var invMap = await UpsertInvoicesAsync(db, data.Invoices, custBySync, supBySync, whBySync, cbBySync, ct);
         await UpsertInvoiceItemsAsync(db, data.InvoiceItems, invMap, prBySync, pricingTypeBySync, ct);
@@ -305,6 +327,26 @@ internal static class SyncMapper
         return d;
     }
     private static WarehouseStockSyncDto MapWarehouseStock(WarehouseStock s, Dictionary<int, Guid> wh, Dictionary<int, Guid> pr) { var d = new WarehouseStockSyncDto(); CopyBase(s, d); d.WarehouseSyncId = wh[s.WarehouseId]; d.ProductSyncId = pr[s.ProductId]; d.Quantity = s.Quantity; d.OpeningQuantity = s.OpeningQuantity; d.UnitCost = s.UnitCost; return d; }
+    private static WarehouseTransferSyncDto MapWarehouseTransfer(WarehouseTransfer t, Dictionary<int, Guid> wh)
+    {
+        var d = new WarehouseTransferSyncDto();
+        CopyBase(t, d);
+        d.TransferNumber = t.TransferNumber;
+        d.FromWarehouseSyncId = wh[t.FromWarehouseId];
+        d.ToWarehouseSyncId = wh[t.ToWarehouseId];
+        d.Date = t.Date;
+        d.Notes = t.Notes;
+        return d;
+    }
+    private static WarehouseTransferItemSyncDto MapWarehouseTransferItem(WarehouseTransferItem i, Dictionary<int, Guid> transfers, Dictionary<int, Guid> pr)
+    {
+        var d = new WarehouseTransferItemSyncDto();
+        CopyBase(i, d);
+        d.WarehouseTransferSyncId = transfers[i.WarehouseTransferId];
+        d.ProductSyncId = pr[i.ProductId];
+        d.Quantity = i.Quantity;
+        return d;
+    }
     private static InvoiceSyncDto MapInvoice(Invoice i, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> wh, Dictionary<int, Guid> cb) { var d = new InvoiceSyncDto(); CopyBase(i, d); d.InvoiceNumber = i.InvoiceNumber; d.InvoiceType = i.InvoiceType; d.CustomerSyncId = i.CustomerId.HasValue ? cust.GetValueOrDefault(i.CustomerId.Value) : null; d.SupplierSyncId = i.SupplierId.HasValue ? sup.GetValueOrDefault(i.SupplierId.Value) : null; d.WarehouseSyncId = wh[i.WarehouseId]; d.PaymentMethod = i.PaymentMethod; d.TotalAmount = i.TotalAmount; d.DiscountAmount = i.DiscountAmount; d.NetAmount = i.NetAmount; d.CompanyFeePercentage = i.CompanyFeePercentage; d.CompanyFeeAmount = i.CompanyFeeAmount; d.RoundingAmount = i.RoundingAmount; d.RoundingType = i.RoundingType; d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null; d.Date = i.Date; d.CreditDueDate = i.CreditDueDate; d.Notes = i.Notes; d.PaidAmount = i.PaidAmount; d.RemainingAmount = i.RemainingAmount; d.IsCreditPaid = i.IsCreditPaid; return d; }
     private static InvoiceItemSyncDto MapInvoiceItem(InvoiceItem i, Dictionary<int, Guid> inv, Dictionary<int, Guid> pr, Dictionary<int, Guid> pricingTypes)
     {
@@ -514,6 +556,47 @@ internal static class SyncMapper
             if (entity.Id == 0) db.WarehouseStocks.Add(entity);
             ApplyBase(entity, dto); entity.WarehouseId = wId; entity.ProductId = pId;
             entity.Quantity = dto.Quantity; entity.OpeningQuantity = dto.OpeningQuantity; entity.UnitCost = dto.UnitCost;
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task<Dictionary<Guid, int>> UpsertWarehouseTransfersAsync(AppDbContext db, List<WarehouseTransferSyncDto> items, Dictionary<Guid, int> wh, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, int>();
+        foreach (var dto in items)
+        {
+            if (!wh.TryGetValue(dto.FromWarehouseSyncId, out var fromId) || !wh.TryGetValue(dto.ToWarehouseSyncId, out var toId)) continue;
+            var entity = await FindBySyncIdAsync(db.WarehouseTransfers, dto.SyncId, ct) ?? new WarehouseTransfer();
+            if (ShouldRejectIncoming(entity, dto)) continue;
+            if (entity.Id == 0) db.WarehouseTransfers.Add(entity);
+            ApplyBase(entity, dto);
+            entity.TransferNumber = dto.TransferNumber;
+            entity.FromWarehouseId = fromId;
+            entity.ToWarehouseId = toId;
+            entity.Date = dto.Date;
+            entity.Notes = dto.Notes;
+        }
+        await db.SaveChangesAsync(ct);
+        foreach (var dto in items)
+        {
+            var e = await FindBySyncIdAsync(db.WarehouseTransfers, dto.SyncId, ct);
+            if (e is not null) map[dto.SyncId] = e.Id;
+        }
+        return map;
+    }
+
+    private static async Task UpsertWarehouseTransferItemsAsync(AppDbContext db, List<WarehouseTransferItemSyncDto> items, Dictionary<Guid, int> transfers, Dictionary<Guid, int> pr, CancellationToken ct)
+    {
+        foreach (var dto in items)
+        {
+            if (!transfers.TryGetValue(dto.WarehouseTransferSyncId, out var tId) || !pr.TryGetValue(dto.ProductSyncId, out var pId)) continue;
+            var entity = await FindBySyncIdAsync(db.WarehouseTransferItems, dto.SyncId, ct) ?? new WarehouseTransferItem();
+            if (ShouldRejectIncoming(entity, dto)) continue;
+            if (entity.Id == 0) db.WarehouseTransferItems.Add(entity);
+            ApplyBase(entity, dto);
+            entity.WarehouseTransferId = tId;
+            entity.ProductId = pId;
+            entity.Quantity = dto.Quantity;
         }
         await db.SaveChangesAsync(ct);
     }

@@ -18,6 +18,8 @@ internal static class SyncIdEnsurer
         changed |= await EnsureAsync(db.Suppliers, ct);
         changed |= await EnsureAsync(db.Warehouses, ct);
         changed |= await EnsureAsync(db.WarehouseStocks, ct);
+        changed |= await EnsureAsync(db.WarehouseTransfers, ct);
+        changed |= await EnsureAsync(db.WarehouseTransferItems, ct);
         changed |= await EnsureAsync(db.CashBoxes, ct);
         changed |= await EnsureAsync(db.BankAccounts, ct);
         changed |= await EnsureAsync(db.Investors, ct);
