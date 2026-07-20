@@ -588,5 +588,7 @@
   "voucher_bank_receipt": "Bank Receipt",
   "voucher_investor_deposit": "Investor Deposit",
   "voucher_investor_withdrawal": "Investor Withdrawal",
-  "voucher_debt_receipt": "Debt Receipt"
+  "voucher_debt_receipt": "Debt Receipt",
+  "notify_overdue": "Notify overdue",
+  "done": "Done"
 }

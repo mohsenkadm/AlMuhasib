@@ -599,5 +599,7 @@
   "voucher_bank_receipt": "قبض بنكي",
   "voucher_investor_deposit": "إيداع مستثمر",
   "voucher_investor_withdrawal": "سحب مستثمر",
-  "voucher_debt_receipt": "قبض دين"
+  "voucher_debt_receipt": "قبض دين",
+  "notify_overdue": "إشعار المتأخرات",
+  "done": "تم"
 }
