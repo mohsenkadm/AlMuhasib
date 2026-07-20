@@ -54,6 +54,16 @@ class InstallmentsController extends GetxController {
     load();
   }
 
+  Future<void> notifyOverdue() async {
+    try {
+      final result = await AppServices.finance.notifyOverdueInstallments();
+      final message = result['message']?.toString() ?? 'done'.tr();
+      AppExceptionHandler.showSuccess(message);
+    } catch (e) {
+      AppExceptionHandler.showError(AppExceptionHandler.messageFor(e));
+    }
+  }
+
   @override
   void onClose() {
     searchController.dispose();
@@ -77,6 +87,13 @@ class InstallmentsScreen extends GetView<InstallmentsController> {
     return AppPageScaffold(
       title: 'installments'.tr(),
       subtitle: 'installments_subtitle'.tr(),
+      actions: [
+        IconButton(
+          tooltip: 'notify_overdue'.tr(),
+          onPressed: controller.notifyOverdue,
+          icon: const Icon(Icons.notifications_active_outlined),
+        ),
+      ],
       body: Column(
         children: [
           SizedBox(

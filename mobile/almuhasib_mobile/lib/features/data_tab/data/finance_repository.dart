@@ -159,4 +159,12 @@ class FinanceRepository {
           InstallmentPlanDetail.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<Map<String, dynamic>> notifyOverdueInstallments() {
+    _apiClient.updateBaseUrl();
+    return _apiClient.post(
+      '/api/mobile/installments/notify-overdue',
+      parser: (data) => Map<String, dynamic>.from(data as Map),
+    );
+  }
 }
