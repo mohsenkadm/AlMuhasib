@@ -1,7 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide Trans;
 
 import '../../core/constants/app_colors.dart';
+import '../../core/getx/app_services.dart';
+import '../../core/offline/offline_write_queue.dart';
+import '../../core/router/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 
 class EmptyStateWidget extends StatelessWidget {
@@ -200,53 +204,76 @@ class ConnectivityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isOffline) return const SizedBox.shrink();
-    return Material(
-      elevation: 2,
-      color: AppColors.warning,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'offline'.tr(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
+    return Obx(() {
+      final pending = Get.isRegistered<OfflineWriteService>()
+          ? AppServices.offlineQueue.pending.length
+          : 0;
+      if (!isOffline && pending == 0) return const SizedBox.shrink();
+
+      final color = isOffline ? AppColors.warning : AppColors.primary;
+      return Material(
+        elevation: 2,
+        color: color,
+        child: SafeArea(
+          bottom: false,
+          child: InkWell(
+            onTap:
+                pending > 0 ? () => Get.toNamed(AppRoutes.pendingSync) : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    Text(
-                      'offline_action_blocked'.tr(),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Icon(
+                      isOffline
+                          ? Icons.wifi_off_rounded
+                          : Icons.cloud_queue_outlined,
+                      color: Colors.white,
+                      size: 18,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isOffline ? 'offline'.tr() : 'pending_sync'.tr(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          isOffline
+                              ? (pending > 0
+                                  ? 'offline_writes_queued'.tr(
+                                      args: ['$pending'],
+                                    )
+                                  : 'offline_reads_blocked'.tr())
+                              : 'pending_sync_tap'.tr(args: ['$pending']),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 

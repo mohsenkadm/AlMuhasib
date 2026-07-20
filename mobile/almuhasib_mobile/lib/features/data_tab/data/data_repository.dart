@@ -76,6 +76,28 @@ class DataRepository {
     );
   }
 
+  Future<List<LookupItem>> getBankAccounts({String? search}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/master-data/bank-accounts',
+      queryParameters: {if (search != null && search.isNotEmpty) 'search': search},
+      parser: (data) => (data as List<dynamic>)
+          .map((e) => LookupItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<LookupItem>> getExpenseTypes({String? search}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/master-data/expense-types',
+      queryParameters: {if (search != null && search.isNotEmpty) 'search': search},
+      parser: (data) => (data as List<dynamic>)
+          .map((e) => LookupItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   Future<List<LookupItem>> getCategories({String? search}) {
     _apiClient.updateBaseUrl();
     return _apiClient.get(

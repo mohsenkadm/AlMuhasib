@@ -47,6 +47,8 @@ class DataListController extends GetxController {
         'suppliers' => await repo.getSuppliers(search: search.value),
         'investors' => await repo.getInvestors(search: search.value),
         'warehouses' => await repo.getWarehouses(search: search.value),
+        'cash-boxes' => await repo.getCashBoxes(search: search.value),
+        'bank-accounts' => await repo.getBankAccounts(search: search.value),
         'invoices' => (await repo.getInvoices(
             from: from.value,
             to: to.value,
@@ -122,6 +124,8 @@ class DataListController extends GetxController {
         'suppliers' => 'suppliers'.tr(),
         'investors' => 'investors'.tr(),
         'warehouses' => 'warehouses'.tr(),
+        'cash-boxes' => 'cash_boxes'.tr(),
+        'bank-accounts' => 'bank_accounts'.tr(),
         'invoices' => 'invoices'.tr(),
         _ => 'data_title'.tr(),
       };
@@ -131,6 +135,9 @@ class DataListController extends GetxController {
         'products' => AppRoutes.productNew,
         'suppliers' => AppRoutes.supplierNew,
         'investors' => AppRoutes.investorNew,
+        'warehouses' => AppRoutes.warehouseNew,
+        'cash-boxes' => AppRoutes.cashBoxNew,
+        'bank-accounts' => AppRoutes.bankAccountNew,
         'invoices' => AppRoutes.invoiceNew,
         _ => null,
       };

@@ -61,6 +61,16 @@ class ReportDetailScreen extends GetView<ReportDetailController> {
                 onTap: () => controller.pickInvestor(context),
               ),
             ),
+          if (reportType == 'supplier_statement')
+            Obx(
+              () => _EntityPickerBar(
+                icon: Icons.local_shipping_outlined,
+                color: AppColors.modulePurple,
+                label: controller.selectedSupplier.value?.name ??
+                    'select_supplier'.tr(),
+                onTap: () => controller.pickSupplier(context),
+              ),
+            ),
           Expanded(
             child: Obx(() {
               final isLoading = controller.isLoading.value;
@@ -261,10 +271,100 @@ class _ReportDetailBody extends StatelessWidget {
               context,
               result as TopProductsReportResult,
             ),
-          _ => [const EmptyStateWidget()],
+          _ => _buildGeneric(context, result),
         },
       ],
     );
+  }
+
+  List<Widget> _buildGeneric(BuildContext context, dynamic data) {
+    if (data is List) {
+      if (data.isEmpty) return [const EmptyStateWidget()];
+      return [
+        _SectionTitle('report_rows'.tr()),
+        ...data.asMap().entries.map((e) {
+          final row = e.value;
+          if (row is Map) {
+            final map = Map<String, dynamic>.from(row);
+            final stringVals =
+                map.values.whereType<String>().where((v) => v.isNotEmpty);
+            final title =
+                stringVals.isNotEmpty ? stringVals.first : '#${e.key + 1}';
+            final subtitle = map.entries
+                .take(4)
+                .map((x) => '${x.key}: ${x.value}')
+                .join(' • ');
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: AppEntityCard(
+                title: title,
+                subtitle: subtitle,
+              ).fadeSlideInList(index: e.key),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(row.toString()),
+          );
+        }),
+      ];
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final kpis = <AppKpiItem>[];
+      final rows = <Widget>[];
+      map.forEach((key, value) {
+        if (value is num) {
+          kpis.add(
+            AppKpiItem(
+              title: key,
+              value: value is double || '$value'.contains('.')
+                  ? formatCurrency(value.toDouble())
+                  : '$value',
+              icon: Icons.analytics_outlined,
+              color: AppColors.primary,
+              compact: true,
+            ),
+          );
+        } else if (value is List) {
+          rows.addAll(_buildGeneric(context, value));
+        } else if (value is Map) {
+          rows.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: AppEntityCard(
+                title: key,
+                subtitle: value.entries
+                    .take(4)
+                    .map((e) => '${e.key}: ${e.value}')
+                    .join(' • '),
+              ),
+            ),
+          );
+        } else if (value != null) {
+          rows.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: AppEntityCard(
+                title: key,
+                subtitle: value.toString(),
+              ),
+            ),
+          );
+        }
+      });
+      return [
+        if (kpis.isNotEmpty) ...[
+          AppKpiGrid(
+            childAspectRatio: 1.55,
+            items: kpis,
+          ).fadeSlideIn(),
+          const SizedBox(height: 14),
+        ],
+        ...rows,
+      ];
+    }
+    return [Text(data.toString())];
   }
 
   List<Widget> _buildSales(BuildContext context, SalesReportResult r) => [

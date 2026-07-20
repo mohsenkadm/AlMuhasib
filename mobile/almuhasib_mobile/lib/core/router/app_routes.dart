@@ -32,6 +32,24 @@ abstract final class AppRoutes {
   static const productPrices = '/data/product-prices';
   static const productPriceNew = '/data/product-prices/new';
   static const productPriceEdit = '/data/product-prices/:syncId/edit';
+
+  static const voucherNew = '/data/voucher/new';
+  static const expenseNew = '/data/expense/new';
+  static const transferNew = '/data/transfer/new';
+  static const cashBoxNew = '/data/cash-box/new';
+  static const bankAccountNew = '/data/bank-account/new';
+  static const expenseTypeNew = '/data/expense-type/new';
+  static const warehouseNew = '/data/warehouse/new';
+  static const warehouseTransferNew = '/data/warehouse-transfer/new';
+  static const stockAdjustment = '/data/stock-adjustment';
+  static const warehouseStocks = '/data/warehouse-stocks';
+  static const financeList = '/data/finance/:type';
+  static const installments = '/data/installments';
+  static const installmentPlanDetail = '/data/installment-plans/:syncId';
+  static const installmentPay = '/data/installments/:syncId/pay';
+  static const pendingSync = '/settings/pending-sync';
+  static const quickActions = '/data/quick-actions';
+
   static const settings = '/settings';
   static const notifications = '/notifications';
 
@@ -105,6 +123,12 @@ abstract final class AppRoutes {
       '/data/pricing-types/$syncId/edit';
   static String productPriceEditPath(String syncId) =>
       '/data/product-prices/$syncId/edit';
+
+  static String financeListPath(String type) => '/data/finance/$type';
+  static String installmentPlanDetailPath(String syncId) =>
+      '/data/installment-plans/$syncId';
+  static String installmentPayPath(String syncId) =>
+      '/data/installments/$syncId/pay';
 
   static String hotelReservationDetailPath(String syncId) =>
       '/hotel/reservations/$syncId';
