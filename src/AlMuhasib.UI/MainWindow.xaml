@@ -1346,6 +1346,9 @@
                         <DataTemplate DataType="{x:Type vm:CustomerStatementViewModel}">
                             <views:CustomerStatementView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PersonProfileViewModel}">
+                            <views:PersonProfileView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SupplierStatementViewModel}">
                             <views:SupplierStatementView />
                         </DataTemplate>
