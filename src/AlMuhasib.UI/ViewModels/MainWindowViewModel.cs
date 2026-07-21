@@ -662,7 +662,9 @@ public partial class MainWindowViewModel : ObservableObject
             reportsSection.IsVisible = MenuItems.Any(i =>
                 i.IsReportCategory
                 && i.IsVisible
-                && string.Equals(i.ScreenName, ScreenPermissionRegistry.Reports, StringComparison.OrdinalIgnoreCase));
+                && (string.Equals(i.ScreenName, ScreenPermissionRegistry.Reports, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(i.ScreenName, ScreenPermissionRegistry.SupervisoryReports, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(i.ScreenName, ScreenPermissionRegistry.BalanceSheet, StringComparison.OrdinalIgnoreCase)));
         }
 
         foreach (var group in MenuItems.Where(i => i.IsGroupHeader))

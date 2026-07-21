@@ -47,6 +47,17 @@ public static class ReportMenuCatalog
             ("تقرير المستثمرين", PackIconKind.AccountGroup, typeof(InvestorsReportViewModel), ScreenPermissionRegistry.Reports),
             ("موازنة يومية", PackIconKind.ScaleBalance, typeof(BalanceSheetViewModel), ScreenPermissionRegistry.BalanceSheet),
         ]),
+        ("supervisory", "التقارير الرقابية", PackIconKind.ShieldSearch, "#C62828", "#FFEBEE", ScreenPermissionRegistry.SupervisoryReports,
+        [
+            ("فواتير محذوفة", PackIconKind.FileDocumentOutline, typeof(DeletedInvoicesReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("سندات محذوفة", PackIconKind.ReceiptTextOutline, typeof(DeletedVouchersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("منتجات محذوفة", PackIconKind.PackageVariant, typeof(DeletedProductsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("عملاء محذوفون", PackIconKind.AccountRemove, typeof(DeletedCustomersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("موردون محذوفون", PackIconKind.TruckDelivery, typeof(DeletedSuppliersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("مصاريف محذوفة", PackIconKind.CashMinus, typeof(DeletedExpensesReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("تعديلات الفواتير", PackIconKind.FileDocumentEdit, typeof(InvoiceModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("تعديلات المنتجات", PackIconKind.PackageVariantClosedPlus, typeof(ProductModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+        ]),
     ];
 
     public static IEnumerable<NavigationMenuItem> CreateCategoryMenuItems()

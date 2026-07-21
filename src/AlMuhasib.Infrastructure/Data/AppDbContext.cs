@@ -132,7 +132,16 @@ public class AppDbContext : DbContext
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = currentUser;
                     if (userId.HasValue)
-                        auditEntries.Add(new AuditEntry(entry, AuditAction.Edit, userId.Value));
+                    {
+                        var isDeletedProp = entry.Property(nameof(BaseEntity.IsDeleted));
+                        var becameDeleted = isDeletedProp.IsModified
+                            && isDeletedProp.OriginalValue is false
+                            && isDeletedProp.CurrentValue is true;
+                        auditEntries.Add(new AuditEntry(
+                            entry,
+                            becameDeleted ? AuditAction.Delete : AuditAction.Edit,
+                            userId.Value));
+                    }
                     break;
 
                 case EntityState.Deleted:

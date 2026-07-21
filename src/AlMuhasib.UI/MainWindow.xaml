@@ -1370,6 +1370,30 @@
                         <DataTemplate DataType="{x:Type vm:BalanceSheetViewModel}">
                             <views:BalanceSheetView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedInvoicesReportViewModel}">
+                            <views:DeletedInvoicesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedVouchersReportViewModel}">
+                            <views:DeletedVouchersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedProductsReportViewModel}">
+                            <views:DeletedProductsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedCustomersReportViewModel}">
+                            <views:DeletedCustomersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedSuppliersReportViewModel}">
+                            <views:DeletedSuppliersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DeletedExpensesReportViewModel}">
+                            <views:DeletedExpensesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InvoiceModificationsReportViewModel}">
+                            <views:InvoiceModificationsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductModificationsReportViewModel}">
+                            <views:ProductModificationsReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:UsersViewModel}">
                             <views:UsersView />
                         </DataTemplate>

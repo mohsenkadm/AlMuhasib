@@ -233,6 +233,14 @@ public partial class App : Application
         services.AddTransient<ProductMovementReportViewModel>();
         services.AddTransient<StockHealthReportViewModel>();
         services.AddTransient<InventoryReplenishmentReportViewModel>();
+        services.AddTransient<DeletedInvoicesReportViewModel>();
+        services.AddTransient<DeletedVouchersReportViewModel>();
+        services.AddTransient<DeletedProductsReportViewModel>();
+        services.AddTransient<DeletedCustomersReportViewModel>();
+        services.AddTransient<DeletedSuppliersReportViewModel>();
+        services.AddTransient<DeletedExpensesReportViewModel>();
+        services.AddTransient<InvoiceModificationsReportViewModel>();
+        services.AddTransient<ProductModificationsReportViewModel>();
         services.AddTransient<UsersViewModel>();
         services.AddTransient<PermissionsViewModel>();
         services.AddTransient<AuditLogViewModel>();

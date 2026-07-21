@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IInvestorService, InvestorService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<ISupervisoryReportService, SupervisoryReportService>();
         services.AddScoped<IPersonProfileService, PersonProfileService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAccountingValidationService, AccountingValidationService>();
