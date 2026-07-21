@@ -12,6 +12,7 @@ public interface IExpenseService
 
     // ── Expense operations ──
     Task<Expense> AddExpenseAsync(int expenseTypeId, decimal amount, DateTime date, int cashBoxId, string? notes);
+    Task DeleteExpenseAsync(int id);
 
     Task<(IEnumerable<Expense> Items, int TotalCount)> GetPagedExpensesAsync(
         int page, int pageSize,

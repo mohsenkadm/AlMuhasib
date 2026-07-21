@@ -86,6 +86,57 @@ public class ExpenseService : IExpenseService
         catch { await transaction.RollbackAsync(); throw; }
     }
 
+    public async Task DeleteExpenseAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var expense = await context.Expenses
+                .Include(e => e.CashBox)
+                .Include(e => e.ExpenseType)
+                .FirstOrDefaultAsync(e => e.Id == id)
+                ?? throw new InvalidOperationException("المصروف غير موجود");
+
+            if (expense.IsDeleted)
+                return;
+
+            var username = _currentUserService.Username;
+            var cashBox = await context.CashBoxes.FindAsync(expense.CashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+
+            cashBox.Balance += expense.Amount;
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
+
+            expense.MarkSoftDeleted(username);
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Delete,
+                    EntityName = "Expense",
+                    EntityId = expense.Id,
+                    OldValues = $"مصروف: {expense.Amount:N0} — {expense.ExpenseType?.Name}, قاصة: {cashBox.Name}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<(IEnumerable<Expense> Items, int TotalCount)> GetPagedExpensesAsync(
         int page, int pageSize, int? expenseTypeId = null, int? cashBoxId = null,
         DateTime? fromDate = null, DateTime? toDate = null, string? searchTerm = null)

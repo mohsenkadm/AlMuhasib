@@ -294,6 +294,10 @@ public class InvoiceService : IInvoiceService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var existing = await context.Invoices
             .AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Supplier)
+            .Include(i => i.Warehouse)
+            .Include(i => i.Items)
             .FirstOrDefaultAsync(i => i.Id == existingId);
 
         var preservedNumber = !string.IsNullOrWhiteSpace(invoice.InvoiceNumber)
@@ -312,26 +316,163 @@ public class InvoiceService : IInvoiceService
             preservedIsCreditPaid = existing.IsCreditPaid;
         }
 
+        var itemsList = items.ToList();
+        var oldSnapshot = existing is null ? null : BuildInvoiceRevisionSnapshot(existing, existing.Items);
+        var newSnapshotPreview = BuildInvoiceRevisionPreview(invoice, itemsList, preservedNumber, existing);
+
         await DeleteInvoiceAsync(existingId);
 
         invoice.InvoiceNumber = preservedNumber;
         invoice.Id = 0;
-        var created = await CreateInvoiceAsync(invoice, items, skipStockUpdate);
+        var created = await CreateInvoiceAsync(invoice, itemsList, skipStockUpdate);
 
-        if (!preserveCreditState)
-            return created;
+        if (preserveCreditState)
+        {
+            await using var updateContext = await _contextFactory.CreateDbContextAsync();
+            var updated = await updateContext.Invoices.FirstOrDefaultAsync(i => i.Id == created.Id);
+            if (updated is not null)
+            {
+                updated.PaidAmount = Math.Min(preservedPaidAmount, updated.NetAmount);
+                updated.RemainingAmount = Math.Max(0, updated.NetAmount - updated.PaidAmount);
+                updated.IsCreditPaid = updated.RemainingAmount <= 0;
+                await updateContext.SaveChangesAsync();
+                created = updated;
+            }
+        }
 
-        await using var updateContext = await _contextFactory.CreateDbContextAsync();
-        var updated = await updateContext.Invoices.FirstOrDefaultAsync(i => i.Id == created.Id);
-        if (updated is null)
-            return created;
-
-        updated.PaidAmount = Math.Min(preservedPaidAmount, updated.NetAmount);
-        updated.RemainingAmount = Math.Max(0, updated.NetAmount - updated.PaidAmount);
-        updated.IsCreditPaid = updated.RemainingAmount <= 0;
-        await updateContext.SaveChangesAsync();
-        return updated;
+        await WriteInvoiceRevisionAuditAsync(created.Id, preservedNumber, oldSnapshot, newSnapshotPreview, created, existing);
+        return created;
     }
+
+    private async Task WriteInvoiceRevisionAuditAsync(
+        int newInvoiceId,
+        string invoiceNumber,
+        Dictionary<string, object?>? oldSnapshot,
+        Dictionary<string, object?> newSnapshotPreview,
+        Invoice created,
+        Invoice? existingBefore)
+    {
+        if (!_currentUserService.UserId.HasValue)
+            return;
+
+        newSnapshotPreview["InvoiceNumber"] = invoiceNumber;
+        newSnapshotPreview["NetAmount"] = created.NetAmount;
+        newSnapshotPreview["TotalAmount"] = created.TotalAmount;
+        newSnapshotPreview["DiscountAmount"] = created.DiscountAmount;
+        newSnapshotPreview["ItemsCount"] = created.Items?.Count
+            ?? (newSnapshotPreview.TryGetValue("ItemsCount", out var c) ? c : 0);
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        string? partyName = null;
+        if (created.CustomerId.HasValue)
+            partyName = await context.Customers.Where(c => c.Id == created.CustomerId).Select(c => c.Name).FirstOrDefaultAsync();
+        else if (created.SupplierId.HasValue)
+            partyName = await context.Suppliers.Where(s => s.Id == created.SupplierId).Select(s => s.Name).FirstOrDefaultAsync();
+
+        var warehouseName = await context.Warehouses
+            .Where(w => w.Id == created.WarehouseId)
+            .Select(w => w.Name)
+            .FirstOrDefaultAsync();
+
+        newSnapshotPreview["PartyName"] = partyName ?? existingBefore?.Customer?.Name ?? existingBefore?.Supplier?.Name;
+        newSnapshotPreview["WarehouseName"] = warehouseName ?? existingBefore?.Warehouse?.Name;
+        newSnapshotPreview["Summary"] =
+            $"تعديل فاتورة {invoiceNumber} | الطرف: {newSnapshotPreview["PartyName"] ?? "—"} | الصافي قبل: {FormatSnapshotAmount(oldSnapshot)} ← بعد: {created.NetAmount:N0}";
+
+        await context.AuditLogs.AddAsync(new AuditLog
+        {
+            UserId = _currentUserService.UserId.Value,
+            Action = AuditAction.Edit,
+            EntityName = "InvoiceRevision",
+            EntityId = newInvoiceId,
+            OldValues = oldSnapshot is null ? null : System.Text.Json.JsonSerializer.Serialize(oldSnapshot, AuditJsonOptions),
+            NewValues = System.Text.Json.JsonSerializer.Serialize(newSnapshotPreview, AuditJsonOptions),
+            Timestamp = DateTime.UtcNow,
+            CreatedBy = _currentUserService.Username,
+            CreatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+    }
+
+    private static readonly System.Text.Json.JsonSerializerOptions AuditJsonOptions = new()
+    {
+        WriteIndented = false,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
+    private static string FormatSnapshotAmount(Dictionary<string, object?>? snapshot)
+    {
+        if (snapshot is null || !snapshot.TryGetValue("NetAmount", out var value) || value is null)
+            return "—";
+        return value is decimal d ? d.ToString("N0") : value.ToString() ?? "—";
+    }
+
+    private static Dictionary<string, object?> BuildInvoiceRevisionSnapshot(Invoice invoice, IEnumerable<InvoiceItem> items)
+    {
+        var itemsList = items.ToList();
+        return new Dictionary<string, object?>
+        {
+            ["InvoiceNumber"] = StripDeleteSuffix(invoice.InvoiceNumber),
+            ["InvoiceType"] = invoice.InvoiceType.ToString(),
+            ["InvoiceTypeDisplay"] = InvoiceTypeArabic(invoice.InvoiceType),
+            ["PartyName"] = invoice.Customer?.Name ?? invoice.Supplier?.Name,
+            ["CustomerId"] = invoice.CustomerId,
+            ["SupplierId"] = invoice.SupplierId,
+            ["WarehouseId"] = invoice.WarehouseId,
+            ["WarehouseName"] = invoice.Warehouse?.Name,
+            ["PaymentMethod"] = invoice.PaymentMethod.ToString(),
+            ["TotalAmount"] = invoice.TotalAmount,
+            ["DiscountAmount"] = invoice.DiscountAmount,
+            ["NetAmount"] = invoice.NetAmount,
+            ["Date"] = invoice.Date,
+            ["Notes"] = invoice.Notes,
+            ["ItemsCount"] = itemsList.Count,
+            ["ItemsSummary"] = string.Join("؛ ", itemsList.Select(i =>
+                $"{(string.IsNullOrWhiteSpace(i.ItemName) ? ("#" + i.ProductId) : i.ItemName)} × {i.Quantity:N0} @ {i.UnitPrice:N0}"))
+        };
+    }
+
+    private static Dictionary<string, object?> BuildInvoiceRevisionPreview(
+        Invoice invoice, IReadOnlyList<InvoiceItem> items, string invoiceNumber, Invoice? existing)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["InvoiceNumber"] = invoiceNumber,
+            ["InvoiceType"] = invoice.InvoiceType.ToString(),
+            ["InvoiceTypeDisplay"] = InvoiceTypeArabic(invoice.InvoiceType),
+            ["PartyName"] = null,
+            ["CustomerId"] = invoice.CustomerId,
+            ["SupplierId"] = invoice.SupplierId,
+            ["WarehouseId"] = invoice.WarehouseId,
+            ["WarehouseName"] = existing?.Warehouse?.Name,
+            ["PaymentMethod"] = invoice.PaymentMethod.ToString(),
+            ["TotalAmount"] = items.Sum(i => i.Quantity * i.UnitPrice),
+            ["DiscountAmount"] = invoice.DiscountAmount,
+            ["NetAmount"] = invoice.NetAmount,
+            ["Date"] = invoice.Date,
+            ["Notes"] = invoice.Notes,
+            ["ItemsCount"] = items.Count,
+            ["ItemsSummary"] = string.Join("؛ ", items.Select(i =>
+                $"{(string.IsNullOrWhiteSpace(i.ItemName) ? ("#" + i.ProductId) : i.ItemName)} × {i.Quantity:N0} @ {i.UnitPrice:N0}"))
+        };
+    }
+
+    private static string StripDeleteSuffix(string invoiceNumber)
+    {
+        var idx = invoiceNumber.LastIndexOf("-D", StringComparison.Ordinal);
+        if (idx <= 0) return invoiceNumber;
+        var suffix = invoiceNumber[(idx + 2)..];
+        return int.TryParse(suffix, out _) ? invoiceNumber[..idx] : invoiceNumber;
+    }
+
+    private static string InvoiceTypeArabic(InvoiceType type) => type switch
+    {
+        InvoiceType.Sale => "مبيعات",
+        InvoiceType.Purchase => "مشتريات",
+        InvoiceType.Installment => "أقساط",
+        InvoiceType.PurchaseReturn => "مرتجع مشتريات",
+        _ => type.ToString()
+    };
 
     public async Task DeleteInvoiceAsync(int id)
     {
