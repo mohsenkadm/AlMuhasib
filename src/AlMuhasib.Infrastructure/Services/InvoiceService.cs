@@ -50,12 +50,13 @@ public class InvoiceService : IInvoiceService
                 : RoundingType.RoundDown;
             invoice.NetAmount = netAmount + roundingAmount;
 
-            // Initialize credit payment tracking
+            // Initialize credit payment tracking (supports down-payment on credit)
             if (invoice.PaymentMethod == PaymentMethod.Credit)
             {
-                invoice.PaidAmount = 0;
-                invoice.RemainingAmount = invoice.NetAmount;
-                invoice.IsCreditPaid = false;
+                var downPayment = Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+                invoice.PaidAmount = downPayment;
+                invoice.RemainingAmount = invoice.NetAmount - downPayment;
+                invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
             }
             else
             {
@@ -126,17 +127,23 @@ public class InvoiceService : IInvoiceService
                 await context.SaveChangesAsync();
             }
 
-            if (invoice.PaymentMethod == PaymentMethod.Cash && invoice.CashBoxId.HasValue)
+            if (invoice.CashBoxId.HasValue &&
+                (invoice.PaymentMethod == PaymentMethod.Cash
+                 || (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)))
             {
                 var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
+                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
+                        ? invoice.PaidAmount
+                        : invoice.NetAmount;
+
                     if (invoice.InvoiceType == InvoiceType.Purchase)
-                        cashBox.Balance -= invoice.NetAmount;
+                        cashBox.Balance -= cashAmount;
                     else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        cashBox.Balance += invoice.NetAmount; // استرداد نقد من المورد
+                        cashBox.Balance += cashAmount; // استرداد نقد من المورد
                     else
-                        cashBox.Balance += invoice.NetAmount;
+                        cashBox.Balance += cashAmount;
 
                     cashBox.UpdatedBy = username;
                     cashBox.UpdatedAt = DateTime.UtcNow;
@@ -342,17 +349,23 @@ public class InvoiceService : IInvoiceService
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
-            if (invoice.PaymentMethod == PaymentMethod.Cash && invoice.CashBoxId.HasValue)
+            if (invoice.CashBoxId.HasValue &&
+                (invoice.PaymentMethod == PaymentMethod.Cash
+                 || (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)))
             {
                 var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
+                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
+                        ? invoice.PaidAmount
+                        : invoice.NetAmount;
+
                     if (invoice.InvoiceType == InvoiceType.Purchase)
-                        cashBox.Balance += invoice.NetAmount;
+                        cashBox.Balance += cashAmount;
                     else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        cashBox.Balance -= invoice.NetAmount;
+                        cashBox.Balance -= cashAmount;
                     else
-                        cashBox.Balance -= invoice.NetAmount;
+                        cashBox.Balance -= cashAmount;
 
                     cashBox.UpdatedBy = username;
                     cashBox.UpdatedAt = DateTime.UtcNow;

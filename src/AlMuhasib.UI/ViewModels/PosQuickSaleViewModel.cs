@@ -43,10 +43,16 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private decimal _grandTotal;
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private decimal _changeAmount;
+    [ObservableProperty] private decimal _creditRemainingAmount;
+    [ObservableProperty] private bool _showChangeDue;
+    [ObservableProperty] private bool _showCreditRemaining;
+    [ObservableProperty] private bool _isPaymentDialogOpen;
     [ObservableProperty] private int _cartLineCount;
     [ObservableProperty] private string _statusMessage = "امسح الباركود أو ابحث بالاسم ثم Enter للإضافة";
     [ObservableProperty] private string? _lastSavedInvoiceNumber;
     [ObservableProperty] private bool _printAfterSale = true;
+
+    private bool _printAfterConfirm;
 
     public PosQuickSaleViewModel(
         IUnitOfWork unitOfWork,
@@ -217,10 +223,127 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task CompleteSaleAsync() => await CompleteSaleCoreAsync(printReceipt: PrintAfterSale);
+    private void OpenPaymentDialog()
+    {
+        if (IsInstallmentMode)
+        {
+            _ = CompleteInstallmentSaleCoreAsync();
+            return;
+        }
+
+        if (!CanOpenPaymentDialog()) return;
+        _printAfterConfirm = PrintAfterSale;
+        PaidAmount = GrandTotal;
+        RecalcChange();
+        IsPaymentDialogOpen = true;
+    }
 
     [RelayCommand]
-    private async Task CompleteSaleAndPrintAsync() => await CompleteSaleCoreAsync(printReceipt: true);
+    private void OpenPaymentDialogAndPrint()
+    {
+        if (IsInstallmentMode)
+        {
+            _ = CompleteInstallmentSaleCoreAsync();
+            return;
+        }
+
+        if (!CanOpenPaymentDialog()) return;
+        _printAfterConfirm = true;
+        PaidAmount = GrandTotal;
+        RecalcChange();
+        IsPaymentDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void ClosePaymentDialog()
+    {
+        IsPaymentDialogOpen = false;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmPaymentAsync()
+    {
+        if (!IsPaymentDialogOpen) return;
+
+        if (PaidAmount < 0)
+        {
+            BeautifulMessageDialog.ShowWarning("المبلغ المدفوع غير صالح");
+            return;
+        }
+
+        var isCredit = PaidAmount < GrandTotal;
+        if (isCredit)
+        {
+            if (SelectedPosCustomer is null && _userPreferences.Current.DefaultSalesCustomerId is null)
+            {
+                BeautifulMessageDialog.ShowWarning("اختر عميلاً للبيع الآجل");
+                return;
+            }
+        }
+
+        IsPaymentDialogOpen = false;
+        await CompleteSaleCoreAsync(printReceipt: _printAfterConfirm);
+    }
+
+    private bool CanOpenPaymentDialog()
+    {
+        if (IsInstallmentMode)
+            return true;
+
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إنشاء فواتير مبيعات");
+            return false;
+        }
+
+        if (SelectedWarehouse is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر المخزن");
+            return false;
+        }
+
+        if (SelectedCashBox is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر القاصة");
+            return false;
+        }
+
+        if (CartLines.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("السلة فارغة");
+            return false;
+        }
+
+        var invalid = CartLines.Where(l => l.UnitPrice <= 0).ToList();
+        if (invalid.Count > 0)
+        {
+            BeautifulMessageDialog.ShowWarning("أدخل سعراً لكل البنود");
+            return false;
+        }
+
+        return true;
+    }
+
+    [RelayCommand]
+    private async Task CompleteSaleAsync() => await OpenPaymentDialogAndCompleteAsync(printReceipt: PrintAfterSale);
+
+    [RelayCommand]
+    private async Task CompleteSaleAndPrintAsync() => await OpenPaymentDialogAndCompleteAsync(printReceipt: true);
+
+    private async Task OpenPaymentDialogAndCompleteAsync(bool printReceipt)
+    {
+        if (IsInstallmentMode)
+        {
+            await CompleteInstallmentSaleCoreAsync();
+            return;
+        }
+
+        if (!CanOpenPaymentDialog()) return;
+        _printAfterConfirm = printReceipt;
+        PaidAmount = GrandTotal;
+        RecalcChange();
+        IsPaymentDialogOpen = true;
+    }
 
     private async Task CompleteSaleCoreAsync(bool printReceipt)
     {
@@ -270,22 +393,32 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             }
         }
 
+        var isCredit = PaidAmount < GrandTotal;
+        int? customerId = SelectedPosCustomer?.Id ?? _userPreferences.Current.DefaultSalesCustomerId;
+        if (isCredit && customerId is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر عميلاً للبيع الآجل");
+            return;
+        }
+
         IsBusy = true;
         try
         {
-            int? customerId = SelectedPosCustomer?.Id ?? _userPreferences.Current.DefaultSalesCustomerId;
             var cartSnapshot = CartLines.ToList();
             var totalSnapshot = GrandTotal;
+            var paidSnapshot = Math.Min(PaidAmount, GrandTotal);
 
             var invoice = new Invoice
             {
                 InvoiceType = InvoiceType.Sale,
                 CustomerId = customerId,
                 WarehouseId = SelectedWarehouse.Id,
-                PaymentMethod = PaymentMethod.Cash,
+                PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
-                Notes = "بيع سريع POS"
+                PaidAmount = isCredit ? paidSnapshot : GrandTotal,
+                CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
+                Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
             };
 
             var items = cartSnapshot.Select(line => new InvoiceItem
@@ -309,7 +442,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             CartLines.Clear();
             PaidAmount = 0;
-            StatusMessage = $"تم البيع — {saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع";
+            StatusMessage = isCredit
+                ? $"تم البيع الآجل — {saved.InvoiceNumber} — مدفوع {paidSnapshot:N0} — متبقي {saved.RemainingAmount:N0} د.ع"
+                : $"تم البيع — {saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع";
             _sound.Play(SoundEffect.Success);
 
             if (printReceipt)
@@ -325,8 +460,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             }
             else
             {
-                BeautifulMessageDialog.ShowSuccess(
-                    $"تم حفظ الفاتورة\nرقم: {saved.InvoiceNumber}\nالمبلغ: {saved.NetAmount:N0} د.ع");
+                var msg = isCredit
+                    ? $"تم حفظ الفاتورة الآجلة\nرقم: {saved.InvoiceNumber}\nالمدفوع: {paidSnapshot:N0} د.ع\nالمتبقي: {saved.RemainingAmount:N0} د.ع"
+                    : $"تم حفظ الفاتورة\nرقم: {saved.InvoiceNumber}\nالمبلغ: {saved.NetAmount:N0} د.ع";
+                BeautifulMessageDialog.ShowSuccess(msg);
             }
         }
         catch (Exception ex)
@@ -450,7 +587,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     private void RecalcChange()
     {
-        ChangeAmount = PaidAmount > 0 ? PaidAmount - GrandTotal : 0;
+        ChangeAmount = PaidAmount > GrandTotal ? PaidAmount - GrandTotal : 0;
+        CreditRemainingAmount = PaidAmount < GrandTotal ? GrandTotal - PaidAmount : 0;
+        ShowChangeDue = ChangeAmount > 0;
+        ShowCreditRemaining = CreditRemainingAmount > 0;
     }
 
     private void PersistPosDefaults()

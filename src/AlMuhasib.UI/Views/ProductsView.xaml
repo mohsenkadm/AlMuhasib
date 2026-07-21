@@ -220,7 +220,7 @@
                         </DataGridTextColumn>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110" IsReadOnly="True"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="150" MinWidth="150" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -230,6 +230,12 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenBarcodePrintDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TablePrintIconButton}"
+                                                ToolTip="طباعة باركود">
+                                            <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
+                                        </Button>
                                         <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource TableEditIconButton}"
@@ -327,6 +333,13 @@
                                                         Style="{StaticResource FlatButton}" Margin="0,0,6,0"
                                                         Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
                                                         Content="إضافة سعر"/>
+                                                <Button Command="{Binding DataContext.OpenBarcodePrintFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TablePrintIconButton}"
+                                                        ToolTip="طباعة باركود"
+                                                        Margin="0,0,4,0">
+                                                    <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
+                                                </Button>
                                                 <Button Command="{Binding DataContext.OpenEditProductFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource TableEditIconButton}">
@@ -437,12 +450,31 @@
                                       Margin="0,0,0,16" />
 
                             <!-- Barcode -->
-                            <TextBox Text="{Binding EditBarcode, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="الباركود"
-                                     materialDesign:HintAssist.IsFloating="True"
-                                     Style="{StaticResource FilledTextBox}"
-                                     Margin="0,0,0,16"
-                                     FontFamily="Consolas" />
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding EditBarcode, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="الباركود"
+                                         materialDesign:HintAssist.IsFloating="True"
+                                         Style="{StaticResource FilledTextBox}"
+                                         FontFamily="Consolas"
+                                         Margin="0,0,8,0"/>
+                                <Button Grid.Column="1"
+                                        Command="{Binding GenerateBarcodeCommand}"
+                                        Style="{StaticResource OutlinedButton}"
+                                        Height="48"
+                                        Padding="14,0"
+                                        VerticalAlignment="Bottom"
+                                        ToolTip="إنشاء باركود فريد غير مكرر"
+                                        materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إنشاء" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
 
                             <!-- Description -->
                             <TextBox Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}"
@@ -685,6 +717,73 @@
                                     Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Padding="24,8"/>
                             <Button Content="إلغاء" Command="{Binding CancelPriceEditCommand}"
                                     Style="{StaticResource OutlinedButton}" Padding="24,8"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- BARCODE PRINT DIALOG                        -->
+        <!-- ═══════════════════════════════════════════ -->
+        <materialDesign:DialogHost IsOpen="{Binding IsBarcodePrintDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="440" MaxWidth="520" Padding="28,24" Background="White" CornerRadius="18">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" Color="#1565C0"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3E0" Margin="0,0,12,0">
+                                <materialDesign:PackIcon Kind="Barcode" Width="24" Height="24"
+                                                         Foreground="#EF6C00"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="طباعة ملصق الباركود" FontSize="20" FontWeight="Bold" Foreground="#E65100"/>
+                                <TextBlock Text="معاينة الملصق قبل الطباعة" FontSize="12" Foreground="#90A4AE" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Background="#F7FAFC" CornerRadius="14" Padding="18,16" Margin="0,0,0,16"
+                                BorderBrush="#E3EAF0" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="{Binding BarcodePrintProductName}" FontSize="16" FontWeight="Bold"
+                                           Foreground="#263238" TextWrapping="Wrap" HorizontalAlignment="Center"
+                                           Margin="0,0,0,10"/>
+                                <Image Source="{Binding BarcodePreviewImage}" Height="100" Stretch="Uniform"
+                                       HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding BarcodePrintCode}" FontFamily="Consolas" FontSize="14"
+                                           Foreground="#546E7A" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                                <TextBlock Text="{Binding BarcodePrintPriceText}" FontSize="18" FontWeight="SemiBold"
+                                           Foreground="#1565C0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBox Text="{Binding BarcodePrintCopies, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="عدد نسخ الطباعة"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Margin="0,0,0,18"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Command="{Binding ConfirmBarcodePrintCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Height="44" Padding="24,0" Margin="0,0,8,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" VerticalAlignment="Center"/>
+                                    <TextBlock Text="طباعة" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding CloseBarcodePrintDialogCommand}"
+                                    Content="إلغاء"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Height="44" Padding="22,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
