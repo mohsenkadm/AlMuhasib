@@ -14,6 +14,7 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
     private readonly IRealEstatePartyService _partyService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IUserPreferencesService _prefs;
 
     public ObservableCollection<RealEstatePartyListItem> Parties { get; } = [];
 
@@ -25,16 +26,23 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
     [ObservableProperty] private string _editIdNumber = string.Empty;
     [ObservableProperty] private bool _isEditDialogOpen;
     [ObservableProperty] private int _editId;
+    [ObservableProperty] private bool _isCardView;
+    [ObservableProperty] private string _partiesCountText = "0";
+    [ObservableProperty] private string _withDebtCountText = "0";
+    [ObservableProperty] private string _totalDebtText = "0";
 
     public RealEstatePartiesViewModel(
         IRealEstatePartyService partyService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IUserPreferencesService prefs)
     {
         _partyService = partyService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _prefs = prefs;
         PageTitle = "الزبائن";
+        IsCardView = ListViewModeHelper.LoadIsCardView(_prefs, "RealEstateParties");
     }
 
     public override async Task InitializeAsync()
@@ -49,7 +57,16 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
         _ = LoadAsync();
     }
 
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_prefs, "RealEstateParties", value);
+
     protected override Task OnPageChangedAsync() => LoadAsync();
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadAsync();
+    }
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -57,16 +74,40 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
         IsBusy = true;
         try
         {
+            if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            {
+                var (allItems, _) = await _partyService.GetPagedAsync(1, int.MaxValue, SearchText);
+                var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+                MasterDataColumnFilterHelper.ApplyClientPagination(
+                    filtered, Parties, CurrentPage, PageSize,
+                    out var filteredTotal, out var filteredPages, out var filteredText);
+                TotalCount = filteredTotal;
+                TotalPages = filteredPages;
+                PaginationText = filteredText;
+                UpdateStats(filtered);
+                return;
+            }
+
             var (items, total) = await _partyService.GetPagedAsync(CurrentPage, PageSize, SearchText);
             Parties.Clear();
             foreach (var item in items)
                 Parties.Add(item);
             ApplyPaginationStats(total);
+
+            var (allForStats, _) = await _partyService.GetPagedAsync(1, int.MaxValue, SearchText);
+            UpdateStats(allForStats);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void UpdateStats(IReadOnlyList<RealEstatePartyListItem> rows)
+    {
+        PartiesCountText = rows.Count.ToString("N0");
+        WithDebtCountText = rows.Count(r => r.TotalDebt > 0).ToString("N0");
+        TotalDebtText = rows.Sum(r => r.TotalDebt).ToString("N0");
     }
 
     [RelayCommand]

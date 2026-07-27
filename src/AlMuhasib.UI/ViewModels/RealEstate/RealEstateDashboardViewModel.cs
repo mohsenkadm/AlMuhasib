@@ -26,6 +26,13 @@ public partial class RealEstateDashboardViewModel : ViewModelBase
     [ObservableProperty] private decimal _totalValue;
     [ObservableProperty] private decimal _totalReceived;
     [ObservableProperty] private decimal _totalRemaining;
+    [ObservableProperty] private string _todayContractsText = "0";
+    [ObservableProperty] private string _monthContractsText = "0";
+    [ObservableProperty] private string _unpaidContractsText = "0";
+    [ObservableProperty] private string _overdueDebtsText = "0";
+    [ObservableProperty] private string _totalValueText = "0";
+    [ObservableProperty] private string _totalReceivedText = "0";
+    [ObservableProperty] private string _totalRemainingText = "0";
     [ObservableProperty] private ISeries[] _monthlySeries = [];
     [ObservableProperty] private ISeries[] _statusSeries = [];
     [ObservableProperty] private Axis[] _monthlyXAxes = [];
@@ -64,6 +71,13 @@ public partial class RealEstateDashboardViewModel : ViewModelBase
             TotalValue = stats.TotalValue;
             TotalReceived = stats.TotalReceived;
             TotalRemaining = stats.TotalRemaining;
+            TodayContractsText = stats.TodayContracts.ToString("N0");
+            MonthContractsText = stats.MonthContracts.ToString("N0");
+            UnpaidContractsText = stats.UnpaidContracts.ToString("N0");
+            OverdueDebtsText = stats.OverdueDebts.ToString("N0");
+            TotalValueText = stats.TotalValue.ToString("N0");
+            TotalReceivedText = stats.TotalReceived.ToString("N0");
+            TotalRemainingText = stats.TotalRemaining.ToString("N0");
 
             RecentContracts.Clear();
             foreach (var item in stats.RecentContracts)

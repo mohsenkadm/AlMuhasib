@@ -1,9 +1,11 @@
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.RealEstate;
+using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LiveChartsCore;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 
@@ -15,6 +17,7 @@ public partial class RealEstateDebtsViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IUserPreferencesService _prefs;
 
     public ObservableCollection<RealEstateDebtItem> Debts { get; } = [];
 
@@ -22,18 +25,27 @@ public partial class RealEstateDebtsViewModel : ViewModelBase
     [ObservableProperty] private bool _overdueOnly;
     [ObservableProperty] private decimal _totalDebt;
     [ObservableProperty] private int _overdueCount;
+    [ObservableProperty] private string _totalDebtText = "0";
+    [ObservableProperty] private string _debtorsCountText = "0";
+    [ObservableProperty] private string _overdueCountText = "0";
+    [ObservableProperty] private string _overdueAmountText = "0";
+    [ObservableProperty] private bool _isCardView;
+    [ObservableProperty] private ISeries[] _statusSeries = [];
 
     public RealEstateDebtsViewModel(
         IRealEstateContractService contractService,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IUserPreferencesService prefs)
     {
         _contractService = contractService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _prefs = prefs;
         PageTitle = "كشف المدينين";
+        IsCardView = ListViewModeHelper.LoadIsCardView(_prefs, "RealEstateDebts");
     }
 
     public override async Task InitializeAsync()
@@ -44,6 +56,8 @@ public partial class RealEstateDebtsViewModel : ViewModelBase
 
     partial void OnSearchTextChanged(string value) => _ = LoadAsync();
     partial void OnOverdueOnlyChanged(bool value) => _ = LoadAsync();
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_prefs, "RealEstateDebts", value);
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -61,18 +75,34 @@ public partial class RealEstateDebtsViewModel : ViewModelBase
                     i.DebtorPhone.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
+            if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+                items = ColumnFilterEngine.Apply(items, ColumnFilters).ToList();
+
             Debts.Clear();
             foreach (var item in items)
                 Debts.Add(item);
 
             TotalDebt = items.Sum(i => i.RemainingAmount);
             OverdueCount = items.Count(i => i.IsOverdue);
+            TotalDebtText = TotalDebt.ToString("N0");
+            DebtorsCountText = items.Count.ToString("N0");
+            OverdueCountText = OverdueCount.ToString("N0");
+            OverdueAmountText = items.Where(i => i.IsOverdue).Sum(i => i.RemainingAmount).ToString("N0");
+
+            var current = items.Count(i => !i.IsOverdue);
+            StatusSeries =
+            [
+                ChartThemeConfig.Pie(current, "حالية", 0),
+                ChartThemeConfig.Pie(OverdueCount, "متأخرة", 1)
+            ];
         }
         finally
         {
             IsBusy = false;
         }
     }
+
+    protected override void OnColumnFiltersChanged() => _ = LoadAsync();
 
     [RelayCommand]
     private async Task ExportExcelAsync()

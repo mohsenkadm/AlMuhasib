@@ -13,6 +13,7 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
     private readonly IRealEstateClauseTemplateService _service;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private List<RealEstateClauseTemplate> _all = [];
 
     public ObservableCollection<RealEstateClauseTemplate> Templates { get; } = [];
 
@@ -23,6 +24,9 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
     [ObservableProperty] private string _editBody = string.Empty;
     [ObservableProperty] private bool _editIsActive = true;
     [ObservableProperty] private bool _isEditOpen;
+    [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private string _totalCountText = "0";
+    [ObservableProperty] private string _activeCountText = "0";
 
     public RealEstateClauseTemplatesViewModel(
         IRealEstateClauseTemplateService service,
@@ -42,20 +46,42 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
         await LoadAsync();
     }
 
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
     [RelayCommand]
     private async Task LoadAsync()
     {
-        var items = await _service.GetAllAsync();
+        _all = (await _service.GetAllAsync()).ToList();
+        TotalCountText = _all.Count.ToString("N0");
+        ActiveCountText = _all.Count(t => t.IsActive).ToString("N0");
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
         Templates.Clear();
-        foreach (var item in items)
+        IEnumerable<RealEstateClauseTemplate> source = _all;
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            source = source.Where(t =>
+                t.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.Body.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            source = ColumnFilterEngine.Apply(source, ColumnFilters);
+
+        foreach (var item in source)
             Templates.Add(item);
     }
+
+    protected override void OnColumnFiltersChanged() => ApplyFilter();
 
     [RelayCommand]
     private void OpenNew()
     {
         EditId = 0;
-        EditSortOrder = Templates.Count + 1;
+        EditSortOrder = _all.Count + 1;
         EditTitle = string.Empty;
         EditBody = string.Empty;
         EditIsActive = true;

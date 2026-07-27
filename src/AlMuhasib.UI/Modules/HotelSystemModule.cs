@@ -46,71 +46,82 @@ public sealed class HotelSystemModule : ISystemModule
 
     public IReadOnlyList<NavigationMenuItem> BuildMenuItems()
     {
-        var operations = CreateGroup("العمليات", PackIconKind.BriefcaseClockOutline, isExpanded: true,
+        var items = new List<NavigationMenuItem>
+        {
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(HotelDashboardViewModel), HotelPermissionRegistry.Dashboard),
-            Item("حجز جديد", PackIconKind.CalendarPlus, typeof(HotelReservationFormViewModel), HotelPermissionRegistry.ReservationForm),
-            Item("الحجوزات", PackIconKind.CalendarClock, typeof(HotelReservationsViewModel), HotelPermissionRegistry.Reservations),
-            Item("تقويم الحجوزات", PackIconKind.CalendarMonth, typeof(HotelReservationsCalendarViewModel), HotelPermissionRegistry.ReservationsCalendar),
-            Item("تسجيل دخول/خروج", PackIconKind.Login, typeof(HotelCheckInOutViewModel), HotelPermissionRegistry.CheckInOut));
-
-        var roomsGuests = CreateGroup("الغرف والنزلاء", PackIconKind.Bed, isExpanded: true,
-            Item("الغرف", PackIconKind.Door, typeof(HotelRoomsViewModel), HotelPermissionRegistry.Rooms),
-            Item("أنواع الغرف", PackIconKind.Bed, typeof(HotelRoomTypesViewModel), HotelPermissionRegistry.RoomTypes),
-            Item("الطوابق", PackIconKind.Stairs, typeof(HotelFloorsViewModel), HotelPermissionRegistry.Floors),
-            Item("النزلاء", PackIconKind.AccountGroup, typeof(HotelGuestsViewModel), HotelPermissionRegistry.Guests),
-            Item("خطط الأسعار", PackIconKind.CurrencyUsd, typeof(HotelRatePlansViewModel), HotelPermissionRegistry.RatePlans),
-            Item("النظافة", PackIconKind.Broom, typeof(HotelHousekeepingViewModel), HotelPermissionRegistry.Housekeeping));
-
-        var restaurant = CreateGroup("المطعم", PackIconKind.SilverwareForkKnife, isExpanded: false,
-            Item("كاشير المطعم", PackIconKind.SilverwareForkKnife, typeof(RestaurantPosViewModel), HotelPermissionRegistry.RestaurantPos),
-            Item("قائمة المطعم", PackIconKind.Food, typeof(RestaurantMenuViewModel), HotelPermissionRegistry.RestaurantMenu),
-            Item("مخزون المطبخ", PackIconKind.PackageVariant, typeof(RestaurantInventoryViewModel), HotelPermissionRegistry.RestaurantInventory),
-            Item("طاولات الصالة", PackIconKind.TableChair, typeof(RestaurantTablesViewModel), HotelPermissionRegistry.RestaurantTables),
-            Item("تقارير المطعم", PackIconKind.ChartPie, typeof(RestaurantReportsViewModel), HotelPermissionRegistry.RestaurantReports),
-            Item("شاشة المطبخ", PackIconKind.Stove, typeof(RestaurantKitchenViewModel), HotelPermissionRegistry.RestaurantKitchen));
-
-        var finance = CreateGroup("المالية", PackIconKind.CashMultiple, isExpanded: false,
-            Item("الصندوق", PackIconKind.CashRegister, typeof(HotelCashViewModel), HotelPermissionRegistry.HotelCash),
-            Item("المصاريف", PackIconKind.CashMinus, typeof(HotelExpensesViewModel), HotelPermissionRegistry.HotelExpenses),
-            Item("التقارير", PackIconKind.ChartBar, typeof(HotelReportsViewModel), HotelPermissionRegistry.HotelReports));
-
-        var system = CreateGroup("النظام", PackIconKind.CogOutline, isExpanded: false,
-            Item("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), HotelPermissionRegistry.Users),
-            Item("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), HotelPermissionRegistry.Permissions),
-            Item("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), HotelPermissionRegistry.PrintSettings),
-            Item("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), HotelPermissionRegistry.Backup),
-            Item("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),
-            Item("المزامنة السحابية", PackIconKind.CloudSync, typeof(CloudSyncSettingsViewModel), HotelPermissionRegistry.CloudSync),
-            Item("تحديث النظام", PackIconKind.CloudDownload, typeof(SystemUpdateViewModel), ScreenPermissionRegistry.SystemUpdate),
-            Item("تبديل النظام (مطور)", PackIconKind.DeveloperBoard, typeof(DeveloperSystemSwitchViewModel), ScreenPermissionRegistry.DeveloperSystem));
-
-        return [operations, roomsGuests, restaurant, finance, system];
-    }
-
-    private static NavigationMenuItem Item(string title, PackIconKind icon, Type viewModelType, string screenName) =>
-        new()
-        {
-            Title = title,
-            Icon = icon,
-            ViewModelType = viewModelType,
-            ScreenName = screenName,
-            IsSubItem = true
+            FlyoutGroup(
+                key: "operations",
+                title: "العمليات",
+                icon: PackIconKind.BriefcaseClockOutline,
+                accent: "#1565C0",
+                accentLight: "#E3F2FD",
+                [
+                    ("حجز جديد", PackIconKind.CalendarPlus, typeof(HotelReservationFormViewModel), HotelPermissionRegistry.ReservationForm),
+                    ("الحجوزات", PackIconKind.CalendarClock, typeof(HotelReservationsViewModel), HotelPermissionRegistry.Reservations),
+                    ("تقويم الحجوزات", PackIconKind.CalendarMonth, typeof(HotelReservationsCalendarViewModel), HotelPermissionRegistry.ReservationsCalendar),
+                    ("تسجيل دخول/خروج", PackIconKind.Login, typeof(HotelCheckInOutViewModel), HotelPermissionRegistry.CheckInOut),
+                ]),
+            FlyoutGroup(
+                key: "rooms-guests",
+                title: "الغرف والنزلاء",
+                icon: PackIconKind.Bed,
+                accent: "#2E7D32",
+                accentLight: "#E8F5E9",
+                [
+                    ("الغرف", PackIconKind.Door, typeof(HotelRoomsViewModel), HotelPermissionRegistry.Rooms),
+                    ("أنواع الغرف", PackIconKind.Bed, typeof(HotelRoomTypesViewModel), HotelPermissionRegistry.RoomTypes),
+                    ("الطوابق", PackIconKind.Stairs, typeof(HotelFloorsViewModel), HotelPermissionRegistry.Floors),
+                    ("النزلاء", PackIconKind.AccountGroup, typeof(HotelGuestsViewModel), HotelPermissionRegistry.Guests),
+                    ("خطط الأسعار", PackIconKind.CurrencyUsd, typeof(HotelRatePlansViewModel), HotelPermissionRegistry.RatePlans),
+                    ("النظافة", PackIconKind.Broom, typeof(HotelHousekeepingViewModel), HotelPermissionRegistry.Housekeeping),
+                ]),
+            FlyoutGroup(
+                key: "restaurant",
+                title: "المطعم",
+                icon: PackIconKind.SilverwareForkKnife,
+                accent: "#E65100",
+                accentLight: "#FFF3E0",
+                [
+                    ("كاشير المطعم", PackIconKind.SilverwareForkKnife, typeof(RestaurantPosViewModel), HotelPermissionRegistry.RestaurantPos),
+                    ("قائمة المطعم", PackIconKind.Food, typeof(RestaurantMenuViewModel), HotelPermissionRegistry.RestaurantMenu),
+                    ("مخزون المطبخ", PackIconKind.PackageVariant, typeof(RestaurantInventoryViewModel), HotelPermissionRegistry.RestaurantInventory),
+                    ("طاولات الصالة", PackIconKind.TableChair, typeof(RestaurantTablesViewModel), HotelPermissionRegistry.RestaurantTables),
+                    ("تقارير المطعم", PackIconKind.ChartPie, typeof(RestaurantReportsViewModel), HotelPermissionRegistry.RestaurantReports),
+                    ("شاشة المطبخ", PackIconKind.Stove, typeof(RestaurantKitchenViewModel), HotelPermissionRegistry.RestaurantKitchen),
+                ]),
+            FlyoutGroup(
+                key: "finance",
+                title: "المالية",
+                icon: PackIconKind.CashMultiple,
+                accent: "#6A1B9A",
+                accentLight: "#F3E5F5",
+                [
+                    ("الصندوق", PackIconKind.CashRegister, typeof(HotelCashViewModel), HotelPermissionRegistry.HotelCash),
+                    ("المصاريف", PackIconKind.CashMinus, typeof(HotelExpensesViewModel), HotelPermissionRegistry.HotelExpenses),
+                    ("التقارير", PackIconKind.ChartBar, typeof(HotelReportsViewModel), HotelPermissionRegistry.HotelReports),
+                ]),
+            FlyoutGroup(
+                key: "system",
+                title: "النظام والإعدادات",
+                icon: PackIconKind.CogOutline,
+                accent: "#455A64",
+                accentLight: "#ECEFF1",
+                [
+                    ("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), HotelPermissionRegistry.Users),
+                    ("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), HotelPermissionRegistry.Permissions),
+                    ("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), HotelPermissionRegistry.PrintSettings),
+                    ("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), HotelPermissionRegistry.Backup),
+                    ("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),
+                    ("المزامنة السحابية", PackIconKind.CloudSync, typeof(CloudSyncSettingsViewModel), HotelPermissionRegistry.CloudSync),
+                    ("تحديث النظام", PackIconKind.CloudDownload, typeof(SystemUpdateViewModel), ScreenPermissionRegistry.SystemUpdate),
+                    ("تبديل النظام (مطور)", PackIconKind.DeveloperBoard, typeof(DeveloperSystemSwitchViewModel), ScreenPermissionRegistry.DeveloperSystem),
+                ])
         };
 
-    private static NavigationMenuItem CreateGroup(string title, PackIconKind icon, bool isExpanded, params NavigationMenuItem[] children)
-    {
-        var group = new NavigationMenuItem
-        {
-            Title = title,
-            Icon = icon,
-            IsGroupHeader = true,
-            IsExpanded = isExpanded
-        };
+        if (items.Count > 0)
+            items[0].IsSelected = true;
 
-        foreach (var child in children)
-            group.Children.Add(child);
-
-        return group;
+        return items;
     }
 
     public string GetScreenName(Type viewModelType) =>
@@ -121,4 +132,48 @@ public sealed class HotelSystemModule : ISystemModule
 
     public Type? GetDefaultViewModelType(string screenName) =>
         HotelPermissionRegistry.GetDefaultViewModelType(screenName);
+
+    private static NavigationMenuItem Item(string title, PackIconKind icon, Type viewModelType, string screenName) =>
+        new()
+        {
+            Title = title,
+            Icon = icon,
+            ViewModelType = viewModelType,
+            ScreenName = screenName
+        };
+
+    private static NavigationMenuItem FlyoutGroup(
+        string key,
+        string title,
+        PackIconKind icon,
+        string accent,
+        string accentLight,
+        (string Title, PackIconKind Icon, Type Vm, string Screen)[] children)
+    {
+        var group = new NavigationMenuItem
+        {
+            Title = title,
+            Icon = icon,
+            IsReportCategory = true,
+            CategoryKey = key,
+            ScreenName = $"MenuGroup:{key}",
+            CategoryAccentColor = accent,
+            CategoryAccentLightColor = accentLight,
+            FlyoutItemLabel = "شاشة"
+        };
+
+        foreach (var child in children)
+        {
+            group.Children.Add(new NavigationMenuItem
+            {
+                Title = child.Title,
+                Icon = child.Icon,
+                ViewModelType = child.Vm,
+                ScreenName = child.Screen,
+                IsSubItem = true
+            });
+        }
+
+        return group;
+    }
 }

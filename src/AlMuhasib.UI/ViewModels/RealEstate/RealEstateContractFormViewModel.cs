@@ -54,14 +54,37 @@ public partial class RealEstateContractFormViewModel : ViewModelBase
 
     public ObservableCollection<RealEstateContractClause> Clauses { get; } = [];
 
-    public Array ContractTypes => Enum.GetValues(typeof(RealEstateContractType));
-    public Array PropertyTypes => Enum.GetValues(typeof(RealEstatePropertyType));
-    public Array PaymentModes => Enum.GetValues(typeof(RealEstatePaymentMode));
-    public Array DebtorParties => Enum.GetValues(typeof(RealEstateDebtorParty));
+    public IReadOnlyList<EnumDisplayItem<RealEstateContractType>> ContractTypes { get; } =
+    [
+        new(RealEstateContractType.Sale, "بيع"),
+        new(RealEstateContractType.Purchase, "شراء")
+    ];
+
+    public IReadOnlyList<EnumDisplayItem<RealEstatePropertyType>> PropertyTypes { get; } =
+    [
+        new(RealEstatePropertyType.House, "دار"),
+        new(RealEstatePropertyType.Land, "أرض"),
+        new(RealEstatePropertyType.Other, "أخرى")
+    ];
+
+    public IReadOnlyList<EnumDisplayItem<RealEstatePaymentMode>> PaymentModes { get; } =
+    [
+        new(RealEstatePaymentMode.Cash, "نقدي"),
+        new(RealEstatePaymentMode.Credit, "آجل")
+    ];
+
+    public IReadOnlyList<EnumDisplayItem<RealEstateDebtorParty>> DebtorParties { get; } =
+    [
+        new(RealEstateDebtorParty.None, "لا يوجد"),
+        new(RealEstateDebtorParty.Buyer, "المشتري"),
+        new(RealEstateDebtorParty.Seller, "البائع")
+    ];
 
     public bool IsCredit => PaymentMode == RealEstatePaymentMode.Credit;
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => IsEditMode ? CanEdit : CanAdd;
+
+    public record EnumDisplayItem<T>(T Value, string Label) where T : Enum;
 
     public RealEstateContractFormViewModel(
         IRealEstateContractService contractService,

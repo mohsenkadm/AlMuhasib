@@ -39,6 +39,21 @@ public partial class RealEstateContractsViewModel : PagedViewModelBase
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private RealEstateContractListItem? _contractToDelete;
     [ObservableProperty] private string _paymentContractSummary = string.Empty;
+    [ObservableProperty] private string _statCountText = "0";
+    [ObservableProperty] private string _statTotalText = "0";
+    [ObservableProperty] private string _statReceivedText = "0";
+    [ObservableProperty] private string _statRemainingText = "0";
+    [ObservableProperty] private string _statUnpaidText = "0";
+
+    public IReadOnlyList<EnumDisplayItem<RealEstateContractStatusFilter>> StatusFilters { get; } =
+    [
+        new(RealEstateContractStatusFilter.All, "الكل"),
+        new(RealEstateContractStatusFilter.Active, "نشط"),
+        new(RealEstateContractStatusFilter.Completed, "مكتمل"),
+        new(RealEstateContractStatusFilter.Cancelled, "ملغى")
+    ];
+
+    public record EnumDisplayItem<T>(T Value, string Label) where T : Enum;
 
     public RealEstateContractsViewModel(
         IRealEstateContractService contractService,
@@ -122,6 +137,7 @@ public partial class RealEstateContractsViewModel : PagedViewModelBase
                 TotalCount = filteredTotal;
                 TotalPages = filteredPages;
                 PaginationText = filteredText;
+                UpdateStats(filtered);
                 return;
             }
 
@@ -130,11 +146,23 @@ public partial class RealEstateContractsViewModel : PagedViewModelBase
             foreach (var item in items)
                 Contracts.Add(item);
             ApplyPaginationStats(total);
+
+            var allForStats = await _contractService.GetAllForExportAsync(filter);
+            UpdateStats(allForStats);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void UpdateStats(IReadOnlyList<RealEstateContractListItem> rows)
+    {
+        StatCountText = rows.Count.ToString("N0");
+        StatTotalText = rows.Sum(r => r.TotalPrice).ToString("N0");
+        StatReceivedText = rows.Sum(r => r.AmountPaid).ToString("N0");
+        StatRemainingText = rows.Sum(r => r.RemainingAmount).ToString("N0");
+        StatUnpaidText = rows.Count(r => r.RemainingAmount > 0).ToString("N0");
     }
 
     [RelayCommand]
