@@ -1400,10 +1400,10 @@
                 <ControlTemplate TargetType="Button">
                     <TextBlock x:Name="LinkText"
                                Text="{TemplateBinding Content}"
-                               TextTrimming="CharacterEllipsis"
                                Foreground="{DynamicResource PrimaryHueMidBrush}"
                                FontWeight="SemiBold"
                                TextDecorations="None"
+                               TextTrimming="CharacterEllipsis"
                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
