@@ -6,12 +6,14 @@ using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Infrastructure.Data.Car;
 using AlMuhasib.Infrastructure.Data.CarTrade;
 using AlMuhasib.Infrastructure.Data.Hotel;
+using AlMuhasib.Infrastructure.Data.RealEstate;
 using AlMuhasib.Infrastructure.Repositories;
 using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.Infrastructure.Services.Car;
 using AlMuhasib.Infrastructure.Services.CarTrade;
 using AlMuhasib.Infrastructure.Services.Hotel;
 using AlMuhasib.Infrastructure.Services.Hotel.Restaurant;
+using AlMuhasib.Infrastructure.Services.RealEstate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +44,9 @@ public static class DependencyInjection
                 break;
             case ApplicationSystemType.CarTrading:
                 RegisterCarTradeInfrastructure(services, connectionString, isBranchClient);
+                break;
+            case ApplicationSystemType.RealEstateContracts:
+                RegisterRealEstateInfrastructure(services, connectionString, isBranchClient);
                 break;
             default:
                 RegisterAccountingInfrastructure(services, connectionString, isBranchClient);
@@ -208,6 +213,37 @@ public static class DependencyInjection
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarTradeDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarTradeSyncService>();
+        services.AddHttpClient("CloudSync");
+    }
+
+    private static void RegisterRealEstateInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
+    {
+        services.AddDbContextFactory<RealEstateDbContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                b => b.MigrationsAssembly(typeof(RealEstateDbContext).Assembly.FullName)));
+
+        services.AddScoped<IUnitOfWork, RealEstateUnitOfWork>();
+        services.AddScoped<IAuthService, RealEstateAuthService>();
+        services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, RealEstateDatabaseMigrationService>();
+        services.AddScoped<IRealEstateContractService, RealEstateContractService>();
+        services.AddScoped<IRealEstateContractReportService, RealEstateContractReportService>();
+        services.AddScoped<IRealEstateClauseTemplateService, RealEstateClauseTemplateService>();
+        services.AddScoped<IRealEstatePartyService, RealEstatePartyService>();
+        services.AddScoped<IGlobalSearchService, RealEstateGlobalSearchService>();
+        services.AddScoped<IAuditLogService, RealEstateAuditLogService>();
+        services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
+        services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
+        services.AddScoped<IUserTaskService, NoOpUserTaskService>();
+        services.AddScoped<IUserNoteService, NoOpUserNoteService>();
+        services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<RealEstateDbContext>>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, RealEstateSyncService>();
         services.AddHttpClient("CloudSync");
     }
 }

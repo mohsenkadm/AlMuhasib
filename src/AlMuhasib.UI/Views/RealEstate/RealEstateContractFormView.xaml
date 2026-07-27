@@ -1,0 +1,101 @@
+<UserControl x:Class="AlMuhasib.UI.Views.RealEstate.RealEstateContractFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}" FlowDirection="RightToLeft">
+  <ScrollViewer Padding="20">
+    <StackPanel MaxWidth="980">
+      <DockPanel Margin="0,0,0,16">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+          <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0" IsEnabled="{Binding CanSave}"/>
+          <Button Content="حفظ وطباعة" Command="{Binding SaveAndPrintCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
+          <Button Content="إلغاء" Command="{Binding CancelCommand}"/>
+        </StackPanel>
+        <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="Bold" Foreground="#1565C0"/>
+      </DockPanel>
+      <md:Card Padding="16" Margin="0,0,0,12">
+        <UniformGrid Columns="4">
+          <TextBox md:HintAssist.Hint="رقم العقد" Text="{Binding ContractNumber}" IsReadOnly="True" Margin="4"/>
+          <DatePicker md:HintAssist.Hint="التاريخ" SelectedDate="{Binding ContractDate}" Margin="4"/>
+          <ComboBox md:HintAssist.Hint="نوع العملية" SelectedItem="{Binding ContractType}" ItemsSource="{Binding ContractTypes}" Margin="4"/>
+          <ComboBox md:HintAssist.Hint="نوع العقار" SelectedItem="{Binding PropertyType}" ItemsSource="{Binding PropertyTypes}" Margin="4"/>
+        </UniformGrid>
+      </md:Card>
+      <md:Card Padding="16" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="العقار" FontWeight="Bold" Margin="0,0,0,8"/>
+          <UniformGrid Columns="3">
+            <TextBox md:HintAssist.Hint="الموقع / الحي" Text="{Binding PropertyLocation}" Margin="4"/>
+            <TextBox md:HintAssist.Hint="العنوان" Text="{Binding PropertyAddress}" Margin="4"/>
+            <TextBox md:HintAssist.Hint="المساحة م²" Text="{Binding PropertyAreaSqm}" Margin="4"/>
+          </UniformGrid>
+          <TextBox md:HintAssist.Hint="وصف العقار" Text="{Binding PropertyDescription}" AcceptsReturn="True" Height="60" Margin="4"/>
+        </StackPanel>
+      </md:Card>
+      <Grid Margin="0,0,0,12">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <md:Card Grid.Column="0" Padding="16" Margin="0,0,6,0">
+          <StackPanel>
+            <TextBlock Text="الطرف الأول (البائع)" FontWeight="Bold" Margin="0,0,0,8"/>
+            <TextBox md:HintAssist.Hint="الاسم" Text="{Binding SellerName}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="العنوان" Text="{Binding SellerAddress}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="الهوية" Text="{Binding SellerIdNumber}" Margin="0,0,0,6"/>
+            <DatePicker md:HintAssist.Hint="تاريخ الهوية" SelectedDate="{Binding SellerIdDate}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="الهاتف" Text="{Binding SellerPhone}"/>
+          </StackPanel>
+        </md:Card>
+        <md:Card Grid.Column="1" Padding="16" Margin="6,0,0,0">
+          <StackPanel>
+            <TextBlock Text="الطرف الثاني (المشتري)" FontWeight="Bold" Margin="0,0,0,8"/>
+            <TextBox md:HintAssist.Hint="الاسم" Text="{Binding BuyerName}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="العنوان" Text="{Binding BuyerAddress}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="الهوية" Text="{Binding BuyerIdNumber}" Margin="0,0,0,6"/>
+            <DatePicker md:HintAssist.Hint="تاريخ الهوية" SelectedDate="{Binding BuyerIdDate}" Margin="0,0,0,6"/>
+            <TextBox md:HintAssist.Hint="الهاتف" Text="{Binding BuyerPhone}"/>
+          </StackPanel>
+        </md:Card>
+      </Grid>
+      <md:Card Padding="16" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="المالية" FontWeight="Bold" Margin="0,0,0,8"/>
+          <UniformGrid Columns="4">
+            <TextBox md:HintAssist.Hint="السعر الكلي" Text="{Binding TotalPrice}" Margin="4"/>
+            <TextBox md:HintAssist.Hint="عربون / دفعة" Text="{Binding DownPayment}" Margin="4"/>
+            <TextBox md:HintAssist.Hint="المدفوع" Text="{Binding AmountPaid}" Margin="4"/>
+            <TextBox md:HintAssist.Hint="المتبقي" Text="{Binding RemainingAmount}" IsReadOnly="True" Margin="4"/>
+          </UniformGrid>
+          <TextBox md:HintAssist.Hint="المبلغ كتابةً" Text="{Binding TotalPriceInWords}" IsReadOnly="True" Margin="4"/>
+          <UniformGrid Columns="3">
+            <ComboBox md:HintAssist.Hint="طريقة الدفع" SelectedItem="{Binding PaymentMode}" ItemsSource="{Binding PaymentModes}" Margin="4"/>
+            <ComboBox md:HintAssist.Hint="طرف المدين" SelectedItem="{Binding DebtorParty}" ItemsSource="{Binding DebtorParties}" IsEnabled="{Binding IsCredit}" Margin="4"/>
+            <DatePicker md:HintAssist.Hint="تاريخ الاستحقاق" SelectedDate="{Binding DueDate}" IsEnabled="{Binding IsCredit}" Margin="4"/>
+          </UniformGrid>
+        </StackPanel>
+      </md:Card>
+      <md:Card Padding="16" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="بنود العقد" FontWeight="Bold" Margin="0,0,0,8"/>
+          <ItemsControl ItemsSource="{Binding Clauses}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="0,6">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding Body}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40"/>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </md:Card>
+      <md:Card Padding="16">
+        <UniformGrid Columns="3">
+          <TextBox md:HintAssist.Hint="الشاهد الأول" Text="{Binding WitnessOneName}" Margin="4"/>
+          <TextBox md:HintAssist.Hint="الشاهد الثاني" Text="{Binding WitnessTwoName}" Margin="4"/>
+          <TextBox md:HintAssist.Hint="ملاحظات" Text="{Binding Notes}" Margin="4"/>
+        </UniformGrid>
+      </md:Card>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

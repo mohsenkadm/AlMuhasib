@@ -66,6 +66,12 @@ public sealed class SyncDataBundle
 
     public List<CarTradeTransactionSyncDto> CarTradeTransactions { get; set; } = [];
     public List<CarTradePaymentSyncDto> CarTradePayments { get; set; } = [];
+
+    public List<RealEstateContractSyncDto> RealEstateContracts { get; set; } = [];
+    public List<RealEstateContractPaymentSyncDto> RealEstateContractPayments { get; set; } = [];
+    public List<RealEstateContractClauseSyncDto> RealEstateContractClauses { get; set; } = [];
+    public List<RealEstateClauseTemplateSyncDto> RealEstateClauseTemplates { get; set; } = [];
+    public List<RealEstatePartySyncDto> RealEstateParties { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

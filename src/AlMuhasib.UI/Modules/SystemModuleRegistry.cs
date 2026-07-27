@@ -11,6 +11,7 @@ public sealed class SystemModuleRegistry
     private readonly CarContractsSystemModule _carContracts;
     private readonly CarTradingSystemModule _carTrading;
     private readonly HotelSystemModule _hotel;
+    private readonly RealEstateContractsSystemModule _realEstate;
 
     public SystemModuleRegistry(ISystemProfileService profile)
     {
@@ -19,6 +20,7 @@ public sealed class SystemModuleRegistry
         _carContracts = new CarContractsSystemModule();
         _carTrading = new CarTradingSystemModule();
         _hotel = new HotelSystemModule();
+        _realEstate = new RealEstateContractsSystemModule();
     }
 
     public ISystemModule ActiveModule => _profile.ActiveSystem switch
@@ -26,14 +28,13 @@ public sealed class SystemModuleRegistry
         ApplicationSystemType.CarContracts => _carContracts,
         ApplicationSystemType.CarTrading => _carTrading,
         ApplicationSystemType.HotelManagement => _hotel,
+        ApplicationSystemType.RealEstateContracts => _realEstate,
         _ => _accounting
     };
 
     public bool IsCarContracts => _profile.ActiveSystem == ApplicationSystemType.CarContracts;
-
     public bool IsCarTrading => _profile.ActiveSystem == ApplicationSystemType.CarTrading;
-
     public bool IsHotelManagement => _profile.ActiveSystem == ApplicationSystemType.HotelManagement;
-
+    public bool IsRealEstateContracts => _profile.ActiveSystem == ApplicationSystemType.RealEstateContracts;
     public bool IsAccounting => _profile.ActiveSystem == ApplicationSystemType.Accounting;
 }

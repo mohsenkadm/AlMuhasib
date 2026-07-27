@@ -14,6 +14,7 @@ import '../../features/data_tab/data/finance_repository.dart';
 import '../../features/hotel/data/hotel_repository.dart';
 import '../../features/hotel/restaurant/data/restaurant_repository.dart';
 import '../../features/operations/data/mobile_operations_repository.dart';
+import '../../features/real_estate/data/real_estate_repository.dart';
 import '../../features/reports/data/reports_repository.dart';
 import '../offline/offline_write_queue.dart';
 import 'controllers/auth_controller.dart';
@@ -76,6 +77,10 @@ class AppServices {
     Get.put<HotelRepository>(HotelRepository(apiClient), permanent: true);
     Get.put<CarRepository>(CarRepository(apiClient), permanent: true);
     Get.put<CarTradeRepository>(CarTradeRepository(apiClient), permanent: true);
+    Get.put<RealEstateRepository>(
+      RealEstateRepository(apiClient),
+      permanent: true,
+    );
     Get.put<RestaurantRepository>(
       RestaurantRepository(apiClient),
       permanent: true,
@@ -104,6 +109,8 @@ class AppServices {
   static HotelRepository get hotel => Get.find<HotelRepository>();
   static CarRepository get car => Get.find<CarRepository>();
   static CarTradeRepository get carTrade => Get.find<CarTradeRepository>();
+  static RealEstateRepository get realEstate =>
+      Get.find<RealEstateRepository>();
   static RestaurantRepository get restaurant => Get.find<RestaurantRepository>();
   static AppInfoService get appInfo => Get.find<AppInfoService>();
 }

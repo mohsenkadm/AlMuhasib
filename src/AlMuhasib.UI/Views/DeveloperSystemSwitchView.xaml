@@ -108,12 +108,22 @@
                             </Button>
                             <Button Command="{Binding SwitchToHotelManagementCommand}"
                                     Style="{StaticResource OutlinedButton}"
-                                    MinHeight="48" Padding="24,12"
+                                    MinHeight="48" Padding="24,12" Margin="0,0,0,12"
                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <md:PackIcon Kind="Hotel" Width="22" Height="22"
                                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <TextBlock Text="نظام إدارة الفنادق" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SwitchToRealEstateContractsCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    MinHeight="48" Padding="24,12"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="HomeCity" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#00695C"/>
+                                    <TextBlock Text="نظام عقود العقارات" FontSize="14" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

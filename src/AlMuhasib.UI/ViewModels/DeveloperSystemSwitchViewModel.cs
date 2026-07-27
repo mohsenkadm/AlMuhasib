@@ -39,6 +39,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
             ApplicationSystemType.CarContracts => "نظام عقود السيارات",
             ApplicationSystemType.CarTrading => "نظام بيع وشراء السيارات",
             ApplicationSystemType.HotelManagement => "نظام إدارة الفنادق",
+            ApplicationSystemType.RealEstateContracts => "نظام عقود العقارات",
             _ => "نظام المحاسبة"
         };
         CurrentDatabaseDisplay = _systemProfile.ActiveDatabaseName;
@@ -134,6 +135,18 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ConfirmAndSwitch(ApplicationSystemType.HotelManagement, "نظام إدارة الفنادق");
     }
 
+    [RelayCommand]
+    private void SwitchToRealEstateContracts()
+    {
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.RealEstateContracts)
+        {
+            _toast.ShowInfo("أنت تستخدم نظام عقود العقارات حالياً");
+            return;
+        }
+
+        ConfirmAndSwitch(ApplicationSystemType.RealEstateContracts, "نظام عقود العقارات");
+    }
+
     private void ConfirmAndSwitch(ApplicationSystemType target, string targetLabel)
     {
         var message =
@@ -156,6 +169,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ApplicationSystemType.CarContracts => "AlMuhasibCarContractsDb",
         ApplicationSystemType.CarTrading => "AlMuhasibCarTradingDb",
         ApplicationSystemType.HotelManagement => "AlMuhasibHotelsDb",
+        ApplicationSystemType.RealEstateContracts => "AlMuhasibRealEstateDb",
         _ => "AlMuhasibDb"
     };
 }

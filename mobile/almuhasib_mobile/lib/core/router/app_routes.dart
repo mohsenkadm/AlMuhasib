@@ -6,6 +6,7 @@ abstract final class AppRoutes {
   static const launchCar = '/launch/car';
   static const launchCarTrade = '/launch/car-trade';
   static const launchHotel = '/launch/hotel';
+  static const launchRealEstate = '/launch/real-estate';
 
   static const home = '/home';
   static const reports = '/reports';
@@ -82,6 +83,14 @@ abstract final class AppRoutes {
   static const carTradePartyStatement = '/car-trade/party-statement';
   static const carTradeSettings = '/car-trade/settings';
 
+  static const realEstateHome = '/real-estate/home';
+  static const realEstateContracts = '/real-estate/contracts';
+  static const realEstateContractNew = '/real-estate/contracts/new';
+  static const realEstateContractDetail = '/real-estate/contracts/:syncId';
+  static const realEstatePayments = '/real-estate/payments';
+  static const realEstateReports = '/real-estate/reports';
+  static const realEstateSettings = '/real-estate/settings';
+
   static const profile = '/profile';
   static const about = '/about';
   static const privacy = '/privacy';
@@ -138,4 +147,6 @@ abstract final class AppRoutes {
       '/car/contracts/$syncId';
   static String carTradeTransactionDetailPath(String syncId) =>
       '/car-trade/transactions/$syncId';
+  static String realEstateContractDetailPath(String syncId) =>
+      '/real-estate/contracts/$syncId';
 }

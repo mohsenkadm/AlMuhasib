@@ -168,6 +168,7 @@ public sealed class NetworkConnectionService : INetworkConnectionService
         ApplicationSystemType.CarContracts => SystemConnectionStrings.CarContractsDatabase,
         ApplicationSystemType.HotelManagement => SystemConnectionStrings.HotelsDatabase,
         ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
+        ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
         _ => SystemConnectionStrings.AccountingDatabase
     };
 
