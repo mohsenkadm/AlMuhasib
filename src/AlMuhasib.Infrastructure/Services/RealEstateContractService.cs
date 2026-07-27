@@ -448,17 +448,17 @@ public sealed class RealEstateContractService : IRealEstateContractService
         Notes = c.Notes
     };
 
-    internal static string GetStatusLabel(RealEstateContractStatus status) => status switch
+    public static string GetStatusLabel(RealEstateContractStatus status) => status switch
     {
         RealEstateContractStatus.Completed => "مكتمل",
         RealEstateContractStatus.Cancelled => "ملغى",
         _ => "نشط"
     };
 
-    internal static string GetContractTypeLabel(RealEstateContractType type) =>
+    public static string GetContractTypeLabel(RealEstateContractType type) =>
         type == RealEstateContractType.Purchase ? "شراء" : "بيع";
 
-    internal static string GetPropertyTypeLabel(RealEstatePropertyType type) => type switch
+    public static string GetPropertyTypeLabel(RealEstatePropertyType type) => type switch
     {
         RealEstatePropertyType.Land => "أرض",
         RealEstatePropertyType.Other => "أخرى",
