@@ -270,6 +270,8 @@ public partial class App : Application
         services.AddTransient<RealEstateDebtsViewModel>();
         services.AddTransient<RealEstatePartiesViewModel>();
         services.AddTransient<RealEstateContractsReportViewModel>();
+        services.AddTransient<RealEstateExpensesViewModel>();
+        services.AddTransient<RealEstateProfitReportViewModel>();
         services.AddTransient<RealEstateClauseTemplatesViewModel>();
 
         services.AddTransient<CarTradeDashboardViewModel>();

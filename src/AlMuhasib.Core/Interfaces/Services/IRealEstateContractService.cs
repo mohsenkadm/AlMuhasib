@@ -27,6 +27,22 @@ public interface IRealEstateContractService
 public interface IRealEstateContractReportService
 {
     Task<RealEstateContractReportData> GetReportAsync(RealEstateContractFilter filter, CancellationToken cancellationToken = default);
+    Task<RealEstateProfitReportData> GetProfitReportAsync(DateTime? dateFrom, DateTime? dateTo, CancellationToken cancellationToken = default);
+}
+
+public interface IRealEstateExpenseService
+{
+    Task<IReadOnlyList<RealEstateExpenseType>> GetTypesAsync(CancellationToken cancellationToken = default);
+    Task EnsureDefaultTypesAsync(CancellationToken cancellationToken = default);
+    Task<RealEstateExpenseType> SaveTypeAsync(RealEstateExpenseType type, CancellationToken cancellationToken = default);
+    Task DeleteTypeAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<RealEstateExpenseListItem> Items, int TotalCount, decimal TotalAmount)> GetPagedAsync(
+        int page, int pageSize, RealEstateExpenseFilter filter, CancellationToken cancellationToken = default);
+    Task<RealEstateExpense?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<RealEstateExpense> SaveAsync(RealEstateExpense expense, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
+    Task<decimal> GetTotalAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default);
 }
 
 public interface IRealEstateClauseTemplateService

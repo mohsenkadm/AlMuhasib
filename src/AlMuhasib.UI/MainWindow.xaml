@@ -1174,6 +1174,12 @@
                         <DataTemplate DataType="{x:Type reVm:RealEstateContractsReportViewModel}">
                             <reViews:RealEstateContractsReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateExpensesViewModel}">
+                            <reViews:RealEstateExpensesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateProfitReportViewModel}">
+                            <reViews:RealEstateProfitReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type reVm:RealEstateClauseTemplatesViewModel}">
                             <reViews:RealEstateClauseTemplatesView />
                         </DataTemplate>

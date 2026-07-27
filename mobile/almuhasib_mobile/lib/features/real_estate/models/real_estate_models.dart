@@ -494,6 +494,187 @@ class CreateRealEstateContractRequest {
   final String notes;
 }
 
+class RealEstateExpenseTypeDto {
+  RealEstateExpenseTypeDto({
+    required this.syncId,
+    required this.name,
+    this.notes = '',
+    this.isActive = true,
+  });
+
+  factory RealEstateExpenseTypeDto.fromJson(Map<String, dynamic> json) {
+    return RealEstateExpenseTypeDto(
+      syncId: _syncId(json['syncId']),
+      name: json['name'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  final String syncId;
+  final String name;
+  final String notes;
+  final bool isActive;
+}
+
+class RealEstateExpenseItem {
+  RealEstateExpenseItem({
+    required this.syncId,
+    required this.expenseDate,
+    required this.amount,
+    required this.expenseTypeSyncId,
+    required this.expenseTypeName,
+    this.description = '',
+    this.notes = '',
+    this.relatedContractSyncId,
+    this.relatedContractNumber = '',
+  });
+
+  factory RealEstateExpenseItem.fromJson(Map<String, dynamic> json) {
+    return RealEstateExpenseItem(
+      syncId: _syncId(json['syncId']),
+      expenseDate:
+          DateTime.tryParse(json['expenseDate'] as String? ?? '') ??
+              DateTime.now(),
+      amount: _num(json['amount']),
+      description: json['description'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
+      expenseTypeSyncId: _syncId(json['expenseTypeSyncId']),
+      expenseTypeName: json['expenseTypeName'] as String? ?? '',
+      relatedContractSyncId: json['relatedContractSyncId'] == null
+          ? null
+          : _syncId(json['relatedContractSyncId']),
+      relatedContractNumber: json['relatedContractNumber'] as String? ?? '',
+    );
+  }
+
+  final String syncId;
+  final DateTime expenseDate;
+  final double amount;
+  final String description;
+  final String notes;
+  final String expenseTypeSyncId;
+  final String expenseTypeName;
+  final String? relatedContractSyncId;
+  final String relatedContractNumber;
+}
+
+class RealEstateExpensesPage {
+  RealEstateExpensesPage({
+    required this.items,
+    this.totalCount = 0,
+    this.totalAmount = 0,
+  });
+
+  factory RealEstateExpensesPage.fromJson(Map<String, dynamic> json) {
+    return RealEstateExpensesPage(
+      items: (json['items'] as List<dynamic>?)
+              ?.map(
+                (e) => RealEstateExpenseItem.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList() ??
+          [],
+      totalCount: json['totalCount'] as int? ?? 0,
+      totalAmount: _num(json['totalAmount']),
+    );
+  }
+
+  final List<RealEstateExpenseItem> items;
+  final int totalCount;
+  final double totalAmount;
+}
+
+class RealEstateProfitReportDto {
+  RealEstateProfitReportDto({
+    required this.saleRevenue,
+    required this.purchaseCost,
+    required this.grossProfit,
+    required this.totalExpenses,
+    required this.netProfit,
+    this.profitMarginPercent = 0,
+    this.netCash = 0,
+    this.saleReceivables = 0,
+    this.purchasePayables = 0,
+    this.saleContractsCount = 0,
+    this.purchaseContractsCount = 0,
+    this.expenseCount = 0,
+    this.expensesByType = const [],
+    this.monthlySeries = const [],
+  });
+
+  factory RealEstateProfitReportDto.fromJson(Map<String, dynamic> json) {
+    return RealEstateProfitReportDto(
+      saleRevenue: _num(json['saleRevenue']),
+      purchaseCost: _num(json['purchaseCost']),
+      grossProfit: _num(json['grossProfit']),
+      totalExpenses: _num(json['totalExpenses']),
+      netProfit: _num(json['netProfit']),
+      profitMarginPercent: _num(json['profitMarginPercent']),
+      netCash: _num(json['netCash']),
+      saleReceivables: _num(json['saleReceivables']),
+      purchasePayables: _num(json['purchasePayables']),
+      saleContractsCount: json['saleContractsCount'] as int? ?? 0,
+      purchaseContractsCount: json['purchaseContractsCount'] as int? ?? 0,
+      expenseCount: json['expenseCount'] as int? ?? 0,
+      expensesByType: _amountPoints(json['expensesByType']),
+      monthlySeries: (json['monthlySeries'] as List<dynamic>?)
+              ?.map(
+                (e) => RealEstateMonthlyProfitPoint.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList() ??
+          [],
+    );
+  }
+
+  final double saleRevenue;
+  final double purchaseCost;
+  final double grossProfit;
+  final double totalExpenses;
+  final double netProfit;
+  final double profitMarginPercent;
+  final double netCash;
+  final double saleReceivables;
+  final double purchasePayables;
+  final int saleContractsCount;
+  final int purchaseContractsCount;
+  final int expenseCount;
+  final List<NameAmountPoint> expensesByType;
+  final List<RealEstateMonthlyProfitPoint> monthlySeries;
+}
+
+class RealEstateMonthlyProfitPoint {
+  RealEstateMonthlyProfitPoint({
+    required this.period,
+    required this.saleRevenue,
+    required this.purchaseCost,
+    required this.expenses,
+    required this.grossProfit,
+    required this.netProfit,
+  });
+
+  factory RealEstateMonthlyProfitPoint.fromJson(Map<String, dynamic> json) {
+    return RealEstateMonthlyProfitPoint(
+      period: json['period'] as String? ?? '',
+      saleRevenue: _num(json['saleRevenue']),
+      purchaseCost: _num(json['purchaseCost']),
+      expenses: _num(json['expenses']),
+      grossProfit: _num(json['grossProfit']),
+      netProfit: _num(json['netProfit']),
+    );
+  }
+
+  final String period;
+  final double saleRevenue;
+  final double purchaseCost;
+  final double expenses;
+  final double grossProfit;
+  final double netProfit;
+}
+
 List<NameCountPoint> _countPoints(dynamic raw) {
   if (raw is! List) return const [];
   return raw

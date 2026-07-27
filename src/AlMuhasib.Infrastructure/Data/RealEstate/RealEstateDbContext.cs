@@ -31,6 +31,8 @@ public class RealEstateDbContext : DbContext
     public DbSet<RealEstateContractClause> RealEstateContractClauses => Set<RealEstateContractClause>();
     public DbSet<RealEstateClauseTemplate> RealEstateClauseTemplates => Set<RealEstateClauseTemplate>();
     public DbSet<RealEstateParty> RealEstateParties => Set<RealEstateParty>();
+    public DbSet<RealEstateExpenseType> RealEstateExpenseTypes => Set<RealEstateExpenseType>();
+    public DbSet<RealEstateExpense> RealEstateExpenses => Set<RealEstateExpense>();
     public DbSet<SyncState> SyncStates => Set<SyncState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,6 +48,8 @@ public class RealEstateDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RealEstateContractClauseConfiguration());
         modelBuilder.ApplyConfiguration(new RealEstateClauseTemplateConfiguration());
         modelBuilder.ApplyConfiguration(new RealEstatePartyConfiguration());
+        modelBuilder.ApplyConfiguration(new RealEstateExpenseTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new RealEstateExpenseConfiguration());
 
         modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
         modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(

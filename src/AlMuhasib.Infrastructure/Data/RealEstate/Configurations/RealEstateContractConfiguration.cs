@@ -112,3 +112,36 @@ public class RealEstatePartyConfiguration : IEntityTypeConfiguration<RealEstateP
         builder.HasIndex(p => p.Phone);
     }
 }
+
+public class RealEstateExpenseTypeConfiguration : IEntityTypeConfiguration<RealEstateExpenseType>
+{
+    public void Configure(EntityTypeBuilder<RealEstateExpenseType> builder)
+    {
+        builder.ToTable("RealEstateExpenseTypes");
+        builder.Property(t => t.Name).IsRequired().HasMaxLength(200);
+        builder.Property(t => t.Notes).HasMaxLength(1000);
+        builder.HasIndex(t => t.Name);
+    }
+}
+
+public class RealEstateExpenseConfiguration : IEntityTypeConfiguration<RealEstateExpense>
+{
+    public void Configure(EntityTypeBuilder<RealEstateExpense> builder)
+    {
+        builder.ToTable("RealEstateExpenses");
+        builder.Property(e => e.Amount).HasPrecision(18, 2);
+        builder.Property(e => e.Description).HasMaxLength(500);
+        builder.Property(e => e.Notes).HasMaxLength(1000);
+        builder.HasIndex(e => e.ExpenseDate);
+
+        builder.HasOne(e => e.ExpenseType)
+            .WithMany(t => t.Expenses)
+            .HasForeignKey(e => e.ExpenseTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.RelatedContract)
+            .WithMany()
+            .HasForeignKey(e => e.RelatedContractId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}

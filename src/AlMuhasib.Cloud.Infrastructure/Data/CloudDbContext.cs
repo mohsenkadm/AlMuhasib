@@ -84,6 +84,8 @@ public class CloudDbContext : DbContext
     public DbSet<CloudRealEstateContractClause> RealEstateContractClauses => Set<CloudRealEstateContractClause>();
     public DbSet<CloudRealEstateClauseTemplate> RealEstateClauseTemplates => Set<CloudRealEstateClauseTemplate>();
     public DbSet<CloudRealEstateParty> RealEstateParties => Set<CloudRealEstateParty>();
+    public DbSet<CloudRealEstateExpenseType> RealEstateExpenseTypes => Set<CloudRealEstateExpenseType>();
+    public DbSet<CloudRealEstateExpense> RealEstateExpenses => Set<CloudRealEstateExpense>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -263,6 +265,29 @@ public class CloudDbContext : DbContext
             e.Property(p => p.IdNumber).HasMaxLength(50);
             e.Property(p => p.Notes).HasMaxLength(2000);
             e.HasIndex(p => new { p.TenantId, p.Name });
+        });
+
+        modelBuilder.Entity<CloudRealEstateExpenseType>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.Property(t => t.Notes).HasMaxLength(1000);
+            e.HasIndex(t => new { t.TenantId, t.Name });
+        });
+
+        modelBuilder.Entity<CloudRealEstateExpense>(e =>
+        {
+            e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.Description).HasMaxLength(500);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.HasIndex(x => new { x.TenantId, x.ExpenseDate });
+            e.HasOne(x => x.ExpenseType)
+                .WithMany()
+                .HasForeignKey(x => x.ExpenseTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.RelatedContract)
+                .WithMany()
+                .HasForeignKey(x => x.RelatedContractId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

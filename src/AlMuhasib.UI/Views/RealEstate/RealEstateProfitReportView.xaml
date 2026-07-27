@@ -1,0 +1,185 @@
+<UserControl x:Class="AlMuhasib.UI.Views.RealEstate.RealEstateProfitReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24">
+
+                <DockPanel Margin="0,0,0,8">
+                    <TextBlock Text="تقرير أرباح عقود العقارات" FontSize="26" FontWeight="Bold"
+                               Foreground="#1B5E20" DockPanel.Dock="Left"/>
+                </DockPanel>
+                <TextBlock Text="{Binding SummaryLine}" FontSize="13" Opacity="0.75" Margin="0,0,0,16"/>
+                <TextBlock Text="صافي الربح = (إيراد البيع − تكلفة الشراء) − المصاريف التشغيلية"
+                           FontSize="12" FontStyle="Italic" Foreground="#546E7A" Margin="0,0,0,16"/>
+
+                <!-- Filters -->
+                <Border Style="{StaticResource FilterBar}" Margin="0,0,0,20">
+                    <WrapPanel>
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
+                                    md:HintAssist.Hint="من تاريخ" Width="150" Margin="0,0,12,8"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
+                                    md:HintAssist.Hint="إلى تاريخ" Width="150" Margin="0,0,12,8"/>
+                        <Button Content="تحديث التقرير" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding LoadCommand}" Margin="0,0,12,8"/>
+                        <Button Content="التفاصيل" Style="{StaticResource AccentButton}"
+                                Command="{Binding ToggleDetailsCommand}" Margin="0,0,12,8"/>
+                        <Button Content="طباعة" Style="{StaticResource OutlinedButton}"
+                                Command="{Binding PrintReportCommand}" IsEnabled="{Binding CanPrint}" Margin="0,0,8,8"/>
+                        <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}"
+                                Command="{Binding ExportExcelCommand}" IsEnabled="{Binding CanExport}" Margin="0,0,0,8"/>
+                    </WrapPanel>
+                </Border>
+
+                <!-- P&L KPIs -->
+                <UniformGrid Columns="3" Margin="0,0,0,12">
+                    <controls:AnimatedStatCard Title="إيراد عقود البيع" TextValue="{Binding SaleRevenueText}"
+                                                Icon="HomeExportOutline" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="تكلفة عقود الشراء" TextValue="{Binding PurchaseCostText}"
+                                                Icon="HomeImportOutline" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+                    <controls:AnimatedStatCard Title="مجمل الربح" TextValue="{Binding GrossProfitText}"
+                                                Icon="TrendingUp" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                </UniformGrid>
+                <UniformGrid Columns="3" Margin="0,0,0,12">
+                    <controls:AnimatedStatCard Title="المصاريف التشغيلية" TextValue="{Binding TotalExpensesText}"
+                                                Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"/>
+                    <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding NetProfitText}"
+                                                Icon="Finance" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+                    <controls:AnimatedStatCard Title="هامش مجمل الربح" TextValue="{Binding MarginText}"
+                                                Icon="Percent" IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                </UniformGrid>
+                <UniformGrid Columns="3" Margin="0,0,0,20">
+                    <controls:AnimatedStatCard Title="صافي التدفق النقدي" TextValue="{Binding NetCashText}"
+                                                Icon="CashSync" IconBackground="#E8EAF6" IconForeground="#3949AB" ValueForeground="#3949AB"/>
+                    <controls:AnimatedStatCard Title="ذمم مدينة (بيع)" TextValue="{Binding ReceivablesText}"
+                                                Icon="AccountArrowLeft" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="ذمم دائنة (شراء)" TextValue="{Binding PayablesText}"
+                                                Icon="AccountArrowRight" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                </UniformGrid>
+
+                <!-- Charts -->
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.4*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:ChartCard Grid.Column="0" Title="الأرباح الشهرية" Subtitle="إيراد · تكلفة · مصروف · صافي" Margin="0,0,12,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding MonthlyNetSeries}"
+                                                XAxes="{Binding MonthlyXAxes}"
+                                                YAxes="{Binding MonthlyYAxes}"
+                                                Height="300"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Grid.Column="1" Title="توزيع المصاريف" Subtitle="حسب النوع">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding ExpensePieSeries}" Height="300"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </Grid>
+
+                <controls:ChartCard Title="ملخص قائمة الدخل" Subtitle="للفترة المحددة" Margin="0,0,0,20">
+                    <controls:ChartCard.ChartContent>
+                        <lvc:CartesianChart Series="{Binding PlSeries}"
+                                            XAxes="{Binding PlXAxes}"
+                                            YAxes="{Binding PlYAxes}"
+                                            Height="260"/>
+                    </controls:ChartCard.ChartContent>
+                </controls:ChartCard>
+
+                <!-- Details -->
+                <StackPanel Visibility="{Binding IsDetailsVisible, Converter={StaticResource BoolToVis}}">
+                    <md:Card Padding="20" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="عقود البيع" FontSize="16" FontWeight="Bold" Foreground="#2E7D32" Margin="0,0,0,12"/>
+                            <DataGrid ItemsSource="{Binding SaleRows}" Style="{StaticResource ModernDataGrid}"
+                                      IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="280"
+                                      CanUserAddRows="False" CanUserDeleteRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120"/>
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                                    <DataGridTextColumn Header="المشتري" Binding="{Binding PartyName}" Width="*"/>
+                                    <DataGridTextColumn Header="الموقع" Binding="{Binding PropertyLocation}" Width="*"/>
+                                    <DataGridTextColumn Header="السعر" Binding="{Binding TotalPrice, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </md:Card>
+
+                    <md:Card Padding="20" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="عقود الشراء" FontSize="16" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,12"/>
+                            <DataGrid ItemsSource="{Binding PurchaseRows}" Style="{StaticResource ModernDataGrid}"
+                                      IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="280"
+                                      CanUserAddRows="False" CanUserDeleteRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120"/>
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                                    <DataGridTextColumn Header="البائع" Binding="{Binding PartyName}" Width="*"/>
+                                    <DataGridTextColumn Header="الموقع" Binding="{Binding PropertyLocation}" Width="*"/>
+                                    <DataGridTextColumn Header="التكلفة" Binding="{Binding TotalPrice, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </md:Card>
+
+                    <md:Card Padding="20" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="المصاريف التشغيلية" FontSize="16" FontWeight="Bold" Foreground="#C2185B" Margin="0,0,0,12"/>
+                            <DataGrid ItemsSource="{Binding ExpenseRows}" Style="{StaticResource ModernDataGrid}"
+                                      IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="280"
+                                      CanUserAddRows="False" CanUserDeleteRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="110"/>
+                                    <DataGridTextColumn Header="النوع" Binding="{Binding ExpenseTypeName}" Width="160"/>
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="2*"/>
+                                    <DataGridTextColumn Header="العقد" Binding="{Binding RelatedContractNumber}" Width="140"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </md:Card>
+
+                    <md:Card Padding="20" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,24">
+                        <StackPanel>
+                            <TextBlock Text="التفصيل الشهري" FontSize="16" FontWeight="Bold" Foreground="#1565C0" Margin="0,0,0,12"/>
+                            <DataGrid ItemsSource="{Binding MonthlyRows}" Style="{StaticResource ModernDataGrid}"
+                                      IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="240"
+                                      CanUserAddRows="False" CanUserDeleteRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="الشهر" Binding="{Binding Period}" Width="100"/>
+                                    <DataGridTextColumn Header="إيراد البيع" Binding="{Binding SaleRevenue, StringFormat=N0}" Width="*"/>
+                                    <DataGridTextColumn Header="تكلفة الشراء" Binding="{Binding PurchaseCost, StringFormat=N0}" Width="*"/>
+                                    <DataGridTextColumn Header="المصاريف" Binding="{Binding Expenses, StringFormat=N0}" Width="*"/>
+                                    <DataGridTextColumn Header="مجمل الربح" Binding="{Binding GrossProfit, StringFormat=N0}" Width="*"/>
+                                    <DataGridTextColumn Header="صافي الربح" Binding="{Binding NetProfit, StringFormat=N0}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </md:Card>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري إعداد تقرير الأرباح..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

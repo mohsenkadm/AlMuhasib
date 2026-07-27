@@ -11,6 +11,8 @@ public static class RealEstatePermissionRegistry
     public const string Debts = "RealEstateDebts";
     public const string Parties = "RealEstateParties";
     public const string Reports = "RealEstateReports";
+    public const string Expenses = "RealEstateExpenses";
+    public const string ProfitReport = "RealEstateProfitReport";
     public const string ClauseTemplates = "RealEstateClauseTemplates";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
@@ -26,6 +28,8 @@ public static class RealEstatePermissionRegistry
         [typeof(RealEstateDebtsViewModel)] = Debts,
         [typeof(RealEstatePartiesViewModel)] = Parties,
         [typeof(RealEstateContractsReportViewModel)] = Reports,
+        [typeof(RealEstateExpensesViewModel)] = Expenses,
+        [typeof(RealEstateProfitReportViewModel)] = ProfitReport,
         [typeof(RealEstateClauseTemplatesViewModel)] = ClauseTemplates,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
@@ -44,6 +48,8 @@ public static class RealEstatePermissionRegistry
         [Debts] = typeof(RealEstateDebtsViewModel),
         [Parties] = typeof(RealEstatePartiesViewModel),
         [Reports] = typeof(RealEstateContractsReportViewModel),
+        [Expenses] = typeof(RealEstateExpensesViewModel),
+        [ProfitReport] = typeof(RealEstateProfitReportViewModel),
         [ClauseTemplates] = typeof(RealEstateClauseTemplatesViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
@@ -62,6 +68,8 @@ public static class RealEstatePermissionRegistry
         [Debts] = "كشف المدينين",
         [Parties] = "الزبائن",
         [Reports] = "التقارير",
+        [Expenses] = "المصاريف",
+        [ProfitReport] = "تقرير الأرباح",
         [ClauseTemplates] = "بنود العقد",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
