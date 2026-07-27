@@ -30,6 +30,8 @@ public static class DependencyInjection
         var networkConnectionService = new NetworkConnectionService();
         services.AddSingleton<INetworkConnectionService>(networkConnectionService);
         services.AddSingleton<IMainServerHostingService, MainServerHostingService>();
+        services.AddSingleton<ISqlServerInstanceDiscoveryService, SqlServerInstanceDiscoveryService>();
+        services.AddSingleton<IAppSettingsConnectionStore, AppSettingsConnectionStore>();
 
         var connectionString = SystemConnectionStrings.Build(configuration, systemProfile, networkConnectionService);
         var isBranchClient = systemProfile.IsBranchClient;
