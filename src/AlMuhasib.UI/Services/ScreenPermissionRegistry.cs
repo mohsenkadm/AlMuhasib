@@ -13,6 +13,7 @@ public static class ScreenPermissionRegistry
     public const string DeveloperSystem = "DeveloperSystem";
     public const string SystemUpdate = "SystemUpdate";
     public const string Reports = "Reports";
+    public const string SupervisoryReports = "SupervisoryReports";
     public const string BalanceSheet = "BalanceSheet";
     public const string NetworkConnection = "NetworkConnection";
 
@@ -45,6 +46,7 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (CarPermissionRegistry.CloudSync, "المزامنة السحابية"),
         (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
@@ -101,8 +103,11 @@ public static class ScreenPermissionRegistry
         (Dashboard, "لوحة التحكم"),
         ("Products", "المنتجات"),
         ("Categories", "تصنيفات المنتجات"),
+        ("PricingTypes", "أنواع التسعير"),
+        ("ProductPricing", "تسعير منتجات"),
         ("Customers", "العملاء"),
         ("Suppliers", "الموردون"),
+        ("PersonProfile", "ملف الشخص"),
         ("PurchaseInvoice", "فاتورة مشتريات"),
         ("SaleInvoice", "فاتورة مبيعات"),
         ("InstallmentInvoice", "فاتورة أقساط"),
@@ -117,6 +122,7 @@ public static class ScreenPermissionRegistry
         ("OpeningStock", "الأرصدة الافتتاحية"),
         ("StockAdjustment", "تسوية مخزنية"),
         ("Reports", "التقارير"),
+        ("SupervisoryReports", "التقارير الرقابية"),
         ("BalanceSheet", "موازنة يومية"),
         ("Capital", "رأس المال"),
         ("AuditLog", "سجل العمليات"),
@@ -172,8 +178,11 @@ public static class ScreenPermissionRegistry
         [typeof(DashboardViewModel)] = Dashboard,
         [typeof(ProductsViewModel)] = "Products",
         [typeof(CategoriesViewModel)] = "Categories",
+        [typeof(PricingTypesViewModel)] = "PricingTypes",
+        [typeof(ProductPricingViewModel)] = "ProductPricing",
         [typeof(CustomersViewModel)] = "Customers",
         [typeof(SuppliersViewModel)] = "Suppliers",
+        [typeof(PersonProfileViewModel)] = "PersonProfile",
         [typeof(PurchaseInvoiceViewModel)] = "PurchaseInvoice",
         [typeof(SalesInvoiceViewModel)] = "SaleInvoice",
         [typeof(PosQuickSaleViewModel)] = "SaleInvoice",
@@ -215,6 +224,14 @@ public static class ScreenPermissionRegistry
         [typeof(InvestorsReportViewModel)] = "Reports",
         [typeof(CashFlowReportViewModel)] = "Reports",
         [typeof(BalanceSheetViewModel)] = "BalanceSheet",
+        [typeof(DeletedInvoicesReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedVouchersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedProductsReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedCustomersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedSuppliersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedExpensesReportViewModel)] = SupervisoryReports,
+        [typeof(InvoiceModificationsReportViewModel)] = SupervisoryReports,
+        [typeof(ProductModificationsReportViewModel)] = SupervisoryReports,
         [typeof(CapitalAdjustmentViewModel)] = "Capital",
         [typeof(AuditLogViewModel)] = "AuditLog",
         [typeof(UsersViewModel)] = "Users",
@@ -233,8 +250,11 @@ public static class ScreenPermissionRegistry
         [Dashboard] = typeof(DashboardViewModel),
         ["Products"] = typeof(ProductsViewModel),
         ["Categories"] = typeof(CategoriesViewModel),
+        ["PricingTypes"] = typeof(PricingTypesViewModel),
+        ["ProductPricing"] = typeof(ProductPricingViewModel),
         ["Customers"] = typeof(CustomersViewModel),
         ["Suppliers"] = typeof(SuppliersViewModel),
+        ["PersonProfile"] = typeof(PersonProfileViewModel),
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
         ["InstallmentInvoice"] = typeof(InstallmentInvoiceViewModel),
@@ -249,6 +269,7 @@ public static class ScreenPermissionRegistry
         ["OpeningStock"] = typeof(OpeningStockViewModel),
         ["StockAdjustment"] = typeof(StockAdjustmentViewModel),
         ["Reports"] = typeof(SalesReportViewModel),
+        [SupervisoryReports] = typeof(DeletedInvoicesReportViewModel),
         ["BalanceSheet"] = typeof(BalanceSheetViewModel),
         ["Capital"] = typeof(CapitalAdjustmentViewModel),
         ["AuditLog"] = typeof(AuditLogViewModel),

@@ -10,10 +10,12 @@ import '../../features/car/data/car_repository.dart';
 import '../../features/car_trade/data/car_trade_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/data_tab/data/data_repository.dart';
+import '../../features/data_tab/data/finance_repository.dart';
 import '../../features/hotel/data/hotel_repository.dart';
 import '../../features/hotel/restaurant/data/restaurant_repository.dart';
 import '../../features/operations/data/mobile_operations_repository.dart';
 import '../../features/reports/data/reports_repository.dart';
+import '../offline/offline_write_queue.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/connectivity_controller.dart';
 import 'controllers/theme_controller.dart';
@@ -37,7 +39,12 @@ class AppServices {
     apiClient.updateBaseUrl();
     Get.put<ApiClient>(apiClient, permanent: true);
 
-    final notificationService = NotificationService(apiClient);
+    Get.put<OfflineWriteService>(
+      OfflineWriteService(prefs.rawPrefs),
+      permanent: true,
+    );
+
+    final notificationService = NotificationService(apiClient, prefs);
     Get.put<NotificationService>(notificationService, permanent: true);
 
     final authRepository = AuthRepository(
@@ -61,6 +68,7 @@ class AppServices {
     );
     Get.put<ReportsRepository>(ReportsRepository(apiClient), permanent: true);
     Get.put<DataRepository>(DataRepository(apiClient), permanent: true);
+    Get.put<FinanceRepository>(FinanceRepository(apiClient), permanent: true);
     Get.put<MobileOperationsRepository>(
       MobileOperationsRepository(apiClient),
       permanent: true,
@@ -88,6 +96,9 @@ class AppServices {
   static DashboardRepository get dashboard => Get.find<DashboardRepository>();
   static ReportsRepository get reports => Get.find<ReportsRepository>();
   static DataRepository get data => Get.find<DataRepository>();
+  static FinanceRepository get finance => Get.find<FinanceRepository>();
+  static OfflineWriteService get offlineQueue =>
+      Get.find<OfflineWriteService>();
   static MobileOperationsRepository get operations =>
       Get.find<MobileOperationsRepository>();
   static HotelRepository get hotel => Get.find<HotelRepository>();

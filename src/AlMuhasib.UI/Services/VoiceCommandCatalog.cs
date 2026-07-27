@@ -4,6 +4,7 @@ using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.ViewModels;
 using AlMuhasib.UI.ViewModels.Car;
+using AlMuhasib.UI.ViewModels.CarTrade;
 using AlMuhasib.UI.ViewModels.Hotel;
 using MaterialDesignThemes.Wpf;
 
@@ -20,6 +21,8 @@ public sealed class VoiceCommandCatalog
                 ["المنتجات", "منتجات", "المخزون", "الاصناف", "الأصناف"]),
             ["Customers"] = (typeof(CustomersViewModel), "العملاء", PackIconKind.AccountGroup,
                 ["العملاء", "عميل", "زبائن", "الزبائن"]),
+            ["PersonProfile"] = (typeof(PersonProfileViewModel), "ملف الشخص", PackIconKind.AccountDetails,
+                ["ملف الشخص", "ملف عميل", "ملف مورد", "ملف مستثمر", "ملف طرف"]),
             ["Suppliers"] = (typeof(SuppliersViewModel), "الموردون", PackIconKind.TruckDelivery,
                 ["الموردين", "الموردون", "مورد", "المورد"]),
             ["SaleInvoice"] = (typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister,
@@ -70,25 +73,28 @@ public sealed class VoiceCommandCatalog
             SuccessMessage = "تم فتح البحث"
         });
 
-        Add(new VoiceCommandDefinition
+        if (moduleRegistry.IsAccounting)
         {
-            Id = "quick-pos",
-            DisplayLabel = "بيع سريع",
-            Phrases = ["بيع سريع", "نقطة بيع", "pos", "بيع سريع pos"],
-            ActionType = VoiceCommandActionType.QuickPosSale,
-            ViewModelType = typeof(PosQuickSaleViewModel),
-            TabTitle = "بيع سريع (POS)",
-            SuccessMessage = "تم فتح بيع سريع"
-        });
+            Add(new VoiceCommandDefinition
+            {
+                Id = "quick-pos",
+                DisplayLabel = "بيع سريع",
+                Phrases = ["بيع سريع", "نقطة بيع", "pos", "بيع سريع pos"],
+                ActionType = VoiceCommandActionType.QuickPosSale,
+                ViewModelType = typeof(PosQuickSaleViewModel),
+                TabTitle = "بيع سريع (POS)",
+                SuccessMessage = "تم فتح بيع سريع"
+            });
 
-        Add(new VoiceCommandDefinition
-        {
-            Id = "quick-sale",
-            DisplayLabel = "فاتورة مبيعات",
-            Phrases = ["فاتورة جديدة", "فاتورة مبيعات سريعة"],
-            ActionType = VoiceCommandActionType.QuickNewSale,
-            SuccessMessage = "تم فتح فاتورة المبيعات"
-        });
+            Add(new VoiceCommandDefinition
+            {
+                Id = "quick-sale",
+                DisplayLabel = "فاتورة مبيعات",
+                Phrases = ["فاتورة جديدة", "فاتورة مبيعات سريعة"],
+                ActionType = VoiceCommandActionType.QuickNewSale,
+                SuccessMessage = "تم فتح فاتورة المبيعات"
+            });
+        }
 
         Add(new VoiceCommandDefinition
         {
@@ -110,6 +116,8 @@ public sealed class VoiceCommandCatalog
 
         if (moduleRegistry.IsCarContracts)
             AddCarCommands(Add, canOpenScreen);
+        else if (moduleRegistry.IsCarTrading)
+            AddCarTradeCommands(Add, canOpenScreen);
         else if (moduleRegistry.IsHotelManagement)
             AddHotelCommands(Add, canOpenScreen);
         else
@@ -172,6 +180,25 @@ public sealed class VoiceCommandCatalog
         if (canOpen(typeof(CarContractsViewModel)))
             add(MakeScreen("car-list", typeof(CarContractsViewModel), "العقود", PackIconKind.FormatListBulleted,
                 ["العقود", "عقود"]));
+    }
+
+    private static void AddCarTradeCommands(Action<VoiceCommandDefinition> add, Func<Type, bool> canOpen)
+    {
+        if (canOpen(typeof(CarTradeDashboardViewModel)))
+            add(MakeScreen("car-trade-dashboard", typeof(CarTradeDashboardViewModel), "لوحة التحكم", PackIconKind.ViewDashboard,
+                ["لوحة التحكم", "الرئيسية", "داشبورد"]));
+        if (canOpen(typeof(CarTradeFormViewModel)))
+            add(MakeScreen("car-trade-new", typeof(CarTradeFormViewModel), "عملية جديدة", PackIconKind.SwapHorizontal,
+                ["عملية جديدة", "انشاء عملية", "بيع سيارة", "شراء سيارة", "عملية"]));
+        if (canOpen(typeof(CarTradeListViewModel)))
+            add(MakeScreen("car-trade-list", typeof(CarTradeListViewModel), "العمليات", PackIconKind.FormatListBulleted,
+                ["العمليات", "عمليات", "قائمة العمليات"]));
+        if (canOpen(typeof(CarTradeReportsViewModel)))
+            add(MakeScreen("car-trade-reports", typeof(CarTradeReportsViewModel), "التقارير", PackIconKind.ChartBar,
+                ["التقارير", "تقرير العمليات", "تقارير"]));
+        if (canOpen(typeof(CarTradePartyStatementViewModel)))
+            add(MakeScreen("car-trade-statement", typeof(CarTradePartyStatementViewModel), "كشف حساب طرف", PackIconKind.AccountCash,
+                ["كشف حساب", "كشف طرف", "حساب طرف", "كشف"]));
     }
 
     private static void AddHotelCommands(Action<VoiceCommandDefinition> add, Func<Type, bool> canOpen)

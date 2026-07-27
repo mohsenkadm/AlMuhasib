@@ -29,6 +29,9 @@
             <a href="/notifications" class="@NavClass("/notifications")">
                 <span class="admin-nav-icon">✉</span> الإشعارات
             </a>
+            <a href="/desktop-license" class="@NavClass("/desktop-license")">
+                <span class="admin-nav-icon">🔑</span> تفعيل سطح المكتب
+            </a>
         </nav>
 
         <div class="admin-sidebar-footer">
@@ -80,6 +83,7 @@
             "/tenants" => "عملاء النظام",
             "/tenants/new" => "عميل جديد",
             "/notifications" => "إرسال إشعار",
+            "/desktop-license" => "تفعيل سطح المكتب",
             var p when p.StartsWith("/tenants/") => "إدارة عميل",
             _ => "لوحة التحكم"
         };

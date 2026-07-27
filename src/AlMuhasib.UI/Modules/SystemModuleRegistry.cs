@@ -34,4 +34,6 @@ public sealed class SystemModuleRegistry
     public bool IsCarTrading => _profile.ActiveSystem == ApplicationSystemType.CarTrading;
 
     public bool IsHotelManagement => _profile.ActiveSystem == ApplicationSystemType.HotelManagement;
+
+    public bool IsAccounting => _profile.ActiveSystem == ApplicationSystemType.Accounting;
 }

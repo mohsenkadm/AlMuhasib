@@ -6,6 +6,9 @@ public static class SyncEntityOrder
     [
         SyncEntityType.Category,
         SyncEntityType.Product,
+        SyncEntityType.PricingType,
+        SyncEntityType.ProductPrice,
+        SyncEntityType.BusinessSettings,
         SyncEntityType.Warehouse,
         SyncEntityType.Customer,
         SyncEntityType.Supplier,
@@ -15,6 +18,8 @@ public static class SyncEntityOrder
         SyncEntityType.ExpenseType,
         SyncEntityType.PrintBrandingSettings,
         SyncEntityType.WarehouseStock,
+        SyncEntityType.WarehouseTransfer,
+        SyncEntityType.WarehouseTransferItem,
         SyncEntityType.Invoice,
         SyncEntityType.InvoiceItem,
         SyncEntityType.InstallmentPlan,

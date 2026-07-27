@@ -3,8 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
-import '../../../core/getx/app_services.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../../shared/models/dashboard_models.dart';
@@ -19,37 +19,56 @@ class DashboardScreen extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isOffline = AppServices.connectivity.isOffline.value;
-
-      return Scaffold(
-        extendBodyBehindAppBar: true,
-        body: Column(
-          children: [
-            ConnectivityBanner(isOffline: isOffline),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: controller.reload,
-                edgeOffset: 120,
-                child: controller.isLoading.value
-                    ? const DashboardShimmer()
-                    : controller.error.value != null
-                        ? ErrorStateWidget(
-                            message: AppExceptionHandler.messageFor(
-                              controller.error.value,
-                            ),
-                            onRetry: controller.reload,
-                          )
-                        : _DashboardBody(
-                            data: controller.data.value!,
-                            companyName: controller.companyName,
-                          ),
-              ),
+    return Scaffold(
+      body: Column(
+        children: [
+          Obx(
+            () => ConnectivityBanner(
+              isOffline: AppServices.connectivity.isOffline.value,
             ),
-          ],
-        ),
-      );
-    });
+          ),
+          Expanded(
+            child: Obx(() {
+              final data = controller.data.value;
+              final isLoading = controller.isLoading.value;
+              final error = controller.error.value;
+
+              if (data != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.reload,
+                  child: _DashboardBody(
+                    data: data,
+                    companyName: controller.companyName,
+                  ),
+                );
+              }
+
+              if (isLoading) return const DashboardShimmer();
+
+              if (error != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.reload,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.6,
+                        child: ErrorStateWidget(
+                          message: AppExceptionHandler.messageFor(error),
+                          onRetry: controller.reload,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return const DashboardShimmer();
+            }),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -64,146 +83,203 @@ class _DashboardBody extends StatelessWidget {
     final topPadding = MediaQuery.paddingOf(context).top;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 120),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 8, 20, 120),
       children: [
         _DashboardHeader(companyName: companyName).fadeSlideIn(),
+        const SizedBox(height: 18),
+        AppBalanceHeroCard(
+          title: 'bank_balance'.tr(),
+          value: formatCurrency(data.bankBalance),
+          subtitle: 'inventory_value'.tr(),
+          trendLabel: formatCurrency(data.totalInventoryValue),
+          trendPositive: true,
+        ).fadeSlideIn(delayMs: 60),
         const SizedBox(height: 20),
-        _QuickActionButton(
-          onPressed: () => Get.toNamed(AppRoutes.invoiceNew),
-        ).fadeSlideIn(delayMs: 80),
-        const SizedBox(height: 24),
-        Text(
-          'dashboard_stats'.tr(),
-          style: Theme.of(context).textTheme.titleMedium,
-        ).fadeSlideIn(delayMs: 120),
-        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'dashboard_stats'.tr(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Get.toNamed(AppRoutes.data),
+              child: Text('view_all'.tr()),
+            ),
+          ],
+        ).fadeSlideIn(delayMs: 100),
+        const SizedBox(height: 8),
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 14,
-          childAspectRatio: 0.92,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.05,
           children: [
             KpiCard(
               title: 'today_sales'.tr(),
               value: formatCurrency(data.todaySales),
               icon: Icons.trending_up_rounded,
-              color: AppColors.success,
+              color: AppColors.moduleGreen,
             ).fadeSlideInList(index: 0),
             KpiCard(
               title: 'net_profit'.tr(),
               value: formatCurrency(data.netProfit),
               icon: Icons.account_balance_wallet_outlined,
-              color: AppColors.accent,
+              color: AppColors.modulePurple,
             ).fadeSlideInList(index: 1),
             KpiCard(
               title: 'today_purchases'.tr(),
               value: formatCurrency(data.todayPurchases),
               icon: Icons.shopping_cart_outlined,
-              color: AppColors.primaryLight,
+              color: AppColors.moduleOrange,
             ).fadeSlideInList(index: 2),
-            KpiCard(
-              title: 'overdue_installments'.tr(),
-              value: '${data.overdueInstallmentsCount}',
-              icon: Icons.warning_amber_rounded,
-              color: AppColors.warning,
+            GestureDetector(
+              onTap: () => Get.toNamed(
+                AppRoutes.installments,
+                arguments: 'overdue',
+              ),
+              child: KpiCard(
+                title: 'overdue_installments'.tr(),
+                value: '${data.overdueInstallmentsCount}',
+                icon: Icons.warning_amber_rounded,
+                color: AppColors.warning,
+              ),
             ).fadeSlideInList(index: 3),
           ],
         ),
-        const SizedBox(height: 24),
-        Card(
-          elevation: 0,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'sales_chart'.tr(),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  height: 210,
-                  child: _SalesChart(points: data.salesLast30Days),
-                ),
-              ],
+        const SizedBox(height: 22),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceDarkCard
+                : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: AppColors.cardShadow(
+              dark: Theme.of(context).brightness == Brightness.dark,
             ),
           ),
-        ).fadeSlideIn(delayMs: 280),
-        const SizedBox(height: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'sales_chart'.tr(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 200,
+                child: _SalesChart(points: data.salesLast30Days),
+              ),
+            ],
+          ),
+        ).fadeSlideIn(delayMs: 220),
+        const SizedBox(height: 22),
         _SectionTitle(title: 'recent_transactions'.tr()),
         ...data.recentTransactions.take(5).toList().asMap().entries.map(
-              (entry) => Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                    child: const Icon(Icons.receipt, color: AppColors.accent),
-                  ),
-                  title: Text('${entry.value.type} — ${entry.value.number}'),
-                  subtitle: Text(
-                    '${entry.value.party} • ${formatDate(entry.value.date)}',
-                  ),
-                  trailing: Text(formatCurrency(entry.value.amount)),
-                ),
-              ).fadeSlideInList(index: entry.key + 4),
+              (entry) {
+                final tx = entry.value;
+                final positive = tx.amount >= 0;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: AppEntityCard(
+                    title: '${tx.type} — ${tx.number}',
+                    subtitle: '${tx.party} • ${formatDate(tx.date)}',
+                    leading: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: (positive ? AppColors.success : AppColors.error)
+                            .withValues(alpha: 0.14),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        positive
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: positive ? AppColors.success : AppColors.error,
+                        size: 22,
+                      ),
+                    ),
+                    trailing: Text(
+                      formatCurrency(tx.amount),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: positive ? AppColors.success : AppColors.error,
+                      ),
+                    ),
+                  ).fadeSlideInList(index: entry.key),
+                );
+              },
             ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _SectionTitle(title: 'upcoming_installments'.tr()),
         ...data.upcomingInstallments.take(5).map(
-              (i) => Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.warning.withValues(alpha: 0.15),
-                    child:
-                        const Icon(Icons.schedule, color: AppColors.warning),
+              (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AppEntityCard(
+                  title: i.customerName,
+                  subtitle:
+                      '${formatDate(i.dueDate)} • ${i.daysRemaining} ${'days'.tr()}',
+                  leading: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.schedule_rounded,
+                      color: AppColors.warning,
+                    ),
                   ),
-                  title: Text(i.customerName),
-                  subtitle: Text(
-                    '${formatDate(i.dueDate)} • ${i.daysRemaining} يوم',
+                  trailing: Text(
+                    formatCurrency(i.amount),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  trailing: Text(formatCurrency(i.amount)),
+                  onTap: () => Get.toNamed(
+                    AppRoutes.installments,
+                    arguments: 'upcoming',
+                  ),
                 ),
               ),
             ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                title: 'bank_balance'.tr(),
-                value: formatCurrency(data.bankBalance),
-                icon: Icons.account_balance,
-                compact: true,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: KpiCard(
-                title: 'inventory_value'.tr(),
-                value: formatCurrency(data.totalInventoryValue),
-                icon: Icons.inventory_2_outlined,
-                compact: true,
-              ),
-            ),
-          ],
+        TextButton(
+          onPressed: () => Get.toNamed(AppRoutes.installments),
+          child: Text('view_all_installments'.tr()),
         ),
         if (data.cashBoxes.isNotEmpty) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           _SectionTitle(title: 'cash_boxes'.tr()),
           ...data.cashBoxes.map(
-            (c) => Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                title: Text(c.name),
-                trailing: Text(formatCurrency(c.balance)),
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: AppEntityCard(
+                title: c.name,
+                leading: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: AppColors.moduleCyan.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: AppColors.moduleCyan,
+                  ),
+                ),
+                trailing: Text(
+                  formatCurrency(c.balance),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ),
@@ -220,102 +296,67 @@ class _DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  AppColors.primary.withValues(alpha: 0.55),
-                  AppColors.accent.withValues(alpha: 0.25),
-                ]
-              : [
-                  AppColors.primaryLight.withValues(alpha: 0.12),
-                  AppColors.accent.withValues(alpha: 0.08),
-                ],
-        ),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const AppLogoMark(size: 56),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${'dashboard_greeting'.tr()} 👋',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  companyName,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 22,
-                        height: 1.2,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'dashboard_subtitle'.tr(),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActionButton extends StatelessWidget {
-  const _QuickActionButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      children: [
+        const AppLogoMark(size: 48),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.receipt_long_rounded, color: Colors.white),
-              const SizedBox(width: 10),
               Text(
-                'new_invoice'.tr(),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.white,
+                'dashboard_greeting'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Text(
+                companyName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
               ),
             ],
           ),
         ),
-      ),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: AppColors.cardShadow(),
+          ),
+          child: IconButton(
+            onPressed: () => Get.toNamed(AppRoutes.invoiceNew),
+            icon: const Icon(Icons.add_rounded),
+            color: AppColors.primary,
+            tooltip: 'new_invoice'.tr(),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: AppColors.cardShadow(),
+          ),
+          child: Obx(() {
+            final unread = AppServices.notifications.unreadCount;
+            return IconButton(
+              onPressed: () => Get.toNamed(AppRoutes.notifications),
+              icon: Badge(
+                isLabelVisible: unread > 0,
+                label: Text('$unread'),
+                child: const Icon(Icons.notifications_none_rounded),
+              ),
+              color: AppColors.primary,
+            );
+          }),
+        ),
+      ],
     );
   }
 }
@@ -329,7 +370,12 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, top: 4),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+      ),
     );
   }
 }
@@ -355,7 +401,7 @@ class _SalesChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (v) => FlLine(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
             strokeWidth: 1,
           ),
         ),
@@ -365,7 +411,7 @@ class _SalesChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 46,
+              reservedSize: 42,
               getTitlesWidget: (value, _) => Text(
                 value >= 1000
                     ? '${(value / 1000).toStringAsFixed(0)}k'
@@ -399,15 +445,48 @@ class _SalesChart extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            color: AppColors.accent,
-            barWidth: 3,
-            dotData: const FlDotData(show: false),
+            color: AppColors.primary,
+            barWidth: 3.5,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 3.5,
+                color: Colors.white,
+                strokeWidth: 2.5,
+                strokeColor: AppColors.primary,
+              ),
+            ),
             belowBarData: BarAreaData(
               show: true,
-              color: AppColors.accent.withValues(alpha: 0.12),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.28),
+                  AppColors.primary.withValues(alpha: 0.02),
+                ],
+              ),
             ),
           ),
         ],
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touched) => touched
+                .map(
+                  (spot) => LineTooltipItem(
+                    formatCurrency(spot.y),
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
       ),
     );
   }

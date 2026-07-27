@@ -23,6 +23,7 @@ class ThemeController extends GetxController {
 
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode.value = mode;
+    Get.changeThemeMode(mode);
     await _prefs.setThemeMode(mode == ThemeMode.light ? 'light' : 'dark');
   }
 

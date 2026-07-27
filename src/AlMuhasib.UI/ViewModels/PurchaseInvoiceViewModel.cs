@@ -20,6 +20,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
+    private readonly IProductPriceService _productPriceService;
+    private readonly IUserPreferencesService _userPreferences;
+    private readonly bool _updateProductPriceOnPurchase;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -106,7 +109,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         IExportService exportService,
         IInvoiceTemplateService templateService,
         IInvoiceDraftService draftService,
-        IInvoiceQueueService queueService)
+        IInvoiceQueueService queueService,
+        IProductPriceService productPriceService,
+        IUserPreferencesService userPreferences,
+        IFeatureFlagService featureFlags,
+        IProductUnitService productUnitService,
+        IProductBatchService productBatchService,
+        IProductSerialService productSerialService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -115,18 +124,26 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         _templateService = templateService;
         _draftService = draftService;
         _queueService = queueService;
+        _productPriceService = productPriceService;
+        _userPreferences = userPreferences;
+        _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
+            && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
 
         PageTitle = "فاتورة مشتريات";
 
-        ProductPicker = new ProductPickerViewModel(_unitOfWork);
+        ProductPicker = new ProductPickerViewModel(
+            _unitOfWork,
+            productPriceService,
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
+        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService);
     }
 
     public override bool HasUnsavedChanges =>
-        !IsSaved && Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0);
+        !IsSaved && Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0);
 
     public override async Task InitializeAsync()
     {
@@ -172,7 +189,20 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             // Start with one empty row
             AddRow();
 
-            if (InvoiceNavigationBridge.PendingPurchaseEditInvoiceId is int pendingEditId)
+            if (InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId is int pendingReturnId)
+            {
+                InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId = null;
+                InvoiceNavigationBridge.PendingPurchaseReturnMode = false;
+                await LoadAsReturnFromInvoiceAsync(pendingReturnId);
+            }
+            else if (InvoiceNavigationBridge.PendingPurchaseReturnMode)
+            {
+                InvoiceNavigationBridge.PendingPurchaseReturnMode = false;
+                EnterReturnMode();
+                InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.PurchaseReturn);
+                BeautifulMessageDialog.ShowInfo("وضع مرتجع المشتريات: ابحث عن فاتورة مشتريات من حقل البحث وانسخها كمرتجع، أو أدخل البنود يدوياً بكميات سالبة.");
+            }
+            else if (InvoiceNavigationBridge.PendingPurchaseEditInvoiceId is int pendingEditId)
             {
                 InvoiceNavigationBridge.PendingPurchaseEditInvoiceId = null;
                 await LoadInvoiceForEditAsync(pendingEditId);
@@ -235,8 +265,10 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
             };
+            InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
             WireItemRow(row);
             Items.Add(row);
+            _ = LoadPurchaseRowFeatureDataAsync(row);
         }
 
         if (!Items.Any())
@@ -244,6 +276,28 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
 
         RecalculateTotals();
         BeautifulMessageDialog.ShowSuccess($"تم نسخ {invoice.Items.Count} بند من الفاتورة {invoice.InvoiceNumber}");
+    }
+
+    public async Task LoadAsReturnFromInvoiceAsync(int invoiceId)
+    {
+        if (!_userPreferences.Current.FeatureFlags.PurchaseReturns)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
+        var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
+        await CopyFromInvoiceAsync(invoiceId);
+        EnterReturnMode(refNumber);
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.PurchaseReturn);
+        IsCashPayment = true;
+
+        foreach (var row in Items.Where(i => i.Quantity != 0).ToList())
+            row.Quantity = -Math.Abs(row.Quantity);
+
+        RecalculateTotals();
+        BeautifulMessageDialog.ShowInfo("وضع المرتجع: الكميات سالبة لإرجاع البضاعة للمورد. راجع ثم احفظ.");
     }
 
     // ── Supplier search ────────────────────────────────────
@@ -310,9 +364,23 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         IsProductPickerOpen = false;
     }
 
-    private void WireItemRow(InvoiceItemRow row) => row.TotalChanged += RecalculateTotals;
+    private void WireItemRow(InvoiceItemRow row)
+    {
+        row.TotalChanged += RecalculateTotals;
+        row.ProductChanged += OnPurchaseProductChanged;
+    }
 
-    private void UnwireItemRow(InvoiceItemRow row) => row.TotalChanged -= RecalculateTotals;
+    private void UnwireItemRow(InvoiceItemRow row)
+    {
+        row.TotalChanged -= RecalculateTotals;
+        row.ProductChanged -= OnPurchaseProductChanged;
+    }
+
+    private async void OnPurchaseProductChanged(InvoiceItemRow row)
+    {
+        try { await LoadPurchaseRowFeatureDataAsync(row); }
+        catch { /* ignore lookup failures */ }
+    }
 
     [RelayCommand]
     private void ProcessBarcode()
@@ -416,10 +484,20 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             return;
         }
 
-        var validItems = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0 && (i.UnitPrice > 0 || i.TotalPrice > 0)).ToList();
+        var validItems = Items.Where(i =>
+                !string.IsNullOrWhiteSpace(i.ItemName)
+                && (IsReturnMode ? i.Quantity != 0 : i.Quantity > 0)
+                && (i.UnitPrice > 0 || i.TotalPrice != 0))
+            .ToList();
         if (validItems.Count == 0)
         {
             ErrorMessage = "يجب إضافة عنصر واحد على الأقل بالكمية والسعر";
+            return;
+        }
+
+        if (IsReturnMode && !_userPreferences.Current.FeatureFlags.PurchaseReturns)
+        {
+            ErrorMessage = "فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً";
             return;
         }
 
@@ -444,10 +522,12 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 supplierId = newSupplier.Id;
             }
 
+            var invoiceType = IsReturnMode ? InvoiceType.PurchaseReturn : InvoiceType.Purchase;
+
             var invoice = new Invoice
             {
                 InvoiceNumber = InvoiceNumber,
-                InvoiceType = InvoiceType.Purchase,
+                InvoiceType = invoiceType,
                 SupplierId = supplierId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
@@ -468,13 +548,19 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                     productId = matchedProduct?.Id;
                 }
 
+                var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
+                var lineTotal = Math.Abs(row.Quantity) * row.UnitPrice;
+                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
+
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
+                    PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
-                    Quantity = row.Quantity,
-                    UnitPrice = row.UnitPrice,
-                    TotalPrice = row.TotalPrice
+                    Quantity = stockQty,
+                    UnitPrice = unitPriceForStorage,
+                    TotalPrice = lineTotal,
+                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });
             }
 
@@ -487,6 +573,26 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             else
             {
                 saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+
+                if (_updateProductPriceOnPurchase && !IsReturnMode)
+                {
+                    foreach (var item in invoiceItems.Where(i => i.ProductId is > 0 && i.PricingTypeId is > 0))
+                    {
+                        await _productPriceService.UpdatePurchasePriceAsync(
+                            item.ProductId!.Value,
+                            item.PricingTypeId!.Value,
+                            item.UnitPrice);
+                    }
+                }
+            }
+
+            try
+            {
+                await ApplyPurchaseFeatureSideEffectsAsync(validItems);
+            }
+            catch (Exception sideEx)
+            {
+                BeautifulMessageDialog.ShowWarning($"حُفظت الفاتورة مع تحذير الميزات: {sideEx.Message}");
             }
 
             _savedInvoice = saved;
@@ -496,7 +602,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             _draftService.ClearDraft(DraftKey);
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع");
+                $"تم حفظ {(IsReturnMode ? "مرتجع المشتريات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع");
 
             PrintInvoice();
         }
@@ -517,7 +623,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         if (_savedInvoice is null) return;
         var model = new InvoicePrintModel
         {
-            Title = "فاتورة مشتريات",
+            Title = IsReturnMode ? "مرتجع مشتريات" : "فاتورة مشتريات",
             InvoiceNumber = _savedInvoice.InvoiceNumber,
             Date = _savedInvoice.Date,
             PartyLabel = "المورد",
@@ -545,6 +651,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private async Task NewInvoice()
     {
         IsSaved = false;
+        IsReturnMode = false;
+        PageTitle = "فاتورة مشتريات";
         ClearEditingInvoiceId();
         _savedInvoice = null;
         _savedItems = [];

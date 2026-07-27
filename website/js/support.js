@@ -7,8 +7,8 @@ function getSupportConfig() {
   return {
     phone,
     waDigits,
-    messageAr: m.supportMessage ?? 'السلام عليكم، أحتاج مساعدة في نظام المحاسب.',
-    messageEn: 'Hello, I need help with AlMuhasib accounting system.'
+    messageAr: m.supportMessage ?? 'السلام عليكم، أحتاج مساعدة في نظام قيد.',
+    messageEn: 'Hello, I need help with the Qayd business system.'
   };
 }
 

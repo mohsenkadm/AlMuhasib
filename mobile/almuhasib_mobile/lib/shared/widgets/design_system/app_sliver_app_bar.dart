@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/config/system_profile.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/getx/app_services.dart';
 import '../../../core/theme/app_spacing.dart';
 
@@ -110,45 +110,37 @@ class AppStandardAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final profile = AppServices.prefs.systemProfile;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.surfaceDarkCard : profile.primary;
+    final fg = Colors.white;
+
     return AppBar(
+      backgroundColor: bg,
+      foregroundColor: fg,
+      iconTheme: IconThemeData(color: fg),
       leading: leading,
       title: subtitle == null
           ? Text(title)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 17)),
+                Text(title, style: TextStyle(fontSize: 17, color: fg)),
                 Text(
                   subtitle!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.65),
+                        color: fg.withValues(alpha: 0.8),
                       ),
                 ),
               ],
             ),
       actions: actions,
-      bottom: bottom,
-      flexibleSpace: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              profile.primary.withValues(alpha: 0.12),
-              Colors.transparent,
-            ],
-          ),
-        ),
-        child: showProgress
-            ? const Align(
-                alignment: Alignment.bottomCenter,
-                child: LinearProgressIndicator(minHeight: 3),
-              )
-            : null,
-      ),
+      bottom: bottom ??
+          (showProgress
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(3),
+                  child: LinearProgressIndicator(minHeight: 3),
+                )
+              : null),
     );
   }
 }

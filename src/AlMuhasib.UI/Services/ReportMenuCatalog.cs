@@ -47,6 +47,17 @@ public static class ReportMenuCatalog
             ("تقرير المستثمرين", PackIconKind.AccountGroup, typeof(InvestorsReportViewModel), ScreenPermissionRegistry.Reports),
             ("موازنة يومية", PackIconKind.ScaleBalance, typeof(BalanceSheetViewModel), ScreenPermissionRegistry.BalanceSheet),
         ]),
+        ("supervisory", "التقارير الرقابية", PackIconKind.ShieldSearch, "#C62828", "#FFEBEE", ScreenPermissionRegistry.SupervisoryReports,
+        [
+            ("فواتير محذوفة", PackIconKind.FileDocumentOutline, typeof(DeletedInvoicesReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("سندات محذوفة", PackIconKind.ReceiptTextOutline, typeof(DeletedVouchersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("منتجات محذوفة", PackIconKind.PackageVariant, typeof(DeletedProductsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("عملاء محذوفون", PackIconKind.AccountRemove, typeof(DeletedCustomersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("موردون محذوفون", PackIconKind.TruckDelivery, typeof(DeletedSuppliersReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("مصاريف محذوفة", PackIconKind.CashMinus, typeof(DeletedExpensesReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("تعديلات الفواتير", PackIconKind.FileDocumentEdit, typeof(InvoiceModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("تعديلات المنتجات", PackIconKind.PackageVariantClosedPlus, typeof(ProductModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+        ]),
     ];
 
     public static IEnumerable<NavigationMenuItem> CreateCategoryMenuItems()
@@ -61,7 +72,8 @@ public static class ReportMenuCatalog
                 CategoryKey = cat.Key,
                 ScreenName = cat.Permission,
                 CategoryAccentColor = cat.Accent,
-                CategoryAccentLightColor = cat.AccentLight
+                CategoryAccentLightColor = cat.AccentLight,
+                FlyoutItemLabel = "تقرير"
             };
 
             foreach (var r in cat.Reports)
@@ -85,9 +97,8 @@ public static class ReportMenuCatalog
         if (!category.IsReportCategory)
             yield break;
 
-        var meta = Catalog.FirstOrDefault(c => c.Key == category.CategoryKey);
-        var accent = meta.Accent;
-        var accentLight = meta.AccentLight;
+        var accent = category.CategoryAccentColor;
+        var accentLight = category.CategoryAccentLightColor;
 
         foreach (var child in category.Children.Where(c => c.IsVisible && c.ViewModelType is not null))
         {

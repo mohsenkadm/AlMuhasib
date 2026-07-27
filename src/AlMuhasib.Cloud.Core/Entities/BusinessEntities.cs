@@ -10,6 +10,28 @@ public class CloudProduct : CloudBaseEntity
     public string? Barcode { get; set; }
     public int CategoryId { get; set; }
     public CloudCategory Category { get; set; } = null!;
+    public ICollection<CloudProductPrice> ProductPrices { get; set; } = [];
+}
+public class CloudPricingType : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public ICollection<CloudProductPrice> ProductPrices { get; set; } = [];
+}
+public class CloudProductPrice : CloudBaseEntity
+{
+    public int ProductId { get; set; }
+    public int PricingTypeId { get; set; }
+    public decimal SalePrice { get; set; }
+    public decimal PurchasePrice { get; set; }
+    public CloudProduct Product { get; set; } = null!;
+    public CloudPricingType PricingType { get; set; } = null!;
+}
+public class CloudBusinessSettings : CloudBaseEntity
+{
+    public bool ProductPricingEnabled { get; set; }
+    public bool UpdateProductPriceOnPurchase { get; set; }
 }
 public class CloudWarehouse : CloudBaseEntity { public string Name { get; set; } = string.Empty; public string? Location { get; set; } }
 public class CloudCustomer : CloudBaseEntity
@@ -72,6 +94,25 @@ public class CloudWarehouseStock : CloudBaseEntity
     public CloudWarehouse Warehouse { get; set; } = null!;
     public CloudProduct Product { get; set; } = null!;
 }
+public class CloudWarehouseTransfer : CloudBaseEntity
+{
+    public string TransferNumber { get; set; } = string.Empty;
+    public int FromWarehouseId { get; set; }
+    public int ToWarehouseId { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+    public CloudWarehouse FromWarehouse { get; set; } = null!;
+    public CloudWarehouse ToWarehouse { get; set; } = null!;
+    public ICollection<CloudWarehouseTransferItem> Items { get; set; } = [];
+}
+public class CloudWarehouseTransferItem : CloudBaseEntity
+{
+    public int WarehouseTransferId { get; set; }
+    public int ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public CloudWarehouseTransfer WarehouseTransfer { get; set; } = null!;
+    public CloudProduct Product { get; set; } = null!;
+}
 public class CloudInvoice : CloudBaseEntity
 {
     public string InvoiceNumber { get; set; } = string.Empty;
@@ -105,12 +146,14 @@ public class CloudInvoiceItem : CloudBaseEntity
 {
     public int InvoiceId { get; set; }
     public int? ProductId { get; set; }
+    public int? PricingTypeId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
     public CloudInvoice Invoice { get; set; } = null!;
     public CloudProduct? Product { get; set; }
+    public CloudPricingType? PricingType { get; set; }
 }
 public class CloudInstallmentPlan : CloudBaseEntity
 {

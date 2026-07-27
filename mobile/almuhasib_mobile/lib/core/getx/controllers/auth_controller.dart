@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
+import '../../router/app_routes.dart';
 import '../../storage/preferences_service.dart';
-import '../../router/route_guard.dart';
 import '../../../features/auth/data/auth_repository.dart';
 
 class AuthController extends GetxController {
@@ -28,19 +28,61 @@ class AuthController extends GetxController {
 
   Future<void> _bootstrap() async {
     isLoading.value = true;
-    isAuthenticated.value = await _repository.hasValidSession();
-    isLoading.value = false;
-    _navigateIfNeeded();
+    try {
+      isAuthenticated.value = await _repository
+          .hasValidSession()
+          .timeout(const Duration(seconds: 4), onTimeout: () => false);
+    } catch (_) {
+      isAuthenticated.value = false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Waits until bootstrap finishes (or [timeout] elapses).
+  Future<void> waitUntilReady({
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    if (!isLoading.value) return;
+    final end = DateTime.now().add(timeout);
+    while (isLoading.value && DateTime.now().isBefore(end)) {
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+    }
+    if (isLoading.value) {
+      isLoading.value = false;
+    }
   }
 
   void _navigateIfNeeded() {
     if (isLoading.value) return;
     final current = Get.currentRoute;
-    if (current.isEmpty) return;
-    final redirect = RouteGuard.redirect(current);
-    if (redirect != null && redirect != current) {
-      Get.offAllNamed(redirect);
+    if (current.isEmpty || current == AppRoutes.splash) return;
+    if (!isAuthenticated.value) {
+      if (current != AppRoutes.login && current != AppRoutes.onboarding) {
+        Get.offAllNamed(
+          _preferences.onboardingCompleted
+              ? AppRoutes.login
+              : AppRoutes.onboarding,
+        );
+      }
+      return;
     }
+    if (current == AppRoutes.login || current == AppRoutes.onboarding) {
+      Get.offAllNamed(_preferences.launchRoute);
+    }
+  }
+
+  /// Leaves the splash after the brand animation; resolves the next route.
+  void leaveSplash() {
+    if (!_preferences.onboardingCompleted) {
+      Get.offAllNamed(AppRoutes.onboarding);
+      return;
+    }
+    if (!isAuthenticated.value) {
+      Get.offAllNamed(AppRoutes.login);
+      return;
+    }
+    Get.offAllNamed(_preferences.launchRoute);
   }
 
   Future<void> login(String username, String password) async {
@@ -53,10 +95,14 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     await _repository.logout();
     isAuthenticated.value = false;
-    Get.offAllNamed('/login');
+    Get.offAllNamed(AppRoutes.login);
   }
 
   Future<void> refreshAuth() async {
-    isAuthenticated.value = await _repository.hasValidSession();
+    try {
+      isAuthenticated.value = await _repository.hasValidSession();
+    } catch (_) {
+      isAuthenticated.value = false;
+    }
   }
 }

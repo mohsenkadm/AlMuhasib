@@ -60,10 +60,8 @@
                 </Border>
                 <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}"
                            ToolTip="{Binding Name}"/>
-                <TextBlock Grid.Row="2" Style="{StaticResource MasterDataCardMeta}">
-                    <Run Text="تاريخ الإنشاء: "/>
-                    <Run Text="{Binding CreatedAt, StringFormat=yyyy/MM/dd}"/>
-                </TextBlock>
+                <TextBlock Grid.Row="2" Style="{StaticResource MasterDataCardMeta}"
+                           Text="{Binding CreatedAt, Mode=OneWay, StringFormat=تاريخ الإنشاء: yyyy/MM/dd}"/>
                 <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
                     <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             CommandParameter="{Binding}"
@@ -99,15 +97,11 @@
                 <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}"
                            ToolTip="{Binding Name}"/>
                 <StackPanel Grid.Row="2">
-                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
-                        <Run Text="التصنيف: "/>
-                        <Run Text="{Binding Category.Name, TargetNullValue=—}"/>
-                    </TextBlock>
-                    <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas">
-                        <Run Text="الباركود: "/>
-                        <Run Text="{Binding Barcode, TargetNullValue=—}"/>
-                    </TextBlock>
-                    <TextBlock Text="{Binding Description}" Style="{StaticResource MasterDataCardMeta}"
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}"
+                               Text="{Binding Category.Name, Mode=OneWay, TargetNullValue=—, FallbackValue=—, StringFormat=التصنيف: {0}}"/>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
+                               Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"/>
+                    <TextBlock Text="{Binding Description, Mode=OneWay}" Style="{StaticResource MasterDataCardMeta}"
                                MaxHeight="32" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
                 <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">

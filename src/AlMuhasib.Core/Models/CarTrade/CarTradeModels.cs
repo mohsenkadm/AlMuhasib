@@ -128,6 +128,7 @@ public class CarTradePartyStatementFilter
 
 public class CarTradePartyStatementRow
 {
+    public int TransactionId { get; set; }
     public DateTime TransactionDate { get; set; }
     public string TransactionNumber { get; set; } = string.Empty;
     public string TradeType { get; set; } = string.Empty;
@@ -137,6 +138,11 @@ public class CarTradePartyStatementRow
     public decimal RemainingAmount { get; set; }
     public string PartyRole { get; set; } = string.Empty;
     public string DebtKind { get; set; } = string.Empty;
+    public string PartyPhone { get; set; } = string.Empty;
+
+    public bool IsSellerDebt => PartyRole == "بائع";
+    public bool IsBuyerDebt => PartyRole == "مشتري";
+    public bool CanSettle => RemainingAmount > 0;
 }
 
 public class CarTradePartyStatementData

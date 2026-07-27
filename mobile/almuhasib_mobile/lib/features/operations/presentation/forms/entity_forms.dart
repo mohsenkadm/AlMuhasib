@@ -134,7 +134,11 @@ class ProductFormScreen extends GetView<ProductFormController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('add_product'.tr())),
+      appBar: AppBar(
+        title: Text(
+          controller.isEdit ? 'edit_product'.tr() : 'add_product'.tr(),
+        ),
+      ),
       body: Form(
         key: controller.formKey,
         child: ListView(
@@ -172,6 +176,36 @@ class ProductFormScreen extends GetView<ProductFormController> {
                 ),
               ],
             ),
+            if (controller.isEdit)
+              Obx(
+                () => FormSectionCard(
+                  title: 'product_prices'.tr(),
+                  children: [
+                    if (controller.prices.isEmpty)
+                      Text('no_product_prices'.tr())
+                    else
+                      ...controller.prices.map(
+                        (price) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(price.pricingTypeName),
+                          subtitle: Text(
+                            '${'sale_price'.tr()}: ${price.salePrice} • ${'purchase_price'.tr()}: ${price.purchasePrice}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => controller.editPrice(price),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: controller.addPrice,
+                      icon: const Icon(Icons.add),
+                      label: Text('add_product_price'.tr()),
+                    ),
+                  ],
+                ),
+              ),
             Obx(
               () => FilledButton(
                 onPressed: controller.saving.value ? null : controller.save,

@@ -69,6 +69,7 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
+    await _notificationService.logoutExternalUser();
     await _secureStorage.clearTokens();
     await _preferences.clearSession();
   }

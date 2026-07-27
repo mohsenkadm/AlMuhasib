@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/app_animations.dart';
@@ -9,6 +10,7 @@ import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/search_filter_bar.dart';
 import '../controllers/car_trade_transactions_controller.dart';
 import '../models/car_trade_models.dart';
+import '../widgets/car_trade_labels.dart';
 
 class CarTradeTransactionsScreen extends GetView<CarTradeTransactionsController> {
   const CarTradeTransactionsScreen({super.key});
@@ -59,29 +61,50 @@ class CarTradeTransactionsScreen extends GetView<CarTradeTransactionsController>
           },
           onClear: controller.clearFilters,
         ),
-        itemBuilder: (context, t, index) => AppEntityCard(
-          title: t.transactionNumber,
-          subtitle: '${t.tradeType} • ${t.plateNumber}',
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                formatCurrency(t.totalAmount),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+        itemBuilder: (context, t, index) {
+          final buy = t.isBuy;
+          return AppEntityCard(
+            title: t.transactionNumber,
+            subtitle:
+                '${carTradeTypeLabel(t.tradeType)} • ${t.carName.isEmpty ? t.plateNumber : t.carName}\n${formatDate(t.transactionDate)}',
+            leading: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: (buy ? AppColors.moduleOrange : AppColors.moduleCyan)
+                    .withValues(alpha: 0.14),
+                shape: BoxShape.circle,
               ),
-              Text(
-                formatCurrency(t.remainingAmount),
-                style: Theme.of(context).textTheme.bodySmall,
+              child: Icon(
+                buy ? Icons.shopping_cart_outlined : Icons.sell_outlined,
+                color: buy ? AppColors.moduleOrange : AppColors.moduleCyan,
               ),
-            ],
-          ),
-          onTap: () => Get.toNamed(
-            AppRoutes.carTradeTransactionDetailPath(t.syncId),
-          ),
-        ).fadeSlideIn(delayMs: index * 40),
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatCurrency(t.totalAmount),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                if (t.remainingAmount > 0)
+                  Text(
+                    formatCurrency(t.remainingAmount),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+              ],
+            ),
+            onTap: () => Get.toNamed(
+              AppRoutes.carTradeTransactionDetailPath(t.syncId),
+            ),
+          ).fadeSlideIn(delayMs: index * 40);
+        },
       ),
     );
   }

@@ -16,6 +16,7 @@ class ReportDetailController extends GetxController {
   final to = DateTime.now().obs;
   final Rxn<LookupItem> selectedCustomer = Rxn<LookupItem>();
   final Rxn<LookupItem> selectedInvestor = Rxn<LookupItem>();
+  final Rxn<LookupItem> selectedSupplier = Rxn<LookupItem>();
   final isLoading = true.obs;
   final Rxn<Object> error = Rxn<Object>();
   final Rxn<dynamic> result = Rxn<dynamic>();
@@ -78,6 +79,50 @@ class ReportDetailController extends GetxController {
               to: to.value,
             );
           }
+        case 'supplier_statement':
+          if (selectedSupplier.value == null) {
+            final suppliers = await AppServices.data.getSuppliers();
+            if (suppliers.isNotEmpty) {
+              selectedSupplier.value = suppliers.first;
+            }
+          }
+          if (selectedSupplier.value != null) {
+            loaded = await repo.getSupplierStatement(
+              selectedSupplier.value!.syncId,
+              from: from.value,
+              to: to.value,
+            );
+          }
+        case 'expenses':
+          loaded = await repo.getExpensesReport(from.value, to.value);
+        case 'income_expense':
+          loaded = await repo.getIncomeExpenseReport(from.value, to.value);
+        case 'cash_flow':
+          loaded = await repo.getCashFlowReport(from.value, to.value);
+        case 'installments_summary':
+          loaded = await repo.getInstallmentsSummary(from.value, to.value);
+        case 'installments_detail':
+          loaded = await repo.getInstallmentsDetail(from.value, to.value);
+        case 'installments_paid':
+          loaded = await repo.getInstallmentsPaid(from.value, to.value);
+        case 'installments_unpaid':
+          loaded = await repo.getInstallmentsUnpaid();
+        case 'installments_aging':
+          loaded = await repo.getInstallmentsAging();
+        case 'product_margin':
+          loaded = await repo.getProductMargin(from.value, to.value);
+        case 'product_movement':
+          loaded = await repo.getProductMovement(from.value, to.value);
+        case 'stock_health':
+          loaded = await repo.getStockHealth();
+        case 'inventory_replenishment':
+          loaded = await repo.getInventoryReplenishment(from.value, to.value);
+        case 'customers_overview':
+          loaded = await repo.getCustomersOverview(from.value, to.value);
+        case 'suppliers_overview':
+          loaded = await repo.getSuppliersOverview(from.value, to.value);
+        case 'profit_comparison':
+          loaded = await repo.getProfitComparison(from.value, to.value);
         default:
           loaded = null;
       }
@@ -139,6 +184,18 @@ class ReportDetailController extends GetxController {
     }
   }
 
+  Future<void> pickSupplier(BuildContext context) async {
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_supplier'.tr(),
+      loadItems: (search) => AppServices.data.getSuppliers(search: search),
+    );
+    if (selected != null) {
+      selectedSupplier.value = selected;
+      await reload();
+    }
+  }
+
   String get title {
     switch (reportType) {
       case 'sales':
@@ -155,17 +212,54 @@ class ReportDetailController extends GetxController {
         return 'report_statement'.tr();
       case 'investor_statement':
         return 'report_investor_statement'.tr();
+      case 'supplier_statement':
+        return 'report_supplier_statement'.tr();
       case 'warehouse':
         return 'report_warehouse'.tr();
       case 'top_products':
         return 'report_top_products'.tr();
+      case 'expenses':
+        return 'report_expenses'.tr();
+      case 'income_expense':
+        return 'report_income_expense'.tr();
+      case 'cash_flow':
+        return 'report_cash_flow'.tr();
+      case 'installments_summary':
+        return 'report_installments_summary'.tr();
+      case 'installments_detail':
+        return 'report_installments_detail'.tr();
+      case 'installments_paid':
+        return 'report_installments_paid'.tr();
+      case 'installments_unpaid':
+        return 'report_installments_unpaid'.tr();
+      case 'installments_aging':
+        return 'report_installments_aging'.tr();
+      case 'product_margin':
+        return 'report_product_margin'.tr();
+      case 'product_movement':
+        return 'report_product_movement'.tr();
+      case 'stock_health':
+        return 'report_stock_health'.tr();
+      case 'inventory_replenishment':
+        return 'report_inventory_replenishment'.tr();
+      case 'customers_overview':
+        return 'report_customers_overview'.tr();
+      case 'suppliers_overview':
+        return 'report_suppliers_overview'.tr();
+      case 'profit_comparison':
+        return 'report_profit_comparison'.tr();
       default:
         return 'reports_title'.tr();
     }
   }
 
-  bool get showDateFilter =>
-      !{'overdue', 'warehouse', 'balance_sheet'}.contains(reportType);
+  bool get showDateFilter => !{
+        'overdue',
+        'warehouse',
+        'installments_unpaid',
+        'installments_aging',
+        'stock_health',
+      }.contains(reportType);
 
   bool get singleDate => reportType == 'balance_sheet';
 }

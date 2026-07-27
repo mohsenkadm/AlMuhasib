@@ -11,7 +11,8 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SalesInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             x:Name="Root">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -312,6 +313,78 @@
 
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
+
+                                <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
+                                <DataGridTemplateColumn x:Name="ColCustomField1" Width="100" MinWidth="80"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.CustomField1Header, ElementName=Root}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding CustomField1, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="{Binding CustomField1Label}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColCustomField2" Width="100" MinWidth="80"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.CustomField2Header, ElementName=Root}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding CustomField2, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="{Binding CustomField2Label}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableUnits}"
+                                                      SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="UnitName"
+                                                      IsEditable="False"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColBatch" Header="الدفعة" Width="110"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableBatches}"
+                                                      SelectedItem="{Binding SelectedBatch, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="False">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <Run Text="{Binding BatchNumber, TargetNullValue=بدون}"/>
+                                                            <Run Text=" — "/>
+                                                            <Run Text="{Binding ExpiryDate, StringFormat=yyyy/MM/dd, TargetNullValue=-}"/>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="120"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>

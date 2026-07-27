@@ -84,7 +84,10 @@ public partial class SalesInvoiceViewModel
         if (template is null || IsSaved) return;
         ApplyTemplate(template);
         IsTemplatePickerOpen = false;
-        BeautifulMessageDialog.ShowSuccess($"تم تحميل القالب «{template.Name}»");
+        var fieldsHint = ActiveCustomFieldLabels.Count > 0
+            ? $" — الحقول: {string.Join("، ", ActiveCustomFieldLabels)}"
+            : string.Empty;
+        BeautifulMessageDialog.ShowSuccess($"تم تحميل القالب «{template.Name}»{fieldsHint}");
     }
 
     [RelayCommand]
@@ -160,6 +163,8 @@ public partial class SalesInvoiceViewModel
 
         Notes = template.Notes ?? string.Empty;
 
+        ApplyCustomFieldLabels(template.CustomFieldLabels, template.IndustryTag);
+
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
         Items.Clear();
@@ -173,6 +178,7 @@ public partial class SalesInvoiceViewModel
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice
             };
+            ApplyActiveLabelsToRow(row);
             WireItemRow(row);
             Items.Add(row);
             OnProductChanged(row);

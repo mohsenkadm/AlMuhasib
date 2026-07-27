@@ -260,6 +260,33 @@ public partial class ExpenseViewModel : PagedViewModelBase
 
     protected override Task OnPageChangedAsync() => LoadExpensesAsync();
 
+    [RelayCommand]
+    private async Task DeleteExpenseAsync(Expense? expense)
+    {
+        if (expense is null || !CanDelete) return;
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"هل تريد حذف المصروف بمبلغ {expense.Amount:N0}؟ سيتم إرجاع المبلغ للقاصة ولن يظهر في التقارير."))
+            return;
+
+        IsBusy = true;
+        try
+        {
+            await _expenseService.DeleteExpenseAsync(expense.Id);
+            BeautifulMessageDialog.ShowSuccess("تم حذف المصروف بنجاح");
+            await LoadCashBoxesAsync();
+            await LoadExpensesAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private async Task LoadExpensesAsync()
     {
         try

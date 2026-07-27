@@ -15,11 +15,17 @@ import '../../features/car/dashboard/car_dashboard_screen.dart';
 import '../../features/car/payments/car_payments_screen.dart';
 import '../../features/car/reports/car_report_screen.dart';
 import '../../features/car_trade/car_trade_shell.dart';
+import '../../features/car_trade/reports/car_trade_party_statement_screen.dart';
 import '../../features/car_trade/transactions/car_trade_transaction_detail_screen.dart';
 import '../../features/car_trade/transactions/car_trade_transaction_form_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/data_tab/presentation/data_list_screen.dart';
 import '../../features/data_tab/presentation/data_screen.dart';
+import '../../features/data_tab/presentation/pricing_type_form_screen.dart';
+import '../../features/data_tab/presentation/pricing_types_screen.dart';
+import '../../features/data_tab/presentation/product_price_form_screen.dart';
+import '../../features/data_tab/presentation/product_prices_screen.dart';
+import '../../features/finance/presentation/finance_list_screen.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
 import '../../features/hotel/guests/hotel_guest_form_screen.dart';
@@ -32,9 +38,14 @@ import '../../features/hotel/reservations/hotel_reservation_form_screen.dart';
 import '../../features/hotel/reservations/hotel_reservations_screen.dart';
 import '../../features/hotel/restaurant/pos/restaurant_hub_screen.dart';
 import '../../features/hotel/rooms/hotel_rooms_screen.dart';
+import '../../features/installments/presentation/installments_screens.dart';
+import '../../features/notifications/notifications_screen.dart';
+import '../../features/offline/presentation/pending_sync_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/operations/presentation/forms/customer_form_screen.dart';
 import '../../features/operations/presentation/forms/entity_forms.dart';
+import '../../features/operations/presentation/forms/finance/finance_entity_forms.dart';
+import '../../features/operations/presentation/forms/finance/finance_transaction_forms.dart';
 import '../../features/operations/presentation/invoice_wizard/invoice_wizard_screen.dart';
 import '../../features/profile/about_screen.dart';
 import '../../features/profile/privacy_policy_screen.dart';
@@ -58,7 +69,6 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashScreen(),
-      middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
     ),
@@ -283,6 +293,54 @@ abstract final class AppPages {
       transitionDuration: slideTransitionDuration,
     ),
     GetPage(
+      name: AppRoutes.pricingTypes,
+      page: () => const PricingTypesScreen(),
+      binding: PricingTypesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pricingTypeNew,
+      page: () => const PricingTypeFormScreen(),
+      binding: PricingTypeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pricingTypeEdit,
+      page: () => PricingTypeFormScreen(syncId: Get.parameters['syncId']),
+      binding: PricingTypeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPrices,
+      page: () => const ProductPricesScreen(),
+      binding: ProductPricesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPriceNew,
+      page: () => const ProductPriceFormScreen(),
+      binding: ProductPriceFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.productPriceEdit,
+      page: () => ProductPriceFormScreen(syncId: Get.parameters['syncId']),
+      binding: ProductPriceFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
       name: AppRoutes.hotelHome,
       page: () => const HotelShellPage(),
       binding: HotelShellBinding(),
@@ -468,8 +526,23 @@ abstract final class AppPages {
       transitionDuration: slideTransitionDuration,
     ),
     GetPage(
+      name: AppRoutes.carTradePartyStatement,
+      page: () => const CarTradePartyStatementScreen(),
+      binding: CarTradePartyStatementBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
       name: AppRoutes.profile,
       page: () => const ProfileScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsScreen(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,
@@ -484,6 +557,139 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.privacy,
       page: () => const PrivacyPolicyScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.financeList,
+      page: () => FinanceListScreen(listType: Get.parameters['type']!),
+      binding: FinanceListBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.voucherNew,
+      page: () => const VoucherFormScreen(),
+      binding: VoucherFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.expenseNew,
+      page: () => const ExpenseFormScreen(),
+      binding: ExpenseFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.transferNew,
+      page: () => const TransferFormScreen(),
+      binding: TransferFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.cashBoxNew,
+      page: () => const CashBoxFormScreen(),
+      binding: CashBoxFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.bankAccountNew,
+      page: () => const BankAccountFormScreen(),
+      binding: BankAccountFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.expenseTypeNew,
+      page: () => const ExpenseTypeFormScreen(),
+      binding: ExpenseTypeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.warehouseNew,
+      page: () => const WarehouseFormScreen(),
+      binding: WarehouseFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.warehouseTransferNew,
+      page: () => const WarehouseTransferFormScreen(),
+      binding: WarehouseTransferFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.stockAdjustment,
+      page: () => const StockAdjustmentFormScreen(),
+      binding: StockAdjustmentFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.warehouseStocks,
+      page: () => const FinanceListScreen(listType: 'warehouse-stocks'),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(
+          () => FinanceListController(listType: 'warehouse-stocks'),
+          tag: 'finance_list_warehouse-stocks',
+          fenix: true,
+        );
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.installments,
+      page: () => const InstallmentsScreen(),
+      binding: InstallmentsBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.installmentPlanDetail,
+      page: () => InstallmentPlanDetailScreen(syncId: Get.parameters['syncId']!),
+      binding: InstallmentPlanDetailBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.installmentPay,
+      page: () => const InstallmentPayScreen(),
+      binding: InstallmentPayBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.pendingSync,
+      page: () => const PendingSyncScreen(),
+      binding: PendingSyncBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.quickActions,
+      page: () => const QuickActionsScreen(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

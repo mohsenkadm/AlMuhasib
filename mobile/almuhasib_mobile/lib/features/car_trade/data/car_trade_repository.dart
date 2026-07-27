@@ -78,27 +78,41 @@ class CarTradeRepository {
     );
   }
 
-  Future<List<CarTradeTransactionListItem>> getReport({
+  Future<CarTradeReportDto> getReport({
     DateTime? from,
     DateTime? to,
     String? status,
     String? tradeType,
   }) {
     return _api.get(
-      '/api/car-trade/reports',
+      '/api/car-trade/reports/transactions',
       queryParameters: {
         if (from != null) 'from': from.toIso8601String(),
         if (to != null) 'to': to.toIso8601String(),
         if (status != null) 'status': status,
         if (tradeType != null) 'tradeType': tradeType,
       },
-      parser: (data) => (data as List<dynamic>)
-          .map(
-            (e) => CarTradeTransactionListItem.fromJson(
-              e as Map<String, dynamic>,
-            ),
-          )
-          .toList(),
+      parser: (data) =>
+          CarTradeReportDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<CarTradePartyStatementDto> getPartyStatement({
+    required String partyName,
+    String? partyPhone,
+    DateTime? from,
+    DateTime? to,
+  }) {
+    return _api.get(
+      '/api/car-trade/reports/party-statement',
+      queryParameters: {
+        'partyName': partyName,
+        if (partyPhone != null && partyPhone.isNotEmpty) 'partyPhone': partyPhone,
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+      },
+      parser: (data) =>
+          CarTradePartyStatementDto.fromJson(data as Map<String, dynamic>),
     );
   }
 }

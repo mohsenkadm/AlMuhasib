@@ -302,19 +302,23 @@ public sealed class CarTradeService : ICarTradeService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var sellers = await context.CarTradeTransactions
-            .Where(t => t.Status != CarTradeStatus.Cancelled && t.RemainingAmount > 0 && t.TradeType == CarTradeType.Buy)
+            .Where(t => t.Status != CarTradeStatus.Cancelled &&
+                        t.TradeType == CarTradeType.Buy &&
+                        !string.IsNullOrWhiteSpace(t.SellerName))
             .Select(t => t.SellerName)
             .ToListAsync(cancellationToken);
 
         var buyers = await context.CarTradeTransactions
-            .Where(t => t.Status != CarTradeStatus.Cancelled && t.IsSold && t.SaleRemainingAmount > 0)
+            .Where(t => t.Status != CarTradeStatus.Cancelled &&
+                        t.IsSold &&
+                        !string.IsNullOrWhiteSpace(t.BuyerName))
             .Select(t => t.BuyerName)
             .ToListAsync(cancellationToken);
 
         var names = sellers.Concat(buyers)
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .Select(n => n.Trim())
-            .Distinct()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n)
             .ToList();
 
@@ -343,14 +347,14 @@ public sealed class CarTradeService : ICarTradeService
         var rows = new List<CarTradePartyStatementRow>();
         foreach (var t in transactions)
         {
-            if (t.RemainingAmount > 0 &&
-                string.Equals(t.SellerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
+            if (string.Equals(t.SellerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrWhiteSpace(filter.PartyPhone) ||
                  string.Equals(t.SellerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)) &&
                 IsWithinDateRange(t.TransactionDate, filter.DateFrom, filter.DateTo))
             {
                 rows.Add(new CarTradePartyStatementRow
                 {
+                    TransactionId = t.Id,
                     TransactionDate = t.TransactionDate,
                     TransactionNumber = t.TransactionNumber,
                     TradeType = "شراء",
@@ -359,12 +363,12 @@ public sealed class CarTradeService : ICarTradeService
                     AmountPaid = t.AmountPaid,
                     RemainingAmount = t.RemainingAmount,
                     PartyRole = "بائع",
-                    DebtKind = "دين بائع"
+                    DebtKind = "دين بائع",
+                    PartyPhone = t.SellerPhone
                 });
             }
 
             if (t.IsSold &&
-                t.SaleRemainingAmount > 0 &&
                 string.Equals(t.BuyerName.Trim(), partyName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrWhiteSpace(filter.PartyPhone) ||
                  string.Equals(t.BuyerPhone.Trim(), filter.PartyPhone.Trim(), StringComparison.OrdinalIgnoreCase)) &&
@@ -372,6 +376,7 @@ public sealed class CarTradeService : ICarTradeService
             {
                 rows.Add(new CarTradePartyStatementRow
                 {
+                    TransactionId = t.Id,
                     TransactionDate = t.SaleDate ?? t.TransactionDate,
                     TransactionNumber = t.TransactionNumber,
                     TradeType = "بيع",
@@ -380,7 +385,8 @@ public sealed class CarTradeService : ICarTradeService
                     AmountPaid = t.SaleAmountPaid,
                     RemainingAmount = t.SaleRemainingAmount,
                     PartyRole = "مشتري",
-                    DebtKind = "دين مشتري"
+                    DebtKind = "دين مشتري",
+                    PartyPhone = t.BuyerPhone
                 });
             }
         }
@@ -389,11 +395,14 @@ public sealed class CarTradeService : ICarTradeService
 
         var totalDebit = rows.Where(r => r.PartyRole == "بائع").Sum(r => r.RemainingAmount);
         var totalCredit = rows.Where(r => r.PartyRole == "مشتري").Sum(r => r.RemainingAmount);
+        var phone = !string.IsNullOrWhiteSpace(filter.PartyPhone)
+            ? filter.PartyPhone.Trim()
+            : rows.Select(r => r.PartyPhone).FirstOrDefault(p => !string.IsNullOrWhiteSpace(p)) ?? string.Empty;
 
         return new CarTradePartyStatementData
         {
             PartyName = partyName,
-            PartyPhone = filter.PartyPhone ?? string.Empty,
+            PartyPhone = phone,
             Rows = rows,
             TotalDebit = totalDebit,
             TotalCredit = totalCredit,

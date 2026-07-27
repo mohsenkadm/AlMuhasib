@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -6,6 +7,26 @@ namespace AlMuhasib.UI.Views;
 public partial class PosQuickSaleView : UserControl
 {
     public PosQuickSaleView() => InitializeComponent();
+
+    private void Root_Loaded(object sender, RoutedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            SearchBox.Focus();
+            Keyboard.Focus(SearchBox);
+        }, System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    private void Root_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Keep barcode scanner input flowing to search when focus drifts.
+        if (e.Key == Key.F2)
+        {
+            SearchBox.Focus();
+            SearchBox.SelectAll();
+            e.Handled = true;
+        }
+    }
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
     {

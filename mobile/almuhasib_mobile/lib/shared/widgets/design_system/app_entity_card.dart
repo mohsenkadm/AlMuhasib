@@ -36,18 +36,7 @@ class AppEntityCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.06),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: AppColors.cardShadow(dark: isDark),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),

@@ -322,6 +322,33 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         await LoadVouchersAsync();
     }
 
+    [RelayCommand]
+    private async Task DeleteVoucherAsync(Voucher? voucher)
+    {
+        if (voucher is null || !CanDelete) return;
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"هل تريد حذف السند {voucher.VoucherNumber}؟ سيتم عكس أثره المحاسبي ولن يظهر في التقارير."))
+            return;
+
+        IsBusy = true;
+        try
+        {
+            await _cashBankService.DeleteVoucherAsync(voucher.Id);
+            BeautifulMessageDialog.ShowSuccess("تم حذف السند بنجاح");
+            await LoadVouchersAsync();
+            await LoadLookupsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     // PRINT VOUCHER
     // ══════════════════════════════════════════════════════

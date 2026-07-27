@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
@@ -17,13 +19,21 @@ class DataListController extends GetxController {
   final search = ''.obs;
   final RxnInt invoiceTypeFilter = RxnInt();
   final RxnInt paymentFilter = RxnInt();
-  final from = DateTime.now().subtract(const Duration(days: 90)).obs;
+  final from = DateTime(DateTime.now().year - 2).obs;
   final to = DateTime.now().obs;
+
+  Timer? _searchDebounce;
 
   @override
   void onInit() {
     super.onInit();
     reload();
+  }
+
+  @override
+  void onClose() {
+    _searchDebounce?.cancel();
+    super.onClose();
   }
 
   Future<void> reload() async {
@@ -37,6 +47,8 @@ class DataListController extends GetxController {
         'suppliers' => await repo.getSuppliers(search: search.value),
         'investors' => await repo.getInvestors(search: search.value),
         'warehouses' => await repo.getWarehouses(search: search.value),
+        'cash-boxes' => await repo.getCashBoxes(search: search.value),
+        'bank-accounts' => await repo.getBankAccounts(search: search.value),
         'invoices' => (await repo.getInvoices(
             from: from.value,
             to: to.value,
@@ -57,7 +69,8 @@ class DataListController extends GetxController {
 
   void updateSearch(String value) {
     search.value = value;
-    reload();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), reload);
   }
 
   void updateInvoiceTypeFilter(String? id) {
@@ -74,7 +87,7 @@ class DataListController extends GetxController {
     search.value = '';
     invoiceTypeFilter.value = null;
     paymentFilter.value = null;
-    from.value = DateTime.now().subtract(const Duration(days: 90));
+    from.value = DateTime(DateTime.now().year - 2);
     to.value = DateTime.now();
     reload();
   }
@@ -111,6 +124,8 @@ class DataListController extends GetxController {
         'suppliers' => 'suppliers'.tr(),
         'investors' => 'investors'.tr(),
         'warehouses' => 'warehouses'.tr(),
+        'cash-boxes' => 'cash_boxes'.tr(),
+        'bank-accounts' => 'bank_accounts'.tr(),
         'invoices' => 'invoices'.tr(),
         _ => 'data_title'.tr(),
       };
@@ -120,6 +135,9 @@ class DataListController extends GetxController {
         'products' => AppRoutes.productNew,
         'suppliers' => AppRoutes.supplierNew,
         'investors' => AppRoutes.investorNew,
+        'warehouses' => AppRoutes.warehouseNew,
+        'cash-boxes' => AppRoutes.cashBoxNew,
+        'bank-accounts' => AppRoutes.bankAccountNew,
         'invoices' => AppRoutes.invoiceNew,
         _ => null,
       };

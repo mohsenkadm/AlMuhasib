@@ -57,6 +57,20 @@ public sealed class AdminTenantsController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        await _tenantService.DeleteAsync(id, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/active")]
+    public async Task<IActionResult> SetActive(int id, [FromBody] SetActiveRequest request, CancellationToken ct)
+    {
+        await _tenantService.SetActiveAsync(id, request.IsActive, ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:int}/accounts")]
     public async Task<ActionResult<TenantAccount>> CreateAccount(int id, [FromBody] CreateAccountRequest request, CancellationToken ct)
     {
@@ -67,6 +81,13 @@ public sealed class AdminTenantsController : ControllerBase
     [HttpGet("{id:int}/accounts")]
     public async Task<ActionResult<List<TenantAccount>>> GetAccounts(int id, CancellationToken ct) =>
         Ok(await _tenantService.GetAccountsAsync(id, ct));
+
+    [HttpDelete("accounts/{accountId:int}")]
+    public async Task<IActionResult> DeleteAccount(int accountId, CancellationToken ct)
+    {
+        await _tenantService.DeleteAccountAsync(accountId, ct);
+        return NoContent();
+    }
 
     [HttpPost("accounts/{accountId:int}/reset-password")]
     public async Task<IActionResult> ResetPassword(int accountId, [FromBody] ResetPasswordRequest request, CancellationToken ct)

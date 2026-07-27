@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="AlMuhasib.UI.Views.PurchaseInvoiceView"
+<UserControl x:Class="AlMuhasib.UI.Views.PurchaseInvoiceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -10,7 +10,8 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PurchaseInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             x:Name="Root">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -275,6 +276,48 @@
 
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
+
+                                <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
+                                <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableUnits}"
+                                                      SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="UnitName"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColBatch" Header="رقم الدفعة" Width="100"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColExpiry" Header="تاريخ الانتهاء" Width="120"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="120"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     ToolTip="أرقام مفصولة بفاصلة عند شراء أكثر من قطعة"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
                                 <!-- Quantity -->
                                 <DataGridTemplateColumn Header="الكمية" Width="140"

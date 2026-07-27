@@ -30,6 +30,10 @@ public sealed class SyncService : ISyncService, IDisposable
     {
         var settings = await _settingsService.GetAsync();
         ValidateSettings(settings);
+        // Always re-login on explicit connection test so stale/wrong tokens are not reused.
+        settings.AccessToken = string.Empty;
+        settings.RefreshToken = string.Empty;
+        settings.AccessTokenExpiresAt = null;
         await EnsureAuthenticatedAsync(settings, ct);
         var status = await _apiClient.GetLicenseStatusAsync(settings, ct);
         return new SyncConnectionResult
@@ -41,12 +45,12 @@ public sealed class SyncService : ISyncService, IDisposable
         };
     }
 
-    public async Task<SyncRunResult> SyncNowAsync(CancellationToken ct = default)
+    public async Task<SyncRunResult> SyncNowAsync(IProgress<SyncProgressUpdate>? progress = null, CancellationToken ct = default)
     {
         await _syncLock.WaitAsync(ct);
         try
         {
-            return await SyncNowCoreAsync(ct);
+            return await SyncNowCoreAsync(progress, ct);
         }
         finally
         {
@@ -54,26 +58,33 @@ public sealed class SyncService : ISyncService, IDisposable
         }
     }
 
-    private async Task<SyncRunResult> SyncNowCoreAsync(CancellationToken ct)
+    private async Task<SyncRunResult> SyncNowCoreAsync(IProgress<SyncProgressUpdate>? progress, CancellationToken ct)
     {
+        SyncProgressReporter.Report(progress, 1, "جاري التحقق من الاتصال وتسجيل الدخول...");
         var settings = await _settingsService.GetAsync();
         ValidateSettings(settings);
         await EnsureAuthenticatedAsync(settings, ct);
 
+        SyncProgressReporter.Report(progress, 2, "جاري تجهيز البيانات المحلية للرفع...");
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
         await SyncIdEnsurer.EnsureAllAsync(db, ct);
         var syncState = await GetOrCreateSyncStateAsync(db, ct);
 
         var pushBundle = await SyncMapper.BuildPushBundleAsync(db, syncState.LastPushedAt, ct);
-        var pushResult = await _apiClient.PushAsync(settings, new SyncPushRequest { Data = pushBundle }, ct);
-        var hasConflicts = pushResult.Conflicts.Count > 0;
 
+        SyncProgressReporter.Report(progress, 3, "جاري رفع البيانات إلى السحابة...");
+        var pushResult = await _apiClient.PushAsync(settings, new SyncPushRequest { Data = pushBundle }, ct);
+        var conflicts = SyncConflictLocalizer.MapAll(pushResult.Conflicts);
+        var hasConflicts = conflicts.Count > 0;
+
+        SyncProgressReporter.Report(progress, 4, "جاري سحب التحديثات من السحابة...");
         var pullResult = await _apiClient.PullAsync(settings, new SyncPullRequest
         {
             Since = syncState.LastPulledAt,
             Cursor = syncState.ServerCursor
         }, ct);
 
+        SyncProgressReporter.Report(progress, 5, "جاري تطبيق البيانات المسحوبة محلياً...");
         await using var applyDb = await _contextFactory.CreateDbContextAsync(ct);
         await using var tx = await applyDb.Database.BeginTransactionAsync(ct);
         try
@@ -94,20 +105,28 @@ public sealed class SyncService : ISyncService, IDisposable
             throw;
         }
 
+        SyncProgressReporter.Report(progress, 6, "جاري حفظ نتيجة المزامنة...");
+        var diagnostics = SyncConflictLocalizer.BuildDiagnostics(
+            pushResult.AcceptedCount, conflicts, settings.ApiBaseUrl, settings.Username);
+
         settings.LastSuccessfulSyncAt = hasConflicts ? settings.LastSuccessfulSyncAt : DateTime.UtcNow;
         settings.LastSyncError = hasConflicts
-            ? $"تعارضات: {pushResult.Conflicts.Count} — لم يُحدَّث مؤشر الرفع"
+            ? $"تعارضات: {conflicts.Count} سجل مرفوض — التفاصيل أدناه"
             : null;
         await _settingsService.SaveAsync(settings);
+
+        SyncProgressReporter.Report(progress, 6, "اكتملت المزامنة");
 
         return new SyncRunResult
         {
             IsSuccess = !hasConflicts,
             AcceptedCount = pushResult.AcceptedCount,
-            ConflictCount = pushResult.Conflicts.Count,
+            ConflictCount = conflicts.Count,
+            Conflicts = conflicts,
+            DiagnosticsText = diagnostics,
             Message = hasConflicts
-                ? $"تم السحب مع {pushResult.Conflicts.Count} تعارض في الرفع — أعد المحاولة"
-                : $"تمت المزامنة — {pushResult.AcceptedCount} سجل"
+                ? $"تم قبول {pushResult.AcceptedCount} سجل مع رفض {conflicts.Count} بسبب تعارض — راجع التفاصيل وانسخ التشخيص إن لزم"
+                : $"تمت المزامنة بنجاح — {pushResult.AcceptedCount} سجل"
         };
     }
 
@@ -126,7 +145,7 @@ public sealed class SyncService : ISyncService, IDisposable
             {
                 try
                 {
-                    await SyncNowAsync(token);
+                    await SyncNowAsync(ct: token);
                 }
                 catch (Exception ex)
                 {

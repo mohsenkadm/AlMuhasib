@@ -101,7 +101,8 @@
                                    FontSize="14" FontWeight="Bold" Foreground="White"/>
                         <TextBlock FontSize="10.5" Foreground="#E3F2FD" Margin="0,1,0,0">
                             <Run Text="{Binding ReportFlyoutItems.Count, Mode=OneWay}"/>
-                            <Run Text="تقرير"/>
+                            <Run Text=" "/>
+                            <Run Text="{Binding ActiveFlyoutItemLabel, Mode=OneWay}"/>
                         </TextBlock>
                     </StackPanel>
                 </Grid>

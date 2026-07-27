@@ -64,12 +64,17 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IPricingTypeService, PricingTypeService>();
+        services.AddScoped<IProductPriceService, ProductPriceService>();
+        services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<ICashBankService, CashBankService>();
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IInvestorService, InvestorService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<ISupervisoryReportService, SupervisoryReportService>();
+        services.AddScoped<IPersonProfileService, PersonProfileService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAccountingValidationService, AccountingValidationService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
@@ -84,12 +89,15 @@ public static class DependencyInjection
         services.AddScoped<ICustomerCreditService, CustomerCreditService>();
         services.AddScoped<ILocalQueryService, LocalQueryService>();
         services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
+        services.AddScoped<IProductUnitService, ProductUnitService>();
+        services.AddScoped<IProductBatchService, ProductBatchService>();
+        services.AddScoped<IProductSerialService, ProductSerialService>();
         services.AddScoped<IUserLoginLogService, UserLoginLogService>();
         services.AddScoped<IDataImportService, DataImportService>();
         services.AddScoped<IDemoDataService, DemoDataService>();
         services.AddScoped<IUserTaskService, UserTaskService>();
         services.AddScoped<IUserNoteService, UserNoteService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<AppDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, SyncService>();
         services.AddHttpClient("CloudSync");
@@ -118,7 +126,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarSyncService>();
         services.AddHttpClient("CloudSync");
@@ -168,7 +176,7 @@ public static class DependencyInjection
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
 
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<HotelDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, HotelSyncService>();
         services.AddHttpClient("CloudSync");
@@ -197,7 +205,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
-        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarTradeDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarTradeSyncService>();
         services.AddHttpClient("CloudSync");

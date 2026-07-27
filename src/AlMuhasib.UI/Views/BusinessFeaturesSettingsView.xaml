@@ -180,6 +180,14 @@
                                                     Description="تتبع الأرقام التسلسلية"
                                                     Icon="Barcode" IconBackground="#F3E5F5" IconForeground="#6A1B9A"
                                                     IsChecked="{Binding SerialNumbers}"/>
+                        <controls:FeatureToggleCard Title="عرض سعر المنتجات"
+                                                    Description="تفعيل أنواع التسعير وأسعار البيع والشراء للمنتجات في الفواتير"
+                                                    Icon="CashMultiple" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding ProductPricingEnabled}"/>
+                        <controls:FeatureToggleCard Title="تحديث سعر المنتج في فاتورة مشتريات"
+                                                    Description="عند إنشاء فاتورة مشتريات فقط: حفظ آخر سعر شراء لنوع التسعير المختار"
+                                                    Icon="PlaylistEdit" IconBackground="#FFF3E0" IconForeground="#E65100"
+                                                    IsChecked="{Binding UpdateProductPriceOnPurchase}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

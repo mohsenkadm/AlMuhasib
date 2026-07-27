@@ -12,4 +12,5 @@ public class Product : BaseEntity
     public Category Category { get; set; } = null!;
     public ICollection<WarehouseStock> WarehouseStocks { get; set; } = [];
     public ICollection<InvoiceItem> InvoiceItems { get; set; } = [];
+    public ICollection<ProductPrice> ProductPrices { get; set; } = [];
 }

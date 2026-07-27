@@ -42,6 +42,28 @@ public sealed class TenantService : ITenantService
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteAsync(int tenantId, CancellationToken ct = default)
+    {
+        var tenant = await _db.Tenants
+            .Include(t => t.Accounts)
+            .Include(t => t.Devices)
+            .FirstOrDefaultAsync(t => t.Id == tenantId, ct)
+            ?? throw new InvalidOperationException("العميل غير موجود");
+
+        _db.TenantAccounts.RemoveRange(tenant.Accounts);
+        _db.DeviceSubscriptions.RemoveRange(tenant.Devices);
+        _db.Tenants.Remove(tenant);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetActiveAsync(int tenantId, bool isActive, CancellationToken ct = default)
+    {
+        var tenant = await _db.Tenants.FindAsync([tenantId], ct)
+            ?? throw new InvalidOperationException("العميل غير موجود");
+        tenant.IsActive = isActive;
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<TenantAccount> CreateAccountAsync(int tenantId, string username, string password, DateTime? expiresAt, CancellationToken ct = default)
     {
         if (await _db.TenantAccounts.AnyAsync(a => a.Username == username, ct))
@@ -63,6 +85,14 @@ public sealed class TenantService : ITenantService
 
     public Task<List<TenantAccount>> GetAccountsAsync(int tenantId, CancellationToken ct = default) =>
         _db.TenantAccounts.AsNoTracking().Where(a => a.TenantId == tenantId).ToListAsync(ct);
+
+    public async Task DeleteAccountAsync(int accountId, CancellationToken ct = default)
+    {
+        var account = await _db.TenantAccounts.FindAsync([accountId], ct)
+            ?? throw new InvalidOperationException("الحساب غير موجود");
+        _db.TenantAccounts.Remove(account);
+        await _db.SaveChangesAsync(ct);
+    }
 
     public async Task ResetPasswordAsync(int accountId, string newPassword, CancellationToken ct = default)
     {

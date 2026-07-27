@@ -39,6 +39,23 @@ public sealed class MasterDataController : TenantApiControllerBase
         return Ok(await MasterData.GetProductsAsync(search, categorySyncId, barcode, ct));
     }
 
+    [HttpGet("pricing-types")]
+    public async Task<IActionResult> GetPricingTypes([FromQuery] string? search, CancellationToken ct)
+    {
+        EnsureTenant();
+        return Ok(await MasterData.GetPricingTypesAsync(search, ct));
+    }
+
+    [HttpGet("product-prices")]
+    public async Task<IActionResult> GetProductPrices(
+        [FromQuery] Guid? productSyncId,
+        [FromQuery] Guid? pricingTypeSyncId,
+        CancellationToken ct)
+    {
+        EnsureTenant();
+        return Ok(await MasterData.GetProductPricesAsync(productSyncId, pricingTypeSyncId, ct));
+    }
+
     [HttpGet("customers")]
     public async Task<IActionResult> GetCustomers([FromQuery] string? search, CancellationToken ct)
     {

@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 
 import '../../../core/router/app_routes.dart';
@@ -13,10 +14,15 @@ class CarTradeShellController extends GetxController {
     AppRoutes.carTradeSettings,
   ];
 
+  /// Called from shell [build]; defer Rx writes so Obx is not rebuilt mid-frame.
   void syncTab(int index) {
-    if (currentIndex.value != index) {
-      currentIndex.value = index;
-    }
+    if (currentIndex.value == index) return;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (isClosed) return;
+      if (currentIndex.value != index) {
+        currentIndex.value = index;
+      }
+    });
   }
 
   void onTabTap(int index) {
