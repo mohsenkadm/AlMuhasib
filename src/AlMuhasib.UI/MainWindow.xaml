@@ -12,6 +12,8 @@
         xmlns:carVm="clr-namespace:AlMuhasib.UI.ViewModels.Car"
         xmlns:carTradeViews="clr-namespace:AlMuhasib.UI.Views.CarTrade"
         xmlns:carTradeVm="clr-namespace:AlMuhasib.UI.ViewModels.CarTrade"
+        xmlns:reViews="clr-namespace:AlMuhasib.UI.Views.RealEstate"
+        xmlns:reVm="clr-namespace:AlMuhasib.UI.ViewModels.RealEstate"
         xmlns:hotelViews="clr-namespace:AlMuhasib.UI.Views.Hotel"
         xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
@@ -1153,6 +1155,27 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type carVm:CarContractsReportViewModel}">
                             <carViews:CarContractsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateDashboardViewModel}">
+                            <reViews:RealEstateDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateContractFormViewModel}">
+                            <reViews:RealEstateContractFormView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateContractsViewModel}">
+                            <reViews:RealEstateContractsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateDebtsViewModel}">
+                            <reViews:RealEstateDebtsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstatePartiesViewModel}">
+                            <reViews:RealEstatePartiesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateContractsReportViewModel}">
+                            <reViews:RealEstateContractsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type reVm:RealEstateClauseTemplatesViewModel}">
+                            <reViews:RealEstateClauseTemplatesView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type carTradeVm:CarTradeDashboardViewModel}">
                             <carTradeViews:CarTradeDashboardView />

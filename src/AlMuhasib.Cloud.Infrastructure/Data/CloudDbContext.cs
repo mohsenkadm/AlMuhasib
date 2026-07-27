@@ -79,6 +79,11 @@ public class CloudDbContext : DbContext
     public DbSet<CloudCarContractPayment> CarContractPayments => Set<CloudCarContractPayment>();
     public DbSet<CloudCarTradeTransaction> CarTradeTransactions => Set<CloudCarTradeTransaction>();
     public DbSet<CloudCarTradePayment> CarTradePayments => Set<CloudCarTradePayment>();
+    public DbSet<CloudRealEstateContract> RealEstateContracts => Set<CloudRealEstateContract>();
+    public DbSet<CloudRealEstateContractPayment> RealEstateContractPayments => Set<CloudRealEstateContractPayment>();
+    public DbSet<CloudRealEstateContractClause> RealEstateContractClauses => Set<CloudRealEstateContractClause>();
+    public DbSet<CloudRealEstateClauseTemplate> RealEstateClauseTemplates => Set<CloudRealEstateClauseTemplate>();
+    public DbSet<CloudRealEstateParty> RealEstateParties => Set<CloudRealEstateParty>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -193,6 +198,71 @@ public class CloudDbContext : DbContext
                 .WithMany(c => c.Payments)
                 .HasForeignKey(p => p.ContractId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudRealEstateContract>(e =>
+        {
+            e.Property(c => c.ContractNumber).HasMaxLength(50);
+            e.Property(c => c.PropertyLocation).HasMaxLength(200);
+            e.Property(c => c.PropertyAddress).HasMaxLength(500);
+            e.Property(c => c.PropertyDescription).HasMaxLength(2000);
+            e.Property(c => c.PropertyAreaSqm).HasPrecision(18, 2);
+            e.Property(c => c.SellerName).HasMaxLength(200);
+            e.Property(c => c.SellerAddress).HasMaxLength(500);
+            e.Property(c => c.SellerIdNumber).HasMaxLength(50);
+            e.Property(c => c.SellerPhone).HasMaxLength(50);
+            e.Property(c => c.BuyerName).HasMaxLength(200);
+            e.Property(c => c.BuyerAddress).HasMaxLength(500);
+            e.Property(c => c.BuyerIdNumber).HasMaxLength(50);
+            e.Property(c => c.BuyerPhone).HasMaxLength(50);
+            e.Property(c => c.TotalPrice).HasPrecision(18, 2);
+            e.Property(c => c.DownPayment).HasPrecision(18, 2);
+            e.Property(c => c.AmountPaid).HasPrecision(18, 2);
+            e.Property(c => c.RemainingAmount).HasPrecision(18, 2);
+            e.Property(c => c.TotalPriceInWords).HasMaxLength(1000);
+            e.Property(c => c.WitnessOneName).HasMaxLength(200);
+            e.Property(c => c.WitnessTwoName).HasMaxLength(200);
+            e.Property(c => c.Notes).HasMaxLength(2000);
+            e.HasIndex(c => new { c.TenantId, c.ContractNumber });
+        });
+
+        modelBuilder.Entity<CloudRealEstateContractPayment>(e =>
+        {
+            e.Property(p => p.Amount).HasPrecision(18, 2);
+            e.Property(p => p.RemainingBefore).HasPrecision(18, 2);
+            e.Property(p => p.RemainingAfter).HasPrecision(18, 2);
+            e.Property(p => p.Notes).HasMaxLength(1000);
+            e.HasOne(p => p.Contract)
+                .WithMany(c => c.Payments)
+                .HasForeignKey(p => p.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudRealEstateContractClause>(e =>
+        {
+            e.Property(c => c.Title).HasMaxLength(200);
+            e.Property(c => c.Body).HasMaxLength(4000);
+            e.HasOne(c => c.Contract)
+                .WithMany(c => c.Clauses)
+                .HasForeignKey(c => c.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudRealEstateClauseTemplate>(e =>
+        {
+            e.Property(c => c.Title).HasMaxLength(200);
+            e.Property(c => c.Body).HasMaxLength(4000);
+            e.HasIndex(c => new { c.TenantId, c.SortOrder });
+        });
+
+        modelBuilder.Entity<CloudRealEstateParty>(e =>
+        {
+            e.Property(p => p.Name).HasMaxLength(200);
+            e.Property(p => p.Phone).HasMaxLength(50);
+            e.Property(p => p.Address).HasMaxLength(500);
+            e.Property(p => p.IdNumber).HasMaxLength(50);
+            e.Property(p => p.Notes).HasMaxLength(2000);
+            e.HasIndex(p => new { p.TenantId, p.Name });
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

@@ -53,6 +53,9 @@ public partial class SetupWizardHostWindow : Window
     private void OnHotelSelected(object sender, MouseButtonEventArgs e) =>
         SelectSystem(ApplicationSystemType.HotelManagement, HotelCard, "#6A1B9A", "#F3E5F5");
 
+    private void OnRealEstateSelected(object sender, MouseButtonEventArgs e) =>
+        SelectSystem(ApplicationSystemType.RealEstateContracts, RealEstateCard, "#00695C", "#E0F2F1");
+
     private void SelectSystem(ApplicationSystemType system, Border card, string accent, string bg)
     {
         SelectedSystem = system;
@@ -62,6 +65,7 @@ public partial class SetupWizardHostWindow : Window
         ResetCard(CarCard);
         ResetCard(CarTradeCard);
         ResetCard(HotelCard);
+        ResetCard(RealEstateCard);
 
         card.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent)!);
         card.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bg)!);
@@ -199,6 +203,7 @@ public partial class SetupWizardHostWindow : Window
             ApplicationSystemType.CarContracts => SystemConnectionStrings.CarContractsDatabase,
             ApplicationSystemType.HotelManagement => SystemConnectionStrings.HotelsDatabase,
             ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
+            ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
             _ => SystemConnectionStrings.AccountingDatabase
         };
 

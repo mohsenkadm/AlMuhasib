@@ -15,6 +15,7 @@ using AlMuhasib.UI.ViewModels;
 using AlMuhasib.UI.ViewModels.Car;
 using AlMuhasib.UI.ViewModels.CarTrade;
 using AlMuhasib.UI.ViewModels.Hotel;
+using AlMuhasib.UI.ViewModels.RealEstate;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Windows;
@@ -263,6 +264,14 @@ public partial class App : Application
         services.AddTransient<CarContractsViewModel>();
         services.AddTransient<CarContractsReportViewModel>();
 
+        services.AddTransient<RealEstateDashboardViewModel>();
+        services.AddTransient<RealEstateContractFormViewModel>();
+        services.AddTransient<RealEstateContractsViewModel>();
+        services.AddTransient<RealEstateDebtsViewModel>();
+        services.AddTransient<RealEstatePartiesViewModel>();
+        services.AddTransient<RealEstateContractsReportViewModel>();
+        services.AddTransient<RealEstateClauseTemplatesViewModel>();
+
         services.AddTransient<CarTradeDashboardViewModel>();
         services.AddTransient<CarTradeFormViewModel>();
         services.AddTransient<CarTradeListViewModel>();
@@ -291,6 +300,7 @@ public partial class App : Application
         services.AddTransient<RestaurantKitchenViewModel>();
         services.AddTransient<HotelSetupWizardViewModel>();
         services.AddSingleton<ICarContractPrintService, CarContractPrintService>();
+        services.AddSingleton<IRealEstateContractPrintService, RealEstateContractPrintService>();
         services.AddSingleton<ICarTradePrintService, CarTradePrintService>();
         services.AddSingleton<IHotelInvoicePrintService, HotelInvoicePrintService>();
 

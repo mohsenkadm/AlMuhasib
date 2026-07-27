@@ -67,6 +67,9 @@ class PreferencesService {
   bool get isHotelTenant =>
       systemType == ApplicationSystemType.hotelManagement;
 
+  bool get isRealEstateTenant =>
+      systemType == ApplicationSystemType.realEstateContracts;
+
   SystemProfile get systemProfile => SystemProfile.of(systemType);
 
   String get homeRoute => systemProfile.homeRoute;

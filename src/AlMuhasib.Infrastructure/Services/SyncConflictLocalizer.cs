@@ -65,7 +65,12 @@ internal static class SyncConflictLocalizer
         ["CarSaleContract"] = "عقد بيع سيارة",
         ["CarContractPayment"] = "دفعة عقد سيارة",
         ["CarTradeTransaction"] = "صفقة تجارة سيارات",
-        ["CarTradePayment"] = "دفعة تجارة سيارات"
+        ["CarTradePayment"] = "دفعة تجارة سيارات",
+        ["RealEstateContract"] = "عقد عقاري",
+        ["RealEstateContractPayment"] = "دفعة عقد عقاري",
+        ["RealEstateContractClause"] = "بند عقد عقاري",
+        ["RealEstateClauseTemplate"] = "قالب بند عقاري",
+        ["RealEstateParty"] = "طرف عقاري"
     };
 
     private static readonly Dictionary<string, string> Reasons = new(StringComparer.OrdinalIgnoreCase)

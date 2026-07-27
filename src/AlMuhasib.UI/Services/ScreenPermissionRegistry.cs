@@ -27,6 +27,8 @@ public static class ScreenPermissionRegistry
 
     public static bool IsHotelManagement => _registry?.IsHotelManagement == true;
 
+    public static bool IsRealEstateContracts => _registry?.IsRealEstateContracts == true;
+
     public static IReadOnlyList<(string Name, string Label)> AllScreens =>
         IsHotelManagement
             ? HotelPermissionRegistryScreens
@@ -34,7 +36,27 @@ public static class ScreenPermissionRegistry
                 ? CarTradePermissionRegistryScreens
             : IsCarContracts
                 ? CarPermissionRegistryScreens
+            : IsRealEstateContracts
+                ? RealEstatePermissionRegistryScreens
                 : AccountingScreens;
+
+    private static IReadOnlyList<(string Name, string Label)> RealEstatePermissionRegistryScreens { get; } =
+    [
+        (RealEstatePermissionRegistry.Dashboard, "لوحة التحكم"),
+        (RealEstatePermissionRegistry.ContractForm, "عقد جديد"),
+        (RealEstatePermissionRegistry.Contracts, "العقود"),
+        (RealEstatePermissionRegistry.Debts, "كشف المدينين"),
+        (RealEstatePermissionRegistry.Parties, "الزبائن"),
+        (RealEstatePermissionRegistry.Reports, "التقارير"),
+        (RealEstatePermissionRegistry.ClauseTemplates, "بنود العقد"),
+        (RealEstatePermissionRegistry.Users, "المستخدمون"),
+        (RealEstatePermissionRegistry.Permissions, "الصلاحيات"),
+        (RealEstatePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
+        (RealEstatePermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (RealEstatePermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
+        (SystemUpdate, "تحديث النظام")
+    ];
 
     private static IReadOnlyList<(string Name, string Label)> CarPermissionRegistryScreens { get; } =
     [
@@ -144,6 +166,8 @@ public static class ScreenPermissionRegistry
                 ? CarTradePermissionRegistry.GetScreenName(viewModelType)
             : IsCarContracts
                 ? CarPermissionRegistry.GetScreenName(viewModelType)
+            : IsRealEstateContracts
+                ? RealEstatePermissionRegistry.GetScreenName(viewModelType)
                 : GetAccountingScreenName(viewModelType);
 
     public static string GetAccountingScreenName(Type viewModelType) =>
@@ -156,6 +180,8 @@ public static class ScreenPermissionRegistry
                 ? CarTradePermissionRegistry.GetDefaultViewModelType(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsRealEstateContracts
+                ? RealEstatePermissionRegistry.GetDefaultViewModelType(screenName)
                 : GetAccountingDefaultViewModelType(screenName);
 
     public static Type? GetAccountingDefaultViewModelType(string screenName) =>
@@ -168,6 +194,8 @@ public static class ScreenPermissionRegistry
                 ? CarTradePermissionRegistry.GetLabel(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetLabel(screenName)
+            : IsRealEstateContracts
+                ? RealEstatePermissionRegistry.GetLabel(screenName)
                 : GetAccountingLabel(screenName);
 
     public static string GetAccountingLabel(string screenName) =>

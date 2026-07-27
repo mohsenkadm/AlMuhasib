@@ -48,14 +48,16 @@
 
             <!-- Step 1: System Type -->
             <ScrollViewer x:Name="Step1Panel" Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <Grid MinWidth="1180">
+                <Grid MinWidth="1380">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
@@ -104,6 +106,18 @@
                             </Border>
                             <TextBlock Text="إدارة الفنادق" FontSize="18" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
                             <TextBlock Text="حجوزات الغرف وتسجيل الدخول والخروج" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="240"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="RealEstateCard" Grid.Column="8" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            MouseLeftButtonUp="OnRealEstateSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="#E0F2F1" Margin="0,0,0,12">
+                                <md:PackIcon Kind="HomeCity" Width="36" Height="36" Foreground="#00695C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="عقود العقارات" FontSize="16" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="بيع وشراء الدور والأراضي مع الآجل والديون" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="220"/>
                         </StackPanel>
                     </Border>
                 </Grid>

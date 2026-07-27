@@ -171,6 +171,37 @@ class SystemProfile {
         ),
       ],
     ),
+    ApplicationSystemType.realEstateContracts: SystemProfile(
+      type: ApplicationSystemType.realEstateContracts,
+      nameKey: 'system_real_estate_name',
+      taglineKey: 'system_real_estate_tagline',
+      icon: Icons.home_work_rounded,
+      primary: Color(0xFF37474F),
+      secondary: Color(0xFF546E7A),
+      accent: Color(0xFF00838F),
+      homeRoute: '/real-estate/home',
+      launchRoute: '/launch/real-estate',
+      onboardingSlides: [
+        SystemOnboardingSlide(
+          icon: Icons.home_work_outlined,
+          titleKey: 'onboarding_real_estate_title_1',
+          descKey: 'onboarding_real_estate_desc_1',
+          colors: [Color(0xFF37474F), Color(0xFF546E7A)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.payments_outlined,
+          titleKey: 'onboarding_real_estate_title_2',
+          descKey: 'onboarding_real_estate_desc_2',
+          colors: [Color(0xFF263238), Color(0xFF00838F)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.sync_outlined,
+          titleKey: 'onboarding_real_estate_title_3',
+          descKey: 'onboarding_real_estate_desc_3',
+          colors: [Color(0xFF455A64), Color(0xFF26A69A)],
+        ),
+      ],
+    ),
   };
 }
 
@@ -178,6 +209,7 @@ const accountingRoutePrefixes = ['/home', '/reports', '/data', '/settings'];
 const carRoutePrefixes = ['/car'];
 const carTradeRoutePrefixes = ['/car-trade'];
 const hotelRoutePrefixes = ['/hotel'];
+const realEstateRoutePrefixes = ['/real-estate'];
 
 bool routeBelongsToSystem(String path, ApplicationSystemType type) {
   bool matches(List<String> prefixes) =>
@@ -188,6 +220,8 @@ bool routeBelongsToSystem(String path, ApplicationSystemType type) {
     ApplicationSystemType.carContracts => matches(carRoutePrefixes),
     ApplicationSystemType.hotelManagement => matches(hotelRoutePrefixes),
     ApplicationSystemType.carTrading => matches(carTradeRoutePrefixes),
+    ApplicationSystemType.realEstateContracts =>
+      matches(realEstateRoutePrefixes),
   };
 }
 

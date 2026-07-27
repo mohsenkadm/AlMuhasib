@@ -4,6 +4,8 @@ abstract final class ApplicationSystemType {
   static const accounting = 0;
   static const carContracts = 1;
   static const hotelManagement = 2;
+  static const carTrading = 3;
+  static const realEstateContracts = 4;
 }
 
 class HotelOccupancySummary {
