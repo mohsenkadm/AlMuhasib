@@ -76,3 +76,20 @@ public sealed class RealEstatePartySyncDto : SyncDtoBase
     public DateTime? IdDate { get; set; }
     public string Notes { get; set; } = string.Empty;
 }
+
+public sealed class RealEstateExpenseTypeSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class RealEstateExpenseSyncDto : SyncDtoBase
+{
+    public Guid ExpenseTypeSyncId { get; set; }
+    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    public decimal Amount { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public Guid? RelatedContractSyncId { get; set; }
+}

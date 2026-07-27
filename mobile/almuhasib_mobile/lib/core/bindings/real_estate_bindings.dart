@@ -4,6 +4,7 @@ import '../../features/real_estate/controllers/real_estate_contract_detail_contr
 import '../../features/real_estate/controllers/real_estate_contract_form_controller.dart';
 import '../../features/real_estate/controllers/real_estate_contracts_controller.dart';
 import '../../features/real_estate/controllers/real_estate_dashboard_controller.dart';
+import '../../features/real_estate/controllers/real_estate_expenses_controller.dart';
 import '../../features/real_estate/controllers/real_estate_payments_controller.dart';
 import '../../features/real_estate/controllers/real_estate_report_controller.dart';
 import '../../features/real_estate/controllers/real_estate_shell_controller.dart';
@@ -78,6 +79,16 @@ class RealEstateContractDetailBinding extends Bindings {
         syncId: Get.parameters['syncId']!,
       ),
       tag: 'real_estate_contract_detail',
+    );
+  }
+}
+
+class RealEstateExpensesBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => RealEstateExpensesController(),
+      tag: 'real_estate_expenses',
     );
   }
 }

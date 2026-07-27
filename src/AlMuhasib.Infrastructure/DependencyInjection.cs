@@ -236,6 +236,7 @@ public static class DependencyInjection
         services.AddScoped<IRealEstateContractReportService, RealEstateContractReportService>();
         services.AddScoped<IRealEstateClauseTemplateService, RealEstateClauseTemplateService>();
         services.AddScoped<IRealEstatePartyService, RealEstatePartyService>();
+        services.AddScoped<IRealEstateExpenseService, RealEstateExpenseService>();
         services.AddScoped<IGlobalSearchService, RealEstateGlobalSearchService>();
         services.AddScoped<IAuditLogService, RealEstateAuditLogService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();

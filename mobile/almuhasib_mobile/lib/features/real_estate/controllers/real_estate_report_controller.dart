@@ -11,6 +11,8 @@ class RealEstateReportController extends GetxController {
   final isLoading = false.obs;
   final error = Rxn<Object>();
   final report = Rxn<RealEstateReportDto>();
+  final profit = Rxn<RealEstateProfitReportDto>();
+  final mode = 'contracts'.obs; // contracts | profit
 
   List<RealEstateContractListItem> get rows => report.value?.rows ?? const [];
 
@@ -24,16 +26,28 @@ class RealEstateReportController extends GetxController {
     isLoading.value = true;
     error.value = null;
     try {
-      report.value = await AppServices.realEstate.getReport(
-        from: from.value,
-        to: to.value,
-        status: statusFilter.value,
-      );
+      if (mode.value == 'profit') {
+        profit.value = await AppServices.realEstate.getProfitReport(
+          from: from.value,
+          to: to.value,
+        );
+      } else {
+        report.value = await AppServices.realEstate.getReport(
+          from: from.value,
+          to: to.value,
+          status: statusFilter.value,
+        );
+      }
     } catch (e) {
       error.value = e;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void setMode(String value) {
+    mode.value = value;
+    load();
   }
 
   Future<void> pickFromDate() async {

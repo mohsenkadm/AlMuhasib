@@ -13,6 +13,8 @@ internal static class RealEstateSyncIdEnsurer
         await EnsureAsync(db.RealEstateContractClauses, ct);
         await EnsureAsync(db.RealEstateClauseTemplates, ct);
         await EnsureAsync(db.RealEstateParties, ct);
+        await EnsureAsync(db.RealEstateExpenseTypes, ct);
+        await EnsureAsync(db.RealEstateExpenses, ct);
         await db.SaveChangesAsync(ct);
     }
 

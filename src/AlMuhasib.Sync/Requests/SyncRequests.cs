@@ -72,6 +72,8 @@ public sealed class SyncDataBundle
     public List<RealEstateContractClauseSyncDto> RealEstateContractClauses { get; set; } = [];
     public List<RealEstateClauseTemplateSyncDto> RealEstateClauseTemplates { get; set; } = [];
     public List<RealEstatePartySyncDto> RealEstateParties { get; set; } = [];
+    public List<RealEstateExpenseTypeSyncDto> RealEstateExpenseTypes { get; set; } = [];
+    public List<RealEstateExpenseSyncDto> RealEstateExpenses { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

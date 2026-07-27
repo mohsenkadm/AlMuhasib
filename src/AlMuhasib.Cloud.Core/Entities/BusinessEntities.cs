@@ -736,3 +736,24 @@ public class CloudRealEstateParty : CloudBaseEntity
     public DateTime? IdDate { get; set; }
     public string Notes { get; set; } = string.Empty;
 }
+
+public class CloudRealEstateExpenseType : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudRealEstateExpense : CloudBaseEntity
+{
+    public int ExpenseTypeId { get; set; }
+    public CloudRealEstateExpenseType ExpenseType { get; set; } = null!;
+
+    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    public decimal Amount { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+
+    public int? RelatedContractId { get; set; }
+    public CloudRealEstateContract? RelatedContract { get; set; }
+}
