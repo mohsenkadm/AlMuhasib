@@ -66,7 +66,7 @@
                             IsEnabled="{Binding CanExport}" Margin="0,0,8,8">
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="MicrosoftExcel" Margin="0,0,6,0"/>
-                            <TextBlock Text="Excel"/>
+                            <TextBlock Text="تصدير Excel"/>
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding PrintTableCommand}" Style="{StaticResource OutlinedButton}"

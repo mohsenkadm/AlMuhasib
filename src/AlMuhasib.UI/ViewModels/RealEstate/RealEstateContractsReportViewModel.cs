@@ -27,10 +27,22 @@ public partial class RealEstateContractsReportViewModel : ViewModelBase
     [ObservableProperty] private decimal _totalValue;
     [ObservableProperty] private decimal _totalReceived;
     [ObservableProperty] private decimal _totalRemaining;
+    [ObservableProperty] private string _totalValueText = "0";
+    [ObservableProperty] private string _totalReceivedText = "0";
+    [ObservableProperty] private string _totalRemainingText = "0";
+    [ObservableProperty] private string _contractsCountText = "0";
+    [ObservableProperty] private string _unpaidCountText = "0";
     [ObservableProperty] private ISeries[] _monthlySeries = [];
     [ObservableProperty] private ISeries[] _typeSeries = [];
+    [ObservableProperty] private ISeries[] _contractTypeSeries = [];
     [ObservableProperty] private Axis[] _monthlyXAxes = [];
     [ObservableProperty] private Axis[] _monthlyYAxes = [];
+    [ObservableProperty] private bool _isCardView;
+    [ObservableProperty] private string _tableSearchText = string.Empty;
+
+    private List<RealEstateContractListItem> _allRows = [];
+
+    public ObservableCollection<RealEstateContractListItem> FilteredRows { get; } = [];
 
     public RealEstateContractsReportViewModel(
         IRealEstateContractReportService reportService,
@@ -65,12 +77,19 @@ public partial class RealEstateContractsReportViewModel : ViewModelBase
             });
 
             Rows.Clear();
+            _allRows = data.Rows.ToList();
             foreach (var row in data.Rows)
                 Rows.Add(row);
+            ApplyTableSearch();
 
             TotalValue = data.TotalValue;
             TotalReceived = data.TotalReceived;
             TotalRemaining = data.TotalRemaining;
+            TotalValueText = data.TotalValue.ToString("N0");
+            TotalReceivedText = data.TotalReceived.ToString("N0");
+            TotalRemainingText = data.TotalRemaining.ToString("N0");
+            ContractsCountText = data.Rows.Count.ToString("N0");
+            UnpaidCountText = data.Rows.Count(r => r.RemainingAmount > 0).ToString("N0");
 
             MonthlySeries = [ChartThemeConfig.Column(data.MonthlyContracts.Select(m => (decimal)m.Count).ToArray(), "العقود", 0)];
             MonthlyXAxes = [ChartThemeConfig.CreateXAxis(data.MonthlyContracts.Select(m => m.Name).ToArray(), -45)];
@@ -78,11 +97,38 @@ public partial class RealEstateContractsReportViewModel : ViewModelBase
             TypeSeries = data.ByPropertyType
                 .Select((p, i) => (ISeries)ChartThemeConfig.Pie(p.Count, p.Name, i))
                 .ToArray();
+            ContractTypeSeries = data.ByContractType
+                .Select((p, i) => (ISeries)ChartThemeConfig.Pie(p.Count, p.Name, i))
+                .ToArray();
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    partial void OnTableSearchTextChanged(string value) => ApplyTableSearch();
+
+    protected override void OnColumnFiltersChanged() => ApplyTableSearch();
+
+    private void ApplyTableSearch()
+    {
+        FilteredRows.Clear();
+        IEnumerable<RealEstateContractListItem> source = _allRows;
+        if (!string.IsNullOrWhiteSpace(TableSearchText))
+        {
+            var term = TableSearchText.Trim();
+            source = source.Where(r =>
+                r.ContractNumber.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                r.SellerName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                r.BuyerName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                r.ContractType.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                r.PropertyLocation.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            source = ColumnFilterEngine.Apply(source, ColumnFilters);
+        foreach (var row in source)
+            FilteredRows.Add(row);
     }
 
     [RelayCommand]

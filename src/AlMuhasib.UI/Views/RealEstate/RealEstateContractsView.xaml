@@ -4,115 +4,208 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}" FlowDirection="RightToLeft">
-  <Grid Margin="16">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
-    <DockPanel Grid.Row="0" Margin="0,0,0,12">
-      <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-        <Button Content="عقد جديد" Command="{Binding OpenNewContractCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
-        <Button Content="تصدير Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-        <Button Content="طباعة كشف" Command="{Binding PrintTableCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-        <controls:ListViewModeToggle OnDarkBackground="False"/>
-        <controls:ColumnFilterToggle Margin="8,0,0,0" IsChecked="{Binding IsColumnFilterPanelOpen}"
-            ActiveFilterCount="{Binding ActiveColumnFilterCount}" ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-            TargetDataGrid="{Binding ElementName=ContractsGrid}"/>
-      </StackPanel>
-      <TextBlock Text="عقود العقارات" FontSize="20" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
-    </DockPanel>
-    <WrapPanel Grid.Row="1" Margin="0,0,0,12">
-      <TextBox Width="220" md:HintAssist.Hint="بحث..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,8,8"/>
-      <DatePicker Width="140" md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Margin="0,0,8,8"/>
-      <DatePicker Width="140" md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Margin="0,0,8,8"/>
-      <CheckBox Content="غير مسدد فقط" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center" Margin="0,0,12,8"/>
-      <CheckBox Content="آجل فقط" IsChecked="{Binding CreditOnly}" VerticalAlignment="Center" Margin="0,0,12,8"/>
-    </WrapPanel>
-    <DataGrid x:Name="ContractsGrid" Grid.Row="2"
-              ItemsSource="{Binding Contracts}" SelectedItem="{Binding SelectedContract}"
-              AutoGenerateColumns="False" IsReadOnly="True"
-              Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
-              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen}"
-              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractNumber"/>
-        <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractDate"/>
-        <DataGridTextColumn Header="النوع" Binding="{Binding ContractType}" Width="70" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractType"/>
-        <DataGridTextColumn Header="العقار" Binding="{Binding PropertyType}" Width="70" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PropertyType"/>
-        <DataGridTextColumn Header="الموقع" Binding="{Binding PropertyLocation}" Width="*" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PropertyLocation"/>
-        <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SellerName"/>
-        <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BuyerName"/>
-        <DataGridTextColumn Header="السعر" Binding="{Binding TotalPrice, StringFormat=N0}" Width="90" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalPrice"/>
-        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-        <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMode}" Width="70" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMode"/>
-        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="80" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
-        <DataGridTemplateColumn Header="إجراءات" Width="220" behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal">
-                <Button Content="تعديل" Command="{Binding DataContext.EditContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                <Button Content="تسديد" Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                <Button Content="طباعة" Command="{Binding DataContext.PrintContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                <Button Content="حذف" Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-              </StackPanel>
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-      </DataGrid.Columns>
-    </DataGrid>
-    <ScrollViewer Grid.Row="2" Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
-      <ItemsControl ItemsSource="{Binding Contracts}">
-        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Border Width="280" Margin="8" Padding="12" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8">
-              <StackPanel>
-                <TextBlock Text="{Binding ContractNumber}" FontWeight="Bold" FontSize="16"/>
-                <TextBlock Text="{Binding PropertyLocation}" Foreground="#607D8B" Margin="0,4,0,0"/>
-                <TextBlock Text="{Binding SellerName, StringFormat=بائع: {0}}" Margin="0,8,0,0"/>
-                <TextBlock Text="{Binding BuyerName, StringFormat=مشتري: {0}}"/>
-                <TextBlock Text="{Binding RemainingAmount, StringFormat=متبقي: {0:N0}}" FontWeight="SemiBold" Margin="0,8,0,0"/>
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                  <Button Content="تعديل" Command="{Binding DataContext.EditContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                  <Button Content="طباعة" Command="{Binding DataContext.PrintContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="عقود العقارات" FontSize="24" FontWeight="Bold"
+                   Foreground="#1565C0" Margin="0,0,0,16"/>
+
+        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,16">
+            <controls:AnimatedStatCard Title="عدد العقود" TextValue="{Binding StatCountText}"
+                                        Icon="FileDocumentMultiple" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+            <controls:AnimatedStatCard Title="إجمالي القيمة" TextValue="{Binding StatTotalText}"
+                                        Icon="Cash" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+            <controls:AnimatedStatCard Title="المحصّل" TextValue="{Binding StatReceivedText}"
+                                        Icon="CashCheck" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+            <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding StatRemainingText}"
+                                        Icon="CashClock" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+            <controls:AnimatedStatCard Title="غير مسددة" TextValue="{Binding StatUnpaidText}"
+                                        Icon="AlertCircleOutline" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+        </UniformGrid>
+
+        <Border Grid.Row="2" Style="{StaticResource FilterBar}" Margin="0,0,0,16">
+            <WrapPanel>
+                <Button Content="عقد جديد" Command="{Binding OpenNewContractCommand}" Style="{StaticResource PrimaryButton}"
+                        IsEnabled="{Binding CanAdd}" Margin="0,0,8,8"/>
+                <Button Content="تحديث" Command="{Binding LoadContractsCommand}" Style="{StaticResource FlatButton}" Margin="0,0,8,8"/>
+                <Button Content="تصدير Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource OutlinedButton}"
+                        IsEnabled="{Binding CanExport}" Margin="0,0,8,8"/>
+                <Button Content="طباعة كشف" Command="{Binding PrintTableCommand}" Style="{StaticResource OutlinedButton}"
+                        IsEnabled="{Binding CanPrint}" Margin="0,0,8,8"/>
+                <TextBox Width="200" md:HintAssist.Hint="بحث في العقود..."
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
+                <DatePicker Width="140" md:HintAssist.Hint="من تاريخ" SelectedDate="{Binding DateFrom}"
+                            Style="{StaticResource FilledDatePicker}" Margin="0,0,8,8"/>
+                <DatePicker Width="140" md:HintAssist.Hint="إلى تاريخ" SelectedDate="{Binding DateTo}"
+                            Style="{StaticResource FilledDatePicker}" Margin="0,0,8,8"/>
+                <ComboBox Width="140" md:HintAssist.Hint="الحالة"
+                          ItemsSource="{Binding StatusFilters}"
+                          SelectedValue="{Binding StatusFilter}"
+                          SelectedValuePath="Value"
+                          DisplayMemberPath="Label"
+                          Style="{StaticResource FilledComboBox}" Margin="0,0,8,8"/>
+                <CheckBox Content="غير مسدد فقط" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                <CheckBox Content="آجل فقط" IsChecked="{Binding CreditOnly}" VerticalAlignment="Center" Margin="0,0,12,8"/>
+                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             TargetDataGrid="{Binding ElementName=ContractsGrid}"
+                                             Margin="0,0,8,8" VerticalAlignment="Center"/>
+                <controls:ListViewModeToggle OnDarkBackground="False" VerticalAlignment="Center" Margin="0,0,0,8"/>
+            </WrapPanel>
+        </Border>
+
+        <md:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <DataGrid x:Name="ContractsGrid"
+                          ItemsSource="{Binding Contracts}"
+                          SelectedItem="{Binding SelectedContract}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Style="{StaticResource ModernDataGrid}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractNumber"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractDate"/>
+                        <DataGridTextColumn Header="النوع" Binding="{Binding ContractType}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractType"/>
+                        <DataGridTextColumn Header="العقار" Binding="{Binding PropertyType}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PropertyType"/>
+                        <DataGridTextColumn Header="الموقع" Binding="{Binding PropertyLocation}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PropertyLocation"/>
+                        <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SellerName"/>
+                        <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BuyerName"/>
+                        <DataGridTextColumn Header="السعر" Binding="{Binding TotalPrice, StringFormat=N0}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalPrice"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                        <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMode}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMode"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
+                        <DataGridTemplateColumn Header="إجراءات" Width="220" behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="تعديل" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.EditContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button Content="تسديد" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button Content="طباعة" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.PrintContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button Content="حذف" Style="{StaticResource FlatButton}" Padding="8,4" Foreground="#C62828"
+                                                Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <ScrollViewer Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                              VerticalScrollBarVisibility="Auto" Padding="12">
+                    <ItemsControl ItemsSource="{Binding Contracts}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="300" Margin="8" Padding="16" Background="White"
+                                        BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="12">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.12"/>
+                                    </Border.Effect>
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,8">
+                                            <Border DockPanel.Dock="Left" Background="#E3F2FD" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
+                                                <TextBlock Text="{Binding Status}" FontSize="11" Foreground="#1565C0" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding ContractNumber}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding PropertyLocation}" Foreground="#607D8B" Margin="0,0,0,4"/>
+                                        <TextBlock FontSize="12" Margin="0,2,0,0">
+                                            <Run Text="بائع: "/><Run Text="{Binding SellerName}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="12" Margin="0,2,0,0">
+                                            <Run Text="مشتري: "/><Run Text="{Binding BuyerName}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="13" FontWeight="Bold" Foreground="#E65100" Margin="0,10,0,0">
+                                            <Run Text="متبقي: "/><Run Text="{Binding RemainingAmount, StringFormat=N0}"/>
+                                        </TextBlock>
+                                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                            <Button Content="تعديل" Style="{StaticResource OutlinedButton}" Padding="12,6" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.EditContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="تسديد" Style="{StaticResource PrimaryButton}" Padding="12,6" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.OpenPaymentDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="طباعة" Style="{StaticResource FlatButton}" Padding="12,6"
+                                                    Command="{Binding DataContext.PrintContractCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </md:Card>
+
+        <controls:PaginationBar Grid.Row="4" Margin="0,12,0,0"/>
+
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" Grid.RowSpan="5">
+            <md:DialogHost.DialogContent>
+                <StackPanel Margin="24" Width="340">
+                    <TextBlock Text="تأكيد الحذف الناعم" FontWeight="Bold" FontSize="16" Margin="0,0,0,12"/>
+                    <TextBlock Text="سيتم إخفاء العقد من القوائم والتقارير دون حذفه نهائياً." TextWrapping="Wrap" Margin="0,0,0,16"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Content="حذف" Command="{Binding DeleteConfirmedCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
                 </StackPanel>
-              </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </ScrollViewer>
-    <controls:PaginationBar Grid.Row="3" Margin="0,12,0,0"/>
-    <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" Grid.RowSpan="4">
-      <md:DialogHost.DialogContent>
-        <StackPanel Margin="24" Width="320">
-          <TextBlock Text="تأكيد الحذف الناعم" FontWeight="Bold" FontSize="16" Margin="0,0,0,12"/>
-          <TextBlock Text="سيتم إخفاء العقد من القوائم والتقارير دون حذفه نهائياً." TextWrapping="Wrap" Margin="0,0,0,16"/>
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-            <Button Content="حذف" Command="{Binding DeleteConfirmedCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
-            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}"/>
-          </StackPanel>
-        </StackPanel>
-      </md:DialogHost.DialogContent>
-    </md:DialogHost>
-    <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" Grid.RowSpan="4">
-      <md:DialogHost.DialogContent>
-        <StackPanel Margin="24" Width="360">
-          <TextBlock Text="تسجيل تسديد" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
-          <TextBlock Text="{Binding PaymentContractSummary}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-          <TextBox md:HintAssist.Hint="المبلغ" Text="{Binding PaymentAmount}" Margin="0,0,0,8"/>
-          <DatePicker md:HintAssist.Hint="التاريخ" SelectedDate="{Binding PaymentDate}" Margin="0,0,0,8"/>
-          <TextBox md:HintAssist.Hint="ملاحظات" Text="{Binding PaymentNotes}" Margin="0,0,0,12"/>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="حفظ" Command="{Binding SubmitPaymentCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
-            <Button Content="إلغاء" Command="{Binding ClosePaymentDialogCommand}"/>
-          </StackPanel>
-        </StackPanel>
-      </md:DialogHost.DialogContent>
-    </md:DialogHost>
-  </Grid>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsPaymentDialogOpen}" Grid.RowSpan="5">
+            <md:DialogHost.DialogContent>
+                <StackPanel Margin="24" Width="380">
+                    <TextBlock Text="تسجيل تسديد" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding PaymentContractSummary}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <TextBlock Text="المبلغ *" Style="{StaticResource FormFieldLabel}"/>
+                    <TextBox Text="{Binding PaymentAmount}" Style="{StaticResource NumericTextBox}" Margin="0,0,0,8"/>
+                    <TextBlock Text="التاريخ" Style="{StaticResource FormFieldLabel}"/>
+                    <DatePicker SelectedDate="{Binding PaymentDate}" Style="{StaticResource MaterialDesignFilledDatePicker}" Margin="0,0,0,8"/>
+                    <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}"/>
+                    <TextBox Text="{Binding PaymentNotes}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="حفظ" Command="{Binding SubmitPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding ClosePaymentDialogCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
 </UserControl>

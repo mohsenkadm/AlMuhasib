@@ -2,45 +2,99 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-             Style="{StaticResource PageStyle}" FlowDirection="RightToLeft">
-  <Grid Margin="16">
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <DockPanel Grid.Row="0" Margin="0,0,0,12">
-      <Button Content="بند جديد" Command="{Binding OpenNewCommand}" Style="{StaticResource MaterialDesignRaisedButton}" DockPanel.Dock="Left"/>
-      <TextBlock Text="بنود العقد الجاهزة" FontSize="20" FontWeight="Bold" Foreground="#455A64"/>
-    </DockPanel>
-    <DataGrid Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding Selected}" AutoGenerateColumns="False" IsReadOnly="True">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="#" Binding="{Binding SortOrder}" Width="50"/>
-        <DataGridTextColumn Header="العنوان" Binding="{Binding Title}" Width="180"/>
-        <DataGridTextColumn Header="النص" Binding="{Binding Body}" Width="*"/>
-        <DataGridCheckBoxColumn Header="مفعّل" Binding="{Binding IsActive}" Width="70"/>
-        <DataGridTemplateColumn Header="إجراءات" Width="160">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal">
-                <Button Content="تعديل" Command="{Binding DataContext.OpenEditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                <Button Content="حذف" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-              </StackPanel>
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-      </DataGrid.Columns>
-    </DataGrid>
-    <md:DialogHost IsOpen="{Binding IsEditOpen}" Grid.RowSpan="2">
-      <md:DialogHost.DialogContent>
-        <StackPanel Margin="24" Width="480">
-          <TextBlock Text="تعديل بند" FontWeight="Bold" Margin="0,0,0,12"/>
-          <TextBox md:HintAssist.Hint="الترتيب" Text="{Binding EditSortOrder}" Margin="0,0,0,8"/>
-          <TextBox md:HintAssist.Hint="العنوان" Text="{Binding EditTitle}" Margin="0,0,0,8"/>
-          <TextBox md:HintAssist.Hint="النص" Text="{Binding EditBody}" AcceptsReturn="True" Height="120" TextWrapping="Wrap" Margin="0,0,0,8"/>
-          <CheckBox Content="مفعّل" IsChecked="{Binding EditIsActive}" Margin="0,0,0,12"/>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
-            <Button Content="إلغاء" Command="{Binding CloseEditCommand}"/>
-          </StackPanel>
-        </StackPanel>
-      </md:DialogHost.DialogContent>
-    </md:DialogHost>
-  </Grid>
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="بنود العقد الجاهزة" FontSize="24" FontWeight="Bold"
+                   Foreground="#455A64" Margin="0,0,0,16"/>
+
+        <UniformGrid Grid.Row="1" Columns="2" Margin="0,0,0,16">
+            <controls:AnimatedStatCard Title="إجمالي البنود" TextValue="{Binding TotalCountText}"
+                                        Icon="FormatListNumbered" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+            <controls:AnimatedStatCard Title="المفعّلة" TextValue="{Binding ActiveCountText}"
+                                        Icon="CheckCircle" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+        </UniformGrid>
+
+        <Border Grid.Row="2" Style="{StaticResource FilterBar}" Margin="0,0,0,16">
+            <WrapPanel>
+                <Button Content="بند جديد" Command="{Binding OpenNewCommand}" Style="{StaticResource PrimaryButton}"
+                        IsEnabled="{Binding CanAdd}" Margin="0,0,8,8"/>
+                <Button Content="تحديث" Command="{Binding LoadCommand}" Style="{StaticResource FlatButton}" Margin="0,0,8,8"/>
+                <TextBox Width="260" md:HintAssist.Hint="بحث داخل البنود..."
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
+                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             TargetDataGrid="{Binding ElementName=TemplatesGrid}"
+                                             Margin="0,0,0,8" VerticalAlignment="Center"/>
+            </WrapPanel>
+        </Border>
+
+        <md:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <DataGrid x:Name="TemplatesGrid"
+                      ItemsSource="{Binding Templates}"
+                      SelectedItem="{Binding Selected}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      Style="{StaticResource ModernDataGrid}"
+                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                      behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="#" Binding="{Binding SortOrder}" Width="50"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SortOrder"/>
+                    <DataGridTextColumn Header="العنوان" Binding="{Binding Title}" Width="180"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Title"/>
+                    <DataGridTextColumn Header="النص" Binding="{Binding Body}" Width="*"
+                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Body"/>
+                    <DataGridCheckBoxColumn Header="مفعّل" Binding="{Binding IsActive}" Width="70"
+                                           behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IsActive"/>
+                    <DataGridTemplateColumn Header="إجراءات" Width="160" behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="تعديل" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                                            Command="{Binding DataContext.OpenEditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Content="حذف" Style="{StaticResource FlatButton}" Padding="8,4" Foreground="#C62828"
+                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsEditOpen}" Grid.RowSpan="4">
+            <md:DialogHost.DialogContent>
+                <StackPanel Margin="24" Width="520">
+                    <TextBlock Text="تعديل بند العقد" FontWeight="Bold" FontSize="16" Margin="0,0,0,16"/>
+                    <TextBlock Text="الترتيب" Style="{StaticResource FormFieldLabel}"/>
+                    <TextBox Text="{Binding EditSortOrder}" Style="{StaticResource NumericTextBox}" Margin="0,0,0,8"/>
+                    <TextBlock Text="العنوان *" Style="{StaticResource FormFieldLabel}"/>
+                    <TextBox Text="{Binding EditTitle}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"/>
+                    <TextBlock Text="نص البند *" Style="{StaticResource FormFieldLabel}"/>
+                    <TextBox Text="{Binding EditBody}" Style="{StaticResource FilledTextBox}"
+                             AcceptsReturn="True" Height="140" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <CheckBox Content="مفعّل" IsChecked="{Binding EditIsActive}" Margin="0,0,0,16"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CloseEditCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
 </UserControl>

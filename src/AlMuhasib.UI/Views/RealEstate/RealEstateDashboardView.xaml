@@ -3,57 +3,78 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <ScrollViewer Padding="24">
+    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <DockPanel Margin="0,0,0,16">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Content="عقد جديد" Command="{Binding OpenNewContractCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
-                    <Button Content="العقود" Command="{Binding OpenContractsCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-                    <Button Content="المدينون" Command="{Binding OpenDebtsCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                    <Button Content="عقد جديد" Command="{Binding OpenNewContractCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                    <Button Content="العقود" Command="{Binding OpenContractsCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"/>
+                    <Button Content="المدينون" Command="{Binding OpenDebtsCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"/>
+                    <Button Content="تحديث" Command="{Binding LoadDataCommand}" Style="{StaticResource FlatButton}"/>
                 </StackPanel>
-                <TextBlock Text="لوحة التحكم — عقود العقارات" FontSize="22" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
+                <TextBlock Text="لوحة التحكم — عقود العقارات" FontSize="24" FontWeight="Bold"
+                           Foreground="#1565C0" VerticalAlignment="Center"/>
             </DockPanel>
-            <UniformGrid Columns="4" Margin="0,0,0,16">
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عقود اليوم" Foreground="#78909C"/><TextBlock Text="{Binding TodayContracts}" FontSize="24" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عقود الشهر" Foreground="#78909C"/><TextBlock Text="{Binding MonthContracts}" FontSize="24" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="غير مسددة" Foreground="#78909C"/><TextBlock Text="{Binding UnpaidContracts}" FontSize="24" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="ديون متأخرة" Foreground="#C62828"/><TextBlock Text="{Binding OverdueDebts}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/></StackPanel></md:Card>
+
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <controls:AnimatedStatCard Title="عقود اليوم" TextValue="{Binding TodayContractsText}"
+                                            Icon="CalendarToday" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                <controls:AnimatedStatCard Title="عقود الشهر" TextValue="{Binding MonthContractsText}"
+                                            Icon="CalendarMonth" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                <controls:AnimatedStatCard Title="غير مسددة" TextValue="{Binding UnpaidContractsText}"
+                                            Icon="CashClock" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+                <controls:AnimatedStatCard Title="ديون متأخرة" TextValue="{Binding OverdueDebtsText}"
+                                            Icon="AlertCircle" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
             </UniformGrid>
+
             <UniformGrid Columns="3" Margin="0,0,0,16">
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="إجمالي القيمة" Foreground="#78909C"/><TextBlock Text="{Binding TotalValue, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="المحصّل" Foreground="#78909C"/><TextBlock Text="{Binding TotalReceived, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="المتبقي" Foreground="#78909C"/><TextBlock Text="{Binding TotalRemaining, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
+                <controls:AnimatedStatCard Title="إجمالي القيمة" TextValue="{Binding TotalValueText}"
+                                            Icon="Cash" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+                <controls:AnimatedStatCard Title="المحصّل" TextValue="{Binding TotalReceivedText}"
+                                            Icon="CashCheck" IconBackground="#E8EAF6" IconForeground="#3949AB" ValueForeground="#3949AB"/>
+                <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding TotalRemainingText}"
+                                            Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"/>
             </UniformGrid>
-            <Grid>
+
+            <Grid Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <md:Card Grid.Column="0" Padding="12" Margin="4">
-                    <StackPanel>
-                        <TextBlock Text="العقود الشهرية" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <lvc:CartesianChart Series="{Binding MonthlySeries}" XAxes="{Binding MonthlyXAxes}" YAxes="{Binding MonthlyYAxes}" Height="260"/>
-                    </StackPanel>
-                </md:Card>
-                <md:Card Grid.Column="1" Padding="12" Margin="4">
-                    <StackPanel>
-                        <TextBlock Text="حالة التسديد" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <lvc:PieChart Series="{Binding StatusSeries}" Height="260"/>
-                    </StackPanel>
-                </md:Card>
+                <controls:ChartCard Grid.Column="0" Title="العقود الشهرية" Subtitle="عدد العقود" Margin="0,0,12,0">
+                    <controls:ChartCard.ChartContent>
+                        <lvc:CartesianChart Series="{Binding MonthlySeries}"
+                                            XAxes="{Binding MonthlyXAxes}"
+                                            YAxes="{Binding MonthlyYAxes}"
+                                            Height="260" FlowDirection="LeftToRight"/>
+                    </controls:ChartCard.ChartContent>
+                </controls:ChartCard>
+                <controls:ChartCard Grid.Column="1" Title="حالة التسديد" Subtitle="محصّل مقابل متبقي">
+                    <controls:ChartCard.ChartContent>
+                        <lvc:PieChart Series="{Binding StatusSeries}" Height="260" FlowDirection="LeftToRight"/>
+                    </controls:ChartCard.ChartContent>
+                </controls:ChartCard>
             </Grid>
-            <md:Card Padding="12" Margin="4,16,4,0">
+
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" md:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
-                    <TextBlock Text="أحدث العقود" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <DataGrid ItemsSource="{Binding RecentContracts}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="260">
+                    <TextBlock Text="أحدث العقود" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <DataGrid ItemsSource="{Binding RecentContracts}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Style="{StaticResource ModernDataGrid}"
+                              MaxHeight="280">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="رقم" Binding="{Binding ContractNumber}" Width="120"/>
+                            <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="120"/>
                             <DataGridTextColumn Header="النوع" Binding="{Binding ContractType}" Width="80"/>
                             <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"/>
                             <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"/>
+                            <DataGridTextColumn Header="السعر" Binding="{Binding TotalPrice, StringFormat=N0}" Width="100"/>
                             <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
+                            <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="80"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
