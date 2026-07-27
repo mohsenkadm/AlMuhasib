@@ -224,6 +224,70 @@
                 </StackPanel>
             </ScrollViewer>
 
+            <!-- Step 3: Standalone SQL Server Selection -->
+            <ScrollViewer x:Name="Step3StandalonePanel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="760" HorizontalAlignment="Center">
+                    <Border Background="#FFF3E0" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Database" Width="24" Height="24" Foreground="#E65100" VerticalAlignment="Center"/>
+                                <TextBlock Text="اختيار سيرفر قاعدة البيانات" FontSize="18" FontWeight="Bold" Foreground="#E65100" Margin="10,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Text="اختر مثيل SQL Server المتوفر على هذا الجهاز. سيتم حفظه في إعدادات التطبيق واستخدامه دائماً للاتصال والترحيل."
+                                       Foreground="#546E7A" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ComboBox x:Name="SqlServerCombo"
+                                  Grid.Column="0"
+                                  IsEditable="True"
+                                  md:HintAssist.Hint="اسم السيرفر / المثيل"
+                                  SelectionChanged="OnSqlServerSelectionChanged"
+                                  StaysOpenOnEdit="True"/>
+
+                        <Button x:Name="RefreshSqlServersButton"
+                                Grid.Column="2"
+                                Content="تحديث القائمة"
+                                Click="OnRefreshSqlServersClick"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                md:ButtonAssist.CornerRadius="8"
+                                Padding="16,10"
+                                VerticalAlignment="Bottom"/>
+                    </Grid>
+
+                    <TextBlock x:Name="SqlServerDiscoveryStatusText"
+                               Text="جاري البحث عن السيرفرات المتوفرة..."
+                               Foreground="#607D8B"
+                               Margin="0,0,0,12"
+                               TextWrapping="Wrap"/>
+
+                    <TextBlock x:Name="StandaloneConnectionTestResultText"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <Button x:Name="TestStandaloneConnectionButton"
+                            Content="اختبار الاتصال"
+                            Click="OnTestStandaloneConnectionClick"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            HorizontalAlignment="Stretch"
+                            Padding="0,10"
+                            Margin="0,0,0,8"/>
+
+                    <TextBlock Text="يمكنك أيضاً كتابة اسم السيرفر يدوياً إن لم يظهر في القائمة (مثال: .\\SQLEXPRESS أو (localdb)\\MSSQLLocalDB)."
+                               Foreground="#90A4AE"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </ScrollViewer>
+
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0">
                 <Button x:Name="BackButton" Content="رجوع" Click="OnBackClick" Visibility="Collapsed"
                         Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,12,0" Padding="32,10"/>
