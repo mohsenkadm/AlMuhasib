@@ -140,4 +140,86 @@ class RealEstateRepository {
       },
     );
   }
+
+  Future<RealEstateProfitReportDto> getProfitReport({
+    DateTime? from,
+    DateTime? to,
+  }) {
+    return _api.get(
+      '/api/real-estate/reports/profit',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+      },
+      parser: (data) =>
+          RealEstateProfitReportDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<RealEstateExpenseTypeDto>> getExpenseTypes() {
+    return _api.get(
+      '/api/real-estate/expenses/types',
+      parser: (data) => (data as List<dynamic>)
+          .map(
+            (e) => RealEstateExpenseTypeDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<RealEstateExpensesPage> getExpenses({
+    DateTime? from,
+    DateTime? to,
+    String? search,
+    String? typeSyncId,
+    int page = 1,
+    int pageSize = 50,
+  }) {
+    return _api.get(
+      '/api/real-estate/expenses',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (typeSyncId != null && typeSyncId.isNotEmpty)
+          'typeSyncId': typeSyncId,
+        'page': page,
+        'pageSize': pageSize,
+      },
+      parser: (data) =>
+          RealEstateExpensesPage.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<String> createExpense({
+    required String expenseTypeSyncId,
+    required DateTime expenseDate,
+    required double amount,
+    String? description,
+    String? notes,
+    String? relatedContractSyncId,
+  }) {
+    return _api.post(
+      '/api/real-estate/expenses',
+      data: {
+        'expenseTypeSyncId': expenseTypeSyncId,
+        'expenseDate': expenseDate.toIso8601String(),
+        'amount': amount,
+        if (description != null) 'description': description,
+        if (notes != null) 'notes': notes,
+        if (relatedContractSyncId != null)
+          'relatedContractSyncId': relatedContractSyncId,
+      },
+      parser: (data) => (data as Map<String, dynamic>)['syncId'].toString(),
+    );
+  }
+
+  Future<void> deleteExpense(String syncId) {
+    return _api.delete(
+      '/api/real-estate/expenses/$syncId',
+      parser: (_) => null,
+    );
+  }
 }

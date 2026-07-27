@@ -53,6 +53,7 @@ import '../../features/profile/privacy_policy_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/real_estate/contracts/real_estate_contract_detail_screen.dart';
 import '../../features/real_estate/contracts/real_estate_contract_form_screen.dart';
+import '../../features/real_estate/expenses/real_estate_expenses_screen.dart';
 import '../../features/real_estate/real_estate_shell.dart';
 import '../../features/reports/presentation/report_detail_screen.dart';
 import '../../features/reports/presentation/reports_screen.dart';
@@ -592,6 +593,14 @@ abstract final class AppPages {
         syncId: Get.parameters['syncId']!,
       ),
       binding: RealEstateContractDetailBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.realEstateExpenses,
+      page: () => const RealEstateExpensesScreen(),
+      binding: RealEstateExpensesBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

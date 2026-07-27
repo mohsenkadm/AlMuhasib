@@ -23,6 +23,10 @@ public sealed partial class SyncEngine
             foreach (var dto in request.Data.RealEstateClauseTemplates)
                 accepted += await UpsertRealEstateClauseTemplateAsync(tenantId, dto, response, ct);
 
+            foreach (var dto in request.Data.RealEstateExpenseTypes)
+                accepted += await UpsertRealEstateExpenseTypeAsync(tenantId, dto, response, ct);
+            await FlushAndCacheAsync(_db.RealEstateExpenseTypes, tenantId, request.Data.RealEstateExpenseTypes.Select(e => e.SyncId), resolver, ct);
+
             foreach (var dto in request.Data.RealEstateContracts)
                 accepted += await UpsertRealEstateContractAsync(tenantId, dto, response, ct);
             await FlushAndCacheAsync(_db.RealEstateContracts, tenantId, request.Data.RealEstateContracts.Select(c => c.SyncId), resolver, ct);
@@ -47,6 +51,29 @@ public sealed partial class SyncEngine
                     continue;
                 }
                 accepted += await UpsertRealEstateContractClauseAsync(tenantId, dto, contractId.Value, response, ct);
+            }
+
+            foreach (var dto in request.Data.RealEstateExpenses)
+            {
+                var typeId = await resolver.ResolveRealEstateExpenseTypeAsync(dto.ExpenseTypeSyncId, ct);
+                if (typeId is null)
+                {
+                    AddConflict(response, "RealEstateExpense", dto.SyncId, "Expense type not found");
+                    continue;
+                }
+
+                int? contractId = null;
+                if (dto.RelatedContractSyncId.HasValue && dto.RelatedContractSyncId != Guid.Empty)
+                {
+                    contractId = await resolver.ResolveRealEstateContractAsync(dto.RelatedContractSyncId, ct);
+                    if (contractId is null)
+                    {
+                        AddConflict(response, "RealEstateExpense", dto.SyncId, "Related contract not found");
+                        continue;
+                    }
+                }
+
+                accepted += await UpsertRealEstateExpenseAsync(tenantId, dto, typeId.Value, contractId, response, ct);
             }
 
             var tenant = await _db.Tenants.FindAsync([tenantId], ct);
@@ -74,10 +101,13 @@ public sealed partial class SyncEngine
         {
             RealEstateContracts = await PullEntitiesAsync(_db.RealEstateContracts, tenantId, since, MapRealEstateContract, ct),
             RealEstateClauseTemplates = await PullEntitiesAsync(_db.RealEstateClauseTemplates, tenantId, since, MapRealEstateClauseTemplate, ct),
-            RealEstateParties = await PullEntitiesAsync(_db.RealEstateParties, tenantId, since, MapRealEstateParty, ct)
+            RealEstateParties = await PullEntitiesAsync(_db.RealEstateParties, tenantId, since, MapRealEstateParty, ct),
+            RealEstateExpenseTypes = await PullEntitiesAsync(_db.RealEstateExpenseTypes, tenantId, since, MapRealEstateExpenseType, ct)
         };
 
         var contractMap = await _db.RealEstateContracts.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
+            .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var expenseTypeMap = await _db.RealEstateExpenseTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
             .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
 
         var payments = await _db.RealEstateContractPayments.IgnoreQueryFilters()
@@ -99,6 +129,17 @@ public sealed partial class SyncEngine
             IsDeleted = c.IsDeleted, DeletedAt = c.DeletedAt, DeletedBy = c.DeletedBy, RowVersion = c.RowVersion,
             ContractSyncId = contractMap.GetValueOrDefault(c.ContractId),
             SortOrder = c.SortOrder, Title = c.Title, Body = c.Body
+        }).ToList();
+
+        var expenses = await _db.RealEstateExpenses.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        bundle.RealEstateExpenses = expenses.Select(e => new RealEstateExpenseSyncDto
+        {
+            SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+            IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+            ExpenseTypeSyncId = expenseTypeMap.GetValueOrDefault(e.ExpenseTypeId),
+            ExpenseDate = e.ExpenseDate, Amount = e.Amount, Description = e.Description, Notes = e.Notes,
+            RelatedContractSyncId = e.RelatedContractId.HasValue ? contractMap.GetValueOrDefault(e.RelatedContractId.Value) : null
         }).ToList();
 
         var serverTime = DateTime.UtcNow;
@@ -142,6 +183,13 @@ public sealed partial class SyncEngine
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, IdNumber = e.IdNumber, IdDate = e.IdDate, Notes = e.Notes
+    };
+
+    private static RealEstateExpenseTypeSyncDto MapRealEstateExpenseType(CloudRealEstateExpenseType e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        Name = e.Name, Notes = e.Notes, IsActive = e.IsActive
     };
 
     private async Task<int> UpsertRealEstateContractAsync(int tenantId, RealEstateContractSyncDto dto, SyncPushResponse response, CancellationToken ct)
@@ -236,6 +284,39 @@ public sealed partial class SyncEngine
         existing.IdNumber = dto.IdNumber;
         existing.IdDate = dto.IdDate;
         existing.Notes = dto.Notes;
+        return 1;
+    }
+
+    private async Task<int> UpsertRealEstateExpenseTypeAsync(int tenantId, RealEstateExpenseTypeSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.RealEstateExpenseTypes, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "RealEstateExpenseType", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudRealEstateExpenseType { TenantId = tenantId }; _db.RealEstateExpenseTypes.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.Name = dto.Name;
+        existing.Notes = dto.Notes;
+        existing.IsActive = dto.IsActive;
+        return 1;
+    }
+
+    private async Task<int> UpsertRealEstateExpenseAsync(
+        int tenantId,
+        RealEstateExpenseSyncDto dto,
+        int typeId,
+        int? relatedContractId,
+        SyncPushResponse response,
+        CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.RealEstateExpenses, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "RealEstateExpense", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudRealEstateExpense { TenantId = tenantId }; _db.RealEstateExpenses.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.ExpenseTypeId = typeId;
+        existing.ExpenseDate = dto.ExpenseDate;
+        existing.Amount = dto.Amount;
+        existing.Description = dto.Description;
+        existing.Notes = dto.Notes;
+        existing.RelatedContractId = relatedContractId;
         return 1;
     }
 }

@@ -89,6 +89,7 @@ abstract final class AppRoutes {
   static const realEstateContractDetail = '/real-estate/contracts/:syncId';
   static const realEstatePayments = '/real-estate/payments';
   static const realEstateReports = '/real-estate/reports';
+  static const realEstateExpenses = '/real-estate/expenses';
   static const realEstateSettings = '/real-estate/settings';
 
   static const profile = '/profile';

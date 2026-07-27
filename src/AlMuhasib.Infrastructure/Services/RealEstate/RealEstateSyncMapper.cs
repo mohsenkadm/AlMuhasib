@@ -27,6 +27,9 @@ internal static class RealEstateSyncMapper
         var contractMap = contracts.ToDictionary(c => c.Id, c => c.SyncId);
         var templates = await db.RealEstateClauseTemplates.IgnoreQueryFilters().ToListAsync(ct);
         var parties = await db.RealEstateParties.IgnoreQueryFilters().ToListAsync(ct);
+        var expenseTypes = await db.RealEstateExpenseTypes.IgnoreQueryFilters().ToListAsync(ct);
+        var expenses = await db.RealEstateExpenses.IgnoreQueryFilters().ToListAsync(ct);
+        var expenseTypeMap = expenseTypes.ToDictionary(t => t.Id, t => t.SyncId);
 
         return new SyncDataBundle
         {
@@ -44,7 +47,13 @@ internal static class RealEstateSyncMapper
                 .Select(c => MapClause(c, contractMap))
                 .ToList(),
             RealEstateClauseTemplates = templates.Where(ShouldSync).Select(MapTemplate).ToList(),
-            RealEstateParties = parties.Where(ShouldSync).Select(MapParty).ToList()
+            RealEstateParties = parties.Where(ShouldSync).Select(MapParty).ToList(),
+            RealEstateExpenseTypes = expenseTypes.Where(ShouldSync).Select(MapExpenseType).ToList(),
+            RealEstateExpenses = expenses
+                .Where(ShouldSync)
+                .Where(e => expenseTypeMap.ContainsKey(e.ExpenseTypeId))
+                .Select(e => MapExpense(e, expenseTypeMap, contractMap))
+                .ToList()
         };
     }
 
@@ -58,6 +67,8 @@ internal static class RealEstateSyncMapper
             await ApplyClausesAsync(db, data.RealEstateContractClauses, contractMap, ct);
             await ApplyTemplatesAsync(db, data.RealEstateClauseTemplates, ct);
             await ApplyPartiesAsync(db, data.RealEstateParties, ct);
+            var expenseTypeMap = await ApplyExpenseTypesAsync(db, data.RealEstateExpenseTypes, ct);
+            await ApplyExpensesAsync(db, data.RealEstateExpenses, expenseTypeMap, contractMap, ct);
             await db.SaveChangesAsync(ct);
         }
         finally
@@ -187,6 +198,38 @@ internal static class RealEstateSyncMapper
             Notes = p.Notes
         };
         CopyBase(p, dto);
+        return dto;
+    }
+
+    private static RealEstateExpenseTypeSyncDto MapExpenseType(RealEstateExpenseType t)
+    {
+        var dto = new RealEstateExpenseTypeSyncDto
+        {
+            Name = t.Name,
+            Notes = t.Notes,
+            IsActive = t.IsActive
+        };
+        CopyBase(t, dto);
+        return dto;
+    }
+
+    private static RealEstateExpenseSyncDto MapExpense(
+        RealEstateExpense e,
+        Dictionary<int, Guid> expenseTypeMap,
+        Dictionary<int, Guid> contractMap)
+    {
+        var dto = new RealEstateExpenseSyncDto
+        {
+            ExpenseTypeSyncId = expenseTypeMap[e.ExpenseTypeId],
+            ExpenseDate = e.ExpenseDate,
+            Amount = e.Amount,
+            Description = e.Description,
+            Notes = e.Notes,
+            RelatedContractSyncId = e.RelatedContractId.HasValue && contractMap.ContainsKey(e.RelatedContractId.Value)
+                ? contractMap[e.RelatedContractId.Value]
+                : null
+        };
+        CopyBase(e, dto);
         return dto;
     }
 
@@ -356,6 +399,83 @@ internal static class RealEstateSyncMapper
             existing.IdNumber = dto.IdNumber;
             existing.IdDate = dto.IdDate;
             existing.Notes = dto.Notes;
+            ApplyBase(existing, dto);
+        }
+    }
+
+    private static async Task<Dictionary<Guid, int>> ApplyExpenseTypesAsync(
+        RealEstateDbContext db,
+        List<RealEstateExpenseTypeSyncDto> dtos,
+        CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, int>();
+        foreach (var dto in dtos)
+        {
+            var existing = await db.RealEstateExpenseTypes.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new RealEstateExpenseType();
+                db.RealEstateExpenseTypes.Add(existing);
+            }
+
+            existing.Name = dto.Name;
+            existing.Notes = dto.Notes;
+            existing.IsActive = dto.IsActive;
+            ApplyBase(existing, dto);
+            await db.SaveChangesAsync(ct);
+            map[dto.SyncId] = existing.Id;
+        }
+
+        return map;
+    }
+
+    private static async Task ApplyExpensesAsync(
+        RealEstateDbContext db,
+        List<RealEstateExpenseSyncDto> dtos,
+        Dictionary<Guid, int> expenseTypeMap,
+        Dictionary<Guid, int> contractMap,
+        CancellationToken ct)
+    {
+        foreach (var dto in dtos)
+        {
+            if (!expenseTypeMap.TryGetValue(dto.ExpenseTypeSyncId, out var typeId))
+            {
+                var type = await db.RealEstateExpenseTypes.IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(t => t.SyncId == dto.ExpenseTypeSyncId, ct);
+                if (type is null) continue;
+                typeId = type.Id;
+                expenseTypeMap[dto.ExpenseTypeSyncId] = typeId;
+            }
+
+            int? relatedContractId = null;
+            if (dto.RelatedContractSyncId.HasValue && dto.RelatedContractSyncId != Guid.Empty)
+            {
+                if (!contractMap.TryGetValue(dto.RelatedContractSyncId.Value, out var contractId))
+                {
+                    var contract = await db.RealEstateContracts.IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(c => c.SyncId == dto.RelatedContractSyncId.Value, ct);
+                    if (contract is null) continue;
+                    contractId = contract.Id;
+                    contractMap[dto.RelatedContractSyncId.Value] = contractId;
+                }
+                relatedContractId = contractId;
+            }
+
+            var existing = await db.RealEstateExpenses.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(e => e.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new RealEstateExpense { ExpenseTypeId = typeId };
+                db.RealEstateExpenses.Add(existing);
+            }
+
+            existing.ExpenseTypeId = typeId;
+            existing.ExpenseDate = dto.ExpenseDate;
+            existing.Amount = dto.Amount;
+            existing.Description = dto.Description;
+            existing.Notes = dto.Notes;
+            existing.RelatedContractId = relatedContractId;
             ApplyBase(existing, dto);
         }
     }

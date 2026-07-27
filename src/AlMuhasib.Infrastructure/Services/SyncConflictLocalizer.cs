@@ -70,7 +70,9 @@ internal static class SyncConflictLocalizer
         ["RealEstateContractPayment"] = "دفعة عقد عقاري",
         ["RealEstateContractClause"] = "بند عقد عقاري",
         ["RealEstateClauseTemplate"] = "قالب بند عقاري",
-        ["RealEstateParty"] = "طرف عقاري"
+        ["RealEstateParty"] = "طرف عقاري",
+        ["RealEstateExpenseType"] = "نوع مصروف عقاري",
+        ["RealEstateExpense"] = "مصروف عقاري"
     };
 
     private static readonly Dictionary<string, string> Reasons = new(StringComparer.OrdinalIgnoreCase)

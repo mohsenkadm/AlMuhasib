@@ -21,7 +21,9 @@ public sealed class RealEstateContractsSystemModule : ISystemModule
         (RealEstatePermissionRegistry.Contracts, "العقود"),
         (RealEstatePermissionRegistry.Debts, "كشف المدينين"),
         (RealEstatePermissionRegistry.Parties, "الزبائن"),
+        (RealEstatePermissionRegistry.Expenses, "المصاريف"),
         (RealEstatePermissionRegistry.Reports, "التقارير"),
+        (RealEstatePermissionRegistry.ProfitReport, "تقرير الأرباح"),
         (RealEstatePermissionRegistry.ClauseTemplates, "بنود العقد"),
         (RealEstatePermissionRegistry.Users, "المستخدمون"),
         (RealEstatePermissionRegistry.Permissions, "الصلاحيات"),
@@ -58,6 +60,16 @@ public sealed class RealEstateContractsSystemModule : ISystemModule
                     ("كشف المدينين", PackIconKind.CashClock, typeof(RealEstateDebtsViewModel), RealEstatePermissionRegistry.Debts),
                 ]),
             FlyoutGroup(
+                key: "finance",
+                title: "المصاريف والأرباح",
+                icon: PackIconKind.CashMultiple,
+                accent: "#6A1B9A",
+                accentLight: "#F3E5F5",
+                [
+                    ("المصاريف", PackIconKind.CashMinus, typeof(RealEstateExpensesViewModel), RealEstatePermissionRegistry.Expenses),
+                    ("تقرير الأرباح", PackIconKind.Finance, typeof(RealEstateProfitReportViewModel), RealEstatePermissionRegistry.ProfitReport),
+                ]),
+            FlyoutGroup(
                 key: "reports",
                 title: "التقارير",
                 icon: PackIconKind.ChartBar,
@@ -65,6 +77,7 @@ public sealed class RealEstateContractsSystemModule : ISystemModule
                 accentLight: "#E8F5E9",
                 [
                     ("تقرير العقود", PackIconKind.ChartBar, typeof(RealEstateContractsReportViewModel), RealEstatePermissionRegistry.Reports),
+                    ("تقرير الأرباح", PackIconKind.ChartTimeline, typeof(RealEstateProfitReportViewModel), RealEstatePermissionRegistry.ProfitReport),
                 ]),
             FlyoutGroup(
                 key: "system",
