@@ -37,6 +37,15 @@
                         تفعيل المزامنة والتطبيق
                     </label>
                 </div>
+                @if (Id > 0)
+                {
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" @bind="_isActive" />
+                            العميل نشط
+                        </label>
+                    </div>
+                }
                 <div class="form-group">
                     <label>انتهاء الترخيص</label>
                     <input type="date" class="form-control" @bind="_licenseExpires" />
@@ -47,10 +56,17 @@
                         <option value="@((int)ApplicationSystemType.Accounting)">المحاسبة</option>
                         <option value="@((int)ApplicationSystemType.CarContracts)">عقود السيارات</option>
                         <option value="@((int)ApplicationSystemType.HotelManagement)">إدارة الفنادق</option>
+                        <option value="@((int)ApplicationSystemType.CarTrading)">بيع وشراء السيارات</option>
                     </select>
                 </div>
             </div>
-            <button class="btn btn-primary" @onclick="SaveAsync" style="margin-top:.5rem">حفظ البيانات</button>
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem">
+                <button class="btn btn-primary" @onclick="SaveAsync">حفظ البيانات</button>
+                @if (Id > 0)
+                {
+                    <button class="btn btn-danger" @onclick="ConfirmDeleteTenant">حذف العميل</button>
+                }
+            </div>
         </div>
     </div>
 
@@ -76,11 +92,13 @@
                                         </span>
                                     </td>
                                     <td>@(a.ExpiresAt?.ToString("yyyy-MM-dd") ?? "—")</td>
-                                    <td>
+                                    <td style="white-space:nowrap">
+                                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditAccount(a)">تعديل</button>
                                         <button class="btn @(a.IsActive ? "btn-warning" : "btn-success") btn-sm"
                                                 @onclick="() => ToggleAccount(a.Id, !a.IsActive)">
                                             @(a.IsActive ? "تعطيل" : "تفعيل")
                                         </button>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => ConfirmDeleteAccount(a)">حذف</button>
                                     </td>
                                 </tr>
                             }
@@ -137,10 +155,65 @@
     }
 }
 
+@if (_editAccount is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseEditAccount">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <h3>تعديل حساب: @_editAccount.Username</h3>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label>كلمة مرور جديدة (اتركها فارغة للإبقاء على الحالية)</label>
+                <input type="password" class="form-control" @bind="_editPassword" />
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label>ينتهي في</label>
+                <input type="date" class="form-control" @bind="_editExpires" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseEditAccount">إلغاء</button>
+                <button class="btn btn-primary" @onclick="SaveAccountEditAsync" disabled="@_savingAccount">
+                    @(_savingAccount ? "جارٍ الحفظ..." : "حفظ")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_deleteAccountTarget is not null)
+{
+    <div class="modal-backdrop" @onclick="CancelDeleteAccount">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <h3>تأكيد حذف الحساب</h3>
+            <p>هل أنت متأكد من حذف الحساب <strong>@_deleteAccountTarget.Username</strong>؟</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CancelDeleteAccount">إلغاء</button>
+                <button class="btn btn-danger" @onclick="DeleteAccountConfirmedAsync">حذف</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_confirmDeleteTenant)
+{
+    <div class="modal-backdrop" @onclick="CancelDeleteTenant">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <h3>تأكيد حذف العميل</h3>
+            <p>هل أنت متأكد من حذف العميل <strong>@_companyName</strong> وجميع حساباته؟</p>
+            <p style="color:var(--text-muted);font-size:.9rem">لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CancelDeleteTenant">إلغاء</button>
+                <button class="btn btn-danger" @onclick="DeleteTenantConfirmedAsync" disabled="@_deleting">
+                    @(_deleting ? "جارٍ الحذف..." : "حذف نهائياً")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public int Id { get; set; }
     private string _companyName = "";
     private bool _isMobileEnabled = true;
+    private bool _isActive = true;
     private DateTime? _licenseExpires;
     private int _applicationSystemType;
     private List<TenantAccount> _accounts = [];
@@ -151,6 +224,15 @@
     private bool _isError;
     private Tenant? _tenant;
     private bool _ready;
+
+    private TenantAccount? _editAccount;
+    private string _editPassword = "";
+    private DateTime? _editExpires;
+    private bool _savingAccount;
+
+    private TenantAccount? _deleteAccountTarget;
+    private bool _confirmDeleteTenant;
+    private bool _deleting;
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,6 +248,7 @@
             if (_tenant is null) return;
             _companyName = _tenant.CompanyName;
             _isMobileEnabled = _tenant.IsMobileEnabled;
+            _isActive = _tenant.IsActive;
             _licenseExpires = _tenant.LicenseExpiresAt;
             _applicationSystemType = _tenant.ApplicationSystemType;
             _accounts = await TenantService.GetAccountsAsync(Id);
@@ -195,6 +278,7 @@
 
             _tenant!.CompanyName = _companyName;
             _tenant.IsMobileEnabled = _isMobileEnabled;
+            _tenant.IsActive = _isActive;
             _tenant.LicenseExpiresAt = _licenseExpires;
             _tenant.ApplicationSystemType = _applicationSystemType;
             await TenantService.UpdateAsync(_tenant);
@@ -228,5 +312,88 @@
     {
         await TenantService.SetAccountActiveAsync(accountId, active);
         _accounts = await TenantService.GetAccountsAsync(Id);
+    }
+
+    private void OpenEditAccount(TenantAccount account)
+    {
+        _editAccount = account;
+        _editPassword = "";
+        _editExpires = account.ExpiresAt;
+    }
+
+    private void CloseEditAccount() => _editAccount = null;
+
+    private async Task SaveAccountEditAsync()
+    {
+        if (_editAccount is null) return;
+        _savingAccount = true;
+        _isError = false;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_editPassword))
+                await TenantService.ResetPasswordAsync(_editAccount.Id, _editPassword);
+
+            await TenantService.ExtendAccountAsync(_editAccount.Id, _editExpires);
+            _accounts = await TenantService.GetAccountsAsync(Id);
+            _message = "تم تحديث الحساب بنجاح";
+            _editAccount = null;
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+        finally
+        {
+            _savingAccount = false;
+        }
+    }
+
+    private void ConfirmDeleteAccount(TenantAccount account) => _deleteAccountTarget = account;
+
+    private void CancelDeleteAccount() => _deleteAccountTarget = null;
+
+    private async Task DeleteAccountConfirmedAsync()
+    {
+        if (_deleteAccountTarget is null) return;
+        _isError = false;
+        try
+        {
+            await TenantService.DeleteAccountAsync(_deleteAccountTarget.Id);
+            _message = $"تم حذف الحساب «{_deleteAccountTarget.Username}»";
+            _deleteAccountTarget = null;
+            _accounts = await TenantService.GetAccountsAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+            _deleteAccountTarget = null;
+        }
+    }
+
+    private void ConfirmDeleteTenant() => _confirmDeleteTenant = true;
+
+    private void CancelDeleteTenant() => _confirmDeleteTenant = false;
+
+    private async Task DeleteTenantConfirmedAsync()
+    {
+        _deleting = true;
+        _isError = false;
+        try
+        {
+            await TenantService.DeleteAsync(Id);
+            Nav.NavigateTo("/tenants");
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+            _confirmDeleteTenant = false;
+        }
+        finally
+        {
+            _deleting = false;
+        }
     }
 }

@@ -33,10 +33,11 @@ public sealed class SystemProfileService : ISystemProfileService
     {
         ApplicationSystemType.CarContracts => "AlMuhasibCarContractsDb",
         ApplicationSystemType.HotelManagement => "AlMuhasibHotelsDb",
+        ApplicationSystemType.CarTrading => "AlMuhasibCarTradingDb",
         _ => "AlMuhasibDb"
     };
 
-    public void SaveSelection(ApplicationSystemType system)
+    public void SaveSelection(ApplicationSystemType system, DeploymentMode deploymentMode = DeploymentMode.Standalone, string? branchDisplayName = null)
     {
         if (_current.IsConfigured)
             throw new InvalidOperationException("System type is already configured and cannot be changed.");
@@ -44,17 +45,34 @@ public sealed class SystemProfileService : ISystemProfileService
         _current = new SystemProfile
         {
             SelectedSystem = system,
-            SelectedAt = DateTime.UtcNow
+            SelectedAt = DateTime.UtcNow,
+            DeploymentMode = deploymentMode,
+            BranchDisplayName = branchDisplayName
         };
         SaveToDisk();
     }
+
+    public void UpdateDeploymentMode(DeploymentMode mode, string? branchDisplayName = null)
+    {
+        _current.DeploymentMode = mode;
+        if (branchDisplayName is not null)
+            _current.BranchDisplayName = branchDisplayName;
+        SaveToDisk();
+    }
+
+    public DeploymentMode DeploymentMode => _current.DeploymentMode;
+    public bool IsBranchClient => _current.IsBranchClient;
+    public bool IsMainServer => _current.IsMainServer;
+    public bool IsStandalone => _current.IsStandalone;
 
     public void ChangeSystem(ApplicationSystemType system)
     {
         _current = new SystemProfile
         {
             SelectedSystem = system,
-            SelectedAt = DateTime.UtcNow
+            SelectedAt = DateTime.UtcNow,
+            DeploymentMode = _current.DeploymentMode,
+            BranchDisplayName = _current.BranchDisplayName
         };
         SaveToDisk();
     }

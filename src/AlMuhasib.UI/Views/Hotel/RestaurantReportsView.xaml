@@ -3,124 +3,189 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
-             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="تقارير المطعم" FontSize="16" FontWeight="Bold"
-                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
-                <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,0"/>
-                    <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,0"/>
-                    <Button Command="{Binding LoadReportsCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="20,8">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تحديث التقارير"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </md:Card>
-
-        <controls:HotelListStatsBar Grid.Row="1" Margin="0,0,0,16" ItemsSource="{Binding Stats}"/>
-
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0" md:ElevationAssist.Elevation="Dp2">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12" md:ElevationAssist.Elevation="Dp2">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
-                            <TextBlock Text="المبيعات حسب القناة" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding ChannelSales}"
-                                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="القناة" Binding="{Binding Label}" Width="*" MinWidth="100"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                                <DataGridTextColumn Header="الطلبات" Binding="{Binding OrderCount}" Width="90" MinWidth="80"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                                <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="110" MinWidth="90"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </md:Card>
-
-                <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
-                    <Grid>
-                        <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
-                            <TextBlock Text="أكثر الأصناف مبيعاً" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding TopItems}"
-                                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="الصنف" Binding="{Binding ItemName}" Width="*" MinWidth="120"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                                <DataGridTextColumn Header="الكمية" Binding="{Binding QuantitySold}" Width="90" MinWidth="80"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                                <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="110" MinWidth="90"
-                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <TextBlock Grid.Row="0" Text="تقارير المطعم" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,0"/>
+                            <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,0"/>
+                            <Button Command="{Binding SetPeriodTodayCommand}" Style="{StaticResource FlatButton}"
+                                    Content="اليوم" Margin="0,0,6,0" Padding="12,6"/>
+                            <Button Command="{Binding SetPeriod7DaysCommand}" Style="{StaticResource FlatButton}"
+                                    Content="7 أيام" Margin="0,0,6,0" Padding="12,6"/>
+                            <Button Command="{Binding SetPeriod30DaysCommand}" Style="{StaticResource FlatButton}"
+                                    Content="30 يوماً" Margin="0,0,12,0" Padding="12,6"/>
+                            <Button Command="{Binding LoadReportsCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="20,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="تحديث التقارير"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </md:Card>
-            </Grid>
 
-            <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,16,0,0" md:ElevationAssist.Elevation="Dp2"
-                     Visibility="{Binding LowStockCount, Converter={StaticResource PositiveIntToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <Border Background="#FFC62828" Padding="14,10">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Alert" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="تنبيهات انخفاض المخزون" FontWeight="Bold" Foreground="White"/>
-                        </StackPanel>
-                    </Border>
-                    <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding LowStock}" MaxHeight="160"
-                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="المكون" Binding="{Binding Name}" Width="*" MinWidth="120"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="الرصيد" Binding="{Binding Stock.Quantity, StringFormat=N2}" Width="100" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                            <DataGridTextColumn Header="الحد الأدنى" Binding="{Binding MinQuantity, StringFormat=N2}" Width="100" MinWidth="90"
-                                                ElementStyle="{StaticResource HotelDataGridTextElement}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                <controls:HotelListStatsBar Margin="0,0,0,12" ItemsSource="{Binding Stats}"/>
+
+                <UniformGrid Columns="5" Margin="0,0,0,12"
+                             Visibility="{Binding HasFinancialOverview, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:AnimatedStatCard Title="إيراد المطعم" TextValue="{Binding OverviewRevenue}"
+                                               Icon="CashRegister" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+                    <controls:AnimatedStatCard Title="تكلفة المبيعات" TextValue="{Binding OverviewCogs}"
+                                               Icon="PackageVariant" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+                    <controls:AnimatedStatCard Title="إجمالي الربح" TextValue="{Binding OverviewGrossProfit}"
+                                               Icon="ChartLine" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="مشتريات المطبخ" TextValue="{Binding OverviewKitchenPurchases}"
+                                               Icon="CartOutline" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard Title="صافي التشغيل" TextValue="{Binding OverviewNetOperating}"
+                                               Icon="ScaleBalance" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                </UniformGrid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <controls:ChartCard Title="المبيعات اليومية">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding DailySeries}" XAxes="{Binding DailyXAxes}"
+                                                YAxes="{Binding DailyYAxes}" Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+
+                    <controls:ChartCard Grid.Column="1" Title="القنوات" Margin="12,0,0,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding ChannelSeries}" Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
                 </Grid>
-            </md:Card>
-        </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0" md:ElevationAssist.Elevation="Dp2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#00897B" Padding="14,10">
+                                <TextBlock Text="المبيعات حسب القناة" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                            <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding ChannelSales}" MinHeight="160"
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="القناة" Binding="{Binding Label}" Width="*" MinWidth="80"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="الطلبات" Binding="{Binding OrderCount}" Width="70"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="90"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </md:Card>
+
+                    <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0" md:ElevationAssist.Elevation="Dp2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#00897B" Padding="14,10">
+                                <TextBlock Text="أكثر الأصناف مبيعاً" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                            <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding TopItems}" MinHeight="160"
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="الصنف" Binding="{Binding ItemName}" Width="*" MinWidth="100"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="الكمية" Binding="{Binding QuantitySold}" Width="70"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="90"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </md:Card>
+
+                    <md:Card Grid.Column="2" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#00695C" Padding="14,10">
+                                <TextBlock Text="طرق الدفع / خدمة الغرف" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                            <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding PaymentBreakdown}" MinHeight="160"
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="الطريقة" Binding="{Binding Label}" Width="*" MinWidth="90"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="العدد" Binding="{Binding PaymentCount}" Width="60"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="90"
+                                                        ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </md:Card>
+                </Grid>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,8" md:ElevationAssist.Elevation="Dp2"
+                         Visibility="{Binding LowStockCount, Converter={StaticResource PositiveIntToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Background="#FFC62828" Padding="14,10">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Alert" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="تنبيهات انخفاض المخزون" FontWeight="Bold" Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                        <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding LowStock}" MaxHeight="160"
+                                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="المكون" Binding="{Binding Name}" Width="*" MinWidth="120"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                <DataGridTextColumn Header="الرصيد" Binding="{Binding Stock.Quantity, StringFormat=N2}" Width="100" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                                <DataGridTextColumn Header="الحد الأدنى" Binding="{Binding MinQuantity, StringFormat=N2}" Width="100" MinWidth="90"
+                                                    ElementStyle="{StaticResource HotelDataGridTextElement}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </md:Card>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

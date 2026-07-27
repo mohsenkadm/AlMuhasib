@@ -69,9 +69,17 @@ public class ProductService : IProductService
     public async Task UpdateAsync(Product product)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        product.UpdatedBy = _currentUserService.Username;
-        product.UpdatedAt = DateTime.UtcNow;
-        context.Products.Update(product);
+        var existing = await context.Products
+            .FirstOrDefaultAsync(p => p.Id == product.Id)
+            ?? throw new InvalidOperationException("المنتج غير موجود");
+
+        existing.Name = product.Name;
+        existing.Barcode = product.Barcode;
+        existing.Description = product.Description;
+        existing.CategoryId = product.CategoryId;
+        existing.UpdatedBy = _currentUserService.Username;
+        existing.UpdatedAt = DateTime.UtcNow;
+
         await context.SaveChangesAsync();
     }
 

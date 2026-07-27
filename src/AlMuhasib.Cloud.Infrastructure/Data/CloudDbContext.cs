@@ -23,6 +23,9 @@ public class CloudDbContext : DbContext
 
     public DbSet<CloudCategory> Categories => Set<CloudCategory>();
     public DbSet<CloudProduct> Products => Set<CloudProduct>();
+    public DbSet<CloudPricingType> PricingTypes => Set<CloudPricingType>();
+    public DbSet<CloudProductPrice> ProductPrices => Set<CloudProductPrice>();
+    public DbSet<CloudBusinessSettings> BusinessSettings => Set<CloudBusinessSettings>();
     public DbSet<CloudWarehouse> Warehouses => Set<CloudWarehouse>();
     public DbSet<CloudCustomer> Customers => Set<CloudCustomer>();
     public DbSet<CloudSupplier> Suppliers => Set<CloudSupplier>();
@@ -32,6 +35,8 @@ public class CloudDbContext : DbContext
     public DbSet<CloudExpenseType> ExpenseTypes => Set<CloudExpenseType>();
     public DbSet<CloudPrintBrandingSettings> PrintBrandingSettings => Set<CloudPrintBrandingSettings>();
     public DbSet<CloudWarehouseStock> WarehouseStocks => Set<CloudWarehouseStock>();
+    public DbSet<CloudWarehouseTransfer> WarehouseTransfers => Set<CloudWarehouseTransfer>();
+    public DbSet<CloudWarehouseTransferItem> WarehouseTransferItems => Set<CloudWarehouseTransferItem>();
     public DbSet<CloudInvoice> Invoices => Set<CloudInvoice>();
     public DbSet<CloudInvoiceItem> InvoiceItems => Set<CloudInvoiceItem>();
     public DbSet<CloudInstallmentPlan> InstallmentPlans => Set<CloudInstallmentPlan>();
@@ -72,6 +77,8 @@ public class CloudDbContext : DbContext
     public DbSet<CloudRestaurantStockMovement> RestaurantStockMovements => Set<CloudRestaurantStockMovement>();
     public DbSet<CloudCarSaleContract> CarSaleContracts => Set<CloudCarSaleContract>();
     public DbSet<CloudCarContractPayment> CarContractPayments => Set<CloudCarContractPayment>();
+    public DbSet<CloudCarTradeTransaction> CarTradeTransactions => Set<CloudCarTradeTransaction>();
+    public DbSet<CloudCarTradePayment> CarTradePayments => Set<CloudCarTradePayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,6 +96,64 @@ public class CloudDbContext : DbContext
         modelBuilder.Entity<DeviceSubscription>()
             .HasIndex(d => new { d.TenantId, d.PlayerId })
             .IsUnique();
+
+        modelBuilder.Entity<CloudPricingType>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.HasIndex(x => new { x.TenantId, x.Name });
+        });
+
+        modelBuilder.Entity<CloudProductPrice>(e =>
+        {
+            e.Property(x => x.SalePrice).HasPrecision(18, 2);
+            e.Property(x => x.PurchasePrice).HasPrecision(18, 2);
+            e.HasIndex(x => new { x.TenantId, x.ProductId, x.PricingTypeId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+            e.HasOne(x => x.Product)
+                .WithMany(p => p.ProductPrices)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.PricingType)
+                .WithMany(t => t.ProductPrices)
+                .HasForeignKey(x => x.PricingTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CloudInvoiceItem>(e =>
+        {
+            e.HasOne(x => x.PricingType)
+                .WithMany()
+                .HasForeignKey(x => x.PricingTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudWarehouseTransfer>(e =>
+        {
+            e.Property(x => x.TransferNumber).HasMaxLength(50);
+            e.Property(x => x.Notes).HasMaxLength(500);
+            e.HasOne(x => x.FromWarehouse)
+                .WithMany()
+                .HasForeignKey(x => x.FromWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ToWarehouse)
+                .WithMany()
+                .HasForeignKey(x => x.ToWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Items)
+                .WithOne(i => i.WarehouseTransfer)
+                .HasForeignKey(i => i.WarehouseTransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudWarehouseTransferItem>(e =>
+        {
+            e.Property(x => x.Quantity).HasPrecision(18, 2);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<CloudCarSaleContract>(e =>
         {
@@ -109,6 +174,8 @@ public class CloudDbContext : DbContext
             e.Property(c => c.CarColor).HasMaxLength(50);
             e.Property(c => c.ChassisNumber).HasMaxLength(100);
             e.Property(c => c.CarPriceInWords).HasMaxLength(1000);
+            e.Property(c => c.WitnessOneName).HasMaxLength(200);
+            e.Property(c => c.WitnessTwoName).HasMaxLength(200);
             e.Property(c => c.Notes).HasMaxLength(2000);
             e.Property(c => c.CarPrice).HasPrecision(18, 2);
             e.Property(c => c.AmountReceived).HasPrecision(18, 2);

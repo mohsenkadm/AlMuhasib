@@ -3,7 +3,7 @@ import 'package:get/get.dart' hide Trans;
 
 import '../../../core/getx/app_services.dart';
 import '../../../shared/models/mobile_models.dart';
-import '../../../shared/widgets/sticky_summary_bar.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 
 class CustomerFormController extends GetxController {
   CustomerFormController({this.syncId});
@@ -39,17 +39,14 @@ class CustomerFormController extends GetxController {
               : notesController.text.trim(),
         ),
       );
-      final ctx = Get.context;
-      if (ctx == null) return;
       if (response.conflicts.isNotEmpty) {
-        showErrorSnackbar(ctx, response.message);
+        AppExceptionHandler.showConflicts(response.conflicts);
         return;
       }
-      showSuccessSnackbar(ctx, response.message);
+      AppExceptionHandler.showSuccess(response.message);
       Get.back(result: true);
     } catch (e) {
-      final ctx = Get.context;
-      if (ctx != null) showErrorSnackbar(ctx, e.toString());
+      AppExceptionHandler.showError(e);
     } finally {
       saving.value = false;
     }

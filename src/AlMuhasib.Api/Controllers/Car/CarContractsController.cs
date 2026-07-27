@@ -21,6 +21,9 @@ public sealed class CarContractsController : CarApiControllerBase
         [FromQuery] int pageSize = 50,
         [FromQuery] string? search = null,
         [FromQuery] string? status = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] bool? hasRemaining = null,
         CancellationToken ct = default)
     {
         if (await EnsureCarTenantAsync(ct) is { } err) return err;
@@ -45,6 +48,15 @@ public sealed class CarContractsController : CarApiControllerBase
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CarContractStatus>(status, true, out var statusEnum))
             query = query.Where(c => c.Status == statusEnum);
+
+        if (from.HasValue)
+            query = query.Where(c => c.ContractDate >= from.Value.Date);
+
+        if (to.HasValue)
+            query = query.Where(c => c.ContractDate <= to.Value.Date);
+
+        if (hasRemaining == true)
+            query = query.Where(c => c.RemainingAmount > 0);
 
         var items = await query
             .OrderByDescending(c => c.ContractDate)
@@ -90,7 +102,10 @@ public sealed class CarContractsController : CarApiControllerBase
             CarColor = request.CarColor ?? string.Empty,
             ChassisNumber = request.ChassisNumber ?? string.Empty,
             CarPrice = request.CarPrice,
+            IsAgreedPrice = request.IsAgreedPrice,
             AmountReceived = request.AmountReceived,
+            WitnessOneName = request.WitnessOneName ?? string.Empty,
+            WitnessTwoName = request.WitnessTwoName ?? string.Empty,
             Notes = request.Notes ?? string.Empty,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = User.Identity?.Name ?? "mobile"
@@ -126,7 +141,10 @@ public sealed class CarContractsController : CarApiControllerBase
         contract.CarColor = request.CarColor ?? string.Empty;
         contract.ChassisNumber = request.ChassisNumber ?? string.Empty;
         contract.CarPrice = request.CarPrice;
+        contract.IsAgreedPrice = request.IsAgreedPrice;
         contract.AmountReceived = request.AmountReceived;
+        contract.WitnessOneName = request.WitnessOneName ?? string.Empty;
+        contract.WitnessTwoName = request.WitnessTwoName ?? string.Empty;
         contract.Notes = request.Notes ?? string.Empty;
         contract.UpdatedAt = DateTime.UtcNow;
         contract.UpdatedBy = User.Identity?.Name ?? "mobile";
@@ -165,6 +183,8 @@ public sealed class CarContractsController : CarApiControllerBase
         if (contract is null) return NotFound();
         if (contract.Status == CarContractStatus.Cancelled)
             return BadRequest("Cannot record payment on a cancelled contract.");
+        if (contract.IsAgreedPrice)
+            return BadRequest("Cannot record payment on an agreed-price contract.");
         if (request.Amount > contract.RemainingAmount)
             return BadRequest("Payment amount exceeds remaining balance.");
 
@@ -231,7 +251,10 @@ public class CreateCarContractRequest
     public string? CarColor { get; set; }
     public string? ChassisNumber { get; set; }
     public decimal CarPrice { get; set; }
+    public bool IsAgreedPrice { get; set; }
     public decimal AmountReceived { get; set; }
+    public string? WitnessOneName { get; set; }
+    public string? WitnessTwoName { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -333,6 +356,14 @@ internal static class CarContractMapper
 
     public static void ApplyAmounts(CloudCarSaleContract contract)
     {
+        if (contract.IsAgreedPrice)
+        {
+            contract.CarPriceInWords = "المبلغ المتفق عليه";
+            contract.RemainingAmount = 0;
+            UpdateStatus(contract);
+            return;
+        }
+
         contract.RemainingAmount = contract.CarPrice - contract.AmountReceived;
         if (contract.RemainingAmount < 0)
             contract.RemainingAmount = 0;
@@ -343,6 +374,12 @@ internal static class CarContractMapper
     {
         if (contract.Status == CarContractStatus.Cancelled)
             return;
+
+        if (contract.IsAgreedPrice)
+        {
+            contract.Status = CarContractStatus.Active;
+            return;
+        }
 
         contract.Status = contract.RemainingAmount <= 0
             ? CarContractStatus.Completed

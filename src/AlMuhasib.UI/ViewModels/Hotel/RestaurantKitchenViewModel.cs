@@ -8,19 +8,24 @@ using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Windows.Threading;
 
 namespace AlMuhasib.UI.ViewModels.Hotel;
 
-public partial class RestaurantKitchenViewModel : ViewModelBase
+public partial class RestaurantKitchenViewModel : ViewModelBase, IDisposable
 {
     private readonly IRestaurantOrderService _orderService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly DispatcherTimer _autoRefreshTimer;
+    private bool _disposed;
 
     public ObservableCollection<RestaurantOrder> KitchenOrders { get; } = [];
     public ObservableCollection<HotelListStatItem> Stats { get; } = [];
 
     [ObservableProperty] private RestaurantOrder? _selectedOrder;
+    [ObservableProperty] private bool _autoRefreshEnabled = true;
+    [ObservableProperty] private string _lastRefreshedText = string.Empty;
 
     public IReadOnlyList<RestaurantKitchenStatus> KitchenStatusOptions { get; } =
         Enum.GetValues<RestaurantKitchenStatus>().ToList();
@@ -36,15 +41,32 @@ public partial class RestaurantKitchenViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _toast = toast;
         PageTitle = "شاشة المطبخ";
+
+        _autoRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        _autoRefreshTimer.Tick += OnAutoRefreshTick;
+    }
+
+    private async void OnAutoRefreshTick(object? sender, EventArgs e)
+    {
+        if (AutoRefreshEnabled && !IsBusy)
+            await LoadOrdersAsync();
     }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, HotelPermissionRegistry.RestaurantKitchen);
         await LoadOrdersAsync();
+        if (AutoRefreshEnabled)
+            _autoRefreshTimer.Start();
     }
 
     partial void OnSelectedOrderChanged(RestaurantOrder? value) => OnPropertyChanged(nameof(HasSelectedOrder));
+
+    partial void OnAutoRefreshEnabledChanged(bool value)
+    {
+        if (value) _autoRefreshTimer.Start();
+        else _autoRefreshTimer.Stop();
+    }
 
     [RelayCommand]
     private void SelectOrder(RestaurantOrder? order) => SelectedOrder = order;
@@ -52,17 +74,26 @@ public partial class RestaurantKitchenViewModel : ViewModelBase
     [RelayCommand]
     private async Task LoadOrdersAsync()
     {
-        KitchenOrders.Clear();
-        var orders = await _orderService.GetKitchenOrdersAsync();
-        foreach (var o in orders)
-            KitchenOrders.Add(o);
+        IsBusy = true;
+        try
+        {
+            KitchenOrders.Clear();
+            var orders = await _orderService.GetKitchenOrdersAsync();
+            foreach (var o in orders)
+                KitchenOrders.Add(o);
 
-        var selectedId = SelectedOrder?.Id;
-        SelectedOrder = selectedId.HasValue
-            ? orders.FirstOrDefault(o => o.Id == selectedId.Value)
-            : orders.FirstOrDefault();
+            var selectedId = SelectedOrder?.Id;
+            SelectedOrder = selectedId.HasValue
+                ? orders.FirstOrDefault(o => o.Id == selectedId.Value)
+                : orders.FirstOrDefault();
 
-        UpdateStats(orders);
+            UpdateStats(orders);
+            LastRefreshedText = $"آخر تحديث: {DateTime.Now:HH:mm:ss}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void UpdateStats(IReadOnlyList<RestaurantOrder> orders)
@@ -98,4 +129,12 @@ public partial class RestaurantKitchenViewModel : ViewModelBase
 
     [RelayCommand]
     private async Task MarkServedAsync() => await UpdateStatusAsync(RestaurantKitchenStatus.Served);
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _autoRefreshTimer.Stop();
+        _autoRefreshTimer.Tick -= OnAutoRefreshTick;
+    }
 }

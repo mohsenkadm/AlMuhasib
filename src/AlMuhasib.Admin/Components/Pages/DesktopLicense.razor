@@ -1,0 +1,145 @@
+@page "/desktop-license"
+@rendermode InteractiveServer
+@using AlMuhasib.Admin.Services
+@using AlMuhasib.Core.Licensing
+@inject DeveloperAuthState Auth
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@inject IJSRuntime Js
+
+<PageTitle>تفعيل سطح المكتب — لوحة المطور</PageTitle>
+
+@if (_ready)
+{
+    <div class="page-header">
+        <h1>توليد مفتاح تفعيل سطح المكتب</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <p style="color:var(--text-muted);margin-bottom:1.25rem;line-height:1.7">
+                أدخل <strong>معرّف التنصيب</strong> الظاهر في شاشة التفعيل عند العميل لتوليد مفتاح مدى الحياة.
+                المفتاح يعمل دون اتصال إنترنت على جهاز العميل.
+            </p>
+
+            @if (!string.IsNullOrEmpty(_configError))
+            {
+                <div class="alert alert-error" style="margin-bottom:1rem">@_configError</div>
+            }
+
+            <div class="form-group">
+                <label for="installationId">معرّف التنصيب (InstallationId)</label>
+                <input id="installationId"
+                       class="form-control"
+                       @bind="_installationIdText"
+                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                       dir="ltr"
+                       style="font-family:Consolas,monospace" />
+            </div>
+
+            <div class="page-actions" style="margin:1rem 0 1.25rem">
+                <button class="btn btn-primary" @onclick="Generate" disabled="@_busy">توليد مفتاح مدى الحياة</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-error">@_error</div>
+            }
+
+            @if (!string.IsNullOrEmpty(_activationKey))
+            {
+                <div class="form-group">
+                    <label>مفتاح التفعيل</label>
+                    <textarea class="form-control"
+                              rows="4"
+                              readonly
+                              dir="ltr"
+                              style="font-family:Consolas,monospace;font-size:0.85rem">@_activationKey</textarea>
+                </div>
+                <button class="btn btn-secondary" @onclick="CopyKey">نسخ المفتاح</button>
+                @if (_copied)
+                {
+                    <span style="margin-inline-start:0.75rem;color:var(--success,#2e7d32)">تم النسخ</span>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool _ready;
+    private bool _busy;
+    private bool _copied;
+    private string _installationIdText = "";
+    private string _activationKey = "";
+    private string _error = "";
+    private string _configError = "";
+    private string? _privateKey;
+
+    protected override void OnInitialized()
+    {
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        _privateKey = Config["DesktopLicense:PrivateKeyPkcs8"];
+        if (string.IsNullOrWhiteSpace(_privateKey))
+            _configError =
+                "المفتاح الخاص غير مُعدّ. عيّنه عبر User Secrets أو متغير البيئة DesktopLicense__PrivateKeyPkcs8 (لا تضع المفتاح في المستودع).";
+
+        _ready = true;
+    }
+
+    private void Generate()
+    {
+        _error = "";
+        _activationKey = "";
+        _copied = false;
+
+        if (string.IsNullOrWhiteSpace(_privateKey))
+        {
+            _error = "تعذّر التوليد: المفتاح الخاص غير مُعدّ.";
+            return;
+        }
+
+        if (!Guid.TryParse(_installationIdText.Trim(), out var installationId) || installationId == Guid.Empty)
+        {
+            _error = "معرّف التنصيب غير صالح.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            _activationKey = DesktopActivationCrypto.CreateLifetimeKey(installationId, _privateKey);
+        }
+        catch (Exception ex)
+        {
+            _error = "فشل توليد المفتاح: " + ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CopyKey()
+    {
+        if (string.IsNullOrEmpty(_activationKey))
+            return;
+
+        try
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", _activationKey);
+            _copied = true;
+            await Task.Delay(1500);
+            _copied = false;
+        }
+        catch
+        {
+            _error = "تعذّر النسخ تلقائياً — انسخ المفتاح يدوياً من الحقل.";
+        }
+    }
+}

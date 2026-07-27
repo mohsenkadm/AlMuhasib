@@ -5,22 +5,10 @@ import 'package:get/get.dart' hide Trans;
 import '../../controllers/entity_form_controllers.dart';
 import '../../../../shared/widgets/form_section_card.dart';
 
-class SupplierFormScreen extends StatelessWidget {
+class SupplierFormScreen extends GetView<SupplierFormController> {
   const SupplierFormScreen({super.key, this.syncId});
 
   final String? syncId;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(SupplierFormController(syncId: syncId));
-    return _SupplierFormView(controller: controller);
-  }
-}
-
-class _SupplierFormView extends StatelessWidget {
-  const _SupplierFormView({required this.controller});
-
-  final SupplierFormController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -77,22 +65,10 @@ class _SupplierFormView extends StatelessWidget {
   }
 }
 
-class InvestorFormScreen extends StatelessWidget {
+class InvestorFormScreen extends GetView<InvestorFormController> {
   const InvestorFormScreen({super.key, this.syncId});
 
   final String? syncId;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(InvestorFormController(syncId: syncId));
-    return _InvestorFormView(controller: controller);
-  }
-}
-
-class _InvestorFormView extends StatelessWidget {
-  const _InvestorFormView({required this.controller});
-
-  final InvestorFormController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -150,27 +126,19 @@ class _InvestorFormView extends StatelessWidget {
   }
 }
 
-class ProductFormScreen extends StatelessWidget {
+class ProductFormScreen extends GetView<ProductFormController> {
   const ProductFormScreen({super.key, this.syncId});
 
   final String? syncId;
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ProductFormController(syncId: syncId));
-    return _ProductFormView(controller: controller);
-  }
-}
-
-class _ProductFormView extends StatelessWidget {
-  const _ProductFormView({required this.controller});
-
-  final ProductFormController controller;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('add_product'.tr())),
+      appBar: AppBar(
+        title: Text(
+          controller.isEdit ? 'edit_product'.tr() : 'add_product'.tr(),
+        ),
+      ),
       body: Form(
         key: controller.formKey,
         child: ListView(
@@ -208,6 +176,36 @@ class _ProductFormView extends StatelessWidget {
                 ),
               ],
             ),
+            if (controller.isEdit)
+              Obx(
+                () => FormSectionCard(
+                  title: 'product_prices'.tr(),
+                  children: [
+                    if (controller.prices.isEmpty)
+                      Text('no_product_prices'.tr())
+                    else
+                      ...controller.prices.map(
+                        (price) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(price.pricingTypeName),
+                          subtitle: Text(
+                            '${'sale_price'.tr()}: ${price.salePrice} • ${'purchase_price'.tr()}: ${price.purchasePrice}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => controller.editPrice(price),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: controller.addPrice,
+                      icon: const Icon(Icons.add),
+                      label: Text('add_product_price'.tr()),
+                    ),
+                  ],
+                ),
+              ),
             Obx(
               () => FilledButton(
                 onPressed: controller.saving.value ? null : controller.save,

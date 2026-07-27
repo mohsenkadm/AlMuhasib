@@ -37,6 +37,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         CurrentSystemDisplay = _systemProfile.ActiveSystem switch
         {
             ApplicationSystemType.CarContracts => "نظام عقود السيارات",
+            ApplicationSystemType.CarTrading => "نظام بيع وشراء السيارات",
             ApplicationSystemType.HotelManagement => "نظام إدارة الفنادق",
             _ => "نظام المحاسبة"
         };
@@ -110,6 +111,18 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void SwitchToCarTrading()
+    {
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.CarTrading)
+        {
+            _toast.ShowInfo("أنت تستخدم نظام بيع وشراء السيارات حالياً");
+            return;
+        }
+
+        ConfirmAndSwitch(ApplicationSystemType.CarTrading, "نظام بيع وشراء السيارات");
+    }
+
+    [RelayCommand]
     private void SwitchToHotelManagement()
     {
         if (_systemProfile.ActiveSystem == ApplicationSystemType.HotelManagement)
@@ -141,6 +154,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
     private static string GetTargetDatabaseName(ApplicationSystemType target) => target switch
     {
         ApplicationSystemType.CarContracts => "AlMuhasibCarContractsDb",
+        ApplicationSystemType.CarTrading => "AlMuhasibCarTradingDb",
         ApplicationSystemType.HotelManagement => "AlMuhasibHotelsDb",
         _ => "AlMuhasibDb"
     };

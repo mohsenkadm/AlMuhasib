@@ -60,3 +60,4 @@
 - `SyncId` الفارغ يُصلَح تلقائياً عبر `SyncIdEnsurer` وترحيل `BackfillEmptySyncIds`.
 - Pull يحترم النسخة المحلية الأحدث عند `UpdatedAt` أحدث من السحابة.
 - المزامنة التلقائية محمية بـ `SemaphoreSlim` ضد التداخل.
+- نقل المخازن (`WarehouseTransfer` / `WarehouseTransferItem`) يُزامن ضمن الـ bundle بعد أرصدة المخازن وقبل الفواتير؛ أنشئ نقلاً محلياً أو عبر الموبايل ثم نفّذ Push/Pull للتحقق.

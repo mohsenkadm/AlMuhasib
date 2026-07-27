@@ -13,7 +13,9 @@ public static class ScreenPermissionRegistry
     public const string DeveloperSystem = "DeveloperSystem";
     public const string SystemUpdate = "SystemUpdate";
     public const string Reports = "Reports";
+    public const string SupervisoryReports = "SupervisoryReports";
     public const string BalanceSheet = "BalanceSheet";
+    public const string NetworkConnection = "NetworkConnection";
 
     private static SystemModuleRegistry? _registry;
 
@@ -21,11 +23,15 @@ public static class ScreenPermissionRegistry
 
     public static bool IsCarContracts => _registry?.IsCarContracts == true;
 
+    public static bool IsCarTrading => _registry?.IsCarTrading == true;
+
     public static bool IsHotelManagement => _registry?.IsHotelManagement == true;
 
     public static IReadOnlyList<(string Name, string Label)> AllScreens =>
         IsHotelManagement
             ? HotelPermissionRegistryScreens
+            : IsCarTrading
+                ? CarTradePermissionRegistryScreens
             : IsCarContracts
                 ? CarPermissionRegistryScreens
                 : AccountingScreens;
@@ -40,6 +46,24 @@ public static class ScreenPermissionRegistry
         (CarPermissionRegistry.Permissions, "الصلاحيات"),
         (CarPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (CarPermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (CarPermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
+        (SystemUpdate, "تحديث النظام")
+    ];
+
+    private static IReadOnlyList<(string Name, string Label)> CarTradePermissionRegistryScreens { get; } =
+    [
+        (CarTradePermissionRegistry.Dashboard, "لوحة التحكم"),
+        (CarTradePermissionRegistry.CarTradeForm, "عملية جديدة"),
+        (CarTradePermissionRegistry.CarTradeList, "العمليات"),
+        (CarTradePermissionRegistry.CarTradeReports, "التقارير"),
+        (CarTradePermissionRegistry.CarTradePartyStatement, "كشف حساب طرف"),
+        (CarTradePermissionRegistry.Users, "المستخدمون"),
+        (CarTradePermissionRegistry.Permissions, "الصلاحيات"),
+        (CarTradePermissionRegistry.PrintSettings, "إعدادات الطباعة"),
+        (CarTradePermissionRegistry.Backup, "النسخ الاحتياطي"),
+        (CarTradePermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -70,6 +94,7 @@ public static class ScreenPermissionRegistry
         (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (HotelPermissionRegistry.Backup, "النسخ الاحتياطي"),
         (HotelPermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام")
     ];
 
@@ -78,8 +103,11 @@ public static class ScreenPermissionRegistry
         (Dashboard, "لوحة التحكم"),
         ("Products", "المنتجات"),
         ("Categories", "تصنيفات المنتجات"),
+        ("PricingTypes", "أنواع التسعير"),
+        ("ProductPricing", "تسعير منتجات"),
         ("Customers", "العملاء"),
         ("Suppliers", "الموردون"),
+        ("PersonProfile", "ملف الشخص"),
         ("PurchaseInvoice", "فاتورة مشتريات"),
         ("SaleInvoice", "فاتورة مبيعات"),
         ("InstallmentInvoice", "فاتورة أقساط"),
@@ -94,6 +122,7 @@ public static class ScreenPermissionRegistry
         ("OpeningStock", "الأرصدة الافتتاحية"),
         ("StockAdjustment", "تسوية مخزنية"),
         ("Reports", "التقارير"),
+        ("SupervisoryReports", "التقارير الرقابية"),
         ("BalanceSheet", "موازنة يومية"),
         ("Capital", "رأس المال"),
         ("AuditLog", "سجل العمليات"),
@@ -104,12 +133,15 @@ public static class ScreenPermissionRegistry
         ("PrintSettings", "إعدادات الطباعة"),
         ("Backup", "النسخ الاحتياطي"),
         ("CloudSync", "المزامنة السحابية"),
+        (NetworkConnection, "ربط الحاسبات"),
         (SystemUpdate, "تحديث النظام"),
     ];
 
     public static string GetScreenName(Type viewModelType) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetScreenName(viewModelType)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetScreenName(viewModelType)
             : IsCarContracts
                 ? CarPermissionRegistry.GetScreenName(viewModelType)
                 : GetAccountingScreenName(viewModelType);
@@ -120,6 +152,8 @@ public static class ScreenPermissionRegistry
     public static Type? GetDefaultViewModelType(string screenName) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetDefaultViewModelType(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetDefaultViewModelType(screenName)
                 : GetAccountingDefaultViewModelType(screenName);
@@ -130,6 +164,8 @@ public static class ScreenPermissionRegistry
     public static string GetLabel(string screenName) =>
         IsHotelManagement
             ? HotelPermissionRegistry.GetLabel(screenName)
+            : IsCarTrading
+                ? CarTradePermissionRegistry.GetLabel(screenName)
             : IsCarContracts
                 ? CarPermissionRegistry.GetLabel(screenName)
                 : GetAccountingLabel(screenName);
@@ -142,8 +178,11 @@ public static class ScreenPermissionRegistry
         [typeof(DashboardViewModel)] = Dashboard,
         [typeof(ProductsViewModel)] = "Products",
         [typeof(CategoriesViewModel)] = "Categories",
+        [typeof(PricingTypesViewModel)] = "PricingTypes",
+        [typeof(ProductPricingViewModel)] = "ProductPricing",
         [typeof(CustomersViewModel)] = "Customers",
         [typeof(SuppliersViewModel)] = "Suppliers",
+        [typeof(PersonProfileViewModel)] = "PersonProfile",
         [typeof(PurchaseInvoiceViewModel)] = "PurchaseInvoice",
         [typeof(SalesInvoiceViewModel)] = "SaleInvoice",
         [typeof(PosQuickSaleViewModel)] = "SaleInvoice",
@@ -185,6 +224,14 @@ public static class ScreenPermissionRegistry
         [typeof(InvestorsReportViewModel)] = "Reports",
         [typeof(CashFlowReportViewModel)] = "Reports",
         [typeof(BalanceSheetViewModel)] = "BalanceSheet",
+        [typeof(DeletedInvoicesReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedVouchersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedProductsReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedCustomersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedSuppliersReportViewModel)] = SupervisoryReports,
+        [typeof(DeletedExpensesReportViewModel)] = SupervisoryReports,
+        [typeof(InvoiceModificationsReportViewModel)] = SupervisoryReports,
+        [typeof(ProductModificationsReportViewModel)] = SupervisoryReports,
         [typeof(CapitalAdjustmentViewModel)] = "Capital",
         [typeof(AuditLogViewModel)] = "AuditLog",
         [typeof(UsersViewModel)] = "Users",
@@ -194,6 +241,7 @@ public static class ScreenPermissionRegistry
         [typeof(PrintLayoutSettingsViewModel)] = "PrintSettings",
         [typeof(BackupRestoreViewModel)] = "Backup",
         [typeof(CloudSyncSettingsViewModel)] = "CloudSync",
+        [typeof(NetworkConnectionSettingsViewModel)] = NetworkConnection,
         [typeof(SystemUpdateViewModel)] = SystemUpdate,
     };
 
@@ -202,8 +250,11 @@ public static class ScreenPermissionRegistry
         [Dashboard] = typeof(DashboardViewModel),
         ["Products"] = typeof(ProductsViewModel),
         ["Categories"] = typeof(CategoriesViewModel),
+        ["PricingTypes"] = typeof(PricingTypesViewModel),
+        ["ProductPricing"] = typeof(ProductPricingViewModel),
         ["Customers"] = typeof(CustomersViewModel),
         ["Suppliers"] = typeof(SuppliersViewModel),
+        ["PersonProfile"] = typeof(PersonProfileViewModel),
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
         ["InstallmentInvoice"] = typeof(InstallmentInvoiceViewModel),
@@ -218,6 +269,7 @@ public static class ScreenPermissionRegistry
         ["OpeningStock"] = typeof(OpeningStockViewModel),
         ["StockAdjustment"] = typeof(StockAdjustmentViewModel),
         ["Reports"] = typeof(SalesReportViewModel),
+        [SupervisoryReports] = typeof(DeletedInvoicesReportViewModel),
         ["BalanceSheet"] = typeof(BalanceSheetViewModel),
         ["Capital"] = typeof(CapitalAdjustmentViewModel),
         ["AuditLog"] = typeof(AuditLogViewModel),
@@ -228,6 +280,7 @@ public static class ScreenPermissionRegistry
         ["PrintSettings"] = typeof(PrintLayoutSettingsViewModel),
         ["Backup"] = typeof(BackupRestoreViewModel),
         ["CloudSync"] = typeof(CloudSyncSettingsViewModel),
+        [NetworkConnection] = typeof(NetworkConnectionSettingsViewModel),
         [SystemUpdate] = typeof(SystemUpdateViewModel),
     };
 }

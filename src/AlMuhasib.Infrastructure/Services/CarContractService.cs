@@ -109,6 +109,9 @@ public sealed class CarContractService : ICarContractService
         if (contract.Status == CarContractStatus.Cancelled)
             throw new InvalidOperationException("لا يمكن تسديد عقد ملغى");
 
+        if (contract.IsAgreedPrice)
+            throw new InvalidOperationException("لا يمكن تسديد عقد بمبلغ متفق عليه");
+
         if (amount > contract.RemainingAmount)
             throw new InvalidOperationException("مبلغ التسديد أكبر من المبلغ المتبقي");
 
@@ -247,18 +250,29 @@ public sealed class CarContractService : ICarContractService
         target.CarColor = source.CarColor;
         target.ChassisNumber = source.ChassisNumber;
         target.CarPrice = source.CarPrice;
+        target.IsAgreedPrice = source.IsAgreedPrice;
         target.AmountReceived = source.AmountReceived;
+        target.WitnessOneName = source.WitnessOneName;
+        target.WitnessTwoName = source.WitnessTwoName;
         target.Notes = source.Notes;
         target.Status = source.Status;
     }
 
     private static void ApplyAmounts(CarSaleContract contract)
     {
+        if (contract.IsAgreedPrice)
+        {
+            contract.CarPriceInWords = "المبلغ المتفق عليه";
+            contract.RemainingAmount = 0;
+            UpdateStatus(contract);
+            return;
+        }
+
         contract.RemainingAmount = contract.CarPrice - contract.AmountReceived;
         if (contract.RemainingAmount < 0)
             contract.RemainingAmount = 0;
 
-        contract.CarPriceInWords = ArabicAmountToWords.Convert(contract.CarPrice);
+        contract.CarPriceInWords = ArabicAmountToWords.Convert(contract.CarPrice, "دولار", "سنت");
         UpdateStatus(contract);
     }
 
@@ -266,6 +280,12 @@ public sealed class CarContractService : ICarContractService
     {
         if (contract.Status == CarContractStatus.Cancelled)
             return;
+
+        if (contract.IsAgreedPrice)
+        {
+            contract.Status = CarContractStatus.Active;
+            return;
+        }
 
         contract.Status = contract.RemainingAmount <= 0
             ? CarContractStatus.Completed

@@ -6,20 +6,11 @@ import '../../../shared/widgets/common_widgets.dart';
 import '../controllers/hotel_reservation_form_controller.dart';
 import '../models/hotel_models.dart';
 
-class HotelReservationFormScreen extends StatelessWidget {
+class HotelReservationFormScreen extends GetView<HotelReservationFormController> {
   const HotelReservationFormScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(HotelReservationFormController());
-    return _HotelReservationFormView(controller: controller);
-  }
-}
-
-class _HotelReservationFormView extends StatelessWidget {
-  const _HotelReservationFormView({required this.controller});
-
-  final HotelReservationFormController controller;
+  final String? tag = 'hotel_reservation_form';
 
   @override
   Widget build(BuildContext context) {

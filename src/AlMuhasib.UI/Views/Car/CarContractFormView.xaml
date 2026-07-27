@@ -181,21 +181,31 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                             <md:PackIcon Kind="CashMultiple" Width="22" Height="22" Foreground="#2E7D32" VerticalAlignment="Center"/>
-                            <TextBlock Text="المبالغ المالية" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                            <TextBlock Text="المبالغ المالية (دولار)" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <RadioButton Content="مبلغ محدد" GroupName="PriceType"
+                                         IsChecked="{Binding IsAgreedPrice, Converter={StaticResource InverseBooleanConverter}}"
+                                         Margin="0,0,24,0" VerticalAlignment="Center"/>
+                            <RadioButton Content="المبلغ المتفق عليه" GroupName="PriceType"
+                                         IsChecked="{Binding IsAgreedPrice}"
+                                         VerticalAlignment="Center"/>
                         </StackPanel>
                         <UniformGrid Columns="2" Margin="0,0,0,12">
                             <StackPanel Margin="0,0,8,12">
-                                <TextBlock Text="سعر السيارة *" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="سعر السيارة (دولار) *" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding CarPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                         IsEnabled="{Binding IsPriceEntryEnabled}"
                                          Style="{StaticResource NumericTextBox}"/>
                             </StackPanel>
                             <StackPanel Margin="8,0,0,12">
-                                <TextBlock Text="المبلغ الواصل" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="المبلغ الواصل (دولار)" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding AmountReceived, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                         IsEnabled="{Binding IsPriceEntryEnabled}"
                                          Style="{StaticResource NumericTextBox}"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,8,12">
-                                <TextBlock Text="المبلغ المتبقي" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="المبلغ المتبقي (دولار)" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding RemainingAmount, StringFormat=N0}" IsReadOnly="True"
                                          Style="{StaticResource FilledTextBox}" Background="#F5F5F5"/>
                             </StackPanel>
@@ -210,6 +220,33 @@
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" AcceptsReturn="True" MinHeight="72" TextWrapping="Wrap"/>
                         </StackPanel>
+                    </StackPanel>
+                </md:Card>
+
+                <!-- Signatures -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,8" md:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <md:PackIcon Kind="Pen" Width="22" Height="22" Foreground="#455A64" VerticalAlignment="Center"/>
+                            <TextBlock Text="التوقيعات" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock Text="أسماء البائع والمشتري تُؤخذ من بياناتهما أعلاه. أدخل أسماء الشاهدين للظهور في الطباعة."
+                                   FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="اسم الشاهد الأول" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding WitnessOneName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="اسم الشاهد الثاني" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding WitnessTwoName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </md:Card>
             </StackPanel>

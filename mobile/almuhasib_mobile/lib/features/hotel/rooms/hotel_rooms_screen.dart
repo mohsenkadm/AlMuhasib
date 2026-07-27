@@ -5,94 +5,90 @@ import 'package:get/get.dart' hide Trans;
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_rooms_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelRoomsScreen extends StatefulWidget {
+class HotelRoomsScreen extends GetView<HotelRoomsController> {
   const HotelRoomsScreen({super.key});
 
   @override
-  State<HotelRoomsScreen> createState() => _HotelRoomsScreenState();
-}
-
-class _HotelRoomsScreenState extends State<HotelRoomsScreen> {
-  late final HotelRoomsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelRoomsController(), tag: 'hotel_rooms');
-  }
+  final String? tag = 'hotel_rooms';
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.paddingOf(context).top;
-
-    return Scaffold(
+    return AppPageScaffold(
+      title: 'hotel_rooms_title'.tr(),
+      subtitle: 'hotel_rooms_subtitle'.tr(),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: topPadding + 8),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'hotel_rooms_title'.tr(),
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            child: _StatusLegend(controller: controller).fadeSlideIn(),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'hotel_rooms_subtitle'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _StatusLegend().fadeSlideIn(),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _controller.load,
-              child: Obx(() {
-                if (_controller.isLoading.value) {
-                  return const ListShimmer();
-                }
-                final error = _controller.error.value;
-                if (error != null) {
-                  return ErrorStateWidget(
-                    message: error.toString(),
-                    onRetry: _controller.load,
-                  );
-                }
-                final rooms = _controller.rooms.value;
-                if (rooms.isEmpty) {
-                  return ListView(
+            child: Obx(() {
+              final rooms = controller.rooms.value;
+              final isLoading = controller.isLoading.value;
+              final error = controller.error.value;
+
+              if (rooms.isNotEmpty) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: rooms.length,
+                    itemBuilder: (context, index) {
+                      return _RoomCard(room: rooms[index])
+                          .fadeSlideInList(index: index);
+                    },
+                  ),
+                );
+              }
+
+              if (isLoading) return const ListShimmer();
+
+              if (error != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(
-                        height: MediaQuery.sizeOf(context).height * 0.35,
-                        child: EmptyStateWidget(message: 'no_data'.tr()),
+                        height: MediaQuery.sizeOf(context).height * 0.45,
+                        child: ErrorStateWidget(
+                          message: AppExceptionHandler.messageFor(error),
+                          onRetry: controller.load,
+                        ),
                       ),
                     ],
-                  );
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
                   ),
-                  itemCount: rooms.length,
-                  itemBuilder: (context, index) {
-                    return _RoomCard(room: rooms[index])
-                        .fadeSlideInList(index: index);
-                  },
                 );
-              }),
-            ),
+              }
+
+              return RefreshIndicator(
+                onRefresh: controller.load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.35,
+                      child: EmptyStateWidget(message: 'no_data'.tr()),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -167,6 +163,10 @@ class _RoomCard extends StatelessWidget {
 }
 
 class _StatusLegend extends StatelessWidget {
+  const _StatusLegend({required this.controller});
+
+  final HotelRoomsController controller;
+
   @override
   Widget build(BuildContext context) {
     final statuses = [
@@ -176,27 +176,40 @@ class _StatusLegend extends StatelessWidget {
       HotelRoomStatus.maintenance,
     ];
 
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: statuses.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final status = statuses[index];
-          final color = hotelRoomStatusColor(status);
-          return Chip(
-            avatar: CircleAvatar(backgroundColor: color, radius: 6),
-            label: Text(
-              hotelRoomStatusLabel(status),
-              style: const TextStyle(fontSize: 11),
-            ),
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-          );
-        },
-      ),
-    );
+    return Obx(() {
+      final selected = controller.statusFilter.value;
+      return SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: statuses.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              final isAll = selected == null;
+              return FilterChip(
+                label: Text('filter_all'.tr()),
+                selected: isAll,
+                onSelected: (_) => controller.clearStatusFilter(),
+              );
+            }
+            final status = statuses[index - 1];
+            final color = hotelRoomStatusColor(status);
+            final isSelected = selected == status;
+            return FilterChip(
+              avatar: CircleAvatar(backgroundColor: color, radius: 6),
+              label: Text(
+                hotelRoomStatusLabel(status),
+                style: const TextStyle(fontSize: 11),
+              ),
+              selected: isSelected,
+              onSelected: (_) => controller.updateStatusFilter(
+                isSelected ? null : status,
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }

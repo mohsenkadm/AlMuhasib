@@ -30,6 +30,7 @@ public sealed class InvoiceItemSyncDto : SyncDtoBase
 {
     public Guid InvoiceSyncId { get; set; }
     public Guid? ProductSyncId { get; set; }
+    public Guid? PricingTypeSyncId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
@@ -135,4 +136,20 @@ public sealed class CustomerAttachmentSyncDto : SyncDtoBase
     public string FilePath { get; set; } = string.Empty;
     public string? Description { get; set; }
     public byte[]? FileData { get; set; }
+}
+
+public sealed class WarehouseTransferSyncDto : SyncDtoBase
+{
+    public string TransferNumber { get; set; } = string.Empty;
+    public Guid FromWarehouseSyncId { get; set; }
+    public Guid ToWarehouseSyncId { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}
+
+public sealed class WarehouseTransferItemSyncDto : SyncDtoBase
+{
+    public Guid WarehouseTransferSyncId { get; set; }
+    public Guid ProductSyncId { get; set; }
+    public decimal Quantity { get; set; }
 }

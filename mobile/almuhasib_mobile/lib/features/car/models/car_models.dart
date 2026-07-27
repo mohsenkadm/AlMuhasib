@@ -1,3 +1,33 @@
+class NameCountPoint {
+  NameCountPoint({required this.name, required this.count});
+
+  factory NameCountPoint.fromJson(Map<String, dynamic> json) {
+    return NameCountPoint(
+      name: json['name'] as String? ?? '',
+      count: json['count'] as int? ?? 0,
+    );
+  }
+
+  final String name;
+  final int count;
+
+  double get value => count.toDouble();
+}
+
+class NameAmountPoint {
+  NameAmountPoint({required this.name, required this.amount});
+
+  factory NameAmountPoint.fromJson(Map<String, dynamic> json) {
+    return NameAmountPoint(
+      name: json['name'] as String? ?? '',
+      amount: _num(json['amount']),
+    );
+  }
+
+  final String name;
+  final double amount;
+}
+
 class CarDashboardDto {
   CarDashboardDto({
     required this.todayContracts,
@@ -6,6 +36,11 @@ class CarDashboardDto {
     required this.totalCarValue,
     required this.totalReceived,
     required this.totalRemaining,
+    this.totalContracts = 0,
+    this.monthlyContracts = const [],
+    this.paymentStatusChart = const [],
+    this.topCarTypes = const [],
+    this.topBuyers = const [],
     this.recentContracts = const [],
   });
 
@@ -14,11 +49,18 @@ class CarDashboardDto {
       todayContracts: json['todayContracts'] as int? ?? 0,
       monthContracts: json['monthContracts'] as int? ?? 0,
       unpaidContracts: json['unpaidContracts'] as int? ?? 0,
+      totalContracts: json['totalContracts'] as int? ?? 0,
       totalCarValue: _num(json['totalCarValue']),
       totalReceived: _num(json['totalReceived']),
       totalRemaining: _num(json['totalRemaining']),
+      monthlyContracts: _countPoints(json['monthlyContracts']),
+      paymentStatusChart: _amountPoints(json['paymentStatusChart']),
+      topCarTypes: _countPoints(json['topCarTypes']),
+      topBuyers: _countPoints(json['topBuyers']),
       recentContracts: (json['recentContracts'] as List<dynamic>?)
-              ?.map((e) => CarContractListItem.fromJson(e as Map<String, dynamic>))
+              ?.map(
+                (e) => CarContractListItem.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -27,10 +69,59 @@ class CarDashboardDto {
   final int todayContracts;
   final int monthContracts;
   final int unpaidContracts;
+  final int totalContracts;
   final double totalCarValue;
   final double totalReceived;
   final double totalRemaining;
+  final List<NameCountPoint> monthlyContracts;
+  final List<NameAmountPoint> paymentStatusChart;
+  final List<NameCountPoint> topCarTypes;
+  final List<NameCountPoint> topBuyers;
   final List<CarContractListItem> recentContracts;
+}
+
+class CarReportDto {
+  CarReportDto({
+    this.rows = const [],
+    this.contractCount = 0,
+    this.totalCarValue = 0,
+    this.totalReceived = 0,
+    this.totalRemaining = 0,
+    this.monthlyContracts = const [],
+    this.collectedVsRemaining = const [],
+    this.byCarType = const [],
+  });
+
+  factory CarReportDto.fromJson(Map<String, dynamic> json) {
+    // Backwards compatible: API used to return a bare list.
+    if (json.containsKey('rows') || json.containsKey('contractCount')) {
+      return CarReportDto(
+        rows: (json['rows'] as List<dynamic>?)
+                ?.map(
+                  (e) => CarContractListItem.fromJson(e as Map<String, dynamic>),
+                )
+                .toList() ??
+            [],
+        contractCount: json['contractCount'] as int? ?? 0,
+        totalCarValue: _num(json['totalCarValue']),
+        totalReceived: _num(json['totalReceived']),
+        totalRemaining: _num(json['totalRemaining']),
+        monthlyContracts: _countPoints(json['monthlyContracts']),
+        collectedVsRemaining: _amountPoints(json['collectedVsRemaining']),
+        byCarType: _countPoints(json['byCarType']),
+      );
+    }
+    return CarReportDto();
+  }
+
+  final List<CarContractListItem> rows;
+  final int contractCount;
+  final double totalCarValue;
+  final double totalReceived;
+  final double totalRemaining;
+  final List<NameCountPoint> monthlyContracts;
+  final List<NameAmountPoint> collectedVsRemaining;
+  final List<NameCountPoint> byCarType;
 }
 
 class CarContractListItem {
@@ -209,6 +300,20 @@ class CreateCarContractRequest {
   final double carPrice;
   final double amountReceived;
   final String notes;
+}
+
+List<NameCountPoint> _countPoints(dynamic raw) {
+  if (raw is! List) return const [];
+  return raw
+      .map((e) => NameCountPoint.fromJson(e as Map<String, dynamic>))
+      .toList();
+}
+
+List<NameAmountPoint> _amountPoints(dynamic raw) {
+  if (raw is! List) return const [];
+  return raw
+      .map((e) => NameAmountPoint.fromJson(e as Map<String, dynamic>))
+      .toList();
 }
 
 double _num(dynamic v) {

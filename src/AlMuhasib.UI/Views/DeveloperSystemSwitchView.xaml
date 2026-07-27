@@ -96,6 +96,16 @@
                                     <TextBlock Text="نظام عقود السيارات" FontSize="14" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <Button Command="{Binding SwitchToCarTradingCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    MinHeight="48" Padding="24,12" Margin="0,0,0,12"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="SwapHorizontal" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#E65100"/>
+                                    <TextBlock Text="نظام بيع وشراء السيارات" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                             <Button Command="{Binding SwitchToHotelManagementCommand}"
                                     Style="{StaticResource OutlinedButton}"
                                     MinHeight="48" Padding="24,12"

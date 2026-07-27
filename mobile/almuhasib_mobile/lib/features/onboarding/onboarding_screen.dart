@@ -7,8 +7,11 @@ import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/app_animations.dart';
 import 'onboarding_controller.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends GetView<OnboardingController> {
   const OnboardingScreen({super.key});
+
+  @override
+  final String? tag = 'onboarding';
 
   static const _slides = [
     _OnboardingSlideData(
@@ -33,8 +36,6 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(OnboardingController(), tag: 'onboarding');
-
     return Scaffold(
       body: SafeArea(
         child: Column(

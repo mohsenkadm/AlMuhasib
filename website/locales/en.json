@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "AlMuhasib — Complete Accounting & Sales System",
-    "description": "Professional Arabic accounting: invoices, inventory, installments, reports, and cloud sync. Fully offline."
+    "description": "Arabic business platform: accounting, hotels, car contracts, LAN branch linking, mobile app, and cloud sync. Fully offline."
   },
   "nav": {
     "features": "Features",
@@ -9,16 +9,17 @@
     "videos": "Videos",
     "reports": "Reports",
     "cloud": "Cloud",
+    "network": "Branch linking",
     "mobile": "Mobile app",
     "download": "Download",
     "faq": "FAQ",
     "contact": "Contact"
   },
   "hero": {
-    "badge": "New release available",
+    "badge": "New: LAN branch linking",
     "title": "AlMuhasib",
     "subtitle": "Arabic accounting & POS — fast, offline, built to scale",
-    "desc": "Sales & purchase invoices, POS, warehouses, installments, vouchers, 25+ reports, and cloud sync — in one desktop app.",
+    "desc": "Invoices, POS, warehouses, installments, LAN branch linking, 25+ reports, and cloud sync — in one desktop app.",
     "cta_download": "Download free",
     "cta_features": "Explore features",
     "stat_modules": "modules",
@@ -104,6 +105,7 @@
       {"icon": "voucher", "title": "Vouchers & expenses", "desc": "Receipts, payments, transfers between cash & banks"},
       {"icon": "investor", "title": "Investors", "desc": "Share management and profit distribution"},
       {"icon": "chart", "title": "Reports & analytics", "desc": "25+ reports: sales, profit, statements, balance sheet"},
+      {"icon": "network", "title": "Branch linking", "desc": "Main PC + branches over WiFi — direct database, no sync"},
       {"icon": "cloud", "title": "Cloud sync", "desc": "Connect branches via multi-tenant cloud API"},
       {"icon": "ai", "title": "Smart assistant", "desc": "Alerts for overdue installments and low stock"},
       {"icon": "shield", "title": "User permissions", "desc": "Fine-grained access per screen"}
@@ -115,6 +117,16 @@
       {"num": "01", "title": "Download", "desc": "ZIP from GitHub — install on Windows"},
       {"num": "02", "title": "Set up data", "desc": "Products, customers, warehouses, opening balances"},
       {"num": "03", "title": "Start selling", "desc": "Invoices, POS, instant reports — no internet required"}
+    ]
+  },
+  "network": {
+    "title": "Main & branch PC linking",
+    "desc": "Direct connection over WiFi or LAN — no sync, no internet required.",
+    "points": [
+      "Works for accounting, hotels, car contracts, and car trading",
+      "Auto-discover the main PC on your network",
+      "Secure pairing code and easy connection settings",
+      "Backward compatible — existing standalone installs unchanged"
     ]
   },
   "cloud": {
@@ -139,6 +151,7 @@
     "title": "FAQ",
     "items": [
       {"q": "Does it work offline?", "a": "Yes. Fully offline. Internet is only needed for cloud sync and updates."},
+      {"q": "How to link a branch PC?", "a": "At setup choose Branch PC, discover the main server on your network, and enter the pairing code. Edit anytime in Network Linking settings."},
       {"q": "Installments support?", "a": "Yes — installment invoices, plans, overdue tracking, and dedicated reports."},
       {"q": "How to update?", "a": "In-app update check reads version.json from GitHub."},
       {"q": "Is data safe?", "a": "Local backup, user permissions, and audit log."}

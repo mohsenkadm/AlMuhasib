@@ -24,6 +24,26 @@ class RestaurantRepository {
     );
   }
 
+  Future<List<ActiveRoom>> getActiveRooms() {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/hotel/restaurant/rooms/active',
+      parser: (data) => (data as List<dynamic>? ?? [])
+          .map((e) => ActiveRoom.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<RestaurantOrder>> getOpenOrders() {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/hotel/restaurant/orders/open',
+      parser: (data) => (data as List<dynamic>? ?? [])
+          .map((e) => RestaurantOrder.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   Future<RestaurantOrder> createOrder({
     required int orderType,
     String? tableSyncId,
@@ -55,7 +75,14 @@ class RestaurantRepository {
     return _apiClient.post(
       '/api/hotel/restaurant/orders/$orderSyncId/pay',
       data: {'amount': amount, 'paymentMethod': paymentMethod},
-      parser: (data) => RestaurantOrder.fromJson(data as Map<String, dynamic>),
+      parser: (data) {
+        final map = data as Map<String, dynamic>;
+        // New API wraps order; keep backward compatible.
+        if (map.containsKey('order') && map['order'] is Map<String, dynamic>) {
+          return RestaurantOrder.fromJson(map['order'] as Map<String, dynamic>);
+        }
+        return RestaurantOrder.fromJson(map);
+      },
     );
   }
 
@@ -68,6 +95,47 @@ class RestaurantRepository {
         if (to != null) 'to': to.toIso8601String(),
       },
       parser: (data) => RestaurantProfitSummary.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<RestaurantChannelSales>> getChannelSales({DateTime? from, DateTime? to}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/hotel/restaurant/reports/channels',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+      },
+      parser: (data) => (data as List<dynamic>? ?? [])
+          .map((e) => RestaurantChannelSales.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<RestaurantTopItem>> getTopItems({DateTime? from, DateTime? to}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/hotel/restaurant/reports/top-items',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+      },
+      parser: (data) => (data as List<dynamic>? ?? [])
+          .map((e) => RestaurantTopItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<RestaurantFinancialOverview> getOverview({DateTime? from, DateTime? to}) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/hotel/restaurant/reports/overview',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+      },
+      parser: (data) =>
+          RestaurantFinancialOverview.fromJson(data as Map<String, dynamic>),
     );
   }
 

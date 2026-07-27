@@ -143,11 +143,30 @@
                             <ComboBox ItemsSource="{Binding AvailablePrinters}" SelectedItem="{Binding SelectedPrinter}"
                                       materialDesign:HintAssist.Hint="الطابعة الافتراضية" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10"/>
                             <ComboBox SelectedValue="{Binding PaperSize}" SelectedValuePath="Content"
-                                      materialDesign:HintAssist.Hint="حجم الورق" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10">
+                                      materialDesign:HintAssist.Hint="حجم ورق الفواتير والتقارير" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10">
                                 <ComboBoxItem Content="A4"/>
                                 <ComboBoxItem Content="Letter"/>
                             </ComboBox>
-                            <CheckBox Content="معاينة قبل الطباعة" IsChecked="{Binding ShowPrintPreview}"/>
+                            <CheckBox Content="معاينة قبل الطباعة" IsChecked="{Binding ShowPrintPreview}" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="نوع ورق الكاشير" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
+                            <TextBlock Text="يُستخدم عند طباعة إيصال البيع السريع (POS)"
+                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            <ComboBox SelectedValue="{Binding PosReceiptPaperSize}" SelectedValuePath="Content"
+                                      materialDesign:HintAssist.Hint="حجم ورق إيصال الكاشير" Style="{StaticResource FilledComboBox}" Margin="0,0,0,8">
+                                <ComboBoxItem Content="A4"/>
+                                <ComboBoxItem Content="80mm"/>
+                                <ComboBoxItem Content="58mm"/>
+                                <ComboBoxItem Content="50mm"/>
+                            </ComboBox>
+                            <Border Background="#E3F2FD" CornerRadius="8" Padding="12,10">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Receipt" Width="18" Height="18" Foreground="#1565C0"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding PosReceiptPreviewHint}" FontSize="12" Foreground="#0D47A1"
+                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </materialDesign:Card>
                 </StackPanel>

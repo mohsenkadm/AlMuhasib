@@ -20,6 +20,11 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="alert @(_isError ? "alert-error" : "alert-success")">@_message</div>
+    }
+
     <div class="card">
         <div class="card-body" style="padding:0">
             @if (_tenants.Count == 0)
@@ -75,7 +80,14 @@
                                     }
                                 </td>
                                 <td>@(t.LastSyncAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
-                                <td><a href="/tenants/@t.Id" class="btn btn-secondary btn-sm">إدارة</a></td>
+                                <td style="white-space:nowrap">
+                                    <a href="/tenants/@t.Id" class="btn btn-secondary btn-sm">تعديل</a>
+                                    <button class="btn @(t.IsActive ? "btn-warning" : "btn-success") btn-sm"
+                                            @onclick="() => ToggleActiveAsync(t)">
+                                        @(t.IsActive ? "تعطيل" : "تفعيل")
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" @onclick="() => ConfirmDelete(t)">حذف</button>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -85,9 +97,30 @@
     </div>
 }
 
+@if (_deleteTarget is not null)
+{
+    <div class="modal-backdrop" @onclick="CancelDelete">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <h3>تأكيد الحذف</h3>
+            <p>هل أنت متأكد من حذف العميل <strong>@_deleteTarget.CompanyName</strong>؟</p>
+            <p style="color:var(--text-muted);font-size:.9rem">سيتم حذف حسابات التطبيق المرتبطة أيضاً. لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CancelDelete">إلغاء</button>
+                <button class="btn btn-danger" @onclick="DeleteConfirmedAsync" disabled="@_deleting">
+                    @(_deleting ? "جارٍ الحذف..." : "حذف نهائياً")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<Tenant> _tenants = [];
     private bool _ready;
+    private string? _message;
+    private bool _isError;
+    private Tenant? _deleteTarget;
+    private bool _deleting;
 
     protected override async Task OnInitializedAsync()
     {
@@ -96,14 +129,62 @@
             Nav.NavigateTo("/login", forceLoad: true);
             return;
         }
-        _tenants = await TenantService.GetAllAsync();
+        await ReloadAsync();
         _ready = true;
+    }
+
+    private async Task ReloadAsync() =>
+        _tenants = await TenantService.GetAllAsync();
+
+    private async Task ToggleActiveAsync(Tenant tenant)
+    {
+        _isError = false;
+        try
+        {
+            await TenantService.SetActiveAsync(tenant.Id, !tenant.IsActive);
+            await ReloadAsync();
+            _message = tenant.IsActive ? "تم تعطيل العميل" : "تم تفعيل العميل";
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+
+    private void ConfirmDelete(Tenant tenant) => _deleteTarget = tenant;
+
+    private void CancelDelete() => _deleteTarget = null;
+
+    private async Task DeleteConfirmedAsync()
+    {
+        if (_deleteTarget is null) return;
+        _deleting = true;
+        _isError = false;
+        try
+        {
+            await TenantService.DeleteAsync(_deleteTarget.Id);
+            _message = $"تم حذف العميل «{_deleteTarget.CompanyName}»";
+            _deleteTarget = null;
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+            _deleteTarget = null;
+        }
+        finally
+        {
+            _deleting = false;
+        }
     }
 
     private static string GetSystemLabel(int type) => type switch
     {
         (int)ApplicationSystemType.CarContracts => "عقود السيارات",
         (int)ApplicationSystemType.HotelManagement => "الفنادق",
+        (int)ApplicationSystemType.CarTrading => "بيع وشراء السيارات",
         _ => "المحاسبة"
     };
 
@@ -111,6 +192,7 @@
     {
         (int)ApplicationSystemType.CarContracts => "badge-info",
         (int)ApplicationSystemType.HotelManagement => "badge-success",
+        (int)ApplicationSystemType.CarTrading => "badge-warning",
         _ => "badge-secondary"
     };
 }

@@ -93,8 +93,9 @@ public sealed partial class SyncEngine
         BuyerIdDate = e.BuyerIdDate, BuyerPhone = e.BuyerPhone,
         AnnualOwnerName = e.AnnualOwnerName, AnnualOwnerAddress = e.AnnualOwnerAddress,
         PlateNumber = e.PlateNumber, CarType = e.CarType, CarModel = e.CarModel, CarColor = e.CarColor,
-        ChassisNumber = e.ChassisNumber, CarPrice = e.CarPrice, CarPriceInWords = e.CarPriceInWords,
+        ChassisNumber = e.ChassisNumber, CarPrice = e.CarPrice, IsAgreedPrice = e.IsAgreedPrice, CarPriceInWords = e.CarPriceInWords,
         AmountReceived = e.AmountReceived, RemainingAmount = e.RemainingAmount,
+        WitnessOneName = e.WitnessOneName, WitnessTwoName = e.WitnessTwoName,
         Notes = e.Notes, Status = e.Status
     };
 
@@ -124,9 +125,12 @@ public sealed partial class SyncEngine
         existing.CarColor = dto.CarColor;
         existing.ChassisNumber = dto.ChassisNumber;
         existing.CarPrice = dto.CarPrice;
+        existing.IsAgreedPrice = dto.IsAgreedPrice;
         existing.CarPriceInWords = dto.CarPriceInWords;
         existing.AmountReceived = dto.AmountReceived;
         existing.RemainingAmount = dto.RemainingAmount;
+        existing.WitnessOneName = dto.WitnessOneName;
+        existing.WitnessTwoName = dto.WitnessTwoName;
         existing.Notes = dto.Notes;
         existing.Status = dto.Status;
         return 1;

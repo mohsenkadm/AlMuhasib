@@ -25,6 +25,7 @@ public class CarDbContext : DbContext
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
+    public DbSet<CloudSyncSettings> CloudSyncSettings => Set<CloudSyncSettings>();
     public DbSet<CarSaleContract> CarSaleContracts => Set<CarSaleContract>();
     public DbSet<CarContractPayment> CarContractPayments => Set<CarContractPayment>();
     public DbSet<SyncState> SyncStates => Set<SyncState>();
@@ -41,6 +42,8 @@ public class CarDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CarContractPaymentConfiguration());
 
         modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
+        modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(
+            new Core.Entities.CloudSyncSettings { Id = Core.Entities.CloudSyncSettings.SingletonId });
 
         modelBuilder.Entity<User>().Ignore(u => u.Tasks);
         modelBuilder.Entity<User>().Ignore(u => u.Notes);

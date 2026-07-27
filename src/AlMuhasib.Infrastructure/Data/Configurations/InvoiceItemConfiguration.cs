@@ -27,5 +27,10 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             .WithMany(p => p.InvoiceItems)
             .HasForeignKey(ii => ii.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(ii => ii.PricingType)
+            .WithMany()
+            .HasForeignKey(ii => ii.PricingTypeId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

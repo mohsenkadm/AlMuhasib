@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AlMuhasib.Cloud.Infrastructure.Data;
 
@@ -14,7 +15,35 @@ public static class CloudDbSeeder
         var db = scope.ServiceProvider.GetRequiredService<CloudDbContext>();
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-        await db.Database.MigrateAsync();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("CloudDbSeeder");
+
+        try
+        {
+            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+            if (pending.Count == 0)
+            {
+                logger.LogInformation("Cloud database is up to date. No pending migrations.");
+            }
+            else
+            {
+                logger.LogWarning(
+                    "Applying {Count} pending cloud migration(s): {Migrations}",
+                    pending.Count,
+                    string.Join(", ", pending));
+            }
+
+            await db.Database.MigrateAsync();
+            logger.LogInformation("Cloud database MigrateAsync completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex,
+                "Failed to apply cloud database migrations. " +
+                "Connection: {HasConnection}. Check SQL permissions and PendingModelChanges.",
+                !string.IsNullOrWhiteSpace(config.GetConnectionString("CloudConnection")));
+            throw;
+        }
 
         if (!await db.DeveloperUsers.AnyAsync())
         {
@@ -26,6 +55,7 @@ public static class CloudDbSeeder
                 CreatedAt = DateTime.UtcNow
             });
             await db.SaveChangesAsync();
+            logger.LogInformation("Seeded default developer user 'admin'.");
         }
 
         if (env.IsDevelopment() && !await db.Tenants.AnyAsync())
@@ -54,6 +84,7 @@ public static class CloudDbSeeder
                 CreatedAt = DateTime.UtcNow
             });
             await db.SaveChangesAsync();
+            logger.LogInformation("Seeded local demo tenant '{User}'.", demoUser);
         }
     }
 }

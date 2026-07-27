@@ -20,36 +20,35 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
     public async Task<string> GenerateOrderNumberAsync(CancellationToken ct = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
-        var prefix = $"RST-{DateTime.Today:yyyyMMdd}";
-        var last = await db.RestaurantOrders.IgnoreQueryFilters()
-            .Where(o => o.OrderNumber.StartsWith(prefix))
-            .OrderByDescending(o => o.Id)
-            .Select(o => o.OrderNumber)
-            .FirstOrDefaultAsync(ct);
-
-        var next = 1;
-        if (last is not null)
-        {
-            var parts = last.Split('-');
-            if (parts.Length >= 3 && int.TryParse(parts[^1], out var n))
-                next = n + 1;
-        }
-
-        return $"{prefix}-{next:D4}";
+        return await GenerateOrderNumberInternalAsync(db, ct);
     }
 
     public async Task<RestaurantOrder> CreateOrderAsync(RestaurantOrderType orderType, int? tableId, int? reservationId, int? roomId, CancellationToken ct = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
 
-        if (orderType == RestaurantOrderType.DineIn && tableId.HasValue)
+        if (orderType == RestaurantOrderType.DineIn)
         {
+            if (!tableId.HasValue)
+                throw new InvalidOperationException("اختر طاولة للصالة");
+
             var table = await db.RestaurantTables.FirstOrDefaultAsync(t => t.Id == tableId.Value, ct)
                 ?? throw new InvalidOperationException("الطاولة غير موجودة");
+
+            var openOnTable = await db.RestaurantOrders
+                .FirstOrDefaultAsync(o => o.RestaurantTableId == tableId.Value
+                    && (o.Status == RestaurantOrderStatus.Open || o.Status == RestaurantOrderStatus.Draft), ct);
+            if (openOnTable is not null)
+                throw new InvalidOperationException("الطاولة لديها طلب مفتوح — قم باستئنافه");
+
             if (table.Status == RestaurantTableStatus.Occupied)
                 throw new InvalidOperationException("الطاولة مشغولة");
+
             table.Status = RestaurantTableStatus.Occupied;
         }
+
+        if (orderType == RestaurantOrderType.RoomService && !reservationId.HasValue)
+            throw new InvalidOperationException("اختر غرفة لخدمة الغرف");
 
         int? guestId = null;
         if (reservationId.HasValue)
@@ -62,10 +61,10 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
 
         var order = new RestaurantOrder
         {
-            OrderNumber = await GenerateOrderNumberAsync(ct),
+            OrderNumber = await GenerateOrderNumberInternalAsync(db, ct),
             OrderType = orderType,
             Status = RestaurantOrderStatus.Open,
-            RestaurantTableId = tableId,
+            RestaurantTableId = orderType == RestaurantOrderType.DineIn ? tableId : null,
             ReservationId = reservationId,
             RoomId = roomId,
             GuestId = guestId,
@@ -87,6 +86,21 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
             .Include(o => o.Room)
             .Include(o => o.Guest)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
+    }
+
+    public async Task<RestaurantOrder?> GetOpenOrderByTableAsync(int tableId, CancellationToken ct = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(ct);
+        return await db.RestaurantOrders
+            .Include(o => o.Lines)
+            .Include(o => o.Payments)
+            .Include(o => o.Table)
+            .Include(o => o.Room)
+            .Include(o => o.Guest)
+            .Where(o => o.RestaurantTableId == tableId
+                && (o.Status == RestaurantOrderStatus.Open || o.Status == RestaurantOrderStatus.Draft))
+            .OrderByDescending(o => o.OrderDate)
+            .FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<RestaurantOrder>> GetOpenOrdersAsync(CancellationToken ct = default)
@@ -186,7 +200,7 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<RestaurantOrder> CompleteAndPayAsync(int orderId, IReadOnlyList<RestaurantPaymentRequest> payments, bool overrideStock = false, CancellationToken ct = default)
+    public async Task<RestaurantPaymentResult> CompleteAndPayAsync(int orderId, IReadOnlyList<RestaurantPaymentRequest> payments, bool overrideStock = false, CancellationToken ct = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -208,46 +222,16 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
         order.CogsAmount = cogs;
         order.GrossProfit = order.TotalAmount - cogs;
 
-        var paymentTotal = payments.Sum(p => p.Amount);
-        if (order.OrderType != RestaurantOrderType.RoomService && Math.Abs(paymentTotal - order.TotalAmount) > 0.01m)
-            throw new InvalidOperationException("مجموع الدفعات لا يطابق إجمالي الطلب");
-
-        foreach (var payment in payments)
-        {
-            await db.RestaurantOrderPayments.AddAsync(new RestaurantOrderPayment
-            {
-                RestaurantOrderId = order.Id,
-                Amount = payment.Amount,
-                PaymentMethod = payment.PaymentMethod,
-                HotelCashBoxId = payment.HotelCashBoxId
-            }, ct);
-
-            if (payment.PaymentMethod is RestaurantPaymentMethod.Cash or RestaurantPaymentMethod.Card
-                && payment.HotelCashBoxId.HasValue && payment.Amount > 0)
-            {
-                var cashBox = await db.HotelCashBoxes.FirstOrDefaultAsync(c => c.Id == payment.HotelCashBoxId.Value, ct)
-                    ?? throw new InvalidOperationException("الصندوق غير موجود");
-                cashBox.CurrentBalance += payment.Amount;
-
-                var voucherNumber = await GetNextVoucherNumberAsync(db, HotelVoucherType.Receipt, ct);
-                await db.HotelVouchers.AddAsync(new HotelVoucher
-                {
-                    VoucherNumber = voucherNumber,
-                    Type = HotelVoucherType.Receipt,
-                    VoucherDate = DateTime.Today,
-                    Amount = payment.Amount,
-                    HotelCashBoxId = payment.HotelCashBoxId.Value,
-                    ReservationId = order.ReservationId,
-                    Description = $"مطعم - طلب {order.OrderNumber}",
-                    Notes = order.Notes
-                }, ct);
-            }
-        }
+        decimal tenderedAmount = 0;
+        decimal changeDue = 0;
 
         if (order.OrderType == RestaurantOrderType.RoomService)
         {
             if (!order.ReservationId.HasValue)
                 throw new InvalidOperationException("يجب ربط الطلب بحجز نشط");
+
+            if (payments.Any(p => p.PaymentMethod != RestaurantPaymentMethod.RoomCharge))
+                throw new InvalidOperationException("خدمة الغرف تُقيَّد على الغرفة فقط");
 
             var charge = new ReservationCharge
             {
@@ -261,9 +245,119 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
             await db.SaveChangesAsync(ct);
             order.ReservationChargeId = charge.Id;
             order.Status = RestaurantOrderStatus.PostedToRoom;
+
+            await db.RestaurantOrderPayments.AddAsync(new RestaurantOrderPayment
+            {
+                RestaurantOrderId = order.Id,
+                Amount = order.TotalAmount,
+                PaymentMethod = RestaurantPaymentMethod.RoomCharge
+            }, ct);
+
+            tenderedAmount = order.TotalAmount;
         }
         else
         {
+            if (payments.Count == 0)
+                throw new InvalidOperationException("أدخل طريقة الدفع");
+
+            var hasCash = payments.Any(p => p.PaymentMethod == RestaurantPaymentMethod.Cash);
+            var hasCard = payments.Any(p => p.PaymentMethod == RestaurantPaymentMethod.Card);
+            if (hasCash && hasCard)
+                throw new InvalidOperationException("ادفع بطريقة واحدة أو استخدم الدفع المختلط لاحقاً");
+
+            foreach (var payment in payments)
+            {
+                if (payment.PaymentMethod == RestaurantPaymentMethod.RoomCharge)
+                    throw new InvalidOperationException("لا يمكن القيد على الغرفة إلا لخدمة الغرف");
+
+                if (payment.PaymentMethod == RestaurantPaymentMethod.Cash)
+                {
+                    if (payment.Amount + 0.01m < order.TotalAmount)
+                        throw new InvalidOperationException("المبلغ المستلم أقل من إجمالي الطلب");
+
+                    tenderedAmount = payment.Amount;
+                    changeDue = Math.Max(0, payment.Amount - order.TotalAmount);
+                    var recorded = order.TotalAmount;
+
+                    await db.RestaurantOrderPayments.AddAsync(new RestaurantOrderPayment
+                    {
+                        RestaurantOrderId = order.Id,
+                        Amount = recorded,
+                        PaymentMethod = RestaurantPaymentMethod.Cash,
+                        HotelCashBoxId = payment.HotelCashBoxId
+                    }, ct);
+
+                    if (payment.HotelCashBoxId.HasValue && recorded > 0)
+                    {
+                        var cashBox = await db.HotelCashBoxes.FirstOrDefaultAsync(c => c.Id == payment.HotelCashBoxId.Value, ct)
+                            ?? throw new InvalidOperationException("الصندوق غير موجود");
+                        cashBox.CurrentBalance += recorded;
+
+                        var voucherNumber = await GetNextVoucherNumberAsync(db, HotelVoucherType.Receipt, ct);
+                        await db.HotelVouchers.AddAsync(new HotelVoucher
+                        {
+                            VoucherNumber = voucherNumber,
+                            Type = HotelVoucherType.Receipt,
+                            VoucherDate = DateTime.Today,
+                            Amount = recorded,
+                            HotelCashBoxId = payment.HotelCashBoxId.Value,
+                            ReservationId = order.ReservationId,
+                            Description = $"مطعم - طلب {order.OrderNumber}",
+                            Notes = changeDue > 0 ? $"باقي للعميل: {changeDue:N0}" : order.Notes
+                        }, ct);
+                    }
+                }
+                else if (payment.PaymentMethod == RestaurantPaymentMethod.Card)
+                {
+                    if (Math.Abs(payment.Amount - order.TotalAmount) > 0.01m)
+                        throw new InvalidOperationException("الدفع بالبطاقة يجب أن يطابق إجمالي الطلب");
+
+                    tenderedAmount = payment.Amount;
+
+                    await db.RestaurantOrderPayments.AddAsync(new RestaurantOrderPayment
+                    {
+                        RestaurantOrderId = order.Id,
+                        Amount = order.TotalAmount,
+                        PaymentMethod = RestaurantPaymentMethod.Card,
+                        HotelCashBoxId = payment.HotelCashBoxId
+                    }, ct);
+
+                    if (payment.HotelCashBoxId.HasValue && order.TotalAmount > 0)
+                    {
+                        var cashBox = await db.HotelCashBoxes.FirstOrDefaultAsync(c => c.Id == payment.HotelCashBoxId.Value, ct)
+                            ?? throw new InvalidOperationException("الصندوق غير موجود");
+                        cashBox.CurrentBalance += order.TotalAmount;
+
+                        var voucherNumber = await GetNextVoucherNumberAsync(db, HotelVoucherType.Receipt, ct);
+                        await db.HotelVouchers.AddAsync(new HotelVoucher
+                        {
+                            VoucherNumber = voucherNumber,
+                            Type = HotelVoucherType.Receipt,
+                            VoucherDate = DateTime.Today,
+                            Amount = order.TotalAmount,
+                            HotelCashBoxId = payment.HotelCashBoxId.Value,
+                            ReservationId = order.ReservationId,
+                            Description = $"مطعم (بطاقة) - طلب {order.OrderNumber}",
+                            Notes = order.Notes
+                        }, ct);
+                    }
+                }
+                else
+                {
+                    if (Math.Abs(payment.Amount - order.TotalAmount) > 0.01m)
+                        throw new InvalidOperationException("مجموع الدفعات لا يطابق إجمالي الطلب");
+
+                    tenderedAmount = payment.Amount;
+                    await db.RestaurantOrderPayments.AddAsync(new RestaurantOrderPayment
+                    {
+                        RestaurantOrderId = order.Id,
+                        Amount = order.TotalAmount,
+                        PaymentMethod = payment.PaymentMethod,
+                        HotelCashBoxId = payment.HotelCashBoxId
+                    }, ct);
+                }
+            }
+
             order.Status = RestaurantOrderStatus.Paid;
         }
 
@@ -279,7 +373,13 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
 
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        return order;
+
+        return new RestaurantPaymentResult
+        {
+            Order = order,
+            TenderedAmount = tenderedAmount,
+            ChangeDue = changeDue
+        };
     }
 
     public async Task CancelOrderAsync(int orderId, CancellationToken ct = default)
@@ -325,6 +425,26 @@ public sealed class RestaurantOrderService : IRestaurantOrderService
             })
             .OrderBy(r => r.RoomNumber)
             .ToListAsync(ct);
+    }
+
+    private static async Task<string> GenerateOrderNumberInternalAsync(HotelDbContext db, CancellationToken ct)
+    {
+        var prefix = $"RST-{DateTime.Today:yyyyMMdd}";
+        var last = await db.RestaurantOrders.IgnoreQueryFilters()
+            .Where(o => o.OrderNumber.StartsWith(prefix))
+            .OrderByDescending(o => o.Id)
+            .Select(o => o.OrderNumber)
+            .FirstOrDefaultAsync(ct);
+
+        var next = 1;
+        if (last is not null)
+        {
+            var parts = last.Split('-');
+            if (parts.Length >= 3 && int.TryParse(parts[^1], out var n))
+                next = n + 1;
+        }
+
+        return $"{prefix}-{next:D4}";
     }
 
     private static void RecalculateOrderTotals(RestaurantOrder order)

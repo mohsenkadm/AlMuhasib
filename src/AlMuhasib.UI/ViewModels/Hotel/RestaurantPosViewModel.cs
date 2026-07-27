@@ -17,6 +17,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
     private readonly IRestaurantMenuService _menuService;
     private readonly IRestaurantOrderService _orderService;
     private readonly IRestaurantTableService _tableService;
+    private readonly IRestaurantReportService _reportService;
     private readonly IHotelCashService _cashService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
@@ -27,8 +28,8 @@ public partial class RestaurantPosViewModel : ViewModelBase
     public ObservableCollection<RestaurantTable> Tables { get; } = [];
     public ObservableCollection<ActiveRoomForService> ActiveRooms { get; } = [];
     public ObservableCollection<HotelCashBox> CashBoxes { get; } = [];
-
     public ObservableCollection<RestaurantMenuItem> FavoriteItems { get; } = [];
+    public ObservableCollection<RestaurantOrder> OpenOrders { get; } = [];
 
     [ObservableProperty] private bool _isLoaded;
     [ObservableProperty] private RestaurantMenuCategory? _selectedCategory;
@@ -45,6 +46,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
     [ObservableProperty] private int? _paymentCashBoxId;
     [ObservableProperty] private RestaurantPaymentMethod _paymentMethod = RestaurantPaymentMethod.Cash;
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private decimal _lastChangeDue;
 
     public int CartLineCount => CartLines.Count;
     public string? CurrentOrderNumber => CurrentOrder?.OrderNumber;
@@ -56,16 +58,26 @@ public partial class RestaurantPosViewModel : ViewModelBase
     public bool IsCartEmpty => CartLines.Count == 0;
     public bool ShowReadOnlyBanner => !CanAdd;
     public int OccupiedTablesCount => Tables.Count(t => t.Status == RestaurantTableStatus.Occupied);
-    public decimal ChangeDue => PaymentAmount > GrandTotal ? PaymentAmount - GrandTotal : 0;
+    public int OpenOrdersCount => OpenOrders.Count;
+    public decimal ChangeDue =>
+        PaymentMethod == RestaurantPaymentMethod.Cash && PaymentAmount > GrandTotal
+            ? PaymentAmount - GrandTotal
+            : 0;
     public bool ShowCashPaymentFields => !IsRoomService;
+    public bool ShowChangeDue => PaymentMethod == RestaurantPaymentMethod.Cash && ChangeDue > 0;
+    public bool IsCashPayment => PaymentMethod == RestaurantPaymentMethod.Cash;
 
     public IReadOnlyList<RestaurantOrderType> OrderTypeOptions { get; } = Enum.GetValues<RestaurantOrderType>().ToList();
-    public IReadOnlyList<RestaurantPaymentMethod> PaymentMethodOptions { get; } = Enum.GetValues<RestaurantPaymentMethod>().ToList();
+    public IReadOnlyList<RestaurantPaymentMethod> PaymentMethodOptions { get; } =
+        Enum.GetValues<RestaurantPaymentMethod>()
+            .Where(m => m is RestaurantPaymentMethod.Cash or RestaurantPaymentMethod.Card)
+            .ToList();
 
     public RestaurantPosViewModel(
         IRestaurantMenuService menuService,
         IRestaurantOrderService orderService,
         IRestaurantTableService tableService,
+        IRestaurantReportService reportService,
         IHotelCashService cashService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast)
@@ -73,6 +85,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
         _menuService = menuService;
         _orderService = orderService;
         _tableService = tableService;
+        _reportService = reportService;
         _cashService = cashService;
         _currentUserService = currentUserService;
         _toast = toast;
@@ -91,6 +104,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
             await LoadLookupsAsync();
             await LoadCategoriesAsync();
             await LoadFavoriteItemsAsync();
+            await LoadOpenOrdersAsync();
         }
         finally
         {
@@ -101,11 +115,22 @@ public partial class RestaurantPosViewModel : ViewModelBase
     partial void OnPaymentAmountChanged(decimal value)
     {
         OnPropertyChanged(nameof(ChangeDue));
+        OnPropertyChanged(nameof(ShowChangeDue));
     }
 
     partial void OnGrandTotalChanged(decimal value)
     {
         OnPropertyChanged(nameof(ChangeDue));
+        OnPropertyChanged(nameof(ShowChangeDue));
+    }
+
+    partial void OnPaymentMethodChanged(RestaurantPaymentMethod value)
+    {
+        OnPropertyChanged(nameof(IsCashPayment));
+        OnPropertyChanged(nameof(ChangeDue));
+        OnPropertyChanged(nameof(ShowChangeDue));
+        if (value != RestaurantPaymentMethod.Cash)
+            PaymentAmount = GrandTotal;
     }
 
     partial void OnDiscountAmountChanged(decimal value) => _ = ApplyDiscountAsync();
@@ -150,19 +175,81 @@ public partial class RestaurantPosViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void SelectTable(RestaurantTable? table)
+    private async Task SelectTableAsync(RestaurantTable? table)
     {
-        if (table is null || table.Status == RestaurantTableStatus.Occupied)
-            return;
+        if (table is null) return;
+
         SelectedTable = table;
+
+        if (table.Status == RestaurantTableStatus.Occupied)
+        {
+            var open = await _orderService.GetOpenOrderByTableAsync(table.Id);
+            if (open is not null)
+            {
+                await ResumeOrderAsync(open);
+                return;
+            }
+        }
+
+        StatusMessage = table.Status == RestaurantTableStatus.Occupied
+            ? $"طاولة {table.TableNumber} مشغولة"
+            : $"طاولة {table.TableNumber} — جاهز لطلب جديد";
+    }
+
+    [RelayCommand]
+    private async Task ResumeOrderAsync(RestaurantOrder? order)
+    {
+        if (order is null) return;
+
+        var full = await _orderService.GetOrderByIdAsync(order.Id) ?? order;
+        CurrentOrder = full;
+        SelectedOrderType = full.OrderType;
+        if (full.RestaurantTableId.HasValue)
+            SelectedTable = Tables.FirstOrDefault(t => t.Id == full.RestaurantTableId.Value);
+
+        CartLines.Clear();
+        foreach (var line in full.Lines)
+            CartLines.Add(line);
+
+        SubTotal = full.SubTotal;
+        DiscountAmount = full.DiscountAmount;
+        GrandTotal = full.TotalAmount;
+        OnPropertyChanged(nameof(CartLineCount));
+        OnPropertyChanged(nameof(IsCartEmpty));
+        StatusMessage = $"استئناف الطلب {full.OrderNumber}";
     }
 
     private async Task LoadFavoriteItemsAsync()
     {
         FavoriteItems.Clear();
-        var items = await _menuService.GetMenuItemsAsync(null);
-        foreach (var item in items.Where(i => i.IsActive).Take(6))
-            FavoriteItems.Add(item);
+        try
+        {
+            var top = await _reportService.GetTopSellingItemsAsync(DateTime.Today.AddDays(-30), DateTime.Today, 6);
+            var allItems = await _menuService.GetMenuItemsAsync(null);
+            foreach (var topItem in top)
+            {
+                var match = allItems.FirstOrDefault(i => i.IsActive
+                    && string.Equals(i.Name, topItem.ItemName, StringComparison.OrdinalIgnoreCase));
+                if (match is not null && FavoriteItems.All(f => f.Id != match.Id))
+                    FavoriteItems.Add(match);
+            }
+
+            if (FavoriteItems.Count < 6)
+            {
+                foreach (var item in allItems.Where(i => i.IsActive).Take(6))
+                {
+                    if (FavoriteItems.All(f => f.Id != item.Id))
+                        FavoriteItems.Add(item);
+                    if (FavoriteItems.Count >= 6) break;
+                }
+            }
+        }
+        catch
+        {
+            var items = await _menuService.GetMenuItemsAsync(null);
+            foreach (var item in items.Where(i => i.IsActive).Take(6))
+                FavoriteItems.Add(item);
+        }
     }
 
     partial void OnSelectedCategoryChanged(RestaurantMenuCategory? value) => _ = LoadMenuItemsAsync();
@@ -174,6 +261,10 @@ public partial class RestaurantPosViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTakeaway));
         OnPropertyChanged(nameof(IsRoomService));
         OnPropertyChanged(nameof(ShowCashPaymentFields));
+        if (value != RestaurantOrderType.DineIn)
+            SelectedTable = null;
+        if (value != RestaurantOrderType.RoomService)
+            SelectedRoom = null;
     }
 
     partial void OnCurrentOrderChanged(RestaurantOrder? value)
@@ -198,6 +289,16 @@ public partial class RestaurantPosViewModel : ViewModelBase
             CashBoxes.Add(c);
 
         PaymentCashBoxId ??= CashBoxes.FirstOrDefault()?.Id;
+        OnPropertyChanged(nameof(OccupiedTablesCount));
+    }
+
+    [RelayCommand]
+    private async Task LoadOpenOrdersAsync()
+    {
+        OpenOrders.Clear();
+        foreach (var o in await _orderService.GetOpenOrdersAsync())
+            OpenOrders.Add(o);
+        OnPropertyChanged(nameof(OpenOrdersCount));
     }
 
     [RelayCommand]
@@ -239,6 +340,17 @@ public partial class RestaurantPosViewModel : ViewModelBase
                 return;
             }
 
+            if (SelectedOrderType == RestaurantOrderType.DineIn && tableId.HasValue)
+            {
+                var existing = await _orderService.GetOpenOrderByTableAsync(tableId.Value);
+                if (existing is not null)
+                {
+                    await ResumeOrderAsync(existing);
+                    _toast.ShowInfo("تم استئناف الطلب المفتوح على الطاولة");
+                    return;
+                }
+            }
+
             if (SelectedOrderType == RestaurantOrderType.RoomService && reservationId is null)
             {
                 _toast.ShowWarning("اختر غرفة لخدمة الغرف");
@@ -249,6 +361,8 @@ public partial class RestaurantPosViewModel : ViewModelBase
             CartLines.Clear();
             RecalculateTotals();
             StatusMessage = $"طلب جديد: {CurrentOrder.OrderNumber}";
+            await LoadLookupsAsync();
+            await LoadOpenOrdersAsync();
         }
         catch (Exception ex)
         {
@@ -328,6 +442,9 @@ public partial class RestaurantPosViewModel : ViewModelBase
         PaymentAmount = GrandTotal;
         if (SelectedOrderType == RestaurantOrderType.RoomService)
             PaymentMethod = RestaurantPaymentMethod.RoomCharge;
+        else if (PaymentMethod is RestaurantPaymentMethod.RoomCharge or RestaurantPaymentMethod.Mixed)
+            PaymentMethod = RestaurantPaymentMethod.Cash;
+
         IsPaymentDialogOpen = true;
     }
 
@@ -338,6 +455,26 @@ public partial class RestaurantPosViewModel : ViewModelBase
 
         try
         {
+            if (!IsRoomService)
+            {
+                if (PaymentMethod == RestaurantPaymentMethod.Cash && PaymentAmount + 0.01m < GrandTotal)
+                {
+                    _toast.ShowWarning("المبلغ المستلم أقل من الإجمالي");
+                    return;
+                }
+
+                if (PaymentMethod == RestaurantPaymentMethod.Card && Math.Abs(PaymentAmount - GrandTotal) > 0.01m)
+                {
+                    PaymentAmount = GrandTotal;
+                }
+
+                if (PaymentCashBoxId is null)
+                {
+                    _toast.ShowWarning("اختر صندوق النقد");
+                    return;
+                }
+            }
+
             var payments = new List<RestaurantPaymentRequest>();
             if (SelectedOrderType == RestaurantOrderType.RoomService)
             {
@@ -351,20 +488,26 @@ public partial class RestaurantPosViewModel : ViewModelBase
             {
                 payments.Add(new RestaurantPaymentRequest
                 {
-                    Amount = PaymentAmount,
+                    Amount = PaymentMethod == RestaurantPaymentMethod.Cash ? PaymentAmount : GrandTotal,
                     PaymentMethod = PaymentMethod,
                     HotelCashBoxId = PaymentCashBoxId
                 });
             }
 
-            await _orderService.CompleteAndPayAsync(CurrentOrder.Id, payments);
-            _toast.ShowSuccess($"تم إغلاق الطلب {CurrentOrder.OrderNumber}");
+            var result = await _orderService.CompleteAndPayAsync(CurrentOrder.Id, payments);
+            LastChangeDue = result.ChangeDue;
+            var changeMsg = result.ChangeDue > 0 ? $" — الباقي {result.ChangeDue:N0} د.ع" : string.Empty;
+            _toast.ShowSuccess($"تم إغلاق الطلب {result.Order.OrderNumber}{changeMsg}");
             IsPaymentDialogOpen = false;
             CurrentOrder = null;
             CartLines.Clear();
             RecalculateTotals();
-            StatusMessage = "جاهز لطلب جديد";
+            StatusMessage = result.ChangeDue > 0
+                ? $"تم الدفع — أعطِ الباقي {result.ChangeDue:N0} د.ع"
+                : "جاهز لطلب جديد";
             await LoadLookupsAsync();
+            await LoadOpenOrdersAsync();
+            await LoadFavoriteItemsAsync();
         }
         catch (Exception ex)
         {
@@ -384,6 +527,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
             RecalculateTotals();
             StatusMessage = "تم إلغاء الطلب";
             await LoadLookupsAsync();
+            await LoadOpenOrdersAsync();
         }
         catch (Exception ex)
         {

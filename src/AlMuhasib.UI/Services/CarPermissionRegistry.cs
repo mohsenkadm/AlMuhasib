@@ -13,6 +13,7 @@ public static class CarPermissionRegistry
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
     public const string Backup = "Backup";
+    public const string CloudSync = "CloudSync";
 
     private static readonly Dictionary<Type, string> ViewModelToScreen = new()
     {
@@ -24,6 +25,8 @@ public static class CarPermissionRegistry
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
         [typeof(BackupRestoreViewModel)] = Backup,
+        [typeof(CloudSyncSettingsViewModel)] = CloudSync,
+        [typeof(NetworkConnectionSettingsViewModel)] = ScreenPermissionRegistry.NetworkConnection,
         [typeof(SystemUpdateViewModel)] = ScreenPermissionRegistry.SystemUpdate
     };
 
@@ -37,6 +40,8 @@ public static class CarPermissionRegistry
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
         [Backup] = typeof(BackupRestoreViewModel),
+        [CloudSync] = typeof(CloudSyncSettingsViewModel),
+        [ScreenPermissionRegistry.NetworkConnection] = typeof(NetworkConnectionSettingsViewModel),
         [ScreenPermissionRegistry.SystemUpdate] = typeof(SystemUpdateViewModel)
     };
 
@@ -50,6 +55,8 @@ public static class CarPermissionRegistry
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",
         [Backup] = "النسخ الاحتياطي",
+        [CloudSync] = "المزامنة السحابية",
+        [ScreenPermissionRegistry.NetworkConnection] = "ربط الحاسبات",
         [ScreenPermissionRegistry.SystemUpdate] = "تحديث النظام"
     };
 

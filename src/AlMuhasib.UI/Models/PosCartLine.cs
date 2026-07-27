@@ -6,6 +6,7 @@ namespace AlMuhasib.UI.Models;
 public partial class PosCartLine : ObservableObject
 {
     public int ProductId { get; init; }
+    public int? PricingTypeId { get; init; }
     public string ProductName { get; init; } = string.Empty;
 
     [ObservableProperty]
@@ -22,10 +23,11 @@ public partial class PosCartLine : ObservableObject
 
     private void Recalc() => LineTotal = Quantity * UnitPrice;
 
-    public static PosCartLine FromProduct(Product product, decimal unitPrice, decimal quantity = 1m) =>
+    public static PosCartLine FromProduct(Product product, decimal unitPrice, decimal quantity = 1m, int? pricingTypeId = null) =>
         new()
         {
             ProductId = product.Id,
+            PricingTypeId = pricingTypeId,
             ProductName = product.Name,
             Quantity = quantity,
             UnitPrice = unitPrice,

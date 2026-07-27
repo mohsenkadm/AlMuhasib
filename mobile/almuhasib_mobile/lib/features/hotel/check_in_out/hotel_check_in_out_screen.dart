@@ -11,32 +11,25 @@ import '../controllers/hotel_check_in_out_controller.dart';
 import '../models/hotel_models.dart';
 import '../models/hotel_status_helpers.dart';
 
-class HotelCheckInOutScreen extends StatefulWidget {
+class HotelCheckInOutScreen extends GetView<HotelCheckInOutController> {
   const HotelCheckInOutScreen({super.key});
 
   @override
-  State<HotelCheckInOutScreen> createState() => _HotelCheckInOutScreenState();
-}
+  final String? tag = 'hotel_check_in_out';
 
-class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
-  late final HotelCheckInOutController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelCheckInOutController(), tag: 'hotel_check_in_out');
-  }
-
-  Future<void> _performCheckIn(HotelReservation reservation) async {
+  Future<void> _performCheckIn(
+    BuildContext context,
+    HotelReservation reservation,
+  ) async {
     try {
-      await _controller.checkIn(reservation);
-      if (mounted) {
+      await controller.checkIn(reservation);
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('hotel_check_in_success'.tr())),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
@@ -44,16 +37,19 @@ class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
     }
   }
 
-  Future<void> _performCheckOut(HotelReservation reservation) async {
+  Future<void> _performCheckOut(
+    BuildContext context,
+    HotelReservation reservation,
+  ) async {
     try {
-      await _controller.checkOut(reservation);
-      if (mounted) {
+      await controller.checkOut(reservation);
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('hotel_check_out_success'.tr())),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
@@ -63,83 +59,80 @@ class _HotelCheckInOutScreenState extends State<HotelCheckInOutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.paddingOf(context).top;
-
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        body: Column(
-          children: [
-            SizedBox(height: topPadding + 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  'hotel_operations_title'.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TabBar(
+              tabs: [
+                Tab(text: 'hotel_today_arrivals'.tr()),
+                Tab(text: 'hotel_today_departures'.tr()),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: TabBar(
-                tabs: [
-                  Tab(text: 'hotel_today_arrivals'.tr()),
-                  Tab(text: 'hotel_today_departures'.tr()),
-                ],
-              ),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _controller.load,
-                child: Obx(() {
-                  if (_controller.isLoading.value) {
-                    return const ListShimmer();
-                  }
-                  final error = _controller.error.value;
-                  if (error != null) {
-                    return ErrorStateWidget(
-                      message: error.toString(),
-                      onRetry: _controller.load,
-                    );
-                  }
-                  final reservations = _controller.reservations.value;
-                  final today = DateTime.now();
-                  final arrivals = reservations
-                      .where((r) =>
-                          r.checkInDate.year == today.year &&
-                          r.checkInDate.month == today.month &&
-                          r.checkInDate.day == today.day)
-                      .toList();
-                  final departures = reservations
-                      .where((r) =>
-                          r.checkOutDate.year == today.year &&
-                          r.checkOutDate.month == today.month &&
-                          r.checkOutDate.day == today.day)
-                      .toList();
+          ),
+          Expanded(
+            child: Obx(() {
+              final reservations = controller.reservations.value;
+              final isLoading = controller.isLoading.value;
+              final error = controller.error.value;
+              final hasData = reservations.isNotEmpty;
 
-                  return TabBarView(
-                    children: [
-                      _ReservationList(
-                        items: arrivals,
-                        emptyMessage: 'hotel_no_arrivals'.tr(),
-                        actionLabel: 'hotel_check_in'.tr(),
-                        onAction: _performCheckIn,
-                      ),
-                      _ReservationList(
-                        items: departures,
-                        emptyMessage: 'hotel_no_departures'.tr(),
-                        actionLabel: 'hotel_check_out'.tr(),
-                        onAction: _performCheckOut,
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
+              if (!hasData && isLoading) {
+                return const ListShimmer();
+              }
+
+              if (!hasData && error != null) {
+                return ErrorStateWidget(
+                  message: error.toString(),
+                  onRetry: controller.load,
+                );
+              }
+
+              final today = DateTime.now();
+              final arrivals = reservations
+                  .where(
+                    (r) =>
+                        r.checkInDate.year == today.year &&
+                        r.checkInDate.month == today.month &&
+                        r.checkInDate.day == today.day,
+                  )
+                  .toList();
+              final departures = reservations
+                  .where(
+                    (r) =>
+                        r.checkOutDate.year == today.year &&
+                        r.checkOutDate.month == today.month &&
+                        r.checkOutDate.day == today.day,
+                  )
+                  .toList();
+
+              return TabBarView(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: controller.load,
+                    child: _ReservationList(
+                      items: arrivals,
+                      emptyMessage: 'hotel_no_arrivals'.tr(),
+                      actionLabel: 'hotel_check_in'.tr(),
+                      onAction: (r) => _performCheckIn(context, r),
+                    ),
+                  ),
+                  RefreshIndicator(
+                    onRefresh: controller.load,
+                    child: _ReservationList(
+                      items: departures,
+                      emptyMessage: 'hotel_no_departures'.tr(),
+                      actionLabel: 'hotel_check_out'.tr(),
+                      onAction: (r) => _performCheckOut(context, r),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -162,6 +155,7 @@ class _ReservationList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
             height: MediaQuery.sizeOf(context).height * 0.35,
@@ -172,6 +166,7 @@ class _ReservationList extends StatelessWidget {
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       itemCount: items.length,
       itemBuilder: (context, index) {

@@ -6,27 +6,17 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../shared/utils/formatters.dart';
-import '../../../shared/widgets/app_animations.dart';
 import '../../../shared/widgets/common_widgets.dart';
+import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/shimmer_widgets.dart';
 import '../controllers/hotel_dashboard_controller.dart';
 import '../models/hotel_models.dart';
 
-class HotelDashboardScreen extends StatefulWidget {
+class HotelDashboardScreen extends GetView<HotelDashboardController> {
   const HotelDashboardScreen({super.key});
 
   @override
-  State<HotelDashboardScreen> createState() => _HotelDashboardScreenState();
-}
-
-class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
-  late final HotelDashboardController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(HotelDashboardController(), tag: 'hotel_dashboard');
-  }
+  final String? tag = 'hotel_dashboard';
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +24,6 @@ class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
     final tenantName = prefs.tenantName ?? prefs.companyName ?? 'app_name'.tr();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       body: Column(
         children: [
           Obx(
@@ -43,30 +32,43 @@ class _HotelDashboardScreenState extends State<HotelDashboardScreen> {
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _controller.load,
-              edgeOffset: 120,
-              child: Obx(() {
-                if (_controller.isLoading.value) {
-                  return const DashboardShimmer();
-                }
-                final error = _controller.error.value;
-                if (error != null) {
-                  return ErrorStateWidget(
-                    message: error.toString(),
-                    onRetry: _controller.load,
-                  );
-                }
-                final data = _controller.data.value;
-                if (data == null) {
-                  return const SizedBox.shrink();
-                }
-                return _HotelDashboardBody(
-                  data: data,
-                  tenantName: tenantName,
+            child: Obx(() {
+              final data = controller.data.value;
+              if (data != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: _HotelDashboardBody(
+                    data: data,
+                    tenantName: tenantName,
+                  ),
                 );
-              }),
-            ),
+              }
+
+              if (controller.isLoading.value) {
+                return const DashboardShimmer();
+              }
+
+              final error = controller.error.value;
+              if (error != null) {
+                return RefreshIndicator(
+                  onRefresh: controller.load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.6,
+                        child: ErrorStateWidget(
+                          message: AppExceptionHandler.messageFor(error),
+                          onRetry: controller.load,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return const DashboardShimmer();
+            }),
           ),
         ],
       ),
@@ -89,109 +91,130 @@ class _HotelDashboardBody extends StatelessWidget {
     final occupancy = data.occupancy;
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 120),
       children: [
-        _HotelHeader(tenantName: tenantName).fadeSlideIn(),
+        _HotelHeader(tenantName: tenantName),
         const SizedBox(height: 20),
         Text(
           'hotel_occupancy'.tr(),
-          style: Theme.of(context).textTheme.titleMedium,
-        ).fadeSlideIn(delayMs: 80),
-        const SizedBox(height: 14),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 14,
-          childAspectRatio: 0.92,
-          children: [
-            KpiCard(
-              title: 'hotel_total_rooms'.tr(),
-              value: '${occupancy.totalRooms}',
-              icon: Icons.meeting_room_outlined,
-              color: AppColors.primaryLight,
-            ).fadeSlideInList(index: 0),
-            KpiCard(
-              title: 'hotel_occupied_rooms'.tr(),
-              value: '${occupancy.occupiedRooms}',
-              icon: Icons.hotel_rounded,
-              color: AppColors.accent,
-            ).fadeSlideInList(index: 1),
-            KpiCard(
-              title: 'hotel_available_rooms'.tr(),
-              value: '${occupancy.availableRooms}',
-              icon: Icons.check_circle_outline,
-              color: AppColors.success,
-            ).fadeSlideInList(index: 2),
-            KpiCard(
-              title: 'hotel_occupancy_rate'.tr(),
-              value: '${occupancy.occupancyRate.toStringAsFixed(1)}%',
-              icon: Icons.pie_chart_outline_rounded,
-              color: AppColors.warning,
-            ).fadeSlideInList(index: 3),
-          ],
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
+        _KpiRow(
+          left: KpiCard(
+            title: 'hotel_total_rooms'.tr(),
+            value: '${occupancy.totalRooms}',
+            icon: Icons.meeting_room_outlined,
+            color: AppColors.primaryLight,
+          ),
+          right: KpiCard(
+            title: 'hotel_occupied_rooms'.tr(),
+            value: '${occupancy.occupiedRooms}',
+            icon: Icons.hotel_rounded,
+            color: AppColors.accent,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _KpiRow(
+          left: KpiCard(
+            title: 'hotel_available_rooms'.tr(),
+            value: '${occupancy.availableRooms}',
+            icon: Icons.check_circle_outline,
+            color: AppColors.success,
+          ),
+          right: KpiCard(
+            title: 'hotel_occupancy_rate'.tr(),
+            value: '${occupancy.occupancyRate.toStringAsFixed(1)}%',
+            icon: Icons.pie_chart_outline_rounded,
+            color: AppColors.warning,
+          ),
+        ),
+        const SizedBox(height: 22),
         Text(
           'hotel_today_summary'.tr(),
-          style: Theme.of(context).textTheme.titleMedium,
-        ).fadeSlideIn(delayMs: 160),
-        const SizedBox(height: 14),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 12),
+        _KpiRow(
+          left: KpiCard(
+            title: 'hotel_today_arrivals'.tr(),
+            value: '${data.todayArrivals}',
+            icon: Icons.flight_land_rounded,
+            compact: true,
+            color: AppColors.success,
+          ),
+          right: KpiCard(
+            title: 'hotel_today_departures'.tr(),
+            value: '${data.todayDepartures}',
+            icon: Icons.flight_takeoff_rounded,
+            compact: true,
+            color: AppColors.warning,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _KpiRow(
+          left: KpiCard(
+            title: 'hotel_in_house'.tr(),
+            value: '${data.inHouseGuests}',
+            icon: Icons.people_outline_rounded,
+            compact: true,
+            color: AppColors.primaryLight,
+          ),
+          right: KpiCard(
+            title: 'hotel_today_revenue'.tr(),
+            value: formatCurrency(data.todayRevenue),
+            icon: Icons.payments_outlined,
+            compact: true,
+            color: AppColors.accent,
+          ),
+        ),
+        const SizedBox(height: 22),
         Row(
           children: [
             Expanded(
-              child: KpiCard(
-                title: 'hotel_today_arrivals'.tr(),
-                value: '${data.todayArrivals}',
-                icon: Icons.flight_land_rounded,
-                compact: true,
-                color: AppColors.success,
+              child: FilledButton.icon(
+                onPressed: () => Get.offNamed(AppRoutes.hotelOperations),
+                icon: const Icon(Icons.login_rounded),
+                label: Text('hotel_go_check_in'.tr()),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
-              child: KpiCard(
-                title: 'hotel_today_departures'.tr(),
-                value: '${data.todayDepartures}',
-                icon: Icons.flight_takeoff_rounded,
-                compact: true,
-                color: AppColors.warning,
+              child: OutlinedButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.hotelRestaurant),
+                icon: const Icon(Icons.restaurant_rounded),
+                label: Text('hotel_nav_restaurant'.tr()),
               ),
             ),
           ],
-        ).fadeSlideIn(delayMs: 200),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                title: 'hotel_in_house'.tr(),
-                value: '${data.inHouseGuests}',
-                icon: Icons.people_outline_rounded,
-                compact: true,
-                color: AppColors.primaryLight,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: KpiCard(
-                title: 'hotel_today_revenue'.tr(),
-                value: formatCurrency(data.todayRevenue),
-                icon: Icons.payments_outlined,
-                compact: true,
-                color: AppColors.accent,
-              ),
-            ),
-          ],
-        ).fadeSlideIn(delayMs: 240),
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: () => Get.offNamed(AppRoutes.hotelOperations),
-          icon: const Icon(Icons.login_rounded),
-          label: Text('hotel_go_check_in'.tr()),
-        ).fadeSlideIn(delayMs: 280),
+        ),
       ],
+    );
+  }
+}
+
+class _KpiRow extends StatelessWidget {
+  const _KpiRow({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: left),
+          const SizedBox(width: 12),
+          Expanded(child: right),
+        ],
+      ),
     );
   }
 }
@@ -230,7 +253,6 @@ class _HotelHeader extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const AppLogoMark(size: 56),
           const SizedBox(width: 16),
@@ -239,7 +261,7 @@ class _HotelHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${'hotel_dashboard_greeting'.tr()} 👋',
+                  'hotel_dashboard_greeting'.tr(),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontSize: 14,
                       ),
@@ -247,9 +269,12 @@ class _HotelHeader extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   tenantName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 22,
                         height: 1.2,
+                        fontWeight: FontWeight.w800,
                       ),
                 ),
                 const SizedBox(height: 4),

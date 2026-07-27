@@ -40,7 +40,8 @@ public sealed class HotelSystemModule : ISystemModule
         (HotelPermissionRegistry.Permissions, "الصلاحيات"),
         (HotelPermissionRegistry.PrintSettings, "إعدادات الطباعة"),
         (HotelPermissionRegistry.Backup, "النسخ الاحتياطي"),
-        (HotelPermissionRegistry.CloudSync, "المزامنة السحابية")
+        (HotelPermissionRegistry.CloudSync, "المزامنة السحابية"),
+        (ScreenPermissionRegistry.NetworkConnection, "ربط الحاسبات")
     ];
 
     public IReadOnlyList<NavigationMenuItem> BuildMenuItems()
@@ -78,6 +79,7 @@ public sealed class HotelSystemModule : ISystemModule
             Item("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), HotelPermissionRegistry.Permissions),
             Item("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), HotelPermissionRegistry.PrintSettings),
             Item("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), HotelPermissionRegistry.Backup),
+            Item("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),
             Item("المزامنة السحابية", PackIconKind.CloudSync, typeof(CloudSyncSettingsViewModel), HotelPermissionRegistry.CloudSync),
             Item("تحديث النظام", PackIconKind.CloudDownload, typeof(SystemUpdateViewModel), ScreenPermissionRegistry.SystemUpdate),
             Item("تبديل النظام (مطور)", PackIconKind.DeveloperBoard, typeof(DeveloperSystemSwitchViewModel), ScreenPermissionRegistry.DeveloperSystem));

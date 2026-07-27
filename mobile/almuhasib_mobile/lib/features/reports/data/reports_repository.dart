@@ -127,9 +127,134 @@ class ReportsRepository {
     _apiClient.updateBaseUrl();
     return _apiClient.get(
       '/api/reports/balance-sheet',
-      queryParameters: {'date': date.toIso8601String()},
+      queryParameters: {'asOfDate': date.toIso8601String()},
       parser: (data) =>
           BalanceSheetResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<dynamic> getGenericReport(
+    String path, {
+    Map<String, dynamic>? query,
+  }) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      path,
+      queryParameters: query,
+      parser: (data) => data,
+    );
+  }
+
+  Future<dynamic> getSupplierStatement(
+    String supplierSyncId, {
+    DateTime? from,
+    DateTime? to,
+  }) {
+    return getGenericReport(
+      '/api/reports/statements/supplier',
+      query: {
+        'supplierSyncId': supplierSyncId,
+        ..._dateParams(from, to),
+      },
+    );
+  }
+
+  Future<dynamic> getExpensesReport(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/expenses',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getIncomeExpenseReport(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/income-expense',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getCashFlowReport(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/cash-flow',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getInstallmentsSummary(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/installments/summary',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getInstallmentsDetail(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/installments/detail',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getInstallmentsPaid(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/installments/paid',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getInstallmentsUnpaid() {
+    return getGenericReport('/api/reports/installments/unpaid');
+  }
+
+  Future<dynamic> getInstallmentsAging() {
+    return getGenericReport(
+      '/api/reports/installments/aging',
+      query: {'asOfDate': DateTime.now().toIso8601String()},
+    );
+  }
+
+  Future<dynamic> getProductMargin(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/products/margin',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getProductMovement(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/products/movement',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getStockHealth() {
+    return getGenericReport('/api/reports/stock-health');
+  }
+
+  Future<dynamic> getInventoryReplenishment(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/inventory-replenishment',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getCustomersOverview(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/customers/overview',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getSuppliersOverview(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/suppliers/overview',
+      query: _dateParams(from, to),
+    );
+  }
+
+  Future<dynamic> getProfitComparison(DateTime? from, DateTime? to) {
+    return getGenericReport(
+      '/api/reports/profit/comparison',
+      query: _dateParams(from, to),
     );
   }
 }

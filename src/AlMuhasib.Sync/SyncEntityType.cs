@@ -4,6 +4,9 @@ public enum SyncEntityType
 {
     Category,
     Product,
+    PricingType,
+    ProductPrice,
+    BusinessSettings,
     Warehouse,
     Customer,
     Supplier,
@@ -13,6 +16,8 @@ public enum SyncEntityType
     ExpenseType,
     PrintBrandingSettings,
     WarehouseStock,
+    WarehouseTransfer,
+    WarehouseTransferItem,
     Invoice,
     InvoiceItem,
     InstallmentPlan,

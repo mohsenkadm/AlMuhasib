@@ -5,6 +5,7 @@ import '../models/car_models.dart';
 
 class CarPaymentsController extends GetxController {
   final isLoading = true.obs;
+  final error = Rxn<Object>();
   final unpaid = <CarContractListItem>[].obs;
 
   @override
@@ -15,9 +16,12 @@ class CarPaymentsController extends GetxController {
 
   Future<void> load() async {
     isLoading.value = true;
+    error.value = null;
     try {
-      final all = await AppServices.car.getContracts();
-      unpaid.value = all.where((c) => c.remainingAmount > 0).toList();
+      final all = await AppServices.car.getContracts(hasRemaining: true);
+      unpaid.value = all;
+    } catch (e) {
+      error.value = e;
     } finally {
       isLoading.value = false;
     }

@@ -221,6 +221,30 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     }
 
     [RelayCommand]
+    private async Task ReturnInvoice(PurchasesReportRow? row)
+    {
+        if (row is null) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"إنشاء مرتجع مشتريات من الفاتورة {row.InvoiceNumber}؟\nستُخصم الكميات من المخزن."))
+            return;
+
+        if (InvoiceNavigationBridge.ReturnPurchaseInvoiceAsync is null)
+        {
+            BeautifulMessageDialog.ShowWarning("تعذر فتح شاشة مرتجع المشتريات");
+            return;
+        }
+
+        try
+        {
+            await InvoiceNavigationBridge.ReturnPurchaseInvoiceAsync(row.InvoiceId);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
     private void OpenPaymentDialog(PurchasesReportRow? row)
     {
         if (row is null || !row.IsCredit || row.IsCreditPaid) return;

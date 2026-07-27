@@ -2,6 +2,8 @@ namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IBackupService
 {
+    bool IsBackupSupported { get; }
+
     /// <summary>
     /// Creates a database backup at the specified file path.
     /// </summary>

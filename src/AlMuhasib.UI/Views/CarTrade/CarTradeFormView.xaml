@@ -1,0 +1,172 @@
+<UserControl x:Class="AlMuhasib.UI.Views.CarTrade.CarTradeFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="24,24,24,8">
+            <StackPanel MaxWidth="1120">
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="48" Height="48" CornerRadius="12" Background="#FFF3E0" Margin="0,0,14,0">
+                        <md:PackIcon Kind="CarArrowRight" Width="26" Height="26"
+                                     Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PageTitle}" FontSize="22" FontWeight="Bold" Foreground="#E65100"/>
+                        <TextBlock Text="سجّل شراء سيارة من بائع خارجي إلى المعرض مع بيانات البائع وطريقة الدفع"
+                                   FontSize="13" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <TextBlock Text="بيانات العملية" Style="{StaticResource SectionSubHeader}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="رقم العملية" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding TransactionNumber}" IsReadOnly="True" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="تاريخ الشراء *" Style="{StaticResource FormFieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding TransactionDate}" Style="{StaticResource MaterialDesignFilledDatePicker}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <md:PackIcon Kind="Car" Width="22" Height="22" Foreground="#E65100" VerticalAlignment="Center"/>
+                            <TextBlock Text="بيانات السيارة" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="اسم السيارة *" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding CarName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="نوع السيارة" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding CarType, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="اللون" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding CarColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="رقم اللوحة" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding PlateNumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                        <StackPanel>
+                            <TextBlock Text="رقم الشاصي" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" FontFamily="Consolas" FontSize="14" MinHeight="44"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <md:PackIcon Kind="Account" Width="22" Height="22" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                            <TextBlock Text="بيانات البائع" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="اسم البائع *" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding SellerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="هاتف البائع" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding SellerPhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </md:Card>
+
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,8" md:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <md:PackIcon Kind="CashMultiple" Width="22" Height="22" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                            <TextBlock Text="سعر الشراء وطريقة الدفع" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="سعر الشراء *" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource NumericTextBox}"
+                                         FontSize="18" FontWeight="Bold" MinHeight="48"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="طريقة الدفع للبائع" Style="{StaticResource FormFieldLabel}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <ToggleButton Content="نقدي" IsChecked="{Binding IsCash, Mode=OneWay}"
+                                                  Command="{Binding SetCashCommand}" Margin="0,0,8,0" Padding="24,10"
+                                                  Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
+                                    <ToggleButton Content="آجل" IsChecked="{Binding IsCredit, Mode=OneWay}"
+                                                  Command="{Binding SetCreditCommand}" Padding="24,10"
+                                                  Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </UniformGrid>
+                        <TextBlock Text="نقدي: دفع كامل المبلغ للبائع الآن. آجل: يمكن دفع جزء الآن والباقي لاحقاً من جدول العمليات. يمكنك تعديل المبلغ المدفوع يدوياً في الحالتين."
+                                   FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <StackPanel Margin="0,0,8,12">
+                                <TextBlock Text="المبلغ المدفوع للبائع" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource NumericTextBox}"
+                                         FontSize="16" FontWeight="SemiBold" MinHeight="48"/>
+                            </StackPanel>
+                            <StackPanel Margin="8,0,0,12">
+                                <TextBlock Text="المبلغ المتبقي للبائع" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBox Text="{Binding RemainingAmount, StringFormat=N0}" IsReadOnly="True"
+                                         Style="{StaticResource FilledTextBox}" Background="#FFF3E0" Foreground="#C62828"
+                                         FontSize="16" FontWeight="Bold" MinHeight="48"/>
+                            </StackPanel>
+                        </UniformGrid>
+                        <StackPanel>
+                            <TextBlock Text="ملاحظات" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" AcceptsReturn="True" MinHeight="72" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0"
+                Padding="24,14">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="حفظ" Command="{Binding SaveCommand}"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="#E65100" md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,10,0"
+                        IsEnabled="{Binding CanSave}"/>
+                <Button Content="حفظ وطباعة" Command="{Binding SaveAndPrintCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        md:ButtonAssist.CornerRadius="8" Padding="24,10" Margin="0,0,10,0"
+                        IsEnabled="{Binding CanSave}"/>
+                <Button Content="إلغاء" Command="{Binding CancelCommand}"
+                        Style="{StaticResource FlatButton}"
+                        md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

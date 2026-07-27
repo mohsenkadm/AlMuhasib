@@ -13,6 +13,8 @@ public static class PrintPreferences
 
     public static string? PreferredPrinter { get; set; }
     public static string PaperSize { get; set; } = "A4";
+    /// <summary>POS cashier receipt paper: A4, 80mm, 58mm, or 50mm.</summary>
+    public static string PosReceiptPaperSize { get; set; } = "80mm";
     public static bool ShowPrintPreview { get; set; } = true;
 
     public static void Load()
@@ -29,6 +31,9 @@ public static class PrintPreferences
 
             PreferredPrinter = data.PreferredPrinter;
             PaperSize = string.IsNullOrWhiteSpace(data.PaperSize) ? "A4" : data.PaperSize;
+            PosReceiptPaperSize = string.IsNullOrWhiteSpace(data.PosReceiptPaperSize)
+                ? "80mm"
+                : data.PosReceiptPaperSize;
             ShowPrintPreview = data.ShowPrintPreview;
         }
         catch
@@ -48,6 +53,7 @@ public static class PrintPreferences
             {
                 PreferredPrinter = PreferredPrinter,
                 PaperSize = PaperSize,
+                PosReceiptPaperSize = PosReceiptPaperSize,
                 ShowPrintPreview = ShowPrintPreview
             };
 
@@ -64,6 +70,7 @@ public static class PrintPreferences
     {
         public string? PreferredPrinter { get; set; }
         public string PaperSize { get; set; } = "A4";
+        public string PosReceiptPaperSize { get; set; } = "80mm";
         public bool ShowPrintPreview { get; set; } = true;
     }
 }

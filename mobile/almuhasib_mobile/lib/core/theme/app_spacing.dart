@@ -3,6 +3,17 @@ abstract final class AppSpacing {
   static const double sm = 8;
   static const double md = 12;
   static const double lg = 16;
-  static const double xl = 24;
-  static const double xxl = 32;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
+
+  static const double radiusSm = 8;
+  static const double radiusMd = 12;
+  static const double radiusLg = 16;
+  static const double radiusXl = 20;
+  static const double radiusFull = 999;
+
+  static const double appBarHeight = 56;
+  static const double bottomNavHeight = 68;
+  static const double fabBottomPadding = 120;
 }

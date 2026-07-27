@@ -6,6 +6,9 @@ public sealed class SyncDataBundle
 {
     public List<CategorySyncDto> Categories { get; set; } = [];
     public List<ProductSyncDto> Products { get; set; } = [];
+    public List<PricingTypeSyncDto> PricingTypes { get; set; } = [];
+    public List<ProductPriceSyncDto> ProductPrices { get; set; } = [];
+    public List<BusinessSettingsSyncDto> BusinessSettings { get; set; } = [];
     public List<WarehouseSyncDto> Warehouses { get; set; } = [];
     public List<CustomerSyncDto> Customers { get; set; } = [];
     public List<SupplierSyncDto> Suppliers { get; set; } = [];
@@ -15,6 +18,8 @@ public sealed class SyncDataBundle
     public List<ExpenseTypeSyncDto> ExpenseTypes { get; set; } = [];
     public List<PrintBrandingSettingsSyncDto> PrintBrandingSettings { get; set; } = [];
     public List<WarehouseStockSyncDto> WarehouseStocks { get; set; } = [];
+    public List<WarehouseTransferSyncDto> WarehouseTransfers { get; set; } = [];
+    public List<WarehouseTransferItemSyncDto> WarehouseTransferItems { get; set; } = [];
     public List<InvoiceSyncDto> Invoices { get; set; } = [];
     public List<InvoiceItemSyncDto> InvoiceItems { get; set; } = [];
     public List<InstallmentPlanSyncDto> InstallmentPlans { get; set; } = [];
@@ -58,6 +63,9 @@ public sealed class SyncDataBundle
 
     public List<CarSaleContractSyncDto> CarSaleContracts { get; set; } = [];
     public List<CarContractPaymentSyncDto> CarContractPayments { get; set; } = [];
+
+    public List<CarTradeTransactionSyncDto> CarTradeTransactions { get; set; } = [];
+    public List<CarTradePaymentSyncDto> CarTradePayments { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

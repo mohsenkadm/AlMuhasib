@@ -62,6 +62,46 @@ public partial class ColumnFilterToggle : UserControl
     {
         InitializeComponent();
         ClearButton.Click += OnClearClicked;
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e) => ResolveTargetDataGrid();
+
+    private void ResolveTargetDataGrid()
+    {
+        if (TargetDataGrid is not null)
+            return;
+
+        DependencyObject? ancestor = this;
+        while (ancestor is not null)
+        {
+            var dataGrid = FindFilterableDataGridInSubtree(ancestor);
+            if (dataGrid is not null)
+            {
+                TargetDataGrid = dataGrid;
+                return;
+            }
+
+            ancestor = LogicalTreeHelper.GetParent(ancestor);
+        }
+    }
+
+    private static DataGrid? FindFilterableDataGridInSubtree(DependencyObject root)
+    {
+        if (root is DataGrid grid && DataGridColumnFilterBehavior.GetIsEnabled(grid))
+            return grid;
+
+        foreach (var child in LogicalTreeHelper.GetChildren(root))
+        {
+            if (child is DependencyObject dependencyObject)
+            {
+                var found = FindFilterableDataGridInSubtree(dependencyObject);
+                if (found is not null)
+                    return found;
+            }
+        }
+
+        return null;
     }
 
     private void OnClearClicked(object sender, RoutedEventArgs e)

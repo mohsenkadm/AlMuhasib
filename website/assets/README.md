@@ -8,8 +8,9 @@
 |-------|-----------|
 | `desktop-accounting.png` | تبويب المحاسبة + Hero |
 | `desktop-hotel.png` | تبويب الفندق |
-| `desktop-restaurant.png` | (اختياري) block المطعm |
-| `desktop-car.png` | تبويب عقود السيارات |
+| `desktop-restaurant.png` | (اختياري) block المطعم |
+| `desktop-car.png` | تبويب عقود السيارات + مؤقتاً تجارة السيارات |
+| `desktop-car-trade.png` | (اختياري مفضّل) تبويب تجارة السيارات — إن وُجد يُفضّل تحديث `screenshot` في locales-data |
 
 > يمكن أيضاً استخدام `desktop-dashboard.png` كاسم قديم — يُفضّل `desktop-accounting.png`.
 

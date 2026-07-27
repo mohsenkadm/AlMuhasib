@@ -5,6 +5,7 @@ public class InvoiceItem : BaseEntity
 {
     public int InvoiceId { get; set; }
     public int? ProductId { get; set; }
+    public int? PricingTypeId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
@@ -16,4 +17,5 @@ public class InvoiceItem : BaseEntity
     // Navigation
     public Invoice Invoice { get; set; } = null!;
     public Product? Product { get; set; }
+    public PricingType? PricingType { get; set; }
 }

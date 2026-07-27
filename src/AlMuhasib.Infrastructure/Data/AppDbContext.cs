@@ -58,6 +58,9 @@ public class AppDbContext : DbContext
     public DbSet<ProductBatch> ProductBatches => Set<ProductBatch>();
     public DbSet<ProductSerial> ProductSerials => Set<ProductSerial>();
     public DbSet<UserLoginLog> UserLoginLogs => Set<UserLoginLog>();
+    public DbSet<PricingType> PricingTypes => Set<PricingType>();
+    public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
+    public DbSet<BusinessSettings> BusinessSettings => Set<BusinessSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -129,7 +132,16 @@ public class AppDbContext : DbContext
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = currentUser;
                     if (userId.HasValue)
-                        auditEntries.Add(new AuditEntry(entry, AuditAction.Edit, userId.Value));
+                    {
+                        var isDeletedProp = entry.Property(nameof(BaseEntity.IsDeleted));
+                        var becameDeleted = isDeletedProp.IsModified
+                            && isDeletedProp.OriginalValue is false
+                            && isDeletedProp.CurrentValue is true;
+                        auditEntries.Add(new AuditEntry(
+                            entry,
+                            becameDeleted ? AuditAction.Delete : AuditAction.Edit,
+                            userId.Value));
+                    }
                     break;
 
                 case EntityState.Deleted:

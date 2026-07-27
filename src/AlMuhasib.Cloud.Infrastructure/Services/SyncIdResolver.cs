@@ -44,8 +44,14 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveExpenseTypeAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.ExpenseTypes, syncId, ct);
 
+    public async Task<int?> ResolvePricingTypeAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.PricingTypes, syncId, ct);
+
     public async Task<int?> ResolveInvoiceAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.Invoices, syncId, ct);
+
+    public async Task<int?> ResolveWarehouseTransferAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.WarehouseTransfers, syncId, ct);
 
     public async Task<int?> ResolveInstallmentPlanAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.InstallmentPlans, syncId, ct);
@@ -100,6 +106,9 @@ public sealed class SyncIdResolver
 
     public async Task<int?> ResolveCarSaleContractAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.CarSaleContracts, syncId, ct);
+
+    public async Task<int?> ResolveCarTradeTransactionAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.CarTradeTransactions, syncId, ct);
 
     public async Task<int> ResolveTransferAccountAsync(TransferAccountType type, Guid syncId, CancellationToken ct) =>
         type switch

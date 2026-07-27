@@ -21,6 +21,7 @@ public interface ICashBankService
 
     // ── Vouchers ─────────────────────────────────────────
     Task<Voucher> CreateVoucherAsync(Voucher voucher);
+    Task DeleteVoucherAsync(int id);
     Task<string> GetNextVoucherNumberAsync(VoucherType type);
     Task<(IEnumerable<Voucher> Items, int TotalCount)> GetPagedVouchersAsync(
         int page, int pageSize, VoucherType? type = null, DateTime? fromDate = null,

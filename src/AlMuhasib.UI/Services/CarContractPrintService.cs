@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using AlMuhasib.Core.Entities.Car;
@@ -14,6 +15,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
     private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
     private static readonly Brush HeaderBg = new SolidColorBrush(Color.FromRgb(0xD9, 0xD9, 0xD9));
     private static readonly Brush LightBg = new SolidColorBrush(Color.FromRgb(0xF7, 0xF7, 0xF7));
+    private static readonly Brush TermsTitleBg = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
 
     public void PrintContract(CarSaleContract contract, int copies = 5)
     {
@@ -32,9 +34,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12,
+            FontSize = 12.5,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(36, 20, 36, 28)
+            PagePadding = new Thickness(28, 10, 28, 40)
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
@@ -44,7 +46,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         doc.Blocks.Add(BuildDetailsRow(contract));
         doc.Blocks.Add(BuildNotesRow(contract));
         doc.Blocks.Add(BuildTermsBlock());
-        doc.Blocks.Add(BuildSignaturesRow());
+        doc.Blocks.Add(BuildSignaturesRow(contract));
 
         return doc;
     }
@@ -62,15 +64,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(6, 4, 6, 4)
+            Padding = new Thickness(4, 2, 4, 2)
         };
 
         var titleCell = new TableCell(new Paragraph(new Run("عقد بيع وشراء"))
         {
-            FontSize = 20,
+            FontSize = 19,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 8, 0, 8)
+            Margin = new Thickness(0, 4, 0, 4)
         })
         {
             BorderBrush = BorderBrush,
@@ -85,7 +87,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(6, 4, 6, 4),
+            Padding = new Thickness(4, 2, 4, 2),
             TextAlignment = TextAlignment.Left
         };
 
@@ -94,7 +96,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         row.Cells.Add(dateCell);
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildPartiesRow(CarSaleContract contract)
@@ -118,11 +120,11 @@ public sealed class CarContractPrintService : ICarContractPrintService
         ]);
 
         var row = new TableRow();
-        row.Cells.Add(WrapCell(sellerBox, padding: new Thickness(0, 0, 6, 0)));
-        row.Cells.Add(WrapCell(buyerBox, padding: new Thickness(6, 0, 0, 0)));
+        row.Cells.Add(WrapCell(sellerBox, padding: new Thickness(0, 0, 4, 0)));
+        row.Cells.Add(WrapCell(buyerBox, padding: new Thickness(4, 0, 0, 0)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildDetailsRow(CarSaleContract contract)
@@ -142,18 +144,18 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var moneyBlock = CreateStackedFieldBlock([
             SectionLabel("العنوان"),
             FieldLine("العنوان", contract.AnnualOwnerAddress),
-            FieldLine("سعر السيارة", FormatMoney(contract.CarPrice)),
-            FieldLine("السعر كتابة", contract.CarPriceInWords),
+            FieldLine("سعر السيارة", FormatContractPrice(contract)),
+            FieldLine("السعر كتابة", FormatContractPriceInWords(contract)),
             FieldLine("المبلغ الواصل", FormatMoney(contract.AmountReceived)),
-            FieldLine("المتبقي", FormatMoney(contract.RemainingAmount))
+            FieldLine("المتبقي", FormatContractRemaining(contract))
         ]);
 
         var row = new TableRow();
-        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(10, 8, 16, 8)));
-        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(16, 8, 10, 8)));
+        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(8, 5, 12, 5)));
+        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(12, 5, 8, 5)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 10));
+        return WrapBlock(table, new Thickness(0, 0, 0, 6));
     }
 
     private static Block BuildNotesRow(CarSaleContract contract)
@@ -164,37 +166,69 @@ public sealed class CarContractPrintService : ICarContractPrintService
 
     private static Block BuildTermsBlock()
     {
-        var section = new Section
+        var body = new Section
         {
-            Margin = new Thickness(0, 8, 0, 12),
+            Margin = new Thickness(0),
             FlowDirection = FlowDirection.RightToLeft
         };
 
-        section.Blocks.Add(new Paragraph(new Run(CarContractPrintTerms.Title))
+        for (var i = 0; i < CarContractPrintTerms.Clauses.Length; i++)
         {
-            FontWeight = FontWeights.Bold,
-            FontSize = 13,
-            TextAlignment = TextAlignment.Center,
-            FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Thickness(0, 0, 0, 8)
-        });
-
-        foreach (var clause in CarContractPrintTerms.Clauses)
-        {
-            section.Blocks.Add(new Paragraph(new Run(clause))
+            var paragraph = new Paragraph
             {
-                FontSize = 10.5,
-                TextAlignment = TextAlignment.Left,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Justify,
                 FlowDirection = FlowDirection.RightToLeft,
-                LineHeight = 20,
+                LineHeight = 19,
                 Margin = new Thickness(0, 0, 0, 6)
+            };
+            paragraph.Inlines.Add(new Run($"{i + 1}. ")
+            {
+                FontWeight = FontWeights.ExtraBold,
+                FontSize = 12.5
             });
+            paragraph.Inlines.Add(new Run(CarContractPrintTerms.Clauses[i])
+            {
+                FontWeight = FontWeights.Bold
+            });
+            body.Blocks.Add(paragraph);
         }
 
-        return section;
+        var titleCell = new TableCell(new Paragraph(new Run(CarContractPrintTerms.Title))
+        {
+            FontWeight = FontWeights.ExtraBold,
+            FontSize = 14.5,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 2, 0, 2)
+        })
+        {
+            Background = TermsTitleBg,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(1, 1, 1, 0),
+            Padding = new Thickness(6, 6, 6, 6)
+        };
+
+        var bodyCell = new TableCell(body)
+        {
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(1),
+            Background = LightBg,
+            Padding = new Thickness(10, 8, 10, 8)
+        };
+
+        var table = CreateTable(1, 0);
+        var titleRow = new TableRow();
+        titleRow.Cells.Add(titleCell);
+        var bodyRow = new TableRow();
+        bodyRow.Cells.Add(bodyCell);
+        table.RowGroups[0].Rows.Add(titleRow);
+        table.RowGroups[0].Rows.Add(bodyRow);
+
+        return WrapBlock(table, new Thickness(0, 6, 0, 0));
     }
 
-    private static Block BuildSignaturesRow()
+    private static Block BuildSignaturesRow(CarSaleContract contract)
     {
         var table = CreateTable(4, 1, [1, 1, 1, 1]);
         var labels = new[]
@@ -204,24 +238,32 @@ public sealed class CarContractPrintService : ICarContractPrintService
             "الشاهد",
             "توقيع الطرف الثاني المشتري"
         };
+        var names = new[]
+        {
+            contract.SellerName,
+            contract.WitnessOneName,
+            contract.WitnessTwoName,
+            contract.BuyerName
+        };
 
         var row = new TableRow();
-        foreach (var label in labels)
+        for (var i = 0; i < labels.Length; i++)
         {
-            row.Cells.Add(new TableCell(new BlockUIContainer(CreateSignatureBlock(label)))
+            row.Cells.Add(new TableCell(new BlockUIContainer(CreateSignatureBlock(labels[i], names[i])))
             {
                 BorderBrush = BorderBrush,
                 BorderThickness = new Thickness(0.5),
-                Padding = new Thickness(6, 8, 6, 8),
+                Padding = new Thickness(4, 5, 4, 5),
                 TextAlignment = TextAlignment.Center
             });
         }
 
         table.RowGroups[0].Rows.Add(row);
-        return WrapBlock(table, new Thickness(0, 16, 0, 0));
+        // Gap between terms and signature boxes.
+        return WrapBlock(table, new Thickness(0, 36, 0, 0));
     }
 
-    private static UIElement CreateSignatureBlock(string label)
+    private static UIElement CreateSignatureBlock(string label, string? name)
     {
         var panel = new System.Windows.Controls.StackPanel
         {
@@ -231,16 +273,31 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             Text = label,
             FontWeight = FontWeights.SemiBold,
+            FontSize = 11.5,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 4)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(name) ? Dots(18) : name.Trim(),
+            FontSize = 11.5,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
             FontSize = 11,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 28)
+            Margin = new Thickness(0, 0, 0, 16)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Height = 1,
-            Width = 120
+            Width = 120,
+            Margin = new Thickness(0, 0, 0, 2)
         });
         return panel;
     }
@@ -277,15 +334,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(title))
         {
             FontWeight = FontWeights.Bold,
-            FontSize = 13,
+            FontSize = 13.5,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 2)
+            Margin = new Thickness(0, 1, 0, 1)
         })
         {
             Background = HeaderBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
-            Padding = new Thickness(4, 6, 4, 6)
+            Padding = new Thickness(3, 5, 3, 5)
         });
         headerTable.RowGroups[0].Rows.Add(headerRow);
         section.Blocks.Add(headerTable);
@@ -301,7 +358,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Background = LightBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 0, 1, 1),
-            Padding = new Thickness(10, 8, 10, 10)
+            Padding = new Thickness(8, 5, 8, 6)
         });
         bodyTable.RowGroups[0].Rows.Add(bodyRow);
         section.Blocks.Add(bodyTable);
@@ -320,9 +377,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
     private static Paragraph SectionLabel(string text) => new(new Run(text))
     {
         FontWeight = FontWeights.Bold,
-        FontSize = 12,
+        FontSize = 12.5,
         TextAlignment = TextAlignment.Center,
-        Margin = new Thickness(0, 0, 0, 6)
+        Margin = new Thickness(0, 0, 0, 4)
     };
 
     private static Paragraph FieldLine(
@@ -333,7 +390,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         bool fullWidth = false)
     {
         var display = string.IsNullOrWhiteSpace(value) ? Dots(fullWidth ? 64 : 28) : value.Trim();
-        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 5), LineHeight = 18 };
+        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 3), LineHeight = 17 };
 
         if (!string.IsNullOrWhiteSpace(label))
         {
@@ -346,7 +403,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         paragraph.Inlines.Add(new Run(display)
         {
             FontWeight = boldValue ? FontWeights.Bold : FontWeights.Normal,
-            FontSize = boldValue ? 13 : 12
+            FontSize = boldValue ? 13.5 : 12.5
         });
 
         if (centerValue)
@@ -388,7 +445,16 @@ public sealed class CarContractPrintService : ICarContractPrintService
         date.HasValue ? date.Value.ToString("yyyy/MM/dd", ArabicCulture) : string.Empty;
 
     private static string FormatMoney(decimal amount) =>
-        amount.ToString("N0", ArabicCulture);
+        $"{amount.ToString("N0", ArabicCulture)} دولار";
+
+    private static string FormatContractPrice(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : FormatMoney(contract.CarPrice);
+
+    private static string FormatContractPriceInWords(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : contract.CarPriceInWords;
+
+    private static string FormatContractRemaining(CarSaleContract contract) =>
+        contract.IsAgreedPrice ? "المبلغ المتفق عليه" : FormatMoney(contract.RemainingAmount);
 
     private static string Dots(int count) => new('.', count);
 }

@@ -289,6 +289,89 @@ public class CashBankService : ICashBankService
         }
     }
 
+    public async Task DeleteVoucherAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var voucher = await context.Vouchers
+                .FirstOrDefaultAsync(v => v.Id == id)
+                ?? throw new InvalidOperationException("السند غير موجود");
+
+            if (voucher.IsDeleted)
+                return;
+
+            var username = _currentUserService.Username;
+
+            switch (voucher.VoucherType)
+            {
+                case VoucherType.Receipt:
+                case VoucherType.DebtReceipt:
+                    await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
+                    break;
+
+                case VoucherType.Payment:
+                    await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
+                    break;
+
+                case VoucherType.BankReceipt:
+                    if (!voucher.BankAccountId.HasValue)
+                        throw new InvalidOperationException("السند المصرفي بدون مصرف مرتبط");
+                    var netAmount = voucher.Amount - voucher.BankFees;
+                    await ValidateAndDeductCashBox(context, voucher.CashBoxId, netAmount, username);
+                    await AdjustBankBalance(context, voucher.BankAccountId.Value, voucher.Amount, username);
+                    break;
+
+                case VoucherType.InvestorDeposit:
+                    if (!voucher.InvestorId.HasValue)
+                        throw new InvalidOperationException("سند الإيداع بدون مستثمر مرتبط");
+                    await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
+                    await AdjustInvestorDeposit(context, voucher.InvestorId.Value, -voucher.Amount, username);
+                    await CreateInvestorTransaction(context, voucher.InvestorId.Value,
+                        InvestorTransactionType.Withdrawal, voucher.Amount,
+                        $"عكس حذف سند {voucher.VoucherNumber}", username);
+                    break;
+
+                case VoucherType.InvestorWithdrawal:
+                    if (!voucher.InvestorId.HasValue)
+                        throw new InvalidOperationException("سند السحب بدون مستثمر مرتبط");
+                    await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
+                    await AdjustInvestorDeposit(context, voucher.InvestorId.Value, voucher.Amount, username);
+                    await CreateInvestorTransaction(context, voucher.InvestorId.Value,
+                        InvestorTransactionType.Deposit, voucher.Amount,
+                        $"عكس حذف سند {voucher.VoucherNumber}", username);
+                    break;
+            }
+
+            voucher.MarkSoftDeleted(username);
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Delete,
+                    EntityName = "Voucher",
+                    EntityId = voucher.Id,
+                    OldValues = $"سند {GetVoucherTypeName(voucher.VoucherType)}: {voucher.VoucherNumber}, المبلغ: {voucher.Amount:N0}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<string> GetNextVoucherNumberAsync(VoucherType type)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -427,6 +510,15 @@ public class CashBankService : ICashBankService
         if (bank.Balance < amount)
             throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ ({amount:N0})");
         bank.Balance -= amount;
+        bank.UpdatedBy = username;
+        bank.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static async Task AdjustBankBalance(AppDbContext context, int bankAccountId, decimal amount, string username)
+    {
+        var bank = await context.BankAccounts.FindAsync(bankAccountId)
+            ?? throw new InvalidOperationException("المصرف غير موجود");
+        bank.Balance += amount;
         bank.UpdatedBy = username;
         bank.UpdatedAt = DateTime.UtcNow;
     }

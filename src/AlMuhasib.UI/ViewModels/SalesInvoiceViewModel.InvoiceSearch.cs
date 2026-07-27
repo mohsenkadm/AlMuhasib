@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Threading;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -186,6 +187,12 @@ public partial class SalesInvoiceViewModel
             UnwireItemRow(row);
         Items.Clear();
 
+        // استخرج تسميات الحقول المخصصة من أول بند يملك JSON (إن وُجدت)
+        var firstCustomJson = invoice.Items.Select(i => i.CustomFieldsJson)
+            .FirstOrDefault(j => !string.IsNullOrWhiteSpace(j));
+        if (!string.IsNullOrWhiteSpace(firstCustomJson))
+            RestoreCustomFieldHeadersFromJson(firstCustomJson);
+
         foreach (var item in invoice.Items)
         {
             var row = new InvoiceItemRow
@@ -195,8 +202,11 @@ public partial class SalesInvoiceViewModel
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
             };
+            ApplyActiveLabelsToRow(row);
+            InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson, ActiveCustomFieldLabels);
             WireItemRow(row);
             Items.Add(row);
+            _ = LoadRowFeatureDataAsync(row);
         }
 
         if (Items.Count == 0)

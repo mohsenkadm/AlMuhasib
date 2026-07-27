@@ -8,6 +8,7 @@ class HotelGuestsController extends GetxController {
   final isLoading = true.obs;
   final error = Rxn<Object>();
   final page = Rxn<HotelGuestPage>();
+  final items = <HotelGuest>[].obs;
 
   @override
   void onInit() {
@@ -28,6 +29,7 @@ class HotelGuestsController extends GetxController {
         search: search.value,
         pageSize: 50,
       );
+      items.assignAll(page.value?.items ?? []);
     } catch (e) {
       error.value = e;
     } finally {
