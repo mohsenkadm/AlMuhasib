@@ -1357,6 +1357,9 @@
                         <DataTemplate DataType="{x:Type vm:MinimumQuantityReportViewModel}">
                             <views:MinimumQuantityReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExpiryReportViewModel}">
+                            <views:ExpiryReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InventoryReplenishmentReportViewModel}">
                             <views:InventoryReplenishmentReportView />
                         </DataTemplate>

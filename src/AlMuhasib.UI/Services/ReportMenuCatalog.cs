@@ -41,6 +41,7 @@ public static class ReportMenuCatalog
             ("تقرير المخازن", PackIconKind.Warehouse, typeof(WarehouseReportViewModel), ScreenPermissionRegistry.Reports),
             ("صحة المخزون", PackIconKind.PackageVariant, typeof(StockHealthReportViewModel), ScreenPermissionRegistry.Reports),
             ("كميات الحد الأدنى", PackIconKind.AlertDecagramOutline, typeof(MinimumQuantityReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقرير الصلاحية", PackIconKind.CalendarClock, typeof(ExpiryReportViewModel), ScreenPermissionRegistry.Reports),
             ("احتياج المخزون", PackIconKind.PackageVariantClosed, typeof(InventoryReplenishmentReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير المصاريف", PackIconKind.CashMinus, typeof(ExpensesReportViewModel), ScreenPermissionRegistry.Reports),
             ("الواردات والمصروفات", PackIconKind.SwapHorizontal, typeof(IncomeExpenseReportViewModel), ScreenPermissionRegistry.Reports),

@@ -1721,6 +1721,21 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
         };
     }
 
+    public Task<ExpiryReportResult> GetExpiryReportAsync(
+        int? warehouseId = null,
+        int? productId = null,
+        string? productSearch = null,
+        DateTime? expiryFrom = null,
+        DateTime? expiryTo = null,
+        ExpiryStatusFilter statusFilter = ExpiryStatusFilter.All,
+        bool hideZeroQuantity = true,
+        int nearExpiryCriticalDays = 30,
+        int nearExpiryWarningDays = 90)
+    {
+        // تتبع دفعات الصلاحية محلي على سطح المكتب وغير متزامن مع السحابة حالياً
+        return Task.FromResult(new ExpiryReportResult());
+    }
+
     private async Task<InventoryReplenishmentRow?> BuildReplenishmentRowAsync(
         int productId,
         int warehouseId,

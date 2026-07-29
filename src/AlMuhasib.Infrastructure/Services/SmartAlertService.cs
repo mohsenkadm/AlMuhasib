@@ -3,17 +3,24 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AlMuhasib.Infrastructure.Services;
 
 public class SmartAlertService : ISmartAlertService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IServiceProvider _serviceProvider;
     private const decimal LowStockThreshold = 5m;
+    private const int NearExpiryCriticalDays = 30;
+    private const int NearExpiryWarningDays = 90;
 
-    public SmartAlertService(IDbContextFactory<AppDbContext> contextFactory)
+    public SmartAlertService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        IServiceProvider serviceProvider)
     {
         _contextFactory = contextFactory;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<SmartAlertSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
@@ -181,10 +188,88 @@ public class SmartAlertService : ISmartAlertService
             });
         }
 
+        await AppendExpiryAlertsAsync(context, today, alerts, tasks, cancellationToken);
+
         return new SmartAlertSummary
         {
             Alerts = alerts,
             DailyTasks = tasks.OrderBy(t => t.Priority).ToList()
         };
+    }
+
+    private async Task AppendExpiryAlertsAsync(
+        AppDbContext context,
+        DateTime today,
+        List<SmartAlert> alerts,
+        List<DailyTaskItem> tasks,
+        CancellationToken cancellationToken)
+    {
+        var featureFlags = _serviceProvider.GetService<IFeatureFlagService>();
+        if (featureFlags is null || !featureFlags.ExpiryTracking)
+            return;
+
+        var criticalCutoff = today.AddDays(NearExpiryCriticalDays);
+        var warningCutoff = today.AddDays(NearExpiryWarningDays);
+
+        var batches = await context.ProductBatches.AsNoTracking()
+            .Where(b => b.Quantity > 0 && b.ExpiryDate != null)
+            .Select(b => new { b.ExpiryDate, b.Quantity })
+            .ToListAsync(cancellationToken);
+
+        var expiredCount = batches.Count(b => b.ExpiryDate!.Value.Date < today);
+        var nearCriticalCount = batches.Count(b =>
+            b.ExpiryDate!.Value.Date >= today && b.ExpiryDate.Value.Date <= criticalCutoff);
+        var nearWarningCount = batches.Count(b =>
+            b.ExpiryDate!.Value.Date > criticalCutoff && b.ExpiryDate.Value.Date <= warningCutoff);
+
+        if (expiredCount > 0)
+        {
+            alerts.Add(new SmartAlert
+            {
+                Title = "منتجات منتهية الصلاحية",
+                Message = $"{expiredCount} دفعة منتهية وما زالت في المخزون",
+                Severity = SmartAlertSeverity.Critical,
+                Action = SmartAlertAction.OpenExpiryReport,
+                Count = expiredCount
+            });
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "مراجعة المنتجات المنتهية",
+                Description = $"{expiredCount} دفعة",
+                Action = SmartAlertAction.OpenExpiryReport,
+                Priority = 2
+            });
+        }
+
+        if (nearCriticalCount > 0)
+        {
+            alerts.Add(new SmartAlert
+            {
+                Title = "صلاحية قريبة (30 يوماً)",
+                Message = $"{nearCriticalCount} دفعة تنتهي خلال {NearExpiryCriticalDays} يوماً",
+                Severity = SmartAlertSeverity.Critical,
+                Action = SmartAlertAction.OpenExpiryReport,
+                Count = nearCriticalCount
+            });
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "مراجعة الصلاحية القريبة",
+                Description = $"{nearCriticalCount} دفعة",
+                Action = SmartAlertAction.OpenExpiryReport,
+                Priority = 3
+            });
+        }
+
+        if (nearWarningCount > 0)
+        {
+            alerts.Add(new SmartAlert
+            {
+                Title = "صلاحية خلال 90 يوماً",
+                Message = $"{nearWarningCount} دفعة تنتهي خلال {NearExpiryWarningDays} يوماً",
+                Severity = SmartAlertSeverity.Warning,
+                Action = SmartAlertAction.OpenExpiryReport,
+                Count = nearWarningCount
+            });
+        }
     }
 }

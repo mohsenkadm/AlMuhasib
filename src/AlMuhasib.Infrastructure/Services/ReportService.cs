@@ -1722,6 +1722,131 @@ public class ReportService : IReportService
         };
     }
 
+    public async Task<ExpiryReportResult> GetExpiryReportAsync(
+        int? warehouseId = null,
+        int? productId = null,
+        string? productSearch = null,
+        DateTime? expiryFrom = null,
+        DateTime? expiryTo = null,
+        ExpiryStatusFilter statusFilter = ExpiryStatusFilter.All,
+        bool hideZeroQuantity = true,
+        int nearExpiryCriticalDays = 30,
+        int nearExpiryWarningDays = 90)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var today = DateTime.Today;
+        var criticalDays = Math.Max(1, nearExpiryCriticalDays);
+        var warningDays = Math.Max(criticalDays, nearExpiryWarningDays);
+        var criticalCutoff = today.AddDays(criticalDays);
+        var warningCutoff = today.AddDays(warningDays);
+
+        var q = context.ProductBatches.AsNoTracking()
+            .Include(b => b.Product)
+            .Include(b => b.Warehouse)
+            .AsQueryable();
+
+        if (hideZeroQuantity)
+            q = q.Where(b => b.Quantity > 0);
+
+        if (warehouseId.HasValue)
+            q = q.Where(b => b.WarehouseId == warehouseId.Value);
+
+        if (productId.HasValue)
+            q = q.Where(b => b.ProductId == productId.Value);
+
+        if (!string.IsNullOrWhiteSpace(productSearch))
+        {
+            var term = productSearch.Trim();
+            q = q.Where(b =>
+                (b.Product != null && b.Product.Name.Contains(term))
+                || (b.Product != null && b.Product.Barcode != null && b.Product.Barcode.Contains(term))
+                || (b.BatchNumber != null && b.BatchNumber.Contains(term)));
+        }
+
+        if (expiryFrom.HasValue)
+            q = q.Where(b => b.ExpiryDate != null && b.ExpiryDate >= expiryFrom.Value.Date);
+
+        if (expiryTo.HasValue)
+            q = q.Where(b => b.ExpiryDate != null && b.ExpiryDate <= expiryTo.Value.Date);
+
+        var batches = await q.ToListAsync();
+        var rows = new List<ExpiryReportRow>();
+
+        foreach (var batch in batches)
+        {
+            var status = ResolveExpiryStatus(batch.ExpiryDate, today, criticalCutoff, warningCutoff);
+            if (!MatchesExpiryFilter(status, statusFilter))
+                continue;
+
+            int? daysRemaining = batch.ExpiryDate.HasValue
+                ? (batch.ExpiryDate.Value.Date - today).Days
+                : null;
+
+            rows.Add(new ExpiryReportRow
+            {
+                ProductId = batch.ProductId,
+                ProductName = batch.Product?.Name ?? "—",
+                ProductBarcode = batch.Product?.Barcode,
+                WarehouseName = batch.Warehouse?.Name ?? "—",
+                BatchNumber = batch.BatchNumber,
+                ExpiryDate = batch.ExpiryDate,
+                Quantity = batch.Quantity,
+                DaysRemaining = daysRemaining,
+                Status = status
+            });
+        }
+
+        rows = rows
+            .OrderBy(r => r.ExpiryDate ?? DateTime.MaxValue)
+            .ThenBy(r => r.ProductName)
+            .ThenBy(r => r.BatchNumber)
+            .ToList();
+
+        var expired = rows.Where(r => r.Status == ExpiryBatchStatus.Expired).ToList();
+        var critical = rows.Where(r => r.Status == ExpiryBatchStatus.Critical).ToList();
+        var warning = rows.Where(r => r.Status == ExpiryBatchStatus.Warning).ToList();
+
+        return new ExpiryReportResult
+        {
+            ExpiredCount = expired.Count,
+            CriticalCount = critical.Count,
+            WarningCount = warning.Count,
+            AffectedQuantity = expired.Sum(r => r.Quantity)
+                               + critical.Sum(r => r.Quantity)
+                               + warning.Sum(r => r.Quantity),
+            Rows = rows
+        };
+    }
+
+    private static ExpiryBatchStatus ResolveExpiryStatus(
+        DateTime? expiryDate,
+        DateTime today,
+        DateTime criticalCutoff,
+        DateTime warningCutoff)
+    {
+        if (!expiryDate.HasValue)
+            return ExpiryBatchStatus.NoExpiry;
+
+        var date = expiryDate.Value.Date;
+        if (date < today)
+            return ExpiryBatchStatus.Expired;
+        if (date <= criticalCutoff)
+            return ExpiryBatchStatus.Critical;
+        if (date <= warningCutoff)
+            return ExpiryBatchStatus.Warning;
+        return ExpiryBatchStatus.Valid;
+    }
+
+    private static bool MatchesExpiryFilter(ExpiryBatchStatus status, ExpiryStatusFilter filter) => filter switch
+    {
+        ExpiryStatusFilter.Expired => status == ExpiryBatchStatus.Expired,
+        ExpiryStatusFilter.Within30Days => status == ExpiryBatchStatus.Critical,
+        ExpiryStatusFilter.Within90Days =>
+            status is ExpiryBatchStatus.Critical or ExpiryBatchStatus.Warning,
+        ExpiryStatusFilter.Valid => status is ExpiryBatchStatus.Valid or ExpiryBatchStatus.NoExpiry,
+        _ => true
+    };
+
     private static async Task<InventoryReplenishmentRow?> BuildReplenishmentRowAsync(
         AppDbContext context,
         int productId,

@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models.Inventory;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,5 +79,70 @@ public class ProductBatchService : IProductBatchService
             .OrderBy(b => b.ExpiryDate ?? DateTime.MaxValue)
             .ThenBy(b => b.Id)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<IReadOnlyList<BatchAllocation>> AllocateFefoAsync(int productId, int warehouseId, decimal requiredQty)
+    {
+        if (requiredQty <= 0)
+            return [];
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var batches = await context.ProductBatches.AsNoTracking()
+            .Where(b => b.ProductId == productId && b.WarehouseId == warehouseId && b.Quantity > 0)
+            .OrderBy(b => b.ExpiryDate ?? DateTime.MaxValue)
+            .ThenBy(b => b.Id)
+            .ToListAsync();
+
+        var remaining = requiredQty;
+        var allocations = new List<BatchAllocation>();
+
+        foreach (var batch in batches)
+        {
+            if (remaining <= 0)
+                break;
+
+            var take = Math.Min(batch.Quantity, remaining);
+            if (take <= 0)
+                continue;
+
+            allocations.Add(new BatchAllocation(batch.Id, take));
+            remaining -= take;
+        }
+
+        if (remaining > 0)
+        {
+            var available = requiredQty - remaining;
+            throw new InvalidOperationException(
+                $"كمية الدفعات غير كافية للمنتج (مطلوب {requiredQty:N0}، متاح من الدفعات {available:N0})");
+        }
+
+        return allocations;
+    }
+
+    public async Task DeductAllocationsAsync(IEnumerable<BatchAllocation> allocations)
+    {
+        var list = allocations.Where(a => a.Quantity > 0).ToList();
+        if (list.Count == 0)
+            return;
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var ids = list.Select(a => a.BatchId).Distinct().ToList();
+        var batches = await context.ProductBatches
+            .Where(b => ids.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id);
+
+        foreach (var allocation in list)
+        {
+            if (!batches.TryGetValue(allocation.BatchId, out var batch))
+                throw new InvalidOperationException($"الدفعة غير موجودة (#{allocation.BatchId})");
+
+            if (batch.Quantity < allocation.Quantity)
+                throw new InvalidOperationException(
+                    $"كمية الدفعة غير كافية (متاح {batch.Quantity:N0}، مطلوب {allocation.Quantity:N0})");
+
+            batch.Quantity -= allocation.Quantity;
+        }
+
+        await context.SaveChangesAsync();
     }
 }

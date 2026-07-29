@@ -17,6 +17,7 @@ public enum SmartAlertAction
     OpenProducts,
     OpenWarehouseReport,
     OpenStockHealthReport,
+    OpenExpiryReport,
     OpenVouchers,
     OpenSalesInvoiceQueue,
     OpenPurchaseInvoiceQueue,

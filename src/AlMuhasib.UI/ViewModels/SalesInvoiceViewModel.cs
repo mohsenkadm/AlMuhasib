@@ -640,6 +640,33 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                     return;
                 }
             }
+
+            if (!IsReturnMode && _featureFlags?.ExpiryTracking == true && _productBatchService is not null)
+            {
+                foreach (var item in validItems.Where(i => i.ProductId.HasValue))
+                {
+                    var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(item));
+                    if (stockQty <= 0) continue;
+
+                    try
+                    {
+                        if (item.BatchId is int batchId)
+                        {
+                            var selected = item.AvailableBatches.FirstOrDefault(b => b.Id == batchId);
+                            if (selected is not null && selected.Quantity >= stockQty)
+                                continue;
+                        }
+
+                        await _productBatchService.AllocateFefoAsync(
+                            item.ProductId!.Value, SelectedWarehouse.Id, stockQty);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        ErrorMessage = $"«{item.ItemName}»: {ex.Message}";
+                        return;
+                    }
+                }
+            }
         }
 
         IsBusy = true;

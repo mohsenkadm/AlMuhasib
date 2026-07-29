@@ -243,15 +243,40 @@ public partial class SalesInvoiceViewModel
             if (_featureFlags.ExpiryTracking && _productBatchService is not null && SelectedWarehouse is not null)
             {
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
+                if (stockQty <= 0)
+                    continue;
+
+                // مرتجع البيع: لا نخصم دفعات هنا (يُعالج لاحقاً عند إرجاع الدفعات)
+                if (IsReturnMode)
+                    continue;
+
                 if (row.BatchId is int batchId)
                 {
-                    await _productBatchService.DeductAsync(batchId, stockQty);
+                    var selected = row.AvailableBatches.FirstOrDefault(b => b.Id == batchId)
+                                   ?? (await _productBatchService.GetByProductAsync(productId, SelectedWarehouse.Id, inStockOnly: true))
+                                       .FirstOrDefault(b => b.Id == batchId);
+                    if (selected is not null && selected.Quantity >= stockQty)
+                    {
+                        await _productBatchService.DeductAsync(batchId, stockQty);
+                        continue;
+                    }
                 }
-                else
+
+                var allocations = await _productBatchService.AllocateFefoAsync(
+                    productId, SelectedWarehouse.Id, stockQty);
+                await _productBatchService.DeductAllocationsAsync(allocations);
+
+                var primary = allocations.FirstOrDefault();
+                if (primary is not null && row.BatchId is null)
                 {
-                    var fifo = await _productBatchService.FindFifoAsync(productId, SelectedWarehouse.Id, stockQty);
-                    if (fifo is not null)
-                        await _productBatchService.DeductAsync(fifo.Id, stockQty);
+                    row.BatchId = primary.BatchId;
+                    var batch = (await _productBatchService.GetByProductAsync(productId, SelectedWarehouse.Id))
+                        .FirstOrDefault(b => b.Id == primary.BatchId);
+                    if (batch is not null)
+                    {
+                        row.BatchNumber = batch.BatchNumber ?? string.Empty;
+                        row.ExpiryDate = batch.ExpiryDate;
+                    }
                 }
             }
 
