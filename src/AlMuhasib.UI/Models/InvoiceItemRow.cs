@@ -18,6 +18,44 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _pricingTypeName = string.Empty;
 
+    /// <summary>خيارات التسعير المتاحة للمنتج المحدد (عند تفعيل تسعير المنتجات).</summary>
+    public ObservableCollection<ProductPricingOption> AvailablePricingOptions { get; } = [];
+
+    [ObservableProperty]
+    private ProductPricingOption? _selectedPricingOption;
+
+    private bool _suppressPricingOptionApply;
+
+    partial void OnSelectedPricingOptionChanged(ProductPricingOption? value)
+    {
+        if (_suppressPricingOptionApply)
+            return;
+
+        if (value is null)
+        {
+            PricingTypeId = null;
+            PricingTypeName = string.Empty;
+            return;
+        }
+
+        PricingTypeId = value.PricingTypeId;
+        PricingTypeName = value.Name;
+        UnitPrice = value.Price;
+    }
+
+    /// <summary>تعيين خيار التسعير دون إعادة كتابة سعر الوحدة (مثلاً عند استعادة سطر موجود).</summary>
+    public void SetSelectedPricingOptionWithoutPrice(ProductPricingOption? option)
+    {
+        _suppressPricingOptionApply = true;
+        SelectedPricingOption = option;
+        if (option is not null)
+        {
+            PricingTypeId = option.PricingTypeId;
+            PricingTypeName = option.Name;
+        }
+        _suppressPricingOptionApply = false;
+    }
+
     [ObservableProperty]
     private string _itemName = string.Empty;
 

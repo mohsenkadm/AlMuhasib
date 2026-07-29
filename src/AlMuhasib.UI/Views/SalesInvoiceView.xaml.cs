@@ -22,6 +22,7 @@ public partial class SalesInvoiceView : UserControl
             ColUnit,
             ColBatch,
             expiry: null,
-            ColSerial);
+            ColSerial,
+            ColPricingType);
     }
 }
