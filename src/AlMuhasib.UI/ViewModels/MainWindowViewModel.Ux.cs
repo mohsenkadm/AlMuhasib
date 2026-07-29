@@ -455,6 +455,9 @@ public partial class MainWindowViewModel
             case SmartAlertAction.OpenStockHealthReport:
                 await OpenTabAsync(typeof(StockHealthReportViewModel), "صحة المخزون", PackIconKind.PackageVariant);
                 break;
+            case SmartAlertAction.OpenExpiryReport:
+                await OpenTabAsync(typeof(ExpiryReportViewModel), "تقرير الصلاحية", PackIconKind.CalendarClock);
+                break;
             case SmartAlertAction.OpenVouchers:
                 await OpenVouchersAsync(VoucherType.Receipt);
                 break;

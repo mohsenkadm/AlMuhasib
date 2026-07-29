@@ -250,6 +250,7 @@ public static class ScreenPermissionRegistry
         [typeof(IncomeExpenseReportViewModel)] = "Reports",
         [typeof(WarehouseReportViewModel)] = "Reports",
         [typeof(StockHealthReportViewModel)] = "Reports",
+        [typeof(ExpiryReportViewModel)] = "Reports",
         [typeof(InventoryReplenishmentReportViewModel)] = "Reports",
         [typeof(InvestorsReportViewModel)] = "Reports",
         [typeof(CashFlowReportViewModel)] = "Reports",
