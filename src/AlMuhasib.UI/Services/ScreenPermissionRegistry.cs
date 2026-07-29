@@ -16,6 +16,7 @@ public static class ScreenPermissionRegistry
     public const string SupervisoryReports = "SupervisoryReports";
     public const string BalanceSheet = "BalanceSheet";
     public const string NetworkConnection = "NetworkConnection";
+    public const string BarcodePriceCheck = "BarcodePriceCheck";
 
     private static SystemModuleRegistry? _registry;
 
@@ -129,6 +130,7 @@ public static class ScreenPermissionRegistry
         ("Categories", "تصنيفات المنتجات"),
         ("PricingTypes", "أنواع التسعير"),
         ("ProductPricing", "تسعير منتجات"),
+        (BarcodePriceCheck, "فحص السعر بالباركود"),
         ("Customers", "العملاء"),
         ("Suppliers", "الموردون"),
         ("PersonProfile", "ملف الشخص"),
@@ -216,6 +218,7 @@ public static class ScreenPermissionRegistry
         [typeof(PurchaseInvoiceViewModel)] = "PurchaseInvoice",
         [typeof(SalesInvoiceViewModel)] = "SaleInvoice",
         [typeof(PosQuickSaleViewModel)] = "SaleInvoice",
+        [typeof(BarcodePriceCheckViewModel)] = BarcodePriceCheck,
         [typeof(InstallmentInvoiceViewModel)] = "InstallmentInvoice",
         [typeof(CollectionDashboardViewModel)] = "Installments",
         [typeof(InstallmentsViewModel)] = "Installments",
@@ -288,6 +291,7 @@ public static class ScreenPermissionRegistry
         ["PersonProfile"] = typeof(PersonProfileViewModel),
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
+        [BarcodePriceCheck] = typeof(BarcodePriceCheckViewModel),
         ["InstallmentInvoice"] = typeof(InstallmentInvoiceViewModel),
         ["Installments"] = typeof(InstallmentsViewModel),
         ["OpeningInstallments"] = typeof(OpeningInstallmentBalanceViewModel),

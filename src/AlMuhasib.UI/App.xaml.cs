@@ -198,6 +198,7 @@ public partial class App : Application
         services.AddTransient<PurchaseInvoiceViewModel>();
         services.AddTransient<SalesInvoiceViewModel>();
         services.AddTransient<PosQuickSaleViewModel>();
+        services.AddTransient<BarcodePriceCheckViewModel>();
         services.AddTransient<InstallmentInvoiceViewModel>();
         services.AddTransient<InstallmentsViewModel>();
         services.AddTransient<OpeningInstallmentBalanceViewModel>();

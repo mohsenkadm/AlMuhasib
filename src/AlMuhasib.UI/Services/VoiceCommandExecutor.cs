@@ -103,6 +103,7 @@ public sealed class VoiceCommandExecutor
             nameof(BackupRestoreViewModel) => PackIconKind.BackupRestore,
             nameof(UsersViewModel) => PackIconKind.AccountCog,
             nameof(PosQuickSaleViewModel) => PackIconKind.PointOfSale,
+            nameof(BarcodePriceCheckViewModel) => PackIconKind.BarcodeScan,
             _ => PackIconKind.Application
         };
 }

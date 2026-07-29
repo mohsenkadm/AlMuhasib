@@ -15,6 +15,7 @@ public static class AccountingMenuBuilder
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
             Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
+            Item("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
 
             // كروبات تفتح نافذة جانبية مثل التقارير
             FlyoutGroup(
