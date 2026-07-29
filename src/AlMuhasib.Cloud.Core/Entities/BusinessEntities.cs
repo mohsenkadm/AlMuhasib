@@ -91,6 +91,8 @@ public class CloudWarehouseStock : CloudBaseEntity
     public decimal Quantity { get; set; }
     public decimal OpeningQuantity { get; set; }
     public decimal UnitCost { get; set; }
+    /// <summary>كمية الحد الأدنى للمنتج في هذا المخزن</summary>
+    public decimal MinQuantity { get; set; }
     public CloudWarehouse Warehouse { get; set; } = null!;
     public CloudProduct Product { get; set; } = null!;
 }

@@ -4765,6 +4765,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<decimal>("MinQuantity")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("OpeningQuantity")
                         .HasColumnType("decimal(18,2)");
 

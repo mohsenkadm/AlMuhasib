@@ -71,6 +71,12 @@ public interface IReportService
         decimal minimumStock,
         InventoryReplenishmentFilter filter = InventoryReplenishmentFilter.All);
 
+    Task<MinimumQuantityReportResult> GetMinimumQuantityReportAsync(
+        int? warehouseId,
+        int? categoryId,
+        MinimumQuantityFilter filter = MinimumQuantityFilter.All,
+        string? search = null);
+
     Task<ExpiryReportResult> GetExpiryReportAsync(
         int? warehouseId = null,
         int? productId = null,
@@ -804,6 +810,54 @@ public class InventoryReplenishmentRow
         InventoryReplenishmentStatus.Critical => "حرج",
         InventoryReplenishmentStatus.NeedsReorder => "يحتاج توريد",
         _ => "كافٍ"
+    };
+}
+
+public enum MinimumQuantityFilter
+{
+    All,
+    BelowMinimum,
+    AtMinimum,
+    AboveMinimum
+}
+
+public enum MinimumQuantityStatus
+{
+    BelowMinimum,
+    AtMinimum,
+    AboveMinimum
+}
+
+public class MinimumQuantityReportResult
+{
+    public int TotalItems { get; set; }
+    public int BelowMinimumCount { get; set; }
+    public int AtMinimumCount { get; set; }
+    public int AboveMinimumCount { get; set; }
+    public decimal TotalShortage { get; set; }
+    public List<MinimumQuantityRow> Rows { get; set; } = [];
+}
+
+public class MinimumQuantityRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
+    public string? Description { get; set; }
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public int WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public decimal CurrentQuantity { get; set; }
+    public decimal MinQuantity { get; set; }
+    public decimal Difference => CurrentQuantity - MinQuantity;
+    public MinimumQuantityStatus Status { get; set; }
+
+    public string StatusDisplay => Status switch
+    {
+        MinimumQuantityStatus.BelowMinimum => "تحت الحد",
+        MinimumQuantityStatus.AtMinimum => "مساوٍ للحد",
+        _ => "فوق الحد"
     };
 }
 

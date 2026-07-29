@@ -391,7 +391,7 @@ public partial class ProductsViewModel : ViewModelBase
 
     // ── Add / Edit Dialog ──────────────────────────────────
     [RelayCommand]
-    private void OpenAddDialog()
+    private async Task OpenAddDialog()
     {
         _editingProductId = null;
         IsEditMode = false;
@@ -402,6 +402,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditCategory = null;
         DialogError = string.Empty;
         ClearFeatureEditCollections();
+        await LoadMinQuantitiesForProductAsync(null);
         IsDialogOpen = true;
     }
 
@@ -419,6 +420,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         DialogError = string.Empty;
         await LoadFeatureDataForProductAsync(product.Id);
+        await LoadMinQuantitiesForProductAsync(product.Id);
         IsDialogOpen = true;
     }
 
@@ -452,6 +454,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.CategoryId = EditCategory.Id;
 
                 await _productService.UpdateAsync(product);
+                await SaveMinQuantitiesAsync(product.Id);
             }
             else
             {
@@ -467,7 +470,9 @@ public partial class ProductsViewModel : ViewModelBase
                 _editingProductId = created.Id;
                 IsEditMode = true;
                 DialogTitle = "تعديل المنتج";
+                await SaveMinQuantitiesAsync(created.Id);
                 await LoadFeatureDataForProductAsync(created.Id);
+                await LoadMinQuantitiesForProductAsync(created.Id);
                 BeautifulMessageDialog.ShowSuccess("تم حفظ المنتج — يمكنك الآن إضافة الوحدات/الدفعات/السيريالات إن كانت مفعّلة");
                 await LoadProductsAsync();
                 return;

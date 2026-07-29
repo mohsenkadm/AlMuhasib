@@ -238,6 +238,15 @@ public sealed class ReportsController : TenantApiControllerBase
             f.From, f.To, f.WarehouseId, minStock, f.InventoryReplenishmentFilter));
     }
 
+    [HttpGet("minimum-quantity")]
+    public async Task<IActionResult> MinimumQuantity([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetMinimumQuantityReportAsync(
+            f.WarehouseId, f.CategoryId, f.MinimumQuantityFilter, f.Search));
+    }
+
     // ── Financial ──────────────────────────────────────────────
 
     [HttpGet("investors")]

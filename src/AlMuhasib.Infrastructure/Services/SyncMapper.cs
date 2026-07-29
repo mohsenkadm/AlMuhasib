@@ -326,7 +326,7 @@ internal static class SyncMapper
         d.FooterImageData = p.FooterImageData; d.FooterImageContentType = p.FooterImageContentType;
         return d;
     }
-    private static WarehouseStockSyncDto MapWarehouseStock(WarehouseStock s, Dictionary<int, Guid> wh, Dictionary<int, Guid> pr) { var d = new WarehouseStockSyncDto(); CopyBase(s, d); d.WarehouseSyncId = wh[s.WarehouseId]; d.ProductSyncId = pr[s.ProductId]; d.Quantity = s.Quantity; d.OpeningQuantity = s.OpeningQuantity; d.UnitCost = s.UnitCost; return d; }
+    private static WarehouseStockSyncDto MapWarehouseStock(WarehouseStock s, Dictionary<int, Guid> wh, Dictionary<int, Guid> pr) { var d = new WarehouseStockSyncDto(); CopyBase(s, d); d.WarehouseSyncId = wh[s.WarehouseId]; d.ProductSyncId = pr[s.ProductId]; d.Quantity = s.Quantity; d.OpeningQuantity = s.OpeningQuantity; d.UnitCost = s.UnitCost; d.MinQuantity = s.MinQuantity; return d; }
     private static WarehouseTransferSyncDto MapWarehouseTransfer(WarehouseTransfer t, Dictionary<int, Guid> wh)
     {
         var d = new WarehouseTransferSyncDto();
@@ -555,7 +555,7 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.WarehouseStocks.Add(entity);
             ApplyBase(entity, dto); entity.WarehouseId = wId; entity.ProductId = pId;
-            entity.Quantity = dto.Quantity; entity.OpeningQuantity = dto.OpeningQuantity; entity.UnitCost = dto.UnitCost;
+            entity.Quantity = dto.Quantity; entity.OpeningQuantity = dto.OpeningQuantity; entity.UnitCost = dto.UnitCost; entity.MinQuantity = dto.MinQuantity;
         }
         await db.SaveChangesAsync(ct);
     }

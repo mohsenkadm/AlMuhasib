@@ -112,4 +112,5 @@ public sealed class WarehouseStockSyncDto : SyncDtoBase
     public decimal Quantity { get; set; }
     public decimal OpeningQuantity { get; set; }
     public decimal UnitCost { get; set; }
+    public decimal MinQuantity { get; set; }
 }

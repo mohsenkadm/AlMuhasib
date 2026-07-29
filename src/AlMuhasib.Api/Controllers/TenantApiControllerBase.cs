@@ -45,8 +45,11 @@ public abstract class TenantApiControllerBase : ControllerBase
             CashBoxId = await ResolveIdAsync("cashbox", filter.CashBoxSyncId, ct),
             ExpenseTypeId = await ResolveIdAsync("expensetype", filter.ExpenseTypeSyncId, ct),
             InvestorId = await ResolveIdAsync("investor", filter.InvestorSyncId, ct),
+            CategoryId = await ResolveIdAsync("category", filter.CategorySyncId, ct),
+            Search = filter.Search,
             StockHealthFilter = ParseStockHealthFilter(filter.StockHealthFilter),
-            InventoryReplenishmentFilter = ParseInventoryReplenishmentFilter(filter.InventoryReplenishmentFilter)
+            InventoryReplenishmentFilter = ParseInventoryReplenishmentFilter(filter.InventoryReplenishmentFilter),
+            MinimumQuantityFilter = ParseMinimumQuantityFilter(filter.MinimumQuantityFilter)
         };
     }
 
@@ -68,6 +71,15 @@ public abstract class TenantApiControllerBase : ControllerBase
             "needs" or "needsreplenishmentonly" => InventoryReplenishmentFilter.NeedsReplenishmentOnly,
             _ => InventoryReplenishmentFilter.All
         };
+
+    private static MinimumQuantityFilter ParseMinimumQuantityFilter(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "below" or "belowminimum" => MinimumQuantityFilter.BelowMinimum,
+            "at" or "atminimum" => MinimumQuantityFilter.AtMinimum,
+            "above" or "aboveminimum" => MinimumQuantityFilter.AboveMinimum,
+            _ => MinimumQuantityFilter.All
+        };
 }
 
 public sealed class ResolvedReportFilter
@@ -81,7 +93,9 @@ public sealed class ResolvedReportFilter
     public int? CashBoxId { get; init; }
     public int? ExpenseTypeId { get; init; }
     public int? InvestorId { get; init; }
+    public int? CategoryId { get; init; }
     public string? Status { get; init; }
+    public string? Search { get; init; }
     public int? TopCount { get; init; }
     public decimal? LowStockThreshold { get; init; }
     public int? DeadStockDays { get; init; }
@@ -89,4 +103,5 @@ public sealed class ResolvedReportFilter
     public int? MinDaysOverdue { get; init; }
     public StockHealthFilter StockHealthFilter { get; init; } = StockHealthFilter.All;
     public InventoryReplenishmentFilter InventoryReplenishmentFilter { get; init; } = InventoryReplenishmentFilter.All;
+    public MinimumQuantityFilter MinimumQuantityFilter { get; init; } = MinimumQuantityFilter.All;
 }

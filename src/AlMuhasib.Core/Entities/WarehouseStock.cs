@@ -10,6 +10,8 @@ public class WarehouseStock : BaseEntity
     public decimal OpeningQuantity { get; set; }
     /// <summary>كلفة شراء الوحدة للرصيد الافتتاحي</summary>
     public decimal UnitCost { get; set; }
+    /// <summary>كمية الحد الأدنى للمنتج في هذا المخزن</summary>
+    public decimal MinQuantity { get; set; }
 
     // Navigation
     public Warehouse Warehouse { get; set; } = null!;

@@ -73,6 +73,9 @@ public sealed class ReportFilterRequest
     public int? DeadStockDays { get; set; }
     public string? StockHealthFilter { get; set; }
     public string? InventoryReplenishmentFilter { get; set; }
+    public string? MinimumQuantityFilter { get; set; }
+    public Guid? CategorySyncId { get; set; }
+    public string? Search { get; set; }
     public DateTime? AsOfDate { get; set; }
     public int? MinDaysOverdue { get; set; }
 }

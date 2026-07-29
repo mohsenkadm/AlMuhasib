@@ -233,6 +233,7 @@ public partial class App : Application
         services.AddTransient<ProfitComparisonReportViewModel>();
         services.AddTransient<ProductMovementReportViewModel>();
         services.AddTransient<StockHealthReportViewModel>();
+        services.AddTransient<MinimumQuantityReportViewModel>();
         services.AddTransient<ExpiryReportViewModel>();
         services.AddTransient<InventoryReplenishmentReportViewModel>();
         services.AddTransient<DeletedInvoicesReportViewModel>();
