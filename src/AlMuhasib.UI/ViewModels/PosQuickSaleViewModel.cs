@@ -23,6 +23,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IFavoriteProductsService _favoriteProducts;
     private readonly ISoundService _sound;
     private readonly IProductPriceService _productPriceService;
+    private readonly IProductBatchService _productBatchService;
+    private readonly IFeatureFlagService _featureFlags;
     private readonly DispatcherTimer _searchDebounce;
 
     private List<Product> _allProducts = [];
@@ -62,7 +64,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IRecentActivityService recentActivity,
         IFavoriteProductsService favoriteProducts,
         ISoundService sound,
-        IProductPriceService productPriceService)
+        IProductPriceService productPriceService,
+        IProductBatchService productBatchService,
+        IFeatureFlagService featureFlags)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -72,6 +76,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _recentActivity = recentActivity;
         _favoriteProducts = favoriteProducts;
         _productPriceService = productPriceService;
+        _productBatchService = productBatchService;
+        _featureFlags = featureFlags;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
 
@@ -393,6 +399,23 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             }
         }
 
+        if (_featureFlags.ExpiryTracking)
+        {
+            foreach (var line in CartLines)
+            {
+                try
+                {
+                    await _productBatchService.AllocateFefoAsync(
+                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    BeautifulMessageDialog.ShowWarning($"«{line.ProductName}»: {ex.Message}");
+                    return;
+                }
+            }
+        }
+
         var isCredit = PaidAmount < GrandTotal;
         int? customerId = SelectedPosCustomer?.Id ?? _userPreferences.Current.DefaultSalesCustomerId;
         if (isCredit && customerId is null)
@@ -433,6 +456,16 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);
             LastSavedInvoiceNumber = saved.InvoiceNumber;
+
+            if (_featureFlags.ExpiryTracking && SelectedWarehouse is not null)
+            {
+                foreach (var line in cartSnapshot)
+                {
+                    var allocations = await _productBatchService.AllocateFefoAsync(
+                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
+                    await _productBatchService.DeductAllocationsAsync(allocations);
+                }
+            }
 
             _recentActivity.Record(
                 "بيع سريع",

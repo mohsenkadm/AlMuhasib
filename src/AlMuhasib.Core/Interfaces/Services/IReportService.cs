@@ -70,6 +70,17 @@ public interface IReportService
         int? warehouseId,
         decimal minimumStock,
         InventoryReplenishmentFilter filter = InventoryReplenishmentFilter.All);
+
+    Task<ExpiryReportResult> GetExpiryReportAsync(
+        int? warehouseId = null,
+        int? productId = null,
+        string? productSearch = null,
+        DateTime? expiryFrom = null,
+        DateTime? expiryTo = null,
+        ExpiryStatusFilter statusFilter = ExpiryStatusFilter.All,
+        bool hideZeroQuantity = true,
+        int nearExpiryCriticalDays = 30,
+        int nearExpiryWarningDays = 90);
 }
 
 public enum StockHealthFilter
@@ -96,6 +107,24 @@ public enum InventoryReplenishmentStatus
     Sufficient,
     NeedsReorder,
     Critical
+}
+
+public enum ExpiryStatusFilter
+{
+    All,
+    Expired,
+    Within30Days,
+    Within90Days,
+    Valid
+}
+
+public enum ExpiryBatchStatus
+{
+    Expired,
+    Critical,
+    Warning,
+    Valid,
+    NoExpiry
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -775,5 +804,40 @@ public class InventoryReplenishmentRow
         InventoryReplenishmentStatus.Critical => "حرج",
         InventoryReplenishmentStatus.NeedsReorder => "يحتاج توريد",
         _ => "كافٍ"
+    };
+}
+
+public class ExpiryReportResult
+{
+    public int ExpiredCount { get; set; }
+    public int CriticalCount { get; set; }
+    public int WarningCount { get; set; }
+    public decimal AffectedQuantity { get; set; }
+    public List<ExpiryReportRow> Rows { get; set; } = [];
+}
+
+public class ExpiryReportRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? ProductBarcode { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public decimal Quantity { get; set; }
+    public int? DaysRemaining { get; set; }
+    public ExpiryBatchStatus Status { get; set; }
+
+    public string BatchNumberDisplay => string.IsNullOrWhiteSpace(BatchNumber) ? "بدون" : BatchNumber;
+    public string ExpiryDateDisplay => ExpiryDate?.ToString("yyyy/MM/dd") ?? "—";
+    public string DaysRemainingDisplay => DaysRemaining?.ToString() ?? "—";
+
+    public string StatusDisplay => Status switch
+    {
+        ExpiryBatchStatus.Expired => "منتهي",
+        ExpiryBatchStatus.Critical => "قريب (30 يوم)",
+        ExpiryBatchStatus.Warning => "تحذير (90 يوم)",
+        ExpiryBatchStatus.Valid => "صالح",
+        _ => "بدون تاريخ"
     };
 }

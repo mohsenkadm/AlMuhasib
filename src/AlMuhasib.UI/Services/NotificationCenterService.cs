@@ -145,6 +145,10 @@ public sealed class NotificationCenterService : INotificationCenterService
         SmartAlertAction.OpenInstallments when alert.Severity == SmartAlertSeverity.Critical => "overdue-installments",
         SmartAlertAction.OpenInstallments => "due-today-installments",
         SmartAlertAction.OpenStockHealthReport => "low-stock",
+        SmartAlertAction.OpenExpiryReport when alert.Severity == SmartAlertSeverity.Critical
+            && alert.Title.Contains("منتهية", StringComparison.Ordinal) => "expired-batches",
+        SmartAlertAction.OpenExpiryReport when alert.Severity == SmartAlertSeverity.Critical => "near-expiry-critical",
+        SmartAlertAction.OpenExpiryReport => "near-expiry-warning",
         SmartAlertAction.OpenUnpaidSales => "unpaid-sales",
         SmartAlertAction.OpenUnpaidPurchases => "unpaid-purchases",
         SmartAlertAction.OpenHotelCheckInOut => "hotel-checkinout",

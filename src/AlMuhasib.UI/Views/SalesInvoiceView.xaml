@@ -368,6 +368,8 @@
                                                             <Run Text="{Binding BatchNumber, TargetNullValue=بدون}"/>
                                                             <Run Text=" — "/>
                                                             <Run Text="{Binding ExpiryDate, StringFormat=yyyy/MM/dd, TargetNullValue=-}"/>
+                                                            <Run Text=" — "/>
+                                                            <Run Text="{Binding Quantity, StringFormat=N0}"/>
                                                         </TextBlock>
                                                     </DataTemplate>
                                                 </ComboBox.ItemTemplate>
