@@ -11,6 +11,7 @@ public partial class SalesInvoiceViewModel
     private IProductUnitService? _productUnitService;
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
+    private IProductPriceService? _productPriceService;
 
     private readonly List<string> _activeCustomFieldLabels = [];
     private string? _appliedIndustryTag;
@@ -33,6 +34,7 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
+    [ObservableProperty] private bool _showProductPricing;
 
     public bool ShowCustomField1 =>
         MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header);
@@ -69,6 +71,7 @@ public partial class SalesInvoiceViewModel
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
+        ShowProductPricing = _featureFlags.ProductPricingEnabled;
 
         var industryStillEnabled = IsIndustryEnabled(_appliedIndustryTag);
         MarketTemplateFieldsEnabled = _featureFlags.AnyMarketTemplateEnabled && industryStillEnabled;
@@ -88,6 +91,19 @@ public partial class SalesInvoiceViewModel
             ClearRowBatches();
         if (!ShowSerialNumbers)
             ClearRowSerials();
+        if (!ShowProductPricing)
+            ClearRowPricing();
+    }
+
+    private void ClearRowPricing()
+    {
+        foreach (var row in Items)
+        {
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            row.PricingTypeId = null;
+            row.PricingTypeName = string.Empty;
+        }
     }
 
     private bool IsIndustryEnabled(string? industryTag) => industryTag switch
@@ -228,6 +244,52 @@ public partial class SalesInvoiceViewModel
         {
             row.SerialNumber = string.Empty;
         }
+
+        await LoadRowPricingOptionsAsync(row, productId);
+    }
+
+    private async Task LoadRowPricingOptionsAsync(InvoiceItemRow row, int productId)
+    {
+        if (!ShowProductPricing || _productPriceService is null)
+        {
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            return;
+        }
+
+        var prices = await _productPriceService.GetByProductIdAsync(productId);
+        var options = prices
+            .Select(p => new ProductPricingOption
+            {
+                PricingTypeId = p.PricingTypeId,
+                Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
+                Price = p.SalePrice,
+                IsDefault = p.PricingType?.IsDefault == true
+            })
+            .ToList();
+
+        row.AvailablePricingOptions.Clear();
+        foreach (var option in options)
+            row.AvailablePricingOptions.Add(option);
+
+        if (options.Count == 0)
+        {
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            row.PricingTypeId = null;
+            row.PricingTypeName = string.Empty;
+            return;
+        }
+
+        var preferred = options.FirstOrDefault(o => o.PricingTypeId == row.PricingTypeId)
+                        ?? options.FirstOrDefault(o => o.IsDefault)
+                        ?? options[0];
+
+        // سطر من نافذة الاختيار أو نسخة فاتورة: احتفظ بالسعر إن كان مضبوطاً مسبقاً
+        var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
+        if (keepExistingPrice)
+            row.SetSelectedPricingOptionWithoutPrice(preferred);
+        else
+            row.SelectedPricingOption = preferred;
     }
 
     private async Task ApplyFeatureSideEffectsOnSaveAsync(IReadOnlyList<InvoiceItemRow> rows, IReadOnlyList<Core.Entities.InvoiceItem> savedItems)

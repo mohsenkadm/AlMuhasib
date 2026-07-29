@@ -17,7 +17,8 @@ public static class InvoiceFeatureColumnSync
         DataGridColumn? unit,
         DataGridColumn? batch,
         DataGridColumn? expiry,
-        DataGridColumn? serial)
+        DataGridColumn? serial,
+        DataGridColumn? pricing = null)
     {
         void SyncFromContext()
         {
@@ -30,6 +31,7 @@ public static class InvoiceFeatureColumnSync
                     Set(batch, sales.ShowExpiryTracking);
                     Set(expiry, null);
                     Set(serial, sales.ShowSerialNumbers);
+                    Set(pricing, sales.ShowProductPricing);
                     break;
                 case PurchaseInvoiceViewModel purchase:
                     Set(custom1, false);
@@ -38,6 +40,7 @@ public static class InvoiceFeatureColumnSync
                     Set(batch, purchase.ShowExpiryTracking);
                     Set(expiry, purchase.ShowExpiryTracking);
                     Set(serial, purchase.ShowSerialNumbers);
+                    Set(pricing, false);
                     break;
                 default:
                     Set(custom1, false);
@@ -46,6 +49,7 @@ public static class InvoiceFeatureColumnSync
                     Set(batch, false);
                     Set(expiry, false);
                     Set(serial, false);
+                    Set(pricing, false);
                     break;
             }
         }
@@ -74,6 +78,7 @@ public static class InvoiceFeatureColumnSync
                 case "ShowUnitsOfMeasure":
                 case "ShowExpiryTracking":
                 case "ShowSerialNumbers":
+                case "ShowProductPricing":
                 case "CustomField1Header":
                 case "CustomField2Header":
                 case "MarketTemplateFieldsEnabled":

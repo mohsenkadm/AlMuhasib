@@ -17,14 +17,6 @@ public enum InvoicePickerMode
     Installment
 }
 
-public partial class ProductPricingOption : ObservableObject
-{
-    public int PricingTypeId { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public decimal Price { get; init; }
-    public string Display => $"{Name} — {Price:N0}";
-}
-
 public partial class ProductPickerDisplayItem : ObservableObject
 {
     public ProductPickerDisplayItem(Product product, string categoryName)
@@ -325,7 +317,8 @@ public partial class ProductPickerViewModel : ObservableObject
             {
                 PricingTypeId = p.PricingTypeId,
                 Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
-                Price = mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice
+                Price = mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice,
+                IsDefault = p.PricingType?.IsDefault == true
             }).ToList();
             _pricesByProduct[group.Key] = options;
         }

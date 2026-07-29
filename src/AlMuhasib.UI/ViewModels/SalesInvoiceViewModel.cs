@@ -155,6 +155,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         _recentActivity = recentActivity;
         _templateService = templateService;
         _queueService = queueService;
+        _productPriceService = productPriceService;
 
         PageTitle = "فاتورة مبيعات";
 
@@ -364,6 +365,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             var row = new InvoiceItemRow
             {
                 ProductId = item.ProductId,
+                PricingTypeId = item.PricingTypeId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
@@ -440,13 +442,16 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         }
     }
 
-    private void OnProductPickerConfirmed()
+    private async void OnProductPickerConfirmed()
     {
         InvoiceProductMergeHelper.Merge(
             ProductPicker.BuildResults(),
             Items,
             WireItemRow,
             UnwireItemRow);
+
+        foreach (var row in Items.Where(i => i.ProductId is > 0).ToList())
+            await LoadRowFeatureDataAsync(row);
 
         RecalculateTotals();
         IsProductPickerOpen = false;
@@ -465,20 +470,24 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ProcessBarcode()
+    private async Task ProcessBarcodeAsync()
     {
+        InvoiceItemRow? updatedRow = null;
         if (!InvoiceBarcodeHelper.TryAddByBarcode(
                 BarcodeInput,
                 Products,
                 Items,
                 WireItemRow,
                 UnwireItemRow,
-                row => OnProductChanged(row),
+                row => updatedRow = row,
                 out var error))
         {
             BeautifulMessageDialog.ShowWarning(error);
             return;
         }
+
+        if (updatedRow is not null)
+            await RefreshProductRowAsync(updatedRow);
 
         BarcodeInput = string.Empty;
         RecalculateTotals();
@@ -509,9 +518,19 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         RecalculateTotals();
     }
 
-    private async void OnProductChanged(InvoiceItemRow row)
+    private async void OnProductChanged(InvoiceItemRow row) =>
+        await RefreshProductRowAsync(row);
+
+    private async Task RefreshProductRowAsync(InvoiceItemRow row)
     {
-        if (row.ProductId is null) { row.StockInfo = string.Empty; row.AvailableStock = 0; return; }
+        if (row.ProductId is null)
+        {
+            row.StockInfo = string.Empty;
+            row.AvailableStock = 0;
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            return;
+        }
 
         try
         {

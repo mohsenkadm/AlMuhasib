@@ -6,6 +6,9 @@ namespace AlMuhasib.UI.Helpers;
 
 public static class InvoiceBarcodeHelper
 {
+    /// <param name="onRowUpdated">
+    /// يُستدعى بعد إضافة/تحديث السطر — في فاتورة البيع يحمّل التسعير والرصيد عبر RefreshProductRowAsync.
+    /// </param>
     public static bool TryAddByBarcode(
         string barcode,
         IEnumerable<Product> products,
@@ -33,7 +36,10 @@ public static class InvoiceBarcodeHelper
             return false;
         }
 
-        var existing = items.FirstOrDefault(i => i.ProductId == product.Id);
+        // فضّل سطر نفس المنتج ونوع التسعير الحالي إن وُجد؛ وإلا أول سطر للمنتج
+        var existing = items.FirstOrDefault(i =>
+                         i.ProductId == product.Id && i.PricingTypeId is not null)
+                     ?? items.FirstOrDefault(i => i.ProductId == product.Id);
         if (existing is not null)
         {
             existing.Quantity += 1;
@@ -48,6 +54,7 @@ public static class InvoiceBarcodeHelper
             };
             wireRow(row);
             items.Add(row);
+            // يستدعي المستدعي تحميل أسعار الكتالوج (النوع الافتراضي) عبر onRowUpdated
             onRowUpdated?.Invoke(row);
         }
 

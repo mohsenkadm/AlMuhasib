@@ -388,6 +388,18 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn x:Name="ColPricingType" Header="نوع التسعير" Width="150" MinWidth="120"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailablePricingOptions}"
+                                                      SelectedItem="{Binding SelectedPricingOption, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="Display"
+                                                      IsEditable="False"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
 
