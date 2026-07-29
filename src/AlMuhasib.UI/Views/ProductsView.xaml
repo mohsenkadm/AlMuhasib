@@ -582,6 +582,60 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
+
+                            <!-- Minimum quantities per warehouse -->
+                            <Border Margin="0,12,0,0" Padding="12" Background="#E3F2FD" CornerRadius="8">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <materialDesign:PackIcon Kind="AlertDecagramOutline" Width="18" Height="18"
+                                                                 Foreground="#1565C0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="كميات الحد الأدنى حسب المخزن" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   Foreground="#1565C0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="حدد الحد الأدنى لكل مخزن؛ سيظهر المنتج في تقرير كميات الحد الأدنى عند تجاوز العجز."
+                                               FontSize="12" Foreground="#546E7A" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                    <ItemsControl ItemsSource="{Binding EditMinQuantities}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="White" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
+                                                        BorderBrush="#BBDEFB" BorderThickness="1">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="130"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                            <TextBlock Text="{Binding WarehouseName}" FontWeight="SemiBold" FontSize="13"/>
+                                                            <TextBlock FontSize="11" Foreground="#78909C"
+                                                                       Text="{Binding CurrentQuantity, StringFormat=الكمية الحالية: {0:N0}}"/>
+                                                        </StackPanel>
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding MinQuantity, UpdateSourceTrigger=LostFocus}"
+                                                                 materialDesign:HintAssist.Hint="الحد الأدنى"
+                                                                 materialDesign:HintAssist.IsFloating="True"
+                                                                 Style="{StaticResource FilledTextBox}"
+                                                                 VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="لا توجد مخازن معرفة بعد."
+                                               FontSize="12" Foreground="#9E9E9E" HorizontalAlignment="Center"
+                                               Margin="0,4,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding EditMinQuantities.Count}" Value="0">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                         </ScrollViewer>
 

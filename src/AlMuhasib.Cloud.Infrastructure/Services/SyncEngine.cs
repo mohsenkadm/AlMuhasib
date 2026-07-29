@@ -566,6 +566,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Quantity = dto.Quantity;
         existing.OpeningQuantity = dto.OpeningQuantity;
         existing.UnitCost = dto.UnitCost;
+        existing.MinQuantity = dto.MinQuantity;
         return 1;
     }
 
@@ -848,7 +849,7 @@ public sealed partial class SyncEngine : ISyncEngine
             SyncId = s.SyncId, CreatedAt = s.CreatedAt, CreatedBy = s.CreatedBy, UpdatedAt = s.UpdatedAt, UpdatedBy = s.UpdatedBy,
             IsDeleted = s.IsDeleted, DeletedAt = s.DeletedAt, DeletedBy = s.DeletedBy, RowVersion = s.RowVersion,
             WarehouseSyncId = wh.GetValueOrDefault(s.WarehouseId), ProductSyncId = pr.GetValueOrDefault(s.ProductId),
-            Quantity = s.Quantity, OpeningQuantity = s.OpeningQuantity, UnitCost = s.UnitCost
+            Quantity = s.Quantity, OpeningQuantity = s.OpeningQuantity, UnitCost = s.UnitCost, MinQuantity = s.MinQuantity
         }).ToList();
     }
 

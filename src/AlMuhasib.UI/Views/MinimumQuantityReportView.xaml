@@ -1,0 +1,295 @@
+<UserControl x:Class="AlMuhasib.UI.Views.MinimumQuantityReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:MinimumQuantityReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,24,24,8">
+
+                <TextBlock Text="كميات الحد الأدنى" FontSize="24" FontWeight="Bold" Margin="0,0,0,8"/>
+                <TextBlock Text="مقارنة الكمية الحالية مع الحد الأدنى لكل منتج في كل مخزن"
+                           FontSize="13" Foreground="#757575" Margin="0,0,0,20"/>
+
+                <UniformGrid Columns="5" Margin="0,0,0,20">
+                    <controls:AnimatedStatCard
+                        Title="إجمالي الأصناف"
+                        TextValue="{Binding TotalItems}"
+                        Icon="PackageVariant"
+                        IconBackground="#E3F2FD"
+                        IconForeground="#1565C0"
+                        ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard
+                        Title="تحت الحد"
+                        TextValue="{Binding BelowMinimumCount}"
+                        Icon="AlertCircleOutline"
+                        IconBackground="#FFEBEE"
+                        IconForeground="#C62828"
+                        ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard
+                        Title="مساوٍ للحد"
+                        TextValue="{Binding AtMinimumCount}"
+                        Icon="Equal"
+                        IconBackground="#FFF8E1"
+                        IconForeground="#F9A825"
+                        ValueForeground="#F9A825"/>
+                    <controls:AnimatedStatCard
+                        Title="فوق الحد"
+                        TextValue="{Binding AboveMinimumCount}"
+                        Icon="CheckCircleOutline"
+                        IconBackground="#E8F5E9"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard
+                        Title="إجمالي العجز"
+                        TextValue="{Binding TotalShortage}"
+                        Icon="TrendingDown"
+                        IconBackground="#FBE9E7"
+                        IconForeground="#D84315"
+                        ValueForeground="#D84315"/>
+                </UniformGrid>
+
+                <Border Style="{StaticResource FilterBar}">
+                    <WrapPanel>
+                        <ComboBox ItemsSource="{Binding Warehouses}"
+                                  SelectedValue="{Binding SelectedWarehouseId}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="المخزن"
+                                  Width="160" Margin="0,0,12,8"/>
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedValue="{Binding SelectedCategoryId}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="التصنيف"
+                                  Width="160" Margin="0,0,12,8"/>
+                        <ComboBox ItemsSource="{Binding StatusFilters}"
+                                  SelectedValue="{Binding SelectedFilter}"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="Label"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="الحالة"
+                                  Width="150" Margin="0,0,12,8"/>
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}"
+                                 materialDesign:HintAssist.Hint="بحث بالمنتج أو الباركود..."
+                                 Width="220" Margin="0,0,12,8"/>
+                        <Button Content="بحث"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding LoadDataCommand}"
+                                Margin="0,0,12,8"/>
+                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                       TargetDataGrid="{Binding ElementName=MinQtyReportGrid}"
+                                                       Margin="0,0,12,8"/>
+                        <Button Content="طباعة"
+                                Style="{StaticResource OutlinedButton}"
+                                Command="{Binding PrintCommand}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="تصدير Excel"
+                                Style="{StaticResource OutlinedButton}"
+                                Command="{Binding ExportToExcelCommand}"
+                                Margin="0,0,0,8"/>
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Margin="24,0,24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <materialDesign:Card Grid.Column="0" materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid x:Name="MinQtyReportGrid"
+                              ItemsSource="{Binding Rows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              SelectionMode="Single"
+                              MinHeight="300"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.InputBindings>
+                            <MouseBinding MouseAction="LeftDoubleClick"
+                                          Command="{Binding ShowDetailsCommand}"
+                                          CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
+                            <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode"/>
+                            <DataGridTextColumn Header="التصنيف" Binding="{Binding CategoryName}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CategoryName"/>
+                            <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
+                            <DataGridTextColumn Header="الكمية الحالية" Binding="{Binding CurrentQuantity, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrentQuantity"/>
+                            <DataGridTextColumn Header="الحد الأدنى" Binding="{Binding MinQuantity, StringFormat=N0}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="MinQuantity"/>
+                            <DataGridTemplateColumn Header="الفرق" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Difference">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Difference, StringFormat=N0}"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                   FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#2E7D32"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="BelowMinimum">
+                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="AtMinimum">
+                                                            <Setter Property="Foreground" Value="#F9A825"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="الحالة" Binding="{Binding StatusDisplay}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusDisplay"/>
+                            <DataGridTemplateColumn Header="التفاصيل" Width="90"
+                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableViewIconButton}"
+                                                ToolTip="عرض تفاصيل الكميات">
+                                            <materialDesign:PackIcon Kind="EyeOutline" Width="18" Height="18"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <controls:PaginationBar Grid.Row="1"/>
+                </Grid>
+            </materialDesign:Card>
+
+            <!-- Details panel -->
+            <materialDesign:Card Grid.Column="1" Width="400" Padding="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp3"
+                                 Margin="16,0,0,0"
+                                 Visibility="{Binding IsDetailsOpen, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,0,0,12">
+                        <TextBlock Text="تفاصيل الكميات" FontSize="16" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="0,0,36,0"
+                                   Foreground="#1565C0"/>
+                        <Button HorizontalAlignment="Left"
+                                Command="{Binding CloseDetailsCommand}"
+                                Style="{StaticResource IconButton}"
+                                Width="30" Height="30">
+                            <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                        </Button>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="#E3F2FD" CornerRadius="10" Padding="12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="{Binding DetailsProductName}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
+                            <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="#546E7A"
+                                       Text="{Binding DetailsBarcode, StringFormat=الباركود: {0}}"/>
+                            <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="#546E7A"
+                                       Text="{Binding DetailsCategory, StringFormat=التصنيف: {0}}"/>
+                            <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="#546E7A" TextWrapping="Wrap"
+                                       Text="{Binding DetailsDescription, StringFormat=الوصف: {0}}"/>
+                            <Separator Margin="0,10,0,10" Background="#BBDEFB"/>
+                            <TextBlock FontSize="12" Foreground="#37474F"
+                                       Text="{Binding DetailsSelectedWarehouse, StringFormat=المخزن المحدد: {0}}"/>
+                            <UniformGrid Columns="3" Margin="0,8,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="الحالية" FontSize="11" Foreground="#78909C"/>
+                                    <TextBlock Text="{Binding DetailsCurrentQuantity}" FontWeight="Bold" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="الحد الأدنى" FontSize="11" Foreground="#78909C"/>
+                                    <TextBlock Text="{Binding DetailsMinQuantity}" FontWeight="Bold" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="الفرق" FontSize="11" Foreground="#78909C"/>
+                                    <TextBlock Text="{Binding DetailsDifference}" FontWeight="Bold" FontSize="14" Foreground="#C62828"/>
+                                </StackPanel>
+                            </UniformGrid>
+                            <TextBlock Margin="0,8,0,0" FontSize="12" FontWeight="SemiBold"
+                                       Text="{Binding DetailsStatus, StringFormat=الحالة: {0}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <DockPanel Grid.Row="2">
+                        <TextBlock DockPanel.Dock="Top" Text="كميات المنتج في كل المخازن"
+                                   FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <DataGrid ItemsSource="{Binding DetailWarehouseRows}"
+                                  Style="{StaticResource ModernDataGrid}"
+                                  IsReadOnly="True"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  MinHeight="160">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="*"/>
+                                <DataGridTextColumn Header="الحالية" Binding="{Binding CurrentQuantity, StringFormat=N0}" Width="70"/>
+                                <DataGridTextColumn Header="الحد" Binding="{Binding MinQuantity, StringFormat=N0}" Width="60"/>
+                                <DataGridTextColumn Header="الفرق" Binding="{Binding Difference, StringFormat=N0}" Width="60"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+
+        <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

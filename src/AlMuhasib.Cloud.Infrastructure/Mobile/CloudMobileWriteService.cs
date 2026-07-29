@@ -747,6 +747,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 Quantity = item.NewQuantity,
                 OpeningQuantity = existing?.OpeningQuantity ?? 0,
                 UnitCost = existing?.UnitCost ?? 0,
+                MinQuantity = existing?.MinQuantity ?? 0,
                 CreatedAt = existing?.CreatedAt ?? now,
                 CreatedBy = existing?.CreatedBy ?? username,
                 UpdatedAt = now,

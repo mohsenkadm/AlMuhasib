@@ -1769,6 +1769,88 @@ public sealed class CloudReportService : Application.Abstractions.ICloudReportSe
         };
     }
 
+    public async Task<MinimumQuantityReportResult> GetMinimumQuantityReportAsync(
+        int? warehouseId,
+        int? categoryId,
+        MinimumQuantityFilter filter = MinimumQuantityFilter.All,
+        string? search = null)
+    {
+        var context = _db;
+
+        var query = context.WarehouseStocks.AsNoTracking()
+            .Include(ws => ws.Product)!.ThenInclude(p => p!.Category)
+            .Include(ws => ws.Warehouse)
+            .Where(ws => ws.MinQuantity > 0);
+
+        if (warehouseId.HasValue)
+            query = query.Where(ws => ws.WarehouseId == warehouseId.Value);
+        if (categoryId.HasValue)
+            query = query.Where(ws => ws.Product!.CategoryId == categoryId.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(ws =>
+                ws.Product!.Name.Contains(term) ||
+                (ws.Product.Barcode != null && ws.Product.Barcode.Contains(term)) ||
+                (ws.Product.Category != null && ws.Product.Category.Name.Contains(term)) ||
+                (ws.Warehouse != null && ws.Warehouse.Name.Contains(term)));
+        }
+
+        var stocks = await query.ToListAsync();
+        var rows = new List<MinimumQuantityRow>();
+
+        foreach (var s in stocks)
+        {
+            var difference = s.Quantity - s.MinQuantity;
+            var status = difference < 0
+                ? MinimumQuantityStatus.BelowMinimum
+                : difference == 0
+                    ? MinimumQuantityStatus.AtMinimum
+                    : MinimumQuantityStatus.AboveMinimum;
+
+            if (filter == MinimumQuantityFilter.BelowMinimum && status != MinimumQuantityStatus.BelowMinimum)
+                continue;
+            if (filter == MinimumQuantityFilter.AtMinimum && status != MinimumQuantityStatus.AtMinimum)
+                continue;
+            if (filter == MinimumQuantityFilter.AboveMinimum && status != MinimumQuantityStatus.AboveMinimum)
+                continue;
+
+            rows.Add(new MinimumQuantityRow
+            {
+                ProductId = s.ProductId,
+                ProductName = s.Product?.Name ?? "—",
+                Barcode = s.Product?.Barcode,
+                Description = s.Product?.Description,
+                CategoryId = s.Product?.CategoryId ?? 0,
+                CategoryName = s.Product?.Category?.Name ?? "—",
+                WarehouseId = s.WarehouseId,
+                WarehouseName = s.Warehouse?.Name ?? "—",
+                CurrentQuantity = s.Quantity,
+                MinQuantity = s.MinQuantity,
+                Status = status
+            });
+        }
+
+        rows = rows
+            .OrderBy(r => r.Status == MinimumQuantityStatus.BelowMinimum ? 0 : r.Status == MinimumQuantityStatus.AtMinimum ? 1 : 2)
+            .ThenBy(r => r.Difference)
+            .ThenBy(r => r.ProductName)
+            .ThenBy(r => r.WarehouseName)
+            .ToList();
+
+        var below = rows.Where(r => r.Status == MinimumQuantityStatus.BelowMinimum).ToList();
+        return new MinimumQuantityReportResult
+        {
+            TotalItems = rows.Count,
+            BelowMinimumCount = below.Count,
+            AtMinimumCount = rows.Count(r => r.Status == MinimumQuantityStatus.AtMinimum),
+            AboveMinimumCount = rows.Count(r => r.Status == MinimumQuantityStatus.AboveMinimum),
+            TotalShortage = below.Sum(r => Math.Abs(r.Difference)),
+            Rows = rows
+        };
+    }
+
     private static string TruncateChartLabel(string name) =>
         name.Length <= 18 ? name : string.Concat(name.AsSpan(0, 15), "...");
 

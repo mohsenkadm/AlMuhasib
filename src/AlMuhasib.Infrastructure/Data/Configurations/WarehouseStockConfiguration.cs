@@ -19,6 +19,9 @@ public class WarehouseStockConfiguration : IEntityTypeConfiguration<WarehouseSto
         builder.Property(ws => ws.UnitCost)
             .HasPrecision(18, 2);
 
+        builder.Property(ws => ws.MinQuantity)
+            .HasPrecision(18, 4);
+
         builder.HasOne(ws => ws.Warehouse)
             .WithMany(w => w.WarehouseStocks)
             .HasForeignKey(ws => ws.WarehouseId)

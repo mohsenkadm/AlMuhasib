@@ -95,18 +95,36 @@ public class SmartAlertService : ISmartAlertService
             });
         }
 
-        var lowStock = await context.WarehouseStocks.AsNoTracking()
-            .GroupBy(ws => ws.ProductId)
-            .Select(g => new { ProductId = g.Key, Qty = g.Sum(x => x.Quantity) })
-            .Where(x => x.Qty > 0 && x.Qty <= LowStockThreshold)
+        // منتجات تحت الحد الأدنى المعرّف لكل مخزن
+        var belowMin = await context.WarehouseStocks.AsNoTracking()
+            .Where(ws => ws.MinQuantity > 0 && ws.Quantity < ws.MinQuantity)
+            .Select(ws => ws.ProductId)
+            .Distinct()
             .CountAsync(cancellationToken);
 
+        // منتجات بلا حد أدنى معرّف وما زالت تحت العتبة الافتراضية
+        var lowStockFallback = await context.WarehouseStocks.AsNoTracking()
+            .GroupBy(ws => ws.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                Qty = g.Sum(x => x.Quantity),
+                HasMin = g.Any(x => x.MinQuantity > 0)
+            })
+            .Where(x => !x.HasMin && x.Qty > 0 && x.Qty <= LowStockThreshold)
+            .CountAsync(cancellationToken);
+
+        var lowStock = belowMin + lowStockFallback;
         if (lowStock > 0)
         {
+            var message = belowMin > 0
+                ? $"{belowMin} منتج تحت الحد الأدنى" + (lowStockFallback > 0 ? $" و{lowStockFallback} بكمية منخفضة" : "")
+                : $"{lowStockFallback} منتج بكمية {LowStockThreshold:N0} أو أقل";
+
             alerts.Add(new SmartAlert
             {
                 Title = "مخزون منخفض",
-                Message = $"{lowStock} منتج بكمية {LowStockThreshold:N0} أو أقل",
+                Message = message,
                 Severity = SmartAlertSeverity.Warning,
                 Action = SmartAlertAction.OpenStockHealthReport,
                 Count = lowStock
