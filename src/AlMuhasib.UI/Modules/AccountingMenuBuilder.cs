@@ -27,6 +27,7 @@ public static class AccountingMenuBuilder
                 [
                     ("المنتجات", PackIconKind.PackageVariantClosed, typeof(ProductsViewModel), "Products"),
                     ("تصنيفات المنتجات", PackIconKind.TagMultiple, typeof(CategoriesViewModel), "Categories"),
+                    ("أنواع التعبئة", PackIconKind.PackageVariant, typeof(PackagingTypesViewModel), "PackagingTypes"),
                     ("أنواع التسعير", PackIconKind.CashMultiple, typeof(PricingTypesViewModel), "PricingTypes"),
                     ("تسعير منتجات", PackIconKind.TagTextOutline, typeof(ProductPricingViewModel), "ProductPricing"),
                     ("المخازن", PackIconKind.Warehouse, typeof(WarehousesViewModel), "Warehouses"),

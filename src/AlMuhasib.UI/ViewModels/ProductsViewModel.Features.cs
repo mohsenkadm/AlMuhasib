@@ -13,6 +13,7 @@ public partial class ProductsViewModel
 {
     private IFeatureFlagService? _featureFlags;
     private IProductUnitService? _productUnitService;
+    private IPackagingTypeService? _packagingTypeService;
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
     private IProductSizeService? _productSizeService;
@@ -21,6 +22,7 @@ public partial class ProductsViewModel
     public ObservableCollection<ProductBatch> EditBatches { get; } = [];
     public ObservableCollection<ProductSerial> EditSerials { get; } = [];
     public ObservableCollection<ProductSize> EditSizes { get; } = [];
+    public ObservableCollection<PackagingType> AvailablePackagingTypes { get; } = [];
 
     [ObservableProperty] private bool _showUnitsSection;
     [ObservableProperty] private bool _showWeightSection;
@@ -29,10 +31,15 @@ public partial class ProductsViewModel
     [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showSizesSection;
 
-    [ObservableProperty] private string _newUnitName = string.Empty;
+    [ObservableProperty] private PackagingType? _selectedPackagingTypeToAdd;
     [ObservableProperty] private decimal _newUnitFactor = 1m;
     [ObservableProperty] private string _newSerialText = string.Empty;
     [ObservableProperty] private string _newSizeName = string.Empty;
+
+    [ObservableProperty] private bool _isPackagingDialogOpen;
+    [ObservableProperty] private string _packagingDialogTitle = string.Empty;
+    [ObservableProperty] private string _packagingDialogProductName = string.Empty;
+    private int? _packagingDialogProductId;
 
     public IReadOnlyList<string> WeightUnitOptions { get; } =
         ["كغ", "غرام", "لتر", "مل", "متر", "سم"];
@@ -62,6 +69,7 @@ public partial class ProductsViewModel
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
+        IPackagingTypeService packagingTypeService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService)
@@ -71,6 +79,7 @@ public partial class ProductsViewModel
 
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
+        _packagingTypeService = packagingTypeService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
@@ -108,10 +117,22 @@ public partial class ProductsViewModel
         EditBatches.Clear();
         EditSerials.Clear();
         EditSizes.Clear();
-        NewUnitName = string.Empty;
+        SelectedPackagingTypeToAdd = null;
         NewUnitFactor = 1m;
         NewSerialText = string.Empty;
         NewSizeName = string.Empty;
+    }
+
+    private async Task EnsurePackagingTypesLoadedAsync()
+    {
+        if (_packagingTypeService is null || !ShowUnitsSection) return;
+        await _packagingTypeService.EnsureDefaultExistsAsync();
+        var types = await _packagingTypeService.GetActiveAsync();
+        AvailablePackagingTypes.Clear();
+        foreach (var t in types)
+            AvailablePackagingTypes.Add(t);
+        SelectedPackagingTypeToAdd ??= AvailablePackagingTypes.FirstOrDefault(t => t.IsDefault)
+            ?? AvailablePackagingTypes.FirstOrDefault();
     }
 
     private async Task LoadFeatureDataForProductAsync(int productId)
@@ -119,6 +140,7 @@ public partial class ProductsViewModel
         ClearFeatureEditCollections();
         if (_productUnitService is not null && ShowUnitsSection)
         {
+            await EnsurePackagingTypesLoadedAsync();
             foreach (var u in await _productUnitService.GetByProductAsync(productId))
                 EditUnits.Add(u);
         }
@@ -143,17 +165,43 @@ public partial class ProductsViewModel
     }
 
     [RelayCommand]
+    private async Task OpenProductPackagingDialogAsync(Product? product)
+    {
+        if (product is null || !ShowUnitsSection || _productUnitService is null)
+            return;
+
+        _packagingDialogProductId = product.Id;
+        PackagingDialogProductName = product.Name;
+        PackagingDialogTitle = $"أنواع التعبئة — {product.Name}";
+        await LoadFeatureDataForProductAsync(product.Id);
+        IsPackagingDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void ClosePackagingDialog()
+    {
+        IsPackagingDialogOpen = false;
+        _packagingDialogProductId = null;
+        PackagingDialogProductName = string.Empty;
+        if (_editingProductId is null)
+            ClearFeatureEditCollections();
+    }
+
+    private int? ResolvePackagingProductId() =>
+        _packagingDialogProductId ?? _editingProductId;
+
+    [RelayCommand]
     private async Task AddProductUnitAsync()
     {
-        if (_editingProductId is not int productId || _productUnitService is null)
+        if (ResolvePackagingProductId() is not int productId || _productUnitService is null)
         {
-            BeautifulMessageDialog.ShowWarning("احفظ المنتج أولاً ثم أضف الوحدات");
+            BeautifulMessageDialog.ShowWarning("احفظ المنتج أولاً ثم أضف أنواع التعبئة");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(NewUnitName))
+        if (SelectedPackagingTypeToAdd is null)
         {
-            BeautifulMessageDialog.ShowWarning("أدخل اسم الوحدة");
+            BeautifulMessageDialog.ShowWarning("اختر نوع التعبئة");
             return;
         }
 
@@ -162,12 +210,14 @@ public partial class ProductsViewModel
             await _productUnitService.SaveAsync(new ProductUnit
             {
                 ProductId = productId,
-                UnitName = NewUnitName.Trim(),
+                PackagingTypeId = SelectedPackagingTypeToAdd.Id,
+                UnitName = SelectedPackagingTypeToAdd.Name,
                 ConversionFactor = NewUnitFactor <= 0 ? 1m : NewUnitFactor,
                 IsDefault = EditUnits.Count == 0
             });
-            NewUnitName = string.Empty;
             NewUnitFactor = 1m;
+            SelectedPackagingTypeToAdd = AvailablePackagingTypes.FirstOrDefault(t =>
+                EditUnits.All(u => u.PackagingTypeId != t.Id));
             await LoadFeatureDataForProductAsync(productId);
         }
         catch (Exception ex)
@@ -179,8 +229,8 @@ public partial class ProductsViewModel
     [RelayCommand]
     private async Task DeleteProductUnitAsync(ProductUnit? unit)
     {
-        if (unit is null || _productUnitService is null || _editingProductId is not int productId) return;
-        if (!BeautifulMessageDialog.ShowConfirm($"حذف الوحدة «{unit.UnitName}»؟")) return;
+        if (unit is null || _productUnitService is null || ResolvePackagingProductId() is not int productId) return;
+        if (!BeautifulMessageDialog.ShowConfirm($"حذف التعبئة «{unit.UnitName}»؟")) return;
         await _productUnitService.DeleteAsync(unit.Id);
         await LoadFeatureDataForProductAsync(productId);
     }
@@ -188,7 +238,7 @@ public partial class ProductsViewModel
     [RelayCommand]
     private async Task SetDefaultProductUnitAsync(ProductUnit? unit)
     {
-        if (unit is null || _productUnitService is null || _editingProductId is not int productId) return;
+        if (unit is null || _productUnitService is null || ResolvePackagingProductId() is not int productId) return;
         await _productUnitService.SetDefaultAsync(productId, unit.Id);
         await LoadFeatureDataForProductAsync(productId);
     }
@@ -204,7 +254,7 @@ public partial class ProductsViewModel
 
         if (string.IsNullOrWhiteSpace(NewSizeName))
         {
-            BeautifulMessageDialog.ShowWarning("أدخل اسم القياس (مثل L أو XL)");
+            BeautifulMessageDialog.ShowWarning("أدخل اسم القياس");
             return;
         }
 
@@ -229,15 +279,8 @@ public partial class ProductsViewModel
     {
         if (size is null || _productSizeService is null || _editingProductId is not int productId) return;
         if (!BeautifulMessageDialog.ShowConfirm($"حذف القياس «{size.SizeName}»؟")) return;
-        try
-        {
-            await _productSizeService.DeleteAsync(size.Id);
-            await LoadFeatureDataForProductAsync(productId);
-        }
-        catch (Exception ex)
-        {
-            BeautifulMessageDialog.ShowError(ex.Message);
-        }
+        await _productSizeService.DeleteAsync(size.Id);
+        await LoadFeatureDataForProductAsync(productId);
     }
 
     [RelayCommand]

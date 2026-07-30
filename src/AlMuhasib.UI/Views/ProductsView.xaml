@@ -267,7 +267,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="150" MinWidth="150" IsReadOnly="True"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="190" MinWidth="190" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -277,6 +277,13 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenProductPackagingDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="أنواع التعبئة"
+                                                Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
+                                            <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+                                        </Button>
                                         <Button Command="{Binding DataContext.OpenBarcodePrintDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource TablePrintIconButton}"
@@ -386,6 +393,14 @@
                                                         ToolTip="طباعة باركود"
                                                         Margin="0,0,4,0">
                                                     <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.OpenProductPackagingDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding Product}"
+                                                        Style="{StaticResource TableEditIconButton}"
+                                                        ToolTip="أنواع التعبئة"
+                                                        Margin="0,0,4,0"
+                                                        Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                                                    <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.OpenEditProductFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
@@ -625,11 +640,13 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Units of measure (feature-gated) -->
+                            <!-- Packaging types (feature-gated) -->
                             <Border Margin="0,16,0,0" Padding="12" Background="#FFF8E1" CornerRadius="8"
                                     Visibility="{Binding ShowUnitsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel>
-                                    <TextBlock Text="وحدات القياس" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="أنواع التعبئة" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="كمية التعبئة = عدد الوحدات الأساسية داخل النوع (مثال: كارتون = 12 قطعة)"
+                                               FontSize="11" Foreground="#795548" Margin="0,0,0,8" TextWrapping="Wrap"/>
                                     <ItemsControl ItemsSource="{Binding EditUnits}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -643,9 +660,10 @@
                                                                 CommandParameter="{Binding}" Padding="8,2"/>
                                                     </StackPanel>
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding UnitName}" VerticalAlignment="Center"/>
-                                                        <TextBlock Text=" × " VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding UnitName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                        <TextBlock Text=" = " VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding ConversionFactor, StringFormat=N2}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text=" وحدة أساسية" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                         <TextBlock Text=" (افتراضي)" Foreground="#F9A825" FontSize="11" VerticalAlignment="Center"
                                                                    Visibility="{Binding IsDefault, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                     </StackPanel>
@@ -656,13 +674,17 @@
                                     <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="110"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" Text="{Binding NewUnitName, UpdateSourceTrigger=PropertyChanged}"
-                                                 materialDesign:HintAssist.Hint="اسم الوحدة" Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <ComboBox Grid.Column="0"
+                                                  ItemsSource="{Binding AvailablePackagingTypes}"
+                                                  SelectedItem="{Binding SelectedPackagingTypeToAdd}"
+                                                  DisplayMemberPath="Name"
+                                                  materialDesign:HintAssist.Hint="نوع التعبئة"
+                                                  Style="{StaticResource FilledComboBox}" Margin="0,0,8,0"/>
                                         <TextBox Grid.Column="1" Text="{Binding NewUnitFactor, UpdateSourceTrigger=PropertyChanged}"
-                                                 materialDesign:HintAssist.Hint="المعامل" Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                                 materialDesign:HintAssist.Hint="كمية التعبئة" Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
                                         <Button Grid.Column="2" Content="إضافة" Style="{StaticResource PrimaryButton}"
                                                 Command="{Binding AddProductUnitCommand}" Padding="12,0"/>
                                     </Grid>
@@ -978,6 +1000,85 @@
                                     materialDesign:ButtonAssist.CornerRadius="10"/>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- Packaging types dialog -->
+        <materialDesign:DialogHost IsOpen="{Binding IsPackagingDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000"
+                                   Identifier="ProductPackagingDialog">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="480" MaxWidth="560" MaxHeight="620" Padding="24"
+                        Background="White" CornerRadius="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                            <TextBlock Text="{Binding PackagingDialogTitle}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource SidebarBackground}"/>
+                            <TextBlock Text="كمية التعبئة = عدد الوحدات الأساسية داخل النوع المختار"
+                                       FontSize="12" Foreground="#795548" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding EditUnits}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#FFF8E1" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                                        <Button Content="افتراضي" Style="{StaticResource OutlinedButton}" Margin="0,0,4,0"
+                                                                Command="{Binding DataContext.SetDefaultProductUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                        <Button Content="حذف" Style="{StaticResource OutlinedButton}"
+                                                                Command="{Binding DataContext.DeleteProductUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                    </StackPanel>
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock FontWeight="SemiBold">
+                                                            <Run Text="{Binding UnitName}"/>
+                                                            <Run Text=" = "/>
+                                                            <Run Text="{Binding ConversionFactor, StringFormat=N2}"/>
+                                                            <Run Text=" وحدة أساسية"/>
+                                                        </TextBlock>
+                                                        <TextBlock Text="افتراضي" Foreground="#F9A825" FontSize="11"
+                                                                   Visibility="{Binding IsDefault, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding AvailablePackagingTypes}"
+                                              SelectedItem="{Binding SelectedPackagingTypeToAdd}"
+                                              DisplayMemberPath="Name"
+                                              materialDesign:HintAssist.Hint="نوع التعبئة"
+                                              Style="{StaticResource FilledComboBox}" Margin="0,0,8,0"/>
+                                    <TextBox Grid.Column="1" Text="{Binding NewUnitFactor, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="كمية التعبئة"
+                                             Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="2" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding AddProductUnitCommand}" Padding="14,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Button Grid.Row="2" Content="إغلاق" Command="{Binding ClosePackagingDialogCommand}"
+                                Style="{StaticResource OutlinedButton}" HorizontalAlignment="Left"
+                                Height="40" Padding="22,0" materialDesign:ButtonAssist.CornerRadius="10"/>
+                    </Grid>
                 </Border>
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>

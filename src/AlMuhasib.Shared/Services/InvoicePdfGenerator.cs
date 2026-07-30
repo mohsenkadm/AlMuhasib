@@ -120,6 +120,8 @@ internal static class InvoicePdfGenerator
                         totals.Item().Text($"المجموع: {m.Subtotal:N0} د.ع");
                         if (m.RoundingAmount != 0)
                             totals.Item().Text($"التقريب: {m.RoundingAmount:N0} د.ع");
+                        if (m.TransportFeeAmount > 0)
+                            totals.Item().Text($"أجور النقل: {m.TransportFeeAmount:N0} د.ع");
                         totals.Item().Text($"الإجمالي الكلي: {m.GrandTotal:N0} د.ع").Bold().FontSize(12);
                     });
                 });

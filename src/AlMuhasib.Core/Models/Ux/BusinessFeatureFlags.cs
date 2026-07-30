@@ -22,6 +22,9 @@ public class BusinessFeatureFlags
     /// <summary>تفعيل الخصم على المنتجات والفواتير (بيع/أقساط/POS) — معطّل افتراضياً.</summary>
     public bool ProductDiscountEnabled { get; set; }
 
+    /// <summary>أجور النقل في فواتير البيع والشراء والأقساط — معطّل افتراضياً.</summary>
+    public bool TransportFees { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }

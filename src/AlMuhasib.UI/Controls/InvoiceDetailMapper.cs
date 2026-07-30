@@ -64,6 +64,7 @@ internal static class InvoiceDetailMapper
             SubtotalText = $"{invoice.TotalAmount:N0} د.ع",
             DiscountText = invoice.DiscountAmount > 0 ? $"{invoice.DiscountAmount:N0} د.ع" : "—",
             RoundingText = invoice.RoundingAmount != 0 ? $"{invoice.RoundingAmount:N0} د.ع" : "—",
+            TransportFeeText = invoice.TransportFeeAmount > 0 ? $"{invoice.TransportFeeAmount:N0} د.ع" : null,
             GrandTotalText = $"{invoice.NetAmount:N0} د.ع",
             CompanyFeeText = companyFee > 0 ? $"{companyFee:N0} د.ع" : null,
             HasCreditInfo = invoice.PaymentMethod == PaymentMethod.Credit,

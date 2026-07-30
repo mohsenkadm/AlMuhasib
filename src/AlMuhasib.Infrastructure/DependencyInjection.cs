@@ -72,6 +72,7 @@ public static class DependencyInjection
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IPricingTypeService, PricingTypeService>();
+        services.AddScoped<IPackagingTypeService, PackagingTypeService>();
         services.AddScoped<IProductPriceService, ProductPriceService>();
         services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
         services.AddScoped<IInvoiceService, InvoiceService>();

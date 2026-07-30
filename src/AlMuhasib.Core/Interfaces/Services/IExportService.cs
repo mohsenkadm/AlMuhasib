@@ -57,6 +57,7 @@ public class InvoicePrintModel
     public List<InvoicePrintItem> Items { get; set; } = [];
     public decimal Subtotal { get; set; }
     public decimal RoundingAmount { get; set; }
+    public decimal TransportFeeAmount { get; set; }
     public decimal GrandTotal { get; set; }
     // Installment extras
     public int? NumberOfInstallments { get; set; }

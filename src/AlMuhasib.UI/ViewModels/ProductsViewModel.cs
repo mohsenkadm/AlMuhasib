@@ -161,6 +161,7 @@ public partial class ProductsViewModel : ViewModelBase
         IProductPriceService productPriceService,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
+        IPackagingTypeService packagingTypeService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService)
@@ -178,7 +179,7 @@ public partial class ProductsViewModel : ViewModelBase
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
-        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService, productSizeService);
+        ConfigureFeatureServices(featureFlags, productUnitService, packagingTypeService, productBatchService, productSerialService, productSizeService);
     }
 
     public override async Task InitializeAsync()

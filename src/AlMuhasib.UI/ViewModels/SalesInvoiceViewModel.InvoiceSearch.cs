@@ -155,6 +155,7 @@ public partial class SalesInvoiceViewModel
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;
         Notes = invoice.Notes ?? string.Empty;
+        TransportFeeAmount = ShowTransportFee ? invoice.TransportFeeAmount : 0m;
 
         if (invoice.CustomerId.HasValue)
         {

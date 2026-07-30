@@ -496,16 +496,20 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
 
-        var (_, rounding, grand) = InvoiceTotalsCalculator.Compute(
+        var (_, _, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),
             _invoiceService,
-            InvoiceType.Purchase);
+            InvoiceType.Purchase,
+            invoiceDiscountAmount: 0m,
+            transportFeeAmount: ShowTransportFee ? TransportFeeAmount : 0m);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
         GrandTotal = grand;
         _isRecalculating = false;
     }
+
+    partial void OnTransportFeeAmountChanged(decimal value) => RecalculateTotals();
 
     // ── Save ───────────────────────────────────────────────
     [RelayCommand]
@@ -586,6 +590,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
                 CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
+                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -693,6 +698,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             Notes = _savedInvoice.Notes,
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
+            TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
             Items = _savedItems.Select((item, i) => new InvoicePrintItem
             {
@@ -720,6 +726,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         _savedItems = [];
         ErrorMessage = string.Empty;
         Notes = string.Empty;
+        TransportFeeAmount = 0m;
         SupplierSearchText = string.Empty;
         SelectedSupplier = null;
         InvoiceDate = DateTime.Now;

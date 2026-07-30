@@ -41,6 +41,8 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showClothingSizes;
+    [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private decimal _transportFeeAmount;
 
     public bool ShowCustomField1 =>
         (MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header))
@@ -84,6 +86,7 @@ public partial class SalesInvoiceViewModel
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
+        ShowTransportFee = _featureFlags.TransportFees;
 
         foreach (var row in Items)
         {
@@ -97,6 +100,9 @@ public partial class SalesInvoiceViewModel
             InvoiceDiscountValue = 0m;
             InvoiceDiscountAmount = 0m;
         }
+
+        if (!ShowTransportFee)
+            TransportFeeAmount = 0m;
 
         RecalculateTotals();
 

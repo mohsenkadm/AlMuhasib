@@ -15,6 +15,7 @@ public class ProductUnitService : IProductUnitService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.ProductUnits.AsNoTracking()
+            .Include(u => u.PackagingType)
             .Where(u => u.ProductId == productId)
             .OrderByDescending(u => u.IsDefault)
             .ThenBy(u => u.UnitName)
@@ -25,10 +26,31 @@ public class ProductUnitService : IProductUnitService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         if (unit.ConversionFactor <= 0)
-            throw new InvalidOperationException("معامل التحويل يجب أن يكون أكبر من صفر");
+            throw new InvalidOperationException("كمية التعبئة يجب أن تكون أكبر من صفر");
+
+        if (unit.PackagingTypeId is int packagingTypeId)
+        {
+            var packaging = await context.PackagingTypes.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == packagingTypeId && t.IsActive)
+                ?? throw new InvalidOperationException("نوع التعبئة غير موجود أو غير نشط");
+            unit.UnitName = packaging.Name;
+        }
+
+        if (string.IsNullOrWhiteSpace(unit.UnitName))
+            throw new InvalidOperationException("اسم نوع التعبئة مطلوب");
+
+        unit.UnitName = unit.UnitName.Trim();
 
         if (unit.Id == 0)
         {
+            if (unit.PackagingTypeId is int newPackagingTypeId)
+            {
+                var duplicate = await context.ProductUnits.AnyAsync(u =>
+                    u.ProductId == unit.ProductId && u.PackagingTypeId == newPackagingTypeId);
+                if (duplicate)
+                    throw new InvalidOperationException("نوع التعبئة مضاف مسبقاً لهذا المنتج");
+            }
+
             var hasAny = await context.ProductUnits.AnyAsync(u => u.ProductId == unit.ProductId);
             if (!hasAny)
                 unit.IsDefault = true;
@@ -41,10 +63,21 @@ public class ProductUnitService : IProductUnitService
         else
         {
             var existing = await context.ProductUnits.FirstOrDefaultAsync(u => u.Id == unit.Id)
-                ?? throw new InvalidOperationException("الوحدة غير موجودة");
+                ?? throw new InvalidOperationException("التعبئة غير موجودة");
+
+            if (unit.PackagingTypeId is int updatedPackagingTypeId)
+            {
+                var duplicate = await context.ProductUnits.AnyAsync(u =>
+                    u.ProductId == existing.ProductId
+                    && u.PackagingTypeId == updatedPackagingTypeId
+                    && u.Id != existing.Id);
+                if (duplicate)
+                    throw new InvalidOperationException("نوع التعبئة مضاف مسبقاً لهذا المنتج");
+            }
 
             existing.UnitName = unit.UnitName;
             existing.ConversionFactor = unit.ConversionFactor;
+            existing.PackagingTypeId = unit.PackagingTypeId;
             if (unit.IsDefault && !existing.IsDefault)
             {
                 await ClearDefaultAsync(context, existing.ProductId);

@@ -191,7 +191,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
         IUserPreferencesService userPreferences,
-        IFeatureFlagService featureFlags)
+        IFeatureFlagService featureFlags,
+        IProductUnitService productUnitService)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -204,6 +205,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _draftService = draftService;
         _queueService = queueService;
         _featureFlags = featureFlags;
+        _productUnitService = productUnitService;
 
         PageTitle = "فاتورة أقساط";
 
@@ -218,27 +220,6 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         RefreshFeatureVisibility();
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshFeatureVisibility);
-    }
-
-    private void RefreshFeatureVisibility()
-    {
-        ShowMenuWeight = _featureFlags.MenuWeight;
-        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
-        foreach (var row in Items)
-        {
-            row.ProductDiscountFeatureEnabled = ShowProductDiscount;
-            row.RefreshProductDiscount();
-        }
-
-        if (!ShowProductDiscount)
-        {
-            InvoiceDiscountType = DiscountType.None;
-            InvoiceDiscountValue = 0m;
-            InvoiceDiscountAmount = 0m;
-        }
-
-        InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
-        RecalculateTotals();
     }
 
     public override bool HasUnsavedChanges =>
@@ -380,6 +361,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             WireItemRow,
             UnwireItemRow);
 
+        foreach (var row in Items.Where(i => i.ProductId is not null))
+            _ = LoadRowUnitsAsync(row);
+
         RecalculateTotals();
         IsProductPickerOpen = false;
     }
@@ -445,10 +429,18 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
     private async void OnProductChanged(InvoiceItemRow row)
     {
-        if (row.ProductId is null) { row.StockInfo = string.Empty; row.AvailableStock = 0; return; }
+        if (row.ProductId is null)
+        {
+            row.StockInfo = string.Empty;
+            row.AvailableStock = 0;
+            ClearRowUnitsFor(row);
+            return;
+        }
 
         try
         {
+            await LoadRowUnitsAsync(row);
+
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
             var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
             var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
@@ -465,7 +457,19 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             else
                 row.AvailableStock = stocks.Sum(s => s.Quantity);
         }
-        catch { row.StockInfo = string.Empty; }
+        catch
+        {
+            row.StockInfo = string.Empty;
+            row.AvailableStock = 0;
+        }
+    }
+
+    private static void ClearRowUnitsFor(InvoiceItemRow row)
+    {
+        row.SelectedUnit = null;
+        row.AvailableUnits.Clear();
+        row.SelectedUnitName = string.Empty;
+        row.UnitConversionFactor = 1m;
     }
 
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -515,7 +519,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             Items.Select(i => i.TotalPrice),
             _invoiceService,
             InvoiceType.Installment,
-            InvoiceDiscountAmount);
+            InvoiceDiscountAmount,
+            ShowTransportFee ? TransportFeeAmount : 0m);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
@@ -618,7 +623,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 CashBoxId = SelectedCashBox?.Id,
                 Date = InvoiceDate,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
+                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m
             };
 
             var invoiceItems = new List<InvoiceItem>();
@@ -632,15 +638,27 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                     productId = matchedProduct?.Id;
                 }
 
+                var displayQty = row.Quantity;
+                var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
+                var lineGross = displayQty * row.UnitPrice;
+                var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
+                if (lineDiscount > Math.Abs(lineGross))
+                    lineDiscount = Math.Abs(lineGross);
+                var lineTotal = ProductDiscountHelper.CalculateLineTotal(displayQty, row.UnitPrice, lineDiscount);
+                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineGross / stockQty;
+                var discountForStorage = stockQty == 0 || displayQty == 0
+                    ? lineDiscount
+                    : lineDiscount * (stockQty / displayQty);
+
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
-                    Quantity = row.Quantity,
-                    UnitPrice = row.UnitPrice,
-                    DiscountAmount = ShowProductDiscount ? row.DiscountAmount : 0m,
-                    TotalPrice = row.TotalPrice,
+                    Quantity = stockQty,
+                    UnitPrice = unitPriceForStorage,
+                    DiscountAmount = discountForStorage,
+                    TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });
             }
@@ -742,6 +760,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             FileNumber = string.IsNullOrWhiteSpace(FileNumber) ? null : FileNumber,
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
+            TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
             CompanyFeeAmount = _savedPlan?.CompanyFeeAmount > 0 ? _savedPlan.CompanyFeeAmount : null,
             NumberOfInstallments = NumberOfInstallments,
@@ -778,6 +797,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _savedPlan = null;
         ErrorMessage = string.Empty;
         Notes = string.Empty;
+        TransportFeeAmount = 0m;
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
         FileNumber = string.Empty;
