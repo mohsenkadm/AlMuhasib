@@ -34,6 +34,7 @@ public partial class SalesInvoiceViewModel
     private bool _marketTemplateFieldsEnabled;
 
     [ObservableProperty] private bool _showUnitsOfMeasure;
+    [ObservableProperty] private bool _showMenuWeight;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showProductPricing;
@@ -75,6 +76,7 @@ public partial class SalesInvoiceViewModel
         if (_featureFlags is null) return;
 
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
+        ShowMenuWeight = _featureFlags.MenuWeight;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
@@ -103,6 +105,8 @@ public partial class SalesInvoiceViewModel
             ClearRowPricing();
         if (!ShowClothingSizes)
             ClearRowSizes();
+
+        InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
     }
 
     private void ClearRowPricing()

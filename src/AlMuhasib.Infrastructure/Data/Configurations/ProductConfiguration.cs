@@ -20,6 +20,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Barcode)
             .HasMaxLength(50);
 
+        builder.Property(p => p.Weight)
+            .HasPrecision(18, 4);
+
+        builder.Property(p => p.WeightUnit)
+            .HasMaxLength(20);
+
         builder.HasOne(p => p.Category)
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)

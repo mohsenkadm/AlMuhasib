@@ -9,6 +9,8 @@ public class CloudProduct : CloudBaseEntity
     public string? Description { get; set; }
     public string? Barcode { get; set; }
     public int CategoryId { get; set; }
+    public decimal Weight { get; set; }
+    public string? WeightUnit { get; set; }
     public CloudCategory Category { get; set; } = null!;
     public ICollection<CloudProductPrice> ProductPrices { get; set; } = [];
 }

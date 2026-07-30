@@ -13,6 +13,8 @@ public sealed class ProductSyncDto : SyncDtoBase
     public string? Description { get; set; }
     public string? Barcode { get; set; }
     public Guid CategorySyncId { get; set; }
+    public decimal Weight { get; set; }
+    public string? WeightUnit { get; set; }
 }
 
 public sealed class PricingTypeSyncDto : SyncDtoBase

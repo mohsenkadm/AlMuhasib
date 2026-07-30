@@ -389,6 +389,37 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Invoice weight card (feature-gated: MenuWeight) -->
+                <materialDesign:Card UniformCornerRadius="12" Padding="0" Margin="0,0,0,16"
+                                     materialDesign:ElevationAssist.Elevation="Dp2"
+                                     Visibility="{Binding ShowMenuWeight, Converter={StaticResource BoolToVis}}">
+                    <Border CornerRadius="12" Padding="18,14">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#E0F7FA" Offset="0"/>
+                                <GradientStop Color="#B2EBF2" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="48" Height="48" CornerRadius="12" Background="#00838F" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="ScaleBalance" Width="26" Height="26"
+                                                         Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="وزن الفاتورة" FontSize="15" FontWeight="Bold" Foreground="#006064"/>
+                                <TextBlock Text="{Binding InvoiceWeightSummaryText}" FontSize="18" FontWeight="SemiBold"
+                                           Foreground="#004D40" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="يُحدَّث تلقائياً عند إضافة أو حذف أو تغيير كمية المنتجات"
+                                           FontSize="11" Foreground="#00838F" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </materialDesign:Card>
+
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- FOOTER / TOTALS                                -->
                 <!-- ═══════════════════════════════════════════ -->

@@ -97,6 +97,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private decimal _totalQuantity;
 
     [ObservableProperty]
+    private string _invoiceWeightSummaryText = string.Empty;
+
+    [ObservableProperty]
     private string _notes = string.Empty;
 
     // ── State ──────────────────────────────────────────────
@@ -626,6 +629,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         Subtotal = sub;
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
+        InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
 
         var (computedSub, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),

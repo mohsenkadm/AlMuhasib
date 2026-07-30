@@ -25,6 +25,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IFeatureFlagService _featureFlags;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -110,6 +111,12 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalQuantity;
 
+    [ObservableProperty]
+    private bool _showMenuWeight;
+
+    [ObservableProperty]
+    private string _invoiceWeightSummaryText = string.Empty;
+
     /// <summary>نسبة الشركة (8%)</summary>
     [ObservableProperty]
     private decimal _companyFeeAmount;
@@ -147,7 +154,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IFeatureFlagService featureFlags)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -159,6 +167,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _templateService = templateService;
         _draftService = draftService;
         _queueService = queueService;
+        _featureFlags = featureFlags;
 
         PageTitle = "فاتورة أقساط";
 
@@ -170,6 +179,14 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
+        RefreshMenuWeightVisibility();
+        featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshMenuWeightVisibility);
+    }
+
+    private void RefreshMenuWeightVisibility()
+    {
+        ShowMenuWeight = _featureFlags.MenuWeight;
+        InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
     }
 
     public override bool HasUnsavedChanges =>
@@ -432,6 +449,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         Subtotal = sub;
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
+        InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
 
         var (_, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),
@@ -557,7 +575,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                     ItemName = row.ItemName.Trim(),
                     Quantity = row.Quantity,
                     UnitPrice = row.UnitPrice,
-                    TotalPrice = row.TotalPrice
+                    TotalPrice = row.TotalPrice,
+                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });
             }
 

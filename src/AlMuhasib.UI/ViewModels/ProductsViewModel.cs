@@ -85,6 +85,12 @@ public partial class ProductsViewModel : ViewModelBase
     private Category? _editCategory;
 
     [ObservableProperty]
+    private decimal _editWeight;
+
+    [ObservableProperty]
+    private string _editWeightUnit = "كغ";
+
+    [ObservableProperty]
     private string _dialogError = string.Empty;
 
     // ── Delete confirmation ────────────────────────────────
@@ -401,6 +407,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditDescription = string.Empty;
         EditBarcode = string.Empty;
         EditCategory = null;
+        EditWeight = 0m;
+        EditWeightUnit = "كغ";
         DialogError = string.Empty;
         ClearFeatureEditCollections();
         await LoadMinQuantitiesForProductAsync(null);
@@ -419,6 +427,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditDescription = product.Description ?? string.Empty;
         EditBarcode = product.Barcode ?? string.Empty;
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
+        EditWeight = product.Weight;
+        EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
         DialogError = string.Empty;
         await LoadFeatureDataForProductAsync(product.Id);
         await LoadMinQuantitiesForProductAsync(product.Id);
@@ -453,6 +463,8 @@ public partial class ProductsViewModel : ViewModelBase
                 product.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
                 product.Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim();
                 product.CategoryId = EditCategory.Id;
+                product.Weight = EditWeight < 0 ? 0m : EditWeight;
+                product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
 
                 await _productService.UpdateAsync(product);
                 await SaveMinQuantitiesAsync(product.Id);
@@ -464,7 +476,9 @@ public partial class ProductsViewModel : ViewModelBase
                     Name = EditName.Trim(),
                     Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
                     Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim(),
-                    CategoryId = EditCategory.Id
+                    CategoryId = EditCategory.Id,
+                    Weight = EditWeight < 0 ? 0m : EditWeight,
+                    WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim()
                 };
 
                 var created = await _productService.CreateAsync(product);

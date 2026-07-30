@@ -275,11 +275,29 @@ internal static class SyncMapper
     };
 
     private static CategorySyncDto MapCategory(Category c) { var d = new CategorySyncDto(); CopyBase(c, d); d.Name = c.Name; return d; }
-    private static ProductSyncDto MapProduct(Product p, Dictionary<int, Guid> cats) { var d = new ProductSyncDto(); CopyBase(p, d); d.Name = p.Name; d.Description = p.Description; d.Barcode = p.Barcode; d.CategorySyncId = cats[p.CategoryId]; return d; }
+    private static ProductSyncDto MapProduct(Product p, Dictionary<int, Guid> cats)
+    {
+        var d = new ProductSyncDto();
+        CopyBase(p, d);
+        d.Name = p.Name;
+        d.Description = p.Description;
+        d.Barcode = p.Barcode;
+        d.CategorySyncId = cats[p.CategoryId];
+        d.Weight = p.Weight;
+        d.WeightUnit = p.WeightUnit;
+        return d;
+    }
     private static ProductSyncDto? MapProductSafe(Product p, Dictionary<int, Guid> cats)
     {
         if (!cats.TryGetValue(p.CategoryId, out var catSyncId)) return null;
-        var d = new ProductSyncDto(); CopyBase(p, d); d.Name = p.Name; d.Description = p.Description; d.Barcode = p.Barcode; d.CategorySyncId = catSyncId;
+        var d = new ProductSyncDto();
+        CopyBase(p, d);
+        d.Name = p.Name;
+        d.Description = p.Description;
+        d.Barcode = p.Barcode;
+        d.CategorySyncId = catSyncId;
+        d.Weight = p.Weight;
+        d.WeightUnit = p.WeightUnit;
         return d;
     }
     private static PricingTypeSyncDto MapPricingType(PricingType t)
@@ -438,6 +456,8 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Products.Add(entity);
             ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.CategoryId = catId;
+            entity.Weight = dto.Weight;
+            entity.WeightUnit = dto.WeightUnit;
         }
         await db.SaveChangesAsync(ct);
     }

@@ -487,6 +487,36 @@
                                      MaxHeight="120"
                                      VerticalScrollBarVisibility="Auto" />
 
+                            <!-- Product weight (feature-gated: MenuWeight) -->
+                            <Border Margin="0,16,0,0" Padding="12" Background="#E0F7FA" CornerRadius="8"
+                                    Visibility="{Binding ShowWeightSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="وزن المادة" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="وزن/حجم الوحدة الأساسية للمنتج. يُستخدم لحساب وزن فاتورة البيع تلقائياً."
+                                               FontSize="12" Foreground="#006064" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="140"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding EditWeight, UpdateSourceTrigger=PropertyChanged, StringFormat=N4}"
+                                                 materialDesign:HintAssist.Hint="الوزن *"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource FilledTextBox}"
+                                                 Margin="0,0,8,0"/>
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding WeightUnitOptions}"
+                                                  SelectedItem="{Binding EditWeightUnit}"
+                                                  IsEditable="True"
+                                                  materialDesign:HintAssist.Hint="الوحدة"
+                                                  materialDesign:HintAssist.IsFloating="True"
+                                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                                  Style="{StaticResource FilledComboBox}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Clothing sizes (feature-gated: TemplateClothing) -->
                             <Border Margin="0,12,0,0" Padding="12" Background="#FCE4EC" CornerRadius="8"
                                     Visibility="{Binding ShowSizesSection, Converter={StaticResource BooleanToVisibilityConverter}}">

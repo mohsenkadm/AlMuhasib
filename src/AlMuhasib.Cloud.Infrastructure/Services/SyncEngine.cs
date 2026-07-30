@@ -407,6 +407,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Description = dto.Description;
         existing.Barcode = dto.Barcode;
         existing.CategoryId = categoryId;
+        existing.Weight = dto.Weight;
+        existing.WeightUnit = dto.WeightUnit;
         return 1;
     }
 
@@ -817,6 +819,7 @@ public sealed partial class SyncEngine : ISyncEngine
             SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode,
+            Weight = p.Weight, WeightUnit = p.WeightUnit,
             CategorySyncId = catMap.GetValueOrDefault(p.CategoryId)
         }).ToList();
     }
