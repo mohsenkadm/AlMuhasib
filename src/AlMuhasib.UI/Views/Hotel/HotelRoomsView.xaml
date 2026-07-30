@@ -16,16 +16,19 @@
                                  PreviewSubtitle="{Binding PreviewSubtitle}"
                                  PreviewIconKind="{Binding PreviewIconKind}"
                                  PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
-                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}"
+                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                 PrintCommand="{Binding PrintTableCommand}"
+                                 ShowCardToggle="True">
 
         <controls:HotelListPageShell.ListHeaderExtra>
-            <StackPanel Orientation="Horizontal">
-                <ToggleButton IsChecked="{Binding IsGridView}" ToolTip="عرض شبكة"
-                              Style="{StaticResource MaterialDesignFlatButton}" Foreground="White" Margin="0,0,8,0">
-                    <md:PackIcon Kind="ViewGrid" Width="18" Height="18"/>
-                </ToggleButton>
-                <controls:ListViewModeToggle OnDarkBackground="True"/>
-            </StackPanel>
+            <ToggleButton IsChecked="{Binding IsGridView}" ToolTip="عرض شبكة"
+                          Style="{StaticResource MaterialDesignFlatButton}" Foreground="White" Margin="0,0,8,0">
+                <md:PackIcon Kind="ViewGrid" Width="18" Height="18"/>
+            </ToggleButton>
         </controls:HotelListPageShell.ListHeaderExtra>
 
         <controls:HotelListPageShell.ToolbarContent>
@@ -45,11 +48,6 @@
                 </Button>
                 <ComboBox md:HintAssist.Hint="فلتر الحالة" ItemsSource="{Binding StatusFilterOptions}"
                           SelectedItem="{Binding StatusFilter}" Width="160" Margin="8,0,0,0"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             Margin="4,0,0,0"
-                                             VerticalAlignment="Center"/>
                 <TextBox md:HintAssist.Hint="بحث..."
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource FilledTextBox}"
@@ -63,7 +61,7 @@
                           SelectedItem="{Binding SelectedRoom}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
-                          Style="{StaticResource HotelListDataGrid}"
+                          Style="{StaticResource ModernDataGrid}"
                           Margin="8"
                           Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"

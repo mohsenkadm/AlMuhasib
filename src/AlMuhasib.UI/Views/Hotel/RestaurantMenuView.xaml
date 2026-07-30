@@ -42,11 +42,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=MenuItemsGrid}"
-                                                 Margin="8,0,0,0" VerticalAlignment="Center"/>
                     <TextBox md:HintAssist.Hint="بحث في الأصناف..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="16,0,0,0"/>
@@ -67,12 +62,14 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
-                        <TextBlock Text="الفئات" FontWeight="Bold" Foreground="White"/>
-                    </Border>
+                    <controls:ListTableHeaderBar Title="الفئات"
+                                                 ShowFilter="False"
+                                                 ShowExport="False"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"/>
                     <controls:HotelListStatsBar Grid.Row="1" Margin="12,10,12,4" ItemsSource="{Binding Stats}"/>
                     <DataGrid Grid.Row="2" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8">
+                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="الفئة" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -111,12 +108,17 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
-                        <TextBlock Text="الأصناف" FontWeight="Bold" Foreground="White"/>
-                    </Border>
+                    <controls:ListTableHeaderBar Title="الأصناف"
+                                                 TargetDataGrid="{Binding ElementName=MenuItemsGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                                 PrintCommand="{Binding PrintTableCommand}"
+                                                 ShowCardToggle="False"/>
                     <DataGrid x:Name="MenuItemsGrid" Grid.Row="1" Margin="8"
                               ItemsSource="{Binding MenuItems}" SelectedItem="{Binding SelectedMenuItem}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

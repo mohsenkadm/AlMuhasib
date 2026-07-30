@@ -18,14 +18,21 @@
                 <TabControl SelectedIndex="{Binding SelectedTabIndex}" md:ColorZoneAssist.Mode="PrimaryMid">
                     <TabItem Header="ديون البائعين">
                         <StackPanel Margin="0,12,0,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                             TargetDataGrid="{Binding ElementName=SellerDebtsGrid}"/>
-                            </StackPanel>
-                            <md:Card md:ElevationAssist.Elevation="Dp2">
-                                <DataGrid x:Name="SellerDebtsGrid"
+                            <md:Card md:ElevationAssist.Elevation="Dp2" Padding="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <controls:ListTableHeaderBar Title="ديون البائعين"
+                                                                 TargetDataGrid="{Binding ElementName=SellerDebtsGrid}"
+                                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                                 ShowPrint="False"
+                                                                 ShowCardToggle="False"/>
+                                <DataGrid x:Name="SellerDebtsGrid" Grid.Row="1"
                                           ItemsSource="{Binding SellerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
                                           AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280"
                                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -64,20 +71,28 @@
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                </Grid>
                             </md:Card>
                         </StackPanel>
                     </TabItem>
 
                     <TabItem Header="ديون المشترين">
                         <StackPanel Margin="0,12,0,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                             TargetDataGrid="{Binding ElementName=BuyerDebtsGrid}"/>
-                            </StackPanel>
-                            <md:Card md:ElevationAssist.Elevation="Dp2">
-                                <DataGrid x:Name="BuyerDebtsGrid"
+                            <md:Card md:ElevationAssist.Elevation="Dp2" Padding="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <controls:ListTableHeaderBar Title="ديون المشترين"
+                                                                 TargetDataGrid="{Binding ElementName=BuyerDebtsGrid}"
+                                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                                 ShowPrint="False"
+                                                                 ShowCardToggle="False"/>
+                                <DataGrid x:Name="BuyerDebtsGrid" Grid.Row="1"
                                           ItemsSource="{Binding BuyerDebts}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
                                           AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280"
                                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -116,6 +131,7 @@
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                </Grid>
                             </md:Card>
                         </StackPanel>
                     </TabItem>
@@ -149,18 +165,26 @@
                                     <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
                                                 md:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,8"/>
                                     <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadStatementCommand}" Margin="0,0,12,8"/>
-                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                                   ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                                   ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                                   TargetDataGrid="{Binding ElementName=PartyStatementGrid}"
-                                                                   Margin="0,0,12,8"/>
                                     <Button Content="تحديث الأسماء" Style="{StaticResource FlatButton}"
                                             Command="{Binding RefreshPartyNamesCommand}" Margin="0,0,8,8"/>
                                 </WrapPanel>
                             </Border>
 
-                            <md:Card md:ElevationAssist.Elevation="Dp2">
-                                <DataGrid x:Name="PartyStatementGrid"
+                            <md:Card md:ElevationAssist.Elevation="Dp2" Padding="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <controls:ListTableHeaderBar Title="كشف الطرف"
+                                                                 TargetDataGrid="{Binding ElementName=PartyStatementGrid}"
+                                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                                 PrintCommand="{Binding PrintStatementCommand}"
+                                                                 ShowCardToggle="False"/>
+                                <DataGrid x:Name="PartyStatementGrid" Grid.Row="1"
                                           ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
                                           AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="240"
                                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -201,17 +225,11 @@
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                </Grid>
                             </md:Card>
                         </StackPanel>
                     </TabItem>
                 </TabControl>
-
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintStatementCommand}"
-                            IsEnabled="{Binding CanPrint}" Margin="0,0,8,0"/>
-                    <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportExcelCommand}"
-                            IsEnabled="{Binding CanExport}"/>
-                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 

@@ -17,6 +17,7 @@ public partial class RestaurantInventoryViewModel : ViewModelBase
     private readonly IHotelCashService _cashService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<RestaurantIngredient> Ingredients { get; } = [];
     public ObservableCollection<HotelCashBox> CashBoxes { get; } = [];
@@ -46,12 +47,14 @@ public partial class RestaurantInventoryViewModel : ViewModelBase
         IRestaurantInventoryService inventoryService,
         IHotelCashService cashService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _inventoryService = inventoryService;
         _cashService = cashService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "مخزون المطبخ";
     }
 
@@ -205,5 +208,27 @@ public partial class RestaurantInventoryViewModel : ViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "المكون", "الوحدة", "الرصيد", "الحد الأدنى", "التكلفة" };
+        var data = Ingredients.Select(i => new object?[]
+        {
+            i.Name, i.Unit, i.Stock?.Quantity, i.MinQuantity, i.AverageCost
+        }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantInventory", "المخزون", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "المكون", "الوحدة", "الرصيد", "الحد الأدنى", "التكلفة" };
+        var data = Ingredients.Select(i => new object?[]
+        {
+            i.Name, i.Unit, i.Stock?.Quantity, i.MinQuantity, i.AverageCost
+        }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "مخزون المطبخ", headers, data);
     }
 }

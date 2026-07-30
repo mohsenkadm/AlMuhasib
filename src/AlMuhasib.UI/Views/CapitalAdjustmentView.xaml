@@ -67,23 +67,6 @@
                             <TextBlock Text="تسوية جديدة"/>
                         </StackPanel>
                     </Button>
-
-                    <Button Command="{Binding ExportToExcelCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8"
-                            Background="#388E3C"
-                            Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileExcel" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
-                            <TextBlock Text="تصدير Excel" Foreground="White"/>
-                        </StackPanel>
-                    </Button>
-
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=CapitalAdjustmentGrid}"
-                                                 VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Adjustment Form (collapsible) -->
@@ -141,9 +124,21 @@
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-            <DataGrid x:Name="CapitalAdjustmentGrid" Grid.Row="0"
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجل رأس المال والتسويات"
+                                             TargetDataGrid="{Binding ElementName=CapitalAdjustmentGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCapitalCommand}"
+                                             ShowCardToggle="False"/>
+
+            <DataGrid x:Name="CapitalAdjustmentGrid" Grid.Row="1"
                       ItemsSource="{Binding Entries}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False" CanUserDeleteRows="False"

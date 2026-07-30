@@ -287,4 +287,25 @@ public partial class WarehousesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0635\u062f\u064a\u0631: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _unitOfWork.Warehouses.GetPagedAsync(1, int.MaxValue);
+            var columns = new[] { "الاسم", "الموقع", "تاريخ الإنشاء" };
+            IList<object[]> rows = allItems.Select(w => new object[]
+            {
+                w.Name,
+                w.Location ?? "",
+                w.CreatedAt.ToString("yyyy/MM/dd")
+            }).ToList();
+            _exportService.PrintTable("قائمة المخازن", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
 }

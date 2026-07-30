@@ -340,6 +340,29 @@ public partial class SuppliersViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _unitOfWork.Suppliers.GetPagedAsync(1, int.MaxValue);
+            var columns = new[] { "الاسم", "الهاتف", "العنوان", "ملاحظات", "تاريخ الإنشاء" };
+            IList<object[]> rows = allItems.Select(s => new object[]
+            {
+                s.Name,
+                s.Phone ?? "",
+                s.Address ?? "",
+                s.Notes ?? "",
+                s.CreatedAt.ToString("yyyy/MM/dd")
+            }).ToList();
+            _exportService.PrintTable("قائمة الموردين", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
     partial void OnIsCardViewChanged(bool value) =>
         ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Suppliers, value);
 }

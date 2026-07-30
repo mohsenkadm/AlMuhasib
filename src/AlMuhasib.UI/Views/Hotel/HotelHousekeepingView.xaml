@@ -16,7 +16,13 @@
                                  PreviewSubtitle="{Binding PreviewSubtitle}"
                                  PreviewIconKind="{Binding PreviewIconKind}"
                                  PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
-                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}"
+                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                 PrintCommand="{Binding PrintTableCommand}"
+                                 ShowCardToggle="False">
 
         <controls:HotelListPageShell.ToolbarContent>
             <StackPanel Orientation="Horizontal">
@@ -32,11 +38,6 @@
                 <TextBox md:HintAssist.Hint="تصفية بالمسؤول"
                          Text="{Binding AssignedFilter, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource FilledTextBox}" Width="180" Margin="8,0,0,0"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             Margin="4,0,0,0"
-                                             VerticalAlignment="Center"/>
             </StackPanel>
         </controls:HotelListPageShell.ToolbarContent>
 
@@ -46,7 +47,7 @@
                       SelectedItem="{Binding SelectedTask}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
-                      Style="{StaticResource HotelListDataGrid}"
+                      Style="{StaticResource ModernDataGrid}"
                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                       behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                       behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

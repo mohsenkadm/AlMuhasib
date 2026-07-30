@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:OpeningInstallmentBalanceViewModel}"
@@ -174,10 +175,14 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <Border Grid.Row="0" Background="#E3F2FD" CornerRadius="12,12,0,0" Padding="16,10">
-                                        <TextBlock Text="معاينة جدول الأقساط" FontSize="15" FontWeight="SemiBold" Foreground="#0D47A1"/>
-                                    </Border>
-                                    <DataGrid Grid.Row="1" ItemsSource="{Binding SchedulePreview}"
+                                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                                 Title="معاينة جدول الأقساط"
+                                                                 TargetDataGrid="{Binding ElementName=SchedulePreviewGrid}"
+                                                                 ShowCardToggle="False"
+                                                                 ShowExport="False"
+                                                                 ShowPrint="False"
+                                                                 ShowFilter="False"/>
+                                    <DataGrid x:Name="SchedulePreviewGrid" Grid.Row="1" ItemsSource="{Binding SchedulePreview}"
                                               Style="{StaticResource ModernDataGrid}"
                                               AutoGenerateColumns="False" IsReadOnly="True"
                                               CanUserAddRows="False" CanUserDeleteRows="False"
@@ -258,16 +263,21 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <Border Grid.Row="0" Background="#E8EAF6" CornerRadius="12,12,0,0" Padding="16,10">
-                                        <Grid>
-                                            <TextBlock Text="معاينة الاستيراد" FontSize="15" FontWeight="SemiBold" Foreground="#283593" VerticalAlignment="Center"/>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                                <TextBlock Text="{Binding ImportValidCount, StringFormat=صالح: {0}}" Margin="0,0,16,0" Foreground="#2E7D32"/>
-                                                <TextBlock Text="{Binding ImportInvalidCount, StringFormat=يحتاج تصحيح: {0}}" Foreground="#C62828"/>
+                                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                                 Title="معاينة الاستيراد"
+                                                                 TargetDataGrid="{Binding ElementName=ImportRowsGrid}"
+                                                                 ShowCardToggle="False"
+                                                                 ShowExport="False"
+                                                                 ShowPrint="False"
+                                                                 ShowFilter="False">
+                                        <controls:ListTableHeaderBar.ExtraContent>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ImportValidCount, StringFormat=صالح: {0}}" Margin="0,0,16,0" Foreground="#C8E6C9"/>
+                                                <TextBlock Text="{Binding ImportInvalidCount, StringFormat=يحتاج تصحيح: {0}}" Foreground="#FFCDD2"/>
                                             </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                    <DataGrid Grid.Row="1" ItemsSource="{Binding ImportRows}"
+                                        </controls:ListTableHeaderBar.ExtraContent>
+                                    </controls:ListTableHeaderBar>
+                                    <DataGrid x:Name="ImportRowsGrid" Grid.Row="1" ItemsSource="{Binding ImportRows}"
                                               Style="{StaticResource ModernDataGrid}"
                                               AutoGenerateColumns="False" IsReadOnly="True"
                                               CanUserAddRows="False"

@@ -16,6 +16,7 @@ public partial class HotelRoomTypesViewModel : PagedViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IExportService _exportService;
     private System.Timers.Timer? _debounceTimer;
 
     public ObservableCollection<RoomType> RoomTypes { get; } = [];
@@ -39,12 +40,14 @@ public partial class HotelRoomTypesViewModel : PagedViewModelBase
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IExportService exportService)
     {
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _exportService = exportService;
         PageTitle = "أنواع الغرف";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelRoomTypes);
     }
@@ -223,5 +226,21 @@ public partial class HotelRoomTypesViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الاسم", "السعة", "السعر الأساسي", "الترتيب" };
+        var data = RoomTypes.Select(r => new object?[] { r.Name, r.Capacity, r.BasePrice, r.SortOrder }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RoomTypes", "أنواع الغرف", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الاسم", "السعة", "السعر الأساسي", "الترتيب" };
+        var data = RoomTypes.Select(r => new object?[] { r.Name, r.Capacity, r.BasePrice, r.SortOrder }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة أنواع الغرف", headers, data);
     }
 }

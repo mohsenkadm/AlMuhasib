@@ -255,6 +255,28 @@ public partial class PricingTypesViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _pricingTypeService.GetPagedAsync(1, int.MaxValue);
+            var columns = new[] { "الاسم", "افتراضي", "نشط", "تاريخ الإنشاء" };
+            IList<object[]> rows = allItems.Select(t => new object[]
+            {
+                t.Name,
+                t.IsDefault ? "نعم" : "لا",
+                t.IsActive ? "نعم" : "لا",
+                t.CreatedAt.ToString("yyyy/MM/dd")
+            }).ToList();
+            _exportService.PrintTable("قائمة أنواع التسعير", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
     partial void OnIsCardViewChanged(bool value) =>
         ListViewModeHelper.SaveIsCardView(_userPreferences, "PricingTypes", value);
 }

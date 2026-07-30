@@ -44,21 +44,25 @@
                          Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
                 <CheckBox Content="المتأخر فقط" IsChecked="{Binding OverdueOnly}" VerticalAlignment="Center" Margin="0,0,12,8"/>
                 <Button Content="تحديث" Command="{Binding LoadCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"/>
-                <Button Content="تصدير Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource OutlinedButton}"
-                        IsEnabled="{Binding CanExport}" Margin="0,0,8,8"/>
-                <Button Content="طباعة" Command="{Binding PrintTableCommand}" Style="{StaticResource OutlinedButton}"
-                        IsEnabled="{Binding CanPrint}" Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=DebtsGrid}"
-                                             Margin="0,0,8,8" VerticalAlignment="Center"/>
-                <controls:ListViewModeToggle OnDarkBackground="False" VerticalAlignment="Center" Margin="0,0,0,8"/>
             </WrapPanel>
         </Border>
 
         <md:Card Grid.Row="4" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="كشف المدينين"
+                                             TargetDataGrid="{Binding ElementName=DebtsGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="True"/>
+                <Grid Grid.Row="1">
                 <DataGrid x:Name="DebtsGrid"
                           ItemsSource="{Binding Debts}"
                           AutoGenerateColumns="False"
@@ -122,6 +126,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+                </Grid>
             </Grid>
         </md:Card>
     </Grid>

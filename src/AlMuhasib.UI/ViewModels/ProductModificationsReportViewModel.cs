@@ -89,4 +89,21 @@ public partial class ProductModificationsReportViewModel : SupervisoryReportView
         ExportService.ExportToExcel(dlg.FileName, "تعديلات المنتجات", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "التاريخ", "المنتج", "ملخص التعديل", "المعدِّل", "القيم القديمة", "القيم الجديدة" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.Timestamp.ToString("yyyy/MM/dd HH:mm"),
+            r.EntityTitle,
+            r.ChangeSummary,
+            r.ModifiedBy,
+            r.OldValues ?? "",
+            r.NewValues ?? ""
+        }).ToList();
+        ExportService.PrintTable("تعديلات المنتجات", cols, (IList<object[]>)data);
+    }
 }

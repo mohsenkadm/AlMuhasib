@@ -45,13 +45,6 @@
                         <ComboBox ItemsSource="{Binding TopCountOptions}" SelectedItem="{Binding TopCount}" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="عدد النتائج" Width="120" Margin="0,0,12,0"
                                   Visibility="{Binding TopCountVisibility}"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,8,0"/>
-                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                       TargetDataGrid="{Binding ElementName=MaterialNetProfitGrid}"
-                                                       Margin="0,0,8,0"/>
-                        <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintCommand}" Margin="0,0,8,0"/>
-                        <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportToExcelCommand}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -60,14 +53,28 @@
         <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Margin="24,0,24,16">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="صافي ربح المواد"
+                                             TargetDataGrid="{Binding ElementName=MaterialNetProfitGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False"/>
+
                 <DataGrid x:Name="MaterialNetProfitGrid"
                           ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False" MinHeight="280"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
+
+                                  Grid.Row="1">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="#" Binding="{Binding Rank}" Width="50"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Rank"/>
@@ -89,7 +96,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="MarginPercent"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <controls:PaginationBar Grid.Row="1"/>
+                <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </materialDesign:Card>
     </Grid>

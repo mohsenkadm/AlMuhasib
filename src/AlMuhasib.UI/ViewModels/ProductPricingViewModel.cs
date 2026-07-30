@@ -357,6 +357,33 @@ public partial class ProductPricingViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (items, _) = await _productPriceService.GetPagedAsync(1, int.MaxValue, SearchText,
+                null, FilterPricingType?.Id, FilterCategory is { Id: > 0 } ? FilterCategory.Id : null,
+                ParseDecimal(MinSalePriceText), ParseDecimal(MaxSalePriceText),
+                ParseDecimal(MinPurchasePriceText), ParseDecimal(MaxPurchasePriceText));
+
+            var columns = new[] { "المنتج", "الباركود", "نوع التسعير", "سعر البيع", "سعر الشراء" };
+            IList<object[]> rows = items.Select(p => new object[]
+            {
+                p.Product?.Name ?? "",
+                p.Product?.Barcode ?? "",
+                p.PricingType?.Name ?? "",
+                p.SalePrice,
+                p.PurchasePrice
+            }).ToList();
+            _exportService.PrintTable("قائمة تسعير المنتجات", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
     private async Task ImportFromExcel()
     {
         try

@@ -18,6 +18,7 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IExportService _exportService;
 
     private List<RatePlan> _allRatePlans = [];
 
@@ -52,13 +53,15 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IExportService exportService)
     {
         _ratePlanService = ratePlanService;
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _exportService = exportService;
         PageTitle = "خطط الأسعار";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelRatePlans);
     }
@@ -405,5 +408,21 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الاسم", "السعر", "نشط" };
+        var data = RatePlans.Select(p => new object?[] { p.Name, p.BasePrice, p.IsActive ? "نعم" : "لا" }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RatePlans", "خطط الأسعار", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الاسم", "السعر", "نشط" };
+        var data = RatePlans.Select(p => new object?[] { p.Name, p.BasePrice, p.IsActive ? "نعم" : "لا" }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "خطط الأسعار", headers, data);
     }
 }

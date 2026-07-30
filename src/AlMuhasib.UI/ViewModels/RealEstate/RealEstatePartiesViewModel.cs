@@ -15,6 +15,7 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _prefs;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<RealEstatePartyListItem> Parties { get; } = [];
 
@@ -35,12 +36,14 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
         IRealEstatePartyService partyService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService prefs)
+        IUserPreferencesService prefs,
+        IExportService exportService)
     {
         _partyService = partyService;
         _currentUserService = currentUserService;
         _toast = toast;
         _prefs = prefs;
+        _exportService = exportService;
         PageTitle = "الزبائن";
         IsCardView = ListViewModeHelper.LoadIsCardView(_prefs, "RealEstateParties");
     }
@@ -180,5 +183,30 @@ public partial class RealEstatePartiesViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (!CanExport) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = $"RealEstateParties_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+        if (dialog.ShowDialog() != true) return;
+        var headers = new[] { "الاسم", "الهاتف", "العنوان", "الهوية", "الدين" };
+        var data = Parties.Select(p => new object?[] { p.Name, p.Phone, p.Address, p.IdNumber, p.TotalDebt }).ToList();
+        _exportService.ExportToExcel(dialog.FileName, "الزبائن", headers, data);
+        _toast.ShowSuccess("تم التصدير");
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (!CanPrint) return;
+        var headers = new[] { "الاسم", "الهاتف", "العنوان", "الدين" };
+        var data = Parties.Select(p => new object?[] { p.Name, p.Phone, p.Address, p.TotalDebt }).ToList();
+        _exportService.PrintTable("قائمة زبائن العقارات", headers, data);
     }
 }

@@ -34,12 +34,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=RatePlansGrid}"
-                                                 Margin="4,0,0,0"
-                                                 VerticalAlignment="Center"/>
                     <TextBox md:HintAssist.Hint="بحث..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
@@ -62,9 +56,15 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Padding="12" Background="{DynamicResource PrimaryHueMidBrush}">
-                        <TextBlock Text="خطط الأسعار" Foreground="White" FontWeight="Bold"/>
-                    </Border>
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="خطط الأسعار"
+                                                 TargetDataGrid="{Binding ElementName=RatePlansGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                                 PrintCommand="{Binding PrintTableCommand}"
+                                                 ShowCardToggle="False"/>
                     <controls:HotelListStatsBar Grid.Row="1" Margin="12,8,12,4" ItemsSource="{Binding Stats}"/>
                     <DataGrid x:Name="RatePlansGrid"
                               Grid.Row="2"
@@ -73,7 +73,7 @@
                               SelectedItem="{Binding SelectedRatePlan}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
+                              Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -116,34 +116,29 @@
 
             <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="8,0,0,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Padding="12" Background="{DynamicResource PrimaryHueMidBrush}">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="مواسم السعر" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                                    <Button Command="{Binding OpenAddSeasonDialogCommand}" Style="{StaticResource FlatButton}" Foreground="White" IsEnabled="{Binding CanAdd}" Margin="12,0,0,0">
-                                        <md:PackIcon Kind="Plus"/>
-                                    </Button>
-                                </StackPanel>
-                                <controls:ColumnFilterToggle Grid.Column="1"
-                                                             IsChecked="{Binding IsSeasonColumnFilterPanelOpen, Mode=TwoWay}"
-                                                             ActiveFilterCount="{Binding SeasonActiveColumnFilterCount}"
-                                                             ClearFiltersCommand="{Binding ClearSeasonColumnFiltersCommand}"
-                                                             TargetDataGrid="{Binding ElementName=SeasonsGrid}"
-                                                             VerticalAlignment="Center"/>
-                            </Grid>
-                            <TextBox md:HintAssist.Hint="بحث في المواسم..."
-                                     Text="{Binding SeasonSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}"
-                                     Margin="0,8,0,0"
-                                     Foreground="Black"/>
-                        </StackPanel>
-                    </Border>
-                    <DataGrid x:Name="SeasonsGrid" ItemsSource="{Binding Seasons}" SelectedItem="{Binding SelectedSeason}" AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                    <controls:ListTableHeaderBar DockPanel.Dock="Top"
+                                                 Title="مواسم السعر"
+                                                 TargetDataGrid="{Binding ElementName=SeasonsGrid}"
+                                                 IsFilterPanelOpen="{Binding IsSeasonColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding SeasonActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearSeasonColumnFiltersCommand}"
+                                                 ShowExport="False"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False">
+                        <controls:ListTableHeaderBar.ExtraContent>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Command="{Binding OpenAddSeasonDialogCommand}" Style="{StaticResource FlatButton}" Foreground="White" IsEnabled="{Binding CanAdd}" Margin="0,0,8,0">
+                                    <md:PackIcon Kind="Plus"/>
+                                </Button>
+                                <TextBox md:HintAssist.Hint="بحث في المواسم..."
+                                         Text="{Binding SeasonSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FilledTextBox}"
+                                         Width="160"
+                                         Foreground="Black"/>
+                            </StackPanel>
+                        </controls:ListTableHeaderBar.ExtraContent>
+                    </controls:ListTableHeaderBar>
+                    <DataGrid x:Name="SeasonsGrid" ItemsSource="{Binding Seasons}" SelectedItem="{Binding SelectedSeason}" AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsSeasonColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplySeasonColumnFiltersCommand}">

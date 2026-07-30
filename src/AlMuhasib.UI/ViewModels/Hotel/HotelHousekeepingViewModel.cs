@@ -18,6 +18,7 @@ public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
     private readonly IHotelMasterDataService _masterDataService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
     private readonly HotelEntityNavigationHelper _navigation;
 
     public ObservableCollection<HousekeepingTaskRow> Tasks { get; } = [];
@@ -42,12 +43,14 @@ public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
+        IExportService exportService,
         MainWindowViewModel mainWindow)
     {
         _housekeepingService = housekeepingService;
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "النظافة";
     }
@@ -241,6 +244,22 @@ public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
             return;
 
         await _navigation.OpenRoomsAsync(task.RoomId);
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الغرفة", "الحالة", "المسؤول", "ملاحظات" };
+        var data = Tasks.Select(t => new object?[] { t.RoomNumber, t.StatusLabel, t.AssignedTo, t.Notes }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "Housekeeping", "النظافة", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الغرفة", "الحالة", "المسؤول", "ملاحظات" };
+        var data = Tasks.Select(t => new object?[] { t.RoomNumber, t.StatusLabel, t.AssignedTo, t.Notes }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "مهام النظافة", headers, data);
     }
 }
 

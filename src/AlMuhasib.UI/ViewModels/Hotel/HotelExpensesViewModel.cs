@@ -16,6 +16,7 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
     private readonly IHotelCashService _cashService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<HotelExpense> Expenses { get; } = [];
     public ObservableCollection<HotelExpenseType> ExpenseTypes { get; } = [];
@@ -45,12 +46,14 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
         IHotelExpenseService expenseService,
         IHotelCashService cashService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _expenseService = expenseService;
         _cashService = cashService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "المصاريف";
     }
 
@@ -281,5 +284,27 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "التاريخ", "النوع", "المبلغ", "الوصف" };
+        var data = Expenses.Select(e => new object?[]
+        {
+            e.ExpenseDate.ToString("yyyy/MM/dd"), e.ExpenseType?.Name, e.Amount, e.Description
+        }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelExpenses", "المصاريف", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "التاريخ", "النوع", "المبلغ", "الوصف" };
+        var data = Expenses.Select(e => new object?[]
+        {
+            e.ExpenseDate.ToString("yyyy/MM/dd"), e.ExpenseType?.Name, e.Amount, e.Description
+        }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "سجل مصاريف الفندق", headers, data);
     }
 }

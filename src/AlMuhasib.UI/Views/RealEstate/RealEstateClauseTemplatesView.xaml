@@ -32,16 +32,26 @@
                 <TextBox Width="260" md:HintAssist.Hint="بحث داخل البنود..."
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=TemplatesGrid}"
-                                             Margin="0,0,0,8" VerticalAlignment="Center"/>
             </WrapPanel>
         </Border>
 
         <md:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="بنود العقد"
+                                             TargetDataGrid="{Binding ElementName=TemplatesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
             <DataGrid x:Name="TemplatesGrid"
+                      Grid.Row="1"
                       ItemsSource="{Binding Templates}"
                       SelectedItem="{Binding Selected}"
                       AutoGenerateColumns="False"
@@ -75,6 +85,7 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+            </Grid>
         </md:Card>
 
         <md:DialogHost IsOpen="{Binding IsEditOpen}" Grid.RowSpan="4">

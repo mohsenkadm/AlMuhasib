@@ -115,24 +115,18 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Background="#6A1B9A" Padding="16,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding SelectedDayTitle}" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                            <controls:ColumnFilterToggle Grid.Column="1"
-                                                         IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                         TargetDataGrid="{Binding ElementName=DayReservationsGrid}"/>
-                        </Grid>
-                    </Border>
+                    <controls:ListTableHeaderBar Title="{Binding SelectedDayTitle}"
+                                                 TargetDataGrid="{Binding ElementName=DayReservationsGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ShowExport="False"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"/>
                     <DataGrid x:Name="DayReservationsGrid" Grid.Row="1"
                               ItemsSource="{Binding SelectedDayReservations}"
                               AutoGenerateColumns="False" IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}" Margin="8"
+                              Style="{StaticResource ModernDataGrid}" Margin="8"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

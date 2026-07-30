@@ -26,7 +26,6 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <DatePicker Grid.Column="0" Width="140" Margin="0,0,8,0"
@@ -70,23 +69,7 @@
                             <TextBlock Text="بحث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=AuditLogGrid}"
-                                                 VerticalAlignment="Center"/>
                 </StackPanel>
-
-                <Button Grid.Column="7"
-                        Command="{Binding ExportToExcelCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Background="#388E3C">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="FileExcel" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
-                        <TextBlock Text="تصدير Excel" Foreground="White"/>
-                    </StackPanel>
-                </Button>
             </Grid>
         </md:Card>
 
@@ -103,10 +86,20 @@
             <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="0" Padding="0" md:ElevationAssist.Elevation="Dp2">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                <DataGrid x:Name="AuditLogGrid" Grid.Row="0"
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجل العمليات"
+                                             TargetDataGrid="{Binding ElementName=AuditLogGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintAuditLogCommand}"
+                                             ShowCardToggle="False"/>
+                <DataGrid x:Name="AuditLogGrid" Grid.Row="1"
                           ItemsSource="{Binding Rows}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -232,7 +225,7 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-                <controls:PaginationBar Grid.Row="1" ShowFirstLastButtons="True"/>
+                <controls:PaginationBar Grid.Row="2" ShowFirstLastButtons="True"/>
                 </Grid>
             </md:Card>
 

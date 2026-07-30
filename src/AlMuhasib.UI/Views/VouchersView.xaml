@@ -196,52 +196,36 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Filter bar -->
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="12,10"
-                        CornerRadius="12,12,0,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBox Grid.Column="0"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="بحث برقم السند أو اسم العميل..."
-                                 materialDesign:TextFieldAssist.HasClearButton="True"
-                                 Style="{StaticResource FilledTextBox}"
-                                 FontSize="13" Foreground="White"
-                                 materialDesign:HintAssist.Foreground="#B0BEC5" />
-
-                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة السندات"
+                                             TargetDataGrid="{Binding ElementName=VouchersGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportVouchersCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBox Width="260"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="بحث برقم السند أو اسم العميل..."
+                                     materialDesign:TextFieldAssist.HasClearButton="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     FontSize="13" Foreground="White"
+                                     materialDesign:HintAssist.Foreground="#B0BEC5"
+                                     Margin="0,0,8,0"/>
                             <Button Command="{Binding SearchVouchersCommand}"
                                     Style="{StaticResource FlatButton}"
-                                    Foreground="White" FontSize="12" Margin="0,0,4,0">
+                                    Foreground="White" FontSize="12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" Margin="0,0,4,0" />
                                     <TextBlock Text="بحث" />
                                 </StackPanel>
                             </Button>
-                            <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                         TargetDataGrid="{Binding ElementName=VouchersGrid}"
-                                                         VerticalAlignment="Center"/>
                         </StackPanel>
-
-                        <Button Grid.Column="4" Command="{Binding ExportVouchersCommand}"
-                                Style="{StaticResource FlatButton}"
-                                Foreground="White" FontSize="12">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FileExcel" Width="18" Height="18" Margin="0,0,4,0" />
-                                <TextBlock Text="تصدير" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
 
                 <!-- Data grid -->
                 <DataGrid x:Name="VouchersGrid"

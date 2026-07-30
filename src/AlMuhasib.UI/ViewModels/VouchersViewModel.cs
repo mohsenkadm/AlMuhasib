@@ -385,7 +385,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     }
 
     // ══════════════════════════════════════════════════════
-    // EXPORT
+    // EXPORT & PRINT TABLE
     // ══════════════════════════════════════════════════════
     [RelayCommand]
     private void ExportVouchers()
@@ -414,6 +414,26 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             _exportService.ExportToExcel(dialog.FileName, "السندات", columns, (IList<object[]>)rows);
             BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
         }
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var columns = new[] { "رقم السند", "النوع", "المبلغ", "العمولة", "التاريخ", "القاصة", "العميل", "المستثمر", "ملاحظات" };
+        IList<object[]> rows = Vouchers.Select(v => new object[]
+        {
+            v.VoucherNumber,
+            GetVoucherTypeName(v.VoucherType),
+            v.Amount.ToString("N0"),
+            v.BankFees > 0 ? v.BankFees.ToString("N0") : "",
+            v.Date.ToString("yyyy/MM/dd"),
+            v.CashBox?.Name ?? "",
+            v.Customer?.Name ?? "",
+            v.Investor?.Name ?? "",
+            v.Notes ?? ""
+        }).ToList();
+
+        _exportService.PrintTable("قائمة السندات", columns, rows);
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch

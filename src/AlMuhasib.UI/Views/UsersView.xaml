@@ -18,7 +18,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- LEFT: User List -->
         <!-- ═══════════════════════════════════════════ -->
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="0" Padding="16" md:ElevationAssist.Elevation="Dp2">
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Column="0" Padding="0" md:ElevationAssist.Elevation="Dp2">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -26,11 +26,18 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Header -->
-                <TextBlock Grid.Row="0" Text="إدارة المستخدمين" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة المستخدمين"
+                                             TargetDataGrid="{Binding ElementName=UsersGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
 
                 <!-- Action buttons -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="16,12,16,12">
                     <Button Command="{Binding ToggleActiveCommand}"
                             Style="{StaticResource PrimaryButton}"
                             md:ButtonAssist.CornerRadius="8"
@@ -50,18 +57,12 @@
                             <TextBlock Text="إعادة كلمة المرور"/>
                         </StackPanel>
                     </Button>
-
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=UsersGrid}"
-                                                 Margin="8,0,0,0"
-                                                 VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Data Grid -->
                 <DataGrid x:Name="UsersGrid"
                           Grid.Row="2"
+                          Margin="0,0,0,0"
                           ItemsSource="{Binding Users}"
                           SelectedItem="{Binding SelectedUser}"
                           AutoGenerateColumns="False"

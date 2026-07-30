@@ -349,6 +349,30 @@ public partial class CustomersViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _unitOfWork.Customers.GetPagedAsync(1, int.MaxValue);
+            var columns = new[] { "الاسم", "الهاتف", "العنوان", "رقم الملف", "ملاحظات", "تاريخ الإنشاء" };
+            IList<object[]> rows = allItems.Select(c => new object[]
+            {
+                c.Name,
+                c.Phone ?? "",
+                c.Address ?? "",
+                c.FileNumber ?? "",
+                c.Notes ?? "",
+                c.CreatedAt.ToString("yyyy/MM/dd")
+            }).ToList();
+            _exportService.PrintTable("قائمة العملاء", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     // ATTACHMENTS
     // ══════════════════════════════════════════════════════

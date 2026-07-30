@@ -84,4 +84,17 @@ public partial class InvoiceModificationsReportViewModel : SupervisoryReportView
         ExportService.ExportToExcel(dlg.FileName, "تعديلات الفواتير", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "التاريخ", "رقم الفاتورة", "العنوان", "ملخص التعديل", "المعدِّل" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.Timestamp.ToString("yyyy/MM/dd HH:mm"),
+            r.EntityKey, r.EntityTitle, r.ChangeSummary, r.ModifiedBy
+        }).ToList();
+        ExportService.PrintTable("تعديلات الفواتير", cols, (IList<object[]>)data);
+    }
 }

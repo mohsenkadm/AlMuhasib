@@ -18,6 +18,7 @@ public partial class HotelGuestsViewModel : HotelListPreviewViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IExportService _exportService;
     private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
 
@@ -46,12 +47,14 @@ public partial class HotelGuestsViewModel : HotelListPreviewViewModelBase
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
         IUserPreferencesService userPreferences,
+        IExportService exportService,
         MainWindowViewModel mainWindow)
     {
         _guestService = guestService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _exportService = exportService;
         _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "النزلاء";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelGuests);
@@ -333,5 +336,30 @@ public partial class HotelGuestsViewModel : HotelListPreviewViewModelBase
             return;
 
         await _navigation.OpenReservationsAsync(reservation.Id);
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (!CanExport) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = $"HotelGuests_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+        if (dialog.ShowDialog() != true) return;
+        var headers = new[] { "الاسم", "الهاتف", "الهوية", "الحجوزات" };
+        var data = Guests.Select(g => new object?[] { g.FullName, g.Phone, g.IdNumber, g.ReservationCount }).ToList();
+        _exportService.ExportToExcel(dialog.FileName, "النزلاء", headers, data);
+        _toast.ShowSuccess("تم التصدير");
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (!CanPrint) return;
+        var headers = new[] { "الاسم", "الهاتف", "الهوية", "الحجوزات" };
+        var data = Guests.Select(g => new object?[] { g.FullName, g.Phone, g.IdNumber, g.ReservationCount }).ToList();
+        _exportService.PrintTable("قائمة النزلاء", headers, data);
     }
 }

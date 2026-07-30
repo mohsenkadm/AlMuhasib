@@ -16,11 +16,13 @@
                                  PreviewSubtitle="{Binding PreviewSubtitle}"
                                  PreviewIconKind="{Binding PreviewIconKind}"
                                  PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
-                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
-
-        <controls:HotelListPageShell.ListHeaderExtra>
-            <controls:ListViewModeToggle OnDarkBackground="True"/>
-        </controls:HotelListPageShell.ListHeaderExtra>
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}"
+                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                 PrintCommand="{Binding PrintTableCommand}"
+                                 ShowCardToggle="True">
 
         <controls:HotelListPageShell.ToolbarContent>
             <StackPanel Orientation="Horizontal">
@@ -36,11 +38,6 @@
                         <TextBlock Text="تحديث"/>
                     </StackPanel>
                 </Button>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             Margin="4,0,0,0"
-                                             VerticalAlignment="Center"/>
                 <TextBox md:HintAssist.Hint="بحث بالاسم أو الهاتف..."
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource FilledTextBox}"
@@ -55,7 +52,7 @@
                           SelectedItem="{Binding SelectedGuest}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
-                          Style="{StaticResource HotelListDataGrid}"
+                          Style="{StaticResource ModernDataGrid}"
                           Margin="8"
                           Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"

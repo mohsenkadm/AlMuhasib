@@ -58,4 +58,17 @@ public partial class DeletedProductsReportViewModel : SupervisoryReportViewModel
         ExportService.ExportToExcel(dlg.FileName, "منتجات محذوفة", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "الاسم", "الباركود", "التصنيف", "الوصف", "تاريخ الحذف", "حذف بواسطة" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.Name, r.Barcode ?? "", r.CategoryName, r.Description ?? "",
+            r.DeletedAt?.ToString("yyyy/MM/dd HH:mm") ?? "", r.DeletedBy
+        }).ToList();
+        ExportService.PrintTable("منتجات محذوفة", cols, (IList<object[]>)data);
+    }
 }

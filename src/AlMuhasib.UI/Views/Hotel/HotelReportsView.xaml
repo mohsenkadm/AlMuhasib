@@ -17,7 +17,6 @@
                 <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"/>
                 <DatePicker md:HintAssist.Hint="تاريخ المراجعة" SelectedDate="{Binding AuditDate}" Width="160" Margin="0,0,8,8"/>
                 <Button Command="{Binding LoadCurrentTabCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"><TextBlock Text="تحديث"/></Button>
-                <Button Command="{Binding ExportExcelCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanExport}"><TextBlock Text="تصدير Excel"/></Button>
             </WrapPanel>
         </md:Card>
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}">
@@ -34,14 +33,19 @@
                         <TextBlock Text="ليالي مباعة:" FontWeight="Bold" Margin="0,0,8,0"/>
                         <TextBlock Text="{Binding SoldRoomNights}"/>
                     </StackPanel>
-                    <controls:ColumnFilterToggle Grid.Row="1" Margin="0,0,0,8"
-                                                 IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                    <controls:ListTableHeaderBar Grid.Row="1"
+                                                 Title="تقرير الإشغال"
+                                                 TargetDataGrid="{Binding ElementName=OccupancyGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                                  ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                  ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=OccupancyGrid}"/>
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"
+                                                 Margin="0,0,0,8"/>
                     <DataGrid x:Name="OccupancyGrid" Grid.Row="2"
                               ItemsSource="{Binding OccupancyRows}" AutoGenerateColumns="False" IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
+                              Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -83,14 +87,19 @@
                         <TextBlock Text="المستحق:" FontWeight="Bold" Margin="0,0,8,0"/>
                         <TextBlock Text="{Binding OutstandingBalance, StringFormat=N0}"/>
                     </StackPanel>
-                    <controls:ColumnFilterToggle Grid.Row="1" Margin="0,0,0,8"
-                                                 IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                    <controls:ListTableHeaderBar Grid.Row="1"
+                                                 Title="تقرير الإيرادات"
+                                                 TargetDataGrid="{Binding ElementName=RevenueGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                                  ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                  ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=RevenueGrid}"/>
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"
+                                                 Margin="0,0,0,8"/>
                     <DataGrid x:Name="RevenueGrid" Grid.Row="2"
                               ItemsSource="{Binding RevenueRows}" AutoGenerateColumns="False" IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
+                              Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -127,14 +136,19 @@
                         <StackPanel><TextBlock Text="إيراد الغرف" Foreground="#78909C"/><TextBlock Text="{Binding AuditRoomRevenue, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
                         <StackPanel><TextBlock Text="التحصيل" Foreground="#78909C"/><TextBlock Text="{Binding AuditPaymentsCollected, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
                     </UniformGrid>
-                    <controls:ColumnFilterToggle Grid.Row="1" Margin="0,0,0,8"
-                                                 IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                    <controls:ListTableHeaderBar Grid.Row="1"
+                                                 Title="المراجعة الليلية"
+                                                 TargetDataGrid="{Binding ElementName=NightAuditGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                                  ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                  ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=NightAuditGrid}"/>
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"
+                                                 Margin="0,0,0,8"/>
                     <DataGrid x:Name="NightAuditGrid" Grid.Row="2"
                               ItemsSource="{Binding NightAuditInHouse}" AutoGenerateColumns="False" IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
+                              Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

@@ -35,17 +35,25 @@
                 <TextBox Width="240" md:HintAssist.Hint="بحث في الزبائن..."
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             TargetDataGrid="{Binding ElementName=PartiesGrid}"
-                                             Margin="0,0,8,8" VerticalAlignment="Center"/>
-                <controls:ListViewModeToggle OnDarkBackground="False" VerticalAlignment="Center" Margin="0,0,0,8"/>
             </WrapPanel>
         </Border>
 
         <md:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة الزبائن"
+                                             TargetDataGrid="{Binding ElementName=PartiesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="True"/>
+                <Grid Grid.Row="1">
                 <DataGrid x:Name="PartiesGrid"
                           ItemsSource="{Binding Parties}"
                           SelectedItem="{Binding SelectedParty}"
@@ -117,6 +125,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+                </Grid>
             </Grid>
         </md:Card>
 

@@ -34,11 +34,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=IngredientsGrid}"
-                                                 Margin="8,0,0,0" VerticalAlignment="Center"/>
                     <TextBox md:HintAssist.Hint="بحث..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="16,0,0,0"/>
@@ -53,13 +48,18 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="المكونات والمخزون" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Title="المكونات والمخزون"
+                                             TargetDataGrid="{Binding ElementName=IngredientsGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
                 <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
                 <DataGrid x:Name="IngredientsGrid" Grid.Row="2" Margin="8"
                           ItemsSource="{Binding Ingredients}" SelectedItem="{Binding SelectedIngredient}"
-                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -153,7 +153,7 @@
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
                         <TextBlock Margin="0,0,0,12" Opacity="0.85">
                             <Run Text="الإجمالي:"/>
-                            <Run Text="{Binding PurchaseTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold"/>
+                            <Run Text="{Binding PurchaseTotal, Mode=OneWay, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold"/>
                         </TextBlock>
                         <ComboBox md:HintAssist.Hint="الصندوق" ItemsSource="{Binding CashBoxes}"
                                   SelectedValuePath="Id" SelectedValue="{Binding PurchaseCashBoxId}"

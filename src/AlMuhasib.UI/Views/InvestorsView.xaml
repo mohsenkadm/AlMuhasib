@@ -93,18 +93,6 @@
                             <Button Content="إلغاء" Command="{Binding CancelEditCommand}"
                                     Style="{StaticResource FlatButton}"
                                     Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            <Button Content="تصدير Excel" Command="{Binding ExportInvestorsCommand}"
-                                    Style="{StaticResource PrimaryButton}"
-                                    md:ButtonAssist.CornerRadius="8" Margin="16,0,0,0">
-                                <Button.ContentTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="تصدير Excel" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </Button.ContentTemplate>
-                            </Button>
                         </StackPanel>
                     </Grid>
                 </md:Card>
@@ -117,20 +105,17 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="إدارة المستثمرين" FontSize="15" FontWeight="Bold" Foreground="White"
-                                           VerticalAlignment="Center"/>
-                                <controls:ListViewModeToggle Grid.Column="1" OnDarkBackground="True" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="قائمة المستثمرين"
+                                                     TargetDataGrid="{Binding ElementName=InvestorsGrid}"
+                                                     ExportCommand="{Binding ExportInvestorsCommand}"
+                                                     PrintCommand="{Binding PrintTableCommand}"
+                                                     ShowCardToggle="True"
+                                                     ShowFilter="False"/>
 
                         <Grid Grid.Row="1">
-                        <DataGrid ItemsSource="{Binding Investors}"
+                        <DataGrid x:Name="InvestorsGrid"
+                                  ItemsSource="{Binding Investors}"
                                   SelectedItem="{Binding SelectedInvestor}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
@@ -299,10 +284,14 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#1976D2" Padding="16,10">
-                            <TextBlock Text="آخر عمليات الإيداع" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding RecentDeposits}"
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="آخر عمليات الإيداع"
+                                                     TargetDataGrid="{Binding ElementName=RecentDepositsGrid}"
+                                                     ShowCardToggle="False"
+                                                     ShowExport="False"
+                                                     ShowPrint="False"
+                                                     ShowFilter="False"/>
+                        <DataGrid x:Name="RecentDepositsGrid" Grid.Row="1" ItemsSource="{Binding RecentDeposits}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   Style="{StaticResource ModernDataGrid}">
@@ -450,10 +439,14 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="{DynamicResource HighlightBrush}" Padding="16,10">
-                            <TextBlock Text="آخر عمليات السحب" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding RecentWithdrawals}"
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="آخر عمليات السحب"
+                                                     TargetDataGrid="{Binding ElementName=RecentWithdrawalsGrid}"
+                                                     ShowCardToggle="False"
+                                                     ShowExport="False"
+                                                     ShowPrint="False"
+                                                     ShowFilter="False"/>
+                        <DataGrid x:Name="RecentWithdrawalsGrid" Grid.Row="1" ItemsSource="{Binding RecentWithdrawals}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   Style="{StaticResource ModernDataGrid}">
@@ -567,21 +560,15 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#388E3C" Padding="16,10">
-                            <Grid>
-                                <TextBlock Text="معاينة التوزيع" FontSize="15" FontWeight="Bold" Foreground="White"
-                                           VerticalAlignment="Center"/>
-                                <Button HorizontalAlignment="Left"
-                                        Command="{Binding PrintDistributionPreviewCommand}"
-                                        ToolTip="طباعة المعاينة"
-                                        Style="{StaticResource FlatButton}"
-                                        Foreground="White" Padding="4">
-                                    <md:PackIcon Kind="Printer"/>
-                                </Button>
-                            </Grid>
-                        </Border>
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="معاينة التوزيع"
+                                                     TargetDataGrid="{Binding ElementName=ProfitPreviewsGrid}"
+                                                     PrintCommand="{Binding PrintDistributionPreviewCommand}"
+                                                     ShowCardToggle="False"
+                                                     ShowExport="False"
+                                                     ShowFilter="False"/>
 
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding ProfitPreviews}"
+                        <DataGrid x:Name="ProfitPreviewsGrid" Grid.Row="1" ItemsSource="{Binding ProfitPreviews}"
                                   AutoGenerateColumns="False" IsReadOnly="False"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   Style="{StaticResource ModernDataGrid}">
@@ -703,9 +690,6 @@
                                 <ColumnDefinition Width="24"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <ComboBox Grid.Column="0" md:HintAssist.Hint="اختر المستثمر"
@@ -729,17 +713,6 @@
                                            FontWeight="Bold" FontSize="15" Foreground="#388E3C"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
-
-                            <Button Grid.Column="6" Command="{Binding PrintStatementCommand}"
-                                    ToolTip="طباعة" Style="{StaticResource PrimaryButton}"
-                                    md:ButtonAssist.CornerRadius="8" Padding="8">
-                                <md:PackIcon Kind="Printer"/>
-                            </Button>
-                            <Button Grid.Column="8" Command="{Binding ExportStatementCommand}"
-                                    ToolTip="تصدير Excel" Style="{StaticResource PrimaryButton}"
-                                    md:ButtonAssist.CornerRadius="8" Padding="8">
-                                <md:PackIcon Kind="FileExcelOutline"/>
-                            </Button>
                         </Grid>
                     </Grid>
                 </md:Card>
@@ -751,10 +724,14 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#388E3C" Padding="16,10">
-                            <TextBlock Text="كشف الأرباح التفصيلي" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding StatementDetails}"
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="كشف الأرباح التفصيلي"
+                                                     TargetDataGrid="{Binding ElementName=StatementDetailsGrid}"
+                                                     ExportCommand="{Binding ExportStatementCommand}"
+                                                     PrintCommand="{Binding PrintStatementCommand}"
+                                                     ShowCardToggle="False"
+                                                     ShowFilter="False"/>
+                        <DataGrid x:Name="StatementDetailsGrid" Grid.Row="1" ItemsSource="{Binding StatementDetails}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   Style="{StaticResource ModernDataGrid}">

@@ -38,10 +38,29 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Shell" Property="Background" Value="{DynamicResource DataGridHeaderHoverBrush}"/>
                         </Trigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Shell" Property="Background" Value="#28FFFFFF"/>
+                            <Setter TargetName="Shell" Property="BorderBrush" Value="#55FFFFFF"/>
+                        </MultiDataTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Shell" Property="Background" Value="{StaticResource PrimaryHueLightBrush}"/>
                             <Setter TargetName="Shell" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
                         </Trigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Shell" Property="Background" Value="#40FFFFFF"/>
+                            <Setter TargetName="Shell" Property="BorderBrush" Value="#AAFFFFFF"/>
+                        </MultiDataTrigger>
+                        <DataTrigger Binding="{Binding OnDarkBackground, ElementName=Root}" Value="True">
+                            <Setter TargetName="Shell" Property="BorderBrush" Value="#55FFFFFF"/>
+                        </DataTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>
                         </Trigger>
@@ -50,7 +69,18 @@
             </ToggleButton.Template>
             <Grid>
                 <md:PackIcon Kind="FilterVariant" Width="18" Height="18" VerticalAlignment="Center"
-                             Foreground="{DynamicResource DataGridHeaderForegroundBrush}"/>
+                             x:Name="FilterIcon">
+                    <md:PackIcon.Style>
+                        <Style TargetType="md:PackIcon">
+                            <Setter Property="Foreground" Value="{DynamicResource DataGridHeaderForegroundBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding OnDarkBackground, ElementName=Root}" Value="True">
+                                    <Setter Property="Foreground" Value="White"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </md:PackIcon.Style>
+                </md:PackIcon>
                 <Border HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Margin="0,-6,-8,0"
@@ -75,7 +105,18 @@
                 Margin="2,0,0,0"
                 ToolTip="مسح فلاتر الأعمدة"
                 Visibility="{Binding ActiveFilterCount, ElementName=Root, Converter={StaticResource CountVis}}">
-            <md:PackIcon Kind="FilterVariantRemove" Width="16" Height="16"/>
+            <md:PackIcon Kind="FilterVariantRemove" Width="16" Height="16">
+                <md:PackIcon.Style>
+                    <Style TargetType="md:PackIcon">
+                        <Setter Property="Foreground" Value="{DynamicResource DataGridHeaderForegroundBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding OnDarkBackground, ElementName=Root}" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </md:PackIcon.Style>
+            </md:PackIcon>
         </Button>
     </StackPanel>
 </UserControl>

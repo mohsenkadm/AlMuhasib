@@ -20,6 +20,7 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
     private readonly IHotelCashService _cashService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
     private readonly MainWindowViewModel _mainWindow;
     private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
@@ -70,6 +71,7 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
         IHotelCashService cashService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
+        IExportService exportService,
         MainWindowViewModel mainWindow)
     {
         _reservationService = reservationService;
@@ -78,6 +80,7 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
         _cashService = cashService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         _mainWindow = mainWindow;
         _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "الحجوزات";
@@ -454,6 +457,32 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
         Status = StatusFilter,
         UnpaidOnly = UnpaidOnly
     };
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الرقم", "النزيل", "الغرفة", "الوصول", "المغادرة", "المتبقي", "الحالة" };
+        var data = Reservations.Select(r => new object?[]
+        {
+            r.ReservationNumber, r.GuestName, r.RoomNumber,
+            r.CheckInDate.ToString("yyyy/MM/dd"), r.CheckOutDate.ToString("yyyy/MM/dd"),
+            r.RemainingAmount, r.Status
+        }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelReservations", "الحجوزات", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الرقم", "النزيل", "الغرفة", "الوصول", "المغادرة", "المتبقي", "الحالة" };
+        var data = Reservations.Select(r => new object?[]
+        {
+            r.ReservationNumber, r.GuestName, r.RoomNumber,
+            r.CheckInDate.ToString("yyyy/MM/dd"), r.CheckOutDate.ToString("yyyy/MM/dd"),
+            r.RemainingAmount, r.Status
+        }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الحجوزات", headers, data);
+    }
 }
 
 public sealed record HotelCashBoxOption(int Id, string Name);

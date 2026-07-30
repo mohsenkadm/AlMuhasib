@@ -16,6 +16,7 @@ public partial class RestaurantMenuViewModel : ViewModelBase
     private readonly IRestaurantInventoryService _inventoryService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<RestaurantMenuCategory> Categories { get; } = [];
     public ObservableCollection<RestaurantMenuItem> MenuItems { get; } = [];
@@ -44,12 +45,14 @@ public partial class RestaurantMenuViewModel : ViewModelBase
         IRestaurantMenuService menuService,
         IRestaurantInventoryService inventoryService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _menuService = menuService;
         _inventoryService = inventoryService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "قائمة المطعم";
     }
 
@@ -262,5 +265,21 @@ public partial class RestaurantMenuViewModel : ViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الاسم", "السعر", "نشط" };
+        var data = MenuItems.Select(m => new object?[] { m.Name, m.SalePrice, m.IsActive ? "نعم" : "لا" }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantMenu", "الأصناف", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الاسم", "السعر", "نشط" };
+        var data = MenuItems.Select(m => new object?[] { m.Name, m.SalePrice, m.IsActive ? "نعم" : "لا" }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "أصناف قائمة المطعم", headers, data);
     }
 }

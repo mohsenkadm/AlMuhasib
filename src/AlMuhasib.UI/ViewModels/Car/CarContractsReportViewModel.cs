@@ -108,4 +108,20 @@ public partial class CarContractsReportViewModel : ViewModelBase
 
         _exportService.ExportToExcel(dialog.FileName, "تقرير العقود", headers, data);
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (!CanPrint || Rows.Count == 0)
+            return;
+
+        var headers = new[] { "رقم العقد", "التاريخ", "البائع", "المشتري", "النوع", "السعر", "الواصل", "المتبقي" };
+        var data = Rows.Select(r => new object?[]
+        {
+            r.ContractNumber, r.ContractDate.ToString("yyyy/MM/dd"), r.SellerName, r.BuyerName,
+            r.CarType, r.CarPrice, r.AmountReceived, r.RemainingAmount
+        }).ToList();
+
+        _exportService.PrintTable("تقرير العقود", headers, data);
+    }
 }

@@ -34,16 +34,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding ExportToExcelCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
-                            IsEnabled="{Binding CanExport}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تصدير Excel"/>
-                        </StackPanel>
-                    </Button>
-
                     <Button Command="{Binding RefreshCommand}"
                             Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8">
@@ -57,12 +47,6 @@
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
                              MinWidth="220" Margin="16,0,0,0"/>
-
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                   ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                   ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                   TargetDataGrid="{Binding ElementName=PricingTypesGrid}"
-                                                   Margin="8,0,0,0"/>
                 </StackPanel>
             </Grid>
         </md:Card>
@@ -75,10 +59,15 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="قائمة أنواع التسعير" FontSize="15" FontWeight="Bold" Foreground="White"
-                               VerticalAlignment="Center"/>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة أنواع التسعير"
+                                             TargetDataGrid="{Binding ElementName=PricingTypesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
 
                 <DataGrid x:Name="PricingTypesGrid" Grid.Row="1"
                           ItemsSource="{Binding PricingTypes}"

@@ -62,20 +62,6 @@
                             ToolTip="تحديث">
                         <md:PackIcon Kind="Refresh"/>
                     </Button>
-                    <Button Command="{Binding ExportExcelCommand}" Style="{StaticResource OutlinedButton}"
-                            IsEnabled="{Binding CanExport}" Margin="0,0,8,8">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="MicrosoftExcel" Margin="0,0,6,0"/>
-                            <TextBlock Text="تصدير Excel"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding PrintTableCommand}" Style="{StaticResource OutlinedButton}"
-                            IsEnabled="{Binding CanPrint}" Margin="0,0,8,8">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Printer" Margin="0,0,6,0"/>
-                            <TextBlock Text="طباعة"/>
-                        </StackPanel>
-                    </Button>
                     <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,8"
                                 Style="{StaticResource FilledDatePicker}"/>
                     <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"
@@ -85,11 +71,6 @@
                               Style="{StaticResource FilledComboBox}" Margin="0,0,8,8"/>
                     <TextBox Width="200" md:HintAssist.Hint="بحث" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=ExpensesGrid}"
-                                                 Margin="4,0,0,0" VerticalAlignment="Center"/>
                 </WrapPanel>
             </Grid>
         </md:Card>
@@ -109,18 +90,18 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="#2E7D32" Padding="14,10">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource FlatButton}" Foreground="White"
+                <controls:ListTableHeaderBar Title="أنواع المصاريف"
+                                             ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
+                        <Button Style="{StaticResource FlatButton}" Foreground="White"
                                 Command="{Binding OpenNewTypeCommand}" IsEnabled="{Binding CanAdd}" Padding="8,2">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="Plus" Margin="0,0,4,0"/>
                                 <TextBlock Text="إضافة نوع" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <TextBlock Text="أنواع المصاريف" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    </DockPanel>
-                </Border>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
                 <DataGrid Grid.Row="1" ItemsSource="{Binding ExpenseTypes}" AutoGenerateColumns="False"
                           IsReadOnly="True" MaxHeight="150" Margin="8" HeadersVisibility="Column"
                           CanUserAddRows="False" CanUserDeleteRows="False">
@@ -155,9 +136,14 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="#1565C0" Padding="16,10">
-                    <TextBlock Text="سجل المصاريف" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Title="سجل المصاريف"
+                                             TargetDataGrid="{Binding ElementName=ExpensesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
                 <DataGrid x:Name="ExpensesGrid" Grid.Row="1"
                           ItemsSource="{Binding Expenses}"
                           AutoGenerateColumns="False" IsReadOnly="True" Margin="8"

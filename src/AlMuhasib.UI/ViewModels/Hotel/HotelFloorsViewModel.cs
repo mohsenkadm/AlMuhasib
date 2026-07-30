@@ -16,6 +16,7 @@ public partial class HotelFloorsViewModel : PagedViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IExportService _exportService;
     private System.Timers.Timer? _debounceTimer;
 
     public ObservableCollection<Floor> Floors { get; } = [];
@@ -36,12 +37,14 @@ public partial class HotelFloorsViewModel : PagedViewModelBase
         IHotelMasterDataService masterDataService,
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IExportService exportService)
     {
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _exportService = exportService;
         PageTitle = "الطوابق";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelFloors);
     }
@@ -216,5 +219,30 @@ public partial class HotelFloorsViewModel : PagedViewModelBase
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (!CanExport) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = $"HotelFloors_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+        if (dialog.ShowDialog() != true) return;
+        var headers = new[] { "الاسم", "الترتيب" };
+        var data = Floors.Select(f => new object?[] { f.Name, f.SortOrder }).ToList();
+        _exportService.ExportToExcel(dialog.FileName, "الطوابق", headers, data);
+        _toast.ShowSuccess("تم التصدير");
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (!CanPrint) return;
+        var headers = new[] { "الاسم", "الترتيب" };
+        var data = Floors.Select(f => new object?[] { f.Name, f.SortOrder }).ToList();
+        _exportService.PrintTable("قائمة الطوابق", headers, data);
     }
 }

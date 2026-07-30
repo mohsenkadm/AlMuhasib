@@ -16,6 +16,7 @@ public partial class RestaurantTablesViewModel : ViewModelBase
     private readonly IRestaurantTableService _tableService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<RestaurantTable> Tables { get; } = [];
     public ObservableCollection<HotelListStatItem> Stats { get; } = [];
@@ -36,11 +37,13 @@ public partial class RestaurantTablesViewModel : ViewModelBase
     public RestaurantTablesViewModel(
         IRestaurantTableService tableService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _tableService = tableService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "طاولات الصالة";
     }
 
@@ -160,5 +163,21 @@ public partial class RestaurantTablesViewModel : ViewModelBase
         await _tableService.SetTableStatusAsync(table.Id, RestaurantTableStatus.Available);
         await LoadTablesAsync();
         _toast.ShowSuccess("تم تحرير الطاولة");
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "رقم الطاولة", "السعة", "الحالة" };
+        var data = Tables.Select(t => new object?[] { t.TableNumber, t.Capacity, t.Status }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantTables", "الطاولات", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "رقم الطاولة", "السعة", "الحالة" };
+        var data = Tables.Select(t => new object?[] { t.TableNumber, t.Capacity, t.Status }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "طاولات الصالة", headers, data);
     }
 }

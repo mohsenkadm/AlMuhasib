@@ -79,6 +79,20 @@ public partial class DeletedVouchersReportViewModel : SupervisoryReportViewModel
         ExportService.ExportToExcel(dlg.FileName, "سندات محذوفة", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "رقم السند", "النوع", "الطرف", "القاصة", "المبلغ", "تاريخ السند", "تاريخ الحذف", "حذف بواسطة", "ملاحظات" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.VoucherNumber, r.VoucherTypeDisplay, r.PartyName, r.CashBoxName,
+            r.Amount.ToString("N0"), r.VoucherDate.ToString("yyyy/MM/dd"),
+            r.DeletedAt?.ToString("yyyy/MM/dd HH:mm") ?? "", r.DeletedBy, r.Notes ?? ""
+        }).ToList();
+        ExportService.PrintTable("سندات محذوفة", cols, (IList<object[]>)data);
+    }
 }
 
 public record VoucherTypeFilterItem(string Name, VoucherType? Value)

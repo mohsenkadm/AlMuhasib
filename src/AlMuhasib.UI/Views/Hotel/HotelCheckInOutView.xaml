@@ -37,23 +37,18 @@
             </Grid.ColumnDefinitions>
             <md:Card Grid.Column="0" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,8,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueMidBrush}" Padding="12,8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="وصول اليوم" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <controls:ColumnFilterToggle Grid.Column="1"
-                                                         IsChecked="{Binding IsArrivalColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding ArrivalActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearArrivalColumnFiltersCommand}"
-                                                         TargetDataGrid="{Binding ElementName=ArrivalsGrid}"/>
-                        </Grid>
-                    </Border>
+                    <controls:ListTableHeaderBar DockPanel.Dock="Top"
+                                                 Title="وصول اليوم"
+                                                 TargetDataGrid="{Binding ElementName=ArrivalsGrid}"
+                                                 IsFilterPanelOpen="{Binding IsArrivalColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ArrivalActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearArrivalColumnFiltersCommand}"
+                                                 ShowExport="False"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"/>
                     <DataGrid x:Name="ArrivalsGrid"
                               ItemsSource="{Binding Arrivals}" SelectedItem="{Binding SelectedArrival}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsArrivalColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyArrivalColumnFiltersCommand}">
@@ -81,23 +76,18 @@
             </md:Card>
             <md:Card Grid.Column="1" Style="{StaticResource ElevatedCard}" Padding="0" Margin="8,0,0,0">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueMidBrush}" Padding="12,8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="مغادرة اليوم" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <controls:ColumnFilterToggle Grid.Column="1"
-                                                         IsChecked="{Binding IsDepartureColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding DepartureActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearDepartureColumnFiltersCommand}"
-                                                         TargetDataGrid="{Binding ElementName=DeparturesGrid}"/>
-                        </Grid>
-                    </Border>
+                    <controls:ListTableHeaderBar DockPanel.Dock="Top"
+                                                 Title="مغادرة اليوم"
+                                                 TargetDataGrid="{Binding ElementName=DeparturesGrid}"
+                                                 IsFilterPanelOpen="{Binding IsDepartureColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding DepartureActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearDepartureColumnFiltersCommand}"
+                                                 ShowExport="False"
+                                                 ShowPrint="False"
+                                                 ShowCardToggle="False"/>
                     <DataGrid x:Name="DeparturesGrid"
                               ItemsSource="{Binding Departures}" SelectedItem="{Binding SelectedDeparture}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                              AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsDepartureColumnFilterPanelOpen, Mode=TwoWay}"
                               behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyDepartureColumnFiltersCommand}">

@@ -123,13 +123,15 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12"
-                                    CornerRadius="12,12,0,0">
-                                <TextBlock FontSize="16" FontWeight="Bold" Foreground="White">
-                                    <Run Text="حركات صندوق" />
-                                    <Run Text="{Binding SelectedCashBox.Name, FallbackValue=''}" />
-                                </TextBlock>
-                            </Border>
+                            <controls:ListTableHeaderBar Grid.Row="0"
+                                                         Title="حركات الصندوق"
+                                                         TargetDataGrid="{Binding ElementName=CashBoxTransactionsGrid}"
+                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         ExportCommand="{Binding ExportCashBoxTransactionsCommand}"
+                                                         PrintCommand="{Binding PrintCashBoxTransactionsCommand}"
+                                                         ShowCardToggle="False"/>
 
                             <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="8,8,8,0">
                                 <Grid>
@@ -155,17 +157,12 @@
                                                 materialDesign:HintAssist.Hint="إلى تاريخ"
                                                 SelectedDate="{Binding CashBoxToDate}"
                                                 Style="{StaticResource FilledDatePicker}"/>
-                                    <StackPanel Grid.Column="6" Orientation="Horizontal">
-                                        <Button Command="{Binding ClearCashBoxFiltersCommand}"
-                                                ToolTip="مسح الفلاتر"
-                                                Style="{StaticResource FlatButton}">
-                                            <materialDesign:PackIcon Kind="FilterRemoveOutline"/>
-                                        </Button>
-                                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                                     TargetDataGrid="{Binding ElementName=CashBoxTransactionsGrid}"/>
-                                    </StackPanel>
+                                    <Button Grid.Column="6"
+                                            Command="{Binding ClearCashBoxFiltersCommand}"
+                                            ToolTip="مسح الفلاتر"
+                                            Style="{StaticResource FlatButton}">
+                                        <materialDesign:PackIcon Kind="FilterRemoveOutline"/>
+                                    </Button>
                                 </Grid>
                             </Border>
 
@@ -352,13 +349,15 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="#1565C0" Padding="16,12"
-                                    CornerRadius="12,12,0,0">
-                                <TextBlock FontSize="16" FontWeight="Bold" Foreground="White">
-                                    <Run Text="حركات حساب" />
-                                    <Run Text="{Binding SelectedBankAccount.Name, FallbackValue=''}" />
-                                </TextBlock>
-                            </Border>
+                            <controls:ListTableHeaderBar Grid.Row="0"
+                                                         Title="حركات البنك"
+                                                         TargetDataGrid="{Binding ElementName=BankTransactionsGrid}"
+                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         ExportCommand="{Binding ExportBankTransactionsCommand}"
+                                                         PrintCommand="{Binding PrintBankTransactionsCommand}"
+                                                         ShowCardToggle="False"/>
 
                             <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="8,8,8,0">
                                 <Grid>
@@ -393,18 +392,25 @@
                                 </Grid>
                             </Border>
 
-                            <DataGrid Grid.Row="2" ItemsSource="{Binding BankTransactions}"
+                            <DataGrid x:Name="BankTransactionsGrid"
+                                      Grid.Row="2" ItemsSource="{Binding BankTransactions}"
                                       Style="{StaticResource ModernDataGrid}"
                                       AutoGenerateColumns="False" IsReadOnly="True"
                                       CanUserSortColumns="True" CanUserReorderColumns="False"
                                       materialDesign:DataGridAssist.CellPadding="10 6"
                                       HeadersVisibility="Column" FontSize="13" Margin="8,8,8,0"
-                                      MinHeight="220">
+                                      MinHeight="220"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110" />
-                                    <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="120" />
-                                    <DataGridTextColumn Header="المرجع" Binding="{Binding Reference}" Width="110" />
-                                    <DataGridTextColumn Header="دائن" Binding="{Binding Credit, StringFormat=N0}" Width="100">
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
+                                    <DataGridTextColumn Header="النوع" Binding="{Binding Type}" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Type" />
+                                    <DataGridTextColumn Header="المرجع" Binding="{Binding Reference}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Reference" />
+                                    <DataGridTextColumn Header="دائن" Binding="{Binding Credit, StringFormat=N0}" Width="100"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Credit">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="Green" />
@@ -638,27 +644,38 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10"
-                                    CornerRadius="12,12,0,0">
-                                <TextBlock Text="سجل التحويلات" FontSize="15" FontWeight="Bold" Foreground="White" />
-                            </Border>
+                            <controls:ListTableHeaderBar Grid.Row="0"
+                                                         Title="سجل التحويلات"
+                                                         TargetDataGrid="{Binding ElementName=TransfersGrid}"
+                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         ExportCommand="{Binding ExportTransfersCommand}"
+                                                         PrintCommand="{Binding PrintTransfersCommand}"
+                                                         ShowCardToggle="False"/>
 
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding Transfers}"
+                            <DataGrid x:Name="TransfersGrid"
+                                      Grid.Row="1" ItemsSource="{Binding Transfers}"
                                       Style="{StaticResource ModernDataGrid}"
                                       AutoGenerateColumns="False" IsReadOnly="True"
                                       CanUserSortColumns="True" CanUserReorderColumns="False"
                                       materialDesign:DataGridAssist.CellPadding="10 6"
-                                      HeadersVisibility="Column" FontSize="13" Margin="8">
+                                      HeadersVisibility="Column" FontSize="13" Margin="8"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110" />
-                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120">
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontWeight" Value="Bold" />
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTemplateColumn Header="من" Width="160">
+                                    <DataGridTemplateColumn Header="من" Width="160"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FromType">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding FromType, Converter={StaticResource AccountTypeToText}}"
@@ -666,7 +683,8 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="إلى" Width="160">
+                                    <DataGridTemplateColumn Header="إلى" Width="160"
+                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ToType">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding ToType, Converter={StaticResource AccountTypeToText}}"
@@ -674,7 +692,8 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*" />
+                                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes" />
                                 </DataGrid.Columns>
                             </DataGrid>
 

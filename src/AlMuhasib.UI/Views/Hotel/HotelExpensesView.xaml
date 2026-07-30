@@ -39,12 +39,6 @@
                     </Button>
                     <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="130" Margin="0,0,8,8"/>
                     <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="130" Margin="0,0,8,8"/>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=ExpensesGrid}"
-                                                 Margin="4,0,0,0"
-                                                 VerticalAlignment="Center"/>
                 </WrapPanel>
             </Grid>
         </md:Card>
@@ -55,12 +49,14 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="14,10">
-                    <TextBlock Text="أنواع المصاريف" FontWeight="Bold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Title="أنواع المصاريف"
+                                             ShowFilter="False"
+                                             ShowExport="False"
+                                             ShowPrint="False"
+                                             ShowCardToggle="False"/>
                 <DataGrid Grid.Row="1" ItemsSource="{Binding ExpenseTypes}" SelectedItem="{Binding SelectedExpenseType}"
                           AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="140" Margin="8"
-                          Style="{StaticResource HotelListDataGrid}">
+                          Style="{StaticResource ModernDataGrid}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" MinWidth="140"
                                             ElementStyle="{StaticResource HotelDataGridTextElement}"/>
@@ -87,13 +83,19 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="سجل المصاريف" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجل المصاريف"
+                                             TargetDataGrid="{Binding ElementName=ExpensesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
                 <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
                 <DataGrid x:Name="ExpensesGrid" Grid.Row="2"
                           ItemsSource="{Binding Expenses}" SelectedItem="{Binding SelectedExpense}"
-                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
+                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

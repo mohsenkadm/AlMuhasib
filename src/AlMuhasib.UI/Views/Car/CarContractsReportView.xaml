@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <ScrollViewer Padding="24">
@@ -12,7 +14,6 @@
                 <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,8"/>
                 <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"/>
                 <Button Content="تحديث" Command="{Binding LoadReportCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,8"/>
-                <Button Content="Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanExport}"/>
             </WrapPanel>
             <UniformGrid Columns="3" Margin="0,0,0,16">
                 <md:Card Padding="12" Margin="4"><TextBlock><Run Text="إجمالي القيمة: "/><Run Text="{Binding TotalCarValue, StringFormat=N0}" FontWeight="Bold"/></TextBlock></md:Card>
@@ -29,17 +30,50 @@
                 <md:Card Grid.Column="1" Padding="8" Margin="4"><lvc:PieChart Series="{Binding AmountSeries}" Height="220"/></md:Card>
                 <md:Card Grid.Column="2" Padding="8" Margin="4"><lvc:PieChart Series="{Binding TypeSeries}" Height="220"/></md:Card>
             </Grid>
-            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="400">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="110"/>
-                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"/>
-                    <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"/>
-                    <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"/>
-                    <DataGridTextColumn Header="النوع" Binding="{Binding CarType}" Width="100"/>
-                    <DataGridTextColumn Header="السعر" Binding="{Binding CarPrice, StringFormat=N0}" Width="90"/>
-                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="تفاصيل العقود"
+                                                 TargetDataGrid="{Binding ElementName=CarContractsReportGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 PrintCommand="{Binding PrintTableCommand}"
+                                                 ShowCardToggle="False"/>
+                    <DataGrid x:Name="CarContractsReportGrid"
+                              Grid.Row="1"
+                              ItemsSource="{Binding Rows}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Style="{StaticResource ModernDataGrid}"
+                              MaxHeight="400"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractNumber"/>
+                            <DataGridTextColumn Header="التاريخ" Binding="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ContractDate"/>
+                            <DataGridTextColumn Header="البائع" Binding="{Binding SellerName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SellerName"/>
+                            <DataGridTextColumn Header="المشتري" Binding="{Binding BuyerName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BuyerName"/>
+                            <DataGridTextColumn Header="النوع" Binding="{Binding CarType}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CarType"/>
+                            <DataGridTextColumn Header="السعر" Binding="{Binding CarPrice, StringFormat=N0}" Width="90"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CarPrice"/>
+                            <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </md:Card>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -35,16 +35,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding ExportToExcelCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
-                            IsEnabled="{Binding CanExport}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تصدير Excel"/>
-                        </StackPanel>
-                    </Button>
-
                     <Button Command="{Binding RefreshCommand}"
                             Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8">
@@ -53,13 +43,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=WarehousesGrid}"
-                                                 Margin="4,0,0,0"
-                                                 VerticalAlignment="Center"/>
 
                     <TextBox md:HintAssist.Hint="بحث..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -78,12 +61,15 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <Grid>
-                        <TextBlock Text="قائمة المخازن" FontSize="15" FontWeight="Bold" Foreground="White"
-                                   VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة المخازن"
+                                             TargetDataGrid="{Binding ElementName=WarehousesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
 
                 <DataGrid x:Name="WarehousesGrid"
                           Grid.Row="1"

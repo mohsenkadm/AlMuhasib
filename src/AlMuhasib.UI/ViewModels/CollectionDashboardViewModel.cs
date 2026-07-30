@@ -4,6 +4,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -15,6 +16,8 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     private readonly IInstallmentService _installmentService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IExportService _exportService;
+    private List<CollectionInstallmentRow> _allRows = [];
 
     [ObservableProperty] private int _dueTodayCount;
     [ObservableProperty] private decimal _dueTodayAmount;
@@ -32,12 +35,14 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         ICollectionDashboardService dashboardService,
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IExportService exportService)
     {
         _dashboardService = dashboardService;
         _installmentService = installmentService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _exportService = exportService;
         PageTitle = "لوحة التحصيل اليومية";
     }
 
@@ -66,8 +71,8 @@ public partial class CollectionDashboardViewModel : ViewModelBase
             ThisWeekCount = summary.ThisWeekCount;
             ThisWeekAmount = summary.ThisWeekAmount;
             Rows.Clear();
-            foreach (var row in summary.Rows)
-                Rows.Add(row);
+            _allRows = summary.Rows.ToList();
+            ApplyRowFilters();
         }
         catch (Exception ex)
         {
@@ -77,6 +82,45 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    protected override void OnColumnFiltersChanged() => ApplyRowFilters();
+
+    private void ApplyRowFilters()
+    {
+        var filtered = ColumnFilterEngine.Apply(_allRows, ColumnFilters);
+        Rows.Clear();
+        foreach (var row in filtered)
+            Rows.Add(row);
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (Rows.Count == 0) return;
+        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "لوحة_التحصيل.xlsx" };
+        if (dlg.ShowDialog() != true) return;
+        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
+            r.StatusLabel, r.RemainingAmount.ToString("N0")
+        }).ToList();
+        _exportService.ExportToExcel(dlg.FileName, "لوحة التحصيل", cols, (IList<object[]>)data);
+        BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
+            r.StatusLabel, r.RemainingAmount.ToString("N0")
+        }).ToList();
+        _exportService.PrintTable("لوحة التحصيل اليومية", cols, (IList<object[]>)data);
     }
 
     [RelayCommand]

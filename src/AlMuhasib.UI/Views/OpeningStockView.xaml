@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
@@ -93,25 +94,26 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="#E8F5E9" CornerRadius="12,12,0,0" Padding="16,10">
-                    <Grid>
-                        <TextBlock Text="أرصدة المنتجات"
-                                   FontSize="15" FontWeight="SemiBold" Foreground="#1B5E20"
-                                   VerticalAlignment="Center"/>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="أرصدة المنتجات"
+                                             TargetDataGrid="{Binding ElementName=OpeningStockGrid}"
+                                             ShowCardToggle="False"
+                                             ShowExport="False"
+                                             ShowPrint="False"
+                                             ShowFilter="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
                         <Button Command="{Binding AddRowCommand}"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource AccentButton}"
-                                Height="32" Padding="14,0"
-                                materialDesign:ButtonAssist.CornerRadius="8">
+                                Style="{StaticResource FlatButton}"
+                                Foreground="White" Height="32" Padding="14,0">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center"/>
                                 <TextBlock Text="إضافة صف" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
-                    </Grid>
-                </Border>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
 
-                <DataGrid Grid.Row="1"
+                <DataGrid x:Name="OpeningStockGrid" Grid.Row="1"
                           ItemsSource="{Binding Rows}"
                           Style="{StaticResource ModernDataGrid}"
                           AutoGenerateColumns="False"

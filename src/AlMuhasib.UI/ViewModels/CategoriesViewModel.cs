@@ -316,6 +316,26 @@ public partial class CategoriesViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _unitOfWork.Categories.GetPagedAsync(1, int.MaxValue);
+            var columns = new[] { "الاسم", "تاريخ الإنشاء" };
+            IList<object[]> rows = allItems.Select(c => new object[]
+            {
+                c.Name,
+                c.CreatedAt.ToString("yyyy/MM/dd")
+            }).ToList();
+            _exportService.PrintTable("قائمة التصنيفات", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
     partial void OnIsCardViewChanged(bool value) =>
         ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Categories, value);
 }

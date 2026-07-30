@@ -17,11 +17,13 @@
                                  PreviewSubtitle="{Binding PreviewSubtitle}"
                                  PreviewIconKind="{Binding PreviewIconKind}"
                                  PreviewSelectedTab="{Binding PreviewSelectedTab, Mode=TwoWay}"
-                                 ClosePreviewCommand="{Binding ClosePreviewCommand}">
-
-        <controls:HotelListPageShell.ListHeaderExtra>
-            <controls:ListViewModeToggle OnDarkBackground="True"/>
-        </controls:HotelListPageShell.ListHeaderExtra>
+                                 ClosePreviewCommand="{Binding ClosePreviewCommand}"
+                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                 PrintCommand="{Binding PrintTableCommand}"
+                                 ShowCardToggle="True">
 
         <controls:HotelListPageShell.ToolbarContent>
             <WrapPanel>
@@ -46,11 +48,6 @@
                           DisplayMemberPath="Label"
                           Width="150"
                           Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                             Margin="4,0,0,0"
-                                             VerticalAlignment="Center"/>
                 <CheckBox Content="غير مسددة" IsChecked="{Binding UnpaidOnly}" VerticalAlignment="Center"/>
             </WrapPanel>
         </controls:HotelListPageShell.ToolbarContent>
@@ -63,7 +60,7 @@
                       CanUserAddRows="False"
                       SelectionMode="Single"
                       HeadersVisibility="Column"
-                      Style="{StaticResource HotelListDataGrid}"
+                      Style="{StaticResource ModernDataGrid}"
                       Margin="8"
                       Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"

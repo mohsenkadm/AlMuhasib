@@ -115,8 +115,11 @@
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Card" Property="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Value="0.96"/>
-                                <Setter TargetName="Card" Property="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Value="0.96"/>
+                                <Setter TargetName="Card" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

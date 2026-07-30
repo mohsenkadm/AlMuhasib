@@ -17,6 +17,7 @@ public partial class HotelCashViewModel : PagedViewModelBase
     private readonly IHotelCashService _cashService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
 
     public ObservableCollection<HotelCashBox> CashBoxes { get; } = [];
     public ObservableCollection<HotelVoucher> Vouchers { get; } = [];
@@ -48,11 +49,13 @@ public partial class HotelCashViewModel : PagedViewModelBase
     public HotelCashViewModel(
         IHotelCashService cashService,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _cashService = cashService;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "الصندوق";
     }
 
@@ -256,4 +259,26 @@ public partial class HotelCashViewModel : PagedViewModelBase
 
     public static string GetVoucherTypeDisplay(HotelVoucherType type) =>
         HotelDisplayHelper.GetVoucherTypeLabel(type);
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "رقم السند", "التاريخ", "النوع", "المبلغ", "البيان" };
+        var data = Vouchers.Select(v => new object?[]
+        {
+            v.VoucherNumber, v.VoucherDate.ToString("yyyy/MM/dd"), v.Type, v.Amount, v.Description
+        }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelCash", "السندات", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "رقم السند", "التاريخ", "النوع", "المبلغ", "البيان" };
+        var data = Vouchers.Select(v => new object?[]
+        {
+            v.VoucherNumber, v.VoucherDate.ToString("yyyy/MM/dd"), v.Type, v.Amount, v.Description
+        }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "سندات القبض والصرف", headers, data);
+    }
 }

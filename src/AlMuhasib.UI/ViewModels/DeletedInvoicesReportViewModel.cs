@@ -77,6 +77,20 @@ public partial class DeletedInvoicesReportViewModel : SupervisoryReportViewModel
         ExportService.ExportToExcel(dlg.FileName, "فواتير محذوفة", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "رقم الفاتورة", "النوع", "الطرف", "المخزن", "المبلغ", "تاريخ الفاتورة", "تاريخ الحذف", "حذف بواسطة", "ملاحظات" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.InvoiceNumber, r.InvoiceTypeDisplay, r.PartyName, r.WarehouseName,
+            r.NetAmount.ToString("N0"), r.InvoiceDate.ToString("yyyy/MM/dd"),
+            r.DeletedAt?.ToString("yyyy/MM/dd HH:mm") ?? "", r.DeletedBy, r.Notes ?? ""
+        }).ToList();
+        ExportService.PrintTable("فواتير محذوفة", cols, (IList<object[]>)data);
+    }
 }
 
 public record InvoiceTypeFilterItem(string Name, InvoiceType? Value)

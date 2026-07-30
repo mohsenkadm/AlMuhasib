@@ -288,33 +288,6 @@
                                     Margin="0,0,8,0"
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
-
-                            <controls:ColumnFilterToggle Grid.Column="3"
-                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                           TargetDataGrid="{Binding ElementName=AllPlansGrid}"
-                                                           Margin="4,0,0,0"
-                                                           VerticalAlignment="Center" />
-
-                            <Button Grid.Column="4"
-                                    Command="{Binding ExportPlansCommand}"
-                                    ToolTip="تصدير Excel"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#2E7D32"
-                                    Width="36" Height="36"
-                                    Margin="0,0,4,0">
-                                <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
-                            </Button>
-
-                            <Button Grid.Column="5"
-                                    Command="{Binding PrintPlansCommand}"
-                                    ToolTip="طباعة"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#1565C0"
-                                    Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
-                            </Button>
                         </Grid>
                     </materialDesign:Card>
 
@@ -323,10 +296,20 @@
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0">
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="خطط الأقساط"
+                                                     TargetDataGrid="{Binding ElementName=AllPlansGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ExportCommand="{Binding ExportPlansCommand}"
+                                                     PrintCommand="{Binding PrintPlansCommand}"
+                                                     ShowCardToggle="False"/>
+                        <DockPanel Grid.Row="1">
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PlansFooter}"/>
                         <DataGrid x:Name="AllPlansGrid"
                                   ItemsSource="{Binding AllPlans}"
@@ -443,7 +426,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         </DockPanel>
-                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding PlansPager}"/>
+                        <controls:PaginationBar Grid.Row="2" DataContext="{Binding PlansPager}"/>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -487,20 +470,6 @@
                                     Height="30"
                                     Margin="16,0,0,0"
                                     FontSize="12" />
-                            <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                           TargetDataGrid="{Binding ElementName=OverdueInstallmentsGrid}"
-                                                           Margin="4,0,0,0"
-                                                           VerticalAlignment="Center" />
-                            <Button Command="{Binding PrintOverdueCommand}"
-                                    ToolTip="طباعة"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#1565C0"
-                                    Width="32" Height="32"
-                                    Margin="8,0,0,0">
-                                <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
-                            </Button>
                         </StackPanel>
                     </materialDesign:Card>
 
@@ -508,6 +477,15 @@
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <DockPanel>
+                        <controls:ListTableHeaderBar DockPanel.Dock="Top"
+                                                     Title="الأقساط المتأخرة"
+                                                     TargetDataGrid="{Binding ElementName=OverdueInstallmentsGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ShowExport="False"
+                                                     PrintCommand="{Binding PrintOverdueCommand}"
+                                                     ShowCardToggle="False"/>
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط (Ctrl+نقر) ثم استخدم «تسديد المحدد» في الأسفل"
                                    FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
@@ -653,15 +631,16 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-                                    <TextBlock Text="خطط الأقساط" FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center" />
-                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                                 TargetDataGrid="{Binding ElementName=CustomerPlansGrid}"
-                                                                 Margin="4,0,0,0"
-                                                                 VerticalAlignment="Center" />
-                                </StackPanel>
+                                <controls:ListTableHeaderBar Grid.Row="0"
+                                                             Title="خطط العميل"
+                                                             TargetDataGrid="{Binding ElementName=CustomerPlansGrid}"
+                                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                             ShowExport="False"
+                                                             ShowPrint="False"
+                                                             ShowCardToggle="False"
+                                                             Margin="0,0,0,8"/>
 
                                 <DataGrid x:Name="CustomerPlansGrid"
                                           Grid.Row="1"
@@ -708,18 +687,16 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-                                    <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center">
-                                        <Run Text="تفاصيل الأقساط" />
-                                        <Run Text=" — حدّد عدة صفوف للتسديد الجماعي" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Normal" />
-                                    </TextBlock>
-                                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                                 TargetDataGrid="{Binding ElementName=PlanInstallmentsGrid}"
-                                                                 Margin="4,0,0,0"
-                                                                 VerticalAlignment="Center" />
-                                </StackPanel>
+                                <controls:ListTableHeaderBar Grid.Row="0"
+                                                             Title="تفاصيل الأقساط"
+                                                             TargetDataGrid="{Binding ElementName=PlanInstallmentsGrid}"
+                                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                             ShowExport="False"
+                                                             ShowPrint="False"
+                                                             ShowCardToggle="False"
+                                                             Margin="0,0,0,8"/>
 
                                 <DockPanel Grid.Row="1">
                                 <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaymentFooter}"/>
@@ -914,33 +891,6 @@
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13"
                                     Margin="0,0,8,0" />
-
-                            <controls:ColumnFilterToggle Grid.Column="2"
-                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                           TargetDataGrid="{Binding ElementName=DetailedInstallmentsGrid}"
-                                                           Margin="4,0,0,0"
-                                                           VerticalAlignment="Center" />
-
-                            <Button Grid.Column="3"
-                                    Command="{Binding PrintDetailedCommand}"
-                                    ToolTip="طباعة الخطة المحددة"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#1565C0"
-                                    Width="36" Height="36"
-                                    Margin="0,0,4,0">
-                                <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
-                            </Button>
-
-                            <Button Grid.Column="4"
-                                    Command="{Binding PrintAllDetailedPlansCommand}"
-                                    ToolTip="طباعة كل فواتير العميل"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#2E7D32"
-                                    Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="PrinterPos" Width="20" Height="20" />
-                            </Button>
                         </Grid>
                     </materialDesign:Card>
 
@@ -953,15 +903,26 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-                                <TextBlock Text="جدول الأقساط - اختر خطة أقساط للعميل" FontSize="14" FontWeight="SemiBold" Foreground="#424242" VerticalAlignment="Center" />
-                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                             TargetDataGrid="{Binding ElementName=DetailedPlansGrid}"
-                                                             Margin="4,0,0,0"
-                                                             VerticalAlignment="Center" />
-                            </StackPanel>
+                            <controls:ListTableHeaderBar Grid.Row="0"
+                                                         Title="خطط التفصيل"
+                                                         TargetDataGrid="{Binding ElementName=DetailedPlansGrid}"
+                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         ShowExport="False"
+                                                         PrintCommand="{Binding PrintDetailedCommand}"
+                                                         ShowCardToggle="False"
+                                                         Margin="0,0,0,8">
+                                <controls:ListTableHeaderBar.ExtraContent>
+                                    <Button Command="{Binding PrintAllDetailedPlansCommand}"
+                                            ToolTip="طباعة كل فواتير العميل"
+                                            Style="{StaticResource IconButton}"
+                                            Foreground="White"
+                                            Width="36" Height="36">
+                                        <materialDesign:PackIcon Kind="PrinterPos" Width="20" Height="20" />
+                                    </Button>
+                                </controls:ListTableHeaderBar.ExtraContent>
+                            </controls:ListTableHeaderBar>
 
                             <DataGrid x:Name="DetailedPlansGrid"
                                       Grid.Row="1"
@@ -1003,6 +964,15 @@
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" UniformCornerRadius="12" Padding="0"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <DockPanel>
+                        <controls:ListTableHeaderBar DockPanel.Dock="Top"
+                                                     Title="أقساط الخطة المحددة"
+                                                     TargetDataGrid="{Binding ElementName=DetailedInstallmentsGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ShowExport="False"
+                                                     ShowPrint="False"
+                                                     ShowCardToggle="False"/>
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط غير مسددة (Ctrl+نقر) للتسديد الجماعي"
                                    FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
@@ -1166,33 +1136,6 @@
                                     Margin="0,0,8,0"
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
-
-                            <controls:ColumnFilterToggle Grid.Column="2"
-                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                           TargetDataGrid="{Binding ElementName=PaidInstallmentsGrid}"
-                                                           Margin="4,0,0,0"
-                                                           VerticalAlignment="Center" />
-
-                            <Button Grid.Column="3"
-                                    Command="{Binding ExportPaidCommand}"
-                                    ToolTip="تصدير Excel"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#2E7D32"
-                                    Width="36" Height="36"
-                                    Margin="0,0,4,0">
-                                <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
-                            </Button>
-
-                            <Button Grid.Column="4"
-                                    Command="{Binding PrintPaidCommand}"
-                                    ToolTip="طباعة"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#1565C0"
-                                    Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
-                            </Button>
                         </Grid>
                     </materialDesign:Card>
 
@@ -1201,10 +1144,20 @@
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0">
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="الأقساط المسددة"
+                                                     TargetDataGrid="{Binding ElementName=PaidInstallmentsGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ExportCommand="{Binding ExportPaidCommand}"
+                                                     PrintCommand="{Binding PrintPaidCommand}"
+                                                     ShowCardToggle="False"/>
+                        <DockPanel Grid.Row="1">
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding PaidFooter}"/>
                         <DataGrid x:Name="PaidInstallmentsGrid"
                                   ItemsSource="{Binding PaidInstallments}"
@@ -1273,7 +1226,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         </DockPanel>
-                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding PaidPager}"/>
+                        <controls:PaginationBar Grid.Row="2" DataContext="{Binding PaidPager}"/>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -1327,33 +1280,6 @@
                                     Margin="0,0,8,0"
                                     materialDesign:ButtonAssist.CornerRadius="8"
                                     FontSize="13" />
-
-                            <controls:ColumnFilterToggle Grid.Column="2"
-                                                           IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                           ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                           ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                           TargetDataGrid="{Binding ElementName=UnpaidInstallmentsGrid}"
-                                                           Margin="4,0,0,0"
-                                                           VerticalAlignment="Center" />
-
-                            <Button Grid.Column="3"
-                                    Command="{Binding ExportUnpaidCommand}"
-                                    ToolTip="تصدير Excel"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#2E7D32"
-                                    Width="36" Height="36"
-                                    Margin="0,0,4,0">
-                                <materialDesign:PackIcon Kind="FileExcelOutline" Width="20" Height="20" />
-                            </Button>
-
-                            <Button Grid.Column="4"
-                                    Command="{Binding PrintUnpaidCommand}"
-                                    ToolTip="طباعة"
-                                    Style="{StaticResource IconButton}"
-                                    Foreground="#1565C0"
-                                    Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="Printer" Width="20" Height="20" />
-                            </Button>
                         </Grid>
                     </materialDesign:Card>
 
@@ -1362,10 +1288,20 @@
                                          materialDesign:ElevationAssist.Elevation="Dp1">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0">
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="الأقساط غير المسددة"
+                                                     TargetDataGrid="{Binding ElementName=UnpaidInstallmentsGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ExportCommand="{Binding ExportUnpaidCommand}"
+                                                     PrintCommand="{Binding PrintUnpaidCommand}"
+                                                     ShowCardToggle="False"/>
+                        <DockPanel Grid.Row="1">
                         <TextBlock DockPanel.Dock="Top"
                                    Text="حدّد عدة أقساط (Ctrl+نقر) ثم استخدم «تسديد المحدد» في الأسفل"
                                    FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="12,8,12,4" />
@@ -1450,7 +1386,7 @@
                         </DataGrid>
                         <controls:InstallmentTotalsFooter DockPanel.Dock="Bottom" DataContext="{Binding UnpaidFooter}"/>
                         </DockPanel>
-                        <controls:PaginationBar Grid.Row="1" DataContext="{Binding UnpaidPager}"/>
+                        <controls:PaginationBar Grid.Row="2" DataContext="{Binding UnpaidPager}"/>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>

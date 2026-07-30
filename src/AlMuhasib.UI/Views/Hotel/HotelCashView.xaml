@@ -37,12 +37,6 @@
                     <Button Command="{Binding LoadVouchersCommand}" Style="{StaticResource FlatButton}">
                         <md:PackIcon Kind="Refresh"/>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=VouchersGrid}"
-                                                 Margin="8,0,0,0"
-                                                 VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </md:Card>
@@ -84,13 +78,19 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="سندات القبض والصرف" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سندات القبض والصرف"
+                                             TargetDataGrid="{Binding ElementName=VouchersGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
                 <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
                 <DataGrid x:Name="VouchersGrid" Grid.Row="2"
                           ItemsSource="{Binding Vouchers}" AutoGenerateColumns="False"
-                          IsReadOnly="True" Style="{StaticResource HotelListDataGrid}" Margin="8"
+                          IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">

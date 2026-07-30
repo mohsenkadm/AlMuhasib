@@ -95,11 +95,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="#00897B" Padding="14,10">
-                                <TextBlock Text="المبيعات حسب القناة" FontWeight="Bold" Foreground="White"/>
-                            </Border>
+                            <controls:ListTableHeaderBar Title="المبيعات حسب القناة" ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
                             <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding ChannelSales}" MinHeight="160"
-                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="القناة" Binding="{Binding Label}" Width="*" MinWidth="80"
                                                         ElementStyle="{StaticResource HotelDataGridTextElement}"/>
@@ -118,11 +116,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="#00897B" Padding="14,10">
-                                <TextBlock Text="أكثر الأصناف مبيعاً" FontWeight="Bold" Foreground="White"/>
-                            </Border>
+                            <controls:ListTableHeaderBar Title="أكثر الأصناف مبيعاً" ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
                             <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding TopItems}" MinHeight="160"
-                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="الصنف" Binding="{Binding ItemName}" Width="*" MinWidth="100"
                                                         ElementStyle="{StaticResource HotelDataGridTextElement}"/>
@@ -141,11 +137,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="#00695C" Padding="14,10">
-                                <TextBlock Text="طرق الدفع / خدمة الغرف" FontWeight="Bold" Foreground="White"/>
-                            </Border>
+                            <controls:ListTableHeaderBar Title="طرق الدفع / خدمة الغرف" ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
                             <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding PaymentBreakdown}" MinHeight="160"
-                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="الطريقة" Binding="{Binding Label}" Width="*" MinWidth="90"
                                                         ElementStyle="{StaticResource HotelDataGridTextElement}"/>
@@ -173,7 +167,7 @@
                             </StackPanel>
                         </Border>
                         <DataGrid Grid.Row="1" Margin="8" ItemsSource="{Binding LowStock}" MaxHeight="160"
-                                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}">
+                                  AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="المكون" Binding="{Binding Name}" Width="*" MinWidth="120"
                                                     ElementStyle="{StaticResource HotelDataGridTextElement}"/>

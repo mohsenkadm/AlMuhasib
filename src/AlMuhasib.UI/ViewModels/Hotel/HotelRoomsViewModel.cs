@@ -19,6 +19,7 @@ public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IExportService _exportService;
     private readonly HotelEntityNavigationHelper _navigation;
     private System.Timers.Timer? _debounceTimer;
 
@@ -58,12 +59,14 @@ public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
         ICurrentUserService currentUserService,
         IToastNotificationService toast,
         IUserPreferencesService userPreferences,
+        IExportService exportService,
         MainWindowViewModel mainWindow)
     {
         _masterDataService = masterDataService;
         _currentUserService = currentUserService;
         _toast = toast;
         _userPreferences = userPreferences;
+        _exportService = exportService;
         _navigation = new HotelEntityNavigationHelper(mainWindow);
         PageTitle = "الغرف";
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.HotelRooms);
@@ -441,6 +444,22 @@ public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
             await _navigation.OpenReservationsAsync(reservationId);
         else
             _toast.ShowWarning("لا يوجد حجز نشط");
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        var headers = new[] { "الغرفة", "النوع", "الطابق", "الحالة" };
+        var data = Rooms.Select(r => new object?[] { r.RoomNumber, r.RoomTypeName, r.FloorName, r.StatusLabel }).ToList();
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelRooms", "الغرف", headers, data);
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var headers = new[] { "الغرفة", "النوع", "الطابق", "الحالة" };
+        var data = Rooms.Select(r => new object?[] { r.RoomNumber, r.RoomTypeName, r.FloorName, r.StatusLabel }).ToList();
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الغرف", headers, data);
     }
 }
 

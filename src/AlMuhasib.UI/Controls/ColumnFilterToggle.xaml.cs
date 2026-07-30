@@ -34,10 +34,23 @@ public partial class ColumnFilterToggle : UserControl
             typeof(ColumnFilterToggle),
             new PropertyMetadata(null));
 
+    public static readonly DependencyProperty OnDarkBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(OnDarkBackground),
+            typeof(bool),
+            typeof(ColumnFilterToggle),
+            new PropertyMetadata(false));
+
     public bool IsChecked
     {
         get => (bool)GetValue(IsCheckedProperty);
         set => SetValue(IsCheckedProperty, value);
+    }
+
+    public bool OnDarkBackground
+    {
+        get => (bool)GetValue(OnDarkBackgroundProperty);
+        set => SetValue(OnDarkBackgroundProperty, value);
     }
 
     public int ActiveFilterCount

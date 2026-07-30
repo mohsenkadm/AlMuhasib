@@ -15,20 +15,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="لوحة التحصيل اليومية" FontSize="22" FontWeight="Bold"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=CollectionDashboardGrid}"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Refresh"/>
-                            <TextBlock Text="تحديث" Margin="6,0,0,0"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh"/>
+                        <TextBlock Text="تحديث" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <UniformGrid Columns="3" Margin="0,0,0,16">
@@ -72,35 +64,54 @@
                         Style="{StaticResource MaterialDesignFlatButton}"/>
             </StackPanel>
 
-            <DataGrid x:Name="CollectionDashboardGrid"
-                      ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}"
-                      AutoGenerateColumns="False" IsReadOnly="True"
-                      CanUserAddRows="False" MinHeight="280"
-                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
-                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
-                    <DataGridTextColumn Header="الهاتف" Binding="{Binding CustomerPhone}" Width="120"
-                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerPhone"/>
-                    <DataGridTextColumn Header="الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="100"
-                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate"/>
-                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="100"
-                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
-                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
-                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                    <DataGridTemplateColumn Header="دفع سريع" Width="100"
-                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="دفع" Padding="8,2"
-                                        Command="{Binding DataContext.QuickPayCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+            <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="أقساط التحصيل"
+                                                 TargetDataGrid="{Binding ElementName=CollectionDashboardGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                                 PrintCommand="{Binding PrintTableCommand}"
+                                                 ShowCardToggle="False"/>
+                    <DataGrid x:Name="CollectionDashboardGrid"
+                              Grid.Row="1"
+                              ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" MinHeight="280"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                            <DataGridTextColumn Header="الهاتف" Binding="{Binding CustomerPhone}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerPhone"/>
+                            <DataGridTextColumn Header="الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate"/>
+                            <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
+                            <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                            <DataGridTemplateColumn Header="دفع سريع" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="دفع" Padding="8,2"
+                                                Command="{Binding DataContext.QuickPayCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </materialDesign:Card>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

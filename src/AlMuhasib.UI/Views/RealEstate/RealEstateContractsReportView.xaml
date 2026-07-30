@@ -61,16 +61,6 @@
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,8,8"/>
                     <Button Content="بحث" Command="{Binding LoadReportCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"/>
-                    <Button Content="تصدير Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource OutlinedButton}"
-                            IsEnabled="{Binding CanExport}" Margin="0,0,8,8"/>
-                    <Button Content="طباعة" Command="{Binding PrintReportCommand}" Style="{StaticResource OutlinedButton}"
-                            IsEnabled="{Binding CanPrint}" Margin="0,0,8,8"/>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=ReportGrid}"
-                                                 Margin="0,0,8,8" VerticalAlignment="Center"/>
-                    <controls:ListViewModeToggle OnDarkBackground="False" VerticalAlignment="Center" Margin="0,0,8,8"/>
                     <TextBox Width="180" md:HintAssist.Hint="بحث داخل الجدول..."
                              Text="{Binding TableSearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"/>
@@ -79,7 +69,21 @@
 
             <md:Card Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="تفاصيل العقود"
+                                                 TargetDataGrid="{Binding ElementName=ReportGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 PrintCommand="{Binding PrintReportCommand}"
+                                                 ShowCardToggle="True"/>
                     <DataGrid x:Name="ReportGrid"
+                              Grid.Row="1"
                               ItemsSource="{Binding FilteredRows}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
@@ -109,7 +113,8 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <ScrollViewer Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    <ScrollViewer Grid.Row="1"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}"
                                   MaxHeight="480" VerticalScrollBarVisibility="Auto" Padding="12">
                         <ItemsControl ItemsSource="{Binding FilteredRows}">
                             <ItemsControl.ItemsPanel>

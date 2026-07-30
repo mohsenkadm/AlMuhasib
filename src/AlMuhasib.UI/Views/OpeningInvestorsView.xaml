@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:OpeningInvestorsViewModel}"
@@ -64,9 +65,17 @@
                              Padding="0" Margin="0,0,0,16" materialDesign:ElevationAssist.Elevation="Dp1">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <DataGrid Grid.Row="0" ItemsSource="{Binding Rows}"
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="أرصدة المستثمرين الافتتاحية"
+                                             TargetDataGrid="{Binding ElementName=OpeningInvestorsGrid}"
+                                             ShowCardToggle="False"
+                                             ShowExport="False"
+                                             ShowPrint="False"
+                                             ShowFilter="False"/>
+                <DataGrid x:Name="OpeningInvestorsGrid" Grid.Row="1" ItemsSource="{Binding Rows}"
                           Style="{StaticResource ModernDataGrid}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"

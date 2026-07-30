@@ -10,6 +10,47 @@ public partial class HotelListPageShell : UserControl
     public HotelListPageShell()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (TargetDataGrid is not null)
+            return;
+
+        if (ListContent is DependencyObject contentRoot)
+        {
+            var grid = FindFilterableDataGrid(contentRoot);
+            if (grid is not null)
+                TargetDataGrid = grid;
+        }
+    }
+
+    private static DataGrid? FindFilterableDataGrid(DependencyObject root)
+    {
+        if (root is DataGrid dataGrid)
+            return dataGrid;
+
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            var found = FindFilterableDataGrid(child);
+            if (found is not null)
+                return found;
+        }
+
+        foreach (var logical in LogicalTreeHelper.GetChildren(root))
+        {
+            if (logical is DependencyObject dep)
+            {
+                var found = FindFilterableDataGrid(dep);
+                if (found is not null)
+                    return found;
+            }
+        }
+
+        return null;
     }
 
     public static readonly DependencyProperty PageTitleProperty =
@@ -74,6 +115,37 @@ public partial class HotelListPageShell : UserControl
 
     public static readonly DependencyProperty ShowPreviewCloseButtonProperty =
         DependencyProperty.Register(nameof(ShowPreviewCloseButton), typeof(bool), typeof(HotelListPageShell), new PropertyMetadata(true));
+
+    public static readonly DependencyProperty TargetDataGridProperty =
+        DependencyProperty.Register(nameof(TargetDataGrid), typeof(DataGrid), typeof(HotelListPageShell), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty ExportCommandProperty =
+        DependencyProperty.Register(nameof(ExportCommand), typeof(ICommand), typeof(HotelListPageShell), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty PrintCommandProperty =
+        DependencyProperty.Register(nameof(PrintCommand), typeof(ICommand), typeof(HotelListPageShell), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty ClearFiltersCommandProperty =
+        DependencyProperty.Register(nameof(ClearFiltersCommand), typeof(ICommand), typeof(HotelListPageShell), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty IsFilterPanelOpenProperty =
+        DependencyProperty.Register(nameof(IsFilterPanelOpen), typeof(bool), typeof(HotelListPageShell),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public static readonly DependencyProperty ActiveFilterCountProperty =
+        DependencyProperty.Register(nameof(ActiveFilterCount), typeof(int), typeof(HotelListPageShell), new PropertyMetadata(0));
+
+    public static readonly DependencyProperty ShowCardToggleProperty =
+        DependencyProperty.Register(nameof(ShowCardToggle), typeof(bool), typeof(HotelListPageShell), new PropertyMetadata(true));
+
+    public static readonly DependencyProperty ShowFilterProperty =
+        DependencyProperty.Register(nameof(ShowFilter), typeof(bool), typeof(HotelListPageShell), new PropertyMetadata(true));
+
+    public static readonly DependencyProperty ShowExportProperty =
+        DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(HotelListPageShell), new PropertyMetadata(true));
+
+    public static readonly DependencyProperty ShowPrintProperty =
+        DependencyProperty.Register(nameof(ShowPrint), typeof(bool), typeof(HotelListPageShell), new PropertyMetadata(true));
 
     public string PageTitle
     {
@@ -199,5 +271,65 @@ public partial class HotelListPageShell : UserControl
     {
         get => (bool)GetValue(ShowPreviewCloseButtonProperty);
         set => SetValue(ShowPreviewCloseButtonProperty, value);
+    }
+
+    public DataGrid? TargetDataGrid
+    {
+        get => (DataGrid?)GetValue(TargetDataGridProperty);
+        set => SetValue(TargetDataGridProperty, value);
+    }
+
+    public ICommand? ExportCommand
+    {
+        get => (ICommand?)GetValue(ExportCommandProperty);
+        set => SetValue(ExportCommandProperty, value);
+    }
+
+    public ICommand? PrintCommand
+    {
+        get => (ICommand?)GetValue(PrintCommandProperty);
+        set => SetValue(PrintCommandProperty, value);
+    }
+
+    public ICommand? ClearFiltersCommand
+    {
+        get => (ICommand?)GetValue(ClearFiltersCommandProperty);
+        set => SetValue(ClearFiltersCommandProperty, value);
+    }
+
+    public bool IsFilterPanelOpen
+    {
+        get => (bool)GetValue(IsFilterPanelOpenProperty);
+        set => SetValue(IsFilterPanelOpenProperty, value);
+    }
+
+    public int ActiveFilterCount
+    {
+        get => (int)GetValue(ActiveFilterCountProperty);
+        set => SetValue(ActiveFilterCountProperty, value);
+    }
+
+    public bool ShowCardToggle
+    {
+        get => (bool)GetValue(ShowCardToggleProperty);
+        set => SetValue(ShowCardToggleProperty, value);
+    }
+
+    public bool ShowFilter
+    {
+        get => (bool)GetValue(ShowFilterProperty);
+        set => SetValue(ShowFilterProperty, value);
+    }
+
+    public bool ShowExport
+    {
+        get => (bool)GetValue(ShowExportProperty);
+        set => SetValue(ShowExportProperty, value);
+    }
+
+    public bool ShowPrint
+    {
+        get => (bool)GetValue(ShowPrintProperty);
+        set => SetValue(ShowPrintProperty, value);
     }
 }

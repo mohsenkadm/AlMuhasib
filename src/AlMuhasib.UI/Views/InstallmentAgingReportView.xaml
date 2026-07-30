@@ -60,13 +60,6 @@
                         <DatePicker SelectedDate="{Binding AsOfDate}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="حتى تاريخ" Width="140" Margin="0,0,12,0"/>
                         <ComboBox ItemsSource="{Binding Customers}" SelectedValue="{Binding SelectedCustomerId}" SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="العميل" Width="180" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,8,0"/>
-                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                       TargetDataGrid="{Binding ElementName=AgingGrid}"
-                                                       Margin="0,0,8,0"/>
-                        <Button Content="طباعة" Style="{StaticResource OutlinedButton}" Command="{Binding PrintCommand}" Margin="0,0,8,0"/>
-                        <Button Content="تصدير Excel" Style="{StaticResource OutlinedButton}" Command="{Binding ExportToExcelCommand}"/>
                     </StackPanel>
                 </Border>
 
@@ -80,10 +73,23 @@
         <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Margin="24,0,24,16">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <DataGrid x:Name="AgingGrid" ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False" MinHeight="280"
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="أعمار ذمم الأقساط"
+                                             TargetDataGrid="{Binding ElementName=AgingGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="AgingGrid" Grid.Row="1"
+                          ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False" MinHeight="280"
                           SelectionMode="Extended" SelectionChanged="AgingGrid_SelectionChanged"
                           behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenInvoiceDetailFromReportRowCommand}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -106,7 +112,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AgingBucket"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                        <controls:PaginationBar Grid.Row="1"/>
+                        <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </materialDesign:Card>
     </Grid>

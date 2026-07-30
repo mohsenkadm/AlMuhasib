@@ -42,13 +42,6 @@
                             <TextBlock Text="استخراج قالب Excel"/>
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding ExportToExcelCommand}" Style="{StaticResource FlatButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanExport}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileExcelOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تصدير Excel"/>
-                        </StackPanel>
-                    </Button>
                     <Button Command="{Binding ImportFromExcelCommand}" Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanAdd}">
                         <StackPanel Orientation="Horizontal">
@@ -102,11 +95,6 @@
                         Style="{StaticResource PrimaryButton}" md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8"/>
                 <Button Content="مسح" Command="{Binding ClearFiltersCommand}"
                         Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8"/>
-                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                               ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                               ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                               TargetDataGrid="{Binding ElementName=PricingGrid}"
-                                               Margin="0,0,8,8"/>
             </WrapPanel>
         </md:Card>
 
@@ -117,10 +105,15 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <TextBlock Text="إدخال سريع داخل الجدول — منتج + نوع تسعير + سعر بيع وشراء"
-                               FontSize="14" FontWeight="SemiBold" Foreground="White"/>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة تسعير المنتجات"
+                                             TargetDataGrid="{Binding ElementName=PricingGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
                 <DataGrid x:Name="PricingGrid" Grid.Row="1"
                           ItemsSource="{Binding Rows}"
                           AutoGenerateColumns="False"

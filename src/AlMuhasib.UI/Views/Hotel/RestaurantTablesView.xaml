@@ -34,12 +34,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=TablesGrid}"
-                                                 Margin="8,0,0,0" VerticalAlignment="Center"
-                                                 Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <TextBox md:HintAssist.Hint="بحث برقم الطاولة..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" MinWidth="200" Margin="16,0,0,0"/>
@@ -54,14 +48,16 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="خريطة الطاولات" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <controls:ListTableHeaderBar Title="خريطة الطاولات"
+                                             TargetDataGrid="{Binding ElementName=TablesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
+                        <StackPanel Orientation="Horizontal">
                             <ToggleButton IsChecked="{Binding IsGridView}" ToolTip="عرض شبكة"
                                           Style="{StaticResource MaterialDesignFlatButton}" Foreground="White" Margin="0,0,8,0">
                                 <md:PackIcon Kind="ViewGrid" Width="18" Height="18"/>
@@ -71,8 +67,8 @@
                                 <md:PackIcon Kind="ViewList" Width="18" Height="18"/>
                             </ToggleButton>
                         </StackPanel>
-                    </Grid>
-                </Border>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
                 <controls:HotelListStatsBar Grid.Row="1" Margin="16,12,16,4" ItemsSource="{Binding Stats}"/>
 
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="12"
@@ -112,7 +108,7 @@
 
                 <DataGrid x:Name="TablesGrid" Grid.Row="2" Margin="8"
                           ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}"
-                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource HotelListDataGrid}"
+                          AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}"
                           Visibility="{Binding IsTableView, Converter={StaticResource BooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"

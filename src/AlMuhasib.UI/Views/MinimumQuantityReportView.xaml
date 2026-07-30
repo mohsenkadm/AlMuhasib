@@ -98,19 +98,6 @@
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding LoadDataCommand}"
                                 Margin="0,0,12,8"/>
-                        <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                       ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                       ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                       TargetDataGrid="{Binding ElementName=MinQtyReportGrid}"
-                                                       Margin="0,0,12,8"/>
-                        <Button Content="طباعة"
-                                Style="{StaticResource OutlinedButton}"
-                                Command="{Binding PrintCommand}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="تصدير Excel"
-                                Style="{StaticResource OutlinedButton}"
-                                Command="{Binding ExportToExcelCommand}"
-                                Margin="0,0,0,8"/>
                     </WrapPanel>
                 </Border>
             </StackPanel>
@@ -125,9 +112,22 @@
             <materialDesign:Card Grid.Column="0" materialDesign:ElevationAssist.Elevation="Dp2">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="كميات الحد الأدنى"
+                                                 TargetDataGrid="{Binding ElementName=MinQtyReportGrid}"
+                                                 IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                 ExportCommand="{Binding ExportToExcelCommand}"
+                                                 PrintCommand="{Binding PrintCommand}"
+                                                 ShowCardToggle="False"/>
+
 
                     <DataGrid x:Name="MinQtyReportGrid"
                               ItemsSource="{Binding Rows}"
@@ -140,7 +140,10 @@
                               MinHeight="300"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
+
+
+                                  Grid.Row="1">
                         <DataGrid.InputBindings>
                             <MouseBinding MouseAction="LeftDoubleClick"
                                           Command="{Binding ShowDetailsCommand}"
@@ -204,7 +207,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <controls:PaginationBar Grid.Row="1"/>
+                    <controls:PaginationBar Grid.Row="2"/>
                 </Grid>
             </materialDesign:Card>
 

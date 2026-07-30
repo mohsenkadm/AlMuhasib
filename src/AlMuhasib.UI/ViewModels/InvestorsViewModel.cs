@@ -158,6 +158,18 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         }
     }
 
+    [RelayCommand]
+    private void PrintTable()
+    {
+        var columns = new[] { "الاسم", "الهاتف", "إجمالي الإيداع", "نسبة الربح %", "إجمالي الأرباح" };
+        var rows = Investors.Select(i => new object[]
+        {
+            i.Name, i.Phone ?? "", i.TotalDeposit.ToString("N0"),
+            i.ProfitPercentage.ToString("N2"), i.TotalProfitsEarned.ToString("N0")
+        }).ToList();
+        _exportService.PrintTable("قائمة المستثمرين", columns, (IList<object[]>)rows);
+    }
+
     // ══════════════════════════════════════════════════════
     // TAB 1: DEPOSIT (سند إيداع مستثمر)
     // ══════════════════════════════════════════════════════

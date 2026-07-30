@@ -13,6 +13,7 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
     private readonly IRealEstateClauseTemplateService _service;
     private readonly ICurrentUserService _currentUserService;
     private readonly IToastNotificationService _toast;
+    private readonly IExportService _exportService;
     private List<RealEstateClauseTemplate> _all = [];
 
     public ObservableCollection<RealEstateClauseTemplate> Templates { get; } = [];
@@ -31,11 +32,13 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
     public RealEstateClauseTemplatesViewModel(
         IRealEstateClauseTemplateService service,
         ICurrentUserService currentUserService,
-        IToastNotificationService toast)
+        IToastNotificationService toast,
+        IExportService exportService)
     {
         _service = service;
         _currentUserService = currentUserService;
         _toast = toast;
+        _exportService = exportService;
         PageTitle = "بنود العقد";
     }
 
@@ -133,5 +136,30 @@ public partial class RealEstateClauseTemplatesViewModel : ViewModelBase
         await _service.DeleteAsync(item.Id, _currentUserService.Username ?? "System");
         _toast.ShowSuccess("تم الحذف");
         await LoadAsync();
+    }
+
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (!CanExport) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = $"ClauseTemplates_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+        if (dialog.ShowDialog() != true) return;
+        var headers = new[] { "الترتيب", "العنوان", "النص", "مفعّل" };
+        var data = Templates.Select(t => new object?[] { t.SortOrder, t.Title, t.Body, t.IsActive ? "نعم" : "لا" }).ToList();
+        _exportService.ExportToExcel(dialog.FileName, "البنود", headers, data);
+        _toast.ShowSuccess("تم التصدير");
+    }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (!CanPrint) return;
+        var headers = new[] { "الترتيب", "العنوان", "النص", "مفعّل" };
+        var data = Templates.Select(t => new object?[] { t.SortOrder, t.Title, t.Body, t.IsActive ? "نعم" : "لا" }).ToList();
+        _exportService.PrintTable("بنود العقد الجاهزة", headers, data);
     }
 }

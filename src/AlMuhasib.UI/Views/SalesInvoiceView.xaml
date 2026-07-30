@@ -20,6 +20,7 @@
     </UserControl.Resources>
 
     <Grid>
+        <FrameworkElement x:Name="VmProxy" Visibility="Collapsed"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0">
@@ -427,7 +428,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn Header="الخصم" Width="90" IsReadOnly="True"
-                                                        Visibility="{Binding DataContext.ShowProductDiscount, Source={x:Reference SalesItemsGrid}, Converter={StaticResource BoolToVis}}">
+                                                        Visibility="{Binding DataContext.ShowProductDiscount, Source={x:Reference VmProxy}, Converter={StaticResource BoolToVis}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}"

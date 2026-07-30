@@ -43,21 +43,19 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="{Binding ListTitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
-                                       FontSize="15" FontWeight="Bold" Foreground="White"
-                                       VerticalAlignment="Center"/>
-                            <ContentPresenter Grid.Column="1"
-                                              Content="{Binding ListHeaderExtra, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
-                                              VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <controls:ListTableHeaderBar Grid.Row="0"
+                                                 Title="{Binding ListTitle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 TargetDataGrid="{Binding TargetDataGrid, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 IsFilterPanelOpen="{Binding IsFilterPanelOpen, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}, Mode=TwoWay}"
+                                                 ActiveFilterCount="{Binding ActiveFilterCount, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ClearFiltersCommand="{Binding ClearFiltersCommand, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ExportCommand="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 PrintCommand="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ShowCardToggle="{Binding ShowCardToggle, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ShowFilter="{Binding ShowFilter, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ShowExport="{Binding ShowExport, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ShowPrint="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"
+                                                 ExtraContent="{Binding ListHeaderExtra, RelativeSource={RelativeSource AncestorType=controls:HotelListPageShell}}"/>
 
                     <controls:HotelListStatsBar Grid.Row="1"
                                                 Margin="16,12,16,4"

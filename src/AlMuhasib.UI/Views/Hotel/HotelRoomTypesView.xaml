@@ -34,12 +34,6 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
-                    <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                 ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                 ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                 TargetDataGrid="{Binding ElementName=RoomTypesGrid}"
-                                                 Margin="4,0,0,0"
-                                                 VerticalAlignment="Center"/>
                     <TextBox md:HintAssist.Hint="بحث..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
@@ -55,16 +49,15 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="قائمة أنواع الغرف" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                        <controls:ListViewModeToggle Grid.Column="1" OnDarkBackground="True" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة أنواع الغرف"
+                                             TargetDataGrid="{Binding ElementName=RoomTypesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="True"/>
 
                 <Grid Grid.Row="1">
                     <Grid.RowDefinitions>
@@ -81,7 +74,7 @@
                               SelectedItem="{Binding SelectedRoomType}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
-                              Style="{StaticResource HotelListDataGrid}"
+                              Style="{StaticResource ModernDataGrid}"
                               Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                               behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                               behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"

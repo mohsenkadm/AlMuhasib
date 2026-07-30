@@ -699,6 +699,80 @@ public partial class CashBankViewModel : ViewModelBase
     // ══════════════════════════════════════════════════════
 
     [RelayCommand]
+    private void ExportCashBoxTransactions()
+    {
+        if (CashBoxTransactions.Count == 0) return;
+        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "حركات_الصندوق.xlsx" };
+        if (dlg.ShowDialog() != true) return;
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var rows = CashBoxTransactions.Select(t => new object[]
+        {
+            t.Date.ToString("yyyy/MM/dd"),
+            t.Type,
+            t.Reference ?? "",
+            t.Credit,
+            t.Debit,
+            t.Description ?? ""
+        }).ToList();
+        _exportService.ExportToExcel(dlg.FileName, "حركات الصندوق", cols, (IList<object[]>)rows);
+        BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+    }
+
+    [RelayCommand]
+    private void PrintCashBoxTransactions()
+    {
+        if (CashBoxTransactions.Count == 0) return;
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var rows = CashBoxTransactions.Select(t => new object[]
+        {
+            t.Date.ToString("yyyy/MM/dd"),
+            t.Type,
+            t.Reference ?? "",
+            t.Credit.ToString("N0"),
+            t.Debit.ToString("N0"),
+            t.Description ?? ""
+        }).ToList();
+        _exportService.PrintTable("حركات الصندوق", cols, (IList<object[]>)rows);
+    }
+
+    [RelayCommand]
+    private void ExportBankTransactions()
+    {
+        if (BankTransactions.Count == 0) return;
+        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "حركات_البنك.xlsx" };
+        if (dlg.ShowDialog() != true) return;
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var rows = BankTransactions.Select(t => new object[]
+        {
+            t.Date.ToString("yyyy/MM/dd"),
+            t.Type,
+            t.Reference ?? "",
+            t.Credit,
+            t.Debit,
+            t.Description ?? ""
+        }).ToList();
+        _exportService.ExportToExcel(dlg.FileName, "حركات البنك", cols, (IList<object[]>)rows);
+        BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+    }
+
+    [RelayCommand]
+    private void PrintBankTransactions()
+    {
+        if (BankTransactions.Count == 0) return;
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var rows = BankTransactions.Select(t => new object[]
+        {
+            t.Date.ToString("yyyy/MM/dd"),
+            t.Type,
+            t.Reference ?? "",
+            t.Credit.ToString("N0"),
+            t.Debit.ToString("N0"),
+            t.Description ?? ""
+        }).ToList();
+        _exportService.PrintTable("حركات البنك", cols, (IList<object[]>)rows);
+    }
+
+    [RelayCommand]
     private void ExportCashBoxes()
     {
         if (CashBoxes.Count == 0) return;

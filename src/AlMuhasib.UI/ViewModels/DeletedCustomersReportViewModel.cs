@@ -58,4 +58,17 @@ public partial class DeletedCustomersReportViewModel : SupervisoryReportViewMode
         ExportService.ExportToExcel(dlg.FileName, "عملاء محذوفون", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
+
+    [RelayCommand]
+    private void PrintTable()
+    {
+        if (Rows.Count == 0) return;
+        var cols = new[] { "الاسم", "الهاتف", "رقم الملف", "العنوان", "تاريخ الحذف", "حذف بواسطة" };
+        var data = Rows.Select(r => new object[]
+        {
+            r.Name, r.Phone ?? "", r.FileNumber ?? "", r.Address ?? "",
+            r.DeletedAt?.ToString("yyyy/MM/dd HH:mm") ?? "", r.DeletedBy
+        }).ToList();
+        ExportService.PrintTable("عملاء محذوفون", cols, (IList<object[]>)data);
+    }
 }

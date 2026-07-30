@@ -51,20 +51,6 @@
                             <TextBlock Text="عقد جديد"/>
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding PrintAllCommand}" Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanPrint}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Printer" Margin="0,0,6,0"/>
-                            <TextBlock Text="طباعة الكل"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding ExportExcelCommand}" Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8" IsEnabled="{Binding CanExport}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileExcelOutline" Margin="0,0,6,0"/>
-                            <TextBlock Text="تصدير Excel"/>
-                        </StackPanel>
-                    </Button>
                     <Button Command="{Binding LoadContractsCommand}" Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
                         <StackPanel Orientation="Horizontal">
@@ -91,21 +77,15 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="قائمة العقود" FontSize="15" FontWeight="Bold"
-                                   Foreground="White" VerticalAlignment="Center"/>
-                        <controls:ColumnFilterToggle Grid.Column="1"
-                                                     IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                     TargetDataGrid="{Binding ElementName=ContractsGrid}"/>
-                    </Grid>
-                </Border>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة العقود"
+                                             TargetDataGrid="{Binding ElementName=ContractsGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportExcelCommand}"
+                                             PrintCommand="{Binding PrintAllCommand}"
+                                             ShowCardToggle="False"/>
 
                 <DataGrid x:Name="ContractsGrid" Grid.Row="2"
                           ItemsSource="{Binding Contracts}" SelectedItem="{Binding SelectedContract}"

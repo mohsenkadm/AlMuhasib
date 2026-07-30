@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <ScrollViewer Padding="24">
@@ -12,8 +13,6 @@
                 <DatePicker md:HintAssist.Hint="من" SelectedDate="{Binding DateFrom}" Width="140" Margin="0,0,8,8"/>
                 <DatePicker md:HintAssist.Hint="إلى" SelectedDate="{Binding DateTo}" Width="140" Margin="0,0,8,8"/>
                 <Button Content="تحديث" Command="{Binding LoadReportCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Background="#E65100" Margin="0,0,8,8"/>
-                <Button Content="Excel" Command="{Binding ExportExcelCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanExport}" Margin="0,0,8,8"/>
-                <Button Content="طباعة" Command="{Binding PrintReportCommand}" Style="{StaticResource OutlinedButton}" IsEnabled="{Binding CanPrint}"/>
             </WrapPanel>
             <UniformGrid Columns="3" Margin="0,0,0,12">
                 <md:Card Padding="12" Margin="4"><TextBlock><Run Text="عمليات شراء: "/><Run Text="{Binding BuyCount}" FontWeight="Bold" Foreground="#2E7D32"/></TextBlock></md:Card>
@@ -53,7 +52,21 @@
             <md:Card Padding="8" Margin="4,0,4,8">
                 <lvc:PieChart Series="{Binding TypeSeries}" Height="180"/>
             </md:Card>
-            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="400">
+            <md:Card Padding="0" Margin="4,0,4,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <controls:ListTableHeaderBar Title="تفاصيل العمليات"
+                                                 TargetDataGrid="{Binding ElementName=ReportRowsGrid}"
+                                                 ShowFilter="False"
+                                                 ExportCommand="{Binding ExportExcelCommand}"
+                                                 PrintCommand="{Binding PrintReportCommand}"
+                                                 ShowCardToggle="False"/>
+                    <DataGrid x:Name="ReportRowsGrid" Grid.Row="1"
+                              ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource ModernDataGrid}" MaxHeight="400">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم العملية" Binding="{Binding TransactionNumber}" Width="110"/>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding TransactionDate, StringFormat=yyyy/MM/dd}" Width="100"/>
@@ -65,6 +78,8 @@
                     <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"/>
                 </DataGrid.Columns>
             </DataGrid>
+                </Grid>
+            </md:Card>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

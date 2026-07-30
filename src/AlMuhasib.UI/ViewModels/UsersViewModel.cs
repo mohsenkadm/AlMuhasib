@@ -7,16 +7,19 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class UsersViewModel : ViewModelBase
 {
     private readonly IAuthService _authService;
+    private readonly IExportService _exportService;
 
-    public UsersViewModel(IAuthService authService)
+    public UsersViewModel(IAuthService authService, IExportService exportService)
     {
         _authService = authService;
+        _exportService = exportService;
         PageTitle = "المستخدمون";
     }
 
@@ -216,6 +219,61 @@ public partial class UsersViewModel : ViewModelBase
         FormFullName = string.Empty;
         FormPassword = string.Empty;
         FormRole = UserRole.User;
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var users = await _authService.GetAllUsersAsync();
+            var exportData = users.Select(u => new
+            {
+                اسم_المستخدم = u.Username,
+                الاسم_الكامل = u.FullName,
+                الصلاحية = u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                الحالة = u.IsActive ? "فعال" : "معطّل"
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"المستخدمون_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "المستخدمون");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var users = await _authService.GetAllUsersAsync();
+            var columns = new[] { "اسم المستخدم", "الاسم الكامل", "الصلاحية", "الحالة" };
+            IList<object[]> rows = users.Select(u => new object[]
+            {
+                u.Username,
+                u.FullName,
+                u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                u.IsActive ? "فعال" : "معطّل"
+            }).ToList();
+            _exportService.PrintTable("قائمة المستخدمين", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
     }
 
     // ── Init ────────────────────────────────────────────
