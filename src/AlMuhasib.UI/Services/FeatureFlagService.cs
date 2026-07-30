@@ -21,6 +21,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool ProductPricingEnabled => Current.ProductPricingEnabled;
     public bool UpdateProductPriceOnPurchase => Current.UpdateProductPriceOnPurchase;
     public bool ProductDiscountEnabled => Current.ProductDiscountEnabled;
+    public bool TransportFees => Current.TransportFees;
     public bool TemplateMobileShop => Current.TemplateMobileShop;
     public bool TemplateClothing => Current.TemplateClothing;
     public bool TemplateConstruction => Current.TemplateConstruction;

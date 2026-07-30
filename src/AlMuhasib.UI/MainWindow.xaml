@@ -1270,6 +1270,9 @@
                         <DataTemplate DataType="{x:Type vm:PricingTypesViewModel}">
                             <views:PricingTypesView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PackagingTypesViewModel}">
+                            <views:PackagingTypesView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductPricingViewModel}">
                             <views:ProductPricingView />
                         </DataTemplate>

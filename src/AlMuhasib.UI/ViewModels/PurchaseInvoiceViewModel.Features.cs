@@ -19,6 +19,8 @@ public partial class PurchaseInvoiceViewModel
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showClothingSizes;
+    [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private decimal _transportFeeAmount;
     [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
 
     public bool ShowCustomField1 => ShowClothingSizes;
@@ -54,9 +56,13 @@ public partial class PurchaseInvoiceViewModel
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowClothingSizes = _featureFlags.TemplateClothing;
+        ShowTransportFee = _featureFlags.TransportFees;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
         OnPropertyChanged(nameof(ShowCustomField1));
         OnPropertyChanged(nameof(ShowCustomField2));
+
+        if (!ShowTransportFee)
+            TransportFeeAmount = 0m;
 
         if (!ShowUnitsOfMeasure)
         {
@@ -112,6 +118,8 @@ public partial class PurchaseInvoiceViewModel
             IsReturnMode = false;
             PageTitle = "فاتورة مشتريات";
         }
+
+        RecalculateTotals();
     }
 
     public void EnterReturnMode(string? reference = null)

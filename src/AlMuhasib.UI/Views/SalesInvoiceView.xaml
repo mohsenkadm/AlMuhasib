@@ -344,7 +344,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
+                                <DataGridTemplateColumn x:Name="ColUnit" Header="التعبئة" Width="100"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -593,6 +593,21 @@
                                                Foreground="#2E7D32"
                                                FontWeight="Medium"
                                                VerticalAlignment="Center" />
+                                </Grid>
+
+                                <!-- Transport fee -->
+                                <Grid Margin="0,0,0,10"
+                                      Visibility="{Binding ShowTransportFee, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="أجور النقل:" FontSize="13"
+                                               Foreground="#1565C0" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                             Style="{StaticResource NumericCellTextBox}"
+                                             materialDesign:HintAssist.Hint="0"/>
                                 </Grid>
 
                                 <Separator Margin="0,4,0,12" Background="#C8E6C9" />

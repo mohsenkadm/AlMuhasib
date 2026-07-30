@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Threading;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -148,6 +149,7 @@ public partial class InstallmentInvoiceViewModel
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;
         Notes = invoice.Notes ?? string.Empty;
+        TransportFeeAmount = ShowTransportFee ? invoice.TransportFeeAmount : 0m;
 
         if (invoice.CustomerId.HasValue)
         {
@@ -189,8 +191,14 @@ public partial class InstallmentInvoiceViewModel
                 UnitPrice = item.UnitPrice
             };
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
+            if (row.UnitConversionFactor > 0 && row.UnitConversionFactor != 1m)
+            {
+                row.Quantity = item.Quantity / row.UnitConversionFactor;
+                row.UnitPrice = item.UnitPrice * row.UnitConversionFactor;
+            }
             WireItemRow(row);
             Items.Add(row);
+            _ = LoadRowUnitsAsync(row);
         }
 
         if (Items.Count == 0)

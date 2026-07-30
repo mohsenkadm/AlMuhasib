@@ -205,6 +205,11 @@
                                         <TextBlock Text="{Binding RoundingText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
+                                                Visibility="{Binding TransportFeeText, Converter={StaticResource NullToCollapsedConverter}}">
+                                        <TextBlock Text="أجور النقل:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="{Binding TransportFeeText}" Foreground="#1565C0" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
                                                 Visibility="{Binding CompanyFeeText, Converter={StaticResource NullToCollapsedConverter}}">
                                         <TextBlock Text="نسبة الشركة:" Width="120" Foreground="#78909C"/>
                                         <TextBlock Text="{Binding CompanyFeeText}" Foreground="#6A1B9A" FontWeight="SemiBold"/>

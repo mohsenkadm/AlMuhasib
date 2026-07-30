@@ -146,6 +146,7 @@ public partial class PurchaseInvoiceViewModel
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;
         Notes = invoice.Notes ?? string.Empty;
+        TransportFeeAmount = ShowTransportFee ? invoice.TransportFeeAmount : 0m;
 
         if (invoice.SupplierId.HasValue)
         {

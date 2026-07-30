@@ -54,6 +54,8 @@ public class InvoiceService : IInvoiceService
                 invoice.DiscountAmount = 0m;
             if (invoice.DiscountAmount > Math.Max(0m, subtotal))
                 invoice.DiscountAmount = Math.Max(0m, subtotal);
+            if (invoice.TransportFeeAmount < 0m)
+                invoice.TransportFeeAmount = 0m;
             decimal netAmount = subtotal - invoice.DiscountAmount;
 
             decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType);
@@ -61,7 +63,7 @@ public class InvoiceService : IInvoiceService
             invoice.RoundingType = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? RoundingType.RoundUp
                 : RoundingType.RoundDown;
-            invoice.NetAmount = netAmount + roundingAmount;
+            invoice.NetAmount = netAmount + roundingAmount + invoice.TransportFeeAmount;
 
             // Initialize credit payment tracking (supports down-payment on credit)
             if (invoice.PaymentMethod == PaymentMethod.Credit)

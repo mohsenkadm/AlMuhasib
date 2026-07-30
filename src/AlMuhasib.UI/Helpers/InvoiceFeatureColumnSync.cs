@@ -42,6 +42,15 @@ public static class InvoiceFeatureColumnSync
                     Set(serial, purchase.ShowSerialNumbers);
                     Set(pricing, false);
                     break;
+                case InstallmentInvoiceViewModel installment:
+                    Set(custom1, false);
+                    Set(custom2, false);
+                    Set(unit, installment.ShowUnitsOfMeasure);
+                    Set(batch, false);
+                    Set(expiry, false);
+                    Set(serial, false);
+                    Set(pricing, false);
+                    break;
                 default:
                     Set(custom1, false);
                     Set(custom2, false);

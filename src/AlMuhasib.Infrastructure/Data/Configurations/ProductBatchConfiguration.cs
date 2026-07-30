@@ -58,6 +58,11 @@ public class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
             .WithMany()
             .HasForeignKey(u => u.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(u => u.PackagingType)
+            .WithMany(t => t.ProductUnits)
+            .HasForeignKey(u => u.PackagingTypeId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

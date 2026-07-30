@@ -16,6 +16,7 @@ public sealed class InvoiceDetailDisplayModel
     public string SubtotalText { get; init; } = string.Empty;
     public string DiscountText { get; init; } = string.Empty;
     public string RoundingText { get; init; } = string.Empty;
+    public string? TransportFeeText { get; init; }
     public string GrandTotalText { get; init; } = string.Empty;
     public string? CompanyFeeText { get; init; }
     public string? PaidAmountText { get; init; }

@@ -168,10 +168,14 @@
                                                     Description="تحويل المخزون بين المخازن"
                                                     Icon="TruckDelivery" IconBackground="#E3F2FD" IconForeground="#1565C0"
                                                     IsChecked="{Binding WarehouseTransfers}"/>
-                        <controls:FeatureToggleCard Title="وحدات قياس"
-                                                    Description="وحدات متعددة لكل منتج"
-                                                    Icon="Ruler" IconBackground="#FFF8E1" IconForeground="#F9A825"
+                        <controls:FeatureToggleCard Title="بيع المواد بالتعبئة"
+                                                    Description="أنواع تعبئة عامة (قطعة/كارتون/متر) وكميات لكل منتج واختيارها في الفواتير"
+                                                    Icon="PackageVariant" IconBackground="#FFF8E1" IconForeground="#F9A825"
                                                     IsChecked="{Binding UnitsOfMeasure}"/>
+                        <controls:FeatureToggleCard Title="أجور النقل"
+                                                    Description="حقل أجور النقل في فواتير البيع والشراء والأقساط مع الظهور في الطباعة"
+                                                    Icon="TruckFast" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    IsChecked="{Binding TransportFees}"/>
                         <controls:FeatureToggleCard Title="وزن القائمة"
                                                     Description="حقل وزن المادة على المنتج وكارد حساب وزن فاتورة البيع"
                                                     Icon="ScaleBalance" IconBackground="#E0F7FA" IconForeground="#00838F"

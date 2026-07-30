@@ -450,6 +450,8 @@ public class ExcelExportService : IExportService
         AddTotalRow("المجموع الفرعي", m.Subtotal);
         if (m.RoundingAmount != 0)
             AddTotalRow("التقريب", m.RoundingAmount);
+        if (m.TransportFeeAmount > 0)
+            AddTotalRow("أجور النقل", m.TransportFeeAmount);
         AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
         if (m.CompanyFeeAmount is > 0)
             AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);

@@ -63,6 +63,7 @@ public class AppDbContext : DbContext
     public DbSet<PricingType> PricingTypes => Set<PricingType>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
     public DbSet<BusinessSettings> BusinessSettings => Set<BusinessSettings>();
+    public DbSet<PackagingType> PackagingTypes => Set<PackagingType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

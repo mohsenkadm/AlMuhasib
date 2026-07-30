@@ -18,6 +18,8 @@ public class Invoice : BaseEntity
     public decimal CompanyFeePercentage { get; set; }
     /// <summary>مبلغ نسبة الشركة</summary>
     public decimal CompanyFeeAmount { get; set; }
+    /// <summary>أجور النقل — تُضاف إلى صافي الفاتورة عند تفعيل الميزة</summary>
+    public decimal TransportFeeAmount { get; set; }
     public decimal RoundingAmount { get; set; }
     public RoundingType RoundingType { get; set; }
     public int? CashBoxId { get; set; }

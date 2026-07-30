@@ -678,7 +678,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             Items.Select(i => i.TotalPrice),
             _invoiceService,
             InvoiceType.Sale,
-            InvoiceDiscountAmount);
+            InvoiceDiscountAmount,
+            ShowTransportFee ? TransportFeeAmount : 0m);
         _ = computedSub;
         _ = discount;
 
@@ -687,6 +688,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     }
 
     partial void OnInvoiceDiscountValueChanged(decimal value) => RecalculateTotals();
+    partial void OnTransportFeeAmountChanged(decimal value) => RecalculateTotals();
 
     // ── Save ───────────────────────────────────────────────
     [RelayCommand]
@@ -830,6 +832,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 Date = InvoiceDate,
                 CreditDueDate = IsCreditPayment ? CreditDueDate : null,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
+                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -977,6 +980,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             Notes = _savedInvoice.Notes,
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
+            TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
             Items = _savedItems.Select((item, i) => new InvoicePrintItem
             {
@@ -1001,6 +1005,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         _savedItems = [];
         ErrorMessage = string.Empty;
         Notes = string.Empty;
+        TransportFeeAmount = 0m;
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
         SelectedPaymentMethod = PaymentMethod.Cash;

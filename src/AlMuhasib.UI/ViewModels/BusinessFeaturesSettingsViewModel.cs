@@ -16,6 +16,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     private readonly IBackupService _backupService;
     private readonly IBusinessSettingsService _businessSettingsService;
     private readonly IPricingTypeService _pricingTypeService;
+    private readonly IPackagingTypeService _packagingTypeService;
     private readonly IServiceProvider _services;
 
     [ObservableProperty] private bool _installmentRemindersEnabled = true;
@@ -30,6 +31,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _purchaseReturns;
     [ObservableProperty] private bool _warehouseTransfers;
     [ObservableProperty] private bool _unitsOfMeasure;
+    [ObservableProperty] private bool _transportFees;
     [ObservableProperty] private bool _menuWeight;
     [ObservableProperty] private bool _expiryTracking;
     [ObservableProperty] private bool _serialNumbers;
@@ -50,7 +52,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
-            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, MenuWeight,
+            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             ProductDiscountEnabled, TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
@@ -62,6 +64,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         IBusinessSettingsService businessSettingsService,
         IPricingTypeService pricingTypeService,
+        IPackagingTypeService packagingTypeService,
         IServiceProvider services)
     {
         _preferences = preferences;
@@ -69,6 +72,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         _backupService = backupService;
         _businessSettingsService = businessSettingsService;
         _pricingTypeService = pricingTypeService;
+        _packagingTypeService = packagingTypeService;
         _services = services;
         PageTitle = "إعدادات الميزات";
         LoadPermissions(currentUserService, "BusinessFeatures");
@@ -112,6 +116,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         PurchaseReturns = p.FeatureFlags.PurchaseReturns;
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
+        TransportFees = p.FeatureFlags.TransportFees;
         MenuWeight = p.FeatureFlags.MenuWeight;
         ExpiryTracking = p.FeatureFlags.ExpiryTracking;
         SerialNumbers = p.FeatureFlags.SerialNumbers;
@@ -140,6 +145,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnPurchaseReturnsChanged(bool value) => NotifyFeaturesCount();
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
+    partial void OnTransportFeesChanged(bool value) => NotifyFeaturesCount();
     partial void OnMenuWeightChanged(bool value) => NotifyFeaturesCount();
     partial void OnExpiryTrackingChanged(bool value) => NotifyFeaturesCount();
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
@@ -180,6 +186,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.PurchaseReturns = PurchaseReturns;
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
+            p.FeatureFlags.TransportFees = TransportFees;
             p.FeatureFlags.MenuWeight = MenuWeight;
             p.FeatureFlags.ExpiryTracking = ExpiryTracking;
             p.FeatureFlags.SerialNumbers = SerialNumbers;
@@ -201,6 +208,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             await _businessSettingsService.SaveAsync(ProductPricingEnabled, UpdateProductPriceOnPurchase);
             if (ProductPricingEnabled)
                 await _pricingTypeService.EnsureDefaultExistsAsync();
+            if (UnitsOfMeasure)
+                await _packagingTypeService.EnsureDefaultExistsAsync();
         }
         catch (Exception ex)
         {
