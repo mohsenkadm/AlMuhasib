@@ -1267,6 +1267,184 @@ public class ReportService : IReportService
         };
     }
 
+    public async Task<MaterialNetProfitReportResult> GetMaterialNetProfitReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, bool ascending = false, int? topN = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.InvoiceItems
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var soldItems = await query.ToListAsync();
+        if (soldItems.Count == 0)
+            return new MaterialNetProfitReportResult();
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stockQuery = context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId));
+        if (warehouseId.HasValue)
+            stockQuery = stockQuery.Where(ws => ws.WarehouseId == warehouseId.Value);
+        var stocks = await stockQuery.ToListAsync();
+        // Cost basis uses all warehouses' opening stock for the product
+        var allStocksForCost = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+
+        var rows = new List<MaterialNetProfitRow>();
+        foreach (var g in soldItems.GroupBy(ii => ii.ProductId!.Value))
+        {
+            var revenue = g.Sum(x => x.TotalPrice);
+            var qty = g.Sum(x => x.Quantity);
+            var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(g.Key) ?? [], allStocksForCost, g.Key);
+            var cost = Math.Round(qty * avgCost, 0);
+            var profit = revenue - cost;
+            var stockQty = stocks.Where(s => s.ProductId == g.Key).Sum(s => s.Quantity);
+            var stockValue = Math.Round(stockQty * avgCost, 0);
+
+            rows.Add(new MaterialNetProfitRow
+            {
+                ProductId = g.Key,
+                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                StockQuantity = stockQty,
+                StockValue = stockValue,
+                QuantitySold = qty,
+                Revenue = revenue,
+                Cost = cost,
+                NetProfit = profit,
+                MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 1) : 0
+            });
+        }
+
+        rows = ascending
+            ? rows.OrderBy(r => r.NetProfit).ToList()
+            : rows.OrderByDescending(r => r.NetProfit).ToList();
+
+        if (topN is > 0)
+            rows = rows.Take(topN.Value).ToList();
+
+        for (var i = 0; i < rows.Count; i++)
+            rows[i].Rank = i + 1;
+
+        var totalRevenue = rows.Sum(r => r.Revenue);
+        var totalProfit = rows.Sum(r => r.NetProfit);
+
+        return new MaterialNetProfitReportResult
+        {
+            TotalNetProfit = totalProfit,
+            TotalStockValue = rows.Sum(r => r.StockValue),
+            ProductCount = rows.Count,
+            AverageMarginPercent = totalRevenue > 0 ? Math.Round(totalProfit / totalRevenue * 100, 1) : 0,
+            Rows = rows,
+            Chart = rows.Take(10)
+                .Select(r => new NameAmountPoint { Name = TruncateChartLabel(r.ProductName), Amount = r.NetProfit })
+                .ToList()
+        };
+    }
+
+    public async Task<CustomerNetProfitReportResult> GetCustomerNetProfitReportAsync(
+        DateTime? from, DateTime? to, bool ascending = false, int? topN = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.InvoiceItems
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice!).ThenInclude(i => i.Customer)
+            .Where(ii => ii.Invoice != null
+                         && ii.Invoice.CustomerId != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+
+        var soldItems = await query.ToListAsync();
+        if (soldItems.Count == 0)
+            return new CustomerNetProfitReportResult();
+
+        var productIds = soldItems
+            .Where(ii => ii.ProductId != null)
+            .Select(ii => ii.ProductId!.Value)
+            .Distinct()
+            .ToList();
+        var stocks = productIds.Count > 0
+            ? await context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId)).ToListAsync()
+            : [];
+        var purchasesByProduct = productIds.Count > 0
+            ? await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds)
+            : new Dictionary<int, List<InvoiceItem>>();
+
+        var avgCostByProduct = productIds.ToDictionary(
+            id => id,
+            id => ProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(id) ?? [], stocks, id));
+
+        var customerIds = soldItems.Select(ii => ii.Invoice!.CustomerId!.Value).Distinct().ToList();
+        var outstandingByCustomer = await context.Invoices.AsNoTracking()
+            .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) && i.RemainingAmount > 0)
+            .GroupBy(i => i.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Outstanding = g.Sum(i => i.RemainingAmount) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Outstanding);
+
+        var rows = new List<CustomerNetProfitRow>();
+        foreach (var g in soldItems.GroupBy(ii => ii.Invoice!.CustomerId!.Value))
+        {
+            var invoiceIds = g.Select(x => x.InvoiceId).Distinct().Count();
+            var sales = g.Sum(x => x.TotalPrice);
+            var cost = Math.Round(g.Sum(x =>
+            {
+                if (x.ProductId is null) return 0m;
+                var avg = avgCostByProduct.GetValueOrDefault(x.ProductId.Value);
+                return x.Quantity * avg;
+            }), 0);
+            var profit = sales - cost;
+            var customer = g.First().Invoice!.Customer;
+
+            rows.Add(new CustomerNetProfitRow
+            {
+                CustomerId = g.Key,
+                CustomerName = customer?.Name ?? "—",
+                Phone = customer?.Phone ?? "—",
+                InvoiceCount = invoiceIds,
+                SalesAmount = sales,
+                Cost = cost,
+                NetProfit = profit,
+                MarginPercent = sales > 0 ? Math.Round(profit / sales * 100, 1) : 0,
+                OutstandingBalance = outstandingByCustomer.GetValueOrDefault(g.Key)
+            });
+        }
+
+        rows = ascending
+            ? rows.OrderBy(r => r.NetProfit).ToList()
+            : rows.OrderByDescending(r => r.NetProfit).ToList();
+
+        if (topN is > 0)
+            rows = rows.Take(topN.Value).ToList();
+
+        for (var i = 0; i < rows.Count; i++)
+            rows[i].Rank = i + 1;
+
+        var totalSales = rows.Sum(r => r.SalesAmount);
+        var totalProfit = rows.Sum(r => r.NetProfit);
+
+        return new CustomerNetProfitReportResult
+        {
+            TotalNetProfit = totalProfit,
+            TotalOutstanding = rows.Sum(r => r.OutstandingBalance),
+            CustomerCount = rows.Count,
+            AverageMarginPercent = totalSales > 0 ? Math.Round(totalProfit / totalSales * 100, 1) : 0,
+            Rows = rows,
+            Chart = rows.Take(10)
+                .Select(r => new NameAmountPoint { Name = TruncateChartLabel(r.CustomerName), Amount = r.NetProfit })
+                .ToList()
+        };
+    }
+
     public async Task<InstallmentAgingReportResult> GetInstallmentAgingReportAsync(DateTime asOfDate, int? customerId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();

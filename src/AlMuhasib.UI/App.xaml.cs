@@ -228,6 +228,10 @@ public partial class App : Application
         services.AddTransient<BalanceSheetViewModel>();
         services.AddTransient<TopProductsReportViewModel>();
         services.AddTransient<ProductProfitMarginReportViewModel>();
+        services.AddTransient<MaterialNetProfitReportViewModel>();
+        services.AddTransient<LeastProfitMaterialsReportViewModel>();
+        services.AddTransient<CustomerNetProfitReportViewModel>();
+        services.AddTransient<LeastProfitCustomersReportViewModel>();
         services.AddTransient<InstallmentAgingReportViewModel>();
         services.AddTransient<CustomersOverviewReportViewModel>();
         services.AddTransient<SuppliersOverviewReportViewModel>();
