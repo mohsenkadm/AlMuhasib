@@ -16,6 +16,7 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
 
         builder.Property(ii => ii.Quantity).HasPrecision(18, 4);
         builder.Property(ii => ii.UnitPrice).HasPrecision(18, 2);
+        builder.Property(ii => ii.DiscountAmount).HasPrecision(18, 2);
         builder.Property(ii => ii.TotalPrice).HasPrecision(18, 2);
 
         builder.HasOne(ii => ii.Invoice)

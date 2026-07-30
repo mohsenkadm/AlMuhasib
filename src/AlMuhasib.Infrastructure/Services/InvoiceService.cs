@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -33,14 +34,26 @@ public class InvoiceService : IInvoiceService
             decimal subtotal = 0m;
             foreach (var item in itemsList)
             {
-                item.TotalPrice = item.Quantity * item.UnitPrice;
+                if (item.DiscountAmount < 0m)
+                    item.DiscountAmount = 0m;
+
+                var gross = item.Quantity * item.UnitPrice;
+                var maxDiscount = Math.Abs(gross);
+                if (item.DiscountAmount > maxDiscount)
+                    item.DiscountAmount = maxDiscount;
+
+                item.TotalPrice = ProductDiscountHelper.CalculateLineTotal(
+                    item.Quantity, item.UnitPrice, item.DiscountAmount);
                 item.CreatedBy = username;
                 item.CreatedAt = DateTime.UtcNow;
                 subtotal += item.TotalPrice;
             }
 
             invoice.TotalAmount = subtotal;
-            invoice.DiscountAmount = 0m;
+            if (invoice.DiscountAmount < 0m)
+                invoice.DiscountAmount = 0m;
+            if (invoice.DiscountAmount > Math.Max(0m, subtotal))
+                invoice.DiscountAmount = Math.Max(0m, subtotal);
             decimal netAmount = subtotal - invoice.DiscountAmount;
 
             decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType);

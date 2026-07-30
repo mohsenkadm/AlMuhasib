@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Threading;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -83,6 +84,39 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     // ── Footer / Totals ────────────────────────────────────
     [ObservableProperty]
     private decimal _subtotal;
+
+    [ObservableProperty]
+    private decimal _invoiceDiscountAmount;
+
+    [ObservableProperty]
+    private DiscountType _invoiceDiscountType = DiscountType.None;
+
+    [ObservableProperty]
+    private decimal _invoiceDiscountValue;
+
+    public IReadOnlyList<DiscountTypeOption> InvoiceDiscountTypeOptions { get; } =
+    [
+        new(DiscountType.None, "بدون خصم كلي"),
+        new(DiscountType.Percentage, "نسبة مئوية (%)"),
+        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+    ];
+
+    [ObservableProperty]
+    private DiscountTypeOption? _selectedInvoiceDiscountOption;
+
+    partial void OnSelectedInvoiceDiscountOptionChanged(DiscountTypeOption? value)
+    {
+        if (value is not null && InvoiceDiscountType != value.Type)
+            InvoiceDiscountType = value.Type;
+    }
+
+    partial void OnInvoiceDiscountTypeChanged(DiscountType value)
+    {
+        var match = InvoiceDiscountTypeOptions.FirstOrDefault(o => o.Type == value);
+        if (!Equals(SelectedInvoiceDiscountOption, match))
+            SelectedInvoiceDiscountOption = match;
+        RecalculateTotals();
+    }
 
     [ObservableProperty]
     private decimal _roundingAmount;
@@ -172,6 +206,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
         Items.CollectionChanged += OnItemsCollectionChanged;
         ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService, productSizeService);
+        SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
     }
 
     private void ScheduleDraftSave()
@@ -477,6 +512,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     private void WireItemRow(InvoiceItemRow row)
     {
+        row.ProductDiscountFeatureEnabled = ShowProductDiscount;
+        row.RefreshProductDiscount();
         row.TotalChanged += RecalculateTotals;
         row.ProductChanged += OnProductChanged;
     }
@@ -631,15 +668,25 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         TotalQuantity = totalQty;
         InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
 
-        var (computedSub, rounding, grand) = InvoiceTotalsCalculator.Compute(
+        if (ShowProductDiscount)
+            InvoiceDiscountAmount = ProductDiscountHelper.CalculateInvoiceDiscount(
+                InvoiceDiscountType, InvoiceDiscountValue, sub);
+        else
+            InvoiceDiscountAmount = 0m;
+
+        var (computedSub, discount, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),
             _invoiceService,
-            InvoiceType.Sale);
+            InvoiceType.Sale,
+            InvoiceDiscountAmount);
         _ = computedSub;
+        _ = discount;
 
         RoundingAmount = rounding;
         GrandTotal = grand;
     }
+
+    partial void OnInvoiceDiscountValueChanged(decimal value) => RecalculateTotals();
 
     // ── Save ───────────────────────────────────────────────
     [RelayCommand]
@@ -782,6 +829,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
                 CreditDueDate = IsCreditPayment ? CreditDueDate : null,
+                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -805,8 +853,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
                 var displayQty = row.Quantity;
                 var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
-                var lineTotal = displayQty * row.UnitPrice;
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
+                var lineGross = displayQty * row.UnitPrice;
+                var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
+                if (lineDiscount > Math.Abs(lineGross))
+                    lineDiscount = Math.Abs(lineGross);
+                var lineTotal = ProductDiscountHelper.CalculateLineTotal(displayQty, row.UnitPrice, lineDiscount);
+                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineGross / stockQty;
+                var discountForStorage = stockQty == 0 || displayQty == 0
+                    ? lineDiscount
+                    : lineDiscount * (stockQty / displayQty);
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
@@ -814,6 +869,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
                     UnitPrice = unitPriceForStorage,
+                    DiscountAmount = discountForStorage,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
                 });

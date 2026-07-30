@@ -15,6 +15,9 @@ public sealed class ProductSyncDto : SyncDtoBase
     public Guid CategorySyncId { get; set; }
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }
+    public DiscountType DiscountType { get; set; }
+    public decimal DiscountValue { get; set; }
+    public DateTime? DiscountExpiresAt { get; set; }
 }
 
 public sealed class PricingTypeSyncDto : SyncDtoBase

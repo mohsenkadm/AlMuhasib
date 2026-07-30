@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -91,7 +92,26 @@ public partial class ProductsViewModel : ViewModelBase
     private string _editWeightUnit = "كغ";
 
     [ObservableProperty]
+    private DiscountType _editDiscountType = DiscountType.None;
+
+    [ObservableProperty]
+    private decimal _editDiscountValue;
+
+    [ObservableProperty]
+    private bool _editDiscountHasExpiry;
+
+    [ObservableProperty]
+    private DateTime? _editDiscountExpiresAt;
+
+    [ObservableProperty]
     private string _dialogError = string.Empty;
+
+    // ── Bulk discount selection ────────────────────────────
+    [ObservableProperty]
+    private bool _hasBulkDiscountSelection;
+
+    [ObservableProperty]
+    private int _bulkDiscountSelectionCount;
 
     // ── Delete confirmation ────────────────────────────────
     [ObservableProperty]
@@ -409,6 +429,11 @@ public partial class ProductsViewModel : ViewModelBase
         EditCategory = null;
         EditWeight = 0m;
         EditWeightUnit = "كغ";
+        EditDiscountType = DiscountType.None;
+        EditDiscountTypeOption = ProductDiscountTypeOptions[0];
+        EditDiscountValue = 0m;
+        EditDiscountHasExpiry = false;
+        EditDiscountExpiresAt = null;
         DialogError = string.Empty;
         ClearFeatureEditCollections();
         await LoadMinQuantitiesForProductAsync(null);
@@ -429,6 +454,12 @@ public partial class ProductsViewModel : ViewModelBase
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         EditWeight = product.Weight;
         EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
+        EditDiscountType = product.DiscountType;
+        EditDiscountTypeOption = ProductDiscountTypeOptions.FirstOrDefault(o => o.Type == product.DiscountType)
+            ?? ProductDiscountTypeOptions[0];
+        EditDiscountValue = product.DiscountValue;
+        EditDiscountHasExpiry = product.DiscountExpiresAt.HasValue;
+        EditDiscountExpiresAt = product.DiscountExpiresAt?.ToLocalTime().Date;
         DialogError = string.Empty;
         await LoadFeatureDataForProductAsync(product.Id);
         await LoadMinQuantitiesForProductAsync(product.Id);
@@ -450,6 +481,25 @@ public partial class ProductsViewModel : ViewModelBase
             return;
         }
 
+        if (ShowDiscountSection && EditDiscountType != DiscountType.None)
+        {
+            if (EditDiscountValue <= 0)
+            {
+                DialogError = "أدخل قيمة خصم أكبر من صفر أو اختر بدون خصم";
+                return;
+            }
+            if (EditDiscountType == DiscountType.Percentage && EditDiscountValue > 100m)
+            {
+                DialogError = "نسبة الخصم لا تتجاوز 100%";
+                return;
+            }
+            if (EditDiscountHasExpiry && EditDiscountExpiresAt is null)
+            {
+                DialogError = "حدد تاريخ انتهاء الخصم أو ألغِ خيار الانتهاء";
+                return;
+            }
+        }
+
         DialogError = string.Empty;
 
         try
@@ -465,6 +515,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.CategoryId = EditCategory.Id;
                 product.Weight = EditWeight < 0 ? 0m : EditWeight;
                 product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
+                ApplyEditDiscountToProduct(product);
 
                 await _productService.UpdateAsync(product);
                 await SaveMinQuantitiesAsync(product.Id);
@@ -480,6 +531,7 @@ public partial class ProductsViewModel : ViewModelBase
                     Weight = EditWeight < 0 ? 0m : EditWeight,
                     WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim()
                 };
+                ApplyEditDiscountToProduct(product);
 
                 var created = await _productService.CreateAsync(product);
                 _editingProductId = created.Id;
@@ -499,6 +551,82 @@ public partial class ProductsViewModel : ViewModelBase
         catch (Exception ex)
         {
             DialogError = $"حدث خطأ: {ex.Message}";
+        }
+    }
+
+    private void ApplyEditDiscountToProduct(Product product)
+    {
+        if (!ShowDiscountSection || EditDiscountType == DiscountType.None || EditDiscountValue <= 0)
+        {
+            product.DiscountType = DiscountType.None;
+            product.DiscountValue = 0m;
+            product.DiscountExpiresAt = null;
+            return;
+        }
+
+        product.DiscountType = EditDiscountType;
+        product.DiscountValue = Math.Max(0m, EditDiscountValue);
+        product.DiscountExpiresAt = EditDiscountHasExpiry && EditDiscountExpiresAt is DateTime d
+            ? DateTime.SpecifyKind(d.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime()
+            : null;
+    }
+
+    public void UpdateBulkDiscountSelectionFromGrid(System.Windows.Controls.DataGrid grid)
+    {
+        var count = grid.SelectedItems.OfType<Product>().Count();
+        BulkDiscountSelectionCount = count;
+        HasBulkDiscountSelection = ShowDiscountSection && count > 0;
+    }
+
+    [RelayCommand]
+    private void ClearBulkDiscountSelection(System.Windows.Controls.DataGrid? grid)
+    {
+        grid?.UnselectAll();
+        BulkDiscountSelectionCount = 0;
+        HasBulkDiscountSelection = false;
+    }
+
+    [RelayCommand]
+    private async Task OpenBulkDiscountDialog(System.Windows.Controls.DataGrid? grid)
+    {
+        if (!ShowDiscountSection || grid is null)
+            return;
+
+        var selected = grid.SelectedItems.OfType<Product>().ToList();
+        if (selected.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("حدّد منتجاً واحداً أو أكثر من الجدول أولاً");
+            return;
+        }
+
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                    ?? Application.Current?.MainWindow;
+        var result = ProductBulkDiscountDialog.Show(owner, selected.Count);
+        if (result is null)
+            return;
+
+        var (_, cleared, type, value, expiresAt) = result.Value;
+        try
+        {
+            if (cleared)
+            {
+                await _productService.ApplyDiscountToProductsAsync(
+                    selected.Select(p => p.Id), DiscountType.None, 0m, null);
+                BeautifulMessageDialog.ShowSuccess($"تم إلغاء الخصم عن {selected.Count} منتج");
+            }
+            else
+            {
+                await _productService.ApplyDiscountToProductsAsync(
+                    selected.Select(p => p.Id), type, value, expiresAt);
+                BeautifulMessageDialog.ShowSuccess($"تم تطبيق الخصم على {selected.Count} منتج");
+            }
+
+            ClearBulkDiscountSelection(grid);
+            await LoadProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر تحديث الخصم: {ex.Message}");
         }
     }
 

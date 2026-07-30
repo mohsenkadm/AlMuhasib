@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Threading;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -42,6 +44,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private Warehouse? _selectedWarehouse;
     [ObservableProperty] private CashBox? _selectedCashBox;
     [ObservableProperty] private decimal _subTotal;
+    [ObservableProperty] private decimal _invoiceDiscountAmount;
+    [ObservableProperty] private DiscountType _invoiceDiscountType = DiscountType.None;
+    [ObservableProperty] private decimal _invoiceDiscountValue;
     [ObservableProperty] private decimal _grandTotal;
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private decimal _changeAmount;
@@ -50,9 +55,19 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private bool _showCreditRemaining;
     [ObservableProperty] private bool _isPaymentDialogOpen;
     [ObservableProperty] private int _cartLineCount;
+    [ObservableProperty] private bool _showProductDiscount;
     [ObservableProperty] private string _statusMessage = "امسح الباركود أو ابحث بالاسم ثم Enter للإضافة";
     [ObservableProperty] private string? _lastSavedInvoiceNumber;
     [ObservableProperty] private bool _printAfterSale = true;
+
+    public IReadOnlyList<DiscountTypeOption> InvoiceDiscountTypeOptions { get; } =
+    [
+        new(DiscountType.None, "بدون خصم كلي"),
+        new(DiscountType.Percentage, "نسبة مئوية (%)"),
+        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+    ];
+
+    [ObservableProperty] private DiscountTypeOption? _selectedInvoiceDiscountOption;
 
     private bool _printAfterConfirm;
 
@@ -80,6 +95,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _featureFlags = featureFlags;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
+        ShowProductDiscount = featureFlags.ProductDiscountEnabled;
+        SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
+        featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshDiscountFeature);
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -90,6 +108,36 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             RefreshFilteredProducts();
         };
     }
+
+    private void RefreshDiscountFeature()
+    {
+        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
+        foreach (var line in CartLines)
+        {
+            line.ProductDiscountFeatureEnabled = ShowProductDiscount;
+            line.RefreshProductDiscount();
+        }
+
+        if (!ShowProductDiscount)
+        {
+            InvoiceDiscountType = DiscountType.None;
+            InvoiceDiscountValue = 0m;
+            InvoiceDiscountAmount = 0m;
+            SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
+        }
+
+        RecalcCartTotals();
+    }
+
+    partial void OnSelectedInvoiceDiscountOptionChanged(DiscountTypeOption? value)
+    {
+        if (value is not null)
+            InvoiceDiscountType = value.Type;
+        RecalcCartTotals();
+    }
+
+    partial void OnInvoiceDiscountTypeChanged(DiscountType value) => RecalcCartTotals();
+    partial void OnInvoiceDiscountValueChanged(decimal value) => RecalcCartTotals();
 
     public override async Task InitializeAsync()
     {
@@ -439,6 +487,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
+                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 PaidAmount = isCredit ? paidSnapshot : GrandTotal,
                 CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
                 Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
@@ -451,6 +500,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 ItemName = line.ProductName,
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
+                DiscountAmount = ShowProductDiscount ? line.DiscountAmount : 0m,
                 TotalPrice = line.LineTotal
             }).ToList();
 
@@ -527,7 +577,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return;
         }
 
-        CartLines.Add(PosCartLine.FromProduct(product, price, 1m, pricingTypeId));
+        CartLines.Add(PosCartLine.FromProduct(
+            product, price, 1m, pricingTypeId, ShowProductDiscount));
         StatusMessage = $"أُضيف {product.Name}";
     }
 
@@ -613,7 +664,14 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private void RecalcCartTotals()
     {
         SubTotal = CartLines.Sum(l => l.LineTotal);
-        GrandTotal = SubTotal;
+        if (ShowProductDiscount)
+            InvoiceDiscountAmount = ProductDiscountHelper.CalculateInvoiceDiscount(
+                InvoiceDiscountType, InvoiceDiscountValue, SubTotal);
+        else
+            InvoiceDiscountAmount = 0m;
+
+        var net = Math.Max(0m, SubTotal - InvoiceDiscountAmount);
+        GrandTotal = net;
         CartLineCount = CartLines.Count;
         RecalcChange();
     }

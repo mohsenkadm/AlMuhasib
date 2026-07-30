@@ -192,6 +192,10 @@
                                                     Description="عند إنشاء فاتورة مشتريات فقط: حفظ آخر سعر شراء لنوع التسعير المختار"
                                                     Icon="PlaylistEdit" IconBackground="#FFF3E0" IconForeground="#E65100"
                                                     IsChecked="{Binding UpdateProductPriceOnPurchase}"/>
+                        <controls:FeatureToggleCard Title="تفعيل الخصم"
+                                                    Description="خصم على المنتجات والفواتير (نسبة أو قيمة) في البيع والأقساط ونقطة البيع"
+                                                    Icon="Percent" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding ProductDiscountEnabled}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

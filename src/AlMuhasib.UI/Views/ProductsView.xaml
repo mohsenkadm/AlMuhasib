@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ProductsViewModel}"
              Style="{StaticResource PageStyle}"
@@ -14,6 +15,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:ProductDiscountDisplayConverter x:Key="ProductDiscountDisplayConverter"/>
     </UserControl.Resources>
 
     <Grid>
@@ -144,9 +146,39 @@
                                  Padding="8,8,8,4"
                                  materialDesign:ElevationAssist.Elevation="Dp2">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Margin="8,4,8,8" Padding="12,10" Background="#E8F5E9" CornerRadius="10"
+                        Visibility="{Binding HasBulkDiscountSelection, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Percent" Width="20" Height="20" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="13">
+                                <Run Text="محدد:"/>
+                                <Run Text="{Binding BulkDiscountSelectionCount, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text="منتج — خصم جماعي"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Right">
+                            <Button Content="إضافة / تعديل خصم" Style="{StaticResource PrimaryButton}" Height="34" Padding="12,0" Margin="0,0,6,0"
+                                    Command="{Binding OpenBulkDiscountDialogCommand}"
+                                    CommandParameter="{Binding ElementName=ProductsGrid}"/>
+                            <Button Content="إلغاء التحديد" Style="{StaticResource OutlinedButton}" Height="34" Padding="12,0"
+                                    Command="{Binding ClearBulkDiscountSelectionCommand}"
+                                    CommandParameter="{Binding ElementName=ProductsGrid}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
                 <DataGrid x:Name="ProductsGrid"
+                          Grid.Row="1"
                           ItemsSource="{Binding Products}"
                           SelectedItem="{Binding SelectedProduct}"
+                          SelectionMode="Extended"
+                          SelectionChanged="ProductsGrid_OnSelectionChanged"
                           Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
@@ -219,6 +251,21 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- Discount (feature-gated) -->
+                        <DataGridTemplateColumn Header="الخصم" Width="*" IsReadOnly="True"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False"
+                                                Visibility="{Binding DataContext.ShowDiscountSection, Source={x:Reference ProductsGrid}, Converter={StaticResource BoolToVis}}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource ProductDiscountDisplayConverter}}"
+                                               VerticalAlignment="Center"
+                                               Foreground="#2E7D32"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <!-- Actions -->
                         <DataGridTemplateColumn Header="الإجراءات" Width="150" MinWidth="150" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
@@ -265,7 +312,7 @@
                     </DataGrid.Style>
                 </DataGrid>
 
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8"
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="8"
                                   Visibility="{Binding IsCardView, Converter={StaticResource BoolToVis}}">
                         <ItemsControl ItemsSource="{Binding ProductCards}">
                             <ItemsControl.ItemsPanel>
@@ -514,6 +561,34 @@
                                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                                   Style="{StaticResource FilledComboBox}"/>
                                     </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Product discount (feature-gated: ProductDiscountEnabled) -->
+                            <Border Margin="0,16,0,0" Padding="12" Background="#E8F5E9" CornerRadius="8"
+                                    Visibility="{Binding ShowDiscountSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="خصم المنتج" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="اختياري: نسبة أو قيمة ثابتة لكل وحدة. يُطبَّق تلقائياً في فواتير البيع والأقساط ونقطة البيع ما دام غير منتهٍ."
+                                               FontSize="12" Foreground="#1B5E20" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                    <ComboBox ItemsSource="{Binding ProductDiscountTypeOptions}"
+                                              SelectedItem="{Binding EditDiscountTypeOption}"
+                                              DisplayMemberPath="Label"
+                                              materialDesign:HintAssist.Hint="نوع الخصم"
+                                              materialDesign:HintAssist.IsFloating="True"
+                                              Style="{StaticResource FilledComboBox}"
+                                              Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditDiscountValue, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="قيمة الخصم"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"
+                                             Margin="0,0,0,8"/>
+                                    <CheckBox Content="تحديد تاريخ انتهاء للخصم"
+                                              IsChecked="{Binding EditDiscountHasExpiry}"
+                                              Margin="0,0,0,8"/>
+                                    <DatePicker SelectedDate="{Binding EditDiscountExpiresAt}"
+                                                IsEnabled="{Binding EditDiscountHasExpiry}"
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}"/>
                                 </StackPanel>
                             </Border>
 

@@ -306,6 +306,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
+                DiscountAmount = item.DiscountAmount,
                 TotalPrice = item.Quantity * item.UnitPrice - item.DiscountAmount,
                 CreatedAt = now,
                 CreatedBy = username

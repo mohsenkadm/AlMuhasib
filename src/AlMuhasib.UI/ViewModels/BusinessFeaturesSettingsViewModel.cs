@@ -35,6 +35,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _serialNumbers;
     [ObservableProperty] private bool _productPricingEnabled;
     [ObservableProperty] private bool _updateProductPriceOnPurchase;
+    [ObservableProperty] private bool _productDiscountEnabled;
 
     [ObservableProperty] private bool _templateMobileShop;
     [ObservableProperty] private bool _templateClothing;
@@ -51,7 +52,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
             AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
-            TemplateMobileShop, TemplateClothing,
+            ProductDiscountEnabled, TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
 
     public BusinessFeaturesSettingsViewModel(
@@ -116,6 +117,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         SerialNumbers = p.FeatureFlags.SerialNumbers;
         ProductPricingEnabled = p.FeatureFlags.ProductPricingEnabled;
         UpdateProductPriceOnPurchase = p.FeatureFlags.UpdateProductPriceOnPurchase;
+        ProductDiscountEnabled = p.FeatureFlags.ProductDiscountEnabled;
 
         TemplateMobileShop = p.FeatureFlags.TemplateMobileShop;
         TemplateClothing = p.FeatureFlags.TemplateClothing;
@@ -143,6 +145,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductPricingEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnUpdateProductPriceOnPurchaseChanged(bool value) => NotifyFeaturesCount();
+    partial void OnProductDiscountEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateMobileShopChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
@@ -182,6 +185,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.SerialNumbers = SerialNumbers;
             p.FeatureFlags.ProductPricingEnabled = ProductPricingEnabled;
             p.FeatureFlags.UpdateProductPriceOnPurchase = UpdateProductPriceOnPurchase;
+            p.FeatureFlags.ProductDiscountEnabled = ProductDiscountEnabled;
 
             p.FeatureFlags.TemplateMobileShop = TemplateMobileShop;
             p.FeatureFlags.TemplateClothing = TemplateClothing;

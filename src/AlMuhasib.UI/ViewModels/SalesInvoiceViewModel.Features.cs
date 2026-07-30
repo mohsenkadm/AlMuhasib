@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -35,6 +36,7 @@ public partial class SalesInvoiceViewModel
 
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showMenuWeight;
+    [ObservableProperty] private bool _showProductDiscount;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showProductPricing;
@@ -77,10 +79,26 @@ public partial class SalesInvoiceViewModel
 
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowMenuWeight = _featureFlags.MenuWeight;
+        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
+
+        foreach (var row in Items)
+        {
+            row.ProductDiscountFeatureEnabled = ShowProductDiscount;
+            row.RefreshProductDiscount();
+        }
+
+        if (!ShowProductDiscount)
+        {
+            InvoiceDiscountType = DiscountType.None;
+            InvoiceDiscountValue = 0m;
+            InvoiceDiscountAmount = 0m;
+        }
+
+        RecalculateTotals();
 
         var industryStillEnabled = IsIndustryEnabled(_appliedIndustryTag);
         MarketTemplateFieldsEnabled = _featureFlags.AnyMarketTemplateEnabled && industryStillEnabled;

@@ -34,6 +34,7 @@ public sealed class InvoiceItemSyncDto : SyncDtoBase
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
 }
 

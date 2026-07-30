@@ -19,6 +19,9 @@ public class BusinessFeatureFlags
     /// <summary>تحديث سعر المنتج من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }
 
+    /// <summary>تفعيل الخصم على المنتجات والفواتير (بيع/أقساط/POS) — معطّل افتراضياً.</summary>
+    public bool ProductDiscountEnabled { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }
