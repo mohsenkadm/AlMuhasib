@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -77,8 +78,39 @@ public class ProductService : IProductService
         existing.Barcode = product.Barcode;
         existing.Description = product.Description;
         existing.CategoryId = product.CategoryId;
+        existing.Weight = product.Weight;
+        existing.WeightUnit = product.WeightUnit;
+        existing.DiscountType = product.DiscountType;
+        existing.DiscountValue = product.DiscountValue;
+        existing.DiscountExpiresAt = product.DiscountExpiresAt;
         existing.UpdatedBy = _currentUserService.Username;
         existing.UpdatedAt = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task ApplyDiscountToProductsAsync(
+        IEnumerable<int> productIds,
+        DiscountType discountType,
+        decimal discountValue,
+        DateTime? discountExpiresAt)
+    {
+        var ids = productIds.Distinct().ToList();
+        if (ids.Count == 0) return;
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var products = await context.Products.Where(p => ids.Contains(p.Id)).ToListAsync();
+        var username = _currentUserService.Username;
+        var now = DateTime.UtcNow;
+
+        foreach (var product in products)
+        {
+            product.DiscountType = discountType;
+            product.DiscountValue = discountType == DiscountType.None ? 0m : Math.Max(0m, discountValue);
+            product.DiscountExpiresAt = discountType == DiscountType.None ? null : discountExpiresAt;
+            product.UpdatedBy = username;
+            product.UpdatedAt = now;
+        }
 
         await context.SaveChangesAsync();
     }

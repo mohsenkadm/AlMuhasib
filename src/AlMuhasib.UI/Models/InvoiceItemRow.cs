@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -194,6 +195,13 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _sizeName = string.Empty;
 
+    // ── خصم المنتج ─────────────────────────────────────────
+    [ObservableProperty]
+    private decimal _discountAmount;
+
+    /// <summary>يُفعَّل من شاشة الفاتورة عند تفعيل ميزة الخصم.</summary>
+    public bool ProductDiscountFeatureEnabled { get; set; }
+
     private bool _isManualTotal;
 
     partial void OnSelectedProductChanged(Product? value)
@@ -209,7 +217,10 @@ public partial class InvoiceItemRow : ObservableObject
         {
             ProductWeight = 0m;
             ProductWeightUnit = string.Empty;
+            DiscountAmount = 0m;
         }
+
+        RefreshProductDiscount();
         ProductChanged?.Invoke(this);
     }
 
@@ -217,11 +228,20 @@ public partial class InvoiceItemRow : ObservableObject
     {
         _isManualTotal = false;
         OnPropertyChanged(nameof(LineWeight));
+        RefreshProductDiscount();
         RecalcTotal();
     }
 
     partial void OnUnitPriceChanged(decimal value)
     {
+        _isManualTotal = false;
+        RefreshProductDiscount();
+        RecalcTotal();
+    }
+
+    partial void OnDiscountAmountChanged(decimal value)
+    {
+        if (_isRecalculating) return;
         _isManualTotal = false;
         RecalcTotal();
     }
@@ -233,7 +253,7 @@ public partial class InvoiceItemRow : ObservableObject
             if (Quantity != 0)
             {
                 _isRecalculating = true;
-                UnitPrice = newValue / Quantity;
+                UnitPrice = (newValue + DiscountAmount) / Quantity;
                 _isRecalculating = false;
                 _isManualTotal = false;
             }
@@ -248,11 +268,26 @@ public partial class InvoiceItemRow : ObservableObject
 
     private bool _isRecalculating;
 
+    public void RefreshProductDiscount()
+    {
+        if (!ProductDiscountFeatureEnabled || SelectedProduct is null)
+        {
+            if (DiscountAmount != 0m)
+                DiscountAmount = 0m;
+            return;
+        }
+
+        var discount = ProductDiscountHelper.CalculateLineDiscount(
+            SelectedProduct, Quantity, UnitPrice);
+        if (DiscountAmount != discount)
+            DiscountAmount = discount;
+    }
+
     private void RecalcTotal()
     {
         if (_isManualTotal) return;
         _isRecalculating = true;
-        TotalPrice = Quantity * UnitPrice;
+        TotalPrice = ProductDiscountHelper.CalculateLineTotal(Quantity, UnitPrice, DiscountAmount);
         _isRecalculating = false;
     }
 

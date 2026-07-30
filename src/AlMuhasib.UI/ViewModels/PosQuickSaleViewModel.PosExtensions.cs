@@ -58,6 +58,7 @@ public partial class PosQuickSaleViewModel
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Cash,
                 Date = DateTime.Now,
+                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 HoldStatus = InvoiceHoldStatus.Held,
                 HeldAt = DateTime.Now,
                 Notes = "فاتورة موقوفة POS"
@@ -68,6 +69,7 @@ public partial class PosQuickSaleViewModel
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
+                DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
                 TotalPrice = l.LineTotal
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items, skipStockUpdate: true);
@@ -145,6 +147,7 @@ public partial class PosQuickSaleViewModel
                 PaymentMethod = PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
+                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = "بيع تقسيط POS"
             };
             var items = CartLines.Select(l => new InvoiceItem
@@ -153,6 +156,7 @@ public partial class PosQuickSaleViewModel
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
+                DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
                 TotalPrice = l.LineTotal
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);

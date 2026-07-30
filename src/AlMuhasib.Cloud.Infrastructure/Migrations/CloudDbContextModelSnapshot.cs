@@ -2562,6 +2562,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
@@ -2813,6 +2816,15 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DiscountExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

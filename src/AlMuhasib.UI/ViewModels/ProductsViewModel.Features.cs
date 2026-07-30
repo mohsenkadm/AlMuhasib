@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
@@ -23,6 +24,7 @@ public partial class ProductsViewModel
 
     [ObservableProperty] private bool _showUnitsSection;
     [ObservableProperty] private bool _showWeightSection;
+    [ObservableProperty] private bool _showDiscountSection;
     [ObservableProperty] private bool _showBatchesSection;
     [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showSizesSection;
@@ -34,6 +36,28 @@ public partial class ProductsViewModel
 
     public IReadOnlyList<string> WeightUnitOptions { get; } =
         ["كغ", "غرام", "لتر", "مل", "متر", "سم"];
+
+    public IReadOnlyList<DiscountTypeOption> ProductDiscountTypeOptions { get; } =
+    [
+        new(DiscountType.None, "بدون خصم"),
+        new(DiscountType.Percentage, "نسبة مئوية (%)"),
+        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع لكل وحدة)")
+    ];
+
+    [ObservableProperty] private DiscountTypeOption? _editDiscountTypeOption;
+
+    partial void OnEditDiscountTypeChanged(DiscountType value)
+    {
+        var match = ProductDiscountTypeOptions.FirstOrDefault(o => o.Type == value);
+        if (!Equals(EditDiscountTypeOption, match))
+            EditDiscountTypeOption = match;
+    }
+
+    partial void OnEditDiscountTypeOptionChanged(DiscountTypeOption? value)
+    {
+        if (value is not null && EditDiscountType != value.Type)
+            EditDiscountType = value.Type;
+    }
 
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
@@ -62,6 +86,7 @@ public partial class ProductsViewModel
         if (_featureFlags is null) return;
         ShowUnitsSection = _featureFlags.UnitsOfMeasure;
         ShowWeightSection = _featureFlags.MenuWeight;
+        ShowDiscountSection = _featureFlags.ProductDiscountEnabled;
         ShowBatchesSection = _featureFlags.ExpiryTracking;
         ShowSerialsSection = _featureFlags.SerialNumbers;
         ShowSizesSection = _featureFlags.TemplateClothing;

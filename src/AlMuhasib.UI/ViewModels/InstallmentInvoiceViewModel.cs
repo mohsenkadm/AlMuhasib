@@ -100,6 +100,39 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private decimal _subtotal;
 
     [ObservableProperty]
+    private decimal _invoiceDiscountAmount;
+
+    [ObservableProperty]
+    private DiscountType _invoiceDiscountType = DiscountType.None;
+
+    [ObservableProperty]
+    private decimal _invoiceDiscountValue;
+
+    public IReadOnlyList<DiscountTypeOption> InvoiceDiscountTypeOptions { get; } =
+    [
+        new(DiscountType.None, "بدون خصم كلي"),
+        new(DiscountType.Percentage, "نسبة مئوية (%)"),
+        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+    ];
+
+    [ObservableProperty]
+    private DiscountTypeOption? _selectedInvoiceDiscountOption;
+
+    partial void OnSelectedInvoiceDiscountOptionChanged(DiscountTypeOption? value)
+    {
+        if (value is not null && InvoiceDiscountType != value.Type)
+            InvoiceDiscountType = value.Type;
+    }
+
+    partial void OnInvoiceDiscountTypeChanged(DiscountType value)
+    {
+        var match = InvoiceDiscountTypeOptions.FirstOrDefault(o => o.Type == value);
+        if (!Equals(SelectedInvoiceDiscountOption, match))
+            SelectedInvoiceDiscountOption = match;
+        RecalculateTotals();
+    }
+
+    [ObservableProperty]
     private decimal _roundingAmount;
 
     [ObservableProperty]
@@ -113,6 +146,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showMenuWeight;
+
+    [ObservableProperty]
+    private bool _showProductDiscount;
 
     [ObservableProperty]
     private string _invoiceWeightSummaryText = string.Empty;
@@ -179,14 +215,30 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
-        RefreshMenuWeightVisibility();
-        featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshMenuWeightVisibility);
+        RefreshFeatureVisibility();
+        SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
+        featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshFeatureVisibility);
     }
 
-    private void RefreshMenuWeightVisibility()
+    private void RefreshFeatureVisibility()
     {
         ShowMenuWeight = _featureFlags.MenuWeight;
+        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
+        foreach (var row in Items)
+        {
+            row.ProductDiscountFeatureEnabled = ShowProductDiscount;
+            row.RefreshProductDiscount();
+        }
+
+        if (!ShowProductDiscount)
+        {
+            InvoiceDiscountType = DiscountType.None;
+            InvoiceDiscountValue = 0m;
+            InvoiceDiscountAmount = 0m;
+        }
+
         InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
+        RecalculateTotals();
     }
 
     public override bool HasUnsavedChanges =>
@@ -334,6 +386,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
 
     private void WireItemRow(InvoiceItemRow row)
     {
+        row.ProductDiscountFeatureEnabled = ShowProductDiscount;
+        row.RefreshProductDiscount();
         row.TotalChanged += RecalculateTotals;
         row.ProductChanged += OnProductChanged;
     }
@@ -451,10 +505,17 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         TotalQuantity = totalQty;
         InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
 
-        var (_, rounding, grand) = InvoiceTotalsCalculator.Compute(
+        if (ShowProductDiscount)
+            InvoiceDiscountAmount = ProductDiscountHelper.CalculateInvoiceDiscount(
+                InvoiceDiscountType, InvoiceDiscountValue, sub);
+        else
+            InvoiceDiscountAmount = 0m;
+
+        var (_, _, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),
             _invoiceService,
-            InvoiceType.Installment);
+            InvoiceType.Installment,
+            InvoiceDiscountAmount);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
@@ -463,6 +524,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         UpdateCompanyFee();
         GenerateSchedulePreview();
     }
+
+    partial void OnInvoiceDiscountValueChanged(decimal value) => RecalculateTotals();
 
     partial void OnSelectedInstallmentTypeChanged(InstallmentType value) => UpdateCompanyFee();
 
@@ -554,6 +617,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 PaymentMethod = PaymentMethod.Installment,
                 CashBoxId = SelectedCashBox?.Id,
                 Date = InvoiceDate,
+                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -575,6 +639,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                     ItemName = row.ItemName.Trim(),
                     Quantity = row.Quantity,
                     UnitPrice = row.UnitPrice,
+                    DiscountAmount = ShowProductDiscount ? row.DiscountAmount : 0m,
                     TotalPrice = row.TotalPrice,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });

@@ -26,6 +26,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.WeightUnit)
             .HasMaxLength(20);
 
+        builder.Property(p => p.DiscountValue)
+            .HasPrecision(18, 2);
+
         builder.HasOne(p => p.Category)
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)

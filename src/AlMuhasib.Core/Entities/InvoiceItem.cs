@@ -9,6 +9,8 @@ public class InvoiceItem : BaseEntity
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    /// <summary>مبلغ خصم السطر (من خصم المنتج أو يدوي).</summary>
+    public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
 
     /// <summary>حقول مخصصة (IMEI، مقاس، لون...) JSON.</summary>

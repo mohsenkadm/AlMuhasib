@@ -11,6 +11,9 @@ public class CloudProduct : CloudBaseEntity
     public int CategoryId { get; set; }
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }
+    public DiscountType DiscountType { get; set; }
+    public decimal DiscountValue { get; set; }
+    public DateTime? DiscountExpiresAt { get; set; }
     public CloudCategory Category { get; set; } = null!;
     public ICollection<CloudProductPrice> ProductPrices { get; set; } = [];
 }
@@ -154,6 +157,7 @@ public class CloudInvoiceItem : CloudBaseEntity
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
     public CloudInvoice Invoice { get; set; } = null!;
     public CloudProduct? Product { get; set; }

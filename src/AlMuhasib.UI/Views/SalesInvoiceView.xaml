@@ -291,7 +291,8 @@
                         </Border>
 
                         <!-- Items DataGrid -->
-                        <DataGrid Grid.Row="1"
+                        <DataGrid x:Name="SalesItemsGrid"
+                                  Grid.Row="1"
                                   Style="{StaticResource InvoiceItemsDataGrid}"
                                   ItemsSource="{Binding Items}"
                                   b:InvoiceDataGridBehavior.Enable="True"
@@ -408,6 +409,19 @@
                                         <DataTemplate>
                                             <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                      Style="{StaticResource NumericCellTextBox}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="الخصم" Width="90" IsReadOnly="True"
+                                                        Visibility="{Binding DataContext.ShowProductDiscount, Source={x:Reference SalesItemsGrid}, Converter={StaticResource BoolToVis}}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#2E7D32"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -531,6 +545,30 @@
                                                Foreground="#424242"
                                                VerticalAlignment="Center" />
                                 </Grid>
+
+                                <!-- Invoice-level discount (feature-gated) -->
+                                <StackPanel Margin="0,0,0,10"
+                                            Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="خصم الفاتورة" FontSize="13" FontWeight="SemiBold" Foreground="#1B5E20" Margin="0,0,0,6"/>
+                                    <ComboBox ItemsSource="{Binding InvoiceDiscountTypeOptions}"
+                                              SelectedItem="{Binding SelectedInvoiceDiscountOption}"
+                                              DisplayMemberPath="Label"
+                                              Margin="0,0,0,6"
+                                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+                                    <TextBox Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="قيمة الخصم الكلي"
+                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                             Margin="0,0,0,6"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="مبلغ الخصم:" FontSize="13" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
+                                                   FontSize="13" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                                    </Grid>
+                                </StackPanel>
 
                                 <!-- Rounding -->
                                 <Grid Margin="0,0,0,10">

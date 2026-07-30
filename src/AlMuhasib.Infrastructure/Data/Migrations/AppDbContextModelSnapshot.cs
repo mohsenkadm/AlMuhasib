@@ -1289,6 +1289,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
@@ -1644,6 +1648,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("DiscountExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

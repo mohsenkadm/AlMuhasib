@@ -409,6 +409,9 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.CategoryId = categoryId;
         existing.Weight = dto.Weight;
         existing.WeightUnit = dto.WeightUnit;
+        existing.DiscountType = dto.DiscountType;
+        existing.DiscountValue = dto.DiscountValue;
+        existing.DiscountExpiresAt = dto.DiscountExpiresAt;
         return 1;
     }
 
@@ -639,6 +642,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.ItemName = dto.ItemName;
         existing.Quantity = dto.Quantity;
         existing.UnitPrice = dto.UnitPrice;
+        existing.DiscountAmount = dto.DiscountAmount;
         existing.TotalPrice = dto.TotalPrice;
         return 1;
     }
@@ -820,6 +824,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode,
             Weight = p.Weight, WeightUnit = p.WeightUnit,
+            DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
             CategorySyncId = catMap.GetValueOrDefault(p.CategoryId)
         }).ToList();
     }
@@ -928,7 +933,8 @@ public sealed partial class SyncEngine : ISyncEngine
             InvoiceSyncId = invoices.GetValueOrDefault(i.InvoiceId),
             ProductSyncId = i.ProductId.HasValue ? products.GetValueOrDefault(i.ProductId.Value) : null,
             PricingTypeSyncId = i.PricingTypeId.HasValue ? pricingTypes.GetValueOrDefault(i.PricingTypeId.Value) : null,
-            ItemName = i.ItemName, Quantity = i.Quantity, UnitPrice = i.UnitPrice, TotalPrice = i.TotalPrice
+            ItemName = i.ItemName, Quantity = i.Quantity, UnitPrice = i.UnitPrice,
+            DiscountAmount = i.DiscountAmount, TotalPrice = i.TotalPrice
         }).ToList();
     }
 

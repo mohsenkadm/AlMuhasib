@@ -285,6 +285,9 @@ internal static class SyncMapper
         d.CategorySyncId = cats[p.CategoryId];
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
+        d.DiscountType = p.DiscountType;
+        d.DiscountValue = p.DiscountValue;
+        d.DiscountExpiresAt = p.DiscountExpiresAt;
         return d;
     }
     private static ProductSyncDto? MapProductSafe(Product p, Dictionary<int, Guid> cats)
@@ -298,6 +301,9 @@ internal static class SyncMapper
         d.CategorySyncId = catSyncId;
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
+        d.DiscountType = p.DiscountType;
+        d.DiscountValue = p.DiscountValue;
+        d.DiscountExpiresAt = p.DiscountExpiresAt;
         return d;
     }
     private static PricingTypeSyncDto MapPricingType(PricingType t)
@@ -376,6 +382,7 @@ internal static class SyncMapper
         d.ItemName = i.ItemName;
         d.Quantity = i.Quantity;
         d.UnitPrice = i.UnitPrice;
+        d.DiscountAmount = i.DiscountAmount;
         d.TotalPrice = i.TotalPrice;
         return d;
     }
@@ -458,6 +465,9 @@ internal static class SyncMapper
             ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.CategoryId = catId;
             entity.Weight = dto.Weight;
             entity.WeightUnit = dto.WeightUnit;
+            entity.DiscountType = dto.DiscountType;
+            entity.DiscountValue = dto.DiscountValue;
+            entity.DiscountExpiresAt = dto.DiscountExpiresAt;
         }
         await db.SaveChangesAsync(ct);
     }
@@ -668,7 +678,8 @@ internal static class SyncMapper
             ApplyBase(entity, dto); entity.InvoiceId = iId;
             entity.ProductId = dto.ProductSyncId.HasValue && pr.TryGetValue(dto.ProductSyncId.Value, out var pId) ? pId : null;
             entity.PricingTypeId = dto.PricingTypeSyncId.HasValue && pricingTypes.TryGetValue(dto.PricingTypeSyncId.Value, out var ptId) ? ptId : null;
-            entity.ItemName = dto.ItemName; entity.Quantity = dto.Quantity; entity.UnitPrice = dto.UnitPrice; entity.TotalPrice = dto.TotalPrice;
+            entity.ItemName = dto.ItemName; entity.Quantity = dto.Quantity; entity.UnitPrice = dto.UnitPrice;
+            entity.DiscountAmount = dto.DiscountAmount; entity.TotalPrice = dto.TotalPrice;
         }
         await db.SaveChangesAsync(ct);
     }
