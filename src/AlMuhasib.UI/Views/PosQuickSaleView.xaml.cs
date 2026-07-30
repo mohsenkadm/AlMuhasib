@@ -25,6 +25,14 @@ public partial class PosQuickSaleView : UserControl
             SearchBox.Focus();
             SearchBox.SelectAll();
             e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F7)
+        {
+            if (DataContext is ViewModels.PosQuickSaleViewModel vm)
+                vm.OpenCurrencyChangeCommand.Execute(null);
+            e.Handled = true;
         }
     }
 

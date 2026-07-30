@@ -997,6 +997,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     // ── New invoice (reset) ────────────────────────────────
     [RelayCommand]
+    private void OpenCurrencyChange()
+    {
+        IraqiCurrencyChangeDialog.ShowCalculator(GrandTotal);
+    }
+
+    [RelayCommand]
     private async Task NewInvoice()
     {
         IsSaved = false;
