@@ -30,6 +30,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _purchaseReturns;
     [ObservableProperty] private bool _warehouseTransfers;
     [ObservableProperty] private bool _unitsOfMeasure;
+    [ObservableProperty] private bool _menuWeight;
     [ObservableProperty] private bool _expiryTracking;
     [ObservableProperty] private bool _serialNumbers;
     [ObservableProperty] private bool _productPricingEnabled;
@@ -48,7 +49,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
-            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure,
+            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
@@ -110,6 +111,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         PurchaseReturns = p.FeatureFlags.PurchaseReturns;
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
+        MenuWeight = p.FeatureFlags.MenuWeight;
         ExpiryTracking = p.FeatureFlags.ExpiryTracking;
         SerialNumbers = p.FeatureFlags.SerialNumbers;
         ProductPricingEnabled = p.FeatureFlags.ProductPricingEnabled;
@@ -136,6 +138,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnPurchaseReturnsChanged(bool value) => NotifyFeaturesCount();
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
+    partial void OnMenuWeightChanged(bool value) => NotifyFeaturesCount();
     partial void OnExpiryTrackingChanged(bool value) => NotifyFeaturesCount();
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductPricingEnabledChanged(bool value) => NotifyFeaturesCount();
@@ -174,6 +177,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.PurchaseReturns = PurchaseReturns;
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
+            p.FeatureFlags.MenuWeight = MenuWeight;
             p.FeatureFlags.ExpiryTracking = ExpiryTracking;
             p.FeatureFlags.SerialNumbers = SerialNumbers;
             p.FeatureFlags.ProductPricingEnabled = ProductPricingEnabled;

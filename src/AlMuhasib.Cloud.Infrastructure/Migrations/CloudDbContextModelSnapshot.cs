@@ -2839,6 +2839,13 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("WeightUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");

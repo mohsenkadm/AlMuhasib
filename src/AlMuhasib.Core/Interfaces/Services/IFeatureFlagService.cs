@@ -10,6 +10,7 @@ public interface IFeatureFlagService
     bool PurchaseReturns { get; }
     bool WarehouseTransfers { get; }
     bool UnitsOfMeasure { get; }
+    bool MenuWeight { get; }
     bool ExpiryTracking { get; }
     bool SerialNumbers { get; }
     bool ProductPricingEnabled { get; }

@@ -15,6 +15,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool PurchaseReturns => Current.PurchaseReturns;
     public bool WarehouseTransfers => Current.WarehouseTransfers;
     public bool UnitsOfMeasure => Current.UnitsOfMeasure;
+    public bool MenuWeight => Current.MenuWeight;
     public bool ExpiryTracking => Current.ExpiryTracking;
     public bool SerialNumbers => Current.SerialNumbers;
     public bool ProductPricingEnabled => Current.ProductPricingEnabled;

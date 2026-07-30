@@ -123,6 +123,38 @@ public partial class InvoiceItemRow : ObservableObject
         UnitConversionFactor = value.ConversionFactor <= 0 ? 1m : value.ConversionFactor;
     }
 
+    // ── وزن المادة (ميزة وزن القائمة) ───────────────────────
+    [ObservableProperty]
+    private decimal _productWeight;
+
+    [ObservableProperty]
+    private string _productWeightUnit = string.Empty;
+
+    /// <summary>وزن السطر = وزن الوحدة × الكمية × معامل التحويل.</summary>
+    public decimal LineWeight
+    {
+        get
+        {
+            if (ProductWeight <= 0) return 0m;
+            var factor = UnitConversionFactor <= 0 ? 1m : UnitConversionFactor;
+            return ProductWeight * Quantity * factor;
+        }
+    }
+
+    partial void OnProductWeightChanged(decimal value)
+    {
+        OnPropertyChanged(nameof(LineWeight));
+        TotalChanged?.Invoke();
+    }
+
+    partial void OnProductWeightUnitChanged(string value) => TotalChanged?.Invoke();
+
+    partial void OnUnitConversionFactorChanged(decimal value)
+    {
+        OnPropertyChanged(nameof(LineWeight));
+        TotalChanged?.Invoke();
+    }
+
     // ── دفعات / صلاحية ────────────────────────────────────
     public ObservableCollection<ProductBatch> AvailableBatches { get; } = [];
 
@@ -170,6 +202,13 @@ public partial class InvoiceItemRow : ObservableObject
         {
             ProductId = value.Id;
             ItemName = value.Name;
+            ProductWeight = value.Weight;
+            ProductWeightUnit = value.WeightUnit ?? string.Empty;
+        }
+        else
+        {
+            ProductWeight = 0m;
+            ProductWeightUnit = string.Empty;
         }
         ProductChanged?.Invoke(this);
     }
@@ -177,6 +216,7 @@ public partial class InvoiceItemRow : ObservableObject
     partial void OnQuantityChanged(decimal value)
     {
         _isManualTotal = false;
+        OnPropertyChanged(nameof(LineWeight));
         RecalcTotal();
     }
 

@@ -22,6 +22,7 @@ public partial class ProductsViewModel
     public ObservableCollection<ProductSize> EditSizes { get; } = [];
 
     [ObservableProperty] private bool _showUnitsSection;
+    [ObservableProperty] private bool _showWeightSection;
     [ObservableProperty] private bool _showBatchesSection;
     [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showSizesSection;
@@ -30,6 +31,9 @@ public partial class ProductsViewModel
     [ObservableProperty] private decimal _newUnitFactor = 1m;
     [ObservableProperty] private string _newSerialText = string.Empty;
     [ObservableProperty] private string _newSizeName = string.Empty;
+
+    public IReadOnlyList<string> WeightUnitOptions { get; } =
+        ["كغ", "غرام", "لتر", "مل", "متر", "سم"];
 
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
@@ -57,6 +61,7 @@ public partial class ProductsViewModel
     {
         if (_featureFlags is null) return;
         ShowUnitsSection = _featureFlags.UnitsOfMeasure;
+        ShowWeightSection = _featureFlags.MenuWeight;
         ShowBatchesSection = _featureFlags.ExpiryTracking;
         ShowSerialsSection = _featureFlags.SerialNumbers;
         ShowSizesSection = _featureFlags.TemplateClothing;

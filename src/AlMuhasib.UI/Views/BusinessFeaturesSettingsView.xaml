@@ -172,6 +172,10 @@
                                                     Description="وحدات متعددة لكل منتج"
                                                     Icon="Ruler" IconBackground="#FFF8E1" IconForeground="#F9A825"
                                                     IsChecked="{Binding UnitsOfMeasure}"/>
+                        <controls:FeatureToggleCard Title="وزن القائمة"
+                                                    Description="حقل وزن المادة على المنتج وكارد حساب وزن فاتورة البيع"
+                                                    Icon="ScaleBalance" IconBackground="#E0F7FA" IconForeground="#00838F"
+                                                    IsChecked="{Binding MenuWeight}"/>
                         <controls:FeatureToggleCard Title="صلاحية / تاريخ انتهاء"
                                                     Description="تتبع تواريخ انتهاء المنتجات"
                                                     Icon="CalendarClock" IconBackground="#E8F5E9" IconForeground="#2E7D32"

@@ -6,6 +6,10 @@ public class BusinessFeatureFlags
     public bool PurchaseReturns { get; set; }
     public bool WarehouseTransfers { get; set; }
     public bool UnitsOfMeasure { get; set; }
+
+    /// <summary>وزن المادة على المنتج وكارد وزن الفاتورة — معطّل افتراضياً.</summary>
+    public bool MenuWeight { get; set; }
+
     public bool ExpiryTracking { get; set; }
     public bool SerialNumbers { get; set; }
 

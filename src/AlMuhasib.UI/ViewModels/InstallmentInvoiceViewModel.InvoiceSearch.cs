@@ -188,6 +188,7 @@ public partial class InstallmentInvoiceViewModel
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
             };
+            InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
             WireItemRow(row);
             Items.Add(row);
         }

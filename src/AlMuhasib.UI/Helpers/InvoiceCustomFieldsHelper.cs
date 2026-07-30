@@ -46,6 +46,12 @@ public static class InvoiceCustomFieldsHelper
             dict["__sizeId"] = row.ProductSizeId.Value.ToString();
         if (!string.IsNullOrWhiteSpace(row.SizeName))
             dict["__size"] = row.SizeName.Trim();
+        if (row.ProductWeight > 0)
+        {
+            dict["__weight"] = row.ProductWeight.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!string.IsNullOrWhiteSpace(row.ProductWeightUnit))
+                dict["__weightUnit"] = row.ProductWeightUnit.Trim();
+        }
 
         return dict.Count == 0 ? null : JsonSerializer.Serialize(dict, JsonOptions);
     }
@@ -97,6 +103,18 @@ public static class InvoiceCustomFieldsHelper
         else if (string.IsNullOrWhiteSpace(row.SizeName) && !string.IsNullOrWhiteSpace(row.CustomField1)
                  && string.Equals(row.CustomField1Label, "المقاس", StringComparison.Ordinal))
             row.SizeName = row.CustomField1;
+
+        if (dict.TryGetValue("__weight", out var weightText)
+            && decimal.TryParse(weightText, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var weight)
+            && weight > 0
+            && row.ProductWeight <= 0)
+            row.ProductWeight = weight;
+
+        if (dict.TryGetValue("__weightUnit", out var weightUnit)
+            && !string.IsNullOrWhiteSpace(weightUnit)
+            && string.IsNullOrWhiteSpace(row.ProductWeightUnit))
+            row.ProductWeightUnit = weightUnit;
     }
 
     /// <summary>يعرض اسم الصنف مع القياس إن وُجد (للفواتير والطباعة).</summary>
