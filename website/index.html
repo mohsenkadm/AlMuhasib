@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="قيد — منصة محاسبة، فنادق، عقود وتجارة سيارات، ربط فروع عبر الشبكة، وتطبيق جوال"/>
-  <title>قيد</title>
+  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، مساعد صوتي، ربط فروع، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
+  <title>قيد — منصة أعمال متكاملة</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
@@ -17,7 +17,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="#top" class="logo">
-        <span class="logo-mark">م</span>
+        <span class="logo-mark">ق</span>
         <span class="logo-text" data-i18n="hero.title">قيد</span>
       </a>
       <button class="nav-toggle" aria-label="Menu">☰</button>
@@ -26,9 +26,6 @@
         <a href="#features" data-i18n="nav.features">المنصة</a>
         <a href="#how" data-i18n="nav.how">كيف يعمل</a>
         <a href="#videos" data-i18n="nav.videos">الفيديوهات</a>
-        <a href="#reports" data-i18n="nav.reports">التقارير</a>
-        <a href="#cloud" data-i18n="nav.cloud">السحابة</a>
-        <a href="#network" data-i18n="nav.network">ربط الفروع</a>
         <a href="#mobile-app" data-i18n="nav.mobile">التطبيق</a>
         <a href="#download" data-i18n="nav.download">التنزيل</a>
         <a href="#faq" data-i18n="nav.faq">الأسئلة</a>
@@ -46,24 +43,24 @@
 
   <main>
     <section class="hero" id="top">
+      <div class="hero-backdrop" aria-hidden="true"></div>
       <div class="container hero-grid">
         <div class="hero-content reveal">
-          <span class="hero-badge" data-i18n="hero.badge">منصة متعددة الأنظمة</span>
-          <h1><span data-i18n="hero.title">قيد</span></h1>
+          <p class="hero-eyebrow" data-i18n="hero.badge">جديد: المساعد الصوتي + عقود العقارات</p>
+          <h1 class="hero-brand"><span data-i18n="hero.title">قيد</span></h1>
           <p class="hero-sub">
             <span data-i18n="hero.subtitle">منصة أعمال متكاملة —</span>
             <span class="hero-rotate-wrap" id="hero-rotate-words" aria-live="polite"></span>
           </p>
-          <p class="hero-desc" data-i18n="hero.desc">ثلاثة أنظمة + جوال + سحابة</p>
+          <p class="hero-desc" data-i18n="hero.desc">أنظمة سطح مكتب أوفلاين، ربط فروع عبر الشبكة، مساعد صوتي، وتطبيق جوال — جاهزة للمحلات والفنادق والمعارض والعقارات.</p>
           <div class="hero-cta">
-            <a href="#download" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل النظام</a>
+            <a href="#download" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل النظام مجاناً</a>
             <a href="#systems" class="btn btn-ghost btn-lg" data-i18n="hero.cta_systems">استكشف الأنظمة</a>
           </div>
-          <div class="hero-stats">
-            <div><strong data-count="3">0</strong><span data-i18n="hero.stat_systems">أنظمة</span></div>
-            <div><strong data-count="25">0</strong><span data-i18n="hero.stat_reports">تقرير+</span></div>
+          <div class="hero-stats" aria-label="Highlights">
+            <div><strong data-count="5">0</strong><span data-i18n="hero.stat_systems">أنظمة</span></div>
+            <div><strong data-count="30">0</strong><span data-i18n="hero.stat_reports">تقرير+</span></div>
             <div><strong>100%</strong><span data-i18n="hero.stat_offline">أوفلاين</span></div>
-            <div><strong>1</strong><span data-i18n="hero.stat_mobile">تطبيق</span></div>
           </div>
         </div>
         <div class="hero-visual reveal">
@@ -77,7 +74,7 @@
               </div>
               <div class="ald-body">
                 <aside class="ald-sidebar">
-                  <div class="ald-logo-side">م</div>
+                  <div class="ald-logo-side">ق</div>
                   <nav class="ald-menu">
                     <a class="active" data-i18n="desktop.menu.dashboard">لوحة التحكم</a>
                     <a data-i18n="desktop.menu.sales">فواتير</a>
@@ -100,7 +97,7 @@
                     <div class="ald-card"><small data-i18n="desktop.stats.invoices">فواتير</small><strong>42</strong></div>
                   </div>
                   <div class="ald-chart-area">
-                    <span class="ald-chart-label" data-i18n="desktop.chart">ملخص المبيعات</span>
+                    <span class="ald-chart-label" data-i18n="desktop.chart">ملخص المبيعات — آخر 7 أيام</span>
                     <div class="ald-bars">
                       <div style="--h:45%"></div><div style="--h:70%"></div><div style="--h:55%"></div>
                       <div style="--h:90%"></div><div style="--h:65%"></div><div style="--h:80%"></div><div style="--h:100%"></div>
@@ -110,9 +107,7 @@
               </div>
             </div>
           </div>
-          <p class="hero-screen-caption" data-i18n="hero.screen_caption">واجهة النظام الأوفلاين</p>
-          <div class="orbit orbit-1"></div>
-          <div class="orbit orbit-2"></div>
+          <p class="hero-screen-caption" data-i18n="hero.screen_caption">واجهة النظام الأوفلاين — لوحة التحكم</p>
         </div>
       </div>
     </section>
@@ -121,7 +116,7 @@
       <div class="container">
         <div class="section-head reveal">
           <h2 data-i18n="systems.title">أنظمتنا المتكاملة</h2>
-          <p data-i18n="systems.subtitle">اختر نظاماً لاستكشاف ميزاته</p>
+          <p data-i18n="systems.subtitle">اختر نظاماً لاستكشاف ميزاته بالتفصيل</p>
         </div>
 
         <div class="system-tabs-wrap reveal">
@@ -154,28 +149,104 @@
     <section class="section section-alt" id="features">
       <div class="container">
         <div class="section-head reveal">
-          <h2 data-i18n="features.title">مميزات المنصة</h2>
-          <p data-i18n="features.subtitle">بنية تحتية موثوقة</p>
+          <h2 data-i18n="features.title">مميزات المنصة المشتركة</h2>
+          <p data-i18n="features.subtitle">ما يجمع كل الأنظمة — بنية تحتية موثوقة</p>
         </div>
         <div class="features-grid" id="features-grid"></div>
       </div>
     </section>
 
-    <section class="section" id="how">
+    <section class="section platform-infra" id="platform-infra">
       <div class="container">
         <div class="section-head reveal">
-          <h2 data-i18n="how.title">كيف يعمل</h2>
+          <h2 data-i18n="platformInfra.title">البنية التحتية</h2>
+          <p data-i18n="platformInfra.subtitle">ربط فروع، مزامنة سحابية، وتقارير شاملة لكل نشاط</p>
+        </div>
+
+        <div class="infra-block reveal" id="network">
+          <div class="network-split">
+            <div class="network-text">
+              <span class="network-badge" data-i18n="network.badge">متاح</span>
+              <h3 data-i18n="network.title">ربط الحاسبات الرئيسية والفرعية</h3>
+              <p data-i18n="network.desc">اربط عدة حواسيب على نفس الشبكة بقاعدة بيانات واحدة — بدون مزامنة وبدون إنترنت.</p>
+              <ul class="network-points" id="network-points"></ul>
+            </div>
+            <div class="network-visual">
+              <div class="network-flow">
+                <div class="network-node main">
+                  <span class="network-node-icon" aria-hidden="true">▣</span>
+                  <strong data-i18n="network.diagram.main">حاسبة رئيسية</strong>
+                  <small data-i18n="network.diagram.mainHint">قاعدة البيانات</small>
+                </div>
+                <div class="network-links" aria-hidden="true">
+                  <span class="network-link"></span>
+                  <span class="network-link"></span>
+                  <span class="network-link"></span>
+                </div>
+                <div class="network-branches">
+                  <div class="network-node branch">
+                    <span class="network-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="network.diagram.branch1">فرع 1</strong>
+                  </div>
+                  <div class="network-node branch">
+                    <span class="network-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="network.diagram.branch2">فرع 2</strong>
+                  </div>
+                  <div class="network-node branch">
+                    <span class="network-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="network.diagram.branch3">فرع 3</strong>
+                  </div>
+                </div>
+                <p class="network-flow-caption" data-i18n="network.diagram.caption">اكتشاف تلقائي على الشبكة + رمز ربط آمن</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="infra-block reveal" id="cloud">
+          <div class="cloud-split">
+            <div class="cloud-text">
+              <h3 data-i18n="cloud.title">مزامنة سحابية — متعددة الأنظمة</h3>
+              <p data-i18n="cloud.desc">اربط Desktop مع Cloud API لكل أنظمتك — Push/Pull مع عزل بيانات كل عميل.</p>
+              <ul class="cloud-points" id="cloud-points"></ul>
+            </div>
+            <div class="cloud-visual">
+              <div class="sync-flow sync-flow-multi">
+                <div class="sync-node desktop">Desktop</div>
+                <div class="sync-systems" id="sync-systems">
+                  <span>Accounting</span><span>Hotel</span><span>Car</span><span>CarTrade</span><span>RealEstate</span>
+                </div>
+                <div class="sync-arrows">⇄</div>
+                <div class="sync-node api">Cloud API</div>
+                <div class="sync-arrows">⇄</div>
+                <div class="sync-node mobile">Mobile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="infra-block reveal" id="reports">
+          <h3 class="infra-subhead" data-i18n="reports.title">تقارير شاملة</h3>
+          <div class="reports-groups" id="reports-groups"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="how">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 data-i18n="how.title">ابدأ في دقائق</h2>
         </div>
         <div class="steps-row" id="how-steps"></div>
       </div>
     </section>
 
-    <section class="section videos-section section-alt" id="videos">
+    <section class="section videos-section" id="videos">
       <div class="container">
         <div class="section-head reveal">
           <span class="section-icon-pill">▶</span>
-          <h2 data-i18n="videos.title">دليل الفيديوهات</h2>
-          <p data-i18n="videos.subtitle">شرح واجهات النظام</p>
+          <h2 data-i18n="videos.title">دليل الفيديوهات التعليمية</h2>
+          <p data-i18n="videos.subtitle">شاهد شرح كل واجهة داخل النظام — نفس الدليل الموجود في التطبيق الأوفلاين</p>
         </div>
         <div class="videos-toolbar reveal">
           <div class="video-search-wrap">
@@ -195,7 +266,7 @@
               <div class="video-placeholder" id="video-placeholder">
                 <div class="placeholder-pulse"></div>
                 <span>▶</span>
-                <p data-i18n="videos.pick">اختر فيديو</p>
+                <p data-i18n="videos.pick">اختر فيديو من القائمة</p>
               </div>
             </div>
             <div class="player-meta">
@@ -210,74 +281,12 @@
       </div>
     </section>
 
-    <section class="section" id="cloud">
-      <div class="container cloud-split reveal">
-        <div class="cloud-text">
-          <h2 data-i18n="cloud.title">مزامنة سحابية</h2>
-          <p data-i18n="cloud.desc">3 أنظمة</p>
-          <ul class="cloud-points" id="cloud-points"></ul>
-        </div>
-        <div class="cloud-visual">
-          <div class="sync-flow sync-flow-multi">
-            <div class="sync-node desktop">Desktop</div>
-            <div class="sync-systems">
-              <span>Accounting</span><span>Hotel</span><span>Car</span>
-            </div>
-            <div class="sync-arrows">⇄</div>
-            <div class="sync-node api">Cloud API</div>
-            <div class="sync-arrows">⇄</div>
-            <div class="sync-node mobile">Mobile</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-alt" id="network">
-      <div class="container network-split reveal">
-        <div class="network-text">
-          <span class="network-badge" data-i18n="network.badge">جديد</span>
-          <h2 data-i18n="network.title">ربط الحاسبات الرئيسية والفرعية</h2>
-          <p data-i18n="network.desc">اتصال مباشر عبر WiFi أو الشبكة المحلية — بدون مزامنة</p>
-          <ul class="network-points" id="network-points"></ul>
-        </div>
-        <div class="network-visual">
-          <div class="network-flow">
-            <div class="network-node main">
-              <span class="network-node-icon">🖥️</span>
-              <strong data-i18n="network.diagram.main">حاسبة رئيسية</strong>
-              <small data-i18n="network.diagram.mainHint">قاعدة البيانات</small>
-            </div>
-            <div class="network-links" aria-hidden="true">
-              <span class="network-link"></span>
-              <span class="network-link"></span>
-              <span class="network-link"></span>
-            </div>
-            <div class="network-branches">
-              <div class="network-node branch">
-                <span class="network-node-icon">💻</span>
-                <strong data-i18n="network.diagram.branch1">فرع 1</strong>
-              </div>
-              <div class="network-node branch">
-                <span class="network-node-icon">💻</span>
-                <strong data-i18n="network.diagram.branch2">فرع 2</strong>
-              </div>
-              <div class="network-node branch">
-                <span class="network-node-icon">💻</span>
-                <strong data-i18n="network.diagram.branch3">فرع 3</strong>
-              </div>
-            </div>
-            <p class="network-flow-caption" data-i18n="network.diagram.caption">اكتشاف تلقائي على الشبكة + رمز ربط آمن</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="section section-alt" id="mobile-app">
       <div class="container mobile-split reveal">
         <div class="mobile-text">
           <span class="coming-badge coming-badge-live" data-i18n="mobile.badge">متاح الآن</span>
-          <h2 data-i18n="mobile.title">تطبيق جوال</h2>
-          <p data-i18n="mobile.desc">3 profiles</p>
+          <h2 data-i18n="mobile.title">تطبيق جوال — 5 أنظمة</h2>
+          <p data-i18n="mobile.desc">تطبيق Flutter متصل بالـ API السحابي حسب نوع نظامك.</p>
           <div class="mobile-profiles" id="mobile-profiles"></div>
           <ul class="mobile-points" id="mobile-points"></ul>
         </div>
@@ -290,12 +299,12 @@
                 <span data-i18n="mobile.appName">قيد</span>
                 <span class="phone-api">API</span>
               </div>
-              <div class="phone-greeting" data-i18n="mobile.greeting">مرحباً</div>
+              <div class="phone-greeting" data-i18n="mobile.greeting">مرحباً — بياناتك متزامنة</div>
               <div class="phone-cards">
-                <div class="phone-card"><span data-i18n="mobile.cards.sales">تقرير</span><em>Live</em></div>
-                <div class="phone-card"><span data-i18n="mobile.cards.statement">كشف</span><em>PDF</em></div>
-                <div class="phone-card"><span data-i18n="mobile.cards.stock">مخزون</span><em>↑</em></div>
-                <div class="phone-card"><span data-i18n="mobile.cards.overdue">حجوزات</span><em>3</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.sales">تقرير المبيعات</span><em>Live</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.statement">كشف حساب</span><em>PDF</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.stock">المخزون</span><em>↑</em></div>
+                <div class="phone-card"><span data-i18n="mobile.cards.overdue">حجوزات اليوم</span><em>3</em></div>
               </div>
               <div class="phone-nav">
                 <span class="on" data-i18n="mobile.nav.home">الرئيسية</span>
@@ -304,33 +313,24 @@
               </div>
             </div>
           </div>
-          <p class="mobile-caption" data-i18n="mobile.caption">iOS و Android</p>
+          <p class="mobile-caption" data-i18n="mobile.caption">تطبيق قيد — iOS و Android</p>
         </div>
       </div>
     </section>
 
-    <section class="section" id="reports">
-      <div class="container">
-        <div class="section-head reveal">
-          <h2 data-i18n="reports.title">التقارير</h2>
-        </div>
-        <div class="reports-groups reveal" id="reports-groups"></div>
-      </div>
-    </section>
-
-    <section class="section download-section section-alt" id="download">
+    <section class="section download-section" id="download">
       <div class="container">
         <div class="download-card reveal">
           <div class="download-info">
-            <h2 data-i18n="download.title">حمّل قيد</h2>
-            <p data-i18n="download.desc">من GitHub</p>
+            <h2 data-i18n="download.title">حمّل قيد الآن</h2>
+            <p data-i18n="download.desc">آخر إصدار من GitHub — تحديثات تلقائية من داخل التطبيق</p>
             <p class="dl-notes" id="dl-notes"></p>
             <dl class="dl-meta">
               <div><dt data-i18n="download.version">الإصدار</dt><dd id="dl-version">…</dd></div>
               <div><dt data-i18n="download.size">الحجم</dt><dd id="dl-size">…</dd></div>
               <div><dt data-i18n="download.date">التاريخ</dt><dd id="dl-date">…</dd></div>
             </dl>
-            <p class="dl-req" data-i18n="download.req">Windows 10/11</p>
+            <p class="dl-req" data-i18n="download.req">متطلبات: Windows 10/11 — .NET 10</p>
           </div>
           <div class="download-action">
             <a id="dl-btn" href="#" class="btn btn-accent btn-xl" data-i18n="download.btn" download>تنزيل ZIP</a>
@@ -339,10 +339,10 @@
       </div>
     </section>
 
-    <section class="section" id="faq">
+    <section class="section section-alt" id="faq">
       <div class="container">
         <div class="section-head reveal">
-          <h2 data-i18n="faq.title">الأسئلة</h2>
+          <h2 data-i18n="faq.title">أسئلة شائعة</h2>
         </div>
         <div class="faq-list" id="faq-list"></div>
       </div>
@@ -350,8 +350,8 @@
 
     <section class="section cta-section" id="contact">
       <div class="container cta-box reveal">
-        <h2 data-i18n="contact.title">جاهز؟</h2>
-        <p data-i18n="contact.desc">نزّل مجاناً</p>
+        <h2 data-i18n="contact.title">جاهز للتجربة؟</h2>
+        <p data-i18n="contact.desc">نزّل مجاناً وجرّب النظام المناسب لنشاطك</p>
         <div class="cta-buttons">
           <a href="#" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل</a>
           <a href="#" class="btn btn-whatsapp btn-lg" data-whatsapp>
@@ -360,7 +360,7 @@
           </a>
           <a href="#" class="btn btn-ghost btn-lg" data-github data-i18n="contact.github">GitHub</a>
         </div>
-        <p class="support-phone-line"><span data-i18n="support.phoneLabel">الدعم:</span> <strong id="support-phone">07505496065</strong></p>
+        <p class="support-phone-line"><span data-i18n="support.phoneLabel">رقم الدعم:</span> <strong id="support-phone">07505496065</strong></p>
       </div>
     </section>
   </main>
@@ -369,12 +369,12 @@
     <span class="wa-float-ring"></span>
     <span class="wa-float-ring wa-float-ring-2"></span>
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-    <span class="wa-float-label" data-i18n="support.float">دعم</span>
+    <span class="wa-float-label" data-i18n="support.float">دعم واتساب</span>
   </a>
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <span data-i18n="footer.rights">حقوق</span>
+      <span data-i18n="footer.rights">جميع الحقوق محفوظة — قيد</span>
       <div class="lang-switch footer-lang">
         <button type="button" data-lang-btn="ar" class="active">العربية</button>
         <button type="button" data-lang-btn="en">English</button>

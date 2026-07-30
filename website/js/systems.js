@@ -4,7 +4,8 @@ const SYSTEM_ACCENTS = {
   hotel: '#00897B',
   car: '#E65100',
   carTrade: '#558B2F',
-  mobile: '#7B1FA2'
+  realEstate: '#6D4C41',
+  mobile: '#0277BD'
 };
 
 let activeSystemId = 'accounting';
@@ -49,11 +50,23 @@ function renderSystemPanel(tab) {
 
   const highlights = (tab.highlights ?? []).map(h => `<li>${h}</li>`).join('');
   const restaurantBlock = tab.restaurant ? `
-    <div class="system-restaurant-block reveal">
+    <div class="system-restaurant-block">
       <h4>${tab.restaurant.title}</h4>
       <ul class="system-highlights system-highlights-compact">
         ${(tab.restaurant.highlights ?? []).map(h => `<li>${h}</li>`).join('')}
       </ul>
+    </div>` : '';
+
+  const modulesBlock = tab.modules?.length ? `
+    <div class="system-modules-block">
+      <h4>${I18N.t('systems.modulesTitle')}</h4>
+      <div class="system-modules-grid">
+        ${tab.modules.map(m => `
+          <div class="system-module">
+            <strong>${m.title}</strong>
+            <ul>${(m.items ?? []).map(i => `<li>${i}</li>`).join('')}</ul>
+          </div>`).join('')}
+      </div>
     </div>` : '';
 
   panel.innerHTML = `
@@ -62,6 +75,7 @@ function renderSystemPanel(tab) {
       <h3>${tab.tagline}</h3>
       <p class="system-panel-desc">${tab.desc}</p>
       <ul class="system-highlights">${highlights}</ul>
+      ${modulesBlock}
       ${restaurantBlock}
       <div class="system-panel-cta">
         <a href="#download" class="btn btn-primary" data-download-link>${I18N.t('systems.cta_download')}</a>
@@ -136,6 +150,7 @@ function switchSystem(id) {
     const dl = document.querySelector('[data-download-link]')?.href;
     if (dl) applyDownloadLinks(dl);
   }
+  if (typeof initSupportLinks === 'function') initSupportLinks();
 }
 
 function initHeroRotate() {
