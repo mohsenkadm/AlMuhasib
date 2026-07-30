@@ -210,6 +210,30 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetProductProfitMarginReportAsync(f.From, f.To, f.WarehouseId));
     }
 
+    [HttpGet("materials/net-profit")]
+    public async Task<IActionResult> MaterialNetProfit(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] bool ascending = false,
+        CancellationToken ct = default)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetMaterialNetProfitReportAsync(
+            f.From, f.To, f.WarehouseId, ascending, f.TopCount));
+    }
+
+    [HttpGet("customers/net-profit")]
+    public async Task<IActionResult> CustomerNetProfit(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] bool ascending = false,
+        CancellationToken ct = default)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCustomerNetProfitReportAsync(
+            f.From, f.To, ascending, f.TopCount));
+    }
+
     [HttpGet("products/movement")]
     public async Task<IActionResult> ProductMovement([FromQuery] ReportFilterRequest filter, CancellationToken ct)
     {

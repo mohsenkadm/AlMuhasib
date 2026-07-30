@@ -18,6 +18,8 @@ public static class ReportMenuCatalog
             ("أفضل المنتجات", PackIconKind.StarCircle, typeof(TopProductsReportViewModel), ScreenPermissionRegistry.Reports),
             ("مقارنة الأرباح", PackIconKind.Compare, typeof(ProfitComparisonReportViewModel), ScreenPermissionRegistry.Reports),
             ("هامش ربح المنتجات", PackIconKind.ChartPie, typeof(ProductProfitMarginReportViewModel), ScreenPermissionRegistry.Reports),
+            ("صافي أرباح المواد", PackIconKind.CashPlus, typeof(MaterialNetProfitReportViewModel), ScreenPermissionRegistry.Reports),
+            ("المواد الأقل ربحاً", PackIconKind.TrendingDown, typeof(LeastProfitMaterialsReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("installments", "الأقساط", PackIconKind.CalendarClock, "#6A1B9A", "#F3E5F5", ScreenPermissionRegistry.Reports,
         [
@@ -31,6 +33,8 @@ public static class ReportMenuCatalog
         ("partners", "العملاء والموردين", PackIconKind.AccountGroup, "#0277BD", "#E1F5FE", ScreenPermissionRegistry.Reports,
         [
             ("ملخص العملاء", PackIconKind.AccountMultiple, typeof(CustomersOverviewReportViewModel), ScreenPermissionRegistry.Reports),
+            ("صافي أرباح العملاء", PackIconKind.AccountCash, typeof(CustomerNetProfitReportViewModel), ScreenPermissionRegistry.Reports),
+            ("العملاء الأقل ربحاً", PackIconKind.AccountArrowDown, typeof(LeastProfitCustomersReportViewModel), ScreenPermissionRegistry.Reports),
             ("كشف حساب عميل", PackIconKind.AccountCash, typeof(CustomerStatementViewModel), ScreenPermissionRegistry.Reports),
             ("ملخص الموردين", PackIconKind.TruckDelivery, typeof(SuppliersOverviewReportViewModel), ScreenPermissionRegistry.Reports),
             ("كشف حساب مورد", PackIconKind.Factory, typeof(SupplierStatementViewModel), ScreenPermissionRegistry.Reports),

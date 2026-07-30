@@ -1339,6 +1339,18 @@
                         <DataTemplate DataType="{x:Type vm:ProductProfitMarginReportViewModel}">
                             <views:ProductProfitMarginReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:MaterialNetProfitReportViewModel}">
+                            <views:MaterialNetProfitReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LeastProfitMaterialsReportViewModel}">
+                            <views:MaterialNetProfitReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CustomerNetProfitReportViewModel}">
+                            <views:CustomerNetProfitReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LeastProfitCustomersReportViewModel}">
+                            <views:CustomerNetProfitReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InstallmentAgingReportViewModel}">
                             <views:InstallmentAgingReportView />
                         </DataTemplate>

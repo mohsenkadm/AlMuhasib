@@ -50,6 +50,12 @@ public interface IReportService
     Task<ProductProfitMarginReportResult> GetProductProfitMarginReportAsync(
         DateTime? from, DateTime? to, int? warehouseId);
 
+    Task<MaterialNetProfitReportResult> GetMaterialNetProfitReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, bool ascending = false, int? topN = null);
+
+    Task<CustomerNetProfitReportResult> GetCustomerNetProfitReportAsync(
+        DateTime? from, DateTime? to, bool ascending = false, int? topN = null);
+
     Task<InstallmentAgingReportResult> GetInstallmentAgingReportAsync(DateTime asOfDate, int? customerId);
 
     Task<CustomersOverviewReportResult> GetCustomersOverviewReportAsync(DateTime? from, DateTime? to);
@@ -643,6 +649,62 @@ public class ProductProfitMarginRow
     public decimal Cost { get; set; }
     public decimal GrossProfit { get; set; }
     public decimal MarginPercent { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// MATERIAL NET PROFIT
+// ══════════════════════════════════════════════════════════════
+
+public class MaterialNetProfitReportResult
+{
+    public decimal TotalNetProfit { get; set; }
+    public decimal TotalStockValue { get; set; }
+    public int ProductCount { get; set; }
+    public decimal AverageMarginPercent { get; set; }
+    public List<MaterialNetProfitRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> Chart { get; set; } = [];
+}
+
+public class MaterialNetProfitRow
+{
+    public int Rank { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal StockQuantity { get; set; }
+    public decimal StockValue { get; set; }
+    public decimal QuantitySold { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal Cost { get; set; }
+    public decimal NetProfit { get; set; }
+    public decimal MarginPercent { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOMER NET PROFIT
+// ══════════════════════════════════════════════════════════════
+
+public class CustomerNetProfitReportResult
+{
+    public decimal TotalNetProfit { get; set; }
+    public decimal TotalOutstanding { get; set; }
+    public int CustomerCount { get; set; }
+    public decimal AverageMarginPercent { get; set; }
+    public List<CustomerNetProfitRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> Chart { get; set; } = [];
+}
+
+public class CustomerNetProfitRow
+{
+    public int Rank { get; set; }
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal SalesAmount { get; set; }
+    public decimal Cost { get; set; }
+    public decimal NetProfit { get; set; }
+    public decimal MarginPercent { get; set; }
+    public decimal OutstandingBalance { get; set; }
 }
 
 // ══════════════════════════════════════════════════════════════
