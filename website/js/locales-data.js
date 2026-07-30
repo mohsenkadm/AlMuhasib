@@ -2,12 +2,12 @@
 window.LOCALES = {
   ar: {
     meta: {
-      title: "قيد — منصة محاسبة، فنادق، مطاعم، عقود وتجارة سيارات",
-      description: "منصة أعمال عربية متكاملة: محاسبة، فنادق، عقود سيارات، بيع وشراء سيارات، مساعد صوتي، ربط فروع عبر الشبكة المحلية، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
+      title: "قيد — محاسبة، فنادق، سيارات، عقارات وتطبيق جوال",
+      description: "منصة أعمال عربية متكاملة: محاسبة، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، مساعد صوتي، ربط فروع عبر الشبكة المحلية، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
     },
     nav: {
       systems: "الأنظمة", features: "المنصة", how: "كيف يعمل", videos: "الفيديوهات",
-      reports: "التقارير", cloud: "السحابة", network: "ربط الفروع", mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
+      mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
     },
     support: { btn: "خدمة العملاء — واتساب", btnShort: "واتساب", float: "دعم واتساب", phoneLabel: "رقم الدعم:" },
     videos: {
@@ -22,24 +22,24 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "جديد: المساعد الصوتي قيد + تجارة السيارات",
+      badge: "جديد: المساعد الصوتي قيد + عقود العقارات",
       title: "قيد",
       subtitle: "منصة أعمال متكاملة —",
-      rotateWords: ["محاسبة", "فنادق", "عقود سيارات", "تجارة سيارات"],
-      desc: "أنظمة سطح مكتب + مساعد صوتي + ربط حاسبات رئيسية وفرعية عبر WiFi + تطبيق جوال + مزامنة سحابية — عربي، أوفلاين، وجاهز للنمو.",
+      rotateWords: ["محاسبة", "فنادق", "عقود سيارات", "تجارة سيارات", "عقود عقارات"],
+      desc: "خمسة أنظمة سطح مكتب أوفلاين + مساعد صوتي + ربط فروع عبر WiFi + تطبيق جوال + مزامنة سحابية — عربي، جاهز للنمو.",
       cta_download: "حمّل النظام مجاناً",
       cta_systems: "استكشف الأنظمة",
       cta_features: "مميزات المنصة",
       stat_systems: "أنظمة",
       stat_reports: "تقرير+",
       stat_offline: "أوفلاين",
-      stat_mobile: "تطبيق جوال",
       screen_caption: "واجهة النظام الأوفلاين — لوحة التحكم"
     },
     systems: {
       title: "أنظمتنا المتكاملة",
       subtitle: "اختر نظاماً لاستكشاف ميزاته بالتفصيل",
       featuresTitle: "ميزات النظام",
+      modulesTitle: "وحدات النظام",
       cta_download: "حمّل الآن",
       tabs: [
         {
@@ -47,27 +47,38 @@ window.LOCALES = {
           label: "المحاسبة",
           badge: "الأكثر استخداماً",
           tagline: "نظام محاسبة ومبيعات احترافي",
-          desc: "فواتير، POS، تسعير منتجات، مخازن، أقساط، سندات، مستثمرون، مساعد صوتي، وأكثر من 25 تقريراً — للمحلات والمخازن والشركات.",
+          desc: "فواتير، POS، تسعير، مخازن، أقساط، مستثمرون، قوالب قطاعات، مساعد صوتي، واتساب للفواتير، وأكثر من 30 تقريراً — للمحلات والمخازن والشركات.",
           screenshot: "assets/desktop-accounting.png",
           screenshotCaption: "نظام المحاسبة — لوحة التحكم والمبيعات",
           highlights: [
-            "فواتير مبيعات ومشتريات مع مرتجعات وخصومات",
-            "مرتجع مشتريات ووحدات قياس ومرونة السوق",
+            "فاتورة مبيعات + بيع سريع POS مع باركود ومفضلة",
+            "فحص السعر بالباركود بسرعة من أي نقطة",
+            "مشتريات ومرتجع مشتريات ووحدات قياس",
             "تسعير منتجات — أسعار بيع وشراء متعددة",
-            "بيع سريع POS — باركود ودفع نقدي فوري",
-            "مخازن، أرصدة افتتاحية، ونقل بين المخازن",
-            "أقساط، متابعة تحصيل، وتقارير متأخرات",
-            "سندات قبض/صرف، مصاريف، وقاصات",
-            "المساعد الصوتي قيد — تحكّم بالصوت (Ctrl+Space)",
-            "25+ تقرير تحليلي شامل + ربط فروع عبر الشبكة"
+            "مخازن، أرصدة افتتاحية، تسوية، ونقل بين المخازن",
+            "أقساط، لوحة تحصيل، ومتابعة المتأخرات",
+            "سندات قبض/صرف، مصاريف، قاصات، ورأس المال",
+            "مستثمرون وأرصدة افتتاحية للمستثمرين",
+            "قوالب قطاعات: جوالات، ألبسة، مقاولات، صيدلية",
+            "مشاركة الفواتير عبر واتساب + مساعد صوتي قيد",
+            "30+ تقرير: مبيعات، أرباح، أقساط، كشوف، رقابية"
+          ],
+          modules: [
+            { title: "المبيعات ونقطة البيع", items: ["فاتورة مبيعات", "بيع سريع POS", "فحص سعر بالباركود"] },
+            { title: "المنتجات والمخزون", items: ["منتجات وتصنيفات", "أنواع تسعير", "مخازن ونقل وتسوية"] },
+            { title: "المشتريات والأقساط", items: ["فاتورة ومرتجع مشتريات", "فاتورة أقساط", "لوحة التحصيل"] },
+            { title: "المالية والمستثمرون", items: ["سندات ومصاريف", "قاصات ومصرف", "مستثمرون"] }
           ],
           features: [
             { icon: "receipt", title: "فواتير متكاملة", desc: "بيع، شراء، أقساط، ومرتجعات بكل التفاصيل" },
-            { icon: "pricing", title: "تسعير المنتجات", desc: "أنواع أسعار بيع وشراء مرنة" },
             { icon: "pos", title: "نقطة بيع POS", desc: "كاشير سريع مع باركود ومفضلة" },
+            { icon: "barcode", title: "فحص السعر", desc: "قراءة باركود فورية لمعرفة السعر" },
             { icon: "warehouse", title: "المخازن", desc: "تتبع الكميات والتسويات والنقل" },
+            { icon: "investor", title: "المستثمرون", desc: "إدارة المستثمرين وأرصدتهم" },
+            { icon: "industry", title: "قوالب القطاعات", desc: "جوالات، ألبسة، مقاولات، صيدلية" },
+            { icon: "whatsapp", title: "واتساب للفواتير", desc: "مشاركة PDF مباشرة مع العميل" },
             { icon: "voice", title: "المساعد الصوتي قيد", desc: "أوامر صوتية لفتح الشاشات والبيع" },
-            { icon: "chart", title: "التقارير", desc: "مبيعات، أرباح، كشوف، وموازنة" }
+            { icon: "chart", title: "تقارير عميقة", desc: "مبيعات، أرباح، أقساط، ورقابة" }
           ]
         },
         {
@@ -138,7 +149,7 @@ window.LOCALES = {
         {
           id: "carTrade",
           label: "تجارة السيارات",
-          badge: "جديد",
+          badge: "معارض",
           tagline: "نظام بيع وشراء السيارات",
           desc: "دورة كاملة: شراء → مخزون → بيع، دفعات للشراء والبيع، أطراف وكشف حساب، وتقارير ربحية — لمعارض التجارة.",
           screenshot: "assets/desktop-car.png",
@@ -163,19 +174,48 @@ window.LOCALES = {
           ]
         },
         {
+          id: "realEstate",
+          label: "عقود العقارات",
+          badge: "جديد",
+          tagline: "نظام عقود العقارات",
+          desc: "عقود عقارية، زبائن، كشف مدينين، مصاريف، بنود العقد، وتقارير عقود وأرباح — لمكاتب العقارات والوسطاء.",
+          screenshot: "assets/desktop-accounting.png",
+          screenshotCaption: "نظام عقود العقارات — اللوحة والعقود",
+          highlights: [
+            "لوحة تحكم لعقود اليوم والحالة",
+            "عقد جديد مع بنود قابلة للتخصيص",
+            "قائمة العقود وتتبع الحالة",
+            "زبائن وملفات الأطراف",
+            "كشف مدينين ومتابعة المستحقات",
+            "مصاريف مرتبطة بالنشاط العقاري",
+            "قوالب بنود العقد الجاهزة",
+            "تقارير عقود وأرباح",
+            "طباعة احترافية + صلاحيات ونسخ احتياطي",
+            "مزامنة سحابية وربط فروع"
+          ],
+          features: [
+            { icon: "realEstate", title: "العقود العقارية", desc: "إنشاء وتتبع العقود والحالات" },
+            { icon: "guest", title: "الزبائن", desc: "ملفات الأطراف والوسطاء" },
+            { icon: "voucher", title: "المدينون", desc: "كشف مستحقات ومتابعة" },
+            { icon: "print", title: "بنود وطباعة", desc: "قوالب بنود وطباعة احترافية" },
+            { icon: "chart", title: "تقارير الأرباح", desc: "عقود، أرباح، ومصاريف" },
+            { icon: "cloud", title: "سحابة وفروع", desc: "مزامنة وربط مكاتب متعددة" }
+          ]
+        },
+        {
           id: "mobile",
           label: "الجوال",
           badge: "متاح الآن",
-          tagline: "تطبيق جوال — محاسبة، فندق، سيارات",
+          tagline: "تطبيق جوال — خمسة أنظمة",
           desc: "تطبيق Flutter يتصل بالـ API السحابي: تقارير، إنشاء بيانات، فواتير، حجوزات، عقود — حسب نوع نظامك.",
           screenshot: "assets/mobile-app.png",
           screenshotCaption: "تطبيق قيد — لوحة التقارير",
           highlights: [
-            "3 profiles: محاسبة، فندق، عقود سيارات",
-            "9+ تقارير محاسبة + KPI فندقي",
+            "5 profiles: محاسبة، فندق، عقود سيارات، تجارة سيارات، عقارات",
+            "تقارير محاسبة + KPI فندقي",
             "إنشاء عملاء، منتجات، فواتير (5 خطوات)",
             "حجوزات، غرف، check-in/out للفندق",
-            "عقود ومدفوعات للسيارات",
+            "عقود ومدفوعات للسيارات والعقارات",
             "مطعم: كاشير وتقارير F&B",
             "عربي/إنجليزي + وضع داكن",
             "إشعارات OneSignal"
@@ -184,9 +224,9 @@ window.LOCALES = {
             { icon: "chart", title: "تقارير لحظية", desc: "مبيعات، أرباح، مخزون، إشغال" },
             { icon: "receipt", title: "فواتير جوال", desc: "معالج 5 خطوات للفواتير" },
             { icon: "hotel", title: "فندق جوال", desc: "حجوزات، غرف، ووصول" },
-            { icon: "car", title: "سيارات جوال", desc: "عقود ومدفوعات" },
-            { icon: "cloud", title: "API آمن", desc: "JWT وmulti-tenant" },
-            { icon: "shield", title: "صلاحيات", desc: "حسب حساب التطبيق" }
+            { icon: "car", title: "سيارات جوال", desc: "عقود وتجارة ومدفوعات" },
+            { icon: "realEstate", title: "عقارات جوال", desc: "عقود وتقارير عقارية" },
+            { icon: "cloud", title: "API آمن", desc: "JWT وmulti-tenant" }
           ]
         }
       ]
@@ -200,15 +240,19 @@ window.LOCALES = {
     },
     mobile: {
       badge: "متاح الآن",
-      title: "تطبيق جوال — 3 أنظمة",
-      desc: "تطبيق Flutter متصل بالـ API السحابي: تقارير لحظية، إنشاء فواتير وبيانات، وإدارة فندق أو عقود سيارات — من أي مكان.",
+      title: "تطبيق جوال — 5 أنظمة",
+      desc: "تطبيق Flutter متصل بالـ API السحابي: تقارير لحظية، إنشاء فواتير وبيانات، وإدارة فندق أو سيارات أو عقارات — من أي مكان.",
       points: [
         "محاسبة: تقارير، فواتير، عملاء، منتجات",
         "فندق: حجوزات، غرف، check-in، مطعم",
-        "سيارات: عقود، مدفوعات، تقارير",
+        "عقود سيارات وتجارة سيارات",
+        "عقود عقارات وتقارير",
         "مزامنة آمنة JWT + multi-tenant"
       ],
-      profiles: { accounting: "محاسبة", hotel: "فندق", car: "سيارات" },
+      profiles: {
+        accounting: "محاسبة", hotel: "فندق", car: "عقود سيارات",
+        carTrade: "تجارة سيارات", realEstate: "عقارات"
+      },
       appName: "قيد", greeting: "مرحباً — بياناتك متزامنة",
       cards: { sales: "تقرير المبيعات", statement: "كشف حساب", stock: "المخزون", overdue: "حجوزات اليوم" },
       nav: { home: "الرئيسية", reports: "التقارير", data: "البيانات" },
@@ -230,11 +274,15 @@ window.LOCALES = {
         { icon: "lang", title: "عربي / English", desc: "RTL كامل + واجهة ثنائية اللغة" }
       ]
     },
+    platformInfra: {
+      title: "البنية التحتية",
+      subtitle: "ربط فروع، مزامنة سحابية، وتقارير شاملة لكل نشاط"
+    },
     how: {
       title: "ابدأ في دقائق",
       steps: [
         { num: "01", title: "نزّل النظام", desc: "ملف ZIP من GitHub — Windows 10/11" },
-        { num: "02", title: "اختر نظامك ونوع الحاسبة", desc: "محاسبة، فندق، عقود، أو تجارة سيارات — رئيسية أو فرعية" },
+        { num: "02", title: "اختر نظامك ونوع الحاسبة", desc: "محاسبة، فندق، عقود سيارات، تجارة سيارات، أو عقارات — رئيسية أو فرعية" },
         { num: "03", title: "اعمل أوفلاين أو عبر الشبكة", desc: "قاعدة محلية أو اتصال مباشر بالحاسبة الرئيسية" }
       ]
     },
@@ -243,7 +291,7 @@ window.LOCALES = {
       title: "ربط الحاسبات الرئيسية والفرعية",
       desc: "اربط عدة حواسيب على نفس الشبكة (WiFi أو Ethernet) بقاعدة بيانات واحدة على الحاسبة الرئيسية — بدون مزامنة وبدون إنترنت.",
       points: [
-        "يدعم كل الأنظمة: محاسبة، فنادق، عقود سيارات، وبيع وشراء السيارات",
+        "يدعم كل الأنظمة: محاسبة، فنادق، عقود سيارات، تجارة سيارات، وعقارات",
         "اكتشاف تلقائي للحاسبة الرئيسية على الشبكة المحلية",
         "رمز ربط آمن + مستخدم SQL مخصص للفروع",
         "الفرعية لا تنشئ قاعدة بيانات — اتصال مباشر فوري",
@@ -261,10 +309,10 @@ window.LOCALES = {
     },
     cloud: {
       title: "مزامنة سحابية — متعددة الأنظمة",
-      desc: "اربط Desktop مع Cloud API: محاسبة، فنادق (ومطعم)، عقود سيارات، وتجارة سيارات — Push/Pull مع عزل بيانات كل عميل.",
+      desc: "اربط Desktop مع Cloud API: محاسبة، فنادق (ومطعم)، عقود سيارات، تجارة سيارات، وعقارات — Push/Pull مع عزل بيانات كل عميل.",
       points: [
-        "مزامنة حسب نوع النظام (Accounting / Hotel / Car / CarTrade)",
-        "فواتير، حجوزات، عقود، تجارة، ومطعم",
+        "مزامنة حسب نوع النظام (Accounting / Hotel / Car / CarTrade / RealEstate)",
+        "فواتير، حجوزات، عقود، تجارة، عقارات، ومطعم",
         "تعارضات ذكية + حذف ناعم",
         "REST API + JWT للتطبيق الجوال",
         "لوحة مطور — tenants وتراخيص",
@@ -274,11 +322,12 @@ window.LOCALES = {
     reports: {
       title: "تقارير شاملة",
       groups: [
-        { label: "المحاسبة", items: ["المبيعات والمشتريات", "الأرباح", "كشف حساب", "المخزون", "الأقساط المتأخرة", "الموازنة اليومية"] },
+        { label: "المحاسبة", items: ["المبيعات والمشتريات", "الأرباح", "كشف حساب", "المخزون", "الأقساط المتأخرة", "الموازنة اليومية", "تقارير رقابية"] },
         { label: "الفندق", items: ["الإشغال", "الإيرادات", "تدقيق ليلي", "وصول/مغادرة"] },
         { label: "المطعم", items: ["مبيعات F&B", "قنوات البيع", "أكثر الأصناف", "ربحية المطعم"] },
         { label: "عقود السيارات", items: ["تقرير العقود", "محصّل/متبقي", "تصدير Excel"] },
-        { label: "تجارة السيارات", items: ["المعاملات", "المخزون", "الأرباح", "كشف الأطراف"] }
+        { label: "تجارة السيارات", items: ["المعاملات", "المخزون", "الأرباح", "كشف الأطراف"] },
+        { label: "العقارات", items: ["تقرير العقود", "الأرباح", "كشف المدينين", "المصاريف"] }
       ]
     },
     download: {
@@ -293,11 +342,12 @@ window.LOCALES = {
         { q: "هل يعمل بدون إنترنت؟", a: "نعم. كل الأنظمة أوفلاين بالكامل. الإنترنت للمزامنة السحابية والتحديثات فقط — ربط الفروع المحلي لا يحتاج إنترنت." },
         { q: "كيف أربط فرعاً بالحاسبة الرئيسية؟", a: "عند التنصيب اختر «حاسبة فرعية»، ابحث عن الرئيسية على الشبكة أو أدخل IP، ثم أدخل رمز الربط. يمكن تعديل الإعدادات لاحقاً من «ربط الحاسبات»." },
         { q: "هل ربط الفروع يحتاج مزامنة؟", a: "لا. الفرعية تتصل مباشرة بقاعدة البيانات على الرئيسية عبر WiFi/LAN — مثل عدة مستخدمين على نفس السيرفر." },
-        { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول أو من لوحة المطور: محاسبة للمحلات، فندق للضيافة، عقود سيارات للمعارض، وتجارة سيارات لدورة الشراء والبيع." },
+        { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول: محاسبة للمحلات، فندق للضيافة، عقود سيارات للمعارض، تجارة سيارات لدورة الشراء والبيع، وعقود عقارات لمكاتب العقارات." },
         { q: "ما الفرق بين عقود السيارات وتجارة السيارات؟", a: "عقود السيارات لإبرام عقود بيع بين بائع ومشتري مع طباعة وشهود. تجارة السيارات لإدارة مخزون المعرض: شراء ثم بيع مع دفعات وتقارير." },
+        { q: "ما هو نظام عقود العقارات؟", a: "نظام لإدارة العقود العقارية والزبائن والمدينين والمصاريف وبنود العقد مع تقارير أرباح — متزامن مع الجوال والسحابة." },
         { q: "ما هو المساعد الصوتي قيد؟", a: "ميزة صوتية على سطح المكتب (Ctrl+Space) للبحث وفتح الشاشات وتنفيذ أوامر مثل البيع السريع دون الكتابة." },
         { q: "هل الفندق يشمل المطعم؟", a: "نعم — POS، KDS، مخزون مطبخ، طاولات، وتقارير F&B مدمجة في نظام الفندق." },
-        { q: "هل التطبيق الجوال جاهز؟", a: "نعم — يدعم profiles حسب نوع حسابك: محاسبة، فندق، أو عقود سيارات." },
+        { q: "هل التطبيق الجوال جاهز؟", a: "نعم — يدعم خمسة profiles: محاسبة، فندق، عقود سيارات، تجارة سيارات، وعقارات حسب نوع حسابك." },
         { q: "كيف أحدّث النظام؟", a: "من داخل التطبيق — يقرأ version.json من GitHub." },
         { q: "هل البيانات آمنة؟", a: "نسخ احتياطي، صلاحيات، سجل تدقيق، وعزل multi-tenant في السحابة." }
       ]
@@ -307,12 +357,12 @@ window.LOCALES = {
   },
   en: {
     meta: {
-      title: "Qayd — Accounting, Hotels, Car Contracts & Car Trading",
-      description: "Integrated Arabic business platform: accounting, hotels, car contracts, car trading, voice assistant, LAN branch linking, mobile app, and cloud sync. Fully offline."
+      title: "Qayd — Accounting, Hotels, Cars, Real Estate & Mobile",
+      description: "Integrated Arabic business platform: accounting, hotels, car contracts, car trading, real estate contracts, voice assistant, LAN branch linking, mobile app, and cloud sync. Fully offline."
     },
     nav: {
       systems: "Systems", features: "Platform", how: "How it works", videos: "Videos",
-      reports: "Reports", cloud: "Cloud", network: "Branch linking", mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
+      mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
     },
     support: { btn: "Customer support — WhatsApp", btnShort: "WhatsApp", float: "WhatsApp support", phoneLabel: "Support number:" },
     videos: {
@@ -326,50 +376,61 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "New: Qayd voice assistant + car trading",
+      badge: "New: Qayd voice assistant + real estate contracts",
       title: "Qayd",
       subtitle: "Integrated business platform —",
-      rotateWords: ["Accounting", "Hotels", "Car contracts", "Car trading"],
-      desc: "Desktop systems + voice assistant + main/branch LAN linking over WiFi + mobile app + cloud sync — Arabic, offline-first, built to scale.",
+      rotateWords: ["Accounting", "Hotels", "Car contracts", "Car trading", "Real estate"],
+      desc: "Five offline desktop systems + voice assistant + main/branch LAN linking + mobile app + cloud sync — Arabic, built to scale.",
       cta_download: "Download free",
       cta_systems: "Explore systems",
       cta_features: "Platform features",
       stat_systems: "systems",
       stat_reports: "reports+",
       stat_offline: "offline",
-      stat_mobile: "mobile app",
       screen_caption: "Offline desktop — dashboard"
     },
     systems: {
       title: "Our integrated systems",
       subtitle: "Pick a system to explore its features",
       featuresTitle: "System features",
+      modulesTitle: "System modules",
       cta_download: "Download now",
       tabs: [
         {
           id: "accounting", label: "Accounting", badge: "Most popular",
           tagline: "Professional accounting & sales",
-          desc: "Invoices, POS, product pricing, warehouses, installments, vouchers, investors, voice assistant, and 25+ reports — for shops and SMBs.",
+          desc: "Invoices, POS, pricing, warehouses, installments, investors, industry templates, voice assistant, WhatsApp invoices, and 30+ reports — for shops and SMBs.",
           screenshot: "assets/desktop-accounting.png",
           screenshotCaption: "Accounting — dashboard & sales",
           highlights: [
-            "Sales & purchase invoices with returns",
-            "Purchase returns, units of measure & flexible market tools",
-            "Product pricing — multiple sell/buy price types",
-            "Quick POS — barcode & instant cash",
-            "Warehouses, opening balances, transfers",
-            "Installments & overdue reports",
-            "Receipts, expenses, cash boxes",
-            "Qayd voice assistant — hands-free control (Ctrl+Space)",
-            "25+ analytical reports + LAN branch linking"
+            "Sales invoice + quick POS with barcode & favorites",
+            "Barcode price check from any station",
+            "Purchases, purchase returns & units of measure",
+            "Product pricing — multiple sell/buy types",
+            "Warehouses, opening balances, adjustments & transfers",
+            "Installments, collection board & overdue tracking",
+            "Vouchers, expenses, cash boxes & capital",
+            "Investors and investor opening balances",
+            "Industry templates: phones, clothing, construction, pharmacy",
+            "WhatsApp invoice sharing + Qayd voice assistant",
+            "30+ reports: sales, profit, installments, statements, audit"
+          ],
+          modules: [
+            { title: "Sales & POS", items: ["Sales invoice", "Quick POS", "Barcode price check"] },
+            { title: "Products & stock", items: ["Products & categories", "Price types", "Warehouses, transfers, adjustments"] },
+            { title: "Purchases & installments", items: ["Purchase & returns", "Installment invoice", "Collection board"] },
+            { title: "Finance & investors", items: ["Vouchers & expenses", "Cash & banks", "Investors"] }
           ],
           features: [
             { icon: "receipt", title: "Full invoicing", desc: "Sales, purchases, installments, returns" },
-            { icon: "pricing", title: "Product pricing", desc: "Flexible sell & buy price types" },
             { icon: "pos", title: "POS", desc: "Fast cashier with barcode" },
+            { icon: "barcode", title: "Price check", desc: "Instant barcode price lookup" },
             { icon: "warehouse", title: "Warehouses", desc: "Stock tracking & transfers" },
+            { icon: "investor", title: "Investors", desc: "Investor accounts & balances" },
+            { icon: "industry", title: "Industry templates", desc: "Phones, clothing, construction, pharmacy" },
+            { icon: "whatsapp", title: "WhatsApp invoices", desc: "Share PDF invoices with customers" },
             { icon: "voice", title: "Qayd voice assistant", desc: "Voice commands for screens & sales" },
-            { icon: "chart", title: "Reports", desc: "Sales, profit, statements" }
+            { icon: "chart", title: "Deep reports", desc: "Sales, profit, installments, audit" }
           ]
         },
         {
@@ -386,7 +447,8 @@ window.LOCALES = {
             "Guest profiles & stay history",
             "Housekeeping & room status",
             "Hotel cash & expenses",
-            "Occupancy, revenue & night audit"
+            "Occupancy, revenue & night audit",
+            "LAN branch linking for front desks"
           ],
           restaurant: {
             title: "Hotel restaurant F&B",
@@ -433,7 +495,7 @@ window.LOCALES = {
           ]
         },
         {
-          id: "carTrade", label: "Car trading", badge: "New",
+          id: "carTrade", label: "Car trading", badge: "Showrooms",
           tagline: "Buy & sell cars system",
           desc: "Full cycle: purchase → inventory → sale, dual payments, parties & statements, profitability reports — for trading showrooms.",
           screenshot: "assets/desktop-car.png",
@@ -458,17 +520,44 @@ window.LOCALES = {
           ]
         },
         {
+          id: "realEstate", label: "Real estate", badge: "New",
+          tagline: "Real estate contracts system",
+          desc: "Property contracts, parties, debtors, expenses, contract clauses, and profit reports — for real-estate offices and brokers.",
+          screenshot: "assets/desktop-accounting.png",
+          screenshotCaption: "Real estate — dashboard & contracts",
+          highlights: [
+            "Dashboard for today's contracts and status",
+            "New contract with customizable clauses",
+            "Contract list and status tracking",
+            "Parties and client profiles",
+            "Debtor statements and receivables",
+            "Business-related expenses",
+            "Ready clause templates",
+            "Contract and profit reports",
+            "Pro printing + permissions & backup",
+            "Cloud sync and branch linking"
+          ],
+          features: [
+            { icon: "realEstate", title: "Property contracts", desc: "Create and track contract status" },
+            { icon: "guest", title: "Parties", desc: "Clients and broker profiles" },
+            { icon: "voucher", title: "Debtors", desc: "Receivables tracking" },
+            { icon: "print", title: "Clauses & print", desc: "Templates and professional print" },
+            { icon: "chart", title: "Profit reports", desc: "Contracts, profit, expenses" },
+            { icon: "cloud", title: "Cloud & branches", desc: "Sync and multi-office linking" }
+          ]
+        },
+        {
           id: "mobile", label: "Mobile", badge: "Available now",
-          tagline: "Mobile app — accounting, hotel, cars",
+          tagline: "Mobile app — five systems",
           desc: "Flutter app on cloud API: reports, data entry, invoices, reservations, contracts — by your system type.",
           screenshot: "assets/mobile-app.png",
           screenshotCaption: "Qayd mobile — reports hub",
           highlights: [
-            "3 profiles: accounting, hotel, car contracts",
-            "9+ accounting reports + hotel KPIs",
+            "5 profiles: accounting, hotel, car contracts, car trading, real estate",
+            "Accounting reports + hotel KPIs",
             "Create customers, products, 5-step invoices",
             "Reservations, rooms, check-in for hotel",
-            "Contracts & payments for cars",
+            "Contracts & payments for cars and real estate",
             "Restaurant POS & F&B reports",
             "Arabic/English + dark mode",
             "OneSignal notifications"
@@ -477,9 +566,9 @@ window.LOCALES = {
             { icon: "chart", title: "Live reports", desc: "Sales, profit, stock, occupancy" },
             { icon: "receipt", title: "Mobile invoices", desc: "5-step invoice wizard" },
             { icon: "hotel", title: "Hotel mobile", desc: "Bookings, rooms, check-in" },
-            { icon: "car", title: "Cars mobile", desc: "Contracts & payments" },
-            { icon: "cloud", title: "Secure API", desc: "JWT multi-tenant" },
-            { icon: "shield", title: "Permissions", desc: "Per app account" }
+            { icon: "car", title: "Cars mobile", desc: "Contracts, trading & payments" },
+            { icon: "realEstate", title: "Real estate mobile", desc: "Contracts & property reports" },
+            { icon: "cloud", title: "Secure API", desc: "JWT multi-tenant" }
           ]
         }
       ]
@@ -493,15 +582,19 @@ window.LOCALES = {
     },
     mobile: {
       badge: "Available now",
-      title: "Mobile app — 3 systems",
-      desc: "Flutter app on cloud API: live reports, invoice creation, hotel or car management — anywhere.",
+      title: "Mobile app — 5 systems",
+      desc: "Flutter app on cloud API: live reports, invoice creation, hotel, cars, or real estate — anywhere.",
       points: [
         "Accounting: reports, invoices, customers, products",
         "Hotel: reservations, rooms, check-in, restaurant",
-        "Cars: contracts, payments, reports",
+        "Car contracts & car trading",
+        "Real estate contracts & reports",
         "Secure JWT + multi-tenant sync"
       ],
-      profiles: { accounting: "Accounting", hotel: "Hotel", car: "Cars" },
+      profiles: {
+        accounting: "Accounting", hotel: "Hotel", car: "Car contracts",
+        carTrade: "Car trading", realEstate: "Real estate"
+      },
       appName: "Qayd", greeting: "Welcome — data synced",
       cards: { sales: "Sales report", statement: "Statement", stock: "Stock", overdue: "Today's bookings" },
       nav: { home: "Home", reports: "Reports", data: "Data" },
@@ -523,11 +616,15 @@ window.LOCALES = {
         { icon: "lang", title: "Arabic / English", desc: "Full RTL + bilingual UI" }
       ]
     },
+    platformInfra: {
+      title: "Infrastructure",
+      subtitle: "Branch linking, cloud sync, and reports for every business"
+    },
     how: {
       title: "Get started in minutes",
       steps: [
         { num: "01", title: "Download", desc: "ZIP from GitHub — Windows 10/11" },
-        { num: "02", title: "Pick system & PC role", desc: "Accounting, hotel, contracts, or car trading — main or branch PC" },
+        { num: "02", title: "Pick system & PC role", desc: "Accounting, hotel, car contracts, car trading, or real estate — main or branch PC" },
         { num: "03", title: "Work offline or on LAN", desc: "Local database or direct link to main server" }
       ]
     },
@@ -536,7 +633,7 @@ window.LOCALES = {
       title: "Main & branch PC linking",
       desc: "Connect multiple PCs on the same network (WiFi or Ethernet) to one database on the main computer — no sync, no internet required.",
       points: [
-        "Works for all systems: accounting, hotels, car contracts, car trading",
+        "Works for all systems: accounting, hotels, car contracts, car trading, real estate",
         "Auto-discover the main PC on your local network",
         "Secure pairing code + dedicated SQL user for branches",
         "Branch PCs never create a local database — instant direct access",
@@ -554,10 +651,10 @@ window.LOCALES = {
     },
     cloud: {
       title: "Cloud sync — multi-system",
-      desc: "Connect Desktop to Cloud API: accounting, hotels (& restaurant), car contracts, and car trading — Push/Pull with tenant isolation.",
+      desc: "Connect Desktop to Cloud API: accounting, hotels (& restaurant), car contracts, car trading, and real estate — Push/Pull with tenant isolation.",
       points: [
-        "Sync by system type (Accounting / Hotel / Car / CarTrade)",
-        "Invoices, reservations, contracts, trading, restaurant",
+        "Sync by system type (Accounting / Hotel / Car / CarTrade / RealEstate)",
+        "Invoices, reservations, contracts, trading, real estate, restaurant",
         "Smart conflicts + soft delete",
         "REST API + JWT for mobile",
         "Developer admin — tenants & licenses",
@@ -567,11 +664,12 @@ window.LOCALES = {
     reports: {
       title: "Comprehensive reports",
       groups: [
-        { label: "Accounting", items: ["Sales & purchases", "Profit", "Statements", "Inventory", "Overdue installments", "Daily balance"] },
+        { label: "Accounting", items: ["Sales & purchases", "Profit", "Statements", "Inventory", "Overdue installments", "Daily balance", "Audit reports"] },
         { label: "Hotel", items: ["Occupancy", "Revenue", "Night audit", "Arrivals/departures"] },
         { label: "Restaurant", items: ["F&B sales", "Channels", "Top items", "F&B profit"] },
         { label: "Car contracts", items: ["Contracts report", "Collected/remaining", "Excel export"] },
-        { label: "Car trading", items: ["Transactions", "Stock", "Profit", "Party statements"] }
+        { label: "Car trading", items: ["Transactions", "Stock", "Profit", "Party statements"] },
+        { label: "Real estate", items: ["Contracts report", "Profit", "Debtors", "Expenses"] }
       ]
     },
     download: {
@@ -585,11 +683,12 @@ window.LOCALES = {
         { q: "Works offline?", a: "Yes. All systems are fully offline. Internet is for cloud sync and updates only — LAN branch linking needs no internet." },
         { q: "How to link a branch PC?", a: "At setup choose Branch PC, discover the main server on your network or enter its IP, then enter the pairing code. Change settings anytime under Network Linking." },
         { q: "Does branch linking use sync?", a: "No. Branch PCs connect directly to the main database over WiFi/LAN — like multiple users on one SQL Server." },
-        { q: "How to pick a system?", a: "At first setup or via admin: accounting for retail, hotel for hospitality, car contracts for dealership paperwork, car trading for buy→stock→sell." },
+        { q: "How to pick a system?", a: "At first setup: accounting for retail, hotel for hospitality, car contracts for dealership paperwork, car trading for buy→stock→sell, real estate for property offices." },
         { q: "Contracts vs car trading?", a: "Contracts formalize a sale between seller and buyer with print and witnesses. Car trading manages showroom inventory: purchase then sell with payments and reports." },
+        { q: "What is real estate contracts?", a: "A system for property contracts, parties, debtors, expenses, and clause templates with profit reports — synced to mobile and cloud." },
         { q: "What is the Qayd voice assistant?", a: "A desktop voice feature (Ctrl+Space) to search, open screens, and run actions like quick sale without typing." },
         { q: "Does hotel include restaurant?", a: "Yes — POS, KDS, kitchen stock, tables, and F&B reports are built in." },
-        { q: "Is mobile ready?", a: "Yes — profiles by account type: accounting, hotel, or car contracts." },
+        { q: "Is mobile ready?", a: "Yes — five profiles: accounting, hotel, car contracts, car trading, and real estate by account type." },
         { q: "How to update?", a: "In-app check reads version.json from GitHub." },
         { q: "Data safe?", a: "Backup, permissions, audit log, multi-tenant cloud isolation." }
       ]

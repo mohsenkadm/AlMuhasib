@@ -11,6 +11,7 @@
 | `desktop-restaurant.png` | (اختياري) block المطعم |
 | `desktop-car.png` | تبويب عقود السيارات + مؤقتاً تجارة السيارات |
 | `desktop-car-trade.png` | (اختياري مفضّل) تبويب تجارة السيارات — إن وُجد يُفضّل تحديث `screenshot` في locales-data |
+| `desktop-real-estate.png` | (اختياري مفضّل) تبويب عقود العقارات — حالياً يستخدم `desktop-accounting.png` كبديل |
 
 > يمكن أيضاً استخدام `desktop-dashboard.png` كاسم قديم — يُفضّل `desktop-accounting.png`.
 
