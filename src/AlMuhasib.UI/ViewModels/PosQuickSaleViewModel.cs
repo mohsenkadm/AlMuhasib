@@ -315,6 +315,30 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenCurrencyChange()
+    {
+        var applied = IraqiCurrencyChangeDialog.Show(
+            invoiceTotal: GrandTotal,
+            allowApplyPaid: true);
+
+        if (applied is null)
+            return;
+
+        PaidAmount = applied.Value;
+        RecalcChange();
+
+        // If payment dialog already open, just update paid amount; otherwise open it.
+        if (IsPaymentDialogOpen)
+            return;
+
+        if (CanOpenPaymentDialog())
+        {
+            _printAfterConfirm = PrintAfterSale;
+            IsPaymentDialogOpen = true;
+        }
+    }
+
+    [RelayCommand]
     private async Task ConfirmPaymentAsync()
     {
         if (!IsPaymentDialogOpen) return;

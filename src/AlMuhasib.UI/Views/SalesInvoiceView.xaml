@@ -12,7 +12,8 @@
              d:DataContext="{d:DesignInstance Type=vm:SalesInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft"
-             x:Name="Root">
+             x:Name="Root"
+             Focusable="True">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -54,10 +55,22 @@
                                 <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="SemiBold" FontFamily="Consolas"/>
                             </TextBlock>
                         </StackPanel>
-                        <Border Grid.Column="2" CornerRadius="10" Background="#26FFFFFF" Padding="16,8">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="الإجمالي" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                        <Border Grid.Column="2" CornerRadius="10" Background="#26FFFFFF" Padding="12,8">
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel HorizontalAlignment="Center" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <TextBlock Text="الإجمالي" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <Button Command="{Binding OpenCurrencyChangeCommand}"
+                                        Style="{StaticResource FlatButton}"
+                                        Foreground="White" Padding="10,6"
+                                        VerticalAlignment="Center"
+                                        ToolTip="حساب الباقي بعملات الدينار العراقي (F7)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="F7" Margin="6,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -661,6 +674,15 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Command="{Binding OpenCurrencyChangeCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        ToolTip="حساب الباقي بعملات الدينار العراقي (F7)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="حساب العملات (F7)" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Command="{Binding OpenInvoiceSearchCommand}" Style="{StaticResource AccentButton}"
                                         Height="42" Padding="18,0" Margin="0,0,10,0"
                                         materialDesign:ButtonAssist.CornerRadius="10"
