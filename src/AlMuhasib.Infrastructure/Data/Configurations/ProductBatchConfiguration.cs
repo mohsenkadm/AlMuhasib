@@ -61,6 +61,50 @@ public class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
     }
 }
 
+public class ProductSizeConfiguration : IEntityTypeConfiguration<ProductSize>
+{
+    public void Configure(EntityTypeBuilder<ProductSize> builder)
+    {
+        builder.ToTable("ProductSizes");
+
+        builder.Property(s => s.SizeName).IsRequired().HasMaxLength(50);
+
+        builder.HasOne(s => s.Product)
+            .WithMany()
+            .HasForeignKey(s => s.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(s => new { s.ProductId, s.SizeName });
+    }
+}
+
+public class ProductSizeStockConfiguration : IEntityTypeConfiguration<ProductSizeStock>
+{
+    public void Configure(EntityTypeBuilder<ProductSizeStock> builder)
+    {
+        builder.ToTable("ProductSizeStocks");
+
+        builder.Property(s => s.Quantity).HasPrecision(18, 2);
+
+        builder.HasOne(s => s.Product)
+            .WithMany()
+            .HasForeignKey(s => s.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.ProductSize)
+            .WithMany(s => s.Stocks)
+            .HasForeignKey(s => s.ProductSizeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(s => s.Warehouse)
+            .WithMany()
+            .HasForeignKey(s => s.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(s => new { s.ProductId, s.ProductSizeId, s.WarehouseId });
+    }
+}
+
 public class UserLoginLogConfiguration : IEntityTypeConfiguration<UserLoginLog>
 {
     public void Configure(EntityTypeBuilder<UserLoginLog> builder)

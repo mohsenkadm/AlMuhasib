@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -12,6 +13,7 @@ public partial class SalesInvoiceViewModel
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
     private IProductPriceService? _productPriceService;
+    private IProductSizeService? _productSizeService;
 
     private readonly List<string> _activeCustomFieldLabels = [];
     private string? _appliedIndustryTag;
@@ -35,9 +37,11 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showProductPricing;
+    [ObservableProperty] private bool _showClothingSizes;
 
     public bool ShowCustomField1 =>
-        MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header);
+        (MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header))
+        || (ShowClothingSizes && !string.IsNullOrWhiteSpace(CustomField1Header));
 
     public bool ShowCustomField2 =>
         MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField2Header);
@@ -48,7 +52,8 @@ public partial class SalesInvoiceViewModel
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
-        IProductSerialService productSerialService)
+        IProductSerialService productSerialService,
+        IProductSizeService productSizeService)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -57,6 +62,7 @@ public partial class SalesInvoiceViewModel
         _productUnitService = productUnitService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
+        _productSizeService = productSizeService;
         RefreshFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
@@ -72,15 +78,17 @@ public partial class SalesInvoiceViewModel
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
+        ShowClothingSizes = _featureFlags.TemplateClothing;
 
         var industryStillEnabled = IsIndustryEnabled(_appliedIndustryTag);
         MarketTemplateFieldsEnabled = _featureFlags.AnyMarketTemplateEnabled && industryStillEnabled;
 
-        if (!MarketTemplateFieldsEnabled)
+        if (ShowClothingSizes && string.IsNullOrWhiteSpace(CustomField1Header))
+            ApplyCustomFieldLabels([ClothingSizeInvoiceHelper.SizeLabel, ClothingSizeInvoiceHelper.ColorLabel], "clothing");
+        else if (!MarketTemplateFieldsEnabled && !ShowClothingSizes)
             ClearCustomFieldLabels();
         else
         {
-            // إعادة إشعار خصائص الظهور حتى تتحدّث أعمدة DataGrid فوراً
             OnPropertyChanged(nameof(ShowCustomField1));
             OnPropertyChanged(nameof(ShowCustomField2));
         }
@@ -93,6 +101,8 @@ public partial class SalesInvoiceViewModel
             ClearRowSerials();
         if (!ShowProductPricing)
             ClearRowPricing();
+        if (!ShowClothingSizes)
+            ClearRowSizes();
     }
 
     private void ClearRowPricing()
@@ -106,9 +116,17 @@ public partial class SalesInvoiceViewModel
         }
     }
 
+    private void ClearRowSizes()
+    {
+        foreach (var row in Items)
+        {
+            row.ProductSizeId = null;
+            row.SizeName = string.Empty;
+        }
+    }
+
     private bool IsIndustryEnabled(string? industryTag) => industryTag switch
     {
-        // بدون قالب مطبّق: لا تُظهر حقولاً مخصصة حتى يُختار قالب سوق مفعّل
         null or "" => false,
         "mobile" => _featureFlags?.TemplateMobileShop == true,
         "clothing" => _featureFlags?.TemplateClothing == true,
@@ -174,7 +192,8 @@ public partial class SalesInvoiceViewModel
         CustomField1Header = _activeCustomFieldLabels.ElementAtOrDefault(0) ?? string.Empty;
         CustomField2Header = _activeCustomFieldLabels.ElementAtOrDefault(1) ?? string.Empty;
 
-        MarketTemplateFieldsEnabled = _featureFlags is null
+        MarketTemplateFieldsEnabled = ShowClothingSizes
+            || _featureFlags is null
             || (IsIndustryEnabled(_appliedIndustryTag) && _featureFlags.AnyMarketTemplateEnabled);
 
         foreach (var row in Items)
@@ -195,6 +214,8 @@ public partial class SalesInvoiceViewModel
     {
         row.CustomField1Label = CustomField1Header;
         row.CustomField2Label = CustomField2Header;
+        if (!string.IsNullOrWhiteSpace(row.SizeName) && string.IsNullOrWhiteSpace(row.CustomField1))
+            row.CustomField1 = row.SizeName;
     }
 
     private async Task LoadRowFeatureDataAsync(InvoiceItemRow row)
@@ -284,12 +305,62 @@ public partial class SalesInvoiceViewModel
                         ?? options.FirstOrDefault(o => o.IsDefault)
                         ?? options[0];
 
-        // سطر من نافذة الاختيار أو نسخة فاتورة: احتفظ بالسعر إن كان مضبوطاً مسبقاً
         var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
         if (keepExistingPrice)
             row.SetSelectedPricingOptionWithoutPrice(preferred);
         else
             row.SelectedPricingOption = preferred;
+    }
+
+    private async Task<bool> TryPromptClothingSizesAsync(
+        Product product,
+        decimal unitPrice,
+        int? pricingTypeId,
+        string? pricingTypeName,
+        InvoiceItemRow? replaceRow = null,
+        IReadOnlyDictionary<int, decimal>? seedQuantities = null)
+    {
+        if (!ShowClothingSizes || _productSizeService is null)
+            return false;
+
+        if (!await _productSizeService.HasSizesAsync(product.Id))
+            return false;
+
+        var selection = await ClothingSizeInvoiceHelper.PromptAsync(
+            _productSizeService,
+            product,
+            SelectedWarehouse?.Id,
+            isSale: true,
+            unitPrice,
+            pricingTypeId,
+            pricingTypeName,
+            seedQuantities);
+
+        if (selection is null)
+        {
+            if (replaceRow is not null)
+            {
+                UnwireItemRow(replaceRow);
+                Items.Remove(replaceRow);
+                InvoiceProductMergeHelper.TrimEmptyRows(Items, UnwireItemRow, WireItemRow);
+                RecalculateTotals();
+            }
+            return true;
+        }
+
+        ClothingSizeInvoiceHelper.ApplySelectionToItems(
+            selection,
+            Items,
+            WireItemRow,
+            UnwireItemRow,
+            ApplyActiveLabelsToRow,
+            replaceRow);
+
+        foreach (var row in Items.Where(i => i.ProductId == product.Id && i.ProductSizeId is not null))
+            await LoadRowFeatureDataAsync(row);
+
+        RecalculateTotals();
+        return true;
     }
 
     private async Task ApplyFeatureSideEffectsOnSaveAsync(IReadOnlyList<InvoiceItemRow> rows, IReadOnlyList<Core.Entities.InvoiceItem> savedItems)
@@ -308,7 +379,6 @@ public partial class SalesInvoiceViewModel
                 if (stockQty <= 0)
                     continue;
 
-                // مرتجع البيع: لا نخصم دفعات هنا (يُعالج لاحقاً عند إرجاع الدفعات)
                 if (IsReturnMode)
                     continue;
 
@@ -346,6 +416,16 @@ public partial class SalesInvoiceViewModel
                 && !string.IsNullOrWhiteSpace(row.SerialNumber) && !IsReturnMode)
             {
                 await _productSerialService.MarkSoldAsync(row.SerialNumber, productId, item.Id);
+            }
+
+            if (ShowClothingSizes && _productSizeService is not null
+                && row.ProductSizeId is int sizeId
+                && SelectedWarehouse is not null
+                && !IsReturnMode)
+            {
+                var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
+                if (stockQty > 0)
+                    await _productSizeService.DeductStockAsync(productId, sizeId, SelectedWarehouse.Id, stockQty);
             }
         }
     }

@@ -143,7 +143,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
-        IProductSerialService productSerialService)
+        IProductSerialService productSerialService,
+        IProductSizeService productSizeService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -167,7 +168,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
-        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService);
+        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService, productSizeService);
     }
 
     private void ScheduleDraftSave()
@@ -444,17 +445,31 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
     private async void OnProductPickerConfirmed()
     {
-        InvoiceProductMergeHelper.Merge(
-            ProductPicker.BuildResults(),
-            Items,
-            WireItemRow,
-            UnwireItemRow);
+        var picks = ProductPicker.BuildResults();
+        IsProductPickerOpen = false;
+
+        foreach (var pick in picks.Where(p => p.Quantity > 0))
+        {
+            var handled = await TryPromptClothingSizesAsync(
+                pick.Product,
+                pick.SuggestedUnitPrice,
+                pick.PricingTypeId,
+                pick.PricingTypeName,
+                seedQuantities: null);
+            if (handled)
+                continue;
+
+            InvoiceProductMergeHelper.Merge(
+                [pick],
+                Items,
+                WireItemRow,
+                UnwireItemRow);
+        }
 
         foreach (var row in Items.Where(i => i.ProductId is > 0).ToList())
             await LoadRowFeatureDataAsync(row);
 
         RecalculateTotals();
-        IsProductPickerOpen = false;
     }
 
     private void WireItemRow(InvoiceItemRow row)
@@ -486,10 +501,26 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             return;
         }
 
+        BarcodeInput = string.Empty;
+
+        if (updatedRow?.SelectedProduct is Product product)
+        {
+            var handled = await TryPromptClothingSizesAsync(
+                product,
+                updatedRow.UnitPrice,
+                updatedRow.PricingTypeId,
+                updatedRow.PricingTypeName,
+                replaceRow: updatedRow.ProductSizeId is null ? updatedRow : null);
+            if (handled)
+            {
+                RecalculateTotals();
+                return;
+            }
+        }
+
         if (updatedRow is not null)
             await RefreshProductRowAsync(updatedRow);
 
-        BarcodeInput = string.Empty;
         RecalculateTotals();
     }
 
@@ -534,6 +565,22 @@ public partial class SalesInvoiceViewModel : ViewModelBase
 
         try
         {
+            if (ShowClothingSizes
+                && row.SelectedProduct is Product product
+                && row.ProductSizeId is null
+                && string.IsNullOrWhiteSpace(row.SizeName)
+                && _productSizeService is not null
+                && await _productSizeService.HasSizesAsync(product.Id))
+            {
+                await TryPromptClothingSizesAsync(
+                    product,
+                    row.UnitPrice,
+                    row.PricingTypeId,
+                    row.PricingTypeName,
+                    replaceRow: row);
+                return;
+            }
+
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
             var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
             var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
@@ -638,6 +685,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             return;
         }
 
+        if (ShowClothingSizes && _productSizeService is not null)
+        {
+            foreach (var row in validItems.Where(r => r.ProductId is > 0))
+            {
+                if (row.ProductSizeId is not null) continue;
+                if (!await _productSizeService.HasSizesAsync(row.ProductId!.Value)) continue;
+                ErrorMessage = $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.";
+                return;
+            }
+        }
+
         // Stock validation for items with known products
         if (SelectedWarehouse is not null)
         {
@@ -732,6 +790,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                     var matchedProduct = Products.FirstOrDefault(p =>
                         p.Name.Equals(row.ItemName.Trim(), StringComparison.OrdinalIgnoreCase));
                     productId = matchedProduct?.Id;
+                }
+
+                if (!string.IsNullOrWhiteSpace(row.SizeName))
+                {
+                    row.CustomField1 = row.SizeName;
+                    if (string.IsNullOrWhiteSpace(row.CustomField1Label))
+                        row.CustomField1Label = ClothingSizeInvoiceHelper.SizeLabel;
                 }
 
                 var displayQty = row.Quantity;
@@ -856,7 +921,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             Items = _savedItems.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,
-                ItemName = item.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice

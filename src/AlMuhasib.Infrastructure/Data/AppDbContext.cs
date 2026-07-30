@@ -57,6 +57,8 @@ public class AppDbContext : DbContext
     public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
     public DbSet<ProductBatch> ProductBatches => Set<ProductBatch>();
     public DbSet<ProductSerial> ProductSerials => Set<ProductSerial>();
+    public DbSet<ProductSize> ProductSizes => Set<ProductSize>();
+    public DbSet<ProductSizeStock> ProductSizeStocks => Set<ProductSizeStock>();
     public DbSet<UserLoginLog> UserLoginLogs => Set<UserLoginLog>();
     public DbSet<PricingType> PricingTypes => Set<PricingType>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();

@@ -115,7 +115,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
-        IProductSerialService productSerialService)
+        IProductSerialService productSerialService,
+        IProductSizeService productSizeService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -139,7 +140,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
-        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService);
+        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService, productSizeService);
     }
 
     public override bool HasUnsavedChanges =>
@@ -352,16 +353,25 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         }
     }
 
-    private void OnProductPickerConfirmed()
+    private async void OnProductPickerConfirmed()
     {
-        InvoiceProductMergeHelper.Merge(
-            ProductPicker.BuildResults(),
-            Items,
-            WireItemRow,
-            UnwireItemRow);
+        var picks = ProductPicker.BuildResults();
+        IsProductPickerOpen = false;
+
+        foreach (var pick in picks.Where(p => p.Quantity > 0))
+        {
+            var handled = await TryPromptClothingSizesAsync(pick.Product, pick.SuggestedUnitPrice);
+            if (handled)
+                continue;
+
+            InvoiceProductMergeHelper.Merge(
+                [pick],
+                Items,
+                WireItemRow,
+                UnwireItemRow);
+        }
 
         RecalculateTotals();
-        IsProductPickerOpen = false;
     }
 
     private void WireItemRow(InvoiceItemRow row)
@@ -378,20 +388,35 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
 
     private async void OnPurchaseProductChanged(InvoiceItemRow row)
     {
-        try { await LoadPurchaseRowFeatureDataAsync(row); }
+        try
+        {
+            if (ShowClothingSizes
+                && row.SelectedProduct is Product product
+                && row.ProductSizeId is null
+                && string.IsNullOrWhiteSpace(row.SizeName)
+                && _productSizeService is not null
+                && await _productSizeService.HasSizesAsync(product.Id))
+            {
+                await TryPromptClothingSizesAsync(product, row.UnitPrice, replaceRow: row);
+                return;
+            }
+
+            await LoadPurchaseRowFeatureDataAsync(row);
+        }
         catch { /* ignore lookup failures */ }
     }
 
     [RelayCommand]
-    private void ProcessBarcode()
+    private async Task ProcessBarcode()
     {
+        InvoiceItemRow? updatedRow = null;
         if (!InvoiceBarcodeHelper.TryAddByBarcode(
                 BarcodeInput,
                 Products,
                 Items,
                 WireItemRow,
                 UnwireItemRow,
-                null,
+                row => updatedRow = row,
                 out var error))
         {
             BeautifulMessageDialog.ShowWarning(error);
@@ -399,6 +424,23 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         }
 
         BarcodeInput = string.Empty;
+
+        if (updatedRow?.SelectedProduct is Product product)
+        {
+            var handled = await TryPromptClothingSizesAsync(
+                product,
+                updatedRow.UnitPrice,
+                replaceRow: updatedRow.ProductSizeId is null ? updatedRow : null);
+            if (handled)
+            {
+                RecalculateTotals();
+                return;
+            }
+        }
+
+        if (updatedRow is not null)
+            await LoadPurchaseRowFeatureDataAsync(updatedRow);
+
         RecalculateTotals();
     }
 
@@ -495,6 +537,17 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             return;
         }
 
+        if (ShowClothingSizes && _productSizeService is not null)
+        {
+            foreach (var row in validItems.Where(r => r.ProductId is > 0))
+            {
+                if (row.ProductSizeId is not null) continue;
+                if (!await _productSizeService.HasSizesAsync(row.ProductId!.Value)) continue;
+                ErrorMessage = $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.";
+                return;
+            }
+        }
+
         if (IsReturnMode && !_userPreferences.Current.FeatureFlags.PurchaseReturns)
         {
             ErrorMessage = "فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً";
@@ -548,6 +601,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                     productId = matchedProduct?.Id;
                 }
 
+                if (!string.IsNullOrWhiteSpace(row.SizeName))
+                {
+                    row.CustomField1 = row.SizeName;
+                    if (string.IsNullOrWhiteSpace(row.CustomField1Label))
+                        row.CustomField1Label = ClothingSizeInvoiceHelper.SizeLabel;
+                }
+
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
                 var lineTotal = Math.Abs(row.Quantity) * row.UnitPrice;
                 var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
@@ -560,7 +620,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                     Quantity = stockQty,
                     UnitPrice = unitPriceForStorage,
                     TotalPrice = lineTotal,
-                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
+                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, [ClothingSizeInvoiceHelper.SizeLabel])
                 });
             }
 
@@ -637,7 +697,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             Items = _savedItems.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,
-                ItemName = item.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice

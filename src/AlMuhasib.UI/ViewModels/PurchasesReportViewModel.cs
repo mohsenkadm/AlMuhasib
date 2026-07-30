@@ -10,6 +10,7 @@ using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -148,7 +149,9 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
                 Items = invoice.Items.Select((item, i) => new InvoicePrintItem
                 {
                     Number = i + 1,
-                    ItemName = item.ItemName,
+                    ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                        item.ItemName,
+                        InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
                     TotalPrice = item.TotalPrice
