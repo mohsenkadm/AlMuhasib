@@ -487,6 +487,39 @@
                                      MaxHeight="120"
                                      VerticalScrollBarVisibility="Auto" />
 
+                            <!-- Clothing sizes (feature-gated: TemplateClothing) -->
+                            <Border Margin="0,12,0,0" Padding="12" Background="#FCE4EC" CornerRadius="8"
+                                    Visibility="{Binding ShowSizesSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="القياسات" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="أضف قياسات المنتج (مثل S / M / L / XL). عند البيع أو الشراء سيُطلب اختيار القياس والكمية، ويُتتبع المخزون لكل قياس."
+                                               FontSize="12" Foreground="#6A1B4D" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                    <ItemsControl ItemsSource="{Binding EditSizes}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,4">
+                                                    <Button Content="حذف" Style="{StaticResource OutlinedButton}" DockPanel.Dock="Right"
+                                                            Command="{Binding DataContext.DeleteProductSizeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" Padding="8,2"/>
+                                                    <TextBlock Text="{Binding SizeName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding NewSizeName, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="اسم القياس (مثال: XL)"
+                                                 Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding AddProductSizeCommand}" Padding="12,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Units of measure (feature-gated) -->
                             <Border Margin="0,16,0,0" Padding="12" Background="#FFF8E1" CornerRadius="8"
                                     Visibility="{Binding ShowUnitsSection, Converter={StaticResource BooleanToVisibilityConverter}}">

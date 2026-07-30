@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -11,17 +12,24 @@ public partial class PurchaseInvoiceViewModel
     private IProductUnitService? _productUnitService;
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
+    private IProductSizeService? _productSizeService;
 
     [ObservableProperty] private bool _isReturnMode;
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
+    [ObservableProperty] private bool _showClothingSizes;
+    [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
+
+    public bool ShowCustomField1 => ShowClothingSizes;
+    public bool ShowCustomField2 => false;
 
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
-        IProductSerialService productSerialService)
+        IProductSerialService productSerialService,
+        IProductSizeService productSizeService)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -30,6 +38,7 @@ public partial class PurchaseInvoiceViewModel
         _productUnitService = productUnitService;
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
+        _productSizeService = productSizeService;
         RefreshFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
@@ -44,6 +53,10 @@ public partial class PurchaseInvoiceViewModel
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
+        ShowClothingSizes = _featureFlags.TemplateClothing;
+        ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
+        OnPropertyChanged(nameof(ShowCustomField1));
+        OnPropertyChanged(nameof(ShowCustomField2));
 
         if (!ShowUnitsOfMeasure)
         {
@@ -74,7 +87,26 @@ public partial class PurchaseInvoiceViewModel
                 row.SerialNumber = string.Empty;
         }
 
-        // إن أُطفئ مرتجع المشتريات أثناء وضع المرتجع: ألغِ الوضع فوراً
+        if (!ShowClothingSizes)
+        {
+            foreach (var row in Items)
+            {
+                row.ProductSizeId = null;
+                row.SizeName = string.Empty;
+                row.CustomField1 = string.Empty;
+                row.CustomField1Label = string.Empty;
+            }
+        }
+        else
+        {
+            foreach (var row in Items)
+            {
+                row.CustomField1Label = ClothingSizeHeader;
+                if (!string.IsNullOrWhiteSpace(row.SizeName))
+                    row.CustomField1 = row.SizeName;
+            }
+        }
+
         if (IsReturnMode && !_featureFlags.PurchaseReturns)
         {
             IsReturnMode = false;
@@ -111,6 +143,56 @@ public partial class PurchaseInvoiceViewModel
         }
     }
 
+    private async Task<bool> TryPromptClothingSizesAsync(
+        Product product,
+        decimal unitPrice,
+        InvoiceItemRow? replaceRow = null)
+    {
+        if (!ShowClothingSizes || _productSizeService is null)
+            return false;
+
+        if (!await _productSizeService.HasSizesAsync(product.Id))
+            return false;
+
+        var selection = await ClothingSizeInvoiceHelper.PromptAsync(
+            _productSizeService,
+            product,
+            SelectedWarehouse?.Id,
+            isSale: false,
+            unitPrice);
+
+        if (selection is null)
+        {
+            if (replaceRow is not null)
+            {
+                UnwireItemRow(replaceRow);
+                Items.Remove(replaceRow);
+                InvoiceProductMergeHelper.TrimEmptyRows(Items, UnwireItemRow, WireItemRow);
+                RecalculateTotals();
+            }
+            return true;
+        }
+
+        ClothingSizeInvoiceHelper.ApplySelectionToItems(
+            selection,
+            Items,
+            WireItemRow,
+            UnwireItemRow,
+            row =>
+            {
+                row.CustomField1Label = ClothingSizeHeader;
+                if (!string.IsNullOrWhiteSpace(row.SizeName))
+                    row.CustomField1 = row.SizeName;
+            },
+            replaceRow);
+
+        foreach (var row in Items.Where(i => i.ProductId == product.Id && i.ProductSizeId is not null))
+            await LoadPurchaseRowFeatureDataAsync(row);
+
+        RecalculateTotals();
+        return true;
+    }
+
     private async Task ApplyPurchaseFeatureSideEffectsAsync(IReadOnlyList<InvoiceItemRow> rows)
     {
         if (_featureFlags is null || SelectedWarehouse is null) return;
@@ -141,6 +223,14 @@ public partial class PurchaseInvoiceViewModel
                 var serials = row.SerialNumber
                     .Split(['\n', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 await _productSerialService.AddRangeAsync(productId, SelectedWarehouse.Id, serials);
+            }
+
+            if (ShowClothingSizes && _productSizeService is not null && row.ProductSizeId is int sizeId && stockQty > 0)
+            {
+                if (IsReturnMode)
+                    await _productSizeService.DeductStockAsync(productId, sizeId, SelectedWarehouse.Id, stockQty);
+                else
+                    await _productSizeService.AdjustStockAsync(productId, sizeId, SelectedWarehouse.Id, stockQty);
             }
         }
     }

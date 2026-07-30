@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.Controls;
@@ -78,7 +79,9 @@ internal static class InvoiceDetailMapper
             Items = new(invoice.Items.OrderBy(i => i.Id).Select((item, index) => new InvoiceDetailItemRow
             {
                 Number = index + 1,
-                ItemName = item.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
                 QuantityText = item.Quantity.ToString("N0"),
                 UnitPriceText = $"{item.UnitPrice:N0}",
                 TotalPriceText = $"{item.TotalPrice:N0}"

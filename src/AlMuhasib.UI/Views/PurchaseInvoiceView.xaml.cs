@@ -17,7 +17,7 @@ public partial class PurchaseInvoiceView : UserControl
         Loaded -= OnLoaded;
         InvoiceFeatureColumnSync.Attach(
             this,
-            custom1: null,
+            custom1: ColSize,
             custom2: null,
             ColUnit,
             ColBatch,

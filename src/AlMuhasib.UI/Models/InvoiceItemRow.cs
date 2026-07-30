@@ -155,6 +155,13 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _serialNumber = string.Empty;
 
+    // ── قياسات الألبسة ────────────────────────────────────
+    [ObservableProperty]
+    private int? _productSizeId;
+
+    [ObservableProperty]
+    private string _sizeName = string.Empty;
+
     private bool _isManualTotal;
 
     partial void OnSelectedProductChanged(Product? value)

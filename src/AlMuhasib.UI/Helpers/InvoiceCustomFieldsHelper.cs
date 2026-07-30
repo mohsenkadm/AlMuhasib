@@ -42,6 +42,10 @@ public static class InvoiceCustomFieldsHelper
             dict["__batchId"] = row.BatchId.Value.ToString();
         if (!string.IsNullOrWhiteSpace(row.SerialNumber))
             dict["__serial"] = row.SerialNumber.Trim();
+        if (row.ProductSizeId.HasValue)
+            dict["__sizeId"] = row.ProductSizeId.Value.ToString();
+        if (!string.IsNullOrWhiteSpace(row.SizeName))
+            dict["__size"] = row.SizeName.Trim();
 
         return dict.Count == 0 ? null : JsonSerializer.Serialize(dict, JsonOptions);
     }
@@ -86,6 +90,63 @@ public static class InvoiceCustomFieldsHelper
             row.BatchId = batchId;
         if (dict.TryGetValue("__serial", out var serial))
             row.SerialNumber = serial;
+        if (dict.TryGetValue("__sizeId", out var sizeIdText) && int.TryParse(sizeIdText, out var sizeId))
+            row.ProductSizeId = sizeId;
+        if (dict.TryGetValue("__size", out var sizeName))
+            row.SizeName = sizeName;
+        else if (string.IsNullOrWhiteSpace(row.SizeName) && !string.IsNullOrWhiteSpace(row.CustomField1)
+                 && string.Equals(row.CustomField1Label, "المقاس", StringComparison.Ordinal))
+            row.SizeName = row.CustomField1;
+    }
+
+    /// <summary>يعرض اسم الصنف مع القياس إن وُجد (للفواتير والطباعة).</summary>
+    public static string FormatItemDisplayName(string itemName, string? sizeName)
+    {
+        if (string.IsNullOrWhiteSpace(sizeName))
+            return itemName;
+        if (string.IsNullOrWhiteSpace(itemName))
+            return sizeName.Trim();
+        return $"{itemName.Trim()} — {sizeName.Trim()}";
+    }
+
+    public static string? ExtractSizeName(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        try
+        {
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
+            if (dict is null) return null;
+            if (dict.TryGetValue("__size", out var size) && !string.IsNullOrWhiteSpace(size))
+                return size.Trim();
+            if (dict.TryGetValue("المقاس", out var labelSize) && !string.IsNullOrWhiteSpace(labelSize))
+                return labelSize.Trim();
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static int? ExtractSizeId(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        try
+        {
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
+            if (dict is null) return null;
+            if (dict.TryGetValue("__sizeId", out var idText) && int.TryParse(idText, out var id))
+                return id;
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static decimal ToStockQuantity(InvoiceItemRow row) =>

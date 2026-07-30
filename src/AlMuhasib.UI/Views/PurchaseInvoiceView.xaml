@@ -277,6 +277,20 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
+                                <DataGridTemplateColumn x:Name="ColSize" Width="90" MinWidth="70"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.ClothingSizeHeader, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SizeName}" VerticalAlignment="Center"
+                                                       FontWeight="SemiBold" Foreground="#AD1457"
+                                                       ToolTip="القياس"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
                                 <DataGridTemplateColumn x:Name="ColUnit" Header="الوحدة" Width="100"
                                                         Visibility="Collapsed">

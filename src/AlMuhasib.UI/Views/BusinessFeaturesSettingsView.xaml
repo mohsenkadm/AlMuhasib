@@ -208,7 +208,7 @@
                                                     Icon="Cellphone" IconBackground="#E8EAF6" IconForeground="#3949AB"
                                                     IsChecked="{Binding TemplateMobileShop}"/>
                         <controls:FeatureToggleCard Title="قالب ألبسة"
-                                                    Description="مقاسات وألوان"
+                                                    Description="قياسات المنتج ومخزون لكل قياس + ألوان"
                                                     Icon="TshirtCrew" IconBackground="#FCE4EC" IconForeground="#C2185B"
                                                     IsChecked="{Binding TemplateClothing}"/>
                         <controls:FeatureToggleCard Title="قالب مواد بناء"
