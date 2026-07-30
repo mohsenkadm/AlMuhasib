@@ -15,6 +15,7 @@ public partial class SalesInvoiceViewModel
     private IProductSerialService? _productSerialService;
     private IProductPriceService? _productPriceService;
     private IProductSizeService? _productSizeService;
+    private IProductColorService? _productColorService;
 
     private readonly List<string> _activeCustomFieldLabels = [];
     private string? _appliedIndustryTag;
@@ -49,7 +50,8 @@ public partial class SalesInvoiceViewModel
         || (ShowClothingSizes && !string.IsNullOrWhiteSpace(CustomField1Header));
 
     public bool ShowCustomField2 =>
-        MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField2Header);
+        (MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField2Header))
+        || (ShowClothingSizes && !string.IsNullOrWhiteSpace(CustomField2Header));
 
     public IReadOnlyList<string> ActiveCustomFieldLabels => _activeCustomFieldLabels;
 
@@ -58,7 +60,8 @@ public partial class SalesInvoiceViewModel
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
-        IProductSizeService productSizeService)
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -68,6 +71,7 @@ public partial class SalesInvoiceViewModel
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
+        _productColorService = productColorService;
         RefreshFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
@@ -150,6 +154,12 @@ public partial class SalesInvoiceViewModel
         {
             row.ProductSizeId = null;
             row.SizeName = string.Empty;
+            row.ProductColorId = null;
+            row.ColorName = string.Empty;
+            row.SelectedColor = null;
+            row.AvailableColors.Clear();
+            if (string.Equals(row.CustomField2Label, ClothingSizeInvoiceHelper.ColorLabel, StringComparison.Ordinal))
+                row.CustomField2 = string.Empty;
         }
     }
 
@@ -244,6 +254,8 @@ public partial class SalesInvoiceViewModel
         row.CustomField2Label = CustomField2Header;
         if (!string.IsNullOrWhiteSpace(row.SizeName) && string.IsNullOrWhiteSpace(row.CustomField1))
             row.CustomField1 = row.SizeName;
+        if (!string.IsNullOrWhiteSpace(row.ColorName) && string.IsNullOrWhiteSpace(row.CustomField2))
+            row.CustomField2 = row.ColorName;
     }
 
     private async Task LoadRowFeatureDataAsync(InvoiceItemRow row)
@@ -294,7 +306,39 @@ public partial class SalesInvoiceViewModel
             row.SerialNumber = string.Empty;
         }
 
+        await LoadRowColorsAsync(row, productId);
         await LoadRowPricingOptionsAsync(row, productId);
+    }
+
+    private async Task LoadRowColorsAsync(InvoiceItemRow row, int productId)
+    {
+        if (!ShowClothingSizes || _productColorService is null)
+        {
+            row.AvailableColors.Clear();
+            row.SelectedColor = null;
+            return;
+        }
+
+        var colors = await _productColorService.GetByProductAsync(productId);
+        row.AvailableColors.Clear();
+        foreach (var color in colors)
+            row.AvailableColors.Add(color);
+
+        if (colors.Count == 0)
+        {
+            row.SelectedColor = null;
+            return;
+        }
+
+        var preferred = colors.FirstOrDefault(c => c.Id == row.ProductColorId)
+                        ?? colors.FirstOrDefault(c =>
+                            string.Equals(c.ColorName, row.ColorName, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(c.ColorName, row.CustomField2, StringComparison.OrdinalIgnoreCase));
+
+        if (preferred is not null)
+            row.SelectedColor = preferred;
+        else if (row.SelectedColor is null && colors.Count == 1)
+            row.SelectedColor = colors[0];
     }
 
     private async Task LoadRowPricingOptionsAsync(InvoiceItemRow row, int productId)

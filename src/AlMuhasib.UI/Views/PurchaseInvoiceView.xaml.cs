@@ -18,7 +18,7 @@ public partial class PurchaseInvoiceView : UserControl
         InvoiceFeatureColumnSync.Attach(
             this,
             custom1: ColSize,
-            custom2: null,
+            custom2: ColColor,
             ColUnit,
             ColBatch,
             ColExpiry,

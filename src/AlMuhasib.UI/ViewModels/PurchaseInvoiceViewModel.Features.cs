@@ -13,6 +13,7 @@ public partial class PurchaseInvoiceViewModel
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
     private IProductSizeService? _productSizeService;
+    private IProductColorService? _productColorService;
 
     [ObservableProperty] private bool _isReturnMode;
     [ObservableProperty] private bool _showUnitsOfMeasure;
@@ -22,16 +23,18 @@ public partial class PurchaseInvoiceViewModel
     [ObservableProperty] private bool _showTransportFee;
     [ObservableProperty] private decimal _transportFeeAmount;
     [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
+    [ObservableProperty] private string _clothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
 
     public bool ShowCustomField1 => ShowClothingSizes;
-    public bool ShowCustomField2 => false;
+    public bool ShowCustomField2 => ShowClothingSizes;
 
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
-        IProductSizeService productSizeService)
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -41,6 +44,7 @@ public partial class PurchaseInvoiceViewModel
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
+        _productColorService = productColorService;
         RefreshFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
@@ -58,6 +62,7 @@ public partial class PurchaseInvoiceViewModel
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowTransportFee = _featureFlags.TransportFees;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
+        ClothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
         OnPropertyChanged(nameof(ShowCustomField1));
         OnPropertyChanged(nameof(ShowCustomField2));
 
@@ -101,6 +106,12 @@ public partial class PurchaseInvoiceViewModel
                 row.SizeName = string.Empty;
                 row.CustomField1 = string.Empty;
                 row.CustomField1Label = string.Empty;
+                row.ProductColorId = null;
+                row.ColorName = string.Empty;
+                row.SelectedColor = null;
+                row.AvailableColors.Clear();
+                row.CustomField2 = string.Empty;
+                row.CustomField2Label = string.Empty;
             }
         }
         else
@@ -108,8 +119,11 @@ public partial class PurchaseInvoiceViewModel
             foreach (var row in Items)
             {
                 row.CustomField1Label = ClothingSizeHeader;
+                row.CustomField2Label = ClothingColorHeader;
                 if (!string.IsNullOrWhiteSpace(row.SizeName))
                     row.CustomField1 = row.SizeName;
+                if (!string.IsNullOrWhiteSpace(row.ColorName))
+                    row.CustomField2 = row.ColorName;
             }
         }
 
@@ -149,6 +163,39 @@ public partial class PurchaseInvoiceViewModel
             row.SelectedUnit = null;
             row.UnitConversionFactor = 1m;
         }
+
+        await LoadPurchaseRowColorsAsync(row, productId);
+    }
+
+    private async Task LoadPurchaseRowColorsAsync(InvoiceItemRow row, int productId)
+    {
+        if (!ShowClothingSizes || _productColorService is null)
+        {
+            row.AvailableColors.Clear();
+            row.SelectedColor = null;
+            return;
+        }
+
+        var colors = await _productColorService.GetByProductAsync(productId);
+        row.AvailableColors.Clear();
+        foreach (var color in colors)
+            row.AvailableColors.Add(color);
+
+        if (colors.Count == 0)
+        {
+            row.SelectedColor = null;
+            return;
+        }
+
+        var preferred = colors.FirstOrDefault(c => c.Id == row.ProductColorId)
+                        ?? colors.FirstOrDefault(c =>
+                            string.Equals(c.ColorName, row.ColorName, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(c.ColorName, row.CustomField2, StringComparison.OrdinalIgnoreCase));
+
+        if (preferred is not null)
+            row.SelectedColor = preferred;
+        else if (row.SelectedColor is null && colors.Count == 1)
+            row.SelectedColor = colors[0];
     }
 
     private async Task<bool> TryPromptClothingSizesAsync(
@@ -189,6 +236,7 @@ public partial class PurchaseInvoiceViewModel
             row =>
             {
                 row.CustomField1Label = ClothingSizeHeader;
+                row.CustomField2Label = ClothingColorHeader;
                 if (!string.IsNullOrWhiteSpace(row.SizeName))
                     row.CustomField1 = row.SizeName;
             },

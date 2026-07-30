@@ -37,7 +37,13 @@ public class ProductService : IProductService
     }
 
     public async Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
-        int page, int pageSize, int? categoryId = null, string? searchTerm = null)
+        int page,
+        int pageSize,
+        int? categoryId = null,
+        string? searchTerm = null,
+        string? sizeName = null,
+        string? colorName = null,
+        bool? hasBatches = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Products
@@ -54,6 +60,25 @@ public class ProductService : IProductService
                 p.Name.Contains(term) ||
                 (p.Barcode != null && p.Barcode.Contains(term)) ||
                 (p.Description != null && p.Description.Contains(term)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(sizeName))
+        {
+            var size = sizeName.Trim();
+            query = query.Where(p => context.ProductSizes.Any(s =>
+                s.ProductId == p.Id && s.SizeName == size));
+        }
+
+        if (!string.IsNullOrWhiteSpace(colorName))
+        {
+            var color = colorName.Trim();
+            query = query.Where(p => context.ProductColors.Any(c =>
+                c.ProductId == p.Id && c.ColorName == color));
+        }
+
+        if (hasBatches == true)
+        {
+            query = query.Where(p => context.ProductBatches.Any(b => b.ProductId == p.Id));
         }
 
         var totalCount = await query.CountAsync();

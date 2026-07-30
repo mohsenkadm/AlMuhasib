@@ -145,4 +145,14 @@ public class ProductSizeService : IProductSizeService
         if (quantity <= 0) return;
         await AdjustStockAsync(productId, productSizeId, warehouseId, -quantity);
     }
+
+    public async Task<IReadOnlyList<string>> GetDistinctSizeNamesAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.ProductSizes.AsNoTracking()
+            .Select(s => s.SizeName)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToListAsync();
+    }
 }

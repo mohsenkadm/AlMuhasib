@@ -101,6 +101,7 @@ public static class DependencyInjection
         services.AddScoped<IProductBatchService, ProductBatchService>();
         services.AddScoped<IProductSerialService, ProductSerialService>();
         services.AddScoped<IProductSizeService, ProductSizeService>();
+        services.AddScoped<IProductColorService, ProductColorService>();
         services.AddScoped<IUserLoginLogService, UserLoginLogService>();
         services.AddScoped<IDataImportService, DataImportService>();
         services.AddScoped<IDemoDataService, DemoDataService>();

@@ -35,7 +35,7 @@ public static class InvoiceFeatureColumnSync
                     break;
                 case PurchaseInvoiceViewModel purchase:
                     Set(custom1, purchase.ShowClothingSizes);
-                    Set(custom2, false);
+                    Set(custom2, purchase.ShowCustomField2);
                     Set(unit, purchase.ShowUnitsOfMeasure);
                     Set(batch, purchase.ShowExpiryTracking);
                     Set(expiry, purchase.ShowExpiryTracking);
@@ -92,6 +92,7 @@ public static class InvoiceFeatureColumnSync
                 case "CustomField1Header":
                 case "CustomField2Header":
                 case "ClothingSizeHeader":
+                case "ClothingColorHeader":
                 case "MarketTemplateFieldsEnabled":
                 case null:
                 case "":

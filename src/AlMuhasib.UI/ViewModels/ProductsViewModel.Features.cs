@@ -17,12 +17,16 @@ public partial class ProductsViewModel
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
     private IProductSizeService? _productSizeService;
+    private IProductColorService? _productColorService;
 
     public ObservableCollection<ProductUnit> EditUnits { get; } = [];
     public ObservableCollection<ProductBatch> EditBatches { get; } = [];
     public ObservableCollection<ProductSerial> EditSerials { get; } = [];
     public ObservableCollection<ProductSize> EditSizes { get; } = [];
+    public ObservableCollection<ProductColor> EditColors { get; } = [];
     public ObservableCollection<PackagingType> AvailablePackagingTypes { get; } = [];
+    public ObservableCollection<string> SizeFilterOptions { get; } = [];
+    public ObservableCollection<string> ColorFilterOptions { get; } = [];
 
     [ObservableProperty] private bool _showUnitsSection;
     [ObservableProperty] private bool _showWeightSection;
@@ -30,16 +34,26 @@ public partial class ProductsViewModel
     [ObservableProperty] private bool _showBatchesSection;
     [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showSizesSection;
+    [ObservableProperty] private bool _showColorsSection;
 
     [ObservableProperty] private PackagingType? _selectedPackagingTypeToAdd;
     [ObservableProperty] private decimal _newUnitFactor = 1m;
     [ObservableProperty] private string _newSerialText = string.Empty;
     [ObservableProperty] private string _newSizeName = string.Empty;
+    [ObservableProperty] private string _newColorName = string.Empty;
 
     [ObservableProperty] private bool _isPackagingDialogOpen;
     [ObservableProperty] private string _packagingDialogTitle = string.Empty;
     [ObservableProperty] private string _packagingDialogProductName = string.Empty;
     private int? _packagingDialogProductId;
+
+    [ObservableProperty] private bool _isClothingDialogOpen;
+    [ObservableProperty] private string _clothingDialogTitle = string.Empty;
+    private int? _clothingDialogProductId;
+
+    [ObservableProperty] private string? _selectedSizeFilter;
+    [ObservableProperty] private string? _selectedColorFilter;
+    [ObservableProperty] private bool _filterHasBatchesOnly;
 
     public IReadOnlyList<string> WeightUnitOptions { get; } =
         ["كغ", "غرام", "لتر", "مل", "متر", "سم"];
@@ -66,13 +80,35 @@ public partial class ProductsViewModel
             EditDiscountType = value.Type;
     }
 
+    partial void OnSelectedSizeFilterChanged(string? value)
+    {
+        if (_isInitializing) return;
+        CurrentPage = 1;
+        _ = LoadProductsAsync();
+    }
+
+    partial void OnSelectedColorFilterChanged(string? value)
+    {
+        if (_isInitializing) return;
+        CurrentPage = 1;
+        _ = LoadProductsAsync();
+    }
+
+    partial void OnFilterHasBatchesOnlyChanged(bool value)
+    {
+        if (_isInitializing) return;
+        CurrentPage = 1;
+        _ = LoadProductsAsync();
+    }
+
     public void ConfigureFeatureServices(
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IPackagingTypeService packagingTypeService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
-        IProductSizeService productSizeService)
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -83,12 +119,24 @@ public partial class ProductsViewModel
         _productBatchService = productBatchService;
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
+        _productColorService = productColorService;
         RefreshProductFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
 
     private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
-        FeatureUiRefresh.Invoke(RefreshProductFeatureVisibility);
+        FeatureUiRefresh.Invoke(() =>
+        {
+            RefreshProductFeatureVisibility();
+            _ = ReloadAfterFeatureFlagsChangedAsync();
+        });
+
+    private async Task ReloadAfterFeatureFlagsChangedAsync()
+    {
+        await RefreshFeatureFilterOptionsAsync();
+        CurrentPage = 1;
+        await LoadProductsAsync();
+    }
 
     private void RefreshProductFeatureVisibility()
     {
@@ -99,6 +147,16 @@ public partial class ProductsViewModel
         ShowBatchesSection = _featureFlags.ExpiryTracking;
         ShowSerialsSection = _featureFlags.SerialNumbers;
         ShowSizesSection = _featureFlags.TemplateClothing;
+        ShowColorsSection = _featureFlags.TemplateClothing;
+
+        if (!ShowSizesSection)
+        {
+            SelectedSizeFilter = null;
+            SelectedColorFilter = null;
+        }
+
+        if (!ShowBatchesSection)
+            FilterHasBatchesOnly = false;
 
         if (!ShowUnitsSection && !ShowBatchesSection && !ShowSerialsSection && !ShowSizesSection)
             ClearFeatureEditCollections();
@@ -108,6 +166,7 @@ public partial class ProductsViewModel
             if (!ShowBatchesSection) EditBatches.Clear();
             if (!ShowSerialsSection) EditSerials.Clear();
             if (!ShowSizesSection) EditSizes.Clear();
+            if (!ShowColorsSection) EditColors.Clear();
         }
     }
 
@@ -117,10 +176,43 @@ public partial class ProductsViewModel
         EditBatches.Clear();
         EditSerials.Clear();
         EditSizes.Clear();
+        EditColors.Clear();
         SelectedPackagingTypeToAdd = null;
         NewUnitFactor = 1m;
         NewSerialText = string.Empty;
         NewSizeName = string.Empty;
+        NewColorName = string.Empty;
+    }
+
+    public const string AllFilterLabel = "— الكل —";
+
+    private async Task RefreshFeatureFilterOptionsAsync()
+    {
+        var previousSize = SelectedSizeFilter;
+        var previousColor = SelectedColorFilter;
+
+        SizeFilterOptions.Clear();
+        ColorFilterOptions.Clear();
+
+        if (ShowSizesSection && _productSizeService is not null)
+        {
+            SizeFilterOptions.Add(AllFilterLabel);
+            foreach (var name in await _productSizeService.GetDistinctSizeNamesAsync())
+                SizeFilterOptions.Add(name);
+            SelectedSizeFilter = SizeFilterOptions.Contains(previousSize ?? string.Empty)
+                ? previousSize
+                : AllFilterLabel;
+        }
+
+        if (ShowColorsSection && _productColorService is not null)
+        {
+            ColorFilterOptions.Add(AllFilterLabel);
+            foreach (var name in await _productColorService.GetDistinctColorNamesAsync())
+                ColorFilterOptions.Add(name);
+            SelectedColorFilter = ColorFilterOptions.Contains(previousColor ?? string.Empty)
+                ? previousColor
+                : AllFilterLabel;
+        }
     }
 
     private async Task EnsurePackagingTypesLoadedAsync()
@@ -162,6 +254,12 @@ public partial class ProductsViewModel
             foreach (var size in await _productSizeService.GetByProductAsync(productId))
                 EditSizes.Add(size);
         }
+
+        if (_productColorService is not null && ShowColorsSection)
+        {
+            foreach (var color in await _productColorService.GetByProductAsync(productId))
+                EditColors.Add(color);
+        }
     }
 
     [RelayCommand]
@@ -183,12 +281,38 @@ public partial class ProductsViewModel
         IsPackagingDialogOpen = false;
         _packagingDialogProductId = null;
         PackagingDialogProductName = string.Empty;
-        if (_editingProductId is null)
+        if (_editingProductId is null && !IsClothingDialogOpen)
             ClearFeatureEditCollections();
     }
 
     private int? ResolvePackagingProductId() =>
         _packagingDialogProductId ?? _editingProductId;
+
+    private int? ResolveClothingProductId() =>
+        _clothingDialogProductId ?? _editingProductId;
+
+    [RelayCommand]
+    private async Task OpenProductClothingDialogAsync(Product? product)
+    {
+        if (product is null || (!ShowSizesSection && !ShowColorsSection))
+            return;
+
+        _clothingDialogProductId = product.Id;
+        ClothingDialogTitle = $"القياسات والألوان — {product.Name}";
+        await LoadFeatureDataForProductAsync(product.Id);
+        IsClothingDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseClothingDialog()
+    {
+        IsClothingDialogOpen = false;
+        _clothingDialogProductId = null;
+        ClothingDialogTitle = string.Empty;
+        if (_editingProductId is null && !IsPackagingDialogOpen)
+            ClearFeatureEditCollections();
+        _ = RefreshFeatureFilterOptionsAsync();
+    }
 
     [RelayCommand]
     private async Task AddProductUnitAsync()
@@ -246,7 +370,7 @@ public partial class ProductsViewModel
     [RelayCommand]
     private async Task AddProductSizeAsync()
     {
-        if (_editingProductId is not int productId || _productSizeService is null)
+        if (ResolveClothingProductId() is not int productId || _productSizeService is null)
         {
             BeautifulMessageDialog.ShowWarning("احفظ المنتج أولاً ثم أضف القياسات");
             return;
@@ -267,6 +391,7 @@ public partial class ProductsViewModel
             });
             NewSizeName = string.Empty;
             await LoadFeatureDataForProductAsync(productId);
+            await RefreshFeatureFilterOptionsAsync();
         }
         catch (Exception ex)
         {
@@ -277,10 +402,60 @@ public partial class ProductsViewModel
     [RelayCommand]
     private async Task DeleteProductSizeAsync(ProductSize? size)
     {
-        if (size is null || _productSizeService is null || _editingProductId is not int productId) return;
+        if (size is null || _productSizeService is null || ResolveClothingProductId() is not int productId) return;
         if (!BeautifulMessageDialog.ShowConfirm($"حذف القياس «{size.SizeName}»؟")) return;
-        await _productSizeService.DeleteAsync(size.Id);
+        try
+        {
+            await _productSizeService.DeleteAsync(size.Id);
+            await LoadFeatureDataForProductAsync(productId);
+            await RefreshFeatureFilterOptionsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddProductColorAsync()
+    {
+        if (ResolveClothingProductId() is not int productId || _productColorService is null)
+        {
+            BeautifulMessageDialog.ShowWarning("احفظ المنتج أولاً ثم أضف الألوان");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewColorName))
+        {
+            BeautifulMessageDialog.ShowWarning("أدخل اسم اللون");
+            return;
+        }
+
+        try
+        {
+            await _productColorService.SaveAsync(new ProductColor
+            {
+                ProductId = productId,
+                ColorName = NewColorName.Trim()
+            });
+            NewColorName = string.Empty;
+            await LoadFeatureDataForProductAsync(productId);
+            await RefreshFeatureFilterOptionsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteProductColorAsync(ProductColor? color)
+    {
+        if (color is null || _productColorService is null || ResolveClothingProductId() is not int productId) return;
+        if (!BeautifulMessageDialog.ShowConfirm($"حذف اللون «{color.ColorName}»؟")) return;
+        await _productColorService.DeleteAsync(color.Id);
         await LoadFeatureDataForProductAsync(productId);
+        await RefreshFeatureFilterOptionsAsync();
     }
 
     [RelayCommand]

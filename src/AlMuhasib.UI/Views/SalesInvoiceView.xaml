@@ -344,16 +344,34 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn x:Name="ColCustomField2" Width="100" MinWidth="80"
+                                <DataGridTemplateColumn x:Name="ColCustomField2" Width="110" MinWidth="90"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.Header>
                                         <TextBlock Text="{Binding DataContext.CustomField2Header, ElementName=Root}"/>
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding CustomField2, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource NumericCellTextBox}"
-                                                     ToolTip="{Binding CustomField2Label}"/>
+                                            <Grid>
+                                                <ComboBox ItemsSource="{Binding AvailableColors}"
+                                                          SelectedItem="{Binding SelectedColor, UpdateSourceTrigger=PropertyChanged}"
+                                                          DisplayMemberPath="ColorName"
+                                                          IsEditable="False"
+                                                          ToolTip="اختر اللون"
+                                                          Visibility="{Binding DataContext.ShowClothingSizes, ElementName=Root, Converter={StaticResource BoolToVis}}"/>
+                                                <TextBox Text="{Binding CustomField2, UpdateSourceTrigger=PropertyChanged}"
+                                                         ToolTip="{Binding CustomField2Label}">
+                                                    <TextBox.Style>
+                                                        <Style TargetType="TextBox" BasedOn="{StaticResource NumericCellTextBox}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DataContext.ShowClothingSizes, ElementName=Root}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBox.Style>
+                                                </TextBox>
+                                            </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

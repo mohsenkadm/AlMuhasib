@@ -82,7 +82,7 @@ internal static class InvoiceDetailMapper
                 Number = index + 1,
                 ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
                     item.ItemName,
-                    InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
+                    item.CustomFieldsJson),
                 QuantityText = item.Quantity.ToString("N0"),
                 UnitPriceText = $"{item.UnitPrice:N0}",
                 TotalPriceText = $"{item.TotalPrice:N0}"

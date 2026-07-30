@@ -181,7 +181,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IProductUnitService productUnitService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
-        IProductSizeService productSizeService)
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -205,7 +206,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
 
         Items.CollectionChanged += OnItemsCollectionChanged;
-        ConfigureFeatureServices(featureFlags, productUnitService, productBatchService, productSerialService, productSizeService);
+        ConfigureFeatureServices(
+            featureFlags, productUnitService, productBatchService, productSerialService,
+            productSizeService, productColorService);
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
     }
 
@@ -987,7 +990,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 Number = i + 1,
                 ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
                     item.ItemName,
-                    InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
+                    item.CustomFieldsJson),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice

@@ -768,7 +768,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             Items = _savedItems.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,
-                ItemName = item.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    item.CustomFieldsJson),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice
