@@ -3,6 +3,7 @@ using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.Input;
 
@@ -141,7 +142,9 @@ public partial class InstallmentsViewModel
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,
-                ItemName = item.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    item.CustomFieldsJson),
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice

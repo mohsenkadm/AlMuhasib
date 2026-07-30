@@ -8,7 +8,13 @@ public interface IProductService
     Task<Product> CreateAsync(Product product);
     Task<Product?> GetByIdAsync(int id);
     Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
-        int page, int pageSize, int? categoryId = null, string? searchTerm = null);
+        int page,
+        int pageSize,
+        int? categoryId = null,
+        string? searchTerm = null,
+        string? sizeName = null,
+        string? colorName = null,
+        bool? hasBatches = null);
     Task UpdateAsync(Product product);
     Task DeleteAsync(int id);
     Task ApplyDiscountToProductsAsync(

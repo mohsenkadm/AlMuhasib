@@ -151,7 +151,7 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
                     Number = i + 1,
                     ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
                         item.ItemName,
-                        InvoiceCustomFieldsHelper.ExtractSizeName(item.CustomFieldsJson)),
+                        item.CustomFieldsJson),
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
                     TotalPrice = item.TotalPrice

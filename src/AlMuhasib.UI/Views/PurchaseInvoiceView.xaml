@@ -291,6 +291,22 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn x:Name="ColColor" Width="110" MinWidth="90"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{Binding DataContext.ClothingColorHeader, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding AvailableColors}"
+                                                      SelectedItem="{Binding SelectedColor, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="ColorName"
+                                                      IsEditable="False"
+                                                      ToolTip="اختر اللون"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <!-- أعمدة الميزات: مخفية افتراضياً؛ يزامنها InvoiceFeatureColumnSync حسب الأعلام -->
                                 <DataGridTemplateColumn x:Name="ColUnit" Header="التعبئة" Width="100"
                                                         Visibility="Collapsed">

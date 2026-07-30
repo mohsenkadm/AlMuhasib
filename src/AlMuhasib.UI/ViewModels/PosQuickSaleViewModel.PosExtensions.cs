@@ -4,6 +4,7 @@ using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -232,7 +233,9 @@ public partial class PosQuickSaleViewModel
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
-                ItemName = it.ItemName,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    it.ItemName,
+                    it.CustomFieldsJson),
                 Quantity = it.Quantity,
                 UnitPrice = it.UnitPrice,
                 TotalPrice = it.TotalPrice

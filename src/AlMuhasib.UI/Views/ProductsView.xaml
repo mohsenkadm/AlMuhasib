@@ -39,6 +39,9 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />      <!-- Search -->
                         <ColumnDefinition Width="Auto" />   <!-- Category -->
+                        <ColumnDefinition Width="Auto" />   <!-- Size -->
+                        <ColumnDefinition Width="Auto" />   <!-- Color -->
+                        <ColumnDefinition Width="Auto" />   <!-- Batches -->
                         <ColumnDefinition Width="Auto" />   <!-- Separator -->
                         <ColumnDefinition Width="Auto" />   <!-- Buttons -->
                     </Grid.ColumnDefinitions>
@@ -67,13 +70,47 @@
                               IsEditable="False"
                               Style="{StaticResource FilledComboBox}" />
 
-                    <Separator Grid.Column="2"
+                    <!-- Size filter (clothing feature) -->
+                    <ComboBox Grid.Column="2"
+                              ItemsSource="{Binding SizeFilterOptions}"
+                              SelectedItem="{Binding SelectedSizeFilter}"
+                              materialDesign:HintAssist.Hint="القياس"
+                              materialDesign:HintAssist.IsFloating="True"
+                              MinWidth="120"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              IsEditable="False"
+                              Style="{StaticResource FilledComboBox}"
+                              Visibility="{Binding ShowSizesSection, Converter={StaticResource BoolToVis}}"/>
+
+                    <!-- Color filter (clothing feature) -->
+                    <ComboBox Grid.Column="3"
+                              ItemsSource="{Binding ColorFilterOptions}"
+                              SelectedItem="{Binding SelectedColorFilter}"
+                              materialDesign:HintAssist.Hint="اللون"
+                              materialDesign:HintAssist.IsFloating="True"
+                              MinWidth="120"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              IsEditable="False"
+                              Style="{StaticResource FilledComboBox}"
+                              Visibility="{Binding ShowColorsSection, Converter={StaticResource BoolToVis}}"/>
+
+                    <!-- Batches filter (expiry feature) -->
+                    <CheckBox Grid.Column="4"
+                              Content="لديه دفعات/صلاحية"
+                              IsChecked="{Binding FilterHasBatchesOnly}"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              Visibility="{Binding ShowBatchesSection, Converter={StaticResource BoolToVis}}"/>
+
+                    <Separator Grid.Column="5"
                                Width="1"
                                Margin="8,4"
                                Background="#E0E0E0" />
 
                     <!-- Action Buttons -->
-                    <StackPanel Grid.Column="3"
+                    <StackPanel Grid.Column="6"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
 
@@ -243,7 +280,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="190" MinWidth="190" IsReadOnly="True"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="230" MinWidth="230" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -259,6 +296,13 @@
                                                 ToolTip="أنواع التعبئة"
                                                 Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
                                             <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.OpenProductClothingDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="القياسات والألوان"
+                                                Visibility="{Binding DataContext.ShowSizesSection, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
+                                            <materialDesign:PackIcon Kind="TshirtCrew" Width="18" Height="18"/>
                                         </Button>
                                         <Button Command="{Binding DataContext.OpenBarcodePrintDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
@@ -377,6 +421,14 @@
                                                         Margin="0,0,4,0"
                                                         Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
                                                     <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.OpenProductClothingDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding Product}"
+                                                        Style="{StaticResource TableEditIconButton}"
+                                                        ToolTip="القياسات والألوان"
+                                                        Margin="0,0,4,0"
+                                                        Visibility="{Binding DataContext.ShowSizesSection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                                                    <materialDesign:PackIcon Kind="TshirtCrew" Width="18" Height="18"/>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.OpenEditProductFromCardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
@@ -612,6 +664,39 @@
                                                  Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
                                         <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
                                                 Command="{Binding AddProductSizeCommand}" Padding="12,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Clothing colors (feature-gated: TemplateClothing) -->
+                            <Border Margin="0,12,0,0" Padding="12" Background="#E3F2FD" CornerRadius="8"
+                                    Visibility="{Binding ShowColorsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="الألوان" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="أضف ألوان المنتج. في الفاتورة يُختار اللون من قائمة بدل كتابته يدوياً."
+                                               FontSize="12" Foreground="#1565C0" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                    <ItemsControl ItemsSource="{Binding EditColors}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,4">
+                                                    <Button Content="حذف" Style="{StaticResource OutlinedButton}" DockPanel.Dock="Right"
+                                                            Command="{Binding DataContext.DeleteProductColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" Padding="8,2"/>
+                                                    <TextBlock Text="{Binding ColorName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding NewColorName, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="اسم اللون (مثال: أسود)"
+                                                 Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding AddProductColorCommand}" Padding="12,0"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -976,6 +1061,97 @@
                                     materialDesign:ButtonAssist.CornerRadius="10"/>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- Clothing sizes/colors dialog -->
+        <materialDesign:DialogHost IsOpen="{Binding IsClothingDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000"
+                                   Identifier="ProductClothingDialog">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="480" MaxWidth="580" MaxHeight="680" Padding="24"
+                        Background="White" CornerRadius="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                            <TextBlock Text="{Binding ClothingDialogTitle}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource SidebarBackground}"/>
+                            <TextBlock Text="أضف قياسات وألوان هذا المنتج. في الفواتير يُختاران من قوائم."
+                                       FontSize="12" Foreground="#6A1B4D" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+                            <StackPanel>
+                                <Border Padding="12" Background="#FCE4EC" CornerRadius="8" Margin="0,0,0,12"
+                                        Visibility="{Binding ShowSizesSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="القياسات" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                        <ItemsControl ItemsSource="{Binding EditSizes}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,0,0,4">
+                                                        <Button Content="حذف" Style="{StaticResource OutlinedButton}" DockPanel.Dock="Right"
+                                                                Command="{Binding DataContext.DeleteProductSizeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                        <TextBlock Text="{Binding SizeName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0" Text="{Binding NewSizeName, UpdateSourceTrigger=PropertyChanged}"
+                                                     materialDesign:HintAssist.Hint="اسم القياس"
+                                                     Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                            <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                    Command="{Binding AddProductSizeCommand}" Padding="12,0"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Padding="12" Background="#E3F2FD" CornerRadius="8"
+                                        Visibility="{Binding ShowColorsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="الألوان" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                        <ItemsControl ItemsSource="{Binding EditColors}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,0,0,4">
+                                                        <Button Content="حذف" Style="{StaticResource OutlinedButton}" DockPanel.Dock="Right"
+                                                                Command="{Binding DataContext.DeleteProductColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Padding="8,2"/>
+                                                        <TextBlock Text="{Binding ColorName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0" Text="{Binding NewColorName, UpdateSourceTrigger=PropertyChanged}"
+                                                     materialDesign:HintAssist.Hint="اسم اللون"
+                                                     Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                                            <Button Grid.Column="1" Content="إضافة" Style="{StaticResource PrimaryButton}"
+                                                    Command="{Binding AddProductColorCommand}" Padding="12,0"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Button Grid.Row="2" Content="إغلاق" Command="{Binding CloseClothingDialogCommand}"
+                                Style="{StaticResource OutlinedButton}" HorizontalAlignment="Left"
+                                Height="40" Padding="22,0" materialDesign:ButtonAssist.CornerRadius="10"/>
+                    </Grid>
                 </Border>
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>

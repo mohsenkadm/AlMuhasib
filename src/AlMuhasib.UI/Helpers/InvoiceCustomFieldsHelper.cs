@@ -46,6 +46,13 @@ public static class InvoiceCustomFieldsHelper
             dict["__sizeId"] = row.ProductSizeId.Value.ToString();
         if (!string.IsNullOrWhiteSpace(row.SizeName))
             dict["__size"] = row.SizeName.Trim();
+        if (row.ProductColorId.HasValue)
+            dict["__colorId"] = row.ProductColorId.Value.ToString();
+        if (!string.IsNullOrWhiteSpace(row.ColorName))
+            dict["__color"] = row.ColorName.Trim();
+        else if (!string.IsNullOrWhiteSpace(row.CustomField2)
+                 && string.Equals(row.CustomField2Label, ClothingSizeInvoiceHelper.ColorLabel, StringComparison.Ordinal))
+            dict["__color"] = row.CustomField2.Trim();
         if (row.ProductWeight > 0)
         {
             dict["__weight"] = row.ProductWeight.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -101,8 +108,19 @@ public static class InvoiceCustomFieldsHelper
         if (dict.TryGetValue("__size", out var sizeName))
             row.SizeName = sizeName;
         else if (string.IsNullOrWhiteSpace(row.SizeName) && !string.IsNullOrWhiteSpace(row.CustomField1)
-                 && string.Equals(row.CustomField1Label, "المقاس", StringComparison.Ordinal))
+                 && string.Equals(row.CustomField1Label, ClothingSizeInvoiceHelper.SizeLabel, StringComparison.Ordinal))
             row.SizeName = row.CustomField1;
+
+        if (dict.TryGetValue("__colorId", out var colorIdText) && int.TryParse(colorIdText, out var colorId))
+            row.ProductColorId = colorId;
+        if (dict.TryGetValue("__color", out var colorName) && !string.IsNullOrWhiteSpace(colorName))
+            row.ColorName = colorName.Trim();
+        else if (dict.TryGetValue(ClothingSizeInvoiceHelper.ColorLabel, out var labelColor)
+                 && !string.IsNullOrWhiteSpace(labelColor))
+            row.ColorName = labelColor.Trim();
+
+        if (!string.IsNullOrWhiteSpace(row.ColorName) && string.IsNullOrWhiteSpace(row.CustomField2))
+            row.CustomField2 = row.ColorName;
 
         if (dict.TryGetValue("__weight", out var weightText)
             && decimal.TryParse(weightText, System.Globalization.NumberStyles.Any,
@@ -117,38 +135,70 @@ public static class InvoiceCustomFieldsHelper
             row.ProductWeightUnit = weightUnit;
     }
 
-    /// <summary>يعرض اسم الصنف مع القياس إن وُجد (للفواتير والطباعة).</summary>
-    public static string FormatItemDisplayName(string itemName, string? sizeName)
+    /// <summary>
+    /// يعرض اسم الصنف مع تفاصيل الميزات المحفوظة (قياس، لون، وحدة، دفعة، صلاحية، سيريال).
+    /// المعامل الثاني هو JSON الحقول المخصصة للسطر.
+    /// </summary>
+    public static string FormatItemDisplayName(string itemName, string? customFieldsJson)
     {
-        if (string.IsNullOrWhiteSpace(sizeName))
-            return itemName;
-        if (string.IsNullOrWhiteSpace(itemName))
-            return sizeName.Trim();
-        return $"{itemName.Trim()} — {sizeName.Trim()}";
+        var size = ExtractSizeName(customFieldsJson);
+        var color = ExtractColorName(customFieldsJson);
+        var unit = ExtractField(customFieldsJson, "__unit");
+        var batch = ExtractField(customFieldsJson, "__batch");
+        var expiry = ExtractField(customFieldsJson, "__expiry");
+        var serial = ExtractField(customFieldsJson, "__serial");
+
+        var name = (itemName ?? string.Empty).Trim();
+        var attrs = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(size)) attrs.Add(size!);
+        if (!string.IsNullOrWhiteSpace(color)) attrs.Add(color!);
+        if (attrs.Count > 0)
+            name = string.IsNullOrWhiteSpace(name)
+                ? string.Join(" — ", attrs)
+                : $"{name} — {string.Join(" — ", attrs)}";
+
+        var extras = new List<string>(4);
+        if (!string.IsNullOrWhiteSpace(unit)) extras.Add(unit!);
+        if (!string.IsNullOrWhiteSpace(batch)) extras.Add($"دفعة: {batch}");
+        if (!string.IsNullOrWhiteSpace(expiry)) extras.Add($"انتهاء: {expiry}");
+        if (!string.IsNullOrWhiteSpace(serial)) extras.Add($"سيريال: {serial}");
+
+        if (extras.Count == 0)
+            return name;
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Join(" | ", extras);
+        return $"{name} | {string.Join(" | ", extras)}";
     }
 
     public static string? ExtractSizeName(string? json)
     {
-        if (string.IsNullOrWhiteSpace(json))
-            return null;
+        var size = ExtractField(json, "__size");
+        if (!string.IsNullOrWhiteSpace(size))
+            return size;
+        return ExtractField(json, ClothingSizeInvoiceHelper.SizeLabel);
+    }
 
-        try
-        {
-            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
-            if (dict is null) return null;
-            if (dict.TryGetValue("__size", out var size) && !string.IsNullOrWhiteSpace(size))
-                return size.Trim();
-            if (dict.TryGetValue("المقاس", out var labelSize) && !string.IsNullOrWhiteSpace(labelSize))
-                return labelSize.Trim();
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
+    public static string? ExtractColorName(string? json)
+    {
+        var color = ExtractField(json, "__color");
+        if (!string.IsNullOrWhiteSpace(color))
+            return color;
+        return ExtractField(json, ClothingSizeInvoiceHelper.ColorLabel);
     }
 
     public static int? ExtractSizeId(string? json)
+    {
+        var text = ExtractField(json, "__sizeId");
+        return int.TryParse(text, out var id) ? id : null;
+    }
+
+    public static int? ExtractColorId(string? json)
+    {
+        var text = ExtractField(json, "__colorId");
+        return int.TryParse(text, out var id) ? id : null;
+    }
+
+    private static string? ExtractField(string? json, string key)
     {
         if (string.IsNullOrWhiteSpace(json))
             return null;
@@ -157,8 +207,8 @@ public static class InvoiceCustomFieldsHelper
         {
             var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
             if (dict is null) return null;
-            if (dict.TryGetValue("__sizeId", out var idText) && int.TryParse(idText, out var id))
-                return id;
+            if (dict.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                return value.Trim();
             return null;
         }
         catch

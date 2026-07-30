@@ -11,4 +11,5 @@ public interface IProductSizeService
     Task<IReadOnlyList<ProductSizeStock>> GetStocksAsync(int productId, int? warehouseId = null);
     Task AdjustStockAsync(int productId, int productSizeId, int warehouseId, decimal quantityDelta);
     Task DeductStockAsync(int productId, int productSizeId, int warehouseId, decimal quantity);
+    Task<IReadOnlyList<string>> GetDistinctSizeNamesAsync();
 }

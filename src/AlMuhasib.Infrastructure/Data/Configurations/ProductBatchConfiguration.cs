@@ -110,6 +110,23 @@ public class ProductSizeStockConfiguration : IEntityTypeConfiguration<ProductSiz
     }
 }
 
+public class ProductColorConfiguration : IEntityTypeConfiguration<ProductColor>
+{
+    public void Configure(EntityTypeBuilder<ProductColor> builder)
+    {
+        builder.ToTable("ProductColors");
+
+        builder.Property(c => c.ColorName).IsRequired().HasMaxLength(50);
+
+        builder.HasOne(c => c.Product)
+            .WithMany()
+            .HasForeignKey(c => c.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(c => new { c.ProductId, c.ColorName });
+    }
+}
+
 public class UserLoginLogConfiguration : IEntityTypeConfiguration<UserLoginLog>
 {
     public void Configure(EntityTypeBuilder<UserLoginLog> builder)

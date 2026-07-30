@@ -164,7 +164,8 @@ public partial class ProductsViewModel : ViewModelBase
         IPackagingTypeService packagingTypeService,
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
-        IProductSizeService productSizeService)
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         _productService = productService;
         _unitOfWork = unitOfWork;
@@ -179,7 +180,9 @@ public partial class ProductsViewModel : ViewModelBase
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
-        ConfigureFeatureServices(featureFlags, productUnitService, packagingTypeService, productBatchService, productSerialService, productSizeService);
+        ConfigureFeatureServices(
+            featureFlags, productUnitService, packagingTypeService, productBatchService,
+            productSerialService, productSizeService, productColorService);
     }
 
     public override async Task InitializeAsync()
@@ -192,6 +195,7 @@ public partial class ProductsViewModel : ViewModelBase
         {
             LoadPermissions(_currentUserService, "Products");
             await LoadCategoriesAsync();
+            await RefreshFeatureFilterOptionsAsync();
             await LoadProductsAsync();
         }
         finally
@@ -221,12 +225,27 @@ public partial class ProductsViewModel : ViewModelBase
             if (requestId != _loadRequestId)
                 return;
 
+            var sizeFilter = ShowSizesSection
+                             && !string.IsNullOrWhiteSpace(SelectedSizeFilter)
+                             && SelectedSizeFilter != ProductsViewModel.AllFilterLabel
+                ? SelectedSizeFilter.Trim()
+                : null;
+            var colorFilter = ShowColorsSection
+                              && !string.IsNullOrWhiteSpace(SelectedColorFilter)
+                              && SelectedColorFilter != ProductsViewModel.AllFilterLabel
+                ? SelectedColorFilter.Trim()
+                : null;
+            var hasBatchesOnly = ShowBatchesSection && FilterHasBatchesOnly;
+
             if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
             {
                 var (allItems, _) = await _productService.GetPagedAsync(
                     1, int.MaxValue,
                     SelectedCategory?.Id,
-                    string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+                    string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
+                    sizeFilter,
+                    colorFilter,
+                    hasBatchesOnly);
 
                 if (requestId != _loadRequestId) return;
 
@@ -245,7 +264,10 @@ public partial class ProductsViewModel : ViewModelBase
                 CurrentPage,
                 PageSize,
                 SelectedCategory?.Id,
-                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
+                sizeFilter,
+                colorFilter,
+                hasBatchesOnly);
 
             if (requestId != _loadRequestId) return;
 
@@ -678,10 +700,23 @@ public partial class ProductsViewModel : ViewModelBase
         try
         {
             // Load all matching products (not just current page)
+            var sizeFilter = ShowSizesSection
+                             && !string.IsNullOrWhiteSpace(SelectedSizeFilter)
+                             && SelectedSizeFilter != AllFilterLabel
+                ? SelectedSizeFilter.Trim()
+                : null;
+            var colorFilter = ShowColorsSection
+                              && !string.IsNullOrWhiteSpace(SelectedColorFilter)
+                              && SelectedColorFilter != AllFilterLabel
+                ? SelectedColorFilter.Trim()
+                : null;
             var (allItems, _) = await _productService.GetPagedAsync(
                 1, int.MaxValue,
                 SelectedCategory?.Id,
-                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
+                sizeFilter,
+                colorFilter,
+                ShowBatchesSection && FilterHasBatchesOnly);
 
             var exportData = allItems.Select(p => new
             {
@@ -717,10 +752,23 @@ public partial class ProductsViewModel : ViewModelBase
     {
         try
         {
+            var sizeFilter = ShowSizesSection
+                             && !string.IsNullOrWhiteSpace(SelectedSizeFilter)
+                             && SelectedSizeFilter != AllFilterLabel
+                ? SelectedSizeFilter.Trim()
+                : null;
+            var colorFilter = ShowColorsSection
+                              && !string.IsNullOrWhiteSpace(SelectedColorFilter)
+                              && SelectedColorFilter != AllFilterLabel
+                ? SelectedColorFilter.Trim()
+                : null;
             var (allItems, _) = await _productService.GetPagedAsync(
                 1, int.MaxValue,
                 SelectedCategory?.Id,
-                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
+                sizeFilter,
+                colorFilter,
+                ShowBatchesSection && FilterHasBatchesOnly);
 
             var printData = allItems.ToList();
 

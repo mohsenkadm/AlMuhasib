@@ -195,6 +195,33 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _sizeName = string.Empty;
 
+    // ── ألوان الألبسة ─────────────────────────────────────
+    public ObservableCollection<ProductColor> AvailableColors { get; } = [];
+
+    [ObservableProperty]
+    private int? _productColorId;
+
+    [ObservableProperty]
+    private string _colorName = string.Empty;
+
+    [ObservableProperty]
+    private ProductColor? _selectedColor;
+
+    partial void OnSelectedColorChanged(ProductColor? value)
+    {
+        if (value is null)
+        {
+            ProductColorId = null;
+            return;
+        }
+
+        ProductColorId = value.Id;
+        ColorName = value.ColorName;
+        CustomField2 = value.ColorName;
+        if (string.IsNullOrWhiteSpace(CustomField2Label))
+            CustomField2Label = "اللون";
+    }
+
     // ── خصم المنتج ─────────────────────────────────────────
     [ObservableProperty]
     private decimal _discountAmount;
