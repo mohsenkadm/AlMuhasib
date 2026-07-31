@@ -242,11 +242,28 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
     {
         ValidateInvoiceRequest(request);
 
-        var invoiceSyncId = Guid.NewGuid();
+        var invoiceSyncId = request.SyncId ?? Guid.NewGuid();
+
+        // Idempotent retry: already fully saved with this SyncId.
+        var existingInvoice = await _db.Invoices
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.SyncId == invoiceSyncId, ct);
+        if (existingInvoice is not null &&
+            !existingInvoice.IsDeleted &&
+            !string.IsNullOrWhiteSpace(existingInvoice.InvoiceNumber))
+        {
+            return new MobileWriteResponse
+            {
+                SyncId = invoiceSyncId,
+                InvoiceNumber = existingInvoice.InvoiceNumber,
+                Message = "تم حفظ الفاتورة بنجاح"
+            };
+        }
+
         var now = DateTime.UtcNow;
         var items = request.Items.Select(i =>
         {
-            var lineTotal = i.Quantity * i.UnitPrice - i.DiscountAmount;
             return new CreateInvoiceItemRequest
             {
                 ProductSyncId = i.ProductSyncId,
@@ -284,7 +301,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 ? RoundingType.RoundUp
                 : RoundingType.RoundDown,
             CashBoxSyncId = request.CashBoxSyncId,
-            Date = request.Date,
+            Date = request.Date == default ? DateTime.UtcNow : request.Date,
             CreditDueDate = request.CreditDueDate,
             Notes = request.Notes,
             PaidAmount = isCredit ? 0 : netAmount,
@@ -333,7 +350,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 TotalAmount = netAmount,
                 NumberOfInstallments = plan.NumberOfInstallments,
                 InstallmentAmount = installmentAmount,
-                StartDate = plan.StartDate,
+                StartDate = plan.StartDate == default ? DateTime.Today : plan.StartDate,
                 InstallmentType = plan.InstallmentType,
                 CompanyFeePercentage = feePct,
                 CompanyFeeAmount = feeAmt,
@@ -350,7 +367,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 {
                     SyncId = Guid.NewGuid(),
                     InstallmentPlanSyncId = planSyncId,
-                    DueDate = plan.StartDate.AddMonths(i),
+                    DueDate = planDto.StartDate.AddMonths(i),
                     Amount = amount,
                     PaidAmount = 0,
                     RemainingAmount = amount,
@@ -373,6 +390,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         var pushResponse = await _syncEngine.PushAsync(tenantId, new SyncPushRequest { Data = bundle }, ct);
         if (pushResponse.Conflicts.Count > 0)
         {
+            await RollbackOrphanInvoiceBundleAsync(tenantId, invoiceSyncId, username, ct);
             return new MobileWriteResponse
             {
                 SyncId = invoiceSyncId,
@@ -1267,27 +1285,114 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
     private static void ValidateInvoiceRequest(CreateInvoiceRequest request)
     {
+        if (request.WarehouseSyncId == Guid.Empty)
+            throw new ArgumentException("المخزن مطلوب");
+
         if (request.Items.Count == 0)
             throw new ArgumentException("يجب إضافة بند واحد على الأقل");
+
+        if (request.DiscountAmount < 0)
+            throw new ArgumentException("قيمة الخصم غير صحيحة");
+
+        foreach (var item in request.Items)
+        {
+            if (item.Quantity <= 0)
+                throw new ArgumentException("كمية البند يجب أن تكون أكبر من صفر");
+            if (item.UnitPrice < 0)
+                throw new ArgumentException("سعر البند غير صحيح");
+            if (item.DiscountAmount < 0)
+                throw new ArgumentException("خصم البند غير صحيح");
+        }
 
         switch (request.InvoiceType)
         {
             case InvoiceType.Sale or InvoiceType.Installment:
-                if (!request.CustomerSyncId.HasValue)
+                if (!request.CustomerSyncId.HasValue || request.CustomerSyncId == Guid.Empty)
                     throw new ArgumentException("العميل مطلوب");
                 break;
             case InvoiceType.Purchase or InvoiceType.PurchaseReturn:
-                if (!request.SupplierSyncId.HasValue)
+                if (!request.SupplierSyncId.HasValue || request.SupplierSyncId == Guid.Empty)
                     throw new ArgumentException("المورد مطلوب");
                 break;
         }
 
-        if (request.PaymentMethod == PaymentMethod.Cash && !request.CashBoxSyncId.HasValue)
+        if (request.PaymentMethod == PaymentMethod.Cash &&
+            (!request.CashBoxSyncId.HasValue || request.CashBoxSyncId == Guid.Empty))
             throw new ArgumentException("الصندوق مطلوب للفواتير النقدية");
 
-        if ((request.PaymentMethod == PaymentMethod.Installment || request.InvoiceType == InvoiceType.Installment)
-            && request.InstallmentPlan is null)
-            throw new ArgumentException("خطة الأقساط مطلوبة");
+        var needsInstallmentPlan = request.PaymentMethod == PaymentMethod.Installment
+                                   || request.InvoiceType == InvoiceType.Installment;
+        if (needsInstallmentPlan)
+        {
+            if (!request.CustomerSyncId.HasValue || request.CustomerSyncId == Guid.Empty)
+                throw new ArgumentException("العميل مطلوب لفواتير الأقساط");
+            if (request.InstallmentPlan is null)
+                throw new ArgumentException("خطة الأقساط مطلوبة");
+            if (request.InstallmentPlan.NumberOfInstallments < 1)
+                throw new ArgumentException("عدد الأقساط يجب أن يكون واحداً على الأقل");
+        }
+    }
+
+    private async Task RollbackOrphanInvoiceBundleAsync(
+        int tenantId, Guid invoiceSyncId, string username, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var invoice = await _db.Invoices
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.SyncId == invoiceSyncId, ct);
+        if (invoice is null)
+            return;
+
+        // Only roll back unfinished mobile drafts (no number / just pushed).
+        if (!string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            return;
+
+        invoice.IsDeleted = true;
+        invoice.DeletedAt = now;
+        invoice.DeletedBy = username;
+        invoice.UpdatedAt = now;
+        invoice.UpdatedBy = username;
+
+        var items = await _db.InvoiceItems
+            .IgnoreQueryFilters()
+            .Where(i => i.TenantId == tenantId && i.InvoiceId == invoice.Id)
+            .ToListAsync(ct);
+        foreach (var item in items)
+        {
+            item.IsDeleted = true;
+            item.DeletedAt = now;
+            item.DeletedBy = username;
+            item.UpdatedAt = now;
+            item.UpdatedBy = username;
+        }
+
+        var plans = await _db.InstallmentPlans
+            .IgnoreQueryFilters()
+            .Where(p => p.TenantId == tenantId && p.InvoiceId == invoice.Id)
+            .ToListAsync(ct);
+        foreach (var plan in plans)
+        {
+            plan.IsDeleted = true;
+            plan.DeletedAt = now;
+            plan.DeletedBy = username;
+            plan.UpdatedAt = now;
+            plan.UpdatedBy = username;
+
+            var installments = await _db.Installments
+                .IgnoreQueryFilters()
+                .Where(i => i.TenantId == tenantId && i.InstallmentPlanId == plan.Id)
+                .ToListAsync(ct);
+            foreach (var inst in installments)
+            {
+                inst.IsDeleted = true;
+                inst.DeletedAt = now;
+                inst.DeletedBy = username;
+                inst.UpdatedAt = now;
+                inst.UpdatedBy = username;
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
     }
 
     private static decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType)

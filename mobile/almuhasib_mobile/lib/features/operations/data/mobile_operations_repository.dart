@@ -93,6 +93,7 @@ class MobileOperationsRepository {
       operationType: 'invoice',
       path: '/api/mobile/invoices',
       body: request.toJson(),
+      syncId: request.syncId,
     );
   }
 
