@@ -68,6 +68,7 @@ public sealed class ReportFilterRequest
     public Guid? WarehouseSyncId { get; set; }
     public Guid? ProductSyncId { get; set; }
     public Guid? CashBoxSyncId { get; set; }
+    public Guid? BankAccountSyncId { get; set; }
     public Guid? ExpenseTypeSyncId { get; set; }
     public Guid? InvestorSyncId { get; set; }
     public string? Status { get; set; }

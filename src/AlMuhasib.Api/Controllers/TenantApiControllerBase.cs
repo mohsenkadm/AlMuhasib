@@ -43,6 +43,7 @@ public abstract class TenantApiControllerBase : ControllerBase
             WarehouseId = await ResolveIdAsync("warehouse", filter.WarehouseSyncId, ct),
             ProductId = await ResolveIdAsync("product", filter.ProductSyncId, ct),
             CashBoxId = await ResolveIdAsync("cashbox", filter.CashBoxSyncId, ct),
+            BankAccountId = await ResolveIdAsync("bankaccount", filter.BankAccountSyncId, ct),
             ExpenseTypeId = await ResolveIdAsync("expensetype", filter.ExpenseTypeSyncId, ct),
             InvestorId = await ResolveIdAsync("investor", filter.InvestorSyncId, ct),
             CategoryId = await ResolveIdAsync("category", filter.CategorySyncId, ct),
@@ -91,6 +92,7 @@ public sealed class ResolvedReportFilter
     public int? WarehouseId { get; init; }
     public int? ProductId { get; init; }
     public int? CashBoxId { get; init; }
+    public int? BankAccountId { get; init; }
     public int? ExpenseTypeId { get; init; }
     public int? InvestorId { get; init; }
     public int? CategoryId { get; init; }

@@ -1447,6 +1447,81 @@
                         <DataTemplate DataType="{x:Type vm:ProductModificationsReportViewModel}">
                             <views:ProductModificationsReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InvestorProfitDistributionsReportViewModel}">
+                            <views:InvestorProfitDistributionsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CapitalMovementReportViewModel}">
+                            <views:CapitalMovementReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningInstallmentBalancesReportViewModel}">
+                            <views:OpeningInstallmentBalancesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CompanyFeeReportViewModel}">
+                            <views:CompanyFeeReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InstallmentScheduleReportViewModel}">
+                            <views:InstallmentScheduleReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesByPaymentMethodReportViewModel}">
+                            <views:SalesByPaymentMethodReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DailySalesReportViewModel}">
+                            <views:DailySalesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesByWarehouseUserReportViewModel}">
+                            <views:SalesByWarehouseUserReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:GrossProfitMarginReportViewModel}">
+                            <views:GrossProfitMarginReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OperatingProfitReportViewModel}">
+                            <views:OperatingProfitReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ReceivablesAgingReportViewModel}">
+                            <views:ReceivablesAgingReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PayablesAgingReportViewModel}">
+                            <views:PayablesAgingReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CustomerCollectionsReportViewModel}">
+                            <views:CustomerCollectionsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OverdueCustomersReportViewModel}">
+                            <views:OverdueCustomersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SupplierPaymentsReportViewModel}">
+                            <views:SupplierPaymentsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:BankAccountStatementReportViewModel}">
+                            <views:BankAccountStatementReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CashBoxMovementReportViewModel}">
+                            <views:CashBoxMovementReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CashBalancesSummaryReportViewModel}">
+                            <views:CashBalancesSummaryReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:TransfersReportViewModel}">
+                            <views:TransfersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:InventoryValuationReportViewModel}">
+                            <views:InventoryValuationReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:StockTakingReportViewModel}">
+                            <views:StockTakingReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CogsReportViewModel}">
+                            <views:CogsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:FinancialPositionSummaryReportViewModel}">
+                            <views:FinancialPositionSummaryReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProfitAndLossReportViewModel}">
+                            <views:ProfitAndLossReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:StatementOfFinancialPositionReportViewModel}">
+                            <views:StatementOfFinancialPositionReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:UsersViewModel}">
                             <views:UsersView />
                         </DataTemplate>

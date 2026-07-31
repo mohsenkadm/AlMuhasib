@@ -20,6 +20,11 @@ public static class ReportMenuCatalog
             ("هامش ربح المنتجات", PackIconKind.ChartPie, typeof(ProductProfitMarginReportViewModel), ScreenPermissionRegistry.Reports),
             ("صافي أرباح المواد", PackIconKind.CashPlus, typeof(MaterialNetProfitReportViewModel), ScreenPermissionRegistry.Reports),
             ("المواد الأقل ربحاً", PackIconKind.TrendingDown, typeof(LeastProfitMaterialsReportViewModel), ScreenPermissionRegistry.Reports),
+            ("مبيعات حسب طريقة الدفع", PackIconKind.CashRegister, typeof(SalesByPaymentMethodReportViewModel), ScreenPermissionRegistry.Reports),
+            ("يومية المبيعات", PackIconKind.CalendarClock, typeof(DailySalesReportViewModel), ScreenPermissionRegistry.Reports),
+            ("مبيعات حسب المخزن / المستخدم", PackIconKind.Warehouse, typeof(SalesByWarehouseUserReportViewModel), ScreenPermissionRegistry.Reports),
+            ("هامش الربح الإجمالي", PackIconKind.ChartPie, typeof(GrossProfitMarginReportViewModel), ScreenPermissionRegistry.Reports),
+            ("صافي الربح التشغيلي", PackIconKind.ChartLine, typeof(OperatingProfitReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("installments", "الأقساط", PackIconKind.CalendarClock, "#6A1B9A", "#F3E5F5", ScreenPermissionRegistry.Reports,
         [
@@ -29,6 +34,9 @@ public static class ReportMenuCatalog
             ("الأقساط المسددة", PackIconKind.CheckCircle, typeof(PaidInstallmentsReportViewModel), ScreenPermissionRegistry.Reports),
             ("الأقساط غير المسددة", PackIconKind.AlertCircle, typeof(UnpaidInstallmentsReportViewModel), ScreenPermissionRegistry.Reports),
             ("الأقساط المتأخرة", PackIconKind.ClockAlert, typeof(OverdueReportViewModel), ScreenPermissionRegistry.Reports),
+            ("ملخص أرصدة افتتاحية الأقساط", PackIconKind.FileDocumentOutline, typeof(OpeningInstallmentBalancesReportViewModel), ScreenPermissionRegistry.Reports),
+            ("عمولة المنصة / رسوم الشركة", PackIconKind.ChartPie, typeof(CompanyFeeReportViewModel), ScreenPermissionRegistry.Reports),
+            ("جدول الاستحقاق", PackIconKind.CalendarClock, typeof(InstallmentScheduleReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("partners", "العملاء والموردين", PackIconKind.AccountGroup, "#0277BD", "#E1F5FE", ScreenPermissionRegistry.Reports,
         [
@@ -38,6 +46,11 @@ public static class ReportMenuCatalog
             ("كشف حساب عميل", PackIconKind.AccountCash, typeof(CustomerStatementViewModel), ScreenPermissionRegistry.Reports),
             ("ملخص الموردين", PackIconKind.TruckDelivery, typeof(SuppliersOverviewReportViewModel), ScreenPermissionRegistry.Reports),
             ("كشف حساب مورد", PackIconKind.Factory, typeof(SupplierStatementViewModel), ScreenPermissionRegistry.Reports),
+            ("أعمار الذمم المدينة", PackIconKind.AccountCash, typeof(ReceivablesAgingReportViewModel), ScreenPermissionRegistry.Reports),
+            ("أعمار الذمم الدائنة", PackIconKind.TruckDelivery, typeof(PayablesAgingReportViewModel), ScreenPermissionRegistry.Reports),
+            ("كشف تحصيلات العملاء", PackIconKind.CashPlus, typeof(CustomerCollectionsReportViewModel), ScreenPermissionRegistry.Reports),
+            ("العملاء المتأخرون", PackIconKind.AccountAlert, typeof(OverdueCustomersReportViewModel), ScreenPermissionRegistry.Reports),
+            ("كشف مدفوعات الموردين", PackIconKind.CashMinus, typeof(SupplierPaymentsReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("inventory-finance", "المخزون والمالية", PackIconKind.Bank, "#37474F", "#ECEFF1", ScreenPermissionRegistry.Reports,
         [
@@ -52,6 +65,19 @@ public static class ReportMenuCatalog
             ("التدفق النقدي", PackIconKind.ChartTimelineVariantShimmer, typeof(CashFlowReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير المستثمرين", PackIconKind.AccountGroup, typeof(InvestorsReportViewModel), ScreenPermissionRegistry.Reports),
             ("موازنة يومية", PackIconKind.ScaleBalance, typeof(BalanceSheetViewModel), ScreenPermissionRegistry.BalanceSheet),
+            ("كشف حساب مصرف", PackIconKind.Bank, typeof(BankAccountStatementReportViewModel), ScreenPermissionRegistry.Reports),
+            ("حركة صندوق / قاصة", PackIconKind.CashRegister, typeof(CashBoxMovementReportViewModel), ScreenPermissionRegistry.Reports),
+            ("ملخص أرصدة نقدية", PackIconKind.CashMultiple, typeof(CashBalancesSummaryReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقرير التحويلات", PackIconKind.SwapHorizontal, typeof(TransfersReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقييم المخزون بالتكلفة", PackIconKind.CashPlus, typeof(InventoryValuationReportViewModel), ScreenPermissionRegistry.Reports),
+            ("جرد المخزون", PackIconKind.PackageVariant, typeof(StockTakingReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تكلفة البضاعة المباعة", PackIconKind.CartArrowDown, typeof(CogsReportViewModel), ScreenPermissionRegistry.Reports),
+        ]),
+        ("financial", "التقارير المالية", PackIconKind.Bank, "#00695C", "#E0F2F1", ScreenPermissionRegistry.Reports,
+        [
+            ("ملخص المركز المالي", PackIconKind.ChartPie, typeof(FinancialPositionSummaryReportViewModel), ScreenPermissionRegistry.Reports),
+            ("أرباح وخسائر", PackIconKind.ChartLine, typeof(ProfitAndLossReportViewModel), ScreenPermissionRegistry.Reports),
+            ("الميزانية العمومية", PackIconKind.ScaleBalance, typeof(StatementOfFinancialPositionReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("supervisory", "التقارير الرقابية", PackIconKind.ShieldSearch, "#C62828", "#FFEBEE", ScreenPermissionRegistry.SupervisoryReports,
         [
@@ -63,6 +89,8 @@ public static class ReportMenuCatalog
             ("مصاريف محذوفة", PackIconKind.CashMinus, typeof(DeletedExpensesReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
             ("تعديلات الفواتير", PackIconKind.FileDocumentEdit, typeof(InvoiceModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
             ("تعديلات المنتجات", PackIconKind.PackageVariantClosedPlus, typeof(ProductModificationsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("توزيعات أرباح المستثمرين", PackIconKind.AccountCash, typeof(InvestorProfitDistributionsReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
+            ("حركة رأس المال", PackIconKind.SwapHorizontal, typeof(CapitalMovementReportViewModel), ScreenPermissionRegistry.SupervisoryReports),
         ]),
     ];
 

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Infrastructure.Services;
 
-public class ReportService : IReportService
+public partial class ReportService : IReportService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
 

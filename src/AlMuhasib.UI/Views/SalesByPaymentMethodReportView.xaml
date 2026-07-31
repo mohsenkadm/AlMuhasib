@@ -1,0 +1,135 @@
+<UserControl x:Class="AlMuhasib.UI.Views.SalesByPaymentMethodReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SalesByPaymentMethodReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:CurrencyFormatConverter x:Key="CurrencyFormat"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,24,24,8">
+                <TextBlock Text="مبيعات حسب طريقة الدفع" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                <UniformGrid Columns="4" Margin="0,0,0,20">
+                    <controls:AnimatedStatCard
+                        Title="إجمالي المبيعات"
+                        TextValue="{Binding TotalSales}"
+                        Icon="CashRegister"
+                        IconBackground="#E8F5E9"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard
+                        Title="نقدي"
+                        TextValue="{Binding CashSales}"
+                        Icon="Cash"
+                        IconBackground="#E3F2FD"
+                        IconForeground="#1565C0"
+                        ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard
+                        Title="آجل"
+                        TextValue="{Binding CreditSales}"
+                        Icon="CashRegister"
+                        IconBackground="#FFF3E0"
+                        IconForeground="#EF6C00"
+                        ValueForeground="#EF6C00"/>
+                    <controls:AnimatedStatCard
+                        Title="أقساط"
+                        TextValue="{Binding InstallmentSales}"
+                        Icon="CalendarClock"
+                        IconBackground="#F3E5F5"
+                        IconForeground="#6A1B9A"
+                        ValueForeground="#6A1B9A"/>
+                </UniformGrid>
+
+                <UniformGrid Columns="2" Margin="0,0,0,4">
+                    <controls:ChartCard Title="التوزيع" Margin="0,0,8,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding PieSeries}" Height="300"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="الاتجاه الزمني" Margin="8,0,0,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding DailySeries}" XAxes="{Binding DailyXAxes}" YAxes="{Binding DailyYAxes}" Height="300"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </UniformGrid>
+
+                <Border Style="{StaticResource FilterBar}">
+                    <StackPanel Orientation="Horizontal">
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Warehouses}" SelectedValue="{Binding SelectedWarehouseId}" SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="المخزن" Width="160" Margin="0,0,12,0"/>
+                        <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <materialDesign:Card Grid.Row="1" materialDesign:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="مبيعات حسب طريقة الدفع"
+                                             TargetDataGrid="{Binding ElementName=SalesByPaymentMethodReportGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="SalesByPaymentMethodReportGrid"
+                          ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
+                          CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
+                          Grid.Row="1">
+                    <DataGrid.Columns>
+                                <DataGridTextColumn Header="طريقة الدفع" Binding="{Binding PaymentMethod}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMethod"/>
+                                <DataGridTextColumn Header="عدد الفواتير" Binding="{Binding InvoiceCount}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceCount"/>
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                <DataGridTextColumn Header="النسبة %" Binding="{Binding SharePercent, StringFormat=N0}" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SharePercent"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </materialDesign:Card>
+
+        <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

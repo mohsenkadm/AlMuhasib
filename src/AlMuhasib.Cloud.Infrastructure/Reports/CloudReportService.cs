@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Cloud.Infrastructure.Reports;
 
-public sealed class CloudReportService : Application.Abstractions.ICloudReportService
+public sealed partial class CloudReportService : Application.Abstractions.ICloudReportService
 {
     private readonly CloudDbContext _db;
 
