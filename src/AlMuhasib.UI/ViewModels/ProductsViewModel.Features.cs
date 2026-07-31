@@ -35,6 +35,7 @@ public partial class ProductsViewModel
     [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showSizesSection;
     [ObservableProperty] private bool _showColorsSection;
+    [ObservableProperty] private bool _showScientificName;
 
     [ObservableProperty] private PackagingType? _selectedPackagingTypeToAdd;
     [ObservableProperty] private decimal _newUnitFactor = 1m;
@@ -148,6 +149,7 @@ public partial class ProductsViewModel
         ShowSerialsSection = _featureFlags.SerialNumbers;
         ShowSizesSection = _featureFlags.TemplateClothing;
         ShowColorsSection = _featureFlags.TemplateClothing;
+        ShowScientificName = _featureFlags.TemplatePharmacy;
 
         if (!ShowSizesSection)
         {

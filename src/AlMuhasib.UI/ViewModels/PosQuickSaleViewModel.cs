@@ -612,11 +612,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IEnumerable<Product> query = _allProducts;
 
         if (!string.IsNullOrWhiteSpace(term))
-        {
-            query = query.Where(p =>
-                p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(p.Barcode) && p.Barcode.Contains(term, StringComparison.OrdinalIgnoreCase)));
-        }
+            query = query.Where(p => ProductSearchHelper.Matches(p, term));
 
         FilteredProducts.Clear();
         foreach (var p in query.Take(48))

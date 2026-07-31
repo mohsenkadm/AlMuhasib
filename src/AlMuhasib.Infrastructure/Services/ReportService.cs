@@ -2066,6 +2066,7 @@ public class ReportService : IReportService
             q = q.Where(b =>
                 (b.Product != null && b.Product.Name.Contains(term))
                 || (b.Product != null && b.Product.Barcode != null && b.Product.Barcode.Contains(term))
+                || (b.Product != null && b.Product.ScientificName != null && b.Product.ScientificName.Contains(term))
                 || (b.BatchNumber != null && b.BatchNumber.Contains(term)));
         }
 

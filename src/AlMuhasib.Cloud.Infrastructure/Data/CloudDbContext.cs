@@ -110,6 +110,11 @@ public class CloudDbContext : DbContext
             e.HasIndex(x => new { x.TenantId, x.Name });
         });
 
+        modelBuilder.Entity<CloudProduct>(e =>
+        {
+            e.Property(x => x.ScientificName).HasMaxLength(300);
+        });
+
         modelBuilder.Entity<CloudProductPrice>(e =>
         {
             e.Property(x => x.SalePrice).HasPrecision(18, 2);

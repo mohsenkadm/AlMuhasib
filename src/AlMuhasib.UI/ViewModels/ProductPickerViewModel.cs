@@ -4,6 +4,7 @@ using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Services;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,6 +31,8 @@ public partial class ProductPickerDisplayItem : ObservableObject
     public string Name => Product.Name;
     public string CategoryName { get; }
     public string? Barcode => Product.Barcode;
+    public string? ScientificName => Product.ScientificName;
+    public bool HasScientificName => !string.IsNullOrWhiteSpace(ScientificName);
 
     [ObservableProperty]
     private decimal _quantity;
@@ -334,9 +337,7 @@ public partial class ProductPickerViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(term))
         {
-            query = query.Where(p =>
-                p.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (p.Barcode?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+            query = query.Where(p => ProductSearchHelper.Matches(p, term));
         }
 
         var ordered = query.OrderBy(p => p.Name).ToList();

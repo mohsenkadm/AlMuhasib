@@ -20,9 +20,11 @@ public partial class ProductCardDisplay : ObservableObject
 {
     public required Product Product { get; init; }
     public string Name { get; init; } = string.Empty;
+    public string? ScientificName { get; init; }
     public string? Barcode { get; init; }
     public string? Description { get; init; }
     public string CategoryName { get; init; } = "—";
     public ObservableCollection<ProductPriceCardLine> Prices { get; } = [];
     public bool HasPrices => Prices.Count > 0;
+    public bool HasScientificName => !string.IsNullOrWhiteSpace(ScientificName);
 }

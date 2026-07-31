@@ -147,6 +147,7 @@ public class ProductPriceService : IProductPriceService
             query = query.Where(p =>
                 p.Product.Name.Contains(term) ||
                 (p.Product.Barcode != null && p.Product.Barcode.Contains(term)) ||
+                (p.Product.ScientificName != null && p.Product.ScientificName.Contains(term)) ||
                 p.PricingType.Name.Contains(term));
         }
 

@@ -46,7 +46,8 @@ public sealed class ProductsController : ControllerBase
             var term = $"%{search.Trim()}%";
             query = query.Where(p =>
                 EF.Functions.Like(p.Name, term) ||
-                (p.Barcode != null && EF.Functions.Like(p.Barcode, term)));
+                (p.Barcode != null && EF.Functions.Like(p.Barcode, term)) ||
+                (p.ScientificName != null && EF.Functions.Like(p.ScientificName, term)));
         }
 
         query = query.OrderBy(p => p.Name);

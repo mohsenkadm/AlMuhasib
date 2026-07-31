@@ -214,6 +214,7 @@ public sealed class MobileFinanceQueryController : ControllerBase
             var term = $"%{search.Trim()}%";
             query = query.Where(s =>
                 EF.Functions.Like(s.Product.Name, term) ||
+                (s.Product.ScientificName != null && EF.Functions.Like(s.Product.ScientificName, term)) ||
                 EF.Functions.Like(s.Warehouse.Name, term));
         }
 

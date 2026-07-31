@@ -113,7 +113,7 @@
 
                     <TextBox x:Name="SearchBox"
                              Grid.Row="1"
-                             materialDesign:HintAssist.Hint="باركود أو اسم منتج — Enter للإضافة"
+                             materialDesign:HintAssist.Hint="باركود أو اسم أو اسم علمي — Enter للإضافة"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
                              KeyDown="SearchBox_KeyDown"
@@ -183,6 +183,9 @@
                                         <StackPanel Margin="12,10,36,0" IsHitTestVisible="False">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
                                                        TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding ScientificName}" FontSize="10" Margin="0,2,0,0"
+                                                       Foreground="#607D8B" TextTrimming="CharacterEllipsis"
+                                                       Visibility="{Binding HasScientificName, Converter={StaticResource BoolVis}}"/>
                                             <TextBlock Text="{Binding Barcode}" FontSize="10" Margin="0,4,0,0"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                                        TextTrimming="CharacterEllipsis"/>

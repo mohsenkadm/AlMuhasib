@@ -59,6 +59,7 @@ public class ProductService : IProductService
             query = query.Where(p =>
                 p.Name.Contains(term) ||
                 (p.Barcode != null && p.Barcode.Contains(term)) ||
+                (p.ScientificName != null && p.ScientificName.Contains(term)) ||
                 (p.Description != null && p.Description.Contains(term)));
         }
 
@@ -101,6 +102,7 @@ public class ProductService : IProductService
 
         existing.Name = product.Name;
         existing.Barcode = product.Barcode;
+        existing.ScientificName = product.ScientificName;
         existing.Description = product.Description;
         existing.CategoryId = product.CategoryId;
         existing.Weight = product.Weight;
@@ -163,7 +165,9 @@ public class ProductService : IProductService
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Products
             .Include(p => p.Category)
-            .Where(p => p.Name.Contains(name))
+            .Where(p => p.Name.Contains(name)
+                        || (p.ScientificName != null && p.ScientificName.Contains(name))
+                        || (p.Barcode != null && p.Barcode.Contains(name)))
             .Take(20)
             .ToListAsync();
     }
