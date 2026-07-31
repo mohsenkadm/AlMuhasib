@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
+import 'package:uuid/uuid.dart';
 
 import '../../../core/getx/app_services.dart';
 import '../../../shared/models/master_data_models.dart';
@@ -30,6 +31,10 @@ class WizardLineItem {
 class InvoiceWizardController extends GetxController {
   final discountController = TextEditingController(text: '0');
   final notesController = TextEditingController();
+  final _uuid = const Uuid();
+
+  /// Stable client SyncId for idempotent save / offline queue retries.
+  late final String draftSyncId = _uuid.v4();
 
   final step = 0.obs;
   final invoiceType = 1.obs;
@@ -45,18 +50,25 @@ class InvoiceWizardController extends GetxController {
   final installmentStart = DateTime.now().obs;
   final saving = false.obs;
   final productPricingEnabled = false.obs;
+  final bootstrapping = true.obs;
 
   @override
   void onInit() {
     super.onInit();
+    creditDueDate.value = DateTime.now().add(const Duration(days: 30));
     _bootstrap();
   }
 
   Future<void> _bootstrap() async {
-    await Future.wait([
-      _loadBusinessSettings(),
-      _preloadDefaults(),
-    ]);
+    bootstrapping.value = true;
+    try {
+      await Future.wait([
+        _loadBusinessSettings(),
+        _preloadDefaults(),
+      ]);
+    } finally {
+      bootstrapping.value = false;
+    }
   }
 
   Future<void> _loadBusinessSettings() async {
@@ -71,11 +83,11 @@ class InvoiceWizardController extends GetxController {
   Future<void> _preloadDefaults() async {
     try {
       final warehouses = await AppServices.data.getWarehouses();
-      if (warehouses.length == 1) {
+      if (warehouses.isNotEmpty && warehouse.value == null) {
         warehouse.value = warehouses.first;
       }
       final cashBoxes = await AppServices.data.getCashBoxes();
-      if (cashBoxes.length == 1) {
+      if (cashBoxes.isNotEmpty && cashBox.value == null) {
         cashBox.value = cashBoxes.first;
       }
     } catch (_) {}
@@ -106,10 +118,28 @@ class InvoiceWizardController extends GetxController {
           AppExceptionHandler.showError('invalid_quantity'.tr());
           return false;
         }
+        if (items.any((item) => item.unitPrice < 0)) {
+          AppExceptionHandler.showError('invalid_unit_price'.tr());
+          return false;
+        }
+        // When product pricing is enabled, zero prices are almost always mistakes.
+        if (productPricingEnabled.value &&
+            items.any((item) => item.unitPrice == 0)) {
+          AppExceptionHandler.showError('zero_unit_price'.tr());
+          return false;
+        }
         return true;
       case 3:
         if (paymentMethod.value == 0 && cashBox.value == null) {
           AppExceptionHandler.showError('select_cashbox'.tr());
+          return false;
+        }
+        if (paymentMethod.value == 1 && creditDueDate.value == null) {
+          AppExceptionHandler.showError('select_credit_due_date'.tr());
+          return false;
+        }
+        if (needsInstallmentPlan && installmentCount.value < 1) {
+          AppExceptionHandler.showError('invalid_installment_count'.tr());
           return false;
         }
         return true;
@@ -144,7 +174,36 @@ class InvoiceWizardController extends GetxController {
     if (type == 2) paymentMethod.value = 2;
   }
 
-  void setPaymentMethod(int method) => paymentMethod.value = method;
+  void setPaymentMethod(int method) {
+    paymentMethod.value = method;
+    if (method == 1 && creditDueDate.value == null) {
+      creditDueDate.value = DateTime.now().add(const Duration(days: 30));
+    }
+  }
+
+  Future<void> pickInvoiceDate() async {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final picked = await showDatePicker(
+      context: ctx,
+      initialDate: date.value,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) date.value = picked;
+  }
+
+  Future<void> pickCreditDueDate() async {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final picked = await showDatePicker(
+      context: ctx,
+      initialDate: creditDueDate.value ?? DateTime.now().add(const Duration(days: 30)),
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked != null) creditDueDate.value = picked;
+  }
 
   Future<void> pickLookup({
     required String title,
@@ -254,7 +313,12 @@ class InvoiceWizardController extends GetxController {
   }
 
   void setInstallmentCount(String value) {
-    installmentCount.value = int.tryParse(value) ?? installmentCount.value;
+    final parsed = int.tryParse(value);
+    if (parsed != null && parsed >= 1) {
+      installmentCount.value = parsed;
+    } else if (value.trim().isEmpty) {
+      installmentCount.value = 0;
+    }
   }
 
   void refreshTotals() => step.refresh();
@@ -263,24 +327,19 @@ class InvoiceWizardController extends GetxController {
     final ctx = Get.context;
     if (ctx == null) return;
 
-    if (warehouse.value == null) {
-      AppExceptionHandler.showError('select_warehouse'.tr());
-      return;
+    for (var s = 1; s <= 3; s++) {
+      final previous = step.value;
+      step.value = s;
+      final ok = validateCurrentStep();
+      step.value = previous;
+      if (!ok) {
+        step.value = s;
+        return;
+      }
     }
-    if (needsCustomer && customer.value == null) {
-      AppExceptionHandler.showError('select_customer'.tr());
-      return;
-    }
-    if (needsSupplier && supplier.value == null) {
-      AppExceptionHandler.showError('select_supplier'.tr());
-      return;
-    }
-    if (paymentMethod.value == 0 && cashBox.value == null) {
-      AppExceptionHandler.showError('select_cashbox'.tr());
-      return;
-    }
-    if (items.isEmpty) {
-      AppExceptionHandler.showError('add_line_item'.tr());
+
+    if (discount < 0) {
+      AppExceptionHandler.showError('invalid_discount'.tr());
       return;
     }
 
@@ -288,6 +347,7 @@ class InvoiceWizardController extends GetxController {
     try {
       final response = await AppServices.operations.createInvoice(
         CreateInvoiceRequest(
+          syncId: draftSyncId,
           invoiceType: invoiceType.value,
           customerSyncId: customer.value?.syncId,
           supplierSyncId: supplier.value?.syncId,
@@ -295,7 +355,8 @@ class InvoiceWizardController extends GetxController {
           paymentMethod: paymentMethod.value,
           cashBoxSyncId: cashBox.value?.syncId,
           date: date.value,
-          creditDueDate: creditDueDate.value,
+          creditDueDate:
+              paymentMethod.value == 1 ? creditDueDate.value : null,
           discountAmount: discount,
           notes: notesController.text.trim().isEmpty
               ? null
@@ -314,19 +375,26 @@ class InvoiceWizardController extends GetxController {
               .toList(),
           installmentPlan: needsInstallmentPlan
               ? CreateInstallmentPlanRequest(
-                  numberOfInstallments: installmentCount.value,
+                  numberOfInstallments: installmentCount.value.clamp(1, 360),
                   startDate: installmentStart.value,
                 )
               : null,
         ),
       );
       if (response.conflicts.isNotEmpty) {
-        AppExceptionHandler.showConflicts(response.conflicts);
+        AppExceptionHandler.showConflicts(
+          response.conflicts,
+          title: response.message.isNotEmpty
+              ? response.message
+              : null,
+        );
         return;
       }
-      AppExceptionHandler.showSuccess(
-        '${response.message} ${response.invoiceNumber ?? ''}',
-      );
+      final number = response.invoiceNumber?.trim();
+      final successMessage = (number != null && number.isNotEmpty)
+          ? '${response.message} ($number)'
+          : response.message;
+      AppExceptionHandler.showSuccess(successMessage);
       Get.back(result: true);
     } catch (e) {
       AppExceptionHandler.showError(e);

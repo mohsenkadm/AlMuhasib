@@ -11,10 +11,22 @@ class MobileWriteResponse {
       syncId: json['syncId']?.toString() ?? '',
       invoiceNumber: json['invoiceNumber'] as String?,
       message: json['message'] as String? ?? '',
-      conflicts: (json['conflicts'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
+      conflicts: _parseConflicts(json['conflicts']),
     );
+  }
+
+  static List<String> _parseConflicts(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.map((e) {
+      if (e is Map) {
+        final reason = e['reason']?.toString().trim() ?? '';
+        final entity = e['entityType']?.toString().trim() ?? '';
+        if (reason.isEmpty) return e.toString();
+        if (entity.isEmpty) return reason;
+        return '$entity: $reason';
+      }
+      return e.toString();
+    }).toList();
   }
 
   final String syncId;
@@ -169,6 +181,7 @@ class CreateInstallmentPlanRequest {
 
 class CreateInvoiceRequest {
   CreateInvoiceRequest({
+    this.syncId,
     required this.invoiceType,
     this.customerSyncId,
     this.supplierSyncId,
@@ -184,6 +197,7 @@ class CreateInvoiceRequest {
   });
 
   Map<String, dynamic> toJson() => {
+        if (syncId != null) 'syncId': syncId,
         'invoiceType': invoiceType,
         if (customerSyncId != null) 'customerSyncId': customerSyncId,
         if (supplierSyncId != null) 'supplierSyncId': supplierSyncId,
@@ -198,6 +212,7 @@ class CreateInvoiceRequest {
         if (installmentPlan != null) 'installmentPlan': installmentPlan!.toJson(),
       };
 
+  final String? syncId;
   final int invoiceType;
   final String? customerSyncId;
   final String? supplierSyncId;

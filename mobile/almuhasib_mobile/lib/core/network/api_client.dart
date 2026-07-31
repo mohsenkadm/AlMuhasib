@@ -143,6 +143,8 @@ class ApiClient {
       final response = await _dio.post(path, data: data);
       return parser(response.data);
     } on DioException catch (e) {
+      final conflict = _tryParseConflict(e, parser);
+      if (conflict != null) return conflict;
       throw _mapError(e);
     }
   }
@@ -164,6 +166,8 @@ class ApiClient {
       final response = await _dio.put(path, data: data);
       return parser(response.data);
     } on DioException catch (e) {
+      final conflict = _tryParseConflict(e, parser);
+      if (conflict != null) return conflict;
       throw _mapError(e);
     }
   }
@@ -180,9 +184,39 @@ class ApiClient {
     }
   }
 
+  /// Mobile write endpoints return 409 + [MobileWriteResponse] body on sync conflicts.
+  T? _tryParseConflict<T>(DioException e, T Function(dynamic data) parser) {
+    if (e.response?.statusCode != 409) return null;
+    final data = e.response?.data;
+    if (data == null) return null;
+    try {
+      return parser(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
   ApiException _mapError(DioException e) {
     final data = e.response?.data;
     if (data is Map<String, dynamic>) {
+      // Prefer explicit conflict reasons when present.
+      final conflicts = data['conflicts'];
+      if (conflicts is List && conflicts.isNotEmpty) {
+        final reasons = conflicts.map((c) {
+          if (c is Map) {
+            final reason = c['reason']?.toString();
+            if (reason != null && reason.isNotEmpty) return reason;
+          }
+          return c.toString();
+        }).join('\n');
+        return ApiException(
+          message: (data['message'] as String?)?.isNotEmpty == true
+              ? '${data['message']}\n$reasons'
+              : reasons,
+          code: data['code'] as String?,
+          statusCode: e.response?.statusCode,
+        );
+      }
       final error = ApiErrorResponse.fromJson(data);
       return ApiException(
         message: error.message,

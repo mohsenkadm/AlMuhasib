@@ -58,6 +58,7 @@ public sealed class CreateInstallmentPlanRequest
 
 public sealed class CreateInvoiceRequest
 {
+    public Guid? SyncId { get; set; }
     public InvoiceType InvoiceType { get; set; }
     public Guid? CustomerSyncId { get; set; }
     public Guid? SupplierSyncId { get; set; }
