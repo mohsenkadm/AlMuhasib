@@ -48,17 +48,17 @@ abstract final class AppExceptionHandler {
     );
   }
 
-  static void showConflicts(List<String> conflicts) {
-    final body = conflicts.join('\n');
+  static void showConflicts(List<String> conflicts, {String? title}) {
+    final body = conflicts.where((c) => c.trim().isNotEmpty).join('\n');
     Get.snackbar(
-      'conflict_title'.tr(),
+      title ?? 'conflict_title'.tr(),
       body.isEmpty ? 'conflict_generic'.tr() : body,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppColors.warning,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 6),
       icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
     );
   }

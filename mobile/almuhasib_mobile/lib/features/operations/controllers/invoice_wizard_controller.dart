@@ -122,7 +122,9 @@ class InvoiceWizardController extends GetxController {
           AppExceptionHandler.showError('invalid_unit_price'.tr());
           return false;
         }
-        if (items.any((item) => item.unitPrice == 0)) {
+        // When product pricing is enabled, zero prices are almost always mistakes.
+        if (productPricingEnabled.value &&
+            items.any((item) => item.unitPrice == 0)) {
           AppExceptionHandler.showError('zero_unit_price'.tr());
           return false;
         }
@@ -177,6 +179,18 @@ class InvoiceWizardController extends GetxController {
     if (method == 1 && creditDueDate.value == null) {
       creditDueDate.value = DateTime.now().add(const Duration(days: 30));
     }
+  }
+
+  Future<void> pickInvoiceDate() async {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final picked = await showDatePicker(
+      context: ctx,
+      initialDate: date.value,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) date.value = picked;
   }
 
   Future<void> pickCreditDueDate() async {
@@ -368,12 +382,19 @@ class InvoiceWizardController extends GetxController {
         ),
       );
       if (response.conflicts.isNotEmpty) {
-        AppExceptionHandler.showConflicts(response.conflicts);
+        AppExceptionHandler.showConflicts(
+          response.conflicts,
+          title: response.message.isNotEmpty
+              ? response.message
+              : null,
+        );
         return;
       }
-      AppExceptionHandler.showSuccess(
-        '${response.message} ${response.invoiceNumber ?? ''}'.trim(),
-      );
+      final number = response.invoiceNumber?.trim();
+      final successMessage = (number != null && number.isNotEmpty)
+          ? '${response.message} ($number)'
+          : response.message;
+      AppExceptionHandler.showSuccess(successMessage);
       Get.back(result: true);
     } catch (e) {
       AppExceptionHandler.showError(e);

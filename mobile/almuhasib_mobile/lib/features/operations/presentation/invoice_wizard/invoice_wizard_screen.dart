@@ -410,6 +410,14 @@ class _PaymentStep extends StatelessWidget {
           FormSectionCard(
             title: 'payment_method'.tr(),
             children: [
+              _PickerButton(
+                icon: Icons.calendar_today_outlined,
+                label:
+                    '${'date'.tr()}: ${DateFormat.yMMMd().format(controller.date.value)}',
+                filled: true,
+                onPressed: controller.pickInvoiceDate,
+              ),
+              const SizedBox(height: 8),
               ...[
                 (0, 'cash'.tr(), Icons.payments_outlined),
                 (1, 'credit'.tr(), Icons.schedule_outlined),
@@ -518,6 +526,10 @@ class _ReviewStep extends StatelessWidget {
           _ReviewRow(
             label: 'invoice_type'.tr(),
             value: invoiceTypeLabel(controller.invoiceType.value),
+          ),
+          _ReviewRow(
+            label: 'date'.tr(),
+            value: DateFormat.yMMMd().format(controller.date.value),
           ),
           _ReviewRow(
             label: 'payment_method'.tr(),
