@@ -17,10 +17,80 @@ class ReportDetailController extends GetxController {
   final Rxn<LookupItem> selectedCustomer = Rxn<LookupItem>();
   final Rxn<LookupItem> selectedInvestor = Rxn<LookupItem>();
   final Rxn<LookupItem> selectedSupplier = Rxn<LookupItem>();
+  final Rxn<LookupItem> selectedWarehouse = Rxn<LookupItem>();
+  final Rxn<LookupItem> selectedCashBox = Rxn<LookupItem>();
+  final Rxn<LookupItem> selectedBankAccount = Rxn<LookupItem>();
   final isLoading = true.obs;
   final Rxn<Object> error = Rxn<Object>();
   final Rxn<dynamic> result = Rxn<dynamic>();
   final profitInvoices = <ProfitInvoiceDetailRow>[].obs;
+
+  static const _noDateTypes = {
+    'overdue',
+    'warehouse',
+    'installments_unpaid',
+    'installments_aging',
+    'stock_health',
+    'cash_balances_summary',
+    'inventory_valuation',
+    'stock_taking',
+  };
+
+  static const _singleDateTypes = {
+    'balance_sheet',
+    'receivables_aging',
+    'payables_aging',
+    'overdue_customers',
+    'financial_position_summary',
+    'statement_of_financial_position',
+  };
+
+  static const _customerFilterTypes = {
+    'statement',
+    'opening_installment_balances',
+    'company_fees',
+    'installment_schedule',
+    'receivables_aging',
+    'customer_collections',
+    'overdue_customers',
+  };
+
+  static const _supplierFilterTypes = {
+    'supplier_statement',
+    'payables_aging',
+    'supplier_payments',
+  };
+
+  static const _investorFilterTypes = {
+    'investor_statement',
+    'investor_profit_distributions',
+  };
+
+  static const _warehouseFilterTypes = {
+    'sales_by_payment_method',
+    'daily_sales',
+    'sales_by_warehouse_user',
+    'inventory_valuation',
+    'stock_taking',
+    'cogs',
+  };
+
+  static const _cashBoxFilterTypes = {
+    'customer_collections',
+    'cash_box_movement',
+  };
+
+  static const _bankFilterTypes = {
+    'bank_account_statement',
+  };
+
+  static const _requiredEntityTypes = {
+    'statement',
+    'investor_statement',
+    'supplier_statement',
+    'bank_account_statement',
+    'cash_box_movement',
+  };
 
   @override
   void onInit() {
@@ -71,20 +141,7 @@ class ReportDetailController extends GetxController {
         case 'top_products':
           loaded = await repo.getTopProductsReport(from.value, to.value);
         case 'statement':
-          if (selectedCustomer.value == null) {
-            final customers = await AppServices.data.getCustomers();
-            if (customers.isNotEmpty) {
-              selectedCustomer.value = customers.first;
-            }
-          } else {
-            // حدّث الرصيد/الاسم من القائمة إن وُجد
-            final customers = await AppServices.data.getCustomers();
-            final syncId = selectedCustomer.value!.syncId;
-            final match = customers.where((c) => c.syncId == syncId);
-            if (match.isNotEmpty) {
-              selectedCustomer.value = match.first;
-            }
-          }
+          await _ensureCustomer();
           if (selectedCustomer.value != null) {
             loaded = await repo.getCustomerStatement(
               selectedCustomer.value!.syncId,
@@ -93,12 +150,7 @@ class ReportDetailController extends GetxController {
             );
           }
         case 'investor_statement':
-          if (selectedInvestor.value == null) {
-            final investors = await AppServices.data.getInvestors();
-            if (investors.isNotEmpty) {
-              selectedInvestor.value = investors.first;
-            }
-          }
+          await _ensureInvestor();
           if (selectedInvestor.value != null) {
             loaded = await repo.getInvestorStatement(
               selectedInvestor.value!.syncId,
@@ -107,12 +159,7 @@ class ReportDetailController extends GetxController {
             );
           }
         case 'supplier_statement':
-          if (selectedSupplier.value == null) {
-            final suppliers = await AppServices.data.getSuppliers();
-            if (suppliers.isNotEmpty) {
-              selectedSupplier.value = suppliers.first;
-            }
-          }
+          await _ensureSupplier();
           if (selectedSupplier.value != null) {
             loaded = await repo.getSupplierStatement(
               selectedSupplier.value!.syncId,
@@ -150,6 +197,139 @@ class ReportDetailController extends GetxController {
           loaded = await repo.getSuppliersOverview(from.value, to.value);
         case 'profit_comparison':
           loaded = await repo.getProfitComparison(from.value, to.value);
+        case 'investor_profit_distributions':
+          loaded = await repo.getInvestorProfitDistributions(
+            from: from.value,
+            to: to.value,
+            investorSyncId: selectedInvestor.value?.syncId,
+          );
+        case 'capital_movement':
+          loaded = await repo.getCapitalMovement(
+            from: from.value,
+            to: to.value,
+          );
+        case 'opening_installment_balances':
+          loaded = await repo.getOpeningInstallmentBalances(
+            from: from.value,
+            to: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+          );
+        case 'company_fees':
+          loaded = await repo.getCompanyFees(
+            from: from.value,
+            to: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+          );
+        case 'installment_schedule':
+          loaded = await repo.getInstallmentSchedule(
+            from: from.value,
+            to: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+          );
+        case 'sales_by_payment_method':
+          loaded = await repo.getSalesByPaymentMethod(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'daily_sales':
+          loaded = await repo.getDailySales(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'sales_by_warehouse_user':
+          loaded = await repo.getSalesByWarehouseUser(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'gross_profit_margin':
+          loaded = await repo.getGrossProfitMargin(
+            from: from.value,
+            to: to.value,
+          );
+        case 'operating_profit':
+          loaded = await repo.getOperatingProfit(
+            from: from.value,
+            to: to.value,
+          );
+        case 'receivables_aging':
+          loaded = await repo.getReceivablesAging(
+            asOf: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+          );
+        case 'payables_aging':
+          loaded = await repo.getPayablesAging(
+            asOf: to.value,
+            supplierSyncId: selectedSupplier.value?.syncId,
+          );
+        case 'customer_collections':
+          loaded = await repo.getCustomerCollections(
+            from: from.value,
+            to: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+            cashBoxSyncId: selectedCashBox.value?.syncId,
+          );
+        case 'overdue_customers':
+          loaded = await repo.getOverdueCustomers(
+            asOf: to.value,
+            customerSyncId: selectedCustomer.value?.syncId,
+          );
+        case 'supplier_payments':
+          loaded = await repo.getSupplierPayments(
+            from: from.value,
+            to: to.value,
+            supplierSyncId: selectedSupplier.value?.syncId,
+          );
+        case 'bank_account_statement':
+          await _ensureBankAccount();
+          if (selectedBankAccount.value != null) {
+            loaded = await repo.getBankAccountStatement(
+              from: from.value,
+              to: to.value,
+              bankAccountSyncId: selectedBankAccount.value!.syncId,
+            );
+          }
+        case 'cash_box_movement':
+          await _ensureCashBox();
+          if (selectedCashBox.value != null) {
+            loaded = await repo.getCashBoxMovement(
+              from: from.value,
+              to: to.value,
+              cashBoxSyncId: selectedCashBox.value!.syncId,
+            );
+          }
+        case 'cash_balances_summary':
+          loaded = await repo.getCashBalancesSummary();
+        case 'transfers':
+          loaded = await repo.getTransfersReport(
+            from: from.value,
+            to: to.value,
+          );
+        case 'inventory_valuation':
+          loaded = await repo.getInventoryValuation(
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'stock_taking':
+          loaded = await repo.getStockTaking(
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'cogs':
+          loaded = await repo.getCogsReport(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'financial_position_summary':
+          loaded = await repo.getFinancialPositionSummary(asOf: to.value);
+        case 'profit_and_loss':
+          loaded = await repo.getProfitAndLoss(
+            from: from.value,
+            to: to.value,
+          );
+        case 'statement_of_financial_position':
+          loaded = await repo.getStatementOfFinancialPosition(asOf: to.value);
         default:
           loaded = null;
       }
@@ -158,6 +338,58 @@ class ReportDetailController extends GetxController {
       error.value = e;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _ensureCustomer() async {
+    if (selectedCustomer.value == null) {
+      final customers = await AppServices.data.getCustomers();
+      if (customers.isNotEmpty) {
+        selectedCustomer.value = customers.first;
+      }
+    } else {
+      final customers = await AppServices.data.getCustomers();
+      final syncId = selectedCustomer.value!.syncId;
+      final match = customers.where((c) => c.syncId == syncId);
+      if (match.isNotEmpty) {
+        selectedCustomer.value = match.first;
+      }
+    }
+  }
+
+  Future<void> _ensureInvestor() async {
+    if (selectedInvestor.value == null) {
+      final investors = await AppServices.data.getInvestors();
+      if (investors.isNotEmpty) {
+        selectedInvestor.value = investors.first;
+      }
+    }
+  }
+
+  Future<void> _ensureSupplier() async {
+    if (selectedSupplier.value == null) {
+      final suppliers = await AppServices.data.getSuppliers();
+      if (suppliers.isNotEmpty) {
+        selectedSupplier.value = suppliers.first;
+      }
+    }
+  }
+
+  Future<void> _ensureCashBox() async {
+    if (selectedCashBox.value == null) {
+      final boxes = await AppServices.data.getCashBoxes();
+      if (boxes.isNotEmpty) {
+        selectedCashBox.value = boxes.first;
+      }
+    }
+  }
+
+  Future<void> _ensureBankAccount() async {
+    if (selectedBankAccount.value == null) {
+      final accounts = await AppServices.data.getBankAccounts();
+      if (accounts.isNotEmpty) {
+        selectedBankAccount.value = accounts.first;
+      }
     }
   }
 
@@ -223,70 +455,83 @@ class ReportDetailController extends GetxController {
     }
   }
 
-  String get title {
-    switch (reportType) {
-      case 'sales':
-        return 'report_sales'.tr();
-      case 'purchases':
-        return 'report_purchases'.tr();
-      case 'profit':
-        return 'report_profit'.tr();
-      case 'balance_sheet':
-        return 'report_balance_sheet'.tr();
-      case 'overdue':
-        return 'report_overdue'.tr();
-      case 'statement':
-        return 'report_statement'.tr();
-      case 'investor_statement':
-        return 'report_investor_statement'.tr();
-      case 'supplier_statement':
-        return 'report_supplier_statement'.tr();
-      case 'warehouse':
-        return 'report_warehouse'.tr();
-      case 'top_products':
-        return 'report_top_products'.tr();
-      case 'expenses':
-        return 'report_expenses'.tr();
-      case 'income_expense':
-        return 'report_income_expense'.tr();
-      case 'cash_flow':
-        return 'report_cash_flow'.tr();
-      case 'installments_summary':
-        return 'report_installments_summary'.tr();
-      case 'installments_detail':
-        return 'report_installments_detail'.tr();
-      case 'installments_paid':
-        return 'report_installments_paid'.tr();
-      case 'installments_unpaid':
-        return 'report_installments_unpaid'.tr();
-      case 'installments_aging':
-        return 'report_installments_aging'.tr();
-      case 'product_margin':
-        return 'report_product_margin'.tr();
-      case 'product_movement':
-        return 'report_product_movement'.tr();
-      case 'stock_health':
-        return 'report_stock_health'.tr();
-      case 'inventory_replenishment':
-        return 'report_inventory_replenishment'.tr();
-      case 'customers_overview':
-        return 'report_customers_overview'.tr();
-      case 'suppliers_overview':
-        return 'report_suppliers_overview'.tr();
-      case 'profit_comparison':
-        return 'report_profit_comparison'.tr();
-      default:
-        return 'reports_title'.tr();
+  Future<void> pickWarehouse(BuildContext context) async {
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_warehouse'.tr(),
+      loadItems: (search) => AppServices.data.getWarehouses(search: search),
+    );
+    if (selected != null) {
+      selectedWarehouse.value = selected;
+      await reload();
     }
   }
 
-  bool get showDateFilter => !{
-        'overdue',
-        'warehouse',
-        'installments_unpaid',
-        'installments_aging',
-        'stock_health',
-      }.contains(reportType);
+  Future<void> pickCashBox(BuildContext context) async {
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_cashbox'.tr(),
+      loadItems: (search) => AppServices.data.getCashBoxes(search: search),
+    );
+    if (selected != null) {
+      selectedCashBox.value = selected;
+      await reload();
+    }
+  }
 
-  bool get singleDate => reportType == 'balance_sheet';
+  Future<void> pickBankAccount(BuildContext context) async {
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_bank_account'.tr(),
+      loadItems: (search) => AppServices.data.getBankAccounts(search: search),
+    );
+    if (selected != null) {
+      selectedBankAccount.value = selected;
+      await reload();
+    }
+  }
+
+  void clearCustomer() {
+    selectedCustomer.value = null;
+    reload();
+  }
+
+  void clearSupplier() {
+    selectedSupplier.value = null;
+    reload();
+  }
+
+  void clearInvestor() {
+    selectedInvestor.value = null;
+    reload();
+  }
+
+  void clearWarehouse() {
+    selectedWarehouse.value = null;
+    reload();
+  }
+
+  void clearCashBox() {
+    if (_requiredEntityTypes.contains(reportType)) return;
+    selectedCashBox.value = null;
+    reload();
+  }
+
+  String get title => 'report_$reportType'.tr();
+
+  bool get showDateFilter => !_noDateTypes.contains(reportType);
+
+  bool get singleDate => _singleDateTypes.contains(reportType);
+
+  bool get showCustomerPicker => _customerFilterTypes.contains(reportType);
+
+  bool get showSupplierPicker => _supplierFilterTypes.contains(reportType);
+
+  bool get showInvestorPicker => _investorFilterTypes.contains(reportType);
+
+  bool get showWarehousePicker => _warehouseFilterTypes.contains(reportType);
+
+  bool get showCashBoxPicker => _cashBoxFilterTypes.contains(reportType);
+
+  bool get showBankPicker => _bankFilterTypes.contains(reportType);
 }
