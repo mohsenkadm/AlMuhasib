@@ -24,12 +24,14 @@ class AppChartCard extends StatelessWidget {
     required this.child,
     this.height = 220,
     this.legend,
+    this.subtitle,
   });
 
   final String title;
   final Widget child;
   final double height;
   final Widget? legend;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,11 @@ class AppChartCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDarkCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : AppColors.primary.withValues(alpha: 0.06),
+        ),
         boxShadow: AppColors.cardShadow(dark: isDark),
       ),
       child: Column(
@@ -50,6 +57,15 @@ class AppChartCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
           if (legend != null) ...[
             const SizedBox(height: 10),
             legend!,
@@ -221,10 +237,12 @@ class AppHorizontalBarChart extends StatelessWidget {
     super.key,
     required this.points,
     this.color = AppColors.primary,
+    this.valueAsCurrency = false,
   });
 
   final List<(String label, double value)> points;
   final Color color;
+  final bool valueAsCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +255,7 @@ class AppHorizontalBarChart extends StatelessWidget {
 
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
       itemCount: points.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
@@ -258,7 +277,9 @@ class AppHorizontalBarChart extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  point.$2.toStringAsFixed(0),
+                  valueAsCurrency
+                      ? formatCurrency(point.$2)
+                      : point.$2.toStringAsFixed(0),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),

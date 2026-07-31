@@ -29,12 +29,21 @@ class AppKpiGrid extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return KpiCard(
+        final card = KpiCard(
           title: item.title,
           value: item.value,
           icon: item.icon,
           color: item.color,
           compact: item.compact,
+        );
+        if (item.onTap == null) return card;
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: item.onTap,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            child: card,
+          ),
         );
       },
     );
@@ -48,6 +57,7 @@ class AppKpiItem {
     required this.icon,
     this.color,
     this.compact = false,
+    this.onTap,
   });
 
   final String title;
@@ -55,4 +65,5 @@ class AppKpiItem {
   final IconData icon;
   final Color? color;
   final bool compact;
+  final VoidCallback? onTap;
 }
