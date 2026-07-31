@@ -25,7 +25,26 @@ class ReportDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _applyRouteArguments();
     reload();
+  }
+
+  void _applyRouteArguments() {
+    final args = Get.arguments;
+    if (args is Map) {
+      final syncId = args['customerSyncId']?.toString();
+      final id = args['customerId'];
+      final name = args['customerName']?.toString();
+      if (syncId != null && syncId.isNotEmpty) {
+        selectedCustomer.value = LookupItem(
+          id: id is int ? id : int.tryParse(id?.toString() ?? '') ?? 0,
+          syncId: syncId,
+          name: name ?? '',
+        );
+      }
+    } else if (args is LookupItem && reportType == 'statement') {
+      selectedCustomer.value = args;
+    }
   }
 
   Future<void> reload() async {
@@ -56,6 +75,14 @@ class ReportDetailController extends GetxController {
             final customers = await AppServices.data.getCustomers();
             if (customers.isNotEmpty) {
               selectedCustomer.value = customers.first;
+            }
+          } else {
+            // حدّث الرصيد/الاسم من القائمة إن وُجد
+            final customers = await AppServices.data.getCustomers();
+            final syncId = selectedCustomer.value!.syncId;
+            final match = customers.where((c) => c.syncId == syncId);
+            if (match.isNotEmpty) {
+              selectedCustomer.value = match.first;
             }
           }
           if (selectedCustomer.value != null) {

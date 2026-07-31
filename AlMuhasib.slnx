@@ -11,6 +11,7 @@
     <Project Path="src/AlMuhasib.Cloud.Infrastructure/AlMuhasib.Cloud.Infrastructure.csproj" />
     <Project Path="src/AlMuhasib.Api/AlMuhasib.Api.csproj" />
     <Project Path="src/AlMuhasib.Admin/AlMuhasib.Admin.csproj" />
+    <Project Path="src/AlMuhasib.Core.Tests/AlMuhasib.Core.Tests.csproj" />
   </Folder>
   <Folder Name="/website/">
     <File Path="website/index.html" />

@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -227,8 +228,13 @@ public class CashBankService : ICashBankService
             switch (voucher.VoucherType)
             {
                 case VoucherType.Receipt:
+                    await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
+                    break;
+
                 case VoucherType.DebtReceipt:
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
+                    if (voucher.CustomerId.HasValue)
+                        await ApplyDebtReceiptToCreditInvoicesAsync(context, voucher, username);
                     break;
 
                 case VoucherType.Payment:
@@ -542,6 +548,37 @@ public class CashBankService : ICashBankService
             CreatedBy = username, CreatedAt = DateTime.UtcNow
         };
         await context.InvestorTransactions.AddAsync(tx);
+    }
+
+    private static async Task ApplyDebtReceiptToCreditInvoicesAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.CustomerId.HasValue)
+            return;
+
+        var creditInvoices = await context.Invoices
+            .Where(i => i.CustomerId == voucher.CustomerId.Value &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .ToList();
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch

@@ -690,5 +690,6 @@
   "voucher_investor_withdrawal": "سحب مستثمر",
   "voucher_debt_receipt": "قبض دين",
   "notify_overdue": "إشعار المتأخرات",
-  "done": "تم"
+  "done": "تم",
+  "view_customer_statement": "عرض كشف حساب الزبون"
 }

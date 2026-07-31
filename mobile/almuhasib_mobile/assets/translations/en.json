@@ -679,5 +679,6 @@
   "voucher_investor_withdrawal": "Investor Withdrawal",
   "voucher_debt_receipt": "Debt Receipt",
   "notify_overdue": "Notify overdue",
-  "done": "Done"
+  "done": "Done",
+  "view_customer_statement": "View customer statement"
 }

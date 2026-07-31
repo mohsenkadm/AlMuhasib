@@ -108,9 +108,14 @@ public class DashboardService : IDashboardService
         // ── Customer credit balance (آجل) ─────────────────────
         try
         {
-            data.CustomerCreditBalance = await context.Invoices
+            var creditRemaining = await context.Invoices
                 .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var unappliedDebt = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt);
         }
         catch (Exception ex)
         {
