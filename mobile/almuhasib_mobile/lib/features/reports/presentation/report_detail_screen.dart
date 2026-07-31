@@ -271,6 +271,11 @@ class _ReportDetailBody extends StatelessWidget {
               context,
               result as TopProductsReportResult,
             ),
+          'expenses' ||
+          'income_expense' ||
+          'installments_summary' ||
+          'customers_overview' =>
+            _buildChartAwareReport(context, reportType, result),
           _ => _buildGeneric(context, result),
         },
       ],
@@ -310,61 +315,312 @@ class _ReportDetailBody extends StatelessWidget {
       ];
     }
     if (data is Map) {
-      final map = Map<String, dynamic>.from(data);
-      final kpis = <AppKpiItem>[];
-      final rows = <Widget>[];
-      map.forEach((key, value) {
-        if (value is num) {
-          kpis.add(
-            AppKpiItem(
-              title: key,
-              value: value is double || '$value'.contains('.')
-                  ? formatCurrency(value.toDouble())
-                  : '$value',
-              icon: Icons.analytics_outlined,
-              color: AppColors.primary,
-              compact: true,
-            ),
-          );
-        } else if (value is List) {
-          rows.addAll(_buildGeneric(context, value));
-        } else if (value is Map) {
-          rows.add(
+      return _buildChartAwareReport(context, reportType, data);
+    }
+    return [Text(data.toString())];
+  }
+
+  List<Widget> _buildChartAwareReport(
+    BuildContext context,
+    String type,
+    dynamic data,
+  ) {
+    if (data is! Map) return _buildGenericFallbackList(context, data);
+
+    final map = Map<String, dynamic>.from(data);
+    final kpis = <AppKpiItem>[];
+    final chartWidgets = <Widget>[];
+    final rowWidgets = <Widget>[];
+
+    const chartKeys = {
+      'byTypeChart',
+      'statusChart',
+      'sharesChart',
+      'topCustomersChart',
+      'byCustomerChart',
+      'overdueBucketChart',
+      'byCashBoxChart',
+      'chart',
+    };
+    const dailyChartKeys = {
+      'dailyChart',
+      'monthlyCollectionChart',
+      'monthlyDueChart',
+      'dailyIncomingChart',
+      'dailyOutgoingChart',
+    };
+
+    const colors = [
+      AppColors.primary,
+      AppColors.accent,
+      AppColors.moduleOrange,
+      AppColors.moduleGreen,
+      AppColors.modulePink,
+      AppColors.moduleIndigo,
+      AppColors.modulePurple,
+      AppColors.warning,
+    ];
+
+    map.forEach((key, value) {
+      if (value is num) {
+        kpis.add(
+          AppKpiItem(
+            title: _humanizeKey(key),
+            value: value is double || '$value'.contains('.')
+                ? formatCurrency(value.toDouble())
+                : '$value',
+            icon: Icons.analytics_outlined,
+            color: AppColors.primary,
+            compact: true,
+          ),
+        );
+      } else if (value is List && chartKeys.contains(key)) {
+        final points = _parseNameAmountList(value);
+        if (points.isNotEmpty) {
+          final sections = points
+              .take(8)
+              .toList()
+              .asMap()
+              .entries
+              .map((e) => (e.value.$1, e.value.$2, colors[e.key % colors.length]))
+              .toList();
+          final total = sections.fold<double>(0, (s, e) => s + e.$2);
+          chartWidgets.add(
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: AppEntityCard(
-                title: key,
-                subtitle: value.entries
-                    .take(4)
-                    .map((e) => '${e.key}: ${e.value}')
-                    .join(' • '),
-              ),
-            ),
-          );
-        } else if (value != null) {
-          rows.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AppEntityCard(
-                title: key,
-                subtitle: value.toString(),
-              ),
+              padding: const EdgeInsets.only(bottom: 14),
+              child: AppChartCard(
+                title: _humanizeKey(key),
+                height: 180,
+                child: AppDonutChart(
+                  sections: sections,
+                  centerLabel: 'total'.tr(),
+                  centerValue: formatCurrency(total),
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(),
             ),
           );
         }
-      });
-      return [
-        if (kpis.isNotEmpty) ...[
-          AppKpiGrid(
-            childAspectRatio: 1.55,
-            items: kpis,
-          ).fadeSlideIn(),
-          const SizedBox(height: 14),
-        ],
-        ...rows,
-      ];
-    }
-    return [Text(data.toString())];
+      } else if (value is List && dailyChartKeys.contains(key)) {
+        final series = _parseDailyAmountList(value);
+        if (series.isNotEmpty) {
+          chartWidgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: AppChartCard(
+                title: _humanizeKey(key),
+                height: 200,
+                child: AppGroupedBarChart(
+                  labels: series.map((e) => e.$1).toList(),
+                  series: [
+                    AppChartSeries(
+                      label: _humanizeKey(key),
+                      values: series.map((e) => e.$2).toList(),
+                      color: AppColors.primary,
+                    ),
+                  ],
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(),
+            ),
+          );
+        }
+      } else if (value is List &&
+          (key == 'monthlyChart') &&
+          value.isNotEmpty &&
+          value.first is Map &&
+          (value.first as Map).containsKey('income')) {
+        final labels = <String>[];
+        final income = <double>[];
+        final expense = <double>[];
+        for (final row in value.whereType<Map>()) {
+          final m = Map<String, dynamic>.from(row);
+          labels.add('${m['month'] ?? ''}');
+          income.add(_asDouble(m['income']));
+          expense.add(_asDouble(m['expense']));
+        }
+        if (labels.isNotEmpty) {
+          chartWidgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: AppChartCard(
+                title: 'income_vs_expense'.tr(),
+                height: 210,
+                legend: AppChartLegend(
+                  items: [
+                    ('income'.tr(), AppColors.moduleGreen),
+                    ('expenses'.tr(), AppColors.moduleOrange),
+                  ],
+                ),
+                child: AppGroupedBarChart(
+                  labels: labels,
+                  series: [
+                    AppChartSeries(
+                      label: 'income'.tr(),
+                      values: income,
+                      color: AppColors.moduleGreen,
+                    ),
+                    AppChartSeries(
+                      label: 'expenses'.tr(),
+                      values: expense,
+                      color: AppColors.moduleOrange,
+                    ),
+                  ],
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(),
+            ),
+          );
+        }
+      } else if (value is List && key.toLowerCase().contains('rows')) {
+        if (type == 'customers_overview') {
+          final outstanding = value
+              .whereType<Map>()
+              .map((row) {
+                final m = Map<String, dynamic>.from(row);
+                return (
+                  '${m['customerName'] ?? m['CustomerName'] ?? ''}',
+                  _asDouble(m['outstandingBalance'] ?? m['OutstandingBalance']),
+                );
+              })
+              .where((e) => e.$1.isNotEmpty && e.$2 > 0)
+              .toList()
+            ..sort((a, b) => b.$2.compareTo(a.$2));
+          if (outstanding.isNotEmpty) {
+            chartWidgets.add(
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: AppChartCard(
+                  title: 'top_customer_balances'.tr(),
+                  height: (outstanding.take(8).length * 52.0).clamp(120, 280),
+                  child: AppHorizontalBarChart(
+                    points: outstanding.take(8).toList(),
+                    color: AppColors.moduleCyan,
+                    valueAsCurrency: true,
+                  ),
+                ).fadeSlideIn(),
+              ),
+            );
+          }
+        }
+        rowWidgets.addAll(_buildGenericFallbackList(context, value));
+      } else if (value is List) {
+        rowWidgets.addAll(_buildGenericFallbackList(context, value));
+      } else if (value is Map) {
+        rowWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: AppEntityCard(
+              title: _humanizeKey(key),
+              subtitle: value.entries
+                  .take(4)
+                  .map((e) => '${e.key}: ${e.value}')
+                  .join(' • '),
+            ),
+          ),
+        );
+      } else if (value != null) {
+        rowWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: AppEntityCard(
+              title: _humanizeKey(key),
+              subtitle: value.toString(),
+            ),
+          ),
+        );
+      }
+    });
+
+    return [
+      if (kpis.isNotEmpty) ...[
+        AppKpiGrid(
+          childAspectRatio: 1.55,
+          items: kpis,
+        ).fadeSlideIn(),
+        const SizedBox(height: 14),
+      ],
+      ...chartWidgets,
+      ...rowWidgets,
+    ];
+  }
+
+  List<Widget> _buildGenericFallbackList(BuildContext context, dynamic data) {
+    if (data is! List) return [Text(data.toString())];
+    if (data.isEmpty) return [const EmptyStateWidget()];
+    return [
+      _SectionTitle('report_rows'.tr()),
+      ...data.asMap().entries.map((e) {
+        final row = e.value;
+        if (row is Map) {
+          final map = Map<String, dynamic>.from(row);
+          final stringVals =
+              map.values.whereType<String>().where((v) => v.isNotEmpty);
+          final title =
+              stringVals.isNotEmpty ? stringVals.first : '#${e.key + 1}';
+          final subtitle = map.entries
+              .take(4)
+              .map((x) => '${x.key}: ${x.value}')
+              .join(' • ');
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: AppEntityCard(
+              title: title,
+              subtitle: subtitle,
+            ).fadeSlideInList(index: e.key),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(row.toString()),
+        );
+      }),
+    ];
+  }
+
+  static List<(String, double)> _parseNameAmountList(List<dynamic> raw) {
+    return raw
+        .whereType<Map>()
+        .map((row) {
+          final m = Map<String, dynamic>.from(row);
+          final name =
+              '${m['name'] ?? m['category'] ?? m['customerName'] ?? ''}';
+          final amount = _asDouble(
+            m['amount'] ?? m['outstandingBalance'] ?? m['value'],
+          );
+          return (name, amount);
+        })
+        .where((e) => e.$1.isNotEmpty)
+        .toList();
+  }
+
+  static List<(String, double)> _parseDailyAmountList(List<dynamic> raw) {
+    return raw.whereType<Map>().map((row) {
+      final m = Map<String, dynamic>.from(row);
+      final dateRaw = m['date'] ?? m['month'] ?? '';
+      String label;
+      if (dateRaw is String && dateRaw.contains('T')) {
+        label = shortDateFormat.format(DateTime.tryParse(dateRaw) ?? DateTime.now());
+      } else {
+        label = '$dateRaw';
+        if (label.length > 7) label = label.substring(5);
+      }
+      return (label, _asDouble(m['amount']));
+    }).toList();
+  }
+
+  static double _asDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static String _humanizeKey(String key) {
+    final spaced = key
+        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAll('Chart', '')
+        .trim();
+    return spaced.isEmpty ? key : spaced;
   }
 
   List<Widget> _buildSales(BuildContext context, SalesReportResult r) => [
