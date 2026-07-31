@@ -93,6 +93,34 @@ public interface IReportService
         bool hideZeroQuantity = true,
         int nearExpiryCriticalDays = 30,
         int nearExpiryWarningDays = 90);
+
+    // ── New extended reports ──────────────────────────────────────
+    Task<InvestorProfitDistributionsReportResult> GetInvestorProfitDistributionsReportAsync(DateTime? from, DateTime? to, int? investorId);
+    Task<CapitalMovementReportResult> GetCapitalMovementReportAsync(DateTime? from, DateTime? to);
+    Task<OpeningInstallmentBalancesReportResult> GetOpeningInstallmentBalancesReportAsync(DateTime? from, DateTime? to, int? customerId);
+    Task<CompanyFeeReportResult> GetCompanyFeeReportAsync(DateTime? from, DateTime? to, int? customerId);
+    Task<InstallmentScheduleReportResult> GetInstallmentScheduleReportAsync(DateTime? from, DateTime? to, int? customerId, string? status);
+    Task<SalesByPaymentMethodReportResult> GetSalesByPaymentMethodReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<DailySalesReportResult> GetDailySalesReportAsync(DateTime? from, DateTime? to, int? warehouseId, PaymentMethod? method);
+    Task<SalesByWarehouseUserReportResult> GetSalesByWarehouseUserReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<GrossProfitMarginReportResult> GetGrossProfitMarginReportAsync(DateTime? from, DateTime? to);
+    Task<OperatingProfitReportResult> GetOperatingProfitReportAsync(DateTime? from, DateTime? to);
+    Task<ReceivablesAgingReportResult> GetReceivablesAgingReportAsync(DateTime asOfDate, int? customerId);
+    Task<PayablesAgingReportResult> GetPayablesAgingReportAsync(DateTime asOfDate, int? supplierId);
+    Task<CustomerCollectionsReportResult> GetCustomerCollectionsReportAsync(DateTime? from, DateTime? to, int? customerId, int? cashBoxId);
+    Task<OverdueCustomersReportResult> GetOverdueCustomersReportAsync(DateTime asOfDate, int? minDaysOverdue, int? customerId);
+    Task<SupplierPaymentsReportResult> GetSupplierPaymentsReportAsync(DateTime? from, DateTime? to, int? supplierId);
+    Task<BankAccountStatementReportResult> GetBankAccountStatementReportAsync(int? bankAccountId, DateTime? from, DateTime? to);
+    Task<CashBoxMovementReportResult> GetCashBoxMovementReportAsync(int? cashBoxId, DateTime? from, DateTime? to);
+    Task<CashBalancesSummaryReportResult> GetCashBalancesSummaryReportAsync();
+    Task<TransfersReportResult> GetTransfersReportAsync(DateTime? from, DateTime? to);
+    Task<InventoryValuationReportResult> GetInventoryValuationReportAsync(int? warehouseId, bool includeZero = false);
+    Task<StockTakingReportResult> GetStockTakingReportAsync(int? warehouseId, bool includeZero = true);
+    Task<CogsReportResult> GetCogsReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<FinancialPositionSummaryReportResult> GetFinancialPositionSummaryReportAsync(DateTime? asOfDate);
+    Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(DateTime? from, DateTime? to);
+    Task<StatementOfFinancialPositionReportResult> GetStatementOfFinancialPositionReportAsync(DateTime date);
+
 }
 
 public enum StockHealthFilter
@@ -956,4 +984,580 @@ public class ExpiryReportRow
         ExpiryBatchStatus.Valid => "صالح",
         _ => "بدون تاريخ"
     };
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// NEW EXTENDED REPORTS
+// ══════════════════════════════════════════════════════════════
+
+public class InvestorProfitDistributionsReportResult
+{
+    public decimal TotalProfit { get; set; }
+    public decimal TotalDistributed { get; set; }
+    public int DistributionCount { get; set; }
+    public int InvestorCount { get; set; }
+    public List<InvestorProfitDistributionRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> ByInvestorChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<InvestorProfitDistributionDetailRow> Details { get; set; } = [];
+}
+
+public class InvestorProfitDistributionRow
+{
+    public int DistributionId { get; set; }
+    public DateTime Date { get; set; }
+    public decimal TotalProfit { get; set; }
+    public decimal DistributedAmount { get; set; }
+    public int DetailCount { get; set; }
+}
+
+public class InvestorProfitDistributionDetailRow
+{
+    public int DistributionId { get; set; }
+    public DateTime Date { get; set; }
+    public int InvestorId { get; set; }
+    public string InvestorName { get; set; } = string.Empty;
+    public decimal ProfitPercentage { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public class CapitalMovementReportResult
+{
+    public decimal InitialCapital { get; set; }
+    public decimal Adjustments { get; set; }
+    public decimal ProfitOpening { get; set; }
+    public decimal EquityCapital { get; set; }
+    public List<CapitalMovementRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> ByTypeChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+}
+
+public class CapitalMovementRow
+{
+    public int Id { get; set; }
+    public DateTime Date { get; set; }
+    public string TypeDisplay { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+}
+
+public class OpeningInstallmentBalancesReportResult
+{
+    public decimal TotalAmount { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal TotalRemaining { get; set; }
+    public int PlanCount { get; set; }
+    public int CustomerCount { get; set; }
+    public List<OpeningInstallmentBalanceRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> StatusChart { get; set; } = [];
+}
+
+public class OpeningInstallmentBalanceRow
+{
+    public int PlanId { get; set; }
+    public int InvoiceId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int InstallmentCount { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class CompanyFeeReportResult
+{
+    public decimal TotalFees { get; set; }
+    public decimal TotalSales { get; set; }
+    public decimal AverageFeePercent { get; set; }
+    public int InvoiceCount { get; set; }
+    public List<CompanyFeeRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> ByCustomerChart { get; set; } = [];
+}
+
+public class CompanyFeeRow
+{
+    public int InvoiceId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal NetAmount { get; set; }
+    public decimal FeePercent { get; set; }
+    public decimal FeeAmount { get; set; }
+    public string PlanNumber { get; set; } = string.Empty;
+}
+
+public class InstallmentScheduleReportResult
+{
+    public decimal TotalAmount { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal TotalRemaining { get; set; }
+    public int InstallmentCount { get; set; }
+    public List<InstallmentScheduleReportRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DueChart { get; set; } = [];
+    public List<NameAmountPoint> StatusChart { get; set; } = [];
+}
+
+public class InstallmentScheduleReportRow
+{
+    public int InstallmentId { get; set; }
+    public int PlanId { get; set; }
+    public int InvoiceId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public DateTime DueDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime? PaymentDate { get; set; }
+}
+
+public class SalesByPaymentMethodReportResult
+{
+    public decimal TotalSales { get; set; }
+    public decimal CashSales { get; set; }
+    public decimal CreditSales { get; set; }
+    public decimal InstallmentSales { get; set; }
+    public int InvoiceCount { get; set; }
+    public List<SalesByPaymentMethodRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> MethodChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+}
+
+public class SalesByPaymentMethodRow
+{
+    public string PaymentMethod { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class DailySalesReportResult
+{
+    public decimal TotalSales { get; set; }
+    public int DayCount { get; set; }
+    public int InvoiceCount { get; set; }
+    public decimal AverageDaily { get; set; }
+    public List<DailySalesRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+}
+
+public class DailySalesRow
+{
+    public DateTime Date { get; set; }
+    public int InvoiceCount { get; set; }
+    public decimal CashSales { get; set; }
+    public decimal CreditSales { get; set; }
+    public decimal InstallmentSales { get; set; }
+    public decimal TotalSales { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal CompanyFees { get; set; }
+}
+
+public class SalesByWarehouseUserReportResult
+{
+    public decimal TotalSales { get; set; }
+    public int WarehouseCount { get; set; }
+    public int UserCount { get; set; }
+    public int InvoiceCount { get; set; }
+    public List<SalesByWarehouseUserRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> WarehouseChart { get; set; } = [];
+    public List<NameAmountPoint> UserChart { get; set; } = [];
+}
+
+public class SalesByWarehouseUserRow
+{
+    public string GroupType { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class GrossProfitMarginReportResult
+{
+    public decimal TotalSales { get; set; }
+    public decimal CostOfGoodsSold { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal GrossMarginPercent { get; set; }
+    public List<GrossProfitMarginRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailySalesChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyGrossChart { get; set; } = [];
+    public List<NameAmountPoint> CompositionChart { get; set; } = [];
+}
+
+public class GrossProfitMarginRow
+{
+    public DateTime Date { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal Revenue { get; set; }
+    public decimal Cost { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal MarginPercent { get; set; }
+}
+
+public class OperatingProfitReportResult
+{
+    public decimal TotalSales { get; set; }
+    public decimal CostOfGoodsSold { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal TotalExpenses { get; set; }
+    public decimal TotalBankFees { get; set; }
+    public decimal OperatingProfit { get; set; }
+    public decimal OperatingMarginPercent { get; set; }
+    public List<OperatingProfitLineRow> Lines { get; set; } = [];
+    public List<NameAmountPoint> CompositionChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+}
+
+public class OperatingProfitLineRow
+{
+    public string LineName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public bool IsSubtotal { get; set; }
+}
+
+public class ReceivablesAgingReportResult
+{
+    public decimal TotalOutstanding { get; set; }
+    public int RowCount { get; set; }
+    public int CustomerCount { get; set; }
+    public List<AgingBucketSummary> Buckets { get; set; } = [];
+    public List<ReceivablesAgingRow> Rows { get; set; } = [];
+}
+
+public class AgingBucketSummary
+{
+    public string BucketName { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public class ReceivablesAgingRow
+{
+    public string SourceType { get; set; } = string.Empty;
+    public int ReferenceId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public DateTime DueDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int DaysOverdue { get; set; }
+    public string AgingBucket { get; set; } = string.Empty;
+}
+
+public class PayablesAgingReportResult
+{
+    public decimal TotalOutstanding { get; set; }
+    public int RowCount { get; set; }
+    public int SupplierCount { get; set; }
+    public List<AgingBucketSummary> Buckets { get; set; } = [];
+    public List<PayablesAgingRow> Rows { get; set; } = [];
+}
+
+public class PayablesAgingRow
+{
+    public int InvoiceId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public string SupplierName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public DateTime DueDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int DaysOverdue { get; set; }
+    public string AgingBucket { get; set; } = string.Empty;
+}
+
+public class CustomerCollectionsReportResult
+{
+    public decimal TotalCollected { get; set; }
+    public decimal VoucherCollections { get; set; }
+    public decimal InstallmentCollections { get; set; }
+    public int RowCount { get; set; }
+    public List<CustomerCollectionRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> ByCustomerChart { get; set; } = [];
+}
+
+public class CustomerCollectionRow
+{
+    public DateTime Date { get; set; }
+    public string SourceType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string AccountName { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class OverdueCustomersReportResult
+{
+    public decimal TotalOverdue { get; set; }
+    public int CustomerCount { get; set; }
+    public int ItemCount { get; set; }
+    public decimal AverageDaysOverdue { get; set; }
+    public List<OverdueCustomerRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> ByCustomerChart { get; set; } = [];
+    public List<AgingBucketSummary> Buckets { get; set; } = [];
+}
+
+public class OverdueCustomerRow
+{
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string SourceType { get; set; } = string.Empty;
+    public int ReferenceId { get; set; }
+    public DateTime DueDate { get; set; }
+    public decimal OverdueAmount { get; set; }
+    public int DaysOverdue { get; set; }
+}
+
+public class SupplierPaymentsReportResult
+{
+    public decimal TotalPaid { get; set; }
+    public decimal VoucherPayments { get; set; }
+    public decimal CashPurchases { get; set; }
+    public int RowCount { get; set; }
+    public List<SupplierPaymentRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> BySupplierChart { get; set; } = [];
+}
+
+public class SupplierPaymentRow
+{
+    public DateTime Date { get; set; }
+    public string SourceType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public string SupplierName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string AccountName { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class BankAccountStatementReportResult
+{
+    public decimal OpeningBalance { get; set; }
+    public decimal TotalIn { get; set; }
+    public decimal TotalOut { get; set; }
+    public decimal ClosingBalance { get; set; }
+    public List<BankAccountStatementRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyInChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyOutChart { get; set; } = [];
+}
+
+public class BankAccountStatementRow
+{
+    public DateTime Date { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal Incoming { get; set; }
+    public decimal Outgoing { get; set; }
+    public decimal Balance { get; set; }
+    public string AccountName { get; set; } = string.Empty;
+}
+
+public class CashBoxMovementReportResult
+{
+    public decimal OpeningBalance { get; set; }
+    public decimal TotalIncoming { get; set; }
+    public decimal TotalOutgoing { get; set; }
+    public decimal ClosingBalance { get; set; }
+    public List<CashBoxMovementRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyIncomingChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyOutgoingChart { get; set; } = [];
+}
+
+public class CashBoxMovementRow
+{
+    public DateTime Date { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal Incoming { get; set; }
+    public decimal Outgoing { get; set; }
+    public decimal Balance { get; set; }
+    public string AccountName { get; set; } = string.Empty;
+}
+
+public class CashBalancesSummaryReportResult
+{
+    public decimal CashBoxesTotal { get; set; }
+    public decimal BanksTotal { get; set; }
+    public decimal TotalLiquid { get; set; }
+    public int AccountCount { get; set; }
+    public List<CashBalanceRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> CompositionChart { get; set; } = [];
+}
+
+public class CashBalanceRow
+{
+    public string AccountType { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string AccountNumber { get; set; } = string.Empty;
+    public decimal Balance { get; set; }
+}
+
+public class TransfersReportResult
+{
+    public decimal TotalAmount { get; set; }
+    public int TransferCount { get; set; }
+    public decimal AverageAmount { get; set; }
+    public List<TransferReportRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> ByTypeChart { get; set; } = [];
+}
+
+public class TransferReportRow
+{
+    public int Id { get; set; }
+    public DateTime Date { get; set; }
+    public string FromAccount { get; set; } = string.Empty;
+    public string ToAccount { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+}
+
+public class InventoryValuationReportResult
+{
+    public decimal TotalValue { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public int ProductCount { get; set; }
+    public int WarehouseCount { get; set; }
+    public List<InventoryValuationRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> WarehouseChart { get; set; } = [];
+    public List<NameAmountPoint> TopProductsChart { get; set; } = [];
+}
+
+public class InventoryValuationRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal AverageCost { get; set; }
+    public decimal TotalValue { get; set; }
+}
+
+public class StockTakingReportResult
+{
+    public decimal TotalQuantity { get; set; }
+    public int ProductCount { get; set; }
+    public int WarehouseCount { get; set; }
+    public List<StockTakingRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> WarehouseChart { get; set; } = [];
+}
+
+public class StockTakingRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal SystemQuantity { get; set; }
+    public decimal? CountedQuantity { get; set; }
+    public decimal Difference => (CountedQuantity ?? SystemQuantity) - SystemQuantity;
+}
+
+public class CogsReportResult
+{
+    public decimal TotalCogs { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public decimal GrossProfit { get; set; }
+    public int ProductCount { get; set; }
+    public List<CogsReportRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> TopProductsChart { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+}
+
+public class CogsReportRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal QuantitySold { get; set; }
+    public decimal AverageCost { get; set; }
+    public decimal CogsAmount { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal GrossProfit { get; set; }
+}
+
+public class FinancialPositionSummaryReportResult
+{
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal TotalEquity { get; set; }
+    public decimal NetWorkingCapital { get; set; }
+    public decimal Difference { get; set; }
+    public bool IsBalanced { get; set; }
+    public List<FinancialPositionLineRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> CompositionChart { get; set; } = [];
+}
+
+public class FinancialPositionLineRow
+{
+    public string Section { get; set; } = string.Empty;
+    public string LineName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+}
+
+public class ProfitAndLossReportResult
+{
+    public decimal TotalSales { get; set; }
+    public decimal CostOfGoodsSold { get; set; }
+    public decimal GrossProfit { get; set; }
+    public decimal TotalExpenses { get; set; }
+    public decimal TotalBankFees { get; set; }
+    public decimal OperatingProfit { get; set; }
+    public decimal DistributedProfits { get; set; }
+    public decimal NetProfit { get; set; }
+    public decimal GrossMarginPercent { get; set; }
+    public decimal NetMarginPercent { get; set; }
+    public List<ProfitAndLossLineRow> Lines { get; set; } = [];
+    public List<NameAmountPoint> CompositionChart { get; set; } = [];
+    public List<DailyAmountPoint> MonthlyChart { get; set; } = [];
+}
+
+public class ProfitAndLossLineRow
+{
+    public string LineName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public bool IsSubtotal { get; set; }
+    public bool IsTotal { get; set; }
+}
+
+public class StatementOfFinancialPositionReportResult
+{
+    public decimal CashAndBanks { get; set; }
+    public decimal Receivables { get; set; }
+    public decimal InstallmentReceivables { get; set; }
+    public decimal Inventory { get; set; }
+    public decimal TotalAssets { get; set; }
+    public decimal Payables { get; set; }
+    public decimal InvestorCapital { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal Capital { get; set; }
+    public decimal Adjustments { get; set; }
+    public decimal AccumulatedProfits { get; set; }
+    public decimal TotalEquity { get; set; }
+    public decimal Difference { get; set; }
+    public bool IsBalanced { get; set; }
+    public List<StatementOfFinancialPositionLineRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> AssetsChart { get; set; } = [];
+    public List<NameAmountPoint> EquityLiabilitiesChart { get; set; } = [];
+}
+
+public class StatementOfFinancialPositionLineRow
+{
+    public string Section { get; set; } = string.Empty;
+    public string LineName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public bool IsTotal { get; set; }
 }

@@ -315,4 +315,185 @@ public sealed class ReportsController : TenantApiControllerBase
         var f = await ResolveFilterAsync(filter, ct);
         return Ok(await _reports.GetSuppliersOverviewReportAsync(f.From, f.To));
     }
+
+    // ── New extended reports ──────────────────────────────────────
+
+    [HttpGet("investor-profit-distributions")]
+    public async Task<IActionResult> InvestorProfitDistributions([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetInvestorProfitDistributionsReportAsync(f.From, f.To, f.InvestorId));
+    }
+
+    [HttpGet("capital-movement")]
+    public async Task<IActionResult> CapitalMovement([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCapitalMovementReportAsync(f.From, f.To));
+    }
+
+    [HttpGet("opening-installment-balances")]
+    public async Task<IActionResult> OpeningInstallmentBalances([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetOpeningInstallmentBalancesReportAsync(f.From, f.To, f.CustomerId));
+    }
+
+    [HttpGet("company-fees")]
+    public async Task<IActionResult> CompanyFees([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCompanyFeeReportAsync(f.From, f.To, f.CustomerId));
+    }
+
+    [HttpGet("installment-schedule")]
+    public async Task<IActionResult> InstallmentSchedule([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetInstallmentScheduleReportAsync(f.From, f.To, f.CustomerId, f.Status));
+    }
+
+    [HttpGet("sales-by-payment-method")]
+    public async Task<IActionResult> SalesByPaymentMethod([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetSalesByPaymentMethodReportAsync(f.From, f.To, f.WarehouseId));
+    }
+
+    [HttpGet("daily-sales")]
+    public async Task<IActionResult> DailySales([FromQuery] ReportFilterRequest filter, [FromQuery] PaymentMethod? paymentMethod, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetDailySalesReportAsync(f.From, f.To, f.WarehouseId, paymentMethod));
+    }
+
+    [HttpGet("sales-by-warehouse-user")]
+    public async Task<IActionResult> SalesByWarehouseUser([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetSalesByWarehouseUserReportAsync(f.From, f.To, f.WarehouseId));
+    }
+
+    [HttpGet("gross-profit-margin")]
+    public async Task<IActionResult> GrossProfitMargin([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetGrossProfitMarginReportAsync(f.From, f.To));
+    }
+
+    [HttpGet("operating-profit")]
+    public async Task<IActionResult> OperatingProfit([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetOperatingProfitReportAsync(f.From, f.To));
+    }
+
+    [HttpGet("receivables-aging")]
+    public async Task<IActionResult> ReceivablesAging([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        var asOf = f.To?.Date ?? DateTime.Today;
+        return Ok(await _reports.GetReceivablesAgingReportAsync(asOf, f.CustomerId));
+    }
+
+    [HttpGet("payables-aging")]
+    public async Task<IActionResult> PayablesAging([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        var asOf = f.To?.Date ?? DateTime.Today;
+        return Ok(await _reports.GetPayablesAgingReportAsync(asOf, f.SupplierId));
+    }
+
+    [HttpGet("customer-collections")]
+    public async Task<IActionResult> CustomerCollections([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCustomerCollectionsReportAsync(f.From, f.To, f.CustomerId, f.CashBoxId));
+    }
+
+    [HttpGet("overdue-customers")]
+    public async Task<IActionResult> OverdueCustomers([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        var asOf = f.To?.Date ?? DateTime.Today;
+        return Ok(await _reports.GetOverdueCustomersReportAsync(asOf, f.MinDaysOverdue, f.CustomerId));
+    }
+
+    [HttpGet("supplier-payments")]
+    public async Task<IActionResult> SupplierPayments([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetSupplierPaymentsReportAsync(f.From, f.To, f.SupplierId));
+    }
+
+    [HttpGet("bank-account-statement")]
+    public async Task<IActionResult> BankAccountStatement([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetBankAccountStatementReportAsync(f.BankAccountId, f.From, f.To));
+    }
+
+    [HttpGet("cash-box-movement")]
+    public async Task<IActionResult> CashBoxMovement([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCashBoxMovementReportAsync(f.CashBoxId, f.From, f.To));
+    }
+
+    [HttpGet("cash-balances-summary")]
+    public async Task<IActionResult> CashBalancesSummary(CancellationToken ct)
+    {
+        return Ok(await _reports.GetCashBalancesSummaryReportAsync());
+    }
+
+    [HttpGet("transfers")]
+    public async Task<IActionResult> Transfers([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetTransfersReportAsync(f.From, f.To));
+    }
+
+    [HttpGet("inventory-valuation")]
+    public async Task<IActionResult> InventoryValuation([FromQuery] ReportFilterRequest filter, [FromQuery] bool includeZero = false, CancellationToken ct = default)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetInventoryValuationReportAsync(f.WarehouseId, includeZero));
+    }
+
+    [HttpGet("stock-taking")]
+    public async Task<IActionResult> StockTaking([FromQuery] ReportFilterRequest filter, [FromQuery] bool includeZero = true, CancellationToken ct = default)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetStockTakingReportAsync(f.WarehouseId, includeZero));
+    }
+
+    [HttpGet("cogs")]
+    public async Task<IActionResult> Cogs([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetCogsReportAsync(f.From, f.To, f.WarehouseId));
+    }
+
+    [HttpGet("financial-position-summary")]
+    public async Task<IActionResult> FinancialPositionSummary([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetFinancialPositionSummaryReportAsync(f.To ?? DateTime.Today));
+    }
+
+    [HttpGet("profit-and-loss")]
+    public async Task<IActionResult> ProfitAndLoss([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetProfitAndLossReportAsync(f.From, f.To));
+    }
+
+    [HttpGet("statement-of-financial-position")]
+    public async Task<IActionResult> StatementOfFinancialPosition([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        var f = await ResolveFilterAsync(filter, ct);
+        var date = f.To?.Date ?? DateTime.Today;
+        return Ok(await _reports.GetStatementOfFinancialPositionReportAsync(date));
+    }
+
 }
