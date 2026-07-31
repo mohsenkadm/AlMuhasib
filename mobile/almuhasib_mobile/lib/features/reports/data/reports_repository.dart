@@ -257,4 +257,325 @@ class ReportsRepository {
       query: _dateParams(from, to),
     );
   }
+
+  // ── New extended reports ──────────────────────────────────────
+
+  Map<String, dynamic> _filterParams({
+    DateTime? from,
+    DateTime? to,
+    DateTime? asOfDate,
+    String? customerSyncId,
+    String? supplierSyncId,
+    String? warehouseSyncId,
+    String? cashBoxSyncId,
+    String? bankAccountSyncId,
+    String? investorSyncId,
+    String? status,
+    int? minDaysOverdue,
+    bool? includeZero,
+    String? paymentMethod,
+  }) {
+    return {
+      ..._dateParams(from, to),
+      if (asOfDate != null) 'asOfDate': asOfDate.toIso8601String(),
+      if (customerSyncId != null && customerSyncId.isNotEmpty)
+        'customerSyncId': customerSyncId,
+      if (supplierSyncId != null && supplierSyncId.isNotEmpty)
+        'supplierSyncId': supplierSyncId,
+      if (warehouseSyncId != null && warehouseSyncId.isNotEmpty)
+        'warehouseSyncId': warehouseSyncId,
+      if (cashBoxSyncId != null && cashBoxSyncId.isNotEmpty)
+        'cashBoxSyncId': cashBoxSyncId,
+      if (bankAccountSyncId != null && bankAccountSyncId.isNotEmpty)
+        'bankAccountSyncId': bankAccountSyncId,
+      if (investorSyncId != null && investorSyncId.isNotEmpty)
+        'investorSyncId': investorSyncId,
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (minDaysOverdue != null) 'minDaysOverdue': minDaysOverdue,
+      if (includeZero != null) 'includeZero': includeZero,
+      if (paymentMethod != null && paymentMethod.isNotEmpty)
+        'paymentMethod': paymentMethod,
+    };
+  }
+
+  Future<dynamic> getInvestorProfitDistributions({
+    DateTime? from,
+    DateTime? to,
+    String? investorSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/investor-profit-distributions',
+        query: _filterParams(
+          from: from,
+          to: to,
+          investorSyncId: investorSyncId,
+        ),
+      );
+
+  Future<dynamic> getCapitalMovement({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/capital-movement',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getOpeningInstallmentBalances({
+    DateTime? from,
+    DateTime? to,
+    String? customerSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/opening-installment-balances',
+        query: _filterParams(
+          from: from,
+          to: to,
+          customerSyncId: customerSyncId,
+        ),
+      );
+
+  Future<dynamic> getCompanyFees({
+    DateTime? from,
+    DateTime? to,
+    String? customerSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/company-fees',
+        query: _filterParams(
+          from: from,
+          to: to,
+          customerSyncId: customerSyncId,
+        ),
+      );
+
+  Future<dynamic> getInstallmentSchedule({
+    DateTime? from,
+    DateTime? to,
+    String? customerSyncId,
+    String? status,
+  }) =>
+      getGenericReport(
+        '/api/reports/installment-schedule',
+        query: _filterParams(
+          from: from,
+          to: to,
+          customerSyncId: customerSyncId,
+          status: status,
+        ),
+      );
+
+  Future<dynamic> getSalesByPaymentMethod({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/sales-by-payment-method',
+        query: _filterParams(
+          from: from,
+          to: to,
+          warehouseSyncId: warehouseSyncId,
+        ),
+      );
+
+  Future<dynamic> getDailySales({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+    String? paymentMethod,
+  }) =>
+      getGenericReport(
+        '/api/reports/daily-sales',
+        query: _filterParams(
+          from: from,
+          to: to,
+          warehouseSyncId: warehouseSyncId,
+          paymentMethod: paymentMethod,
+        ),
+      );
+
+  Future<dynamic> getSalesByWarehouseUser({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/sales-by-warehouse-user',
+        query: _filterParams(
+          from: from,
+          to: to,
+          warehouseSyncId: warehouseSyncId,
+        ),
+      );
+
+  Future<dynamic> getGrossProfitMargin({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/gross-profit-margin',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getOperatingProfit({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/operating-profit',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getReceivablesAging({
+    DateTime? asOf,
+    String? customerSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/receivables-aging',
+        query: _filterParams(
+          to: asOf ?? DateTime.now(),
+          customerSyncId: customerSyncId,
+        ),
+      );
+
+  Future<dynamic> getPayablesAging({
+    DateTime? asOf,
+    String? supplierSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/payables-aging',
+        query: _filterParams(
+          to: asOf ?? DateTime.now(),
+          supplierSyncId: supplierSyncId,
+        ),
+      );
+
+  Future<dynamic> getCustomerCollections({
+    DateTime? from,
+    DateTime? to,
+    String? customerSyncId,
+    String? cashBoxSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/customer-collections',
+        query: _filterParams(
+          from: from,
+          to: to,
+          customerSyncId: customerSyncId,
+          cashBoxSyncId: cashBoxSyncId,
+        ),
+      );
+
+  Future<dynamic> getOverdueCustomers({
+    DateTime? asOf,
+    int? minDaysOverdue,
+    String? customerSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/overdue-customers',
+        query: _filterParams(
+          to: asOf ?? DateTime.now(),
+          minDaysOverdue: minDaysOverdue ?? 1,
+          customerSyncId: customerSyncId,
+        ),
+      );
+
+  Future<dynamic> getSupplierPayments({
+    DateTime? from,
+    DateTime? to,
+    String? supplierSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/supplier-payments',
+        query: _filterParams(
+          from: from,
+          to: to,
+          supplierSyncId: supplierSyncId,
+        ),
+      );
+
+  Future<dynamic> getBankAccountStatement({
+    DateTime? from,
+    DateTime? to,
+    String? bankAccountSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/bank-account-statement',
+        query: _filterParams(
+          from: from,
+          to: to,
+          bankAccountSyncId: bankAccountSyncId,
+        ),
+      );
+
+  Future<dynamic> getCashBoxMovement({
+    DateTime? from,
+    DateTime? to,
+    String? cashBoxSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/cash-box-movement',
+        query: _filterParams(
+          from: from,
+          to: to,
+          cashBoxSyncId: cashBoxSyncId,
+        ),
+      );
+
+  Future<dynamic> getCashBalancesSummary() =>
+      getGenericReport('/api/reports/cash-balances-summary');
+
+  Future<dynamic> getTransfersReport({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/transfers',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getInventoryValuation({
+    String? warehouseSyncId,
+    bool includeZero = false,
+  }) =>
+      getGenericReport(
+        '/api/reports/inventory-valuation',
+        query: _filterParams(
+          warehouseSyncId: warehouseSyncId,
+          includeZero: includeZero,
+        ),
+      );
+
+  Future<dynamic> getStockTaking({
+    String? warehouseSyncId,
+    bool includeZero = true,
+  }) =>
+      getGenericReport(
+        '/api/reports/stock-taking',
+        query: _filterParams(
+          warehouseSyncId: warehouseSyncId,
+          includeZero: includeZero,
+        ),
+      );
+
+  Future<dynamic> getCogsReport({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/cogs',
+        query: _filterParams(
+          from: from,
+          to: to,
+          warehouseSyncId: warehouseSyncId,
+        ),
+      );
+
+  Future<dynamic> getFinancialPositionSummary({DateTime? asOf}) =>
+      getGenericReport(
+        '/api/reports/financial-position-summary',
+        query: _filterParams(to: asOf ?? DateTime.now()),
+      );
+
+  Future<dynamic> getProfitAndLoss({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/profit-and-loss',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getStatementOfFinancialPosition({DateTime? asOf}) =>
+      getGenericReport(
+        '/api/reports/statement-of-financial-position',
+        query: _filterParams(to: asOf ?? DateTime.now()),
+      );
 }

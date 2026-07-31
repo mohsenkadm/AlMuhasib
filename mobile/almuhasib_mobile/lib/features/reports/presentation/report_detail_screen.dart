@@ -41,7 +41,7 @@ class ReportDetailScreen extends GetView<ReportDetailController> {
                       onPickTo: () => controller.pickToDate(context),
                     ),
             ),
-          if (reportType == 'statement')
+          if (controller.showCustomerPicker)
             Obx(
               () => _EntityPickerBar(
                 icon: Icons.person_search_rounded,
@@ -51,7 +51,7 @@ class ReportDetailScreen extends GetView<ReportDetailController> {
                 onTap: () => controller.pickCustomer(context),
               ),
             ),
-          if (reportType == 'investor_statement')
+          if (controller.showInvestorPicker)
             Obx(
               () => _EntityPickerBar(
                 icon: Icons.savings_outlined,
@@ -61,7 +61,7 @@ class ReportDetailScreen extends GetView<ReportDetailController> {
                 onTap: () => controller.pickInvestor(context),
               ),
             ),
-          if (reportType == 'supplier_statement')
+          if (controller.showSupplierPicker)
             Obx(
               () => _EntityPickerBar(
                 icon: Icons.local_shipping_outlined,
@@ -69,6 +69,36 @@ class ReportDetailScreen extends GetView<ReportDetailController> {
                 label: controller.selectedSupplier.value?.name ??
                     'select_supplier'.tr(),
                 onTap: () => controller.pickSupplier(context),
+              ),
+            ),
+          if (controller.showWarehousePicker)
+            Obx(
+              () => _EntityPickerBar(
+                icon: Icons.warehouse_outlined,
+                color: AppColors.moduleOrange,
+                label: controller.selectedWarehouse.value?.name ??
+                    'select_warehouse'.tr(),
+                onTap: () => controller.pickWarehouse(context),
+              ),
+            ),
+          if (controller.showCashBoxPicker)
+            Obx(
+              () => _EntityPickerBar(
+                icon: Icons.point_of_sale_outlined,
+                color: AppColors.moduleGreen,
+                label: controller.selectedCashBox.value?.name ??
+                    'select_cashbox'.tr(),
+                onTap: () => controller.pickCashBox(context),
+              ),
+            ),
+          if (controller.showBankPicker)
+            Obx(
+              () => _EntityPickerBar(
+                icon: Icons.account_balance_rounded,
+                color: AppColors.primary,
+                label: controller.selectedBankAccount.value?.name ??
+                    'select_bank_account'.tr(),
+                onTap: () => controller.pickBankAccount(context),
               ),
             ),
           Expanded(
@@ -186,6 +216,73 @@ class _EntityPickerBar extends StatelessWidget {
   }
 }
 
+class _ReportInfoTip extends StatefulWidget {
+  const _ReportInfoTip({required this.reportType});
+
+  final String reportType;
+
+  @override
+  State<_ReportInfoTip> createState() => _ReportInfoTipState();
+}
+
+class _ReportInfoTipState extends State<_ReportInfoTip> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final info = 'report_info_${widget.reportType}'.tr();
+    if (info == 'report_info_${widget.reportType}') {
+      return const SizedBox.shrink();
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primaryContainer.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => setState(() => _expanded = !_expanded),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.lightbulb_outline_rounded, color: scheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'report_tip_title'.tr(),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                  Icon(
+                    _expanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: scheme.primary,
+                  ),
+                ],
+              ),
+              if (_expanded) ...[
+                const SizedBox(height: 8),
+                Text(
+                  info,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        height: 1.45,
+                      ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReportDetailBody extends StatelessWidget {
   const _ReportDetailBody({
     required this.isLoading,
@@ -245,6 +342,8 @@ class _ReportDetailBody extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
       children: [
+        _ReportInfoTip(reportType: reportType).fadeSlideIn(),
+        const SizedBox(height: 10),
         ...switch (reportType) {
           'sales' => _buildSales(context, result as SalesReportResult),
           'purchases' =>
@@ -273,8 +372,45 @@ class _ReportDetailBody extends StatelessWidget {
             ),
           'expenses' ||
           'income_expense' ||
+          'cash_flow' ||
           'installments_summary' ||
-          'customers_overview' =>
+          'installments_detail' ||
+          'installments_paid' ||
+          'installments_unpaid' ||
+          'installments_aging' ||
+          'product_margin' ||
+          'product_movement' ||
+          'stock_health' ||
+          'inventory_replenishment' ||
+          'customers_overview' ||
+          'suppliers_overview' ||
+          'profit_comparison' ||
+          'investor_profit_distributions' ||
+          'capital_movement' ||
+          'opening_installment_balances' ||
+          'company_fees' ||
+          'installment_schedule' ||
+          'sales_by_payment_method' ||
+          'daily_sales' ||
+          'sales_by_warehouse_user' ||
+          'gross_profit_margin' ||
+          'operating_profit' ||
+          'receivables_aging' ||
+          'payables_aging' ||
+          'customer_collections' ||
+          'overdue_customers' ||
+          'supplier_payments' ||
+          'bank_account_statement' ||
+          'cash_box_movement' ||
+          'cash_balances_summary' ||
+          'transfers' ||
+          'inventory_valuation' ||
+          'stock_taking' ||
+          'cogs' ||
+          'financial_position_summary' ||
+          'profit_and_loss' ||
+          'statement_of_financial_position' ||
+          'supplier_statement' =>
             _buildChartAwareReport(context, reportType, result),
           _ => _buildGeneric(context, result),
         },
@@ -341,6 +477,17 @@ class _ReportDetailBody extends StatelessWidget {
       'overdueBucketChart',
       'byCashBoxChart',
       'chart',
+      'methodChart',
+      'compositionChart',
+      'warehouseChart',
+      'userChart',
+      'byInvestorChart',
+      'bySupplierChart',
+      'assetsChart',
+      'equityLiabilitiesChart',
+      'topProductsChart',
+      'distributedChart',
+      'reorderChart',
     };
     const dailyChartKeys = {
       'dailyChart',
@@ -348,6 +495,12 @@ class _ReportDetailBody extends StatelessWidget {
       'monthlyDueChart',
       'dailyIncomingChart',
       'dailyOutgoingChart',
+      'dueChart',
+      'dailyInChart',
+      'dailyOutChart',
+      'dailySalesChart',
+      'dailyGrossChart',
+      'monthlyChart',
     };
 
     const colors = [
@@ -374,57 +527,6 @@ class _ReportDetailBody extends StatelessWidget {
             compact: true,
           ),
         );
-      } else if (value is List && chartKeys.contains(key)) {
-        final points = _parseNameAmountList(value);
-        if (points.isNotEmpty) {
-          final sections = points
-              .take(8)
-              .toList()
-              .asMap()
-              .entries
-              .map((e) => (e.value.$1, e.value.$2, colors[e.key % colors.length]))
-              .toList();
-          final total = sections.fold<double>(0, (s, e) => s + e.$2);
-          chartWidgets.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: AppChartCard(
-                title: _humanizeKey(key),
-                height: 180,
-                child: AppDonutChart(
-                  sections: sections,
-                  centerLabel: 'total'.tr(),
-                  centerValue: formatCurrency(total),
-                  valueAsCurrency: true,
-                ),
-              ).fadeSlideIn(),
-            ),
-          );
-        }
-      } else if (value is List && dailyChartKeys.contains(key)) {
-        final series = _parseDailyAmountList(value);
-        if (series.isNotEmpty) {
-          chartWidgets.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: AppChartCard(
-                title: _humanizeKey(key),
-                height: 200,
-                child: AppGroupedBarChart(
-                  labels: series.map((e) => e.$1).toList(),
-                  series: [
-                    AppChartSeries(
-                      label: _humanizeKey(key),
-                      values: series.map((e) => e.$2).toList(),
-                      color: AppColors.primary,
-                    ),
-                  ],
-                  valueAsCurrency: true,
-                ),
-              ).fadeSlideIn(),
-            ),
-          );
-        }
       } else if (value is List &&
           (key == 'monthlyChart') &&
           value.isNotEmpty &&
@@ -472,7 +574,65 @@ class _ReportDetailBody extends StatelessWidget {
             ),
           );
         }
-      } else if (value is List && key.toLowerCase().contains('rows')) {
+      } else if (value is List && (chartKeys.contains(key) || key == 'buckets')) {
+        final points = key == 'buckets'
+            ? _parseBucketAmountList(value)
+            : _parseNameAmountList(value);
+        if (points.isNotEmpty) {
+          final sections = points
+              .take(8)
+              .toList()
+              .asMap()
+              .entries
+              .map((e) => (e.value.$1, e.value.$2, colors[e.key % colors.length]))
+              .toList();
+          final total = sections.fold<double>(0, (s, e) => s + e.$2);
+          chartWidgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: AppChartCard(
+                title: key == 'buckets'
+                    ? 'aging_buckets'.tr()
+                    : _humanizeKey(key),
+                height: 180,
+                child: AppDonutChart(
+                  sections: sections,
+                  centerLabel: 'total'.tr(),
+                  centerValue: formatCurrency(total),
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(),
+            ),
+          );
+        }
+      } else if (value is List && dailyChartKeys.contains(key)) {
+        final series = _parseDailyAmountList(value);
+        if (series.isNotEmpty) {
+          chartWidgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: AppChartCard(
+                title: _humanizeKey(key),
+                height: 200,
+                child: AppGroupedBarChart(
+                  labels: series.map((e) => e.$1).toList(),
+                  series: [
+                    AppChartSeries(
+                      label: _humanizeKey(key),
+                      values: series.map((e) => e.$2).toList(),
+                      color: AppColors.primary,
+                    ),
+                  ],
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(),
+            ),
+          );
+        }
+      } else if (value is List &&
+          (key.toLowerCase().contains('rows') ||
+              key == 'lines' ||
+              key == 'details')) {
         if (type == 'customers_overview') {
           final outstanding = value
               .whereType<Map>()
@@ -584,13 +744,30 @@ class _ReportDetailBody extends StatelessWidget {
         .map((row) {
           final m = Map<String, dynamic>.from(row);
           final name =
-              '${m['name'] ?? m['category'] ?? m['customerName'] ?? ''}';
+              '${m['name'] ?? m['category'] ?? m['customerName'] ?? m['supplierName'] ?? m['productName'] ?? m['warehouseName'] ?? m['lineName'] ?? m['bucketName'] ?? ''}';
           final amount = _asDouble(
-            m['amount'] ?? m['outstandingBalance'] ?? m['value'],
+            m['amount'] ??
+                m['outstandingBalance'] ??
+                m['value'] ??
+                m['totalValue'] ??
+                m['cogsAmount'] ??
+                m['remainingAmount'],
           );
           return (name, amount);
         })
         .where((e) => e.$1.isNotEmpty)
+        .toList();
+  }
+
+  static List<(String, double)> _parseBucketAmountList(List<dynamic> raw) {
+    return raw
+        .whereType<Map>()
+        .map((row) {
+          final m = Map<String, dynamic>.from(row);
+          final name = '${m['bucketName'] ?? m['name'] ?? ''}';
+          return (name, _asDouble(m['amount']));
+        })
+        .where((e) => e.$1.isNotEmpty && e.$2 > 0)
         .toList();
   }
 
