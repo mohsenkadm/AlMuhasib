@@ -25,6 +25,7 @@ public sealed class CreateProductRequest
     public Guid? SyncId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Barcode { get; set; }
+    public string? ScientificName { get; set; }
     public string? Description { get; set; }
     public Guid CategorySyncId { get; set; }
 }

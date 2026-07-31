@@ -63,7 +63,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             var term = $"%{search.Trim()}%";
             query = query.Where(p =>
                 EF.Functions.Like(p.Name, term) ||
-                (p.Barcode != null && EF.Functions.Like(p.Barcode, term)));
+                (p.Barcode != null && EF.Functions.Like(p.Barcode, term)) ||
+                (p.ScientificName != null && EF.Functions.Like(p.ScientificName, term)));
         }
 
         var products = await query.OrderBy(p => p.Name)
@@ -73,6 +74,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 SyncId = p.SyncId,
                 Name = p.Name,
                 Barcode = p.Barcode,
+                ScientificName = p.ScientificName,
                 CategorySyncId = p.Category.SyncId,
                 CategoryName = p.Category.Name
             })

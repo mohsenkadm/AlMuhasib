@@ -61,7 +61,8 @@ public class GlobalSearchService : IGlobalSearchService
 
         var products = await context.Products.AsNoTracking()
             .Where(p => EF.Functions.Like(p.Name, like)
-                        || (p.Barcode != null && EF.Functions.Like(p.Barcode, like)))
+                        || (p.Barcode != null && EF.Functions.Like(p.Barcode, like))
+                        || (p.ScientificName != null && EF.Functions.Like(p.ScientificName, like)))
             .OrderBy(p => p.Name)
             .Take(PerCategoryLimit)
             .Select(p => new GlobalSearchHit
@@ -69,7 +70,9 @@ public class GlobalSearchService : IGlobalSearchService
                 Kind = GlobalSearchKind.Product,
                 EntityId = p.Id,
                 Title = p.Name,
-                Subtitle = p.Barcode ?? "منتج",
+                Subtitle = !string.IsNullOrWhiteSpace(p.ScientificName)
+                    ? p.ScientificName
+                    : (p.Barcode ?? "منتج"),
                 ScreenName = "Products"
             })
             .ToListAsync(cancellationToken);

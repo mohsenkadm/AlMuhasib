@@ -8,6 +8,10 @@ public class Product : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Barcode { get; set; }
+
+    /// <summary>الاسم العلمي (للصيدليات). يظهر عند تفعيل قالب الصيدلية.</summary>
+    public string? ScientificName { get; set; }
+
     public int CategoryId { get; set; }
 
     /// <summary>وزن/حجم الوحدة الأساسية للمنتج (0 = غير محدد).</summary>

@@ -141,6 +141,7 @@ public class SupervisoryReportService : ISupervisoryReportService
         query = ApplyDeletedFilters(query, filter, p =>
             p.Name.Contains(filter.SearchTerm!) ||
             (p.Barcode != null && p.Barcode.Contains(filter.SearchTerm!)) ||
+            (p.ScientificName != null && p.ScientificName.Contains(filter.SearchTerm!)) ||
             (p.Description != null && p.Description.Contains(filter.SearchTerm!)) ||
             (p.Category != null && p.Category.Name.Contains(filter.SearchTerm!)));
 
@@ -570,6 +571,7 @@ public class SupervisoryReportService : ISupervisoryReportService
     private static readonly Dictionary<string, string> ProductFieldLabels = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Name"] = "الاسم",
+        ["ScientificName"] = "الاسم العلمي",
         ["Barcode"] = "الباركود",
         ["Description"] = "الوصف",
         ["CategoryId"] = "التصنيف",

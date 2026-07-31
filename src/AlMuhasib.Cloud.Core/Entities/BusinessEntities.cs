@@ -8,6 +8,7 @@ public class CloudProduct : CloudBaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Barcode { get; set; }
+    public string? ScientificName { get; set; }
     public int CategoryId { get; set; }
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }

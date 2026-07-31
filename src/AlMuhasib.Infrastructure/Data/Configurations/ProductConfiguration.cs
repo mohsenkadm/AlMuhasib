@@ -20,6 +20,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Barcode)
             .HasMaxLength(50);
 
+        builder.Property(p => p.ScientificName)
+            .HasMaxLength(300);
+
         builder.Property(p => p.Weight)
             .HasPrecision(18, 4);
 

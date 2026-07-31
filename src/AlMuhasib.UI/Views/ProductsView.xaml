@@ -50,7 +50,7 @@
                     <TextBox Grid.Column="0"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource SearchBox}"
-                             materialDesign:HintAssist.Hint="ابحث عن المنتج أو الباركود..."
+                             materialDesign:HintAssist.Hint="ابحث بالاسم أو الاسم العلمي أو الباركود..."
                              Margin="0,0,12,0"
                              MaxWidth="400"
                              HorizontalAlignment="Stretch"
@@ -232,6 +232,21 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- Scientific name (pharmacy template) -->
+                        <DataGridTextColumn x:Name="ColScientificName"
+                                            Header="الاسم العلمي"
+                                            Binding="{Binding ScientificName}"
+                                            Width="*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ScientificName">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#546E7A"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
                         <!-- Category -->
                         <DataGridTextColumn Header="التصنيف"
                                             Binding="{Binding Category.Name}"
@@ -369,6 +384,9 @@
                                             <StackPanel Grid.Row="2">
                                                 <TextBlock Style="{StaticResource MasterDataCardMeta}"
                                                            Text="{Binding CategoryName, Mode=OneWay, StringFormat=التصنيف: {0}}"/>
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}"
+                                                           Text="{Binding ScientificName, Mode=OneWay, StringFormat=علمي: {0}}"
+                                                           Visibility="{Binding HasScientificName, Converter={StaticResource BoolToVis}}"/>
                                                 <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
                                                            Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"/>
                                             </StackPanel>
@@ -528,6 +546,14 @@
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"
                                      Margin="0,0,0,16" />
+
+                            <!-- Scientific name (pharmacy template) -->
+                            <TextBox Text="{Binding EditScientificName, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="الاسم العلمي"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     Margin="0,0,0,16"
+                                     Visibility="{Binding ShowScientificName, Converter={StaticResource BoolToVis}}" />
 
                             <!-- Category -->
                             <ComboBox ItemsSource="{Binding Categories}"

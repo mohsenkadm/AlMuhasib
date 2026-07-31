@@ -2,7 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors">
+                    xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+                    xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core">
 
     <!-- ══════════════════════════════════════════════════════════════
          CUSTOM COLOR OVERRIDES
@@ -1551,19 +1552,42 @@
     </DataTemplate>
 
     <DataTemplate x:Key="InvoiceProductCellTemplate">
-        <StackPanel MaxWidth="200" VerticalAlignment="Center">
+        <StackPanel MaxWidth="220" VerticalAlignment="Center">
             <ComboBox ItemsSource="{Binding DataContext.Products, RelativeSource={RelativeSource AncestorType=UserControl}}"
                       SelectedItem="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged}"
-                      DisplayMemberPath="Name"
                       Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}"
                       IsEditable="True"
-                      MaxWidth="200"
-                      materialDesign:HintAssist.Hint="ابحث أو اختر..."
+                      IsTextSearchEnabled="False"
+                      MaxWidth="220"
+                      materialDesign:HintAssist.Hint="ابحث بالاسم أو العلمي..."
                       materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                       BorderThickness="0"
                       Background="Transparent"
                       FontSize="13"
-                      Padding="0,2">
+                      Padding="0,2"
+                      behaviors:ProductComboBoxSearchBehavior.IsEnabled="True">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type entities:Product}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                            <TextBlock FontSize="10" Foreground="#78909C">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding ScientificName, StringFormat=علمي: {0}}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ScientificName}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding ScientificName}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
                 <ComboBox.ItemContainerStyle>
                     <Style TargetType="ComboBoxItem" BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}">
                         <Setter Property="Padding" Value="8,6"/>

@@ -1741,6 +1741,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<string>("ScientificName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<Guid>("SyncId")
                         .HasColumnType("uniqueidentifier");
 

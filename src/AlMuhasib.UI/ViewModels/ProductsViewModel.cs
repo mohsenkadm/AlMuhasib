@@ -83,6 +83,9 @@ public partial class ProductsViewModel : ViewModelBase
     private string _editBarcode = string.Empty;
 
     [ObservableProperty]
+    private string _editScientificName = string.Empty;
+
+    [ObservableProperty]
     private Category? _editCategory;
 
     [ObservableProperty]
@@ -330,6 +333,7 @@ public partial class ProductsViewModel : ViewModelBase
             {
                 Product = product,
                 Name = product.Name,
+                ScientificName = product.ScientificName,
                 Barcode = product.Barcode,
                 Description = product.Description,
                 CategoryName = categoryName
@@ -449,6 +453,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditName = string.Empty;
         EditDescription = string.Empty;
         EditBarcode = string.Empty;
+        EditScientificName = string.Empty;
         EditCategory = null;
         EditWeight = 0m;
         EditWeightUnit = "كغ";
@@ -474,6 +479,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditName = product.Name;
         EditDescription = product.Description ?? string.Empty;
         EditBarcode = product.Barcode ?? string.Empty;
+        EditScientificName = product.ScientificName ?? string.Empty;
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         EditWeight = product.Weight;
         EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
@@ -535,6 +541,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.Name = EditName.Trim();
                 product.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
                 product.Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim();
+                product.ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim();
                 product.CategoryId = EditCategory.Id;
                 product.Weight = EditWeight < 0 ? 0m : EditWeight;
                 product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
@@ -550,6 +557,7 @@ public partial class ProductsViewModel : ViewModelBase
                     Name = EditName.Trim(),
                     Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
                     Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim(),
+                    ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim(),
                     CategoryId = EditCategory.Id,
                     Weight = EditWeight < 0 ? 0m : EditWeight,
                     WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim()
@@ -718,15 +726,6 @@ public partial class ProductsViewModel : ViewModelBase
                 colorFilter,
                 ShowBatchesSection && FilterHasBatchesOnly);
 
-            var exportData = allItems.Select(p => new
-            {
-                الاسم = p.Name,
-                الصنف = p.Category?.Name ?? "",
-                الباركود = p.Barcode ?? "",
-                الوصف = p.Description ?? "",
-                تاريخ_الإنشاء = p.CreatedAt.ToString("yyyy/MM/dd")
-            });
-
             var dialog = new SaveFileDialog
             {
                 Filter = "Excel Files (*.xlsx)|*.xlsx",
@@ -734,11 +733,36 @@ public partial class ProductsViewModel : ViewModelBase
                 DefaultExt = ".xlsx"
             };
 
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() != true)
+                return;
+
+            if (ShowScientificName)
             {
+                var exportData = allItems.Select(p => new
+                {
+                    الاسم = p.Name,
+                    الاسم_العلمي = p.ScientificName ?? "",
+                    الصنف = p.Category?.Name ?? "",
+                    الباركود = p.Barcode ?? "",
+                    الوصف = p.Description ?? "",
+                    تاريخ_الإنشاء = p.CreatedAt.ToString("yyyy/MM/dd")
+                });
                 await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "المنتجات");
-                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
             }
+            else
+            {
+                var exportData = allItems.Select(p => new
+                {
+                    الاسم = p.Name,
+                    الصنف = p.Category?.Name ?? "",
+                    الباركود = p.Barcode ?? "",
+                    الوصف = p.Description ?? "",
+                    تاريخ_الإنشاء = p.CreatedAt.ToString("yyyy/MM/dd")
+                });
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "المنتجات");
+            }
+
+            BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
         }
         catch (Exception ex)
         {
@@ -810,10 +834,12 @@ public partial class ProductsViewModel : ViewModelBase
             table.CellSpacing = 0;
 
             table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(50) });   // #
-            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(200) });  // Name
-            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(120) });  // Category
-            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(120) });  // Barcode
-            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(200) });  // Description
+            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(180) });  // Name
+            if (ShowScientificName)
+                table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(160) }); // Scientific
+            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(110) });  // Category
+            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(110) });  // Barcode
+            table.Columns.Add(new System.Windows.Documents.TableColumn { Width = new GridLength(160) });  // Description
 
             // Header row
             var headerGroup = new System.Windows.Documents.TableRowGroup();
@@ -821,7 +847,10 @@ public partial class ProductsViewModel : ViewModelBase
             headerRow.Background = System.Windows.Media.Brushes.DarkSlateBlue;
             headerRow.Foreground = System.Windows.Media.Brushes.White;
 
-            foreach (var h in new[] { "#", "الاسم", "الصنف", "الباركود", "الوصف" })
+            var headers = ShowScientificName
+                ? new[] { "#", "الاسم", "الاسم العلمي", "الصنف", "الباركود", "الوصف" }
+                : new[] { "#", "الاسم", "الصنف", "الباركود", "الوصف" };
+            foreach (var h in headers)
             {
                 var cell = new System.Windows.Documents.TableCell(
                     new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(h))
@@ -844,7 +873,9 @@ public partial class ProductsViewModel : ViewModelBase
                     row.Background = new System.Windows.Media.SolidColorBrush(
                         System.Windows.Media.Color.FromRgb(245, 245, 245));
 
-                var values = new[] { index.ToString(), p.Name, p.Category?.Name ?? "", p.Barcode ?? "", p.Description ?? "" };
+                var values = ShowScientificName
+                    ? new[] { index.ToString(), p.Name, p.ScientificName ?? "", p.Category?.Name ?? "", p.Barcode ?? "", p.Description ?? "" }
+                    : new[] { index.ToString(), p.Name, p.Category?.Name ?? "", p.Barcode ?? "", p.Description ?? "" };
                 foreach (var v in values)
                 {
                     var cell = new System.Windows.Documents.TableCell(
