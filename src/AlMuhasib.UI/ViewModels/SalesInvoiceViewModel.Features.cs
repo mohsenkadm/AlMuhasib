@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
@@ -43,7 +44,12 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private bool _showDriverSelection;
     [ObservableProperty] private decimal _transportFeeAmount;
+
+    public ObservableCollection<Driver> Drivers { get; } = [];
+
+    [ObservableProperty] private Driver? _selectedDriver;
 
     public bool ShowCustomField1 =>
         (MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header))
@@ -91,6 +97,7 @@ public partial class SalesInvoiceViewModel
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowTransportFee = _featureFlags.TransportFees;
+        ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
 
         foreach (var row in Items)
         {
@@ -107,6 +114,9 @@ public partial class SalesInvoiceViewModel
 
         if (!ShowTransportFee)
             TransportFeeAmount = 0m;
+
+        if (!ShowDriverSelection)
+            SelectedDriver = null;
 
         RecalculateTotals();
 

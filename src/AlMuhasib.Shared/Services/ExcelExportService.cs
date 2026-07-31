@@ -324,6 +324,11 @@ public class ExcelExportService : IExportService
         AddInfoRow("طريقة الدفع", m.PaymentMethod,
             m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : null,
             m.CreditDueDate?.ToString("yyyy/MM/dd"));
+        if (!string.IsNullOrWhiteSpace(m.PartyPhone) || !string.IsNullOrWhiteSpace(m.PartyAddress))
+            AddInfoRow("هاتف العميل", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone,
+                "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
+        if (!string.IsNullOrWhiteSpace(m.DriverName))
+            AddInfoRow("السائق", m.DriverName);
         if (!string.IsNullOrWhiteSpace(m.FileNumber))
             AddInfoRow("رقم الملف", m.FileNumber);
         if (!string.IsNullOrWhiteSpace(m.Notes))
@@ -340,17 +345,23 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         // ITEMS TABLE
         // ═══════════════════════════════════════════════
+        var hideAmounts = m.HideAmounts;
         var itemsTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
-        var colWidths = compactScheduleMode
-            ? new[] { 32.0, 205.0, 62.0, 90.0, 105.0 }
-            : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 };
+        var colWidths = hideAmounts
+            ? (compactScheduleMode ? new[] { 40.0, 380.0, 80.0 } : new[] { 50.0, 420.0, 90.0 })
+            : (compactScheduleMode
+                ? new[] { 32.0, 205.0, 62.0, 90.0, 105.0 }
+                : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 });
         foreach (var w in colWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
 
         // Header
         var itemHeaderGroup = new TableRowGroup();
         var itemHeaderRow = new TableRow { Background = primaryBrush };
-        foreach (var col in new[] { "#", "المادة", "الكمية", "سعر الوحدة", "الإجمالي" })
+        var headerCols = hideAmounts
+            ? new[] { "#", "المادة", "الكمية" }
+            : new[] { "#", "المادة", "الكمية", "سعر الوحدة", "الإجمالي" };
+        foreach (var col in headerCols)
         {
             itemHeaderRow.Cells.Add(new TableCell(new Paragraph(new Run(col))
             {
@@ -394,16 +405,21 @@ public class ExcelExportService : IExportService
             AddItemCell(item.Number.ToString());
             AddItemCell(item.ItemName, align: TextAlignment.Right);
             AddItemCell(item.Quantity.ToString("N0"));
-            AddItemCell(item.UnitPrice.ToString("N0") + " د.ع");
-            AddItemCell(item.TotalPrice.ToString("N0") + " د.ع", bold: true);
+            if (!hideAmounts)
+            {
+                AddItemCell(item.UnitPrice.ToString("N0") + " د.ع");
+                AddItemCell(item.TotalPrice.ToString("N0") + " د.ع", bold: true);
+            }
             dataGroup.Rows.Add(itemRow);
         }
         itemsTable.RowGroups.Add(dataGroup);
         doc.Blocks.Add(itemsTable);
 
         // ═══════════════════════════════════════════════
-        // TOTALS SECTION — right-aligned box
+        // TOTALS SECTION — right-aligned box (skipped for warehouse copy)
         // ═══════════════════════════════════════════════
+        if (!hideAmounts)
+        {
         var totalsTable = new Table
         {
             CellSpacing = 0,
@@ -458,11 +474,12 @@ public class ExcelExportService : IExportService
 
         totalsTable.RowGroups.Add(totalsGroup);
         doc.Blocks.Add(totalsTable);
+        }
 
         // ═══════════════════════════════════════════════
         // INSTALLMENT SCHEDULE (if applicable)
         // ═══════════════════════════════════════════════
-        if (m.Schedule is { Count: > 0 })
+        if (!hideAmounts && m.Schedule is { Count: > 0 })
         {
             doc.Blocks.Add(new Paragraph(new Run(" "))
             {

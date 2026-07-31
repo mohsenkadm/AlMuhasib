@@ -175,6 +175,50 @@
         </Border>
     </DataTemplate>
 
+    <!-- ═══ Driver Card ═══ -->
+    <DataTemplate x:Key="DriverCardTemplate" DataType="{x:Type entities:Driver}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#EFEBE9" Margin="0,0,0,8">
+                    <md:PackIcon Kind="AccountHardHat" Width="20" Height="20" Foreground="#5D4037"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}"
+                           ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهاتف: "/>
+                        <Run Text="{Binding Phone, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="العنوان: "/>
+                        <Run Text="{Binding Address, TargetNullValue=—}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
     <!-- ═══ Supplier Card ═══ -->
     <DataTemplate x:Key="SupplierCardTemplate" DataType="{x:Type entities:Supplier}">
         <Border Style="{StaticResource MasterDataEntityCardBorder}">

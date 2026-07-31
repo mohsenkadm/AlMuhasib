@@ -7,6 +7,7 @@ public class SalesInvoiceDraft
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; } = DateTime.Now;
     public int? CustomerId { get; set; }
+    public int? DriverId { get; set; }
     public int? WarehouseId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public DateTime? CreditDueDate { get; set; }

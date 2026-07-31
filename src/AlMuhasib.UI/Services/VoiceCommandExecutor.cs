@@ -89,6 +89,7 @@ public sealed class VoiceCommandExecutor
             nameof(DashboardViewModel) => PackIconKind.ViewDashboard,
             nameof(ProductsViewModel) => PackIconKind.PackageVariantClosed,
             nameof(CustomersViewModel) => PackIconKind.AccountGroup,
+            nameof(DriversViewModel) => PackIconKind.AccountHardHat,
             nameof(PersonProfileViewModel) => PackIconKind.AccountDetails,
             nameof(SuppliersViewModel) => PackIconKind.TruckDelivery,
             nameof(SalesInvoiceViewModel) => PackIconKind.CashRegister,

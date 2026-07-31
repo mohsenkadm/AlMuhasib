@@ -140,6 +140,19 @@
                                          IsChecked="{Binding SelectedInstallmentType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Platform}"
                                          Style="{StaticResource MaterialDesignChoiceChipRadioButton}"/>
                         </StackPanel>
+
+                        <!-- Driver (feature-gated) -->
+                        <ComboBox Grid.Row="2" Grid.Column="1"
+                                  ItemsSource="{Binding Drivers}"
+                                  SelectedItem="{Binding SelectedDriver}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="السائق"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,12,12,0"
+                                  FontSize="14"
+                                  Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolToVis}}" />
                     </Grid>
                 </materialDesign:Card>
 

@@ -48,6 +48,12 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasForeignKey(i => i.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(i => i.Driver)
+            .WithMany(d => d.Invoices)
+            .HasForeignKey(i => i.DriverId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(i => i.Warehouse)
             .WithMany()
             .HasForeignKey(i => i.WarehouseId)
@@ -64,5 +70,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(i => i.Date);
         builder.HasIndex(i => i.InvoiceType);
+        builder.HasIndex(i => i.DriverId);
     }
 }

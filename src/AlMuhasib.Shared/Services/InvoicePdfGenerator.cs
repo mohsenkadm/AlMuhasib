@@ -38,6 +38,12 @@ internal static class InvoicePdfGenerator
                         row.RelativeItem().AlignRight().Text($"التاريخ: {m.Date:yyyy/MM/dd}");
                     });
                     col.Item().PaddingTop(4).Text($"{m.PartyLabel}: {m.PartyName}");
+                    if (!string.IsNullOrWhiteSpace(m.PartyPhone))
+                        col.Item().Text($"هاتف العميل: {m.PartyPhone}");
+                    if (!string.IsNullOrWhiteSpace(m.PartyAddress))
+                        col.Item().Text($"عنوان العميل: {m.PartyAddress}");
+                    if (!string.IsNullOrWhiteSpace(m.DriverName))
+                        col.Item().Text($"السائق: {m.DriverName}");
                     if (!string.IsNullOrWhiteSpace(m.WarehouseName))
                         col.Item().Text($"المخزن: {m.WarehouseName}");
                     col.Item().Text($"طريقة الدفع: {m.PaymentMethod}");
@@ -53,35 +59,61 @@ internal static class InvoicePdfGenerator
                 {
                     col.Item().Table(table =>
                     {
-                        table.ColumnsDefinition(c =>
+                        if (m.HideAmounts)
                         {
-                            c.RelativeColumn(3);
-                            c.ConstantColumn(50);
-                            c.ConstantColumn(55);
-                            c.ConstantColumn(65);
-                            c.ConstantColumn(30);
-                        });
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(4);
+                                c.ConstantColumn(60);
+                                c.ConstantColumn(30);
+                            });
 
-                        table.Header(h =>
-                        {
-                            h.Cell().Element(HeaderCell).Text("البيان");
-                            h.Cell().Element(HeaderCell).Text("الكمية");
-                            h.Cell().Element(HeaderCell).Text("السعر");
-                            h.Cell().Element(HeaderCell).Text("الإجمالي");
-                            h.Cell().Element(HeaderCell).Text("#");
-                        });
+                            table.Header(h =>
+                            {
+                                h.Cell().Element(HeaderCell).Text("البيان");
+                                h.Cell().Element(HeaderCell).Text("الكمية");
+                                h.Cell().Element(HeaderCell).Text("#");
+                            });
 
-                        foreach (var item in m.Items)
+                            foreach (var item in m.Items)
+                            {
+                                table.Cell().Element(BodyCell).Text(item.ItemName);
+                                table.Cell().Element(BodyCell).Text(item.Quantity.ToString("N0"));
+                                table.Cell().Element(BodyCell).Text(item.Number.ToString());
+                            }
+                        }
+                        else
                         {
-                            table.Cell().Element(BodyCell).Text(item.ItemName);
-                            table.Cell().Element(BodyCell).Text(item.Quantity.ToString("N0"));
-                            table.Cell().Element(BodyCell).Text(item.UnitPrice.ToString("N0"));
-                            table.Cell().Element(BodyCell).Text(item.TotalPrice.ToString("N0"));
-                            table.Cell().Element(BodyCell).Text(item.Number.ToString());
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(3);
+                                c.ConstantColumn(50);
+                                c.ConstantColumn(55);
+                                c.ConstantColumn(65);
+                                c.ConstantColumn(30);
+                            });
+
+                            table.Header(h =>
+                            {
+                                h.Cell().Element(HeaderCell).Text("البيان");
+                                h.Cell().Element(HeaderCell).Text("الكمية");
+                                h.Cell().Element(HeaderCell).Text("السعر");
+                                h.Cell().Element(HeaderCell).Text("الإجمالي");
+                                h.Cell().Element(HeaderCell).Text("#");
+                            });
+
+                            foreach (var item in m.Items)
+                            {
+                                table.Cell().Element(BodyCell).Text(item.ItemName);
+                                table.Cell().Element(BodyCell).Text(item.Quantity.ToString("N0"));
+                                table.Cell().Element(BodyCell).Text(item.UnitPrice.ToString("N0"));
+                                table.Cell().Element(BodyCell).Text(item.TotalPrice.ToString("N0"));
+                                table.Cell().Element(BodyCell).Text(item.Number.ToString());
+                            }
                         }
                     });
 
-                    if (m.NumberOfInstallments.HasValue)
+                    if (!m.HideAmounts && m.NumberOfInstallments.HasValue)
                     {
                         col.Item().PaddingTop(8).Text(
                             $"عدد الأقساط: {m.NumberOfInstallments} | مبلغ القسط: {m.InstallmentAmount:N0} د.ع");
@@ -89,7 +121,7 @@ internal static class InvoicePdfGenerator
                             col.Item().Text($"نسبة الشركة: {m.CompanyFeeAmount:N0} د.ع");
                     }
 
-                    if (m.Schedule is { Count: > 0 })
+                    if (!m.HideAmounts && m.Schedule is { Count: > 0 })
                     {
                         col.Item().PaddingTop(8).Text("جدول الأقساط").Bold();
                         col.Item().Table(st =>
@@ -115,15 +147,18 @@ internal static class InvoicePdfGenerator
                         });
                     }
 
-                    col.Item().PaddingTop(12).AlignLeft().Column(totals =>
+                    if (!m.HideAmounts)
                     {
-                        totals.Item().Text($"المجموع: {m.Subtotal:N0} د.ع");
-                        if (m.RoundingAmount != 0)
-                            totals.Item().Text($"التقريب: {m.RoundingAmount:N0} د.ع");
-                        if (m.TransportFeeAmount > 0)
-                            totals.Item().Text($"أجور النقل: {m.TransportFeeAmount:N0} د.ع");
-                        totals.Item().Text($"الإجمالي الكلي: {m.GrandTotal:N0} د.ع").Bold().FontSize(12);
-                    });
+                        col.Item().PaddingTop(12).AlignLeft().Column(totals =>
+                        {
+                            totals.Item().Text($"المجموع: {m.Subtotal:N0} د.ع");
+                            if (m.RoundingAmount != 0)
+                                totals.Item().Text($"التقريب: {m.RoundingAmount:N0} د.ع");
+                            if (m.TransportFeeAmount > 0)
+                                totals.Item().Text($"أجور النقل: {m.TransportFeeAmount:N0} د.ع");
+                            totals.Item().Text($"الإجمالي الكلي: {m.GrandTotal:N0} د.ع").Bold().FontSize(12);
+                        });
+                    }
                 });
 
                 page.Footer().AlignCenter().Text(t =>

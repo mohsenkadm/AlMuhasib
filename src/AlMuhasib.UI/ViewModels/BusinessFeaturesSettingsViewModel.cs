@@ -32,6 +32,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _warehouseTransfers;
     [ObservableProperty] private bool _unitsOfMeasure;
     [ObservableProperty] private bool _transportFees;
+    [ObservableProperty] private bool _warehouseInvoiceAndDriver;
     [ObservableProperty] private bool _menuWeight;
     [ObservableProperty] private bool _expiryTracking;
     [ObservableProperty] private bool _serialNumbers;
@@ -52,7 +53,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
-            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees, MenuWeight,
+            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
+            WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             ProductDiscountEnabled, TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
@@ -117,6 +119,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
         TransportFees = p.FeatureFlags.TransportFees;
+        WarehouseInvoiceAndDriver = p.FeatureFlags.WarehouseInvoiceAndDriver;
         MenuWeight = p.FeatureFlags.MenuWeight;
         ExpiryTracking = p.FeatureFlags.ExpiryTracking;
         SerialNumbers = p.FeatureFlags.SerialNumbers;
@@ -146,6 +149,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
     partial void OnTransportFeesChanged(bool value) => NotifyFeaturesCount();
+    partial void OnWarehouseInvoiceAndDriverChanged(bool value) => NotifyFeaturesCount();
     partial void OnMenuWeightChanged(bool value) => NotifyFeaturesCount();
     partial void OnExpiryTrackingChanged(bool value) => NotifyFeaturesCount();
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
@@ -187,6 +191,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
             p.FeatureFlags.TransportFees = TransportFees;
+            p.FeatureFlags.WarehouseInvoiceAndDriver = WarehouseInvoiceAndDriver;
             p.FeatureFlags.MenuWeight = MenuWeight;
             p.FeatureFlags.ExpiryTracking = ExpiryTracking;
             p.FeatureFlags.SerialNumbers = SerialNumbers;

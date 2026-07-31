@@ -168,6 +168,11 @@ public partial class SalesInvoiceViewModel
             CustomerSearchText = string.Empty;
         }
 
+        if (ShowDriverSelection && invoice.DriverId.HasValue)
+            SelectedDriver = Drivers.FirstOrDefault(d => d.Id == invoice.DriverId);
+        else
+            SelectedDriver = null;
+
         SelectedWarehouse = invoice.WarehouseId > 0
             ? Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId)
             : null;

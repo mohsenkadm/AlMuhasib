@@ -176,6 +176,10 @@
                                                     Description="حقل أجور النقل في فواتير البيع والشراء والأقساط مع الظهور في الطباعة"
                                                     Icon="TruckFast" IconBackground="#E3F2FD" IconForeground="#1565C0"
                                                     IsChecked="{Binding TransportFees}"/>
+                        <controls:FeatureToggleCard Title="نسخة المخزن والسائق"
+                                                    Description="طباعة نسخة فاتورة للمخزن بدون مبالغ واختيار سائق للتوصيل من فاتورة البيع والأقساط"
+                                                    Icon="AccountHardHat" IconBackground="#EFEBE9" IconForeground="#5D4037"
+                                                    IsChecked="{Binding WarehouseInvoiceAndDriver}"/>
                         <controls:FeatureToggleCard Title="وزن القائمة"
                                                     Description="حقل وزن المادة على المنتج وكارد حساب وزن فاتورة البيع"
                                                     Icon="ScaleBalance" IconBackground="#E0F7FA" IconForeground="#00838F"

@@ -234,6 +234,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         InvoiceNumber = InvoiceNumber,
         InvoiceDate = InvoiceDate,
         CustomerId = SelectedCustomer?.Id,
+        DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
         WarehouseId = SelectedWarehouse?.Id,
         PaymentMethod = SelectedPaymentMethod,
         CreditDueDate = CreditDueDate,
@@ -256,6 +257,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         Notes = draft.Notes ?? string.Empty;
         if (draft.CustomerId.HasValue)
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == draft.CustomerId);
+        if (draft.DriverId.HasValue && ShowDriverSelection)
+            SelectedDriver = Drivers.FirstOrDefault(d => d.Id == draft.DriverId);
         if (draft.WarehouseId.HasValue)
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == draft.WarehouseId);
         if (draft.CashBoxId.HasValue)
@@ -323,6 +326,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             if (CashBoxes.Count > 0)
                 SelectedCashBox = CashBoxes[0];
 
+            var drivers = await _unitOfWork.Drivers.GetAllAsync();
+            Drivers.Clear();
+            foreach (var d in drivers.OrderBy(x => x.Name))
+                Drivers.Add(d);
+
             var products = await _unitOfWork.Products.GetAllAsync();
             Products.Clear();
             foreach (var p in products)
@@ -387,6 +395,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             if (SelectedCustomer is not null)
                 CustomerSearchText = SelectedCustomer.Name;
         }
+
+        if (ShowDriverSelection && invoice.DriverId.HasValue)
+            SelectedDriver = Drivers.FirstOrDefault(d => d.Id == invoice.DriverId);
+        else
+            SelectedDriver = null;
 
         if (invoice.WarehouseId > 0)
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId);
@@ -829,6 +842,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 InvoiceNumber = InvoiceNumber,
                 InvoiceType = invoiceType,
                 CustomerId = customerId,
+                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = SelectedPaymentMethod,
                 CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
@@ -946,7 +960,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     private void PrintInvoice()
     {
         if (_savedInvoice is null) return;
-        _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
+        var model = BuildSavedInvoicePrintModel();
+        _exportService.PrintInvoice(model);
+        if (ShowDriverSelection)
+            _exportService.PrintInvoice(BuildWarehouseCopyPrintModel(model));
     }
 
     [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
@@ -972,6 +989,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             CreditDueDate = _savedInvoice.CreditDueDate,
             PartyLabel = "العميل",
             PartyName = SelectedCustomer?.Name ?? CustomerSearchText,
+            PartyPhone = SelectedCustomer?.Phone,
+            PartyAddress = SelectedCustomer?.Address,
+            DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             PaymentMethod = _savedInvoice.PaymentMethod switch
             {
@@ -998,6 +1018,32 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         };
     }
 
+    private static InvoicePrintModel BuildWarehouseCopyPrintModel(InvoicePrintModel source) =>
+        new()
+        {
+            Title = "نسخة مخزن",
+            InvoiceNumber = source.InvoiceNumber,
+            Date = source.Date,
+            CreditDueDate = source.CreditDueDate,
+            PartyLabel = source.PartyLabel,
+            PartyName = source.PartyName,
+            PartyPhone = source.PartyPhone,
+            PartyAddress = source.PartyAddress,
+            DriverName = source.DriverName,
+            WarehouseName = source.WarehouseName,
+            PaymentMethod = source.PaymentMethod,
+            Notes = source.Notes,
+            HideAmounts = true,
+            Items = source.Items.Select(i => new InvoicePrintItem
+            {
+                Number = i.Number,
+                ItemName = i.ItemName,
+                Quantity = i.Quantity,
+                UnitPrice = 0,
+                TotalPrice = 0
+            }).ToList()
+        };
+
     // ── New invoice (reset) ────────────────────────────────
     [RelayCommand]
     private void OpenCurrencyChange()
@@ -1017,6 +1063,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         TransportFeeAmount = 0m;
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
+        SelectedDriver = null;
         SelectedPaymentMethod = PaymentMethod.Cash;
         CreditDueDate = null;
         InvoiceDate = DateTime.Now;

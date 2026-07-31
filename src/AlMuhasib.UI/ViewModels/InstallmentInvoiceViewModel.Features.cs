@@ -1,8 +1,10 @@
+using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -12,7 +14,12 @@ public partial class InstallmentInvoiceViewModel
 
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private bool _showDriverSelection;
     [ObservableProperty] private decimal _transportFeeAmount;
+
+    public ObservableCollection<Driver> Drivers { get; } = [];
+
+    [ObservableProperty] private Driver? _selectedDriver;
 
     private void RefreshFeatureVisibility()
     {
@@ -20,6 +27,7 @@ public partial class InstallmentInvoiceViewModel
         ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
         ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
         ShowTransportFee = _featureFlags.TransportFees;
+        ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
 
         foreach (var row in Items)
         {
@@ -39,6 +47,9 @@ public partial class InstallmentInvoiceViewModel
 
         if (!ShowTransportFee)
             TransportFeeAmount = 0m;
+
+        if (!ShowDriverSelection)
+            SelectedDriver = null;
 
         InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
         RecalculateTotals();

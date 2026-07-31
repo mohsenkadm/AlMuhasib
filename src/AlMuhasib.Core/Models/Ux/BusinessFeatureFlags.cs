@@ -25,6 +25,9 @@ public class BusinessFeatureFlags
     /// <summary>أجور النقل في فواتير البيع والشراء والأقساط — معطّل افتراضياً.</summary>
     public bool TransportFees { get; set; }
 
+    /// <summary>نسخة فاتورة للمخزن بدون مبالغ + اختيار سائق للتوصيل — معطّل افتراضياً.</summary>
+    public bool WarehouseInvoiceAndDriver { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }

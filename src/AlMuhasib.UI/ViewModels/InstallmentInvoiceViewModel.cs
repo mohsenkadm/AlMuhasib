@@ -259,6 +259,11 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             if (CashBoxes.Count > 0)
                 SelectedCashBox = CashBoxes[0];
 
+            var drivers = await _unitOfWork.Drivers.GetAllAsync();
+            Drivers.Clear();
+            foreach (var d in drivers.OrderBy(x => x.Name))
+                Drivers.Add(d);
+
             var products = await _unitOfWork.Products.GetAllAsync();
             Products.Clear();
             foreach (var p in products)
@@ -618,6 +623,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
                 InvoiceNumber = InvoiceNumber,
                 InvoiceType = InvoiceType.Installment,
                 CustomerId = customerId,
+                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
                 CashBoxId = SelectedCashBox?.Id,
@@ -730,6 +736,11 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         }
 
         _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
+        if (ShowDriverSelection)
+        {
+            var warehouseCopy = BuildWarehouseCopyPrintModel(BuildSavedInvoicePrintModel());
+            _exportService.PrintInvoice(warehouseCopy);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanPrintSavedInvoice))]
@@ -754,6 +765,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             Date = _savedInvoice.Date,
             PartyLabel = "العميل",
             PartyName = SelectedCustomer?.Name ?? CustomerSearchText,
+            PartyPhone = SelectedCustomer?.Phone,
+            PartyAddress = SelectedCustomer?.Address,
+            DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             PaymentMethod = "أقساط",
             Notes = _savedInvoice.Notes,
@@ -788,6 +802,32 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         };
     }
 
+    private static InvoicePrintModel BuildWarehouseCopyPrintModel(InvoicePrintModel source) =>
+        new()
+        {
+            Title = "نسخة مخزن",
+            InvoiceNumber = source.InvoiceNumber,
+            Date = source.Date,
+            PartyLabel = source.PartyLabel,
+            PartyName = source.PartyName,
+            PartyPhone = source.PartyPhone,
+            PartyAddress = source.PartyAddress,
+            DriverName = source.DriverName,
+            WarehouseName = source.WarehouseName,
+            PaymentMethod = source.PaymentMethod,
+            Notes = source.Notes,
+            FileNumber = source.FileNumber,
+            HideAmounts = true,
+            Items = source.Items.Select(i => new InvoicePrintItem
+            {
+                Number = i.Number,
+                ItemName = i.ItemName,
+                Quantity = i.Quantity,
+                UnitPrice = 0,
+                TotalPrice = 0
+            }).ToList()
+        };
+
     // ── New invoice (reset) ────────────────────────────────
     [RelayCommand]
     private async Task NewInvoice()
@@ -802,6 +842,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         TransportFeeAmount = 0m;
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
+        SelectedDriver = null;
         FileNumber = string.Empty;
         NumberOfInstallments = 6;
         InstallmentStartDate = DateTime.Now.AddMonths(1);
