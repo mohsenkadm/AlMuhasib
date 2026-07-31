@@ -3,6 +3,8 @@ using AlMuhasib.Cloud.Application.Models;
 using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
+using AlMuhasib.Core;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Sync;
 using Microsoft.EntityFrameworkCore;
 
@@ -169,7 +171,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         };
     }
 
-    public Task<List<LookupItem>> GetCustomersAsync(string? search = null, CancellationToken ct = default)
+    public async Task<List<LookupItem>> GetCustomersAsync(string? search = null, CancellationToken ct = default)
     {
         var query = _db.Customers.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
@@ -180,9 +182,66 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 (c.Phone != null && EF.Functions.Like(c.Phone, term)));
         }
 
-        return query.OrderBy(c => c.Name)
+        var customers = await query.OrderBy(c => c.Name)
             .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name, Extra = c.Phone })
             .ToListAsync(ct);
+
+        if (customers.Count == 0)
+            return customers;
+
+        var customerIds = customers.Select(c => c.Id).ToList();
+
+        var creditByCustomer = await _db.Invoices.AsNoTracking()
+            .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) &&
+                        i.PaymentMethod == PaymentMethod.Credit)
+            .GroupBy(i => i.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+            .ToListAsync(ct);
+
+        var planRows = await _db.InstallmentPlans.AsNoTracking()
+            .Where(p => customerIds.Contains(p.CustomerId))
+            .Select(p => new { p.Id, p.CustomerId })
+            .ToListAsync(ct);
+        var planIds = planRows.Select(p => p.Id).ToList();
+        var installmentByPlan = planIds.Count == 0
+            ? []
+            : await _db.Installments.AsNoTracking()
+                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                .GroupBy(i => i.InstallmentPlanId)
+                .Select(g => new { PlanId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+                .ToListAsync(ct);
+
+        var installmentByCustomer = planRows
+            .GroupBy(p => p.CustomerId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(p => installmentByPlan.FirstOrDefault(x => x.PlanId == p.Id)?.Remaining ?? 0));
+
+        var unappliedDebt = await _db.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .GroupBy(v => v.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .ToListAsync(ct);
+
+        var receipts = await _db.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
+                        v.VoucherType == VoucherType.Receipt)
+            .GroupBy(v => v.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .ToListAsync(ct);
+
+        foreach (var customer in customers)
+        {
+            var credit = creditByCustomer.FirstOrDefault(x => x.CustomerId == customer.Id)?.Remaining ?? 0;
+            installmentByCustomer.TryGetValue(customer.Id, out var inst);
+            var debt = unappliedDebt.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
+            var receipt = receipts.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
+            customer.Balance = CustomerBalanceHelper.ComputeOutstandingBalance(credit, inst, debt, receipt);
+        }
+
+        return customers;
     }
 
     public Task<List<LookupItem>> GetSuppliersAsync(string? search = null, CancellationToken ct = default)

@@ -631,6 +631,25 @@ public class InvoiceService : IInvoiceService
                 cashBox.UpdatedAt = DateTime.UtcNow;
             }
 
+            // إنشاء سند قبض دين للمزامنة وكشف الحساب (معلّم كمطبّق لأن الفاتورة حُدّثت أعلاه)
+            if (invoice.CustomerId.HasValue && invoice.InvoiceType != InvoiceType.Purchase)
+            {
+                var voucherNumber = await GetNextDebtReceiptNumberAsync(context);
+                await context.Vouchers.AddAsync(new Voucher
+                {
+                    VoucherNumber = voucherNumber,
+                    VoucherType = VoucherType.DebtReceipt,
+                    Amount = amount,
+                    CustomerId = invoice.CustomerId,
+                    CashBoxId = cashBoxId,
+                    Date = DateTime.Today,
+                    Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(
+                        $"تسديد فاتورة آجلة {invoice.InvoiceNumber}"),
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
             await context.SaveChangesAsync();
 
             if (_currentUserService.UserId.HasValue)
@@ -656,6 +675,22 @@ public class InvoiceService : IInvoiceService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    private static async Task<string> GetNextDebtReceiptNumberAsync(AppDbContext context)
+    {
+        var lastVoucher = await context.Vouchers
+            .IgnoreQueryFilters()
+            .Where(v => v.VoucherType == VoucherType.DebtReceipt)
+            .OrderByDescending(v => v.Id)
+            .FirstOrDefaultAsync();
+
+        var nextNum = 1;
+        if (lastVoucher?.VoucherNumber is { Length: > 3 } number &&
+            int.TryParse(number.AsSpan(3), out var parsed))
+            nextNum = parsed + 1;
+
+        return $"DRC{nextNum:D6}";
     }
 
     /// <summary>

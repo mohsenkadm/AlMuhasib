@@ -622,44 +622,155 @@ public class ReportService : IReportService
         var customer = await context.Customers.FindAsync(customerId);
         if (customer is null) return new CustomerStatementResult { CustomerName = "\u2014" };
 
-        var rows = new List<CustomerStatementRow>();
+        // إصلاح سندات قبض الدين القديمة التي لم تُطبَّق على الفواتير الآجلة
+        await EnsureDebtReceiptsAppliedAsync(context, customerId);
 
-        var invQ = context.Invoices
+        var invQ = context.Invoices.AsNoTracking()
             .Where(i => i.CustomerId == customerId &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         (i.PaymentMethod == PaymentMethod.Credit || i.PaymentMethod == PaymentMethod.Installment));
         if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
-        foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
-            rows.Add(new CustomerStatementRow { Date = inv.Date, Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 \u0645\u0628\u064a\u0639\u0627\u062a {inv.InvoiceNumber}", Debit = inv.NetAmount });
+        var invoices = await invQ.OrderBy(i => i.Date).ToListAsync();
 
-        var vQ = context.Vouchers
-            .Where(v => v.CustomerId == customerId && (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt));
+        var vQ = context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId == customerId &&
+                        (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt));
         if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
-        foreach (var v in await vQ.OrderBy(v => v.Date).ToListAsync())
-            rows.Add(new CustomerStatementRow { Date = v.Date, Description = v.VoucherType == VoucherType.Receipt ? $"\u0633\u0646\u062f \u0642\u0628\u0636 {v.VoucherNumber}" : $"\u0633\u0646\u062f \u062a\u0633\u062f\u064a\u062f \u062f\u064a\u0646 {v.VoucherNumber}", Credit = v.Amount });
+        var vouchers = await vQ.OrderBy(v => v.Date).ToListAsync();
 
-        var planIds = await context.InstallmentPlans.Where(p => p.CustomerId == customerId).Select(p => p.Id).ToListAsync();
+        var planIds = await context.InstallmentPlans.AsNoTracking()
+            .Where(p => p.CustomerId == customerId)
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        var installmentPayments = new List<Installment>();
         if (planIds.Count > 0)
         {
-            var instQ = context.Installments.Where(i => planIds.Contains(i.InstallmentPlanId) && i.PaidAmount > 0);
+            var instQ = context.Installments.AsNoTracking()
+                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.PaidAmount > 0);
             if (from.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
             if (to.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) < EndOfDay(to));
-            foreach (var inst in await instQ.OrderBy(i => i.PaymentDate).ToListAsync())
-                rows.Add(new CustomerStatementRow { Date = inst.PaymentDate ?? inst.DueDate, Description = "\u062f\u0641\u0639\u0629 \u0642\u0633\u0637", Credit = inst.PaidAmount });
+            installmentPayments = await instQ.OrderBy(i => i.PaymentDate).ToListAsync();
         }
 
-        rows = rows.OrderBy(r => r.Date).ToList();
-        decimal balance = 0;
-        foreach (var r in rows) { balance += r.Debit - r.Credit; r.RunningBalance = balance; }
+        var unpaidInstallmentRemaining = planIds.Count == 0
+            ? 0m
+            : await context.Installments.AsNoTracking()
+                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        // رصيد مستحق حالي (كل الفترة) — مصدر الحقيقة للمطابقة مع الموبايل/التقارير
+        var allCreditRemaining = await context.Invoices.AsNoTracking()
+            .Where(i => i.CustomerId == customerId && i.PaymentMethod == PaymentMethod.Credit)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var allReceipts = await context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId == customerId && v.VoucherType == VoucherType.Receipt)
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var allUnappliedDebt = await context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId == customerId &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var currentBalance = CustomerBalanceHelper.ComputeOutstandingBalance(
+            allCreditRemaining, unpaidInstallmentRemaining, allUnappliedDebt, allReceipts);
+
+        var (ledgerRows, _) = CustomerBalanceHelper.BuildCustomerStatementLedger(
+            invoices.Select(i => new CustomerBalanceInvoiceRow
+            {
+                Id = i.Id,
+                Date = i.Date,
+                InvoiceNumber = i.InvoiceNumber,
+                InvoiceType = i.InvoiceType,
+                PaymentMethod = i.PaymentMethod,
+                NetAmount = i.NetAmount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount
+            }),
+            vouchers.Select(v => new CustomerBalanceVoucherRow
+            {
+                Id = v.Id,
+                Date = v.Date,
+                VoucherNumber = v.VoucherNumber,
+                VoucherType = v.VoucherType,
+                Amount = v.Amount,
+                Notes = v.Notes
+            }),
+            installmentPayments.Select(i => new CustomerBalanceInstallmentPaymentRow
+            {
+                Id = i.Id,
+                Date = i.PaymentDate ?? i.DueDate,
+                PaidAmount = i.PaidAmount
+            }),
+            unpaidInstallmentRemaining);
+
+        var rows = ledgerRows.Select(r => new CustomerStatementRow
+        {
+            Date = r.Date,
+            Description = r.Description,
+            Debit = r.Debit,
+            Credit = r.Credit,
+            RunningBalance = r.RunningBalance
+        }).ToList();
+
+        var balance = currentBalance;
 
         return new CustomerStatementResult
         {
             CustomerName = customer.Name,
-            TotalDebit = rows.Sum(r => r.Debit), TotalCredit = rows.Sum(r => r.Credit),
-            Balance = balance, TransactionCount = rows.Count, Rows = rows
+            TotalDebit = rows.Sum(r => r.Debit),
+            TotalCredit = rows.Sum(r => r.Credit),
+            Balance = balance,
+            TransactionCount = rows.Count,
+            Rows = rows
         };
+    }
+
+    /// <summary>يطبق سندات قبض الدين غير المعلّمة على الفواتير الآجلة (إصلاح بيانات قديمة).</summary>
+    private static async Task EnsureDebtReceiptsAppliedAsync(AppDbContext context, int customerId)
+    {
+        var pending = await context.Vouchers
+            .Where(v => v.CustomerId == customerId &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .OrderBy(v => v.Date)
+            .ThenBy(v => v.Id)
+            .ToListAsync();
+
+        if (pending.Count == 0)
+            return;
+
+        var creditInvoices = await context.Invoices
+            .Where(i => i.CustomerId == customerId &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
+
+        foreach (var voucher in pending)
+        {
+            var snapshot = creditInvoices
+                .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+                .ToList();
+            var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+            foreach (var u in updates)
+            {
+                var inv = creditInvoices.First(i => i.Id == u.Id);
+                inv.PaidAmount = u.PaidAmount;
+                inv.RemainingAmount = u.RemainingAmount;
+                inv.IsCreditPaid = u.IsCreditPaid;
+                inv.UpdatedAt = DateTime.UtcNow;
+                inv.UpdatedBy = "balance-repair";
+            }
+
+            voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+            voucher.UpdatedAt = DateTime.UtcNow;
+            voucher.UpdatedBy = "balance-repair";
+        }
+
+        await context.SaveChangesAsync();
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -1547,9 +1658,26 @@ public class ReportService : IReportService
                 collected += await instQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0m;
             }
 
-            var outstanding = await context.Invoices.AsNoTracking()
-                .Where(i => i.CustomerId == customer.Id && i.RemainingAmount > 0)
+            var outstandingCredit = await context.Invoices.AsNoTracking()
+                .Where(i => i.CustomerId == customer.Id && i.PaymentMethod == PaymentMethod.Credit)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
+            var outstandingInstallments = 0m;
+            if (planIds.Count > 0)
+            {
+                outstandingInstallments = await context.Installments.AsNoTracking()
+                    .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                    .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+            }
+
+            var unappliedDebt = await context.Vouchers.AsNoTracking()
+                .Where(v => v.CustomerId == customer.Id &&
+                            v.VoucherType == VoucherType.DebtReceipt &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0m;
+
+            var outstanding = CustomerBalanceHelper.ComputeOutstandingBalance(
+                outstandingCredit, outstandingInstallments, unappliedDebt);
 
             if (invoiceCount == 0 && collected == 0 && outstanding == 0)
                 continue;

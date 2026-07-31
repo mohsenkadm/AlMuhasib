@@ -1,5 +1,6 @@
 using AlMuhasib.Cloud.Application.Abstractions;
 using AlMuhasib.Cloud.Infrastructure.Data;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Models;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,11 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.CustomerCreditBalance = await _db.Invoices
             .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
+        var unappliedDebt = await _db.Vouchers
+            .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
+        data.CustomerCreditBalance = Math.Max(0, data.CustomerCreditBalance - unappliedDebt);
 
         var salesRaw = await _db.Invoices
             .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)

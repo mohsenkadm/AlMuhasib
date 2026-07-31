@@ -4,6 +4,7 @@ class LookupItem {
     required this.syncId,
     required this.name,
     this.extra,
+    this.balance,
   });
 
   factory LookupItem.fromJson(Map<String, dynamic> json) {
@@ -12,6 +13,7 @@ class LookupItem {
       syncId: json['syncId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       extra: json['extra'] as String?,
+      balance: json['balance'] == null ? null : _num(json['balance']),
     );
   }
 
@@ -19,6 +21,7 @@ class LookupItem {
   final String syncId;
   final String name;
   final String? extra;
+  final double? balance;
 }
 
 class ProductPriceLookupItem {

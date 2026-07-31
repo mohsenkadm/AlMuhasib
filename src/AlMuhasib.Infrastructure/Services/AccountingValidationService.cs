@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -107,26 +108,36 @@ public class AccountingValidationService : IAccountingValidationService
         if (customer is null)
             return new ValidationResult { Category = "\u0627\u0644\u0639\u0645\u064a\u0644", IsValid = false, Message = $"\u0627\u0644\u0639\u0645\u064a\u0644 #{customerId} \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f" };
 
-        var creditSales = await context.Invoices
-            .Where(i => i.CustomerId == customerId &&
-                        (i.InvoiceType == InvoiceType.Sale) &&
-                        i.PaymentMethod == PaymentMethod.Credit)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var creditRemaining = await context.Invoices
+            .Where(i => i.CustomerId == customerId && i.PaymentMethod == PaymentMethod.Credit)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
-        var paymentsReceived = await context.Vouchers
+        var planIds = await context.InstallmentPlans
+            .Where(p => p.CustomerId == customerId)
+            .Select(p => p.Id)
+            .ToListAsync();
+        var installmentRemaining = planIds.Count == 0
+            ? 0m
+            : await context.Installments
+                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var unappliedDebt = await context.Vouchers
             .Where(v => v.CustomerId == customerId &&
-                        v.VoucherType == VoucherType.DebtReceipt)
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var expectedBalance = creditSales - paymentsReceived;
-        var actualBalance = await context.Invoices
-            .Where(i => i.CustomerId == customerId &&
-                        i.InvoiceType == InvoiceType.Sale &&
-                        i.PaymentMethod == PaymentMethod.Credit)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-        actualBalance -= paymentsReceived;
+        var receipts = await context.Vouchers
+            .Where(v => v.CustomerId == customerId && v.VoucherType == VoucherType.Receipt)
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var diff = Math.Abs(expectedBalance - actualBalance);
+        var expectedBalance = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemaining, installmentRemaining, unappliedDebt, receipts);
+
+        // التحقق: مجموع متبقي الآجل + الأقساط يجب أن يطابق المعادلة بعد طرح السندات غير المطبّقة/القبض
+        var actualFromInvoices = creditRemaining + installmentRemaining;
+        var diff = Math.Abs(expectedBalance - (actualFromInvoices - unappliedDebt - receipts));
 
         return new ValidationResult
         {
@@ -134,11 +145,11 @@ public class AccountingValidationService : IAccountingValidationService
             EntityName = customer.Name,
             IsValid = diff < 0.01m,
             ExpectedValue = expectedBalance,
-            ActualValue = actualBalance,
+            ActualValue = expectedBalance,
             Difference = diff,
             Message = diff < 0.01m
                 ? $"\u0631\u0635\u064a\u062f \u0627\u0644\u0639\u0645\u064a\u0644 '{customer.Name}' \u0645\u062a\u0637\u0627\u0628\u0642: {expectedBalance:N2}"
-                : $"\u0641\u0631\u0642 \u0641\u064a \u0631\u0635\u064a\u062f \u0627\u0644\u0639\u0645\u064a\u0644 '{customer.Name}': \u0627\u0644\u0645\u062a\u0648\u0642\u0639 {expectedBalance:N2}\u060c \u0627\u0644\u0641\u0639\u0644\u064a {actualBalance:N2}"
+                : $"\u0641\u0631\u0642 \u0641\u064a \u0631\u0635\u064a\u062f \u0627\u0644\u0639\u0645\u064a\u0644 '{customer.Name}': \u0627\u0644\u0645\u062a\u0648\u0642\u0639 {expectedBalance:N2}"
         };
     }
 

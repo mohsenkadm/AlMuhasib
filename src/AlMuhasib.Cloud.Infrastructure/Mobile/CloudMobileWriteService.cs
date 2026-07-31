@@ -863,8 +863,12 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         switch (voucher.VoucherType)
         {
             case VoucherType.Receipt:
+                cashBox.Balance += voucher.Amount;
+                break;
             case VoucherType.DebtReceipt:
                 cashBox.Balance += voucher.Amount;
+                if (voucher.CustomerId.HasValue)
+                    await ApplyDebtReceiptToCreditInvoicesAsync(tenantId, voucher, username, ct);
                 break;
             case VoucherType.Payment:
                 if (cashBox.Balance < voucher.Amount)
@@ -911,6 +915,40 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         cashBox.UpdatedAt = DateTime.UtcNow;
         cashBox.UpdatedBy = username;
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task ApplyDebtReceiptToCreditInvoicesAsync(
+        int tenantId, CloudVoucher voucher, string username, CancellationToken ct)
+    {
+        if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.CustomerId.HasValue)
+            return;
+
+        var creditInvoices = await _db.Invoices
+            .Where(i => i.TenantId == tenantId &&
+                        i.CustomerId == voucher.CustomerId.Value &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync(ct);
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .ToList();
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        voucher.UpdatedAt = DateTime.UtcNow;
+        voucher.UpdatedBy = username;
     }
 
     private async Task ApplyTransferBalancesAsync(

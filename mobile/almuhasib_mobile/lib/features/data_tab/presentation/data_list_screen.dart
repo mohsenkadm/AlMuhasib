@@ -286,11 +286,27 @@ class _DataListBody extends StatelessWidget {
     }
 
     if (item is LookupItem && listType != 'invoices') {
+      final balanceText = listType == 'customers' && item.balance != null
+          ? '${'balance'.tr()}: ${formatCurrency(item.balance!)}'
+          : null;
       return AppEntityCard(
         title: item.name,
-        subtitle: item.extra,
+        subtitle: [
+          if (item.extra != null && item.extra!.isNotEmpty) item.extra!,
+          if (balanceText != null) balanceText,
+        ].join(' • '),
         leading: _LeadingBadge(icon: icon, color: accent, letter: item.name),
-        trailing: Icon(Icons.chevron_left_rounded, color: accent),
+        trailing: listType == 'customers' && item.balance != null
+            ? Text(
+                formatCurrency(item.balance!),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: item.balance! > 0
+                          ? AppColors.error
+                          : AppColors.success,
+                    ),
+              )
+            : Icon(Icons.chevron_left_rounded, color: accent),
         onTap: () {
           final route = detailRouteFor(item);
           if (route != null) Get.toNamed(route, arguments: item);
@@ -380,6 +396,7 @@ class EntityDetailScreen extends StatefulWidget {
 
 class _EntityDetailScreenState extends State<EntityDetailScreen> {
   ProductLookupItem? _product;
+  LookupItem? _customer;
   bool _loadingProduct = false;
 
   String get _editRoute => switch (widget.entityType) {
@@ -414,7 +431,25 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
       } else {
         _loadProduct();
       }
+    } else if (widget.entityType == 'customer') {
+      if (args is LookupItem) {
+        _customer = args;
+      } else {
+        _loadCustomer();
+      }
     }
+  }
+
+  Future<void> _loadCustomer() async {
+    try {
+      final customers = await AppServices.data.getCustomers();
+      for (final c in customers) {
+        if (c.syncId == widget.syncId) {
+          if (mounted) setState(() => _customer = c);
+          break;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadProduct() async {
@@ -436,8 +471,11 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = _product;
-    final displayName =
-        widget.name.isNotEmpty ? widget.name : (product?.name ?? '');
+    final customer = _customer;
+    final displayName = widget.name.isNotEmpty
+        ? widget.name
+        : (product?.name ?? customer?.name ?? '');
+    final customerBalance = customer?.balance;
 
     return AppPageScaffold(
       title: displayName,
@@ -451,7 +489,10 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
       actions: [
         IconButton(
           tooltip: 'edit'.tr(),
-          onPressed: () => Get.toNamed(_editRoute, arguments: product),
+          onPressed: () => Get.toNamed(
+            _editRoute,
+            arguments: product ?? customer,
+          ),
           icon: const Icon(Icons.edit_outlined),
         ),
       ],
@@ -461,19 +502,54 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
               children: [
                 AppBalanceHeroCard(
-                  title: displayName,
-                  value: product?.categoryName.isNotEmpty == true
-                      ? product!.categoryName
-                      : switch (widget.entityType) {
-                          'customer' => 'customers'.tr(),
-                          'product' => 'products'.tr(),
-                          'supplier' => 'suppliers'.tr(),
-                          'investor' => 'investors'.tr(),
-                          _ => displayName,
-                        },
-                  subtitle: product?.barcode,
+                  title: widget.entityType == 'customer'
+                      ? 'balance'.tr()
+                      : displayName,
+                  value: widget.entityType == 'customer'
+                      ? formatCurrency(customerBalance ?? 0)
+                      : product?.categoryName.isNotEmpty == true
+                          ? product!.categoryName
+                          : switch (widget.entityType) {
+                              'product' => 'products'.tr(),
+                              'supplier' => 'suppliers'.tr(),
+                              'investor' => 'investors'.tr(),
+                              _ => displayName,
+                            },
+                  subtitle: widget.entityType == 'customer'
+                      ? (customer?.extra ?? displayName)
+                      : product?.barcode,
                 ).fadeSlideIn(),
                 const SizedBox(height: 14),
+                if (widget.entityType == 'customer') ...[
+                  AppEntityCard(
+                    title: displayName,
+                    subtitle: [
+                      if (customer?.extra != null &&
+                          customer!.extra!.isNotEmpty)
+                        '${'phone'.tr()}: ${customer.extra}',
+                      'SyncId: ${widget.syncId}',
+                    ].join('\n'),
+                    leading: _LeadingBadge(icon: _icon, color: _accent),
+                  ).fadeSlideIn(delayMs: 40),
+                  const SizedBox(height: 12),
+                  AppEntityCard(
+                    title: 'report_statement'.tr(),
+                    subtitle: 'view_customer_statement'.tr(),
+                    leading: const _LeadingBadge(
+                      icon: Icons.receipt_long_outlined,
+                      color: AppColors.moduleCyan,
+                    ),
+                    trailing: const Icon(Icons.chevron_left_rounded),
+                    onTap: () => Get.toNamed(
+                      AppRoutes.reportDetailPath('statement'),
+                      arguments: {
+                        'customerSyncId': widget.syncId,
+                        'customerId': customer?.id,
+                        'customerName': displayName,
+                      },
+                    ),
+                  ).fadeSlideIn(delayMs: 80),
+                ] else ...[
                 AppEntityCard(
                   title: 'details'.tr(),
                   subtitle: product != null
@@ -487,6 +563,7 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                       : 'SyncId: ${widget.syncId}',
                   leading: _LeadingBadge(icon: _icon, color: _accent),
                 ).fadeSlideIn(delayMs: 40),
+                ],
                 if (product != null) ...[
                   const SizedBox(height: 18),
                   Text(
@@ -544,7 +621,10 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                 ],
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: () => Get.toNamed(_editRoute, arguments: product),
+                  onPressed: () => Get.toNamed(
+                    _editRoute,
+                    arguments: product ?? customer,
+                  ),
                   icon: const Icon(Icons.edit_rounded),
                   label: Text('edit'.tr()),
                 ).fadeSlideIn(delayMs: 120),
