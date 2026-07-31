@@ -43,6 +43,7 @@ public static class AccountingMenuBuilder
                 accentLight: "#E1F5FE",
                 [
                     ("العملاء", PackIconKind.AccountGroup, typeof(CustomersViewModel), "Customers"),
+                    ("السواقين", PackIconKind.AccountHardHat, typeof(DriversViewModel), "Drivers"),
                     ("الموردون", PackIconKind.Factory, typeof(SuppliersViewModel), "Suppliers"),
                     ("ملف الشخص", PackIconKind.AccountDetails, typeof(PersonProfileViewModel), "PersonProfile"),
                 ]),

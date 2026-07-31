@@ -54,6 +54,7 @@ public partial class MainWindowViewModel
         return item.ViewModelType switch
         {
             var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
+            var t when t == typeof(DriversViewModel) => flags.WarehouseInvoiceAndDriver,
             var t when t == typeof(PackagingTypesViewModel) => flags.UnitsOfMeasure,
             var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,

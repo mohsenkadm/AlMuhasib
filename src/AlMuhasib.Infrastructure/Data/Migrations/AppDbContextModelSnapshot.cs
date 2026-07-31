@@ -567,6 +567,76 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Driver", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("SyncId");
+
+                    b.ToTable("Drivers", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.CustomerAttachment", b =>
                 {
                     b.Property<int>("Id")
@@ -1157,6 +1227,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("DriverId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("HeldAt")
                         .HasColumnType("datetime2");
 
@@ -1249,6 +1322,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("Date");
+
+                    b.HasIndex("DriverId");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique()
@@ -3357,6 +3432,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("AlMuhasib.Core.Entities.Driver", "Driver")
+                        .WithMany("Invoices")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AlMuhasib.Core.Entities.Supplier", "Supplier")
                         .WithMany("Invoices")
                         .HasForeignKey("SupplierId")
@@ -3371,6 +3451,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("CashBox");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Driver");
 
                     b.Navigation("Supplier");
 
@@ -3714,6 +3796,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Invoices");
 
                     b.Navigation("Vouchers");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Driver", b =>
+                {
+                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ExpenseType", b =>

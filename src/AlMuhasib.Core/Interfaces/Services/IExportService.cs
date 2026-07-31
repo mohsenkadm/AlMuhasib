@@ -54,6 +54,11 @@ public class InvoicePrintModel
     public string WarehouseName { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public string? PartyPhone { get; set; }
+    public string? PartyAddress { get; set; }
+    public string? DriverName { get; set; }
+    /// <summary>نسخة مخزن — بدون أسعار أو مجاميع</summary>
+    public bool HideAmounts { get; set; }
     public List<InvoicePrintItem> Items { get; set; } = [];
     public decimal Subtotal { get; set; }
     public decimal RoundingAmount { get; set; }

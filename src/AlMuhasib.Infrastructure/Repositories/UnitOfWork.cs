@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Category>? _categories;
     private IRepository<Product>? _products;
     private IRepository<Customer>? _customers;
+    private IRepository<Driver>? _drivers;
     private IRepository<Supplier>? _suppliers;
     private IRepository<Warehouse>? _warehouses;
     private IRepository<WarehouseStock>? _warehouseStocks;
@@ -56,6 +57,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Category> Categories => _categories ??= new Repository<Category>(_contextFactory, GetActiveContext);
     public IRepository<Product> Products => _products ??= new Repository<Product>(_contextFactory, GetActiveContext);
     public IRepository<Customer> Customers => _customers ??= new Repository<Customer>(_contextFactory, GetActiveContext);
+    public IRepository<Driver> Drivers => _drivers ??= new Repository<Driver>(_contextFactory, GetActiveContext);
     public IRepository<Supplier> Suppliers => _suppliers ??= new Repository<Supplier>(_contextFactory, GetActiveContext);
     public IRepository<Warehouse> Warehouses => _warehouses ??= new Repository<Warehouse>(_contextFactory, GetActiveContext);
     public IRepository<WarehouseStock> WarehouseStocks => _warehouseStocks ??= new Repository<WarehouseStock>(_contextFactory, GetActiveContext);

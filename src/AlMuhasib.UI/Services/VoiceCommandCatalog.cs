@@ -21,6 +21,8 @@ public sealed class VoiceCommandCatalog
                 ["المنتجات", "منتجات", "المخزون", "الاصناف", "الأصناف"]),
             ["Customers"] = (typeof(CustomersViewModel), "العملاء", PackIconKind.AccountGroup,
                 ["العملاء", "عميل", "زبائن", "الزبائن"]),
+            ["Drivers"] = (typeof(DriversViewModel), "السواقين", PackIconKind.AccountHardHat,
+                ["السواقين", "السائقين", "سائق", "سواق"]),
             ["PersonProfile"] = (typeof(PersonProfileViewModel), "ملف الشخص", PackIconKind.AccountDetails,
                 ["ملف الشخص", "ملف عميل", "ملف مورد", "ملف مستثمر", "ملف طرف"]),
             ["Suppliers"] = (typeof(SuppliersViewModel), "الموردون", PackIconKind.TruckDelivery,

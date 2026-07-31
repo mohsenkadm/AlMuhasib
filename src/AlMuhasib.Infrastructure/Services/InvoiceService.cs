@@ -199,6 +199,7 @@ public class InvoiceService : IInvoiceService
             .Include(i => i.Items)
             .Include(i => i.Customer)
             .Include(i => i.Supplier)
+            .Include(i => i.Driver)
             .Include(i => i.Warehouse)
             .Include(i => i.CashBox)
             .FirstOrDefaultAsync(i => i.Id == id);
@@ -211,6 +212,7 @@ public class InvoiceService : IInvoiceService
             .Include(i => i.Items)
             .Include(i => i.Customer)
             .Include(i => i.Supplier)
+            .Include(i => i.Driver)
             .Include(i => i.Warehouse)
             .Include(i => i.CashBox)
             .Include(i => i.InstallmentPlans)

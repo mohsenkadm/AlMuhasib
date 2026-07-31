@@ -9,6 +9,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<Category> Categories { get; }
     IRepository<Product> Products { get; }
     IRepository<Customer> Customers { get; }
+    IRepository<Driver> Drivers { get; }
     IRepository<Supplier> Suppliers { get; }
     IRepository<Warehouse> Warehouses { get; }
     IRepository<WarehouseStock> WarehouseStocks { get; }
