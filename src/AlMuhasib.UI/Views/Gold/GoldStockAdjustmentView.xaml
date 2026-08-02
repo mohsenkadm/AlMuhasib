@@ -47,10 +47,39 @@
                               Style="{StaticResource FilledComboBox}"
                               Margin="0,0,0,14"/>
 
-                    <TextBox Text="{Binding GramsDelta, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="فرق الوزن بالغرام (+/-)"
-                             Style="{StaticResource FilledTextBox}"
-                             Margin="0,0,0,14"/>
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding GramsDelta, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="فرق الوزن بالغرام (+/-)"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Content="قراءة الميزان" Command="{Binding ReadScaleCommand}"
+                                Style="{StaticResource OutlinedButton}" Height="40" Padding="14,0"
+                                ToolTip="قراءة الوزن من الميزان الإلكتروني"/>
+                    </Grid>
+
+                    <Border Padding="10,6" CornerRadius="8" Background="#FFF8E1" Margin="0,0,0,14">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#C62828"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsScaleConnected}" Value="True">
+                                                <Setter Property="Fill" Value="#2E7D32"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock FontSize="12" Foreground="#8B6914" VerticalAlignment="Center">
+                                <Run Text="الميزان:"/>
+                                <Run Text="{Binding ScaleStatusText, Mode=OneWay}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
                     <TextBox Text="{Binding CostPerGram, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
                              md:HintAssist.Hint="تكلفة الغرام (اختياري)"

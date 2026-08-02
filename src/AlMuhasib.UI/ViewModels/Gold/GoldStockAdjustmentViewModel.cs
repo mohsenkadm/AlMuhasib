@@ -14,6 +14,7 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
     private readonly IGoldInventoryService _inventoryService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldWarehouseService _warehouseService;
+    private readonly IGoldScaleService _scaleService;
     private readonly ICurrentUserService _currentUserService;
 
     [ObservableProperty] private int _karatValue = 21;
@@ -23,6 +24,8 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
     [ObservableProperty] private string _formError = string.Empty;
     [ObservableProperty] private string _currentBalanceText = "—";
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
+    [ObservableProperty] private bool _isScaleConnected;
+    [ObservableProperty] private string _scaleStatusText = "غير متصل";
 
     public ObservableCollection<GoldKarat> Karats { get; } = [];
     public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
@@ -31,11 +34,13 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         IGoldInventoryService inventoryService,
         IGoldPricingService pricingService,
         IGoldWarehouseService warehouseService,
+        IGoldScaleService scaleService,
         ICurrentUserService currentUserService)
     {
         _inventoryService = inventoryService;
         _pricingService = pricingService;
         _warehouseService = warehouseService;
+        _scaleService = scaleService;
         _currentUserService = currentUserService;
         PageTitle = "تسوية مخزون";
     }
@@ -56,7 +61,14 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         if (Karats.Count > 0)
             KaratValue = Karats[0].KaratValue;
 
+        RefreshScaleStatus();
         await RefreshBalanceAsync();
+    }
+
+    private void RefreshScaleStatus()
+    {
+        IsScaleConnected = _scaleService.IsConnected;
+        ScaleStatusText = _scaleService.IsConnected ? "متصل" : "غير متصل";
     }
 
     partial void OnKaratValueChanged(int value) => _ = RefreshBalanceAsync();
@@ -75,6 +87,34 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         catch
         {
             CurrentBalanceText = "—";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ReadScaleAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            FormError = string.Empty;
+            var stable = await _scaleService.WaitForStableWeightAsync(timeout: TimeSpan.FromSeconds(8));
+            if (!stable)
+                throw new InvalidOperationException("لم يستقر الوزن على الميزان خلال المهلة المحددة");
+
+            var grams = await _scaleService.ReadWeightGramsAsync();
+            GramsDelta = grams;
+            RefreshScaleStatus();
+            BeautifulMessageDialog.ShowSuccess($"تم قراءة الوزن: {grams:N3} غرام");
+        }
+        catch (Exception ex)
+        {
+            RefreshScaleStatus();
+            FormError = $"تعذر قراءة الميزان: {ex.Message}";
+            BeautifulMessageDialog.ShowError(FormError, "الميزان");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

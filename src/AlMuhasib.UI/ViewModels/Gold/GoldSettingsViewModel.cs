@@ -187,6 +187,31 @@ public partial class GoldSettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task TestConnectionAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            await _scaleService.ConnectAsync(
+                string.IsNullOrWhiteSpace(ScaleComPort) ? null : ScaleComPort,
+                ScaleBaudRate);
+            var grams = await _scaleService.ReadWeightGramsAsync();
+            UpdateScaleStatus();
+            BeautifulMessageDialog.ShowSuccess(
+                $"اختبار الاتصال ناجح\nالمنفذ: {_scaleService.ConnectedPort}\nالوزن الحالي: {grams:N3} غرام");
+        }
+        catch (Exception ex)
+        {
+            UpdateScaleStatus();
+            BeautifulMessageDialog.ShowError($"فشل اختبار الاتصال:\n{ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task DisconnectScaleAsync()
     {
         try

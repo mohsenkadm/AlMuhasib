@@ -22,6 +22,8 @@ public partial class GoldSaleLineDraft : ObservableObject
     [ObservableProperty] private decimal _makingChargeRate;
     [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private bool _weightFromScale;
+    /// <summary>When true, the weight cell is locked (e.g. after scale read with AllowManualWeightEdit=false).</summary>
+    [ObservableProperty] private bool _isWeightReadOnly;
     [ObservableProperty] private decimal _goldValue;
     [ObservableProperty] private decimal _lineTotal;
     [ObservableProperty] private decimal? _lineTotalIqd;

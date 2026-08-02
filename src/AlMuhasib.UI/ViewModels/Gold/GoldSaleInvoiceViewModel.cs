@@ -20,11 +20,13 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
     private readonly IGoldScaleService _scaleService;
+    private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
     private int _quoteVersion;
     private GoldInvoice? _lastSavedInvoice;
+    private bool _allowManualWeightEdit = true;
 
     public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
@@ -57,6 +59,8 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private bool _weightFromScale;
+    [ObservableProperty] private bool _isScaleConnected;
+    [ObservableProperty] private string _scaleStatusText = "غير متصل";
     [ObservableProperty] private GoldSaleLineDraft? _selectedLine;
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
@@ -75,6 +79,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
         IGoldScaleService scaleService,
+        IGoldSettingsService settingsService,
         IGoldPrintService printService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
@@ -85,6 +90,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         _warehouseService = warehouseService;
         _cashService = cashService;
         _scaleService = scaleService;
+        _settingsService = settingsService;
         _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
@@ -127,6 +133,18 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 FxRate = fx.UsdToIqd;
 
             await ReloadCashBoxesAsync();
+
+            try
+            {
+                var settings = await _settingsService.GetSettingsAsync();
+                _allowManualWeightEdit = settings.AllowManualWeightEdit;
+            }
+            catch
+            {
+                _allowManualWeightEdit = true;
+            }
+
+            RefreshScaleStatus();
         }
         catch (Exception ex)
         {
@@ -137,6 +155,12 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private void RefreshScaleStatus()
+    {
+        IsScaleConnected = _scaleService.IsConnected;
+        ScaleStatusText = _scaleService.IsConnected ? "متصل" : "غير متصل";
     }
 
     private async Task ReloadCashBoxesAsync()
@@ -167,7 +191,11 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     private void AddLine()
     {
         var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
-        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
+        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l))
+        {
+            KaratValue = defaultKarat,
+            IsWeightReadOnly = !_allowManualWeightEdit
+        };
         Lines.Add(line);
         SelectedLine = line;
     }
@@ -280,15 +308,23 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         Message = string.Empty;
         try
         {
+            var stable = await _scaleService.WaitForStableWeightAsync(timeout: TimeSpan.FromSeconds(8));
+            if (!stable)
+                throw new InvalidOperationException("لم يستقر الوزن على الميزان خلال المهلة المحددة");
+
             var grams = await _scaleService.ReadWeightGramsAsync();
             target.WeightGrams = grams;
             target.WeightFromScale = true;
+            if (!_allowManualWeightEdit)
+                target.IsWeightReadOnly = true;
             WeightFromScale = true;
+            RefreshScaleStatus();
             Message = $"تم قراءة الوزن: {grams:N3} غرام";
             _toast.ShowSuccess(Message);
         }
         catch (Exception ex)
         {
+            RefreshScaleStatus();
             Message = $"تعذر قراءة الميزان: {ex.Message}";
             ErrorMessage = Message;
             _toast.ShowError(Message);

@@ -108,6 +108,8 @@
                     <StackPanel Orientation="Horizontal">
                         <Button Content="اتصال" Command="{Binding ConnectScaleCommand}"
                                 Style="{StaticResource PrimaryButton}" Height="36" Padding="18,0" Margin="0,0,8,0"/>
+                        <Button Content="اختبار الاتصال" Command="{Binding TestConnectionCommand}"
+                                Style="{StaticResource OutlinedButton}" Height="36" Padding="18,0" Margin="0,0,8,0"/>
                         <Button Content="قطع الاتصال" Command="{Binding DisconnectScaleCommand}"
                                 Style="{StaticResource FlatButton}" Height="36"/>
                     </StackPanel>
