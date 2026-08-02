@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Infrastructure.Services;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -10,6 +11,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class MainWindowViewModel
 {
     private readonly ICustomerStatementQuickService _customerStatementQuick = null!;
+    private readonly IWhatsAppShareService _whatsAppShare = null!;
 
     [ObservableProperty] private bool _isQuickStatementOpen;
     [ObservableProperty] private string _quickStatementCustomerName = string.Empty;
@@ -19,6 +21,7 @@ public partial class MainWindowViewModel
     public ObservableCollection<CustomerQuickStatementLine> QuickStatementLines { get; } = [];
 
     private int _quickStatementCustomerId;
+    private string? _quickStatementPhone;
 
     [RelayCommand]
     private void CloseQuickStatement() => IsQuickStatementOpen = false;
@@ -29,6 +32,7 @@ public partial class MainWindowViewModel
         {
             var data = await _customerStatementQuick.GetStatementAsync(customerId);
             _quickStatementCustomerId = customerId;
+            _quickStatementPhone = data.Phone;
             QuickStatementCustomerName = data.CustomerName;
             QuickStatementBalance = data.Balance;
             QuickStatementOverdueText = data.OverdueInstallmentCount > 0
@@ -58,20 +62,27 @@ public partial class MainWindowViewModel
         if (_quickStatementCustomerId <= 0) return;
         var dlg = new SaveFileDialog
         {
-            Filter = "Excel|*.xlsx",
-            FileName = $"كشف_{QuickStatementCustomerName}.xlsx"
+            Filter = "PDF|*.pdf",
+            FileName = $"كشف_{QuickStatementCustomerName}.pdf"
         };
         if (dlg.ShowDialog() != true) return;
         await _customerStatementQuick.ExportToPdfAsync(_quickStatementCustomerId, dlg.FileName);
-        _toast.ShowSuccess("تم التصدير");
+        _toast.ShowSuccess("تم تصدير PDF");
     }
 
     [RelayCommand]
     private async Task ShareQuickStatementWhatsAppAsync()
     {
         if (_quickStatementCustomerId <= 0) return;
-        var tempPath = Path.Combine(Path.GetTempPath(), $"كشف_{QuickStatementCustomerName}_{DateTime.Now:yyyyMMdd}.xlsx");
-        await _customerStatementQuick.ExportToPdfAsync(_quickStatementCustomerId, tempPath);
-        _toast.ShowInfo($"تم تجهيز الملف:\n{tempPath}\nأرسله للعميل عبر واتساب");
+        try
+        {
+            var data = await _customerStatementQuick.GetStatementAsync(_quickStatementCustomerId);
+            var model = CustomerStatementQuickService.BuildStatementModel(data);
+            _whatsAppShare.ShareStatement(model, data.Phone ?? _quickStatementPhone, data.CustomerName);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+        }
     }
 }

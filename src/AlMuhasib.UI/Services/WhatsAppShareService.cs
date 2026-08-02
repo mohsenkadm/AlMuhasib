@@ -16,9 +16,18 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
         _exportService = exportService;
     }
 
+    public void SharePdf(string? phone, string partyName, string pdfPath, string message, string title)
+    {
+        if (!TryResolvePhone(phone, partyName, out var waDigits, out var displayPhone))
+            return;
+
+        OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, title);
+    }
+
     public void ShareInvoice(InvoicePrintModel model, string? customerPhone, string customerName)
     {
-        if (!TryResolvePhone(customerPhone, customerName, out var waDigits, out var displayPhone))
+        var phone = !string.IsNullOrWhiteSpace(customerPhone) ? customerPhone : model.PartyPhone;
+        if (!TryResolvePhone(phone, customerName, out var waDigits, out var displayPhone))
             return;
 
         var pdfPath = _exportService.ExportInvoiceToPdf(model);
@@ -34,6 +43,40 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
         var pdfPath = _exportService.ExportInstallmentPaymentReceiptToPdf(model);
         var message = BuildPaymentMessage(model);
         OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, "إرسال إيصال التسديد عبر واتساب");
+    }
+
+    public void ShareVoucher(VoucherPrintModel model, string? partyPhone, string partyName)
+    {
+        var phone = !string.IsNullOrWhiteSpace(partyPhone) ? partyPhone : model.PartyPhone;
+        var name = !string.IsNullOrWhiteSpace(partyName) ? partyName : (model.PartyName ?? "الطرف");
+        if (!TryResolvePhone(phone, name, out var waDigits, out var displayPhone))
+            return;
+
+        var pdfPath = _exportService.ExportVoucherToPdf(model);
+        var message = BuildVoucherMessage(model, name);
+        OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, "إرسال السند عبر واتساب");
+    }
+
+    public void ShareInvestorTransaction(InvestorTransactionPrintModel model)
+    {
+        if (!TryResolvePhone(model.InvestorPhone, model.InvestorName, out var waDigits, out var displayPhone))
+            return;
+
+        var pdfPath = _exportService.ExportInvestorTransactionToPdf(model);
+        var message = BuildInvestorMessage(model);
+        OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, "إرسال إيصال المستثمر عبر واتساب");
+    }
+
+    public void ShareStatement(StatementPrintModel model, string? partyPhone, string partyName)
+    {
+        var phone = !string.IsNullOrWhiteSpace(partyPhone) ? partyPhone : model.PartyPhone;
+        var name = !string.IsNullOrWhiteSpace(partyName) ? partyName : model.PartyName;
+        if (!TryResolvePhone(phone, name, out var waDigits, out var displayPhone))
+            return;
+
+        var pdfPath = _exportService.ExportStatementToPdf(model);
+        var message = BuildStatementMessage(model, name);
+        OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, "إرسال الكشف عبر واتساب");
     }
 
     private static bool TryResolvePhone(string? customerPhone, string customerName, out string waDigits, out string displayPhone)
@@ -129,13 +172,14 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
 
     private static string BuildInvoiceMessage(InvoicePrintModel m, string customerName)
     {
+        var partyLabel = string.IsNullOrWhiteSpace(m.PartyLabel) ? "العميل" : m.PartyLabel;
         var lines = new List<string>
         {
             "السلام عليكم،",
             $"مرفق {m.Title}.",
             $"رقم الفاتورة: {m.InvoiceNumber}",
             $"التاريخ: {m.Date:yyyy/MM/dd}",
-            $"العميل: {customerName}",
+            $"{partyLabel}: {customerName}",
             $"الإجمالي: {m.GrandTotal:N0} د.ع"
         };
         if (!string.IsNullOrWhiteSpace(m.Notes))
@@ -160,6 +204,73 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
             lines.Add($"المتبقي على الخطة: {m.PlanRemainingTotal:N0} د.ع");
         if (!string.IsNullOrWhiteSpace(m.Notes))
             lines.Add($"ملاحظات: {m.Notes}");
+        lines.Add("");
+        lines.Add("مع التحية — المحاسب");
+        return string.Join("\n", lines);
+    }
+
+    private static string BuildVoucherMessage(VoucherPrintModel m, string partyName)
+    {
+        var lines = new List<string>
+        {
+            "السلام عليكم،",
+            $"مرفق {m.Title}.",
+            $"رقم السند: {m.VoucherNumber}",
+            $"النوع: {m.VoucherTypeLabel}",
+            $"التاريخ: {m.Date:yyyy/MM/dd}",
+            $"الطرف: {partyName}",
+            $"المبلغ: {m.Amount:N0} د.ع"
+        };
+        if (m.BankFees > 0)
+            lines.Add($"عمولة المصرف: {m.BankFees:N0} د.ع");
+        if (!string.IsNullOrWhiteSpace(m.Notes))
+            lines.Add($"ملاحظات: {m.Notes}");
+        lines.Add("");
+        lines.Add("مع التحية — المحاسب");
+        return string.Join("\n", lines);
+    }
+
+    private static string BuildInvestorMessage(InvestorTransactionPrintModel m)
+    {
+        var lines = new List<string>
+        {
+            "السلام عليكم،",
+            $"مرفق {m.Title}.",
+            $"المستثمر: {m.InvestorName}",
+            $"النوع: {m.TransactionTypeLabel}",
+            $"التاريخ: {m.Date:yyyy/MM/dd}",
+            $"المبلغ: {m.Amount:N0} د.ع"
+        };
+        if (m.BalanceAfter.HasValue)
+            lines.Add($"الرصيد بعد العملية: {m.BalanceAfter.Value:N0} د.ع");
+        if (!string.IsNullOrWhiteSpace(m.Notes))
+            lines.Add($"ملاحظات: {m.Notes}");
+        lines.Add("");
+        lines.Add("مع التحية — المحاسب");
+        return string.Join("\n", lines);
+    }
+
+    private static string BuildStatementMessage(StatementPrintModel m, string partyName)
+    {
+        var lines = new List<string>
+        {
+            "السلام عليكم،",
+            $"مرفق {m.Title}.",
+            $"الاسم: {partyName}"
+        };
+        if (m.FromDate.HasValue || m.ToDate.HasValue)
+        {
+            var from = m.FromDate?.ToString("yyyy/MM/dd") ?? "—";
+            var to = m.ToDate?.ToString("yyyy/MM/dd") ?? "—";
+            lines.Add($"الفترة: {from} → {to}");
+        }
+
+        if (m.SummaryLines is { Count: > 0 })
+        {
+            foreach (var summary in m.SummaryLines.Take(3))
+                lines.Add(summary);
+        }
+
         lines.Add("");
         lines.Add("مع التحية — المحاسب");
         return string.Join("\n", lines);

@@ -270,10 +270,22 @@
                                      Style="{StaticResource FilledTextBox}"/>
                         </Grid>
 
-                        <Button Grid.Row="3" HorizontalAlignment="Left"
-                                Content="تأكيد الإيداع" Command="{Binding SubmitDepositCommand}"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="تأكيد الإيداع" Command="{Binding SubmitDepositCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
+                            <Button Command="{Binding SendPendingWhatsAppReceiptCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Height="36" Padding="16,0" Margin="12,0,0,0"
+                                    md:ButtonAssist.CornerRadius="8"
+                                    Visibility="{Binding CanSendWhatsAppReceipt, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    ToolTip="إرسال إيصال الإيداع عبر واتساب">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Whatsapp" Width="18" Height="18" Foreground="#25D366" VerticalAlignment="Center"/>
+                                    <TextBlock Text="واتساب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </md:Card>
 
@@ -332,6 +344,21 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="واتساب" Width="70"
+                                                        IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource TableWhatsAppIconButton}"
+                                                    Command="{Binding DataContext.SendTransactionWhatsAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="Whatsapp" Width="18" Height="18"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -425,10 +452,22 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <Button Grid.Row="4" HorizontalAlignment="Left"
-                                Content="تأكيد السحب" Command="{Binding SubmitWithdrawalCommand}"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="تأكيد السحب" Command="{Binding SubmitWithdrawalCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
+                            <Button Command="{Binding SendPendingWhatsAppReceiptCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Height="36" Padding="16,0" Margin="12,0,0,0"
+                                    md:ButtonAssist.CornerRadius="8"
+                                    Visibility="{Binding CanSendWhatsAppReceipt, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    ToolTip="إرسال إيصال السحب عبر واتساب">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Whatsapp" Width="18" Height="18" Foreground="#25D366" VerticalAlignment="Center"/>
+                                    <TextBlock Text="واتساب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </md:Card>
 
@@ -487,6 +526,21 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="واتساب" Width="70"
+                                                        IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource TableWhatsAppIconButton}"
+                                                    Command="{Binding DataContext.SendTransactionWhatsAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="Whatsapp" Width="18" Height="18"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -509,6 +563,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -619,6 +674,20 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="واتساب" Width="70" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource TableWhatsAppIconButton}"
+                                                    Command="{Binding DataContext.SendProfitPreviewWhatsAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}">
+                                                <md:PackIcon Kind="Whatsapp" Width="18" Height="18"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -651,6 +720,22 @@
                         </StackPanel>
                     </Grid>
                 </md:Card>
+
+                <Border Grid.Row="3" Margin="0,12,0,0" Padding="12" CornerRadius="10"
+                        Background="#E8F8EF" BorderBrush="#A5D6A7" BorderThickness="1"
+                        Visibility="{Binding CanSendProfitWhatsApp, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Command="{Binding SendPendingProfitWhatsAppCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="40" HorizontalAlignment="Stretch"
+                            md:ButtonAssist.CornerRadius="10"
+                            ToolTip="إرسال إيصالات التوزيع عبر واتساب">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <md:PackIcon Kind="Whatsapp" Width="22" Height="22" Foreground="#25D366" VerticalAlignment="Center"/>
+                            <TextBlock Text="إرسال إيصالات توزيع الأرباح (PDF) عبر واتساب" Margin="10,0,0,0"
+                                       FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
             </Grid>
         </TabItem>
 
@@ -730,7 +815,17 @@
                                                      ExportCommand="{Binding ExportStatementCommand}"
                                                      PrintCommand="{Binding PrintStatementCommand}"
                                                      ShowCardToggle="False"
-                                                     ShowFilter="False"/>
+                                                     ShowFilter="False">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <Button Command="{Binding ShareStatementWhatsAppCommand}"
+                                        ToolTip="إرسال الكشف عبر واتساب"
+                                        Background="#E8F8EF" BorderBrush="#A5D6A7" BorderThickness="1"
+                                        Width="36" Height="36" Cursor="Hand"
+                                        md:ButtonAssist.CornerRadius="8">
+                                    <md:PackIcon Kind="Whatsapp" Width="20" Height="20" Foreground="#25D366"/>
+                                </Button>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
                         <DataGrid x:Name="StatementDetailsGrid" Grid.Row="1" ItemsSource="{Binding StatementDetails}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
