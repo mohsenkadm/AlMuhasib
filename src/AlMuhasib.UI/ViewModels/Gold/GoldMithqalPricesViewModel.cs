@@ -3,18 +3,21 @@ using System.Windows;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
 public partial class GoldMithqalPricesViewModel : ViewModelBase
 {
     private readonly IGoldPricingService _pricingService;
+    private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly List<GoldMithqalPriceRow> _allPrices = [];
     private System.Timers.Timer? _debounceTimer;
@@ -45,9 +48,11 @@ public partial class GoldMithqalPricesViewModel : ViewModelBase
 
     public GoldMithqalPricesViewModel(
         IGoldPricingService pricingService,
+        IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _pricingService = pricingService;
+        _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أسعار المثقال";
     }
@@ -100,6 +105,9 @@ public partial class GoldMithqalPricesViewModel : ViewModelBase
         }
 
         var filtered = query.ToList();
+        if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            filtered = ColumnFilterEngine.Apply(filtered, ColumnFilters);
+
         TotalCount = filtered.Count;
         TotalPages = PaginationHelper.ComputeTotalPages(TotalCount, PageSize);
         if (CurrentPage > TotalPages) CurrentPage = Math.Max(1, TotalPages);
@@ -108,6 +116,12 @@ public partial class GoldMithqalPricesViewModel : ViewModelBase
         Prices.Clear();
         foreach (var row in filtered.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
             Prices.Add(row);
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        ApplyPage();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -232,6 +246,71 @@ public partial class GoldMithqalPricesViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            if (_allPrices.Count == 0)
+                await LoadAsync();
+
+            var exportData = _allPrices.Select(p => new
+            {
+                التاريخ = p.PriceDate.ToString("yyyy/MM/dd"),
+                العيار = p.KaratName,
+                القيمة = p.KaratValue,
+                سعر_المثقال = p.PricePerMithqal,
+                العملة = p.Currency.ToString(),
+                سعر_الغرام = p.PricePerGram,
+                ملاحظات = p.Notes
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"أسعار_المثقال_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "أسعار المثقال");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            if (_allPrices.Count == 0)
+                await LoadAsync();
+
+            var columns = new[] { "التاريخ", "العيار", "القيمة", "سعر المثقال", "العملة", "سعر الغرام", "ملاحظات" };
+            IList<object[]> rows = _allPrices.Select(p => new object[]
+            {
+                p.PriceDate.ToString("yyyy/MM/dd"),
+                p.KaratName,
+                p.KaratValue,
+                p.PricePerMithqal.ToString("N2"),
+                p.Currency.ToString(),
+                p.PricePerGram?.ToString("N2") ?? "",
+                p.Notes
+            }).ToList();
+            _exportService.PrintTable("سجل أسعار المثقال", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

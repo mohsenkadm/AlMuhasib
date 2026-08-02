@@ -1,75 +1,123 @@
 <UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldCreditSalesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </UserControl.Resources>
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Margin="0,0,0,16">
-            <TextBlock Text="مبيعات الآجل" FontSize="24" FontWeight="Bold" Foreground="#B8860B"
-                       VerticalAlignment="Center"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Border Background="#FFF8E7" CornerRadius="10" Padding="14,8" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="عدد الفواتير" FontSize="11" Foreground="#8B6914"/>
-                        <TextBlock Text="{Binding OpenCount}" FontSize="18" FontWeight="Bold" Foreground="#8B6914"/>
+        <!-- ═══ TOP: Action Bar ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="مبيعات الآجل" FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Border Background="#FFF8E7" CornerRadius="10" Padding="14,8" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="عدد الفواتير" FontSize="11" Foreground="#8B6914"/>
+                                <TextBlock Text="{Binding OpenCount}" FontSize="18" FontWeight="Bold" Foreground="#8B6914"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FFEBEE" CornerRadius="10" Padding="14,8">
+                            <StackPanel>
+                                <TextBlock Text="إجمالي المتبقي" FontSize="11" Foreground="#C62828"/>
+                                <TextBlock Text="{Binding TotalRemaining, StringFormat=N0}" FontSize="18" FontWeight="Bold" Foreground="#C62828"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-                <Border Background="#FFEBEE" CornerRadius="10" Padding="14,8">
-                    <StackPanel>
-                        <TextBlock Text="إجمالي المتبقي" FontSize="11" Foreground="#C62828"/>
-                        <TextBlock Text="{Binding TotalRemaining, StringFormat=N0}" FontSize="18" FontWeight="Bold" Foreground="#C62828"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </DockPanel>
+                </DockPanel>
 
-        <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal">
-                <TextBox Width="240" Margin="0,0,12,0"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         materialDesign:HintAssist.Hint="بحث برقم الفاتورة أو الزبون"
-                         Style="{StaticResource FilledTextBox}"/>
-                <ComboBox Width="160" Margin="0,0,12,0"
-                          ItemsSource="{Binding StatusFilters}"
-                          SelectedValue="{Binding StatusFilter}"
-                          SelectedValuePath="Value" DisplayMemberPath="Label"
-                          materialDesign:HintAssist.Hint="الحالة"
-                          Style="{StaticResource FilledComboBox}"/>
-                <Button Content="بحث" Command="{Binding SearchCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
-                <Button Command="{Binding LoadCommand}" Style="{StaticResource FlatButton}" ToolTip="تحديث">
-                    <materialDesign:PackIcon Kind="Refresh"/>
-                </Button>
-            </StackPanel>
-        </Border>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <TextBox Width="240" Margin="0,0,12,0"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="بحث برقم الفاتورة أو الزبون"
+                             Style="{StaticResource FilledTextBox}"/>
+                    <ComboBox Width="160" Margin="0,0,12,0"
+                              ItemsSource="{Binding StatusFilters}"
+                              SelectedValue="{Binding StatusFilter}"
+                              SelectedValuePath="Value" DisplayMemberPath="Label"
+                              md:HintAssist.Hint="الحالة"
+                              Style="{StaticResource FilledComboBox}"/>
+                    <Button Content="بحث" Command="{Binding SearchCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                    <Button Command="{Binding LoadCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </md:Card>
 
-        <materialDesign:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0">
-            <DataGrid ItemsSource="{Binding Invoices}" SelectedItem="{Binding SelectedInvoice}"
-                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="120"/>
-                    <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="110"/>
-                    <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"/>
-                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="100"/>
-                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"/>
-                    <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="110"/>
-                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </materialDesign:Card>
+        <!-- ═══ BOTTOM: Data Grid ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <controls:PaginationBar Grid.Row="3" Margin="0,8,0,0"/>
-        <TextBlock Grid.Row="3" Text="{Binding ErrorMessage}" Foreground="#C62828" VerticalAlignment="Center" Margin="0,8,200,0"/>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="فواتير الآجل المفتوحة"
+                                             TargetDataGrid="{Binding ElementName=GoldCreditSalesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="GoldCreditSalesGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Invoices}"
+                          SelectedItem="{Binding SelectedInvoice}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceNumber"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceDate"/>
+                        <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
+                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Grid Grid.Row="2">
+                    <controls:PaginationBar/>
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" VerticalAlignment="Center" Margin="16,0,200,0"/>
+                </Grid>
+            </Grid>
+        </md:Card>
     </Grid>
 </UserControl>

@@ -11,19 +11,30 @@ public static class GoldShopPermissionRegistry
     public const string Items = "GoldItems";
     public const string Stock = "GoldStock";
     public const string StockAdjustment = "GoldStockAdjustment";
+    public const string Warehouses = "GoldWarehouses";
+    public const string WarehouseTransfer = "GoldWarehouseTransfer";
     public const string SaleInvoice = "GoldSaleInvoice";
     public const string CreditSales = "GoldCreditSales";
     public const string Collection = "GoldCollection";
+    public const string ExchangeInvoice = "GoldExchangeInvoice";
     public const string PurchaseInvoice = "GoldPurchaseInvoice";
+    public const string Suppliers = "GoldSuppliers";
     public const string Customers = "GoldCustomers";
     public const string CustomerStatement = "GoldCustomerStatement";
     public const string CashBoxes = "GoldCashBoxes";
     public const string Vouchers = "GoldVouchers";
+    public const string Expenses = "GoldExpenses";
+    public const string ExpenseTypes = "GoldExpenseTypes";
     public const string Notifications = "GoldNotifications";
     public const string Settings = "GoldSettings";
     public const string StockReport = "GoldStockReport";
     public const string SalesReport = "GoldSalesReport";
     public const string CreditReport = "GoldCreditReport";
+    public const string AgingReport = "GoldAgingReport";
+    public const string KaratMovementReport = "GoldKaratMovementReport";
+    public const string ProfitabilityReport = "GoldProfitabilityReport";
+    public const string AuditReport = "GoldAuditReport";
+    public const string PurchasesReport = "GoldPurchasesReport";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
@@ -38,19 +49,30 @@ public static class GoldShopPermissionRegistry
         (Items, "أصناف الذهب"),
         (Stock, "المخزون"),
         (StockAdjustment, "تسوية مخزون"),
+        (Warehouses, "المخازن"),
+        (WarehouseTransfer, "نقل مخازن"),
         (SaleInvoice, "فاتورة بيع"),
         (CreditSales, "مبيعات الآجل"),
         (Collection, "التحصيل"),
+        (ExchangeInvoice, "تبديل ذهب"),
         (PurchaseInvoice, "فاتورة شراء"),
+        (Suppliers, "الموردون"),
         (Customers, "الزبائن"),
         (CustomerStatement, "كشف حساب زبون"),
         (CashBoxes, "القاصات"),
         (Vouchers, "السندات"),
+        (Expenses, "المصاريف"),
+        (ExpenseTypes, "أنواع المصاريف"),
         (Notifications, "التنبيهات"),
         (Settings, "إعدادات الذهب"),
         (StockReport, "تقرير المخزون"),
         (SalesReport, "تقرير المبيعات"),
         (CreditReport, "تقرير الآجل"),
+        (AgingReport, "أعمار ذمم الذهب"),
+        (KaratMovementReport, "حركة العيارات"),
+        (ProfitabilityReport, "ربحية الذهب"),
+        (AuditReport, "سجل تدقيق الذهب"),
+        (PurchasesReport, "تقرير المشتريات"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (PrintSettings, "إعدادات الطباعة"),
@@ -68,19 +90,30 @@ public static class GoldShopPermissionRegistry
         [typeof(GoldItemsViewModel)] = Items,
         [typeof(GoldStockViewModel)] = Stock,
         [typeof(GoldStockAdjustmentViewModel)] = StockAdjustment,
+        [typeof(GoldWarehousesViewModel)] = Warehouses,
+        [typeof(GoldWarehouseTransferViewModel)] = WarehouseTransfer,
         [typeof(GoldSaleInvoiceViewModel)] = SaleInvoice,
         [typeof(GoldCreditSalesViewModel)] = CreditSales,
         [typeof(GoldCollectionViewModel)] = Collection,
+        [typeof(GoldExchangeInvoiceViewModel)] = ExchangeInvoice,
         [typeof(GoldPurchaseInvoiceViewModel)] = PurchaseInvoice,
+        [typeof(GoldSuppliersViewModel)] = Suppliers,
         [typeof(GoldCustomersViewModel)] = Customers,
         [typeof(GoldCustomerStatementViewModel)] = CustomerStatement,
         [typeof(GoldCashBoxesViewModel)] = CashBoxes,
         [typeof(GoldVouchersViewModel)] = Vouchers,
+        [typeof(GoldExpensesViewModel)] = Expenses,
+        [typeof(GoldExpenseTypesViewModel)] = ExpenseTypes,
         [typeof(GoldNotificationsViewModel)] = Notifications,
         [typeof(GoldSettingsViewModel)] = Settings,
         [typeof(GoldStockReportViewModel)] = StockReport,
         [typeof(GoldSalesReportViewModel)] = SalesReport,
         [typeof(GoldCreditReportViewModel)] = CreditReport,
+        [typeof(GoldAgingReportViewModel)] = AgingReport,
+        [typeof(GoldKaratMovementReportViewModel)] = KaratMovementReport,
+        [typeof(GoldProfitabilityReportViewModel)] = ProfitabilityReport,
+        [typeof(GoldAuditReportViewModel)] = AuditReport,
+        [typeof(GoldPurchasesReportViewModel)] = PurchasesReport,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
@@ -98,19 +131,30 @@ public static class GoldShopPermissionRegistry
         [Items] = typeof(GoldItemsViewModel),
         [Stock] = typeof(GoldStockViewModel),
         [StockAdjustment] = typeof(GoldStockAdjustmentViewModel),
+        [Warehouses] = typeof(GoldWarehousesViewModel),
+        [WarehouseTransfer] = typeof(GoldWarehouseTransferViewModel),
         [SaleInvoice] = typeof(GoldSaleInvoiceViewModel),
         [CreditSales] = typeof(GoldCreditSalesViewModel),
         [Collection] = typeof(GoldCollectionViewModel),
+        [ExchangeInvoice] = typeof(GoldExchangeInvoiceViewModel),
         [PurchaseInvoice] = typeof(GoldPurchaseInvoiceViewModel),
+        [Suppliers] = typeof(GoldSuppliersViewModel),
         [Customers] = typeof(GoldCustomersViewModel),
         [CustomerStatement] = typeof(GoldCustomerStatementViewModel),
         [CashBoxes] = typeof(GoldCashBoxesViewModel),
         [Vouchers] = typeof(GoldVouchersViewModel),
+        [Expenses] = typeof(GoldExpensesViewModel),
+        [ExpenseTypes] = typeof(GoldExpenseTypesViewModel),
         [Notifications] = typeof(GoldNotificationsViewModel),
         [Settings] = typeof(GoldSettingsViewModel),
         [StockReport] = typeof(GoldStockReportViewModel),
         [SalesReport] = typeof(GoldSalesReportViewModel),
         [CreditReport] = typeof(GoldCreditReportViewModel),
+        [AgingReport] = typeof(GoldAgingReportViewModel),
+        [KaratMovementReport] = typeof(GoldKaratMovementReportViewModel),
+        [ProfitabilityReport] = typeof(GoldProfitabilityReportViewModel),
+        [AuditReport] = typeof(GoldAuditReportViewModel),
+        [PurchasesReport] = typeof(GoldPurchasesReportViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),

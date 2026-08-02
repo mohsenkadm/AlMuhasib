@@ -93,6 +93,11 @@ public class CloudDbContext : DbContext
     public DbSet<CloudGoldItem> GoldItems => Set<CloudGoldItem>();
     public DbSet<CloudGoldStockBalance> GoldStockBalances => Set<CloudGoldStockBalance>();
     public DbSet<CloudGoldCustomer> GoldCustomers => Set<CloudGoldCustomer>();
+    public DbSet<CloudGoldSupplier> GoldSuppliers => Set<CloudGoldSupplier>();
+    public DbSet<CloudGoldWarehouse> GoldWarehouses => Set<CloudGoldWarehouse>();
+    public DbSet<CloudGoldExpenseType> GoldExpenseTypes => Set<CloudGoldExpenseType>();
+    public DbSet<CloudGoldExpense> GoldExpenses => Set<CloudGoldExpense>();
+    public DbSet<CloudGoldWarehouseTransfer> GoldWarehouseTransfers => Set<CloudGoldWarehouseTransfer>();
     public DbSet<CloudGoldCashBox> GoldCashBoxes => Set<CloudGoldCashBox>();
     public DbSet<CloudGoldInvoice> GoldInvoices => Set<CloudGoldInvoice>();
     public DbSet<CloudGoldInvoiceLine> GoldInvoiceLines => Set<CloudGoldInvoiceLine>();
@@ -356,7 +361,11 @@ public class CloudDbContext : DbContext
         {
             e.Property(s => s.GramsOnHand).HasPrecision(18, 3);
             e.Property(s => s.AverageCostPerGram).HasPrecision(18, 2);
-            e.HasIndex(s => new { s.TenantId, s.KaratValue });
+            e.HasIndex(s => new { s.TenantId, s.WarehouseId, s.KaratValue });
+            e.HasOne(s => s.Warehouse)
+                .WithMany()
+                .HasForeignKey(s => s.WarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CloudGoldCustomer>(e =>
@@ -370,6 +379,64 @@ public class CloudDbContext : DbContext
             e.HasIndex(c => new { c.TenantId, c.Name });
         });
 
+        modelBuilder.Entity<CloudGoldSupplier>(e =>
+        {
+            e.Property(c => c.Name).HasMaxLength(200);
+            e.Property(c => c.Phone).HasMaxLength(50);
+            e.Property(c => c.Address).HasMaxLength(500);
+            e.Property(c => c.Notes).HasMaxLength(2000);
+            e.Property(c => c.CreditBalanceIqd).HasPrecision(18, 2);
+            e.Property(c => c.CreditBalanceUsd).HasPrecision(18, 2);
+            e.HasIndex(c => new { c.TenantId, c.Name });
+        });
+
+        modelBuilder.Entity<CloudGoldWarehouse>(e =>
+        {
+            e.Property(w => w.Name).HasMaxLength(200);
+            e.Property(w => w.Notes).HasMaxLength(2000);
+            e.HasIndex(w => new { w.TenantId, w.Name });
+        });
+
+        modelBuilder.Entity<CloudGoldExpenseType>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.HasIndex(t => new { t.TenantId, t.Name });
+        });
+
+        modelBuilder.Entity<CloudGoldExpense>(e =>
+        {
+            e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.Notes).HasMaxLength(2000);
+            e.HasIndex(x => new { x.TenantId, x.ExpenseDate });
+            e.HasOne(x => x.ExpenseType)
+                .WithMany()
+                .HasForeignKey(x => x.ExpenseTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.CashBox)
+                .WithMany()
+                .HasForeignKey(x => x.CashBoxId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Warehouse)
+                .WithMany()
+                .HasForeignKey(x => x.WarehouseId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudGoldWarehouseTransfer>(e =>
+        {
+            e.Property(t => t.WeightGrams).HasPrecision(18, 3);
+            e.Property(t => t.Notes).HasMaxLength(2000);
+            e.HasIndex(t => new { t.TenantId, t.TransferDate });
+            e.HasOne(t => t.FromWarehouse)
+                .WithMany()
+                .HasForeignKey(t => t.FromWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(t => t.ToWarehouse)
+                .WithMany()
+                .HasForeignKey(t => t.ToWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<CloudGoldCashBox>(e =>
         {
             e.Property(c => c.Name).HasMaxLength(100);
@@ -380,6 +447,7 @@ public class CloudDbContext : DbContext
         {
             e.Property(i => i.InvoiceNumber).HasMaxLength(50);
             e.Property(i => i.FxRate).HasPrecision(18, 2);
+            e.Property(i => i.ExchangeCashDifference).HasPrecision(18, 2);
             e.Property(i => i.TotalGoldValue).HasPrecision(18, 2);
             e.Property(i => i.TotalMakingCharge).HasPrecision(18, 2);
             e.Property(i => i.DiscountAmount).HasPrecision(18, 2);
@@ -394,6 +462,14 @@ public class CloudDbContext : DbContext
             e.HasOne(i => i.Customer)
                 .WithMany()
                 .HasForeignKey(i => i.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(i => i.Supplier)
+                .WithMany()
+                .HasForeignKey(i => i.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(i => i.Warehouse)
+                .WithMany()
+                .HasForeignKey(i => i.WarehouseId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

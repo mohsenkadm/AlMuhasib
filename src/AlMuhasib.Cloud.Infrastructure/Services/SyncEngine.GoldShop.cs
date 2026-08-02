@@ -29,20 +29,104 @@ public sealed partial class SyncEngine
             foreach (var dto in request.Data.GoldMithqalPrices)
                 accepted += await UpsertGoldMithqalPriceAsync(tenantId, dto, response, ct);
 
+            foreach (var dto in request.Data.GoldWarehouses)
+                accepted += await UpsertGoldWarehouseAsync(tenantId, dto, response, ct);
+            await FlushAndCacheAsync(_db.GoldWarehouses, tenantId, request.Data.GoldWarehouses.Select(w => w.SyncId), resolver, ct);
+
             foreach (var dto in request.Data.GoldItems)
                 accepted += await UpsertGoldItemAsync(tenantId, dto, response, ct);
             await FlushAndCacheAsync(_db.GoldItems, tenantId, request.Data.GoldItems.Select(i => i.SyncId), resolver, ct);
 
             foreach (var dto in request.Data.GoldStockBalances)
-                accepted += await UpsertGoldStockBalanceAsync(tenantId, dto, response, ct);
+            {
+                int warehouseId = 0;
+                if (dto.WarehouseSyncId.HasValue && dto.WarehouseSyncId != Guid.Empty)
+                {
+                    var resolved = await resolver.ResolveGoldWarehouseAsync(dto.WarehouseSyncId, ct);
+                    if (resolved is null)
+                    {
+                        AddConflict(response, "GoldStockBalance", dto.SyncId, "Warehouse not found");
+                        continue;
+                    }
+                    warehouseId = resolved.Value;
+                }
+                else if (dto.WarehouseId > 0)
+                {
+                    // Desktop may send local id; prefer sync id. Fall back to default warehouse.
+                    warehouseId = await ResolveDefaultGoldWarehouseIdAsync(tenantId, ct) ?? 0;
+                }
+                else
+                {
+                    warehouseId = await ResolveDefaultGoldWarehouseIdAsync(tenantId, ct) ?? 0;
+                }
+
+                if (warehouseId <= 0)
+                {
+                    AddConflict(response, "GoldStockBalance", dto.SyncId, "Warehouse not found");
+                    continue;
+                }
+
+                accepted += await UpsertGoldStockBalanceAsync(tenantId, dto, warehouseId, response, ct);
+            }
 
             foreach (var dto in request.Data.GoldCustomers)
                 accepted += await UpsertGoldCustomerAsync(tenantId, dto, response, ct);
             await FlushAndCacheAsync(_db.GoldCustomers, tenantId, request.Data.GoldCustomers.Select(c => c.SyncId), resolver, ct);
 
+            foreach (var dto in request.Data.GoldSuppliers)
+                accepted += await UpsertGoldSupplierAsync(tenantId, dto, response, ct);
+            await FlushAndCacheAsync(_db.GoldSuppliers, tenantId, request.Data.GoldSuppliers.Select(s => s.SyncId), resolver, ct);
+
+            foreach (var dto in request.Data.GoldExpenseTypes)
+                accepted += await UpsertGoldExpenseTypeAsync(tenantId, dto, response, ct);
+            await FlushAndCacheAsync(_db.GoldExpenseTypes, tenantId, request.Data.GoldExpenseTypes.Select(t => t.SyncId), resolver, ct);
+
             foreach (var dto in request.Data.GoldCashBoxes)
                 accepted += await UpsertGoldCashBoxAsync(tenantId, dto, response, ct);
             await FlushAndCacheAsync(_db.GoldCashBoxes, tenantId, request.Data.GoldCashBoxes.Select(c => c.SyncId), resolver, ct);
+
+            foreach (var dto in request.Data.GoldExpenses)
+            {
+                var expenseTypeId = await resolver.ResolveGoldExpenseTypeAsync(dto.ExpenseTypeSyncId, ct);
+                if (expenseTypeId is null)
+                {
+                    AddConflict(response, "GoldExpense", dto.SyncId, "ExpenseType not found");
+                    continue;
+                }
+
+                var cashBoxId = await resolver.ResolveGoldCashBoxAsync(dto.CashBoxSyncId, ct);
+                if (cashBoxId is null)
+                {
+                    AddConflict(response, "GoldExpense", dto.SyncId, "CashBox not found");
+                    continue;
+                }
+
+                int? warehouseId = null;
+                if (dto.WarehouseSyncId.HasValue && dto.WarehouseSyncId != Guid.Empty)
+                {
+                    warehouseId = await resolver.ResolveGoldWarehouseAsync(dto.WarehouseSyncId, ct);
+                    if (warehouseId is null)
+                    {
+                        AddConflict(response, "GoldExpense", dto.SyncId, "Warehouse not found");
+                        continue;
+                    }
+                }
+
+                accepted += await UpsertGoldExpenseAsync(tenantId, dto, expenseTypeId.Value, cashBoxId.Value, warehouseId, response, ct);
+            }
+
+            foreach (var dto in request.Data.GoldWarehouseTransfers)
+            {
+                var fromId = await resolver.ResolveGoldWarehouseAsync(dto.FromWarehouseSyncId, ct);
+                var toId = await resolver.ResolveGoldWarehouseAsync(dto.ToWarehouseSyncId, ct);
+                if (fromId is null || toId is null)
+                {
+                    AddConflict(response, "GoldWarehouseTransfer", dto.SyncId, "Warehouse not found");
+                    continue;
+                }
+
+                accepted += await UpsertGoldWarehouseTransferAsync(tenantId, dto, fromId.Value, toId.Value, response, ct);
+            }
 
             foreach (var dto in request.Data.GoldInvoices)
             {
@@ -53,6 +137,28 @@ public sealed partial class SyncEngine
                     if (customerId is null)
                     {
                         AddConflict(response, "GoldInvoice", dto.SyncId, "Customer not found");
+                        continue;
+                    }
+                }
+
+                int? supplierId = null;
+                if (dto.SupplierSyncId.HasValue && dto.SupplierSyncId != Guid.Empty)
+                {
+                    supplierId = await resolver.ResolveGoldSupplierAsync(dto.SupplierSyncId, ct);
+                    if (supplierId is null)
+                    {
+                        AddConflict(response, "GoldInvoice", dto.SyncId, "Supplier not found");
+                        continue;
+                    }
+                }
+
+                int? warehouseId = null;
+                if (dto.WarehouseSyncId.HasValue && dto.WarehouseSyncId != Guid.Empty)
+                {
+                    warehouseId = await resolver.ResolveGoldWarehouseAsync(dto.WarehouseSyncId, ct);
+                    if (warehouseId is null)
+                    {
+                        AddConflict(response, "GoldInvoice", dto.SyncId, "Warehouse not found");
                         continue;
                     }
                 }
@@ -68,7 +174,7 @@ public sealed partial class SyncEngine
                     }
                 }
 
-                accepted += await UpsertGoldInvoiceAsync(tenantId, dto, customerId, cashBoxId, response, ct);
+                accepted += await UpsertGoldInvoiceAsync(tenantId, dto, customerId, supplierId, warehouseId, cashBoxId, response, ct);
             }
             await FlushAndCacheAsync(_db.GoldInvoices, tenantId, request.Data.GoldInvoices.Select(i => i.SyncId), resolver, ct);
 
@@ -161,21 +267,66 @@ public sealed partial class SyncEngine
             GoldFxRates = await PullEntitiesAsync(_db.GoldFxRates, tenantId, since, MapGoldFxRate, ct),
             GoldKarats = await PullEntitiesAsync(_db.GoldKarats, tenantId, since, MapGoldKarat, ct),
             GoldMithqalPrices = await PullEntitiesAsync(_db.GoldMithqalPrices, tenantId, since, MapGoldMithqalPrice, ct),
+            GoldWarehouses = await PullEntitiesAsync(_db.GoldWarehouses, tenantId, since, MapGoldWarehouse, ct),
             GoldItems = await PullEntitiesAsync(_db.GoldItems, tenantId, since, MapGoldItem, ct),
-            GoldStockBalances = await PullEntitiesAsync(_db.GoldStockBalances, tenantId, since, MapGoldStockBalance, ct),
             GoldCustomers = await PullEntitiesAsync(_db.GoldCustomers, tenantId, since, MapGoldCustomer, ct),
+            GoldSuppliers = await PullEntitiesAsync(_db.GoldSuppliers, tenantId, since, MapGoldSupplier, ct),
+            GoldExpenseTypes = await PullEntitiesAsync(_db.GoldExpenseTypes, tenantId, since, MapGoldExpenseType, ct),
             GoldCashBoxes = await PullEntitiesAsync(_db.GoldCashBoxes, tenantId, since, MapGoldCashBox, ct),
             GoldNotifications = await PullEntitiesAsync(_db.GoldNotifications, tenantId, since, MapGoldNotification, ct)
         };
 
+        var warehouseMap = await _db.GoldWarehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
+            .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var customerMap = await _db.GoldCustomers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
             .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var supplierMap = await _db.GoldSuppliers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
+            .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var cashBoxMap = await _db.GoldCashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
+            .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var expenseTypeMap = await _db.GoldExpenseTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
             .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var itemMap = await _db.GoldItems.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
             .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var invoiceMap = await _db.GoldInvoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId)
             .ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+
+        var stocks = await _db.GoldStockBalances.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        bundle.GoldStockBalances = stocks.Select(s => new GoldStockBalanceSyncDto
+        {
+            SyncId = s.SyncId, CreatedAt = s.CreatedAt, CreatedBy = s.CreatedBy, UpdatedAt = s.UpdatedAt, UpdatedBy = s.UpdatedBy,
+            IsDeleted = s.IsDeleted, DeletedAt = s.DeletedAt, DeletedBy = s.DeletedBy, RowVersion = s.RowVersion,
+            WarehouseId = s.WarehouseId,
+            WarehouseSyncId = warehouseMap.GetValueOrDefault(s.WarehouseId),
+            KaratValue = s.KaratValue, GramsOnHand = s.GramsOnHand, AverageCostPerGram = s.AverageCostPerGram
+        }).ToList();
+
+        var expenses = await _db.GoldExpenses.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        bundle.GoldExpenses = expenses.Select(e => new GoldExpenseSyncDto
+        {
+            SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+            IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+            ExpenseDate = e.ExpenseDate,
+            ExpenseTypeSyncId = expenseTypeMap.GetValueOrDefault(e.ExpenseTypeId),
+            Amount = e.Amount, Currency = e.Currency,
+            CashBoxSyncId = cashBoxMap.GetValueOrDefault(e.CashBoxId),
+            Notes = e.Notes,
+            WarehouseSyncId = e.WarehouseId.HasValue ? warehouseMap.GetValueOrDefault(e.WarehouseId.Value) : null
+        }).ToList();
+
+        var transfers = await _db.GoldWarehouseTransfers.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        bundle.GoldWarehouseTransfers = transfers.Select(t => new GoldWarehouseTransferSyncDto
+        {
+            SyncId = t.SyncId, CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
+            IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
+            TransferDate = t.TransferDate,
+            FromWarehouseSyncId = warehouseMap.GetValueOrDefault(t.FromWarehouseId),
+            ToWarehouseSyncId = warehouseMap.GetValueOrDefault(t.ToWarehouseId),
+            KaratValue = t.KaratValue, WeightGrams = t.WeightGrams, Notes = t.Notes
+        }).ToList();
 
         var invoices = await _db.GoldInvoices.IgnoreQueryFilters()
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
@@ -186,6 +337,9 @@ public sealed partial class SyncEngine
             InvoiceNumber = i.InvoiceNumber, InvoiceDate = i.InvoiceDate, InvoiceType = i.InvoiceType,
             PaymentMethod = i.PaymentMethod, Status = i.Status,
             CustomerSyncId = i.CustomerId.HasValue ? customerMap.GetValueOrDefault(i.CustomerId.Value) : null,
+            SupplierSyncId = i.SupplierId.HasValue ? supplierMap.GetValueOrDefault(i.SupplierId.Value) : null,
+            WarehouseSyncId = i.WarehouseId.HasValue ? warehouseMap.GetValueOrDefault(i.WarehouseId.Value) : null,
+            IsExchange = i.IsExchange, ExchangeCashDifference = i.ExchangeCashDifference,
             PricingCurrency = i.PricingCurrency, PaymentCurrency = i.PaymentCurrency, FxRate = i.FxRate,
             TotalGoldValue = i.TotalGoldValue, TotalMakingCharge = i.TotalMakingCharge, DiscountAmount = i.DiscountAmount,
             TotalAmount = i.TotalAmount, TotalAmountIqd = i.TotalAmountIqd, TotalAmountUsd = i.TotalAmountUsd,
@@ -204,7 +358,8 @@ public sealed partial class SyncEngine
             ItemSyncId = l.ItemId.HasValue ? itemMap.GetValueOrDefault(l.ItemId.Value) : null,
             KaratValue = l.KaratValue, WeightGrams = l.WeightGrams, MithqalPrice = l.MithqalPrice,
             PricePerGram = l.PricePerGram, GoldValue = l.GoldValue, MakingCharge = l.MakingCharge,
-            LineTotal = l.LineTotal, Description = l.Description, WeightFromScale = l.WeightFromScale
+            LineTotal = l.LineTotal, Description = l.Description, WeightFromScale = l.WeightFromScale,
+            LineDirection = l.LineDirection
         }).ToList();
 
         var payments = await _db.GoldPayments.IgnoreQueryFilters()
@@ -242,6 +397,16 @@ public sealed partial class SyncEngine
         };
     }
 
+    private async Task<int?> ResolveDefaultGoldWarehouseIdAsync(int tenantId, CancellationToken ct)
+    {
+        var wh = await _db.GoldWarehouses.IgnoreQueryFilters()
+            .Where(w => w.TenantId == tenantId && !w.IsDeleted && w.IsActive)
+            .OrderByDescending(w => w.IsDefault)
+            .ThenBy(w => w.Id)
+            .FirstOrDefaultAsync(ct);
+        return wh?.Id;
+    }
+
     private static GoldSettingsSyncDto MapGoldSettings(CloudGoldSettings e, Dictionary<int, Guid> _) => new()
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
@@ -274,6 +439,13 @@ public sealed partial class SyncEngine
         Currency = e.Currency, FxRateUsed = e.FxRateUsed, Notes = e.Notes
     };
 
+    private static GoldWarehouseSyncDto MapGoldWarehouse(CloudGoldWarehouse e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        Name = e.Name, IsDefault = e.IsDefault, IsActive = e.IsActive, Notes = e.Notes
+    };
+
     private static GoldItemSyncDto MapGoldItem(CloudGoldItem e, Dictionary<int, Guid> _) => new()
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
@@ -283,19 +455,27 @@ public sealed partial class SyncEngine
         MakingChargeCurrency = e.MakingChargeCurrency, CostPerGram = e.CostPerGram, Status = e.Status, TrackAsPiece = e.TrackAsPiece
     };
 
-    private static GoldStockBalanceSyncDto MapGoldStockBalance(CloudGoldStockBalance e, Dictionary<int, Guid> _) => new()
-    {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
-        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
-        KaratValue = e.KaratValue, GramsOnHand = e.GramsOnHand, AverageCostPerGram = e.AverageCostPerGram
-    };
-
     private static GoldCustomerSyncDto MapGoldCustomer(CloudGoldCustomer e, Dictionary<int, Guid> _) => new()
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, Notes = e.Notes,
         CreditBalanceIqd = e.CreditBalanceIqd, CreditBalanceUsd = e.CreditBalanceUsd, IsActive = e.IsActive
+    };
+
+    private static GoldSupplierSyncDto MapGoldSupplier(CloudGoldSupplier e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        Name = e.Name, Phone = e.Phone, Address = e.Address, Notes = e.Notes,
+        CreditBalanceIqd = e.CreditBalanceIqd, CreditBalanceUsd = e.CreditBalanceUsd, IsActive = e.IsActive
+    };
+
+    private static GoldExpenseTypeSyncDto MapGoldExpenseType(CloudGoldExpenseType e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        Name = e.Name, IsActive = e.IsActive
     };
 
     private static GoldCashBoxSyncDto MapGoldCashBox(CloudGoldCashBox e, Dictionary<int, Guid> _) => new()
@@ -371,6 +551,19 @@ public sealed partial class SyncEngine
         return 1;
     }
 
+    private async Task<int> UpsertGoldWarehouseAsync(int tenantId, GoldWarehouseSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.GoldWarehouses, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "GoldWarehouse", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudGoldWarehouse { TenantId = tenantId }; _db.GoldWarehouses.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.Name = dto.Name;
+        existing.IsDefault = dto.IsDefault;
+        existing.IsActive = dto.IsActive;
+        existing.Notes = dto.Notes;
+        return 1;
+    }
+
     private async Task<int> UpsertGoldItemAsync(int tenantId, GoldItemSyncDto dto, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldItems, tenantId, dto.SyncId, ct);
@@ -391,12 +584,14 @@ public sealed partial class SyncEngine
         return 1;
     }
 
-    private async Task<int> UpsertGoldStockBalanceAsync(int tenantId, GoldStockBalanceSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    private async Task<int> UpsertGoldStockBalanceAsync(
+        int tenantId, GoldStockBalanceSyncDto dto, int warehouseId, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldStockBalances, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "GoldStockBalance", dto.SyncId, "Server version is newer"); return 0; }
         if (existing is null) { existing = new CloudGoldStockBalance { TenantId = tenantId }; _db.GoldStockBalances.Add(existing); }
         if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.WarehouseId = warehouseId;
         existing.KaratValue = dto.KaratValue;
         existing.GramsOnHand = dto.GramsOnHand;
         existing.AverageCostPerGram = dto.AverageCostPerGram;
@@ -419,6 +614,33 @@ public sealed partial class SyncEngine
         return 1;
     }
 
+    private async Task<int> UpsertGoldSupplierAsync(int tenantId, GoldSupplierSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.GoldSuppliers, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "GoldSupplier", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudGoldSupplier { TenantId = tenantId }; _db.GoldSuppliers.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.Name = dto.Name;
+        existing.Phone = dto.Phone;
+        existing.Address = dto.Address;
+        existing.Notes = dto.Notes;
+        existing.CreditBalanceIqd = dto.CreditBalanceIqd;
+        existing.CreditBalanceUsd = dto.CreditBalanceUsd;
+        existing.IsActive = dto.IsActive;
+        return 1;
+    }
+
+    private async Task<int> UpsertGoldExpenseTypeAsync(int tenantId, GoldExpenseTypeSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.GoldExpenseTypes, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "GoldExpenseType", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudGoldExpenseType { TenantId = tenantId }; _db.GoldExpenseTypes.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.Name = dto.Name;
+        existing.IsActive = dto.IsActive;
+        return 1;
+    }
+
     private async Task<int> UpsertGoldCashBoxAsync(int tenantId, GoldCashBoxSyncDto dto, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldCashBoxes, tenantId, dto.SyncId, ct);
@@ -433,8 +655,44 @@ public sealed partial class SyncEngine
         return 1;
     }
 
+    private async Task<int> UpsertGoldExpenseAsync(
+        int tenantId, GoldExpenseSyncDto dto, int expenseTypeId, int cashBoxId, int? warehouseId,
+        SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.GoldExpenses, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "GoldExpense", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudGoldExpense { TenantId = tenantId }; _db.GoldExpenses.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.ExpenseDate = dto.ExpenseDate;
+        existing.ExpenseTypeId = expenseTypeId;
+        existing.Amount = dto.Amount;
+        existing.Currency = dto.Currency;
+        existing.CashBoxId = cashBoxId;
+        existing.Notes = dto.Notes;
+        existing.WarehouseId = warehouseId;
+        return 1;
+    }
+
+    private async Task<int> UpsertGoldWarehouseTransferAsync(
+        int tenantId, GoldWarehouseTransferSyncDto dto, int fromWarehouseId, int toWarehouseId,
+        SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.GoldWarehouseTransfers, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "GoldWarehouseTransfer", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudGoldWarehouseTransfer { TenantId = tenantId }; _db.GoldWarehouseTransfers.Add(existing); }
+        if (!TryApplyAudit(existing, dto, GetEntityTypeName(existing), response)) return 0;
+        existing.TransferDate = dto.TransferDate;
+        existing.FromWarehouseId = fromWarehouseId;
+        existing.ToWarehouseId = toWarehouseId;
+        existing.KaratValue = dto.KaratValue;
+        existing.WeightGrams = dto.WeightGrams;
+        existing.Notes = dto.Notes;
+        return 1;
+    }
+
     private async Task<int> UpsertGoldInvoiceAsync(
-        int tenantId, GoldInvoiceSyncDto dto, int? customerId, int? cashBoxId, SyncPushResponse response, CancellationToken ct)
+        int tenantId, GoldInvoiceSyncDto dto, int? customerId, int? supplierId, int? warehouseId, int? cashBoxId,
+        SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldInvoices, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "GoldInvoice", dto.SyncId, "Server version is newer"); return 0; }
@@ -446,6 +704,10 @@ public sealed partial class SyncEngine
         existing.PaymentMethod = dto.PaymentMethod;
         existing.Status = dto.Status;
         existing.CustomerId = customerId;
+        existing.SupplierId = supplierId;
+        existing.WarehouseId = warehouseId;
+        existing.IsExchange = dto.IsExchange;
+        existing.ExchangeCashDifference = dto.ExchangeCashDifference;
         existing.PricingCurrency = dto.PricingCurrency;
         existing.PaymentCurrency = dto.PaymentCurrency;
         existing.FxRate = dto.FxRate;
@@ -482,6 +744,7 @@ public sealed partial class SyncEngine
         existing.LineTotal = dto.LineTotal;
         existing.Description = dto.Description;
         existing.WeightFromScale = dto.WeightFromScale;
+        existing.LineDirection = dto.LineDirection;
         return 1;
     }
 

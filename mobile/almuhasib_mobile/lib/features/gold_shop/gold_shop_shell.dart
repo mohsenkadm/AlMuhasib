@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/getx/app_services.dart';
+import '../../core/router/app_routes.dart';
 import '../../shared/widgets/animated_bottom_nav.dart';
 import 'controllers/gold_shell_controller.dart';
 import 'customers/gold_customers_screen.dart';
@@ -34,6 +35,7 @@ class GoldShopShellPage extends GetView<GoldShellController> {
         bottomNavigationBar: AnimatedBottomNavBar(
           selectedIndex: controller.currentIndex.value,
           onTap: controller.onTabTap,
+          onFabTap: () => Get.toNamed(AppRoutes.goldShopSaleNew),
           accentColor: profile.accent,
           primaryColor: profile.primary,
           items: const [

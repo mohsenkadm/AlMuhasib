@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
@@ -15,6 +17,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
 {
     private readonly IGoldCashService _cashService;
     private readonly IGoldCustomerService _customerService;
+    private readonly IExportService _exportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
 
@@ -61,11 +64,13 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
     public GoldVouchersViewModel(
         IGoldCashService cashService,
         IGoldCustomerService customerService,
+        IExportService exportService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _cashService = cashService;
         _customerService = customerService;
+        _exportService = exportService;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "السندات";
@@ -88,6 +93,12 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
 
     protected override Task OnPageChangedAsync() => LoadAsync();
 
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadAsync();
+    }
+
     partial void OnTypeFilterChanged(GoldVoucherType? value) => _ = ReloadAsync();
     partial void OnCurrencyFilterChanged(GoldCurrency? value) => _ = ReloadAsync();
     partial void OnDateFromChanged(DateTime? value) => _ = ReloadAsync();
@@ -105,6 +116,20 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
         IsBusy = true;
         try
         {
+            if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            {
+                var (allItems, _) = await _cashService.GetVouchersPagedAsync(
+                    1, int.MaxValue, TypeFilter, CurrencyFilter, DateFrom, DateTo);
+                var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+                MasterDataColumnFilterHelper.ApplyClientPagination(
+                    filtered, Vouchers, CurrentPage, PageSize,
+                    out var filteredTotal, out var filteredPages, out var filteredText);
+                ApplyPaginationStats(filteredTotal, CurrentPage);
+                TotalPages = filteredPages;
+                PaginationText = filteredText;
+                return;
+            }
+
             var (items, total) = await _cashService.GetVouchersPagedAsync(
                 CurrentPage, PageSize, TypeFilter, CurrencyFilter, DateFrom, DateTo);
             Vouchers.Clear();
@@ -202,6 +227,67 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
             ErrorMessage = ex.Message;
             _toast.ShowError(ex.Message);
             BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var (allItems, _) = await _cashService.GetVouchersPagedAsync(
+                1, int.MaxValue, TypeFilter, CurrencyFilter, DateFrom, DateTo);
+            var exportData = allItems.Select(v => new
+            {
+                رقم_السند = v.VoucherNumber,
+                التاريخ = v.VoucherDate.ToString("yyyy/MM/dd"),
+                النوع = v.VoucherType.ToString(),
+                العملة = v.Currency.ToString(),
+                المبلغ = v.Amount,
+                ملاحظات = v.Notes
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"سندات_الذهب_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "السندات");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _cashService.GetVouchersPagedAsync(
+                1, int.MaxValue, TypeFilter, CurrencyFilter, DateFrom, DateTo);
+            var columns = new[] { "رقم السند", "التاريخ", "النوع", "العملة", "المبلغ", "ملاحظات" };
+            IList<object[]> rows = allItems.Select(v => new object[]
+            {
+                v.VoucherNumber,
+                v.VoucherDate.ToString("yyyy/MM/dd"),
+                v.VoucherType.ToString(),
+                v.Currency.ToString(),
+                v.Amount.ToString("N0"),
+                v.Notes
+            }).ToList();
+            _exportService.PrintTable("قائمة السندات", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

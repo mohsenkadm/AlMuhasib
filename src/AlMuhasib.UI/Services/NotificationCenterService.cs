@@ -154,6 +154,14 @@ public sealed class NotificationCenterService : INotificationCenterService
         SmartAlertAction.OpenHotelCheckInOut => "hotel-checkinout",
         SmartAlertAction.OpenHotelRooms => "hotel-rooms",
         SmartAlertAction.OpenHotelHousekeeping => "hotel-housekeeping",
+        SmartAlertAction.OpenGoldMithqalPrices => "gold-mithqal-prices",
+        SmartAlertAction.OpenGoldCollection => "gold-collection",
+        SmartAlertAction.OpenGoldStock => "gold-stock",
+        SmartAlertAction.OpenGoldExpenses => "gold-expenses",
+        SmartAlertAction.OpenGoldWarehouses => "gold-warehouses",
+        SmartAlertAction.OpenGoldSale => "gold-sale",
+        SmartAlertAction.OpenGoldExchange => "gold-exchange",
+        SmartAlertAction.OpenGoldWarehouseTransfer => "gold-warehouse-transfer",
         _ => alert.Id
     };
 

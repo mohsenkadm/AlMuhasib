@@ -88,6 +88,8 @@ public sealed class GoldInventoryService : IGoldInventoryService
                 throw new InvalidOperationException("الباركود مستخدم مسبقاً");
         }
 
+        var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(context, null, cancellationToken);
+
         item.Status = GoldItemStatus.InStock;
         await context.GoldItems.AddAsync(item, cancellationToken);
 
@@ -96,6 +98,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
             item.KaratValue,
             item.WeightGrams,
             item.CostPerGram > 0 ? item.CostPerGram : null,
+            warehouseId,
             cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
@@ -118,6 +121,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
                 throw new InvalidOperationException("الباركود مستخدم مسبقاً");
         }
 
+        var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(context, null, cancellationToken);
         var weightDelta = item.WeightGrams - existing.WeightGrams;
         var karatChanged = existing.KaratValue != item.KaratValue;
 
@@ -125,12 +129,13 @@ public sealed class GoldInventoryService : IGoldInventoryService
         {
             if (karatChanged)
             {
-                await AdjustStockInternalAsync(context, existing.KaratValue, -existing.WeightGrams, null, cancellationToken);
+                await AdjustStockInternalAsync(context, existing.KaratValue, -existing.WeightGrams, null, warehouseId, cancellationToken);
                 await AdjustStockInternalAsync(
                     context,
                     item.KaratValue,
                     item.WeightGrams,
                     item.CostPerGram > 0 ? item.CostPerGram : null,
+                    warehouseId,
                     cancellationToken);
             }
             else if (weightDelta != 0)
@@ -140,6 +145,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
                     existing.KaratValue,
                     weightDelta,
                     weightDelta > 0 && item.CostPerGram > 0 ? item.CostPerGram : null,
+                    warehouseId,
                     cancellationToken);
             }
         }
@@ -167,23 +173,32 @@ public sealed class GoldInventoryService : IGoldInventoryService
             ?? throw new InvalidOperationException("القطعة غير موجودة");
 
         if (item.Status == GoldItemStatus.InStock)
-            await AdjustStockInternalAsync(context, item.KaratValue, -item.WeightGrams, null, cancellationToken);
+        {
+            var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(context, null, cancellationToken);
+            await AdjustStockInternalAsync(context, item.KaratValue, -item.WeightGrams, null, warehouseId, cancellationToken);
+        }
 
         item.MarkSoftDeleted(deletedBy);
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<GoldStockRow>> GetStockBalancesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<GoldStockRow>> GetStockBalancesAsync(
+        int? warehouseId = null,
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        return await BuildStockRowsAsync(context, cancellationToken);
+        return await BuildStockRowsAsync(context, warehouseId, cancellationToken);
     }
 
-    public async Task<GoldStockBalance?> GetStockBalanceByKaratAsync(int karatValue, CancellationToken cancellationToken = default)
+    public async Task<GoldStockBalance?> GetStockBalanceByKaratAsync(
+        int karatValue,
+        int? warehouseId = null,
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var resolvedWarehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(context, warehouseId, cancellationToken);
         return await context.GoldStockBalances.AsNoTracking()
-            .FirstOrDefaultAsync(s => s.KaratValue == karatValue, cancellationToken);
+            .FirstOrDefaultAsync(s => s.KaratValue == karatValue && s.WarehouseId == resolvedWarehouseId, cancellationToken);
     }
 
     public async Task AdjustStockAsync(
@@ -191,13 +206,15 @@ public sealed class GoldInventoryService : IGoldInventoryService
         decimal gramsDelta,
         decimal? costPerGram = null,
         string? notes = null,
+        int? warehouseId = null,
         CancellationToken cancellationToken = default)
     {
         if (gramsDelta == 0)
             return;
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        await AdjustStockInternalAsync(context, karatValue, gramsDelta, costPerGram, cancellationToken);
+        var resolvedWarehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(context, warehouseId, cancellationToken);
+        await AdjustStockInternalAsync(context, karatValue, gramsDelta, costPerGram, resolvedWarehouseId, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
     }
 
@@ -206,15 +223,17 @@ public sealed class GoldInventoryService : IGoldInventoryService
         int karatValue,
         decimal gramsDelta,
         decimal? costPerGram,
+        int warehouseId,
         CancellationToken cancellationToken)
     {
         var balance = await context.GoldStockBalances
-            .FirstOrDefaultAsync(s => s.KaratValue == karatValue, cancellationToken);
+            .FirstOrDefaultAsync(s => s.KaratValue == karatValue && s.WarehouseId == warehouseId, cancellationToken);
 
         if (balance is null)
         {
             balance = new GoldStockBalance
             {
+                WarehouseId = warehouseId,
                 KaratValue = karatValue,
                 GramsOnHand = 0,
                 AverageCostPerGram = costPerGram ?? 0
@@ -230,15 +249,22 @@ public sealed class GoldInventoryService : IGoldInventoryService
 
     internal static async Task<List<GoldStockRow>> BuildStockRowsAsync(
         GoldDbContext context,
+        int? warehouseId,
         CancellationToken cancellationToken)
     {
         var settings = await context.GoldSettings.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == GoldSettings.SingletonId, cancellationToken);
         var lowThreshold = settings?.LowStockAlertGrams ?? 10m;
 
-        var balances = await context.GoldStockBalances.AsNoTracking().ToListAsync(cancellationToken);
+        var balanceQuery = context.GoldStockBalances.AsNoTracking().AsQueryable();
+        if (warehouseId.HasValue)
+            balanceQuery = balanceQuery.Where(s => s.WarehouseId == warehouseId.Value);
+
+        var balances = await balanceQuery.ToListAsync(cancellationToken);
         var karats = await context.GoldKarats.AsNoTracking()
             .ToDictionaryAsync(k => k.KaratValue, k => k.Name, cancellationToken);
+        var warehouses = await context.GoldWarehouses.AsNoTracking()
+            .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
 
         var pieceCounts = await context.GoldItems.AsNoTracking()
             .Where(i => i.Status == GoldItemStatus.InStock && i.TrackAsPiece)
@@ -247,12 +273,15 @@ public sealed class GoldInventoryService : IGoldInventoryService
             .ToDictionaryAsync(x => x.KaratValue, x => x.Count, cancellationToken);
 
         return balances
-            .OrderBy(b => b.KaratValue)
+            .OrderBy(b => b.WarehouseId)
+            .ThenBy(b => b.KaratValue)
             .Select(b =>
             {
                 var value = GoldCurrencyHelper.Round(b.GramsOnHand * b.AverageCostPerGram);
                 return new GoldStockRow
                 {
+                    WarehouseId = b.WarehouseId,
+                    WarehouseName = warehouses.TryGetValue(b.WarehouseId, out var whName) ? whName : $"مخزن #{b.WarehouseId}",
                     KaratValue = b.KaratValue,
                     KaratName = karats.TryGetValue(b.KaratValue, out var name) ? name : $"عيار {b.KaratValue}",
                     GramsOnHand = b.GramsOnHand,

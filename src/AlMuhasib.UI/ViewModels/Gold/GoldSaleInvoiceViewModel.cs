@@ -17,14 +17,18 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     private readonly IGoldSaleService _saleService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldCustomerService _customerService;
+    private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
     private readonly IGoldScaleService _scaleService;
+    private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
     private int _quoteVersion;
+    private GoldInvoice? _lastSavedInvoice;
 
     public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
+    public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
 
@@ -44,6 +48,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private DateTime _invoiceDate = DateTime.Today;
     [ObservableProperty] private GoldPaymentMethod _paymentMethod = GoldPaymentMethod.Cash;
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
+    [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
     [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
@@ -55,6 +60,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldSaleLineDraft? _selectedLine;
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
+    [ObservableProperty] private bool _canPrintInvoice;
 
     [ObservableProperty] private decimal _totalGoldValue;
     [ObservableProperty] private decimal _totalMakingCharge;
@@ -66,16 +72,20 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         IGoldSaleService saleService,
         IGoldPricingService pricingService,
         IGoldCustomerService customerService,
+        IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
         IGoldScaleService scaleService,
+        IGoldPrintService printService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _saleService = saleService;
         _pricingService = pricingService;
         _customerService = customerService;
+        _warehouseService = warehouseService;
         _cashService = cashService;
         _scaleService = scaleService;
+        _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "فاتورة بيع ذهب";
@@ -102,6 +112,11 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             var (customers, _) = await _customerService.GetPagedAsync(1, 500, activeOnly: true);
             foreach (var c in customers)
                 Customers.Add(c);
+
+            Warehouses.Clear();
+            foreach (var w in await _warehouseService.GetAllAsync(activeOnly: true))
+                Warehouses.Add(w);
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
 
             Karats.Clear();
             foreach (var k in await _pricingService.GetKaratsAsync())
@@ -348,6 +363,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 InvoiceDate = InvoiceDate.Date,
                 PaymentMethod = PaymentMethod,
                 CustomerId = SelectedCustomer?.Id,
+                WarehouseId = SelectedWarehouse?.Id,
                 PricingCurrency = PricingCurrency,
                 PaymentCurrency = PaymentCurrency,
                 FxRate = FxRate,
@@ -369,9 +385,18 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             };
 
             var invoice = await _saleService.CreateSaleAsync(request);
+            _lastSavedInvoice = invoice;
+            CanPrintInvoice = CanPrint;
             Message = $"تم حفظ فاتورة البيع {invoice.InvoiceNumber}";
             _toast.ShowSuccess(Message);
-            BeautifulMessageDialog.ShowSuccess(Message);
+
+            if (BeautifulMessageDialog.ShowConfirm(
+                    $"{Message}\n\nهل تريد طباعة الفاتورة؟",
+                    "طباعة"))
+            {
+                await PrintInvoiceAsync();
+            }
+
             await ResetFormAsync();
         }
         catch (Exception ex)
@@ -386,6 +411,25 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
+    private async Task PrintInvoiceAsync()
+    {
+        if (_lastSavedInvoice is null || !CanPrint)
+            return;
+
+        try
+        {
+            await _printService.PrintInvoiceAsync(_lastSavedInvoice);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError(ex.Message, "الطباعة");
+        }
+    }
+
+    partial void OnCanPrintInvoiceChanged(bool value) => PrintInvoiceCommand.NotifyCanExecuteChanged();
+
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();
 
@@ -394,6 +438,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         InvoiceDate = DateTime.Today;
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
+        SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
         DiscountAmount = 0;
         PaidAmount = 0;
         Notes = string.Empty;

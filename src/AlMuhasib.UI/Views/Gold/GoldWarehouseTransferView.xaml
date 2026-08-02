@@ -1,0 +1,133 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldWarehouseTransferView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,16">
+                    <TextBlock Text="نقل بين المخازن" FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" HorizontalAlignment="Left">
+                        <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                                md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="تحديث"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ResetFormCommand}" Style="{StaticResource FlatButton}"
+                                md:ButtonAssist.CornerRadius="8" Content="مسح النموذج"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <DatePicker Grid.Column="0" SelectedDate="{Binding TransferDate}"
+                                md:HintAssist.Hint="التاريخ" Style="{StaticResource FilledDatePicker}"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding FromWarehouse}" DisplayMemberPath="Name"
+                              md:HintAssist.Hint="من مخزن" Style="{StaticResource FilledComboBox}"/>
+                    <ComboBox Grid.Column="4" ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding ToWarehouse}" DisplayMemberPath="Name"
+                              md:HintAssist.Hint="إلى مخزن" Style="{StaticResource FilledComboBox}"/>
+                    <ComboBox Grid.Column="6" ItemsSource="{Binding Karats}"
+                              SelectedValue="{Binding KaratValue}" SelectedValuePath="KaratValue"
+                              DisplayMemberPath="Name" md:HintAssist.Hint="العيار"
+                              Style="{StaticResource FilledComboBox}"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" Text="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="الوزن (غرام)" Style="{StaticResource FilledTextBox}"/>
+                    <TextBox Grid.Column="2" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="ملاحظات" Style="{StaticResource FilledTextBox}"/>
+                    <Button Grid.Column="4" Content="تنفيذ النقل" Command="{Binding SubmitTransferCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8"
+                            IsEnabled="{Binding CanAdd}"/>
+                </Grid>
+
+                <TextBlock Text="{Binding FormError}" Foreground="#D32F2F" Margin="0,10,0,0"/>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="آخر النقلات"
+                                             TargetDataGrid="{Binding ElementName=GoldTransfersGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="GoldTransfersGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Transfers}"
+                          SelectedItem="{Binding SelectedTransfer}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding TransferDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransferDate"/>
+                        <DataGridTextColumn Header="من" Binding="{Binding FromWarehouse.Name}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FromWarehouse.Name"/>
+                        <DataGridTextColumn Header="إلى" Binding="{Binding ToWarehouse.Name}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ToWarehouse.Name"/>
+                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratValue}" Width="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratValue"/>
+                        <DataGridTextColumn Header="الوزن (غ)" Binding="{Binding WeightGrams, StringFormat=N2}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WeightGrams"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="180"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+    </Grid>
+</UserControl>

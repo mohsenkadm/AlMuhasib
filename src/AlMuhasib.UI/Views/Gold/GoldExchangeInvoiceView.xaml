@@ -1,0 +1,355 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldExchangeInvoiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft"
+             d:DataContext="{d:DesignInstance Type=vm:GoldExchangeInvoiceViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+            <StackPanel Margin="20,16,20,24">
+
+                <Border CornerRadius="14" Margin="0,0,0,16" Padding="24,18">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#6B4E16" Offset="0"/>
+                            <GradientStop Color="#B8860B" Offset="0.45"/>
+                            <GradientStop Color="#E8C547" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="52" Height="52" CornerRadius="14" Background="#33FFFFFF" Margin="0,0,16,0">
+                            <materialDesign:PackIcon Kind="SwapHorizontal" Width="30" Height="30" Foreground="White"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="تبديل ذهب" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Foreground="#EEFFFFFF" FontSize="13" Margin="0,4,0,0">
+                                <Run Text="رقم الفاتورة:"/>
+                                <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="SemiBold" FontFamily="Consolas"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="2" CornerRadius="12" Background="#33FFFFFF" Padding="16,10">
+                            <StackPanel>
+                                <TextBlock Text="فرق النقدية" FontSize="11" Foreground="#CCFFFFFF" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding ExchangeCashDifference, StringFormat='{}{0:N0}'}" FontSize="22" FontWeight="Bold"
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                                     Padding="20,16" Margin="0,0,0,16"
+                                     materialDesign:ElevationAssist.Elevation="Dp1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <DatePicker Grid.Row="0" Grid.Column="0"
+                                    SelectedDate="{Binding InvoiceDate}"
+                                    materialDesign:HintAssist.Hint="التاريخ"
+                                    materialDesign:HintAssist.IsFloating="True"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    Margin="0,0,12,12"/>
+
+                        <ComboBox Grid.Row="0" Grid.Column="1"
+                                  ItemsSource="{Binding PaymentMethods}"
+                                  SelectedValue="{Binding PaymentMethod}"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="طريقة الدفع"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,12,12"/>
+
+                        <ComboBox Grid.Row="0" Grid.Column="2"
+                                  ItemsSource="{Binding Customers}"
+                                  SelectedItem="{Binding SelectedCustomer}"
+                                  DisplayMemberPath="Name"
+                                  IsEditable="True"
+                                  StaysOpenOnEdit="True"
+                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                  materialDesign:HintAssist.Hint="الزبون"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,12,12"/>
+
+                        <ComboBox Grid.Row="0" Grid.Column="3"
+                                  ItemsSource="{Binding Warehouses}"
+                                  SelectedItem="{Binding SelectedWarehouse}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="المخزن"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,12"/>
+
+                        <ComboBox Grid.Row="1" Grid.Column="0"
+                                  ItemsSource="{Binding Currencies}"
+                                  SelectedValue="{Binding PricingCurrency}"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="عملة التسعير"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,12,0"/>
+
+                        <ComboBox Grid.Row="1" Grid.Column="1"
+                                  ItemsSource="{Binding Currencies}"
+                                  SelectedValue="{Binding PaymentCurrency}"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="عملة الدفع"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,12,0"/>
+
+                        <Grid Grid.Row="1" Grid.Column="2" Margin="0,0,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                     materialDesign:HintAssist.Hint="سعر الصرف (دولار→دينار)"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"/>
+                            <Button Grid.Column="1" Command="{Binding RefreshFxCommand}"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    ToolTip="تحديث سعر الصرف" Margin="4,0,0,0">
+                                <materialDesign:PackIcon Kind="CurrencyUsd" Width="20" Height="20" Foreground="#B8860B"/>
+                            </Button>
+                        </Grid>
+
+                        <ComboBox Grid.Row="1" Grid.Column="3"
+                                  ItemsSource="{Binding CashBoxes}"
+                                  SelectedItem="{Binding SelectedCashBox}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="القاصة"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"/>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- وارد -->
+                <DockPanel Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                        <Button Command="{Binding AddInLineCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"
+                                Click="OnInSectionFocus">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/>
+                                <TextBlock Text="إضافة وارد"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding RemoveInLineCommand}" CommandParameter="{Binding SelectedInLine}"
+                                Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnInSectionFocus">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
+                                <TextBlock Text="حذف"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Click="OnInSectionFocus">
+                            <Button.Background>
+                                <SolidColorBrush Color="#2E7D32"/>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ScaleBalance" Margin="0,0,6,0"/>
+                                <TextBlock Text="قراءة الميزان"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="وارد (كسر / ذهب قديم)" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#2E7D32" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                                     Padding="0" Margin="0,0,0,16"
+                                     materialDesign:ElevationAssist.Elevation="Dp1"
+                                     GotFocus="OnInSectionFocus" PreviewMouseDown="OnInSectionFocus">
+                    <DataGrid ItemsSource="{Binding InLines}"
+                              SelectedItem="{Binding SelectedInLine}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              Style="{StaticResource ModernDataGrid}"
+                              MinHeight="160"
+                              Margin="8">
+                        <DataGrid.Columns>
+                            <DataGridComboBoxColumn Header="العيار" Width="100"
+                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
+                                                    SelectedValuePath="KaratValue"
+                                                    DisplayMemberPath="Name"
+                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTextColumn Header="الوزن (غ)" Width="110"
+                                                Binding="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}"/>
+                            <DataGridTextColumn Header="سعر المثقال" Width="120"
+                                                Binding="{Binding MithqalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="القيمة" Width="120" IsReadOnly="True"
+                                                Binding="{Binding LineTotal, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="الوصف" Width="*"
+                                                Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </materialDesign:Card>
+
+                <!-- صادر -->
+                <DockPanel Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                        <Button Command="{Binding AddOutLineCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"
+                                Click="OnOutSectionFocus">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/>
+                                <TextBlock Text="إضافة صادر"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding RemoveOutLineCommand}" CommandParameter="{Binding SelectedOutLine}"
+                                Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnOutSectionFocus">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
+                                <TextBlock Text="حذف"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Click="OnOutSectionFocus">
+                            <Button.Background>
+                                <SolidColorBrush Color="#C62828"/>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ScaleBalance" Margin="0,0,6,0"/>
+                                <TextBlock Text="قراءة الميزان"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="صادر (ذهب جديد)" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#C62828" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
+                                     Padding="0" Margin="0,0,0,16"
+                                     materialDesign:ElevationAssist.Elevation="Dp1"
+                                     GotFocus="OnOutSectionFocus" PreviewMouseDown="OnOutSectionFocus">
+                    <DataGrid ItemsSource="{Binding OutLines}"
+                              SelectedItem="{Binding SelectedOutLine}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              Style="{StaticResource ModernDataGrid}"
+                              MinHeight="160"
+                              Margin="8">
+                        <DataGrid.Columns>
+                            <DataGridComboBoxColumn Header="العيار" Width="100"
+                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
+                                                    SelectedValuePath="KaratValue"
+                                                    DisplayMemberPath="Name"
+                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTextColumn Header="الوزن (غ)" Width="110"
+                                                Binding="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}"/>
+                            <DataGridTextColumn Header="سعر المثقال" Width="120"
+                                                Binding="{Binding MithqalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="أجور الصياغة" Width="120"
+                                                Binding="{Binding MakingCharge, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="القيمة" Width="120" IsReadOnly="True"
+                                                Binding="{Binding LineTotal, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="الوصف" Width="*"
+                                                Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="قطعة #" Width="80"
+                                                Binding="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </materialDesign:Card>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="360"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Bottom" Margin="0,0,16,0">
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="ملاحظات"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding Message}" Foreground="#1565C0" FontSize="13" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" FontSize="13" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="حفظ الفاتورة" Command="{Binding SaveCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    IsEnabled="{Binding CanAdd}"
+                                    Padding="28,10" Margin="0,0,8,0">
+                                <Button.Background>
+                                    <SolidColorBrush Color="#B8860B"/>
+                                </Button.Background>
+                            </Button>
+                            <Button Content="طباعة" Command="{Binding PrintInvoiceCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Padding="20,10" Margin="0,0,8,0"/>
+                            <Button Content="فاتورة جديدة" Command="{Binding NewInvoiceCommand}"
+                                    Style="{StaticResource OutlinedButton}" Padding="20,10"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Grid.Column="1" CornerRadius="14" Padding="20,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FFF8E7" Offset="0"/>
+                                <GradientStop Color="#F5E6C8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="إجمالي الوارد" Foreground="#2E7D32"/>
+                                <TextBlock Text="{Binding InTotalValue, StringFormat=N0}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Left" Foreground="#2E7D32"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="إجمالي الصادر" Foreground="#C62828"/>
+                                <TextBlock Text="{Binding OutTotalValue, StringFormat=N0}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Left" Foreground="#C62828"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="الفرق المحسوب" Foreground="#5D4E37"/>
+                                <TextBlock Text="{Binding ComputedDifference, StringFormat=N0}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Left" Foreground="#5D4E37"/>
+                            </DockPanel>
+                            <Separator Margin="0,4,0,10"/>
+                            <TextBox Text="{Binding ExchangeCashDifference, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="فرق النقدية (+ زبون يدفع / − المحل يدفع)"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding PaidAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="المبلغ المدفوع"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Background="#88000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar IsIndeterminate="True" Width="200" Height="6" VerticalAlignment="Center"
+                         Foreground="#B8860B"/>
+        </Border>
+    </Grid>
+</UserControl>

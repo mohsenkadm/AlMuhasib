@@ -67,6 +67,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <DatePicker Grid.Row="0" Grid.Column="0"
@@ -99,15 +100,24 @@
                                   Margin="0,0,12,12"/>
 
                         <ComboBox Grid.Row="0" Grid.Column="3"
+                                  ItemsSource="{Binding Warehouses}"
+                                  SelectedItem="{Binding SelectedWarehouse}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="المخزن"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,12"/>
+
+                        <ComboBox Grid.Row="1" Grid.Column="0"
                                   ItemsSource="{Binding CashBoxes}"
                                   SelectedItem="{Binding SelectedCashBox}"
                                   DisplayMemberPath="Name"
                                   materialDesign:HintAssist.Hint="القاصة"
                                   materialDesign:HintAssist.IsFloating="True"
                                   Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,0,12"/>
+                                  Margin="0,0,12,12"/>
 
-                        <ComboBox Grid.Row="1" Grid.Column="0"
+                        <ComboBox Grid.Row="1" Grid.Column="1"
                                   ItemsSource="{Binding Currencies}"
                                   SelectedValue="{Binding PricingCurrency}"
                                   SelectedValuePath="Value"
@@ -115,9 +125,9 @@
                                   materialDesign:HintAssist.Hint="عملة التسعير"
                                   materialDesign:HintAssist.IsFloating="True"
                                   Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,12,0"/>
+                                  Margin="0,0,12,12"/>
 
-                        <ComboBox Grid.Row="1" Grid.Column="1"
+                        <ComboBox Grid.Row="1" Grid.Column="2"
                                   ItemsSource="{Binding Currencies}"
                                   SelectedValue="{Binding PaymentCurrency}"
                                   SelectedValuePath="Value"
@@ -125,9 +135,9 @@
                                   materialDesign:HintAssist.Hint="عملة الدفع"
                                   materialDesign:HintAssist.IsFloating="True"
                                   Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,12,0"/>
+                                  Margin="0,0,12,12"/>
 
-                        <Grid Grid.Row="1" Grid.Column="2" Margin="0,0,12,0">
+                        <Grid Grid.Row="1" Grid.Column="3" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -143,7 +153,7 @@
                             </Button>
                         </Grid>
 
-                        <TextBox Grid.Row="1" Grid.Column="3"
+                        <TextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
                                  Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="ملاحظات"
                                  materialDesign:HintAssist.IsFloating="True"
@@ -236,6 +246,9 @@
                                     <SolidColorBrush Color="#B8860B"/>
                                 </Button.Background>
                             </Button>
+                            <Button Content="طباعة" Command="{Binding PrintInvoiceCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Padding="20,10" Margin="0,0,8,0"/>
                             <Button Content="فاتورة جديدة" Command="{Binding NewInvoiceCommand}"
                                     Style="{StaticResource OutlinedButton}" Padding="20,10"/>
                         </StackPanel>

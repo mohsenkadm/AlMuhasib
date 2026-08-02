@@ -101,4 +101,34 @@ class GoldShopApi {
           .toList(),
     );
   }
+
+  Future<List<GoldWarehouseItem>> getWarehouses() {
+    return _api.get(
+      '$_base/warehouses',
+      parser: (data) => (data as List<dynamic>)
+          .map((e) => GoldWarehouseItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<List<GoldSupplierItem>> getSuppliers({String? search}) {
+    return _api.get(
+      '$_base/suppliers',
+      queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+      parser: (data) => (data as List<dynamic>)
+          .map((e) => GoldSupplierItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Future<GoldInvoiceDetail> createSale(CreateGoldSaleRequest request) {
+    return _api.post(
+      '$_base/invoices/sale',
+      data: request.toJson(),
+      parser: (data) =>
+          GoldInvoiceDetail.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

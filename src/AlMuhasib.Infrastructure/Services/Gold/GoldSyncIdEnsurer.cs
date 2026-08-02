@@ -15,6 +15,11 @@ internal static class GoldSyncIdEnsurer
         await EnsureAsync(db.GoldItems, ct);
         await EnsureAsync(db.GoldStockBalances, ct);
         await EnsureAsync(db.GoldCustomers, ct);
+        await EnsureAsync(db.GoldSuppliers, ct);
+        await EnsureAsync(db.GoldWarehouses, ct);
+        await EnsureAsync(db.GoldExpenseTypes, ct);
+        await EnsureAsync(db.GoldExpenses, ct);
+        await EnsureAsync(db.GoldWarehouseTransfers, ct);
         await EnsureAsync(db.GoldCashBoxes, ct);
         await EnsureAsync(db.GoldInvoices, ct);
         await EnsureAsync(db.GoldInvoiceLines, ct);

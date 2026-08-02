@@ -101,14 +101,27 @@ public class GoldInvoiceConfiguration : IEntityTypeConfiguration<GoldInvoice>
         builder.Property(i => i.PaidAmount).HasPrecision(18, 2);
         builder.Property(i => i.RemainingAmount).HasPrecision(18, 2);
         builder.Property(i => i.TotalWeightGrams).HasPrecision(18, 3);
+        builder.Property(i => i.ExchangeCashDifference).HasPrecision(18, 2);
         builder.Property(i => i.Notes).HasMaxLength(2000);
         builder.HasIndex(i => i.InvoiceDate);
         builder.HasIndex(i => i.Status);
         builder.HasIndex(i => i.CustomerId);
+        builder.HasIndex(i => i.SupplierId);
+        builder.HasIndex(i => i.WarehouseId);
 
         builder.HasOne(i => i.Customer)
             .WithMany()
             .HasForeignKey(i => i.CustomerId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(i => i.Supplier)
+            .WithMany()
+            .HasForeignKey(i => i.SupplierId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(i => i.Warehouse)
+            .WithMany()
+            .HasForeignKey(i => i.WarehouseId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }
@@ -125,6 +138,7 @@ public class GoldInvoiceLineConfiguration : IEntityTypeConfiguration<GoldInvoice
         builder.Property(l => l.MakingCharge).HasPrecision(18, 2);
         builder.Property(l => l.LineTotal).HasPrecision(18, 2);
         builder.Property(l => l.Description).HasMaxLength(500);
+        builder.Property(l => l.LineDirection).HasConversion<string>().HasMaxLength(10);
 
         builder.HasOne(l => l.Invoice)
             .WithMany(i => i.Lines)
@@ -198,7 +212,11 @@ public class GoldStockBalanceConfiguration : IEntityTypeConfiguration<GoldStockB
         builder.ToTable("GoldStockBalances");
         builder.Property(s => s.GramsOnHand).HasPrecision(18, 3);
         builder.Property(s => s.AverageCostPerGram).HasPrecision(18, 2);
-        builder.HasIndex(s => s.KaratValue).IsUnique();
+        builder.HasIndex(s => new { s.WarehouseId, s.KaratValue }).IsUnique();
+        builder.HasOne(s => s.Warehouse)
+            .WithMany()
+            .HasForeignKey(s => s.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -213,5 +231,98 @@ public class GoldNotificationConfiguration : IEntityTypeConfiguration<GoldNotifi
         builder.Property(n => n.RelatedEntity).HasMaxLength(100);
         builder.HasIndex(n => n.IsRead);
         builder.HasIndex(n => n.Type);
+    }
+}
+
+public class GoldSupplierConfiguration : IEntityTypeConfiguration<GoldSupplier>
+{
+    public void Configure(EntityTypeBuilder<GoldSupplier> builder)
+    {
+        builder.ToTable("GoldSuppliers");
+        builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
+        builder.Property(s => s.Phone).HasMaxLength(50);
+        builder.Property(s => s.Address).HasMaxLength(500);
+        builder.Property(s => s.Notes).HasMaxLength(2000);
+        builder.Property(s => s.CreditBalanceIqd).HasPrecision(18, 2);
+        builder.Property(s => s.CreditBalanceUsd).HasPrecision(18, 2);
+        builder.HasIndex(s => s.Name);
+        builder.HasIndex(s => s.Phone);
+        builder.HasIndex(s => s.IsActive);
+    }
+}
+
+public class GoldExpenseTypeConfiguration : IEntityTypeConfiguration<GoldExpenseType>
+{
+    public void Configure(EntityTypeBuilder<GoldExpenseType> builder)
+    {
+        builder.ToTable("GoldExpenseTypes");
+        builder.Property(t => t.Name).IsRequired().HasMaxLength(200);
+        builder.HasIndex(t => t.IsActive);
+    }
+}
+
+public class GoldExpenseConfiguration : IEntityTypeConfiguration<GoldExpense>
+{
+    public void Configure(EntityTypeBuilder<GoldExpense> builder)
+    {
+        builder.ToTable("GoldExpenses");
+        builder.Property(e => e.Amount).HasPrecision(18, 2);
+        builder.Property(e => e.Currency).HasConversion<string>().HasMaxLength(10);
+        builder.Property(e => e.Notes).HasMaxLength(2000);
+        builder.HasIndex(e => e.ExpenseDate);
+        builder.HasIndex(e => e.ExpenseTypeId);
+        builder.HasIndex(e => e.CashBoxId);
+        builder.HasIndex(e => e.WarehouseId);
+
+        builder.HasOne(e => e.ExpenseType)
+            .WithMany()
+            .HasForeignKey(e => e.ExpenseTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.CashBox)
+            .WithMany()
+            .HasForeignKey(e => e.CashBoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.Warehouse)
+            .WithMany()
+            .HasForeignKey(e => e.WarehouseId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+public class GoldWarehouseConfiguration : IEntityTypeConfiguration<GoldWarehouse>
+{
+    public void Configure(EntityTypeBuilder<GoldWarehouse> builder)
+    {
+        builder.ToTable("GoldWarehouses");
+        builder.Property(w => w.Name).IsRequired().HasMaxLength(200);
+        builder.Property(w => w.Notes).HasMaxLength(2000);
+        builder.HasIndex(w => w.IsActive);
+        builder.HasIndex(w => w.IsDefault);
+    }
+}
+
+public class GoldWarehouseTransferConfiguration : IEntityTypeConfiguration<GoldWarehouseTransfer>
+{
+    public void Configure(EntityTypeBuilder<GoldWarehouseTransfer> builder)
+    {
+        builder.ToTable("GoldWarehouseTransfers");
+        builder.Property(t => t.WeightGrams).HasPrecision(18, 3);
+        builder.Property(t => t.Notes).HasMaxLength(2000);
+        builder.HasIndex(t => t.TransferDate);
+        builder.HasIndex(t => t.FromWarehouseId);
+        builder.HasIndex(t => t.ToWarehouseId);
+        builder.HasIndex(t => t.KaratValue);
+
+        builder.HasOne(t => t.FromWarehouse)
+            .WithMany()
+            .HasForeignKey(t => t.FromWarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(t => t.ToWarehouse)
+            .WithMany()
+            .HasForeignKey(t => t.ToWarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

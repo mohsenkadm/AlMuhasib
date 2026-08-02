@@ -121,6 +121,56 @@ public sealed class GoldShopMasterDataController : GoldShopApiControllerBase
             IsActive = c.IsActive
         }).ToList());
     }
+
+    [HttpGet("warehouses")]
+    public async Task<ActionResult<List<GoldWarehouseDto>>> GetWarehouses(CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var items = await Db.GoldWarehouses.AsNoTracking()
+            .Where(w => w.TenantId == TenantId && w.IsActive)
+            .OrderByDescending(w => w.IsDefault)
+            .ThenBy(w => w.Name)
+            .ToListAsync(ct);
+
+        return Ok(items.Select(w => new GoldWarehouseDto
+        {
+            Id = w.Id,
+            SyncId = w.SyncId,
+            Name = w.Name,
+            IsDefault = w.IsDefault,
+            IsActive = w.IsActive,
+            Notes = w.Notes
+        }).ToList());
+    }
+
+    [HttpGet("suppliers")]
+    public async Task<ActionResult<List<GoldSupplierDto>>> GetSuppliers(
+        [FromQuery] string? search = null,
+        CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var query = Db.GoldSuppliers.AsNoTracking().Where(s => s.TenantId == TenantId && s.IsActive);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(s => s.Name.Contains(term) || s.Phone.Contains(term));
+        }
+
+        var items = await query.OrderBy(s => s.Name).Take(500).ToListAsync(ct);
+        return Ok(items.Select(s => new GoldSupplierDto
+        {
+            Id = s.Id,
+            SyncId = s.SyncId,
+            Name = s.Name,
+            Phone = s.Phone,
+            Address = s.Address,
+            CreditBalanceIqd = s.CreditBalanceIqd,
+            CreditBalanceUsd = s.CreditBalanceUsd,
+            IsActive = s.IsActive
+        }).ToList());
+    }
 }
 
 public sealed class GoldFxRateDto

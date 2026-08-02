@@ -3,58 +3,74 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <Grid Margin="20">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <md:Card Grid.Row="0" Padding="18" Margin="0,0,0,14" UniformCornerRadius="14"
-                 BorderBrush="#E8D5A3" BorderThickness="1">
+        <!-- ═══ TOP: Action Bar ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="مخزون الذهب" FontSize="20" FontWeight="Bold" Foreground="#B8860B"/>
-                    <TextBlock Text="أرصدة العيارات مع تمييز المخزون المنخفض" FontSize="12"
-                               Foreground="#8D6E63" Margin="0,4,0,0"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Command="{Binding OpenAdjustmentCommand}" Style="{StaticResource PrimaryButton}"
-                            Height="36" Padding="14,0" Margin="0,0,8,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="مخزون الذهب" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAdjustmentCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="TuneVerticalVariant" Width="18" Height="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="تسوية" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            <md:PackIcon Kind="TuneVerticalVariant" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تسوية"/>
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource IconButton}"
-                            Width="36" Height="36" ToolTip="تحديث">
-                        <md:PackIcon Kind="Refresh" Width="20" Height="20"/>
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
                     </Button>
+
+                    <ComboBox ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding SelectedWarehouse}"
+                              DisplayMemberPath="Name"
+                              md:HintAssist.Hint="المخزن"
+                              Style="{StaticResource FilledComboBox}"
+                              MinWidth="200" Margin="16,0,0,0"/>
                 </StackPanel>
             </Grid>
         </md:Card>
 
-        <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,14">
-            <md:Card Padding="16" Margin="0,0,10,0" UniformCornerRadius="12" BorderBrush="#E8D5A3" BorderThickness="1">
+        <!-- Stats -->
+        <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,16">
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,10,0" md:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
                     <TextBlock Text="إجمالي الوزن" Foreground="#8D6E63" FontSize="12"/>
-                    <TextBlock Text="{Binding TotalGrams, StringFormat={}{0:N2} غ}" FontSize="22" FontWeight="Bold" Foreground="#B8860B"/>
+                    <TextBlock Text="{Binding TotalGrams, StringFormat={}{0:N2} غ}" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                 </StackPanel>
             </md:Card>
-            <md:Card Padding="16" Margin="0,0,10,0" UniformCornerRadius="12" BorderBrush="#E8D5A3" BorderThickness="1">
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,10,0" md:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
                     <TextBlock Text="قيمة المخزون" Foreground="#8D6E63" FontSize="12"/>
                     <TextBlock Text="{Binding TotalValue, StringFormat={}{0:N0} د.ع}" FontSize="22" FontWeight="Bold" Foreground="#8B6914"/>
                 </StackPanel>
             </md:Card>
-            <md:Card Padding="16" UniformCornerRadius="12" BorderBrush="#FFCDD2" BorderThickness="1" Background="#FFEBEE">
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="16" md:ElevationAssist.Elevation="Dp2"
+                     BorderBrush="#FFCDD2" BorderThickness="1" Background="#FFEBEE">
                 <StackPanel>
                     <TextBlock Text="عيارات منخفضة" Foreground="#C62828" FontSize="12"/>
                     <TextBlock Text="{Binding LowStockCount}" FontSize="22" FontWeight="Bold" Foreground="#C62828"/>
@@ -62,15 +78,37 @@
             </md:Card>
         </UniformGrid>
 
-        <md:Card Grid.Row="2" Padding="0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
-            <DockPanel>
-                <controls:ListTableHeaderBar DockPanel.Dock="Top" Title="أرصدة المخزون حسب العيار"
-                                             ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
-                <DataGrid ItemsSource="{Binding StockRows}"
+        <!-- ═══ BOTTOM: Data Grid ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="أرصدة المخزون حسب العيار"
+                                             TargetDataGrid="{Binding ElementName=GoldStockGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="GoldStockGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding StockRows}"
                           SelectedItem="{Binding SelectedRow}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}" Margin="8">
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                             <Style.Triggers>
@@ -83,13 +121,22 @@
                         </Style>
                     </DataGrid.RowStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratName}" Width="120"/>
-                        <DataGridTextColumn Header="القيمة" Binding="{Binding KaratValue}" Width="70"/>
-                        <DataGridTextColumn Header="الوزن (غ)" Binding="{Binding GramsOnHand, StringFormat=N2}" Width="110"/>
-                        <DataGridTextColumn Header="متوسط التكلفة/غ" Binding="{Binding AverageCostPerGram, StringFormat=N0}" Width="130"/>
-                        <DataGridTextColumn Header="قيمة المخزون" Binding="{Binding StockValue, StringFormat=N0}" Width="130"/>
-                        <DataGridTextColumn Header="عدد القطع" Binding="{Binding PieceCount}" Width="90"/>
-                        <DataGridTemplateColumn Header="تنبيه" Width="100">
+                        <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
+                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratName}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratName"/>
+                        <DataGridTextColumn Header="القيمة" Binding="{Binding KaratValue}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratValue"/>
+                        <DataGridTextColumn Header="الوزن (غ)" Binding="{Binding GramsOnHand, StringFormat=N2}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GramsOnHand"/>
+                        <DataGridTextColumn Header="متوسط التكلفة/غ" Binding="{Binding AverageCostPerGram, StringFormat=N0}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AverageCostPerGram"/>
+                        <DataGridTextColumn Header="قيمة المخزون" Binding="{Binding StockValue, StringFormat=N0}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StockValue"/>
+                        <DataGridTextColumn Header="عدد القطع" Binding="{Binding PieceCount}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PieceCount"/>
+                        <DataGridTemplateColumn Header="تنبيه" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -123,7 +170,7 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </DockPanel>
+            </Grid>
         </md:Card>
     </Grid>
 </UserControl>

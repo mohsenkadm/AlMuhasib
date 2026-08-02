@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../features/gold_shop/controllers/gold_create_sale_controller.dart';
 import '../../features/gold_shop/controllers/gold_customers_controller.dart';
 import '../../features/gold_shop/controllers/gold_dashboard_controller.dart';
 import '../../features/gold_shop/controllers/gold_notifications_controller.dart';
@@ -69,6 +70,16 @@ class GoldNotificationsBinding extends Bindings {
     Get.lazyPut(
       () => GoldNotificationsController(),
       tag: 'gold_notifications',
+    );
+  }
+}
+
+class GoldCreateSaleBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => GoldCreateSaleController(),
+      tag: 'gold_create_sale',
     );
   }
 }

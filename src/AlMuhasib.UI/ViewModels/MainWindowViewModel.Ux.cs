@@ -6,6 +6,7 @@ using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels.Car;
+using AlMuhasib.UI.ViewModels.Gold;
 using AlMuhasib.UI.ViewModels.Hotel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -480,6 +481,30 @@ public partial class MainWindowViewModel
                 break;
             case SmartAlertAction.OpenHotelHousekeeping:
                 await OpenTabAsync(typeof(HotelHousekeepingViewModel), "النظافة", PackIconKind.Broom);
+                break;
+            case SmartAlertAction.OpenGoldMithqalPrices:
+                await OpenTabAsync(typeof(GoldMithqalPricesViewModel), "أسعار المثقال", PackIconKind.CurrencyUsd);
+                break;
+            case SmartAlertAction.OpenGoldCollection:
+                await OpenTabAsync(typeof(GoldCollectionViewModel), "التحصيل", PackIconKind.CashCheck);
+                break;
+            case SmartAlertAction.OpenGoldStock:
+                await OpenTabAsync(typeof(GoldStockViewModel), "المخزون", PackIconKind.Warehouse);
+                break;
+            case SmartAlertAction.OpenGoldExpenses:
+                await OpenTabAsync(typeof(GoldExpensesViewModel), "المصروفات", PackIconKind.CashMinus);
+                break;
+            case SmartAlertAction.OpenGoldWarehouses:
+                await OpenTabAsync(typeof(GoldWarehousesViewModel), "المخازن", PackIconKind.Warehouse);
+                break;
+            case SmartAlertAction.OpenGoldSale:
+                await OpenTabAsync(typeof(GoldSaleInvoiceViewModel), "فاتورة بيع", PackIconKind.CashRegister);
+                break;
+            case SmartAlertAction.OpenGoldExchange:
+                await OpenTabAsync(typeof(GoldExchangeInvoiceViewModel), "تبديل ذهب", PackIconKind.SwapHorizontal);
+                break;
+            case SmartAlertAction.OpenGoldWarehouseTransfer:
+                await OpenTabAsync(typeof(GoldWarehouseTransferViewModel), "نقل مخزني", PackIconKind.TruckDelivery);
                 break;
         }
     }

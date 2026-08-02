@@ -1,0 +1,115 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldKaratMovementReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             d:DataContext="{d:DesignInstance vm:GoldKaratMovementReportViewModel, IsDesignTimeCreatable=False}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,24,24,8">
+                <TextBlock Text="حركة العيارات" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                <UniformGrid Columns="4" Margin="0,0,0,20">
+                    <controls:AnimatedStatCard Title="صافي الحركة" TextValue="{Binding NetMovement}"
+                                               Icon="SwapHorizontal" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                    <controls:AnimatedStatCard Title="مبيعات (غ)" TextValue="{Binding SoldGrams}"
+                                               Icon="CashMinus" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="مشتريات (غ)" TextValue="{Binding PurchasedGrams}"
+                                               Icon="CashPlus" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="الرصيد (غ)" TextValue="{Binding ClosingGrams}"
+                                               Icon="Warehouse" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                </UniformGrid>
+
+                <Border Style="{StaticResource FilterBar}">
+                    <StackPanel Orientation="Horizontal">
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Warehouses}" SelectedValue="{Binding SelectedWarehouseId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Name"
+                                  Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="المخزن"
+                                  Width="160" Margin="0,0,12,0"/>
+                        <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <materialDesign:Card Grid.Row="1" materialDesign:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="حركة العيارات"
+                                             TargetDataGrid="{Binding ElementName=KaratMovementGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="KaratMovementGrid"
+                          ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True"
+                          AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" MinHeight="300"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
+                          Grid.Row="1">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratName}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratName"/>
+                        <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
+                        <DataGridTextColumn Header="مشتريات" Binding="{Binding PurchasedGrams, StringFormat=N3}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasedGrams"/>
+                        <DataGridTextColumn Header="مبيعات" Binding="{Binding SoldGrams, StringFormat=N3}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SoldGrams"/>
+                        <DataGridTextColumn Header="وارد تبديل" Binding="{Binding ExchangeInGrams, StringFormat=N3}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExchangeInGrams"/>
+                        <DataGridTextColumn Header="صادر تبديل" Binding="{Binding ExchangeOutGrams, StringFormat=N3}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExchangeOutGrams"/>
+                        <DataGridTextColumn Header="تحويل وارد" Binding="{Binding TransferredInGrams, StringFormat=N3}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransferredInGrams"/>
+                        <DataGridTextColumn Header="تحويل صادر" Binding="{Binding TransferredOutGrams, StringFormat=N3}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TransferredOutGrams"/>
+                        <DataGridTextColumn Header="صافي" Binding="{Binding NetMovementGrams, StringFormat=N3}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetMovementGrams"/>
+                        <DataGridTextColumn Header="رصيد" Binding="{Binding ClosingGrams, StringFormat=N3}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ClosingGrams"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </materialDesign:Card>
+
+        <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

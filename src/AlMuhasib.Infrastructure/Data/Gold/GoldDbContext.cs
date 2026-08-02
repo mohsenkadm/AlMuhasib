@@ -40,6 +40,11 @@ public class GoldDbContext : DbContext
     public DbSet<GoldMithqalPrice> GoldMithqalPrices => Set<GoldMithqalPrice>();
     public DbSet<GoldStockBalance> GoldStockBalances => Set<GoldStockBalance>();
     public DbSet<GoldNotification> GoldNotifications => Set<GoldNotification>();
+    public DbSet<GoldSupplier> GoldSuppliers => Set<GoldSupplier>();
+    public DbSet<GoldExpenseType> GoldExpenseTypes => Set<GoldExpenseType>();
+    public DbSet<GoldExpense> GoldExpenses => Set<GoldExpense>();
+    public DbSet<GoldWarehouse> GoldWarehouses => Set<GoldWarehouse>();
+    public DbSet<GoldWarehouseTransfer> GoldWarehouseTransfers => Set<GoldWarehouseTransfer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,6 +67,11 @@ public class GoldDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GoldMithqalPriceConfiguration());
         modelBuilder.ApplyConfiguration(new GoldStockBalanceConfiguration());
         modelBuilder.ApplyConfiguration(new GoldNotificationConfiguration());
+        modelBuilder.ApplyConfiguration(new GoldSupplierConfiguration());
+        modelBuilder.ApplyConfiguration(new GoldExpenseTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new GoldExpenseConfiguration());
+        modelBuilder.ApplyConfiguration(new GoldWarehouseConfiguration());
+        modelBuilder.ApplyConfiguration(new GoldWarehouseTransferConfiguration());
 
         modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
         modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(

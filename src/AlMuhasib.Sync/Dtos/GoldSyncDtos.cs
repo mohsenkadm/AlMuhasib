@@ -57,6 +57,8 @@ public sealed class GoldItemSyncDto : SyncDtoBase
 
 public sealed class GoldStockBalanceSyncDto : SyncDtoBase
 {
+    public int WarehouseId { get; set; }
+    public Guid? WarehouseSyncId { get; set; }
     public int KaratValue { get; set; }
     public decimal GramsOnHand { get; set; }
     public decimal AverageCostPerGram { get; set; }
@@ -71,6 +73,52 @@ public sealed class GoldCustomerSyncDto : SyncDtoBase
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
     public bool IsActive { get; set; } = true;
+}
+
+public sealed class GoldSupplierSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public decimal CreditBalanceIqd { get; set; }
+    public decimal CreditBalanceUsd { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class GoldWarehouseSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public sealed class GoldExpenseTypeSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class GoldExpenseSyncDto : SyncDtoBase
+{
+    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    public Guid ExpenseTypeSyncId { get; set; }
+    public decimal Amount { get; set; }
+    public GoldCurrency Currency { get; set; } = GoldCurrency.IQD;
+    public Guid CashBoxSyncId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public Guid? WarehouseSyncId { get; set; }
+}
+
+public sealed class GoldWarehouseTransferSyncDto : SyncDtoBase
+{
+    public DateTime TransferDate { get; set; } = DateTime.Today;
+    public Guid FromWarehouseSyncId { get; set; }
+    public Guid ToWarehouseSyncId { get; set; }
+    public int KaratValue { get; set; }
+    public decimal WeightGrams { get; set; }
+    public string Notes { get; set; } = string.Empty;
 }
 
 public sealed class GoldCashBoxSyncDto : SyncDtoBase
@@ -90,6 +138,10 @@ public sealed class GoldInvoiceSyncDto : SyncDtoBase
     public GoldPaymentMethod PaymentMethod { get; set; } = GoldPaymentMethod.Cash;
     public GoldInvoiceStatus Status { get; set; } = GoldInvoiceStatus.Completed;
     public Guid? CustomerSyncId { get; set; }
+    public Guid? SupplierSyncId { get; set; }
+    public Guid? WarehouseSyncId { get; set; }
+    public bool IsExchange { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
     public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
@@ -120,6 +172,7 @@ public sealed class GoldInvoiceLineSyncDto : SyncDtoBase
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    public GoldInvoiceLineDirection LineDirection { get; set; } = GoldInvoiceLineDirection.Out;
 }
 
 public sealed class GoldPaymentSyncDto : SyncDtoBase
