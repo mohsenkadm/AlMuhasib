@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums.Gold;
+
 namespace AlMuhasib.Core.Entities.Gold;
 
 /// <summary>إعدادات محل الذهب (صف واحد — Id = 1).</summary>
@@ -13,4 +15,5 @@ public class GoldSettings : BaseEntity
     public decimal LowStockAlertGrams { get; set; } = 10;
     public int OverdueDaysThreshold { get; set; } = 30;
     public string EnabledKaratsCsv { get; set; } = "24,22,21,18";
+    public GoldMakingChargeMode DefaultMakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
 }

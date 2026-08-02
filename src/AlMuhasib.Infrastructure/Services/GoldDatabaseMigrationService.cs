@@ -66,6 +66,9 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
         await ApplyPhase2SchemaUpgradesAsync(db, cancellationToken);
         applied.Add("Phase2SchemaUpgrade");
 
+        await ApplyMustFeatureSchemaUpgradesAsync(db, cancellationToken);
+        applied.Add("MustFeatureSchemaUpgrade");
+
         await SeedPhase2DefaultsAsync(db, cancellationToken);
         applied.Add("SeedPhase2Defaults");
 
@@ -267,6 +270,42 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
                 CREATE UNIQUE INDEX [IX_GoldStockBalances_WarehouseId_KaratValue]
                 ON [dbo].[GoldStockBalances]([WarehouseId], [KaratValue]);
             END
+            """, cancellationToken);
+    }
+
+    /// <summary>
+    /// Must-features: making charge modes, customer gold credit grams, related invoice on returns.
+    /// </summary>
+    internal static async Task ApplyMustFeatureSchemaUpgradesAsync(GoldDbContext db, CancellationToken cancellationToken)
+    {
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldCustomers', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldCustomers','GoldCreditGrams') IS NULL
+                ALTER TABLE [dbo].[GoldCustomers] ADD [GoldCreditGrams] DECIMAL(18,3) NOT NULL CONSTRAINT DF_GoldCustomers_GoldCreditGrams DEFAULT(0);
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldSettings', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldSettings','DefaultMakingChargeMode') IS NULL
+                ALTER TABLE [dbo].[GoldSettings] ADD [DefaultMakingChargeMode] NVARCHAR(20) NOT NULL CONSTRAINT DF_GoldSettings_DefaultMakingChargeMode DEFAULT(N'Fixed');
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldInvoiceLines', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldInvoiceLines','MakingChargeMode') IS NULL
+                ALTER TABLE [dbo].[GoldInvoiceLines] ADD [MakingChargeMode] NVARCHAR(20) NOT NULL CONSTRAINT DF_GoldInvoiceLines_MakingChargeMode DEFAULT(N'Fixed');
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldInvoiceLines', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldInvoiceLines','MakingChargeRate') IS NULL
+                ALTER TABLE [dbo].[GoldInvoiceLines] ADD [MakingChargeRate] DECIMAL(18,4) NOT NULL CONSTRAINT DF_GoldInvoiceLines_MakingChargeRate DEFAULT(0);
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldInvoices', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldInvoices','RelatedInvoiceId') IS NULL
+                ALTER TABLE [dbo].[GoldInvoices] ADD [RelatedInvoiceId] INT NULL;
             """, cancellationToken);
     }
 

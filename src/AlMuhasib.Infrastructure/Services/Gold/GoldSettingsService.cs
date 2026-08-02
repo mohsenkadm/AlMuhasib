@@ -59,6 +59,7 @@ public sealed class GoldSettingsService : IGoldSettingsService
         existing.EnabledKaratsCsv = string.IsNullOrWhiteSpace(settings.EnabledKaratsCsv)
             ? "24,22,21,18"
             : settings.EnabledKaratsCsv;
+        existing.DefaultMakingChargeMode = settings.DefaultMakingChargeMode;
 
         await context.SaveChangesAsync(cancellationToken);
         return existing;

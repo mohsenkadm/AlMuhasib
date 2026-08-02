@@ -107,49 +107,37 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                 CashBoxId = request.CashBoxId
             };
 
+            var purityByKarat = await context.GoldKarats.AsNoTracking()
+                .ToDictionaryAsync(k => k.KaratValue, k => k.PurityFactor, cancellationToken);
+
             decimal totalGold = 0, totalMaking = 0, totalWeight = 0;
 
             foreach (var lineReq in request.Lines)
             {
-                if (lineReq.WeightGrams <= 0)
-                    throw new InvalidOperationException("وزن البند يجب أن يكون أكبر من صفر");
-                if (lineReq.MithqalPrice <= 0)
-                    throw new InvalidOperationException("سعر المثقال يجب أن يكون أكبر من صفر");
+                purityByKarat.TryGetValue(lineReq.KaratValue, out var purity);
+                if (purity <= 0) purity = 1m;
 
-                var pricePerGram = GoldCurrencyHelper.Round(lineReq.MithqalPrice / mithqalGrams, 6);
-                var goldValue = GoldCurrencyHelper.Round(lineReq.WeightGrams * pricePerGram);
-                var making = Math.Max(0, lineReq.MakingCharge);
-                var lineTotal = GoldCurrencyHelper.Round(goldValue + making);
+                var line = GoldLinePricingHelper.BuildInvoiceLine(
+                    lineReq,
+                    mithqalGrams,
+                    purity,
+                    GoldInvoiceLineDirection.In,
+                    "شراء كسر");
 
                 // Scrap purchase increases stock and recalculates average cost.
                 await GoldInventoryService.AdjustStockInternalAsync(
                     context,
-                    lineReq.KaratValue,
-                    lineReq.WeightGrams,
-                    pricePerGram,
+                    line.KaratValue,
+                    line.WeightGrams,
+                    line.PricePerGram,
                     warehouseId,
                     cancellationToken);
 
-                invoice.Lines.Add(new GoldInvoiceLine
-                {
-                    ItemId = lineReq.ItemId,
-                    KaratValue = lineReq.KaratValue,
-                    WeightGrams = lineReq.WeightGrams,
-                    MithqalPrice = lineReq.MithqalPrice,
-                    PricePerGram = pricePerGram,
-                    GoldValue = goldValue,
-                    MakingCharge = making,
-                    LineTotal = lineTotal,
-                    Description = string.IsNullOrWhiteSpace(lineReq.Description)
-                        ? $"شراء كسر عيار {lineReq.KaratValue}"
-                        : lineReq.Description,
-                    WeightFromScale = lineReq.WeightFromScale,
-                    LineDirection = GoldInvoiceLineDirection.In
-                });
+                invoice.Lines.Add(line);
 
-                totalGold += goldValue;
-                totalMaking += making;
-                totalWeight += lineReq.WeightGrams;
+                totalGold += line.GoldValue;
+                totalMaking += line.MakingCharge;
+                totalWeight += line.WeightGrams;
             }
 
             invoice.TotalGoldValue = GoldCurrencyHelper.Round(totalGold);
@@ -222,7 +210,11 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                 if (supplier is not null)
                     GoldSupplierService.AdjustCredit(supplier, request.PaymentCurrency, creditInPaymentCurrency);
                 else if (customer is not null)
+                {
                     GoldCustomerService.AdjustCredit(customer, request.PaymentCurrency, creditInPaymentCurrency);
+                    // Scrap purchased on credit from customer settles gold-credit grams they owed.
+                    GoldCustomerService.AdjustGoldCreditGrams(customer, -invoice.TotalWeightGrams);
+                }
             }
 
             await context.GoldInvoices.AddAsync(invoice, cancellationToken);

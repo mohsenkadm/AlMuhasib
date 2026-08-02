@@ -14,6 +14,7 @@ public static class GoldShopPermissionRegistry
     public const string Warehouses = "GoldWarehouses";
     public const string WarehouseTransfer = "GoldWarehouseTransfer";
     public const string SaleInvoice = "GoldSaleInvoice";
+    public const string SaleReturn = "GoldSaleReturn";
     public const string CreditSales = "GoldCreditSales";
     public const string Collection = "GoldCollection";
     public const string ExchangeInvoice = "GoldExchangeInvoice";
@@ -21,6 +22,8 @@ public static class GoldShopPermissionRegistry
     public const string Suppliers = "GoldSuppliers";
     public const string Customers = "GoldCustomers";
     public const string CustomerStatement = "GoldCustomerStatement";
+    public const string OpeningStock = "GoldOpeningStock";
+    public const string OpeningCustomerBalance = "GoldOpeningCustomerBalance";
     public const string CashBoxes = "GoldCashBoxes";
     public const string Vouchers = "GoldVouchers";
     public const string Expenses = "GoldExpenses";
@@ -52,6 +55,7 @@ public static class GoldShopPermissionRegistry
         (Warehouses, "المخازن"),
         (WarehouseTransfer, "نقل مخازن"),
         (SaleInvoice, "فاتورة بيع"),
+        (SaleReturn, "مرتجع بيع"),
         (CreditSales, "مبيعات الآجل"),
         (Collection, "التحصيل"),
         (ExchangeInvoice, "تبديل ذهب"),
@@ -59,6 +63,8 @@ public static class GoldShopPermissionRegistry
         (Suppliers, "الموردون"),
         (Customers, "الزبائن"),
         (CustomerStatement, "كشف حساب زبون"),
+        (OpeningStock, "رصيد افتتاحي مخزون"),
+        (OpeningCustomerBalance, "رصيد افتتاحي زبون"),
         (CashBoxes, "القاصات"),
         (Vouchers, "السندات"),
         (Expenses, "المصاريف"),
@@ -93,6 +99,7 @@ public static class GoldShopPermissionRegistry
         [typeof(GoldWarehousesViewModel)] = Warehouses,
         [typeof(GoldWarehouseTransferViewModel)] = WarehouseTransfer,
         [typeof(GoldSaleInvoiceViewModel)] = SaleInvoice,
+        [typeof(GoldSaleReturnViewModel)] = SaleReturn,
         [typeof(GoldCreditSalesViewModel)] = CreditSales,
         [typeof(GoldCollectionViewModel)] = Collection,
         [typeof(GoldExchangeInvoiceViewModel)] = ExchangeInvoice,
@@ -100,6 +107,8 @@ public static class GoldShopPermissionRegistry
         [typeof(GoldSuppliersViewModel)] = Suppliers,
         [typeof(GoldCustomersViewModel)] = Customers,
         [typeof(GoldCustomerStatementViewModel)] = CustomerStatement,
+        [typeof(GoldOpeningStockViewModel)] = OpeningStock,
+        [typeof(GoldOpeningCustomerBalanceViewModel)] = OpeningCustomerBalance,
         [typeof(GoldCashBoxesViewModel)] = CashBoxes,
         [typeof(GoldVouchersViewModel)] = Vouchers,
         [typeof(GoldExpensesViewModel)] = Expenses,
@@ -134,6 +143,7 @@ public static class GoldShopPermissionRegistry
         [Warehouses] = typeof(GoldWarehousesViewModel),
         [WarehouseTransfer] = typeof(GoldWarehouseTransferViewModel),
         [SaleInvoice] = typeof(GoldSaleInvoiceViewModel),
+        [SaleReturn] = typeof(GoldSaleReturnViewModel),
         [CreditSales] = typeof(GoldCreditSalesViewModel),
         [Collection] = typeof(GoldCollectionViewModel),
         [ExchangeInvoice] = typeof(GoldExchangeInvoiceViewModel),
@@ -141,6 +151,8 @@ public static class GoldShopPermissionRegistry
         [Suppliers] = typeof(GoldSuppliersViewModel),
         [Customers] = typeof(GoldCustomersViewModel),
         [CustomerStatement] = typeof(GoldCustomerStatementViewModel),
+        [OpeningStock] = typeof(GoldOpeningStockViewModel),
+        [OpeningCustomerBalance] = typeof(GoldOpeningCustomerBalanceViewModel),
         [CashBoxes] = typeof(GoldCashBoxesViewModel),
         [Vouchers] = typeof(GoldVouchersViewModel),
         [Expenses] = typeof(GoldExpensesViewModel),

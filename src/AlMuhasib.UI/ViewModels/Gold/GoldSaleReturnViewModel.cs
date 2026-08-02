@@ -12,33 +12,27 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
-public partial class GoldSaleInvoiceViewModel : ViewModelBase
+public partial class GoldSaleReturnViewModel : ViewModelBase
 {
     private readonly IGoldSaleService _saleService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldCustomerService _customerService;
     private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
-    private readonly IGoldScaleService _scaleService;
-    private readonly IGoldSettingsService _settingsService;
-    private readonly IGoldPrintService _printService;
-    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
-    private int _quoteVersion;
-    private GoldInvoice? _lastSavedInvoice;
-    private bool _allowManualWeightEdit = true;
 
     public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
     public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
+    public ObservableCollection<GoldInvoiceListItem> OriginalSales { get; } = [];
 
     public IReadOnlyList<GoldPaymentMethodOption> PaymentMethods { get; } =
     [
-        new(GoldPaymentMethod.Cash, "نقدي"),
-        new(GoldPaymentMethod.Credit, "آجل")
+        new(GoldPaymentMethod.Cash, "نقدي (استرداد)"),
+        new(GoldPaymentMethod.Credit, "آجل (تخفيض ذمة)")
     ];
 
     public IReadOnlyList<GoldCurrencyOption> Currencies { get; } =
@@ -52,6 +46,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldPaymentMethod _paymentMethod = GoldPaymentMethod.Cash;
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
+    [ObservableProperty] private GoldInvoiceListItem? _selectedOriginalSale;
     [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
@@ -59,30 +54,19 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private decimal _discountAmount;
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private string _notes = string.Empty;
-    [ObservableProperty] private bool _weightFromScale;
-    [ObservableProperty] private bool _isScaleConnected;
-    [ObservableProperty] private string _scaleStatusText = "غير متصل";
     [ObservableProperty] private GoldSaleLineDraft? _selectedLine;
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
-    [ObservableProperty] private bool _canPrintInvoice;
-
     [ObservableProperty] private decimal _totalGoldValue;
     [ObservableProperty] private decimal _totalMakingCharge;
     [ObservableProperty] private decimal _grandTotal;
-    [ObservableProperty] private decimal _totalIqd;
-    [ObservableProperty] private decimal _totalUsd;
 
-    public GoldSaleInvoiceViewModel(
+    public GoldSaleReturnViewModel(
         IGoldSaleService saleService,
         IGoldPricingService pricingService,
         IGoldCustomerService customerService,
         IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
-        IGoldScaleService scaleService,
-        IGoldSettingsService settingsService,
-        IGoldPrintService printService,
-        IWhatsAppShareService whatsAppShare,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
@@ -91,19 +75,15 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         _customerService = customerService;
         _warehouseService = warehouseService;
         _cashService = cashService;
-        _scaleService = scaleService;
-        _settingsService = settingsService;
-        _printService = printService;
-        _whatsAppShare = whatsAppShare;
         _toast = toast;
         _currentUserService = currentUserService;
-        PageTitle = "فاتورة بيع ذهب";
+        PageTitle = "مرتجع بيع ذهب";
         Lines.CollectionChanged += OnLinesCollectionChanged;
     }
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.SaleInvoice);
+        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.SaleReturn);
         await LoadLookupsAsync();
         AddLine();
     }
@@ -115,7 +95,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            InvoiceNumber = await _saleService.GetNextInvoiceNumberAsync();
+            InvoiceNumber = await _saleService.GetNextSaleReturnNumberAsync();
 
             Customers.Clear();
             var (customers, _) = await _customerService.GetPagedAsync(1, 500, activeOnly: true);
@@ -131,23 +111,16 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             foreach (var k in await _pricingService.GetKaratsAsync())
                 Karats.Add(k);
 
+            OriginalSales.Clear();
+            var (sales, _) = await _saleService.GetPagedAsync(1, 100);
+            foreach (var s in sales.Where(x => x.Status != GoldInvoiceStatus.Cancelled))
+                OriginalSales.Add(s);
+
             var fx = await _pricingService.GetLatestFxRateAsync();
             if (fx is not null && fx.UsdToIqd > 0)
                 FxRate = fx.UsdToIqd;
 
             await ReloadCashBoxesAsync();
-
-            try
-            {
-                var settings = await _settingsService.GetSettingsAsync();
-                _allowManualWeightEdit = settings.AllowManualWeightEdit;
-            }
-            catch
-            {
-                _allowManualWeightEdit = true;
-            }
-
-            RefreshScaleStatus();
         }
         catch (Exception ex)
         {
@@ -160,33 +133,28 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         }
     }
 
-    private void RefreshScaleStatus()
-    {
-        IsScaleConnected = _scaleService.IsConnected;
-        ScaleStatusText = _scaleService.IsConnected ? "متصل" : "غير متصل";
-    }
-
     private async Task ReloadCashBoxesAsync()
     {
         CashBoxes.Clear();
-        foreach (var box in await _cashService.GetCashBoxesAsync())
+        foreach (var box in await _cashService.GetCashBoxesAsync(activeOnly: true))
             CashBoxes.Add(box);
-
-        SelectedCashBox = CashBoxes.FirstOrDefault(b => b.Currency == PaymentCurrency && b.IsDefault)
-            ?? CashBoxes.FirstOrDefault(b => b.Currency == PaymentCurrency)
+        SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Currency == PaymentCurrency && c.IsDefault)
+            ?? CashBoxes.FirstOrDefault(c => c.Currency == PaymentCurrency)
             ?? CashBoxes.FirstOrDefault();
     }
 
     partial void OnPaymentCurrencyChanged(GoldCurrency value) => _ = ReloadCashBoxesAsync();
 
-    partial void OnPricingCurrencyChanged(GoldCurrency value)
+    partial void OnSelectedOriginalSaleChanged(GoldInvoiceListItem? value)
     {
-        foreach (var line in Lines)
-            _ = QuoteLineAsync(line);
+        if (value is null) return;
+        PricingCurrency = value.PricingCurrency;
+        PaymentCurrency = value.PaymentCurrency;
+        SelectedCustomer = Customers.FirstOrDefault(c => c.Name == value.CustomerName);
+        Notes = string.IsNullOrWhiteSpace(Notes)
+            ? $"مرتجع لفاتورة {value.InvoiceNumber}"
+            : Notes;
     }
-
-    partial void OnDiscountAmountChanged(decimal value) => RecalculateTotals();
-    partial void OnFxRateChanged(decimal value) => RecalculateTotals();
 
     private void OnLinesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RecalculateTotals();
 
@@ -194,11 +162,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     private void AddLine()
     {
         var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
-        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l))
-        {
-            KaratValue = defaultKarat,
-            IsWeightReadOnly = !_allowManualWeightEdit
-        };
+        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
         Lines.Add(line);
         SelectedLine = line;
     }
@@ -206,19 +170,10 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [RelayCommand]
     private void RemoveLine(GoldSaleLineDraft? line)
     {
-        line ??= SelectedLine;
-        if (line is null || Lines.Count <= 1)
-            return;
+        if (line is null) return;
         Lines.Remove(line);
         SelectedLine = Lines.LastOrDefault();
         RecalculateTotals();
-    }
-
-    [RelayCommand]
-    private async Task QuoteSelectedLineAsync()
-    {
-        if (SelectedLine is not null)
-            await QuoteLineAsync(SelectedLine);
     }
 
     private async Task QuoteLineAsync(GoldSaleLineDraft line)
@@ -231,7 +186,6 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             return;
         }
 
-        var version = ++_quoteVersion;
         line.IsQuoting = true;
         try
         {
@@ -244,12 +198,6 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 FxRate > 0 ? FxRate : null,
                 line.MakingChargeMode,
                 line.MakingChargeRate);
-
-            if (version != _quoteVersion && line.IsQuoting)
-            {
-                // Still apply latest for this line if weights match intent
-            }
-
             line.ApplyQuote(quote);
             if (quote.FxRate is > 0)
                 FxRate = quote.FxRate.Value;
@@ -271,95 +219,8 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         TotalGoldValue = Lines.Sum(l => l.GoldValue);
         TotalMakingCharge = Lines.Sum(l => l.MakingCharge);
         GrandTotal = Math.Max(0, TotalGoldValue + TotalMakingCharge - DiscountAmount);
-
-        if (FxRate > 0)
-        {
-            if (PricingCurrency == GoldCurrency.USD)
-            {
-                TotalUsd = GrandTotal;
-                TotalIqd = Math.Round(GrandTotal * FxRate, 0);
-            }
-            else
-            {
-                TotalIqd = GrandTotal;
-                TotalUsd = Math.Round(GrandTotal / FxRate, 2);
-            }
-        }
-        else
-        {
-            TotalIqd = PricingCurrency == GoldCurrency.IQD ? GrandTotal : 0;
-            TotalUsd = PricingCurrency == GoldCurrency.USD ? GrandTotal : 0;
-        }
-
         if (PaymentMethod == GoldPaymentMethod.Cash && PaidAmount <= 0)
-            PaidAmount = PaymentCurrency == PricingCurrency
-                ? GrandTotal
-                : (PaymentCurrency == GoldCurrency.IQD ? TotalIqd : TotalUsd);
-    }
-
-    [RelayCommand]
-    private async Task ReadScaleAsync()
-    {
-        var target = SelectedLine ?? Lines.LastOrDefault();
-        if (target is null)
-        {
-            Message = "أضف بنداً أولاً";
-            return;
-        }
-
-        IsBusy = true;
-        Message = string.Empty;
-        try
-        {
-            var stable = await _scaleService.WaitForStableWeightAsync(timeout: TimeSpan.FromSeconds(8));
-            if (!stable)
-                throw new InvalidOperationException("لم يستقر الوزن على الميزان خلال المهلة المحددة");
-
-            var grams = await _scaleService.ReadWeightGramsAsync();
-            target.WeightGrams = grams;
-            target.WeightFromScale = true;
-            if (!_allowManualWeightEdit)
-                target.IsWeightReadOnly = true;
-            WeightFromScale = true;
-            RefreshScaleStatus();
-            Message = $"تم قراءة الوزن: {grams:N3} غرام";
-            _toast.ShowSuccess(Message);
-        }
-        catch (Exception ex)
-        {
-            RefreshScaleStatus();
-            Message = $"تعذر قراءة الميزان: {ex.Message}";
-            ErrorMessage = Message;
-            _toast.ShowError(Message);
-            BeautifulMessageDialog.ShowError(Message, "الميزان");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task RefreshFxAsync()
-    {
-        try
-        {
-            var fx = await _pricingService.GetLatestFxRateAsync();
-            if (fx is null || fx.UsdToIqd <= 0)
-            {
-                _toast.ShowWarning("لا يوجد سعر صرف مسجّل");
-                return;
-            }
-
-            FxRate = fx.UsdToIqd;
-            foreach (var line in Lines)
-                await QuoteLineAsync(line);
-            _toast.ShowSuccess($"سعر الصرف: {FxRate:N0}");
-        }
-        catch (Exception ex)
-        {
-            _toast.ShowError(ex.Message);
-        }
+            PaidAmount = GrandTotal;
     }
 
     [RelayCommand]
@@ -376,7 +237,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
 
         if (PaymentMethod == GoldPaymentMethod.Credit && SelectedCustomer is null)
         {
-            ErrorMessage = "البيع الآجل يتطلب اختيار زبون";
+            ErrorMessage = "مرتجع الآجل يتطلب اختيار زبون";
             _toast.ShowWarning(ErrorMessage);
             return;
         }
@@ -389,30 +250,24 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             return;
         }
 
-        if (FxRate <= 0)
-        {
-            ErrorMessage = "أدخل سعر صرف صحيح";
-            return;
-        }
-
         IsBusy = true;
         try
         {
             RecalculateTotals();
-            var request = new GoldSaleRequest
+            var request = new GoldSaleReturnRequest
             {
                 InvoiceDate = InvoiceDate.Date,
                 PaymentMethod = PaymentMethod,
                 CustomerId = SelectedCustomer?.Id,
                 WarehouseId = SelectedWarehouse?.Id,
+                RelatedInvoiceId = SelectedOriginalSale?.Id,
                 PricingCurrency = PricingCurrency,
                 PaymentCurrency = PaymentCurrency,
                 FxRate = FxRate,
                 DiscountAmount = DiscountAmount,
-                PaidAmount = PaymentMethod == GoldPaymentMethod.Cash ? PaidAmount : PaidAmount,
+                PaidAmount = PaidAmount,
                 CashBoxId = SelectedCashBox?.Id,
                 Notes = Notes,
-                WeightFromScale = WeightFromScale || validLines.Any(l => l.WeightFromScale),
                 Lines = validLines.Select(l => new GoldSaleLineRequest
                 {
                     ItemId = l.ItemId,
@@ -427,19 +282,10 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 }).ToList()
             };
 
-            var invoice = await _saleService.CreateSaleAsync(request);
-            _lastSavedInvoice = invoice;
-            CanPrintInvoice = CanPrint;
-            Message = $"تم حفظ فاتورة البيع {invoice.InvoiceNumber}";
+            var invoice = await _saleService.CreateSaleReturnAsync(request);
+            Message = $"تم حفظ مرتجع البيع {invoice.InvoiceNumber}";
             _toast.ShowSuccess(Message);
-
-            if (BeautifulMessageDialog.ShowConfirm(
-                    $"{Message}\n\nهل تريد طباعة الفاتورة؟",
-                    "طباعة"))
-            {
-                await PrintInvoiceAsync();
-            }
-
+            BeautifulMessageDialog.ShowSuccess(Message);
             await ResetFormAsync();
         }
         catch (Exception ex)
@@ -454,50 +300,6 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
-    private async Task PrintInvoiceAsync()
-    {
-        if (_lastSavedInvoice is null || !CanPrint)
-            return;
-
-        try
-        {
-            await _printService.PrintInvoiceAsync(_lastSavedInvoice);
-        }
-        catch (Exception ex)
-        {
-            _toast.ShowError(ex.Message);
-            BeautifulMessageDialog.ShowError(ex.Message, "الطباعة");
-        }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
-    private void SendInvoiceWhatsApp()
-    {
-        if (_lastSavedInvoice is null || !CanPrint)
-            return;
-
-        try
-        {
-            var model = _printService.BuildInvoicePrintModel(_lastSavedInvoice);
-            _whatsAppShare.ShareInvoice(
-                model,
-                _lastSavedInvoice.Customer?.Phone ?? SelectedCustomer?.Phone,
-                _lastSavedInvoice.Customer?.Name ?? SelectedCustomer?.Name ?? "زبون");
-        }
-        catch (Exception ex)
-        {
-            _toast.ShowError(ex.Message);
-            BeautifulMessageDialog.ShowError(ex.Message, "واتساب");
-        }
-    }
-
-    partial void OnCanPrintInvoiceChanged(bool value)
-    {
-        PrintInvoiceCommand.NotifyCanExecuteChanged();
-        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
-    }
-
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();
 
@@ -506,16 +308,16 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         InvoiceDate = DateTime.Today;
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
+        SelectedOriginalSale = null;
         SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
         DiscountAmount = 0;
         PaidAmount = 0;
         Notes = string.Empty;
-        WeightFromScale = false;
         Lines.Clear();
         AddLine();
         try
         {
-            InvoiceNumber = await _saleService.GetNextInvoiceNumberAsync();
+            InvoiceNumber = await _saleService.GetNextSaleReturnNumberAsync();
             var fx = await _pricingService.GetLatestFxRateAsync();
             if (fx is not null && fx.UsdToIqd > 0)
                 FxRate = fx.UsdToIqd;
@@ -523,7 +325,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         }
         catch
         {
-            // ignore refresh errors on reset
+            // ignore
         }
         RecalculateTotals();
         ErrorMessage = string.Empty;

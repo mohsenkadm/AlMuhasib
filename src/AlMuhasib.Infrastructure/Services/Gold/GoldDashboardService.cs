@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces.Services.Gold;
+using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.Infrastructure.Data.Gold;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,8 @@ public sealed class GoldDashboardService : IGoldDashboardService
         CancellationToken cancellationToken = default)
     {
         var today = (asOfDate ?? DateTime.Today).Date;
+        var thirtyDaysAgo = today.AddDays(-29);
+        var tomorrow = today.AddDays(1);
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var todaySales = await context.GoldInvoices.AsNoTracking()
@@ -43,6 +46,7 @@ public sealed class GoldDashboardService : IGoldDashboardService
 
         var cashBoxes = await context.GoldCashBoxes.AsNoTracking()
             .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
             .ToListAsync(cancellationToken);
 
         var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
@@ -92,6 +96,29 @@ public sealed class GoldDashboardService : IGoldDashboardService
             .Take(10)
             .ToListAsync(cancellationToken);
 
+        // Real 30-day sales series from DB (IQD totals), including zero days
+        var salesRaw = await context.GoldInvoices.AsNoTracking()
+            .Where(i => i.InvoiceType == GoldInvoiceType.Sale &&
+                        i.Status != GoldInvoiceStatus.Cancelled &&
+                        i.InvoiceDate >= thirtyDaysAgo &&
+                        i.InvoiceDate < tomorrow)
+            .Select(i => new { i.InvoiceDate, i.TotalAmountIqd })
+            .ToListAsync(cancellationToken);
+
+        var salesByDay = salesRaw
+            .GroupBy(i => i.InvoiceDate.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(x => x.TotalAmountIqd) })
+            .ToList();
+
+        var salesLast30Days = Enumerable.Range(0, 30)
+            .Select(offset =>
+            {
+                var d = thirtyDaysAgo.AddDays(offset);
+                var match = salesByDay.FirstOrDefault(s => s.Date == d);
+                return new DailySalesPoint { Date = d, Amount = match?.Amount ?? 0 };
+            })
+            .ToList();
+
         var alerts = await _alertService.GetAlertsAsync(cancellationToken);
         var latestPrices = await _pricingService.GetLatestPricesAsync(cancellationToken);
 
@@ -116,6 +143,14 @@ public sealed class GoldDashboardService : IGoldDashboardService
             LowWarehouseStockCount = lowWarehouseStockCount,
             PricesUpdatedToday = pricesUpdatedToday,
             LatestUsdToIqd = latestFx?.UsdToIqd,
+            SalesLast30Days = salesLast30Days,
+            CashBoxes = cashBoxes.Select(c => new GoldCashBoxSummary
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Balance = c.Balance,
+                Currency = c.Currency
+            }).ToList(),
             StockByKarat = stockRows,
             RecentInvoices = recent.Select(GoldCurrencyHelper.ToListItem).ToList(),
             Alerts = alerts.Take(8).ToList(),

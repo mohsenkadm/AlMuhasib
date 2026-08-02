@@ -32,7 +32,7 @@
             </StackPanel>
         </Border>
 
-        <UniformGrid Grid.Row="2" Columns="5" Margin="0,0,0,16">
+        <UniformGrid Grid.Row="2" Columns="6" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="إجمالي الفواتير" TextValue="{Binding TotalAmount, StringFormat=N0}"
                                        Icon="FileDocument" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
             <controls:AnimatedStatCard Title="المدفوع" TextValue="{Binding TotalPaid, StringFormat=N0}"
@@ -43,6 +43,8 @@
                                        Icon="CurrencyUsd" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
             <controls:AnimatedStatCard Title="رصيد آجل $" TextValue="{Binding CreditBalanceUsd, StringFormat=N2}"
                                        Icon="CurrencyUsd" IconBackground="#E8EAF6" IconForeground="#3949AB" ValueForeground="#3949AB"/>
+            <controls:AnimatedStatCard Title="ذهب آجل (غ)" TextValue="{Binding GoldCreditGrams, StringFormat=N3}"
+                                       Icon="Gold" IconBackground="#FFF8E1" IconForeground="#8B6914" ValueForeground="#8B6914"/>
         </UniformGrid>
 
         <materialDesign:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0">

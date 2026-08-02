@@ -53,6 +53,31 @@
                     </Grid>
                 </Border>
 
+                <!-- Scale connection status -->
+                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="8" Background="#FFF8E1"
+                        BorderBrush="#E8D5A3" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#C62828"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsScaleConnected}" Value="True">
+                                            <Setter Property="Fill" Value="#2E7D32"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <materialDesign:PackIcon Kind="ScaleBalance" Width="18" Height="18"
+                                                 Foreground="#8B6914" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock FontSize="13" Foreground="#8B6914" VerticalAlignment="Center">
+                            <Run Text="الميزان:"/>
+                            <Run Text="{Binding ScaleStatusText, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
                 <!-- Header fields -->
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
                                      Padding="20,16" Margin="0,0,0,16"
@@ -209,10 +234,25 @@
                                                     SelectedValuePath="KaratValue"
                                                     DisplayMemberPath="Name"
                                                     ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                            <DataGridTextColumn Header="الوزن (غ)" Width="110"
-                                                Binding="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}"/>
+                            <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding WeightGrams, StringFormat=N3}"
+                                                   VerticalAlignment="Center" Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}"
+                                                 IsReadOnly="{Binding IsWeightReadOnly}"
+                                                 BorderThickness="0" Padding="4,2"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="سعر المثقال" Width="120"
                                                 Binding="{Binding MithqalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="معدل الأجور" Width="100"
+                                                Binding="{Binding MakingChargeRate, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"/>
                             <DataGridTextColumn Header="أجور الصياغة" Width="120"
                                                 Binding="{Binding MakingCharge, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
                             <DataGridTextColumn Header="قيمة الذهب" Width="120" IsReadOnly="True"
@@ -247,6 +287,9 @@
                                 </Button.Background>
                             </Button>
                             <Button Content="طباعة" Command="{Binding PrintInvoiceCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Padding="20,10" Margin="0,0,8,0"/>
+                            <Button Content="واتساب" Command="{Binding SendInvoiceWhatsAppCommand}"
                                     Style="{StaticResource OutlinedButton}"
                                     Padding="20,10" Margin="0,0,8,0"/>
                             <Button Content="فاتورة جديدة" Command="{Binding NewInvoiceCommand}"

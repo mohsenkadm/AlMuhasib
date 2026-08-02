@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services.Gold;
+using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,45 +10,43 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
-public partial class GoldStockAdjustmentViewModel : ViewModelBase
+public partial class GoldOpeningStockViewModel : ViewModelBase
 {
+    private readonly IGoldOpeningBalanceService _openingService;
     private readonly IGoldInventoryService _inventoryService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldWarehouseService _warehouseService;
-    private readonly IGoldScaleService _scaleService;
     private readonly ICurrentUserService _currentUserService;
 
     [ObservableProperty] private int _karatValue = 21;
-    [ObservableProperty] private decimal _gramsDelta;
+    [ObservableProperty] private decimal _gramsOnHand;
     [ObservableProperty] private decimal? _costPerGram;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private string _formError = string.Empty;
     [ObservableProperty] private string _currentBalanceText = "—";
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
-    [ObservableProperty] private bool _isScaleConnected;
-    [ObservableProperty] private string _scaleStatusText = "غير متصل";
 
     public ObservableCollection<GoldKarat> Karats { get; } = [];
     public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
 
-    public GoldStockAdjustmentViewModel(
+    public GoldOpeningStockViewModel(
+        IGoldOpeningBalanceService openingService,
         IGoldInventoryService inventoryService,
         IGoldPricingService pricingService,
         IGoldWarehouseService warehouseService,
-        IGoldScaleService scaleService,
         ICurrentUserService currentUserService)
     {
+        _openingService = openingService;
         _inventoryService = inventoryService;
         _pricingService = pricingService;
         _warehouseService = warehouseService;
-        _scaleService = scaleService;
         _currentUserService = currentUserService;
-        PageTitle = "تسوية مخزون";
+        PageTitle = "رصيد افتتاحي للمخزون";
     }
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.StockAdjustment);
+        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.OpeningStock);
 
         Warehouses.Clear();
         foreach (var w in await _warehouseService.GetAllAsync(activeOnly: true))
@@ -61,14 +60,7 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         if (Karats.Count > 0)
             KaratValue = Karats[0].KaratValue;
 
-        RefreshScaleStatus();
         await RefreshBalanceAsync();
-    }
-
-    private void RefreshScaleStatus()
-    {
-        IsScaleConnected = _scaleService.IsConnected;
-        ScaleStatusText = _scaleService.IsConnected ? "متصل" : "غير متصل";
     }
 
     partial void OnKaratValueChanged(int value) => _ = RefreshBalanceAsync();
@@ -80,9 +72,18 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         {
             var balance = await _inventoryService.GetStockBalanceByKaratAsync(
                 KaratValue, SelectedWarehouse?.Id);
-            CurrentBalanceText = balance is null
-                ? "لا يوجد رصيد مسجّل لهذا العيار"
-                : $"الرصيد الحالي: {balance.GramsOnHand:N2} غ — متوسط التكلفة: {balance.AverageCostPerGram:N0}";
+            if (balance is null)
+            {
+                CurrentBalanceText = "لا يوجد رصيد مسجّل لهذا العيار";
+                GramsOnHand = 0;
+            }
+            else
+            {
+                CurrentBalanceText =
+                    $"الرصيد الحالي: {balance.GramsOnHand:N2} غ — متوسط التكلفة: {balance.AverageCostPerGram:N0}";
+                GramsOnHand = balance.GramsOnHand;
+                CostPerGram = balance.AverageCostPerGram > 0 ? balance.AverageCostPerGram : null;
+            }
         }
         catch
         {
@@ -91,39 +92,11 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task ReadScaleAsync()
-    {
-        try
-        {
-            IsBusy = true;
-            FormError = string.Empty;
-            var stable = await _scaleService.WaitForStableWeightAsync(timeout: TimeSpan.FromSeconds(8));
-            if (!stable)
-                throw new InvalidOperationException("لم يستقر الوزن على الميزان خلال المهلة المحددة");
-
-            var grams = await _scaleService.ReadWeightGramsAsync();
-            GramsDelta = grams;
-            RefreshScaleStatus();
-            BeautifulMessageDialog.ShowSuccess($"تم قراءة الوزن: {grams:N3} غرام");
-        }
-        catch (Exception ex)
-        {
-            RefreshScaleStatus();
-            FormError = $"تعذر قراءة الميزان: {ex.Message}";
-            BeautifulMessageDialog.ShowError(FormError, "الميزان");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
     private async Task SubmitAsync()
     {
         if (!CanAdd && !CanEdit)
         {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تسوية المخزون");
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعيين رصيد الافتتاح");
             return;
         }
 
@@ -139,31 +112,31 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
             return;
         }
 
-        if (GramsDelta == 0)
+        if (GramsOnHand < 0)
         {
-            FormError = "أدخل فرق الوزن (+/-)";
+            FormError = "الرصيد لا يمكن أن يكون سالباً";
             return;
         }
 
         if (!BeautifulMessageDialog.ShowConfirm(
-                $"تأكيد تسوية مخزون عيار {KaratValue} بمقدار {GramsDelta:N2} غرام في «{SelectedWarehouse.Name}»؟",
-                "تسوية المخزون"))
+                $"تعيين رصيد افتتاحي لعيار {KaratValue} بمقدار {GramsOnHand:N2} غرام في «{SelectedWarehouse.Name}»؟",
+                "رصيد الافتتاح"))
             return;
 
         try
         {
             IsBusy = true;
             FormError = string.Empty;
-            await _inventoryService.AdjustStockAsync(
-                KaratValue,
-                GramsDelta,
-                CostPerGram,
-                string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                SelectedWarehouse.Id);
+            await _openingService.SetOpeningStockAsync(new GoldOpeningStockRequest
+            {
+                WarehouseId = SelectedWarehouse.Id,
+                KaratValue = KaratValue,
+                GramsOnHand = GramsOnHand,
+                CostPerGram = CostPerGram,
+                Notes = string.IsNullOrWhiteSpace(Notes) ? "رصيد افتتاحي" : Notes.Trim()
+            });
 
-            BeautifulMessageDialog.ShowSuccess("تم تنفيذ التسوية");
-            GramsDelta = 0;
-            CostPerGram = null;
+            BeautifulMessageDialog.ShowSuccess("تم تعيين رصيد الافتتاح");
             Notes = string.Empty;
             await RefreshBalanceAsync();
         }
@@ -176,14 +149,5 @@ public partial class GoldStockAdjustmentViewModel : ViewModelBase
         {
             IsBusy = false;
         }
-    }
-
-    [RelayCommand]
-    private void ResetForm()
-    {
-        GramsDelta = 0;
-        CostPerGram = null;
-        Notes = string.Empty;
-        FormError = string.Empty;
     }
 }

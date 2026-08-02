@@ -12,6 +12,7 @@ public sealed class GoldSettingsSyncDto : SyncDtoBase
     public decimal LowStockAlertGrams { get; set; } = 10;
     public int OverdueDaysThreshold { get; set; } = 30;
     public string EnabledKaratsCsv { get; set; } = "24,22,21,18";
+    public GoldMakingChargeMode DefaultMakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
 }
 
 public sealed class GoldFxRateSyncDto : SyncDtoBase
@@ -72,6 +73,7 @@ public sealed class GoldCustomerSyncDto : SyncDtoBase
     public string Notes { get; set; } = string.Empty;
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
+    public decimal GoldCreditGrams { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -157,6 +159,7 @@ public sealed class GoldInvoiceSyncDto : SyncDtoBase
     public Guid? CashBoxSyncId { get; set; }
     public string Notes { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    public Guid? RelatedInvoiceSyncId { get; set; }
 }
 
 public sealed class GoldInvoiceLineSyncDto : SyncDtoBase
@@ -169,6 +172,8 @@ public sealed class GoldInvoiceLineSyncDto : SyncDtoBase
     public decimal PricePerGram { get; set; }
     public decimal GoldValue { get; set; }
     public decimal MakingCharge { get; set; }
+    public GoldMakingChargeMode MakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    public decimal MakingChargeRate { get; set; }
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }

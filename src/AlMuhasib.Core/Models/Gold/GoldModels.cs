@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums.Gold;
+using AlMuhasib.Core.Models;
 
 namespace AlMuhasib.Core.Models.Gold;
 
@@ -23,10 +24,25 @@ public class GoldDashboardData
     public bool HasExpenseToday { get; set; }
     public bool PricesUpdatedToday { get; set; }
     public decimal? LatestUsdToIqd { get; set; }
+    public List<DailySalesPoint> SalesLast30Days { get; set; } = [];
+    public List<GoldCashBoxSummary> CashBoxes { get; set; } = [];
     public List<GoldStockRow> StockByKarat { get; set; } = [];
     public List<GoldInvoiceListItem> RecentInvoices { get; set; } = [];
     public List<GoldAlertItem> Alerts { get; set; } = [];
     public List<GoldMithqalPriceRow> LatestPrices { get; set; } = [];
+}
+
+public class GoldCashBoxSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Balance { get; set; }
+    public GoldCurrency Currency { get; set; }
+    public string CurrencyLabel => Currency == GoldCurrency.USD ? "$" : "د.ع";
+    public string BalanceDisplay =>
+        Currency == GoldCurrency.USD
+            ? $"{Balance:N2} $"
+            : $"{Balance:N0} د.ع";
 }
 
 public class GoldStockRow
@@ -70,6 +86,7 @@ public class GoldCustomerListItem
     public string Address { get; set; } = string.Empty;
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
+    public decimal GoldCreditGrams { get; set; }
     public bool IsActive { get; set; }
     public int OpenInvoiceCount { get; set; }
     public DateTime? LastTransactionDate { get; set; }
@@ -124,7 +141,11 @@ public class GoldSaleLineRequest
     public int KaratValue { get; set; }
     public decimal WeightGrams { get; set; }
     public decimal MithqalPrice { get; set; }
+    /// <summary>Resolved making charge amount (always stored/used as the line charge).</summary>
     public decimal MakingCharge { get; set; }
+    public GoldMakingChargeMode MakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    /// <summary>Per-gram or percent rate when mode is not Fixed.</summary>
+    public decimal MakingChargeRate { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
 }
@@ -162,16 +183,57 @@ public class GoldPricingQuote
 {
     public int KaratValue { get; set; }
     public decimal WeightGrams { get; set; }
+    public decimal PureGrams { get; set; }
+    public decimal PurityFactor { get; set; } = 1m;
     public decimal MithqalGrams { get; set; }
     public decimal MithqalPrice { get; set; }
     public GoldCurrency PricingCurrency { get; set; }
     public decimal PricePerGram { get; set; }
     public decimal GoldValue { get; set; }
     public decimal MakingCharge { get; set; }
+    public GoldMakingChargeMode MakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    public decimal MakingChargeRate { get; set; }
     public decimal LineTotal { get; set; }
     public decimal? FxRate { get; set; }
     public decimal? LineTotalIqd { get; set; }
     public decimal? LineTotalUsd { get; set; }
+}
+
+public class GoldSaleReturnRequest
+{
+    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public GoldPaymentMethod PaymentMethod { get; set; } = GoldPaymentMethod.Cash;
+    public int? CustomerId { get; set; }
+    public int? WarehouseId { get; set; }
+    public int? RelatedInvoiceId { get; set; }
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
+    public decimal FxRate { get; set; }
+    public decimal DiscountAmount { get; set; }
+    /// <summary>Refund paid out in payment currency (cash refund). For credit, remaining reduces customer credit.</summary>
+    public decimal PaidAmount { get; set; }
+    public int? CashBoxId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool WeightFromScale { get; set; }
+    public List<GoldSaleLineRequest> Lines { get; set; } = [];
+}
+
+public class GoldOpeningStockRequest
+{
+    public int WarehouseId { get; set; }
+    public int KaratValue { get; set; }
+    public decimal GramsOnHand { get; set; }
+    public decimal? CostPerGram { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class GoldOpeningCustomerBalanceRequest
+{
+    public int CustomerId { get; set; }
+    public decimal CreditBalanceIqd { get; set; }
+    public decimal CreditBalanceUsd { get; set; }
+    public decimal GoldCreditGrams { get; set; }
+    public string Notes { get; set; } = string.Empty;
 }
 
 public class GoldReportSummary

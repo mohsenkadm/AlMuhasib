@@ -4,5 +4,6 @@ public enum GoldInvoiceType
 {
     Sale = 0,
     Purchase = 1,
-    Exchange = 2
+    Exchange = 2,
+    SaleReturn = 3
 }

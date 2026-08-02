@@ -284,9 +284,13 @@ public static class DependencyInjection
         services.AddScoped<IGoldSaleService, GoldSaleService>();
         services.AddScoped<IGoldPurchaseService, GoldPurchaseService>();
         services.AddScoped<IGoldExchangeService, GoldExchangeService>();
+        services.AddScoped<IGoldOpeningBalanceService, GoldOpeningBalanceService>();
         services.AddScoped<IGoldDashboardService, GoldDashboardService>();
         services.AddScoped<IGoldReportService, GoldReportService>();
-        services.AddScoped<IGoldPrintService, GoldPrintService>();
+        services.AddScoped<IGoldPrintService>(sp =>
+            new GoldPrintService(
+                sp.GetRequiredService<IExportService>(),
+                sp.GetService<IBarcodeLabelService>()));
         services.AddSingleton<IGoldScaleService, GoldScaleService>();
         services.AddScoped<IGoldSmartAlertService, GoldSmartAlertService>();
         services.AddScoped<ISmartAlertService, GoldSmartAlertBridge>();

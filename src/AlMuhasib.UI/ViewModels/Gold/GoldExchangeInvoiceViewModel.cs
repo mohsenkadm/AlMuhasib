@@ -19,10 +19,12 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     private readonly IGoldCashService _cashService;
     private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldScaleService _scaleService;
+    private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
     private GoldInvoice? _lastSavedInvoice;
+    private bool _allowManualWeightEdit = true;
 
     public ObservableCollection<GoldSaleLineDraft> InLines { get; } = [];
     public ObservableCollection<GoldSaleLineDraft> OutLines { get; } = [];
@@ -56,6 +58,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private bool _weightFromScale;
+    [ObservableProperty] private bool _isScaleConnected;
+    [ObservableProperty] private string _scaleStatusText = "غير متصل";
     [ObservableProperty] private GoldSaleLineDraft? _selectedInLine;
     [ObservableProperty] private GoldSaleLineDraft? _selectedOutLine;
     [ObservableProperty] private bool _isOutSectionActive;
@@ -73,6 +77,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         IGoldCashService cashService,
         IGoldWarehouseService warehouseService,
         IGoldScaleService scaleService,
+        IGoldSettingsService settingsService,
         IGoldPrintService printService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
@@ -83,6 +88,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         _cashService = cashService;
         _warehouseService = warehouseService;
         _scaleService = scaleService;
+        _settingsService = settingsService;
         _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
@@ -128,6 +134,18 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
                 FxRate = fx.UsdToIqd;
 
             await ReloadCashBoxesAsync();
+
+            try
+            {
+                var settings = await _settingsService.GetSettingsAsync();
+                _allowManualWeightEdit = settings.AllowManualWeightEdit;
+            }
+            catch
+            {
+                _allowManualWeightEdit = true;
+            }
+
+            RefreshScaleStatus();
         }
         catch (Exception ex)
         {
@@ -138,6 +156,12 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private void RefreshScaleStatus()
+    {
+        IsScaleConnected = _scaleService.IsConnected;
+        ScaleStatusText = _scaleService.IsConnected ? "متصل" : "غير متصل";
     }
 
     private async Task ReloadCashBoxesAsync()
@@ -167,7 +191,11 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     private void AddInLine()
     {
         var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
-        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
+        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l))
+        {
+            KaratValue = defaultKarat,
+            IsWeightReadOnly = !_allowManualWeightEdit
+        };
         InLines.Add(line);
         SelectedInLine = line;
         IsOutSectionActive = false;
@@ -177,7 +205,11 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     private void AddOutLine()
     {
         var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
-        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
+        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l))
+        {
+            KaratValue = defaultKarat,
+            IsWeightReadOnly = !_allowManualWeightEdit
+        };
         OutLines.Add(line);
         SelectedOutLine = line;
         IsOutSectionActive = true;
@@ -224,7 +256,9 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
                 line.MakingCharge,
                 PricingCurrency,
                 line.MithqalPrice > 0 ? line.MithqalPrice : null,
-                FxRate > 0 ? FxRate : null);
+                FxRate > 0 ? FxRate : null,
+                line.MakingChargeMode,
+                line.MakingChargeRate);
             line.ApplyQuote(quote);
             if (quote.FxRate is > 0)
                 FxRate = quote.FxRate.Value;
@@ -270,15 +304,23 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         Message = string.Empty;
         try
         {
+            var stable = await _scaleService.WaitForStableWeightAsync(timeout: TimeSpan.FromSeconds(8));
+            if (!stable)
+                throw new InvalidOperationException("لم يستقر الوزن على الميزان خلال المهلة المحددة");
+
             var grams = await _scaleService.ReadWeightGramsAsync();
             target.WeightGrams = grams;
             target.WeightFromScale = true;
+            if (!_allowManualWeightEdit)
+                target.IsWeightReadOnly = true;
             WeightFromScale = true;
+            RefreshScaleStatus();
             Message = $"تم قراءة الوزن: {grams:N3} غرام";
             _toast.ShowSuccess(Message);
         }
         catch (Exception ex)
         {
+            RefreshScaleStatus();
             Message = $"تعذر قراءة الميزان: {ex.Message}";
             ErrorMessage = Message;
             _toast.ShowError(Message);
@@ -429,6 +471,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         WeightGrams = l.WeightGrams,
         MithqalPrice = l.MithqalPrice,
         MakingCharge = l.MakingCharge,
+        MakingChargeMode = l.MakingChargeMode,
+        MakingChargeRate = l.MakingChargeRate,
         Description = l.Description,
         WeightFromScale = l.WeightFromScale
     };

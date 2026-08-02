@@ -66,6 +66,7 @@ internal static class GoldInvoiceQueryHelper
             GoldInvoiceType.Sale => "GS",
             GoldInvoiceType.Purchase => "GP",
             GoldInvoiceType.Exchange => "GX",
+            GoldInvoiceType.SaleReturn => "GR",
             _ => "G"
         };
         var last = await context.GoldInvoices

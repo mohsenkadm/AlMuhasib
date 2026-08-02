@@ -56,6 +56,13 @@
                              md:HintAssist.Hint="أيام اعتبار الآجل متأخراً"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
+                    <ComboBox ItemsSource="{Binding MakingChargeModes}"
+                              SelectedValue="{Binding DefaultMakingChargeMode}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Label"
+                              md:HintAssist.Hint="وضع أجور الصياغة الافتراضي"
+                              Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+
                     <CheckBox Content="السماح بتعديل الوزن يدوياً"
                               IsChecked="{Binding AllowManualWeightEdit}" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -101,6 +108,8 @@
                     <StackPanel Orientation="Horizontal">
                         <Button Content="اتصال" Command="{Binding ConnectScaleCommand}"
                                 Style="{StaticResource PrimaryButton}" Height="36" Padding="18,0" Margin="0,0,8,0"/>
+                        <Button Content="اختبار الاتصال" Command="{Binding TestConnectionCommand}"
+                                Style="{StaticResource OutlinedButton}" Height="36" Padding="18,0" Margin="0,0,8,0"/>
                         <Button Content="قطع الاتصال" Command="{Binding DisconnectScaleCommand}"
                                 Style="{StaticResource FlatButton}" Height="36"/>
                     </StackPanel>

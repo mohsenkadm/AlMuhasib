@@ -1290,6 +1290,9 @@
                         <DataTemplate DataType="{x:Type goldVm:GoldSaleInvoiceViewModel}">
                             <goldViews:GoldSaleInvoiceView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSaleReturnViewModel}">
+                            <goldViews:GoldSaleReturnView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldCreditSalesViewModel}">
                             <goldViews:GoldCreditSalesView />
                         </DataTemplate>
@@ -1310,6 +1313,12 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldCustomerStatementViewModel}">
                             <goldViews:GoldCustomerStatementView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldOpeningStockViewModel}">
+                            <goldViews:GoldOpeningStockView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldOpeningCustomerBalanceViewModel}">
+                            <goldViews:GoldOpeningCustomerBalanceView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldCashBoxesViewModel}">
                             <goldViews:GoldCashBoxesView />

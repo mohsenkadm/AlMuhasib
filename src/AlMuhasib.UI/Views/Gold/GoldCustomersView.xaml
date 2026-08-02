@@ -95,6 +95,8 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreditBalanceIqd"/>
                         <DataGridTextColumn Header="رصيد آجل $" Binding="{Binding CreditBalanceUsd, StringFormat=N2}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreditBalanceUsd"/>
+                        <DataGridTextColumn Header="ذهب آجل (غ)" Binding="{Binding GoldCreditGrams, StringFormat=N3}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GoldCreditGrams"/>
                         <DataGridTextColumn Header="فواتير مفتوحة" Binding="{Binding OpenInvoiceCount}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OpenInvoiceCount"/>
                         <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="70" IsReadOnly="True"

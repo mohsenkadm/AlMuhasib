@@ -233,6 +233,8 @@ public sealed class GoldPricingService : IGoldPricingService
         GoldCurrency pricingCurrency,
         decimal? mithqalPriceOverride = null,
         decimal? fxRateOverride = null,
+        GoldMakingChargeMode makingChargeMode = GoldMakingChargeMode.Fixed,
+        decimal makingChargeRate = 0,
         CancellationToken cancellationToken = default)
     {
         if (weightGrams <= 0)
@@ -240,6 +242,10 @@ public sealed class GoldPricingService : IGoldPricingService
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var mithqalGrams = await GetMithqalGramsAsync(context, cancellationToken);
+
+        var karat = await context.GoldKarats.AsNoTracking()
+            .FirstOrDefaultAsync(k => k.KaratValue == karatValue, cancellationToken);
+        var purityFactor = GoldLinePricingHelper.ResolvePurityFactor(karat);
 
         decimal mithqalPrice;
         if (mithqalPriceOverride.HasValue && mithqalPriceOverride.Value > 0)
@@ -263,9 +269,14 @@ public sealed class GoldPricingService : IGoldPricingService
             mithqalPrice = latest.PricePerMithqal;
         }
 
-        var pricePerGram = GoldCurrencyHelper.Round(mithqalPrice / mithqalGrams, 6);
-        var goldValue = GoldCurrencyHelper.Round(weightGrams * pricePerGram);
-        var lineTotal = GoldCurrencyHelper.Round(goldValue + makingCharge);
+        var (pricePerGram, pureGrams, goldValue, resolvedMaking, lineTotal) = GoldLinePricingHelper.Calculate(
+            weightGrams,
+            mithqalPrice,
+            mithqalGrams,
+            purityFactor,
+            makingChargeMode,
+            makingCharge,
+            makingChargeRate);
 
         decimal? fx = fxRateOverride;
         if (!fx.HasValue || fx.Value <= 0)
@@ -297,12 +308,16 @@ public sealed class GoldPricingService : IGoldPricingService
         {
             KaratValue = karatValue,
             WeightGrams = weightGrams,
+            PureGrams = pureGrams,
+            PurityFactor = purityFactor,
             MithqalGrams = mithqalGrams,
             MithqalPrice = mithqalPrice,
             PricingCurrency = pricingCurrency,
             PricePerGram = pricePerGram,
             GoldValue = goldValue,
-            MakingCharge = makingCharge,
+            MakingCharge = resolvedMaking,
+            MakingChargeMode = makingChargeMode,
+            MakingChargeRate = makingChargeRate,
             LineTotal = lineTotal,
             FxRate = fx,
             LineTotalIqd = lineTotalIqd,

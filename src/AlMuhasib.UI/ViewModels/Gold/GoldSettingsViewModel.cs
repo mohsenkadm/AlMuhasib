@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
+using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.UI.Controls;
@@ -23,11 +24,19 @@ public partial class GoldSettingsViewModel : ViewModelBase
     [ObservableProperty] private decimal _lowStockAlertGrams = 10;
     [ObservableProperty] private int _overdueDaysThreshold = 30;
     [ObservableProperty] private string _enabledKaratsCsv = "24,22,21,18";
+    [ObservableProperty] private GoldMakingChargeMode _defaultMakingChargeMode = GoldMakingChargeMode.Fixed;
     [ObservableProperty] private string _scaleStatusText = "غير متصل";
     [ObservableProperty] private bool _isScaleConnected;
 
     public ObservableCollection<string> AvailablePorts { get; } = [];
     public int[] BaudRates { get; } = [2400, 4800, 9600, 19200, 38400, 57600, 115200];
+
+    public IReadOnlyList<GoldMakingChargeModeOption> MakingChargeModes { get; } =
+    [
+        new(GoldMakingChargeMode.Fixed, "مبلغ ثابت"),
+        new(GoldMakingChargeMode.PerGram, "لكل غرام"),
+        new(GoldMakingChargeMode.PercentOfGold, "نسبة من قيمة الذهب")
+    ];
 
     public GoldSettingsViewModel(
         IGoldSettingsService settingsService,
@@ -79,6 +88,7 @@ public partial class GoldSettingsViewModel : ViewModelBase
         LowStockAlertGrams = settings.LowStockAlertGrams;
         OverdueDaysThreshold = settings.OverdueDaysThreshold;
         EnabledKaratsCsv = settings.EnabledKaratsCsv;
+        DefaultMakingChargeMode = settings.DefaultMakingChargeMode;
     }
 
     private void UpdateScaleStatus()
@@ -137,6 +147,7 @@ public partial class GoldSettingsViewModel : ViewModelBase
             settings.LowStockAlertGrams = LowStockAlertGrams;
             settings.OverdueDaysThreshold = OverdueDaysThreshold;
             settings.EnabledKaratsCsv = EnabledKaratsCsv?.Trim() ?? "24,22,21,18";
+            settings.DefaultMakingChargeMode = DefaultMakingChargeMode;
             settings.UpdatedBy = _currentUserService.Username;
 
             await _settingsService.SaveSettingsAsync(settings);
@@ -168,6 +179,31 @@ public partial class GoldSettingsViewModel : ViewModelBase
         {
             UpdateScaleStatus();
             BeautifulMessageDialog.ShowError($"فشل الاتصال بالميزان:\n{ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task TestConnectionAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            await _scaleService.ConnectAsync(
+                string.IsNullOrWhiteSpace(ScaleComPort) ? null : ScaleComPort,
+                ScaleBaudRate);
+            var grams = await _scaleService.ReadWeightGramsAsync();
+            UpdateScaleStatus();
+            BeautifulMessageDialog.ShowSuccess(
+                $"اختبار الاتصال ناجح\nالمنفذ: {_scaleService.ConnectedPort}\nالوزن الحالي: {grams:N3} غرام");
+        }
+        catch (Exception ex)
+        {
+            UpdateScaleStatus();
+            BeautifulMessageDialog.ShowError($"فشل اختبار الاتصال:\n{ex.Message}");
         }
         finally
         {

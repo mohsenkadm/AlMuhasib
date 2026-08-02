@@ -26,6 +26,7 @@ public class GoldSettingsConfiguration : IEntityTypeConfiguration<GoldSettings>
         builder.Property(s => s.ScaleStabilityThresholdGrams).HasPrecision(18, 3);
         builder.Property(s => s.LowStockAlertGrams).HasPrecision(18, 3);
         builder.Property(s => s.EnabledKaratsCsv).HasMaxLength(100);
+        builder.Property(s => s.DefaultMakingChargeMode).HasConversion<string>().HasMaxLength(20);
     }
 }
 
@@ -53,6 +54,7 @@ public class GoldCustomerConfiguration : IEntityTypeConfiguration<GoldCustomer>
         builder.Property(c => c.Notes).HasMaxLength(2000);
         builder.Property(c => c.CreditBalanceIqd).HasPrecision(18, 2);
         builder.Property(c => c.CreditBalanceUsd).HasPrecision(18, 2);
+        builder.Property(c => c.GoldCreditGrams).HasPrecision(18, 3);
         builder.HasIndex(c => c.Name);
         builder.HasIndex(c => c.Phone);
         builder.HasIndex(c => c.IsActive);
@@ -108,6 +110,7 @@ public class GoldInvoiceConfiguration : IEntityTypeConfiguration<GoldInvoice>
         builder.HasIndex(i => i.CustomerId);
         builder.HasIndex(i => i.SupplierId);
         builder.HasIndex(i => i.WarehouseId);
+        builder.HasIndex(i => i.RelatedInvoiceId);
 
         builder.HasOne(i => i.Customer)
             .WithMany()
@@ -136,6 +139,8 @@ public class GoldInvoiceLineConfiguration : IEntityTypeConfiguration<GoldInvoice
         builder.Property(l => l.PricePerGram).HasPrecision(18, 2);
         builder.Property(l => l.GoldValue).HasPrecision(18, 2);
         builder.Property(l => l.MakingCharge).HasPrecision(18, 2);
+        builder.Property(l => l.MakingChargeMode).HasConversion<string>().HasMaxLength(20);
+        builder.Property(l => l.MakingChargeRate).HasPrecision(18, 4);
         builder.Property(l => l.LineTotal).HasPrecision(18, 2);
         builder.Property(l => l.Description).HasMaxLength(500);
         builder.Property(l => l.LineDirection).HasConversion<string>().HasMaxLength(10);

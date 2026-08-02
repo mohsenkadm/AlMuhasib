@@ -350,6 +350,7 @@ public partial class App : Application
         services.AddTransient<GoldWarehousesViewModel>();
         services.AddTransient<GoldWarehouseTransferViewModel>();
         services.AddTransient<GoldSaleInvoiceViewModel>();
+        services.AddTransient<GoldSaleReturnViewModel>();
         services.AddTransient<GoldCreditSalesViewModel>();
         services.AddTransient<GoldCollectionViewModel>();
         services.AddTransient<GoldExchangeInvoiceViewModel>();
@@ -357,6 +358,8 @@ public partial class App : Application
         services.AddTransient<GoldSuppliersViewModel>();
         services.AddTransient<GoldCustomersViewModel>();
         services.AddTransient<GoldCustomerStatementViewModel>();
+        services.AddTransient<GoldOpeningStockViewModel>();
+        services.AddTransient<GoldOpeningCustomerBalanceViewModel>();
         services.AddTransient<GoldCashBoxesViewModel>();
         services.AddTransient<GoldVouchersViewModel>();
         services.AddTransient<GoldExpensesViewModel>();
