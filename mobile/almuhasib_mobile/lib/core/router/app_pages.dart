@@ -5,6 +5,7 @@ import '../bindings/accounting_shell_binding.dart';
 import '../bindings/auth_binding.dart';
 import '../bindings/car_bindings.dart';
 import '../bindings/car_trade_bindings.dart';
+import '../bindings/gold_shop_bindings.dart';
 import '../bindings/hotel_bindings.dart';
 import '../bindings/real_estate_bindings.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -27,6 +28,10 @@ import '../../features/data_tab/presentation/pricing_types_screen.dart';
 import '../../features/data_tab/presentation/product_price_form_screen.dart';
 import '../../features/data_tab/presentation/product_prices_screen.dart';
 import '../../features/finance/presentation/finance_list_screen.dart';
+import '../../features/gold_shop/gold_shop_shell.dart';
+import '../../features/gold_shop/notifications/gold_notifications_screen.dart';
+import '../../features/gold_shop/prices/gold_prices_screen.dart';
+import '../../features/gold_shop/sales/gold_sale_detail_screen.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
 import '../../features/hotel/guests/hotel_guest_form_screen.dart';
@@ -133,6 +138,15 @@ abstract final class AppPages {
       name: AppRoutes.launchRealEstate,
       page: () => const SystemLaunchScreen(
         systemType: ApplicationSystemType.realEstateContracts,
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.launchGoldShop,
+      page: () => const SystemLaunchScreen(
+        systemType: ApplicationSystemType.goldShop,
       ),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
@@ -601,6 +615,64 @@ abstract final class AppPages {
       name: AppRoutes.realEstateExpenses,
       page: () => const RealEstateExpensesScreen(),
       binding: RealEstateExpensesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopHome,
+      page: () => const GoldShopShellPage(),
+      binding: GoldShopShellBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopSales,
+      page: () => const GoldShopShellPage(initialTab: 1),
+      binding: GoldShopShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.goldShopCustomers,
+      page: () => const GoldShopShellPage(initialTab: 2),
+      binding: GoldShopShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.goldShopMore,
+      page: () => const GoldShopShellPage(initialTab: 3),
+      binding: GoldShopShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.goldShopSettings,
+      page: () => const GoldShopShellPage(initialTab: 3),
+      binding: GoldShopShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.goldShopSaleDetail,
+      page: () => GoldSaleDetailScreen(
+        invoiceId: int.tryParse(Get.parameters['id'] ?? '') ?? 0,
+      ),
+      binding: GoldSaleDetailBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopPrices,
+      page: () => const GoldPricesScreen(),
+      binding: GoldPricesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopNotifications,
+      page: () => const GoldNotificationsScreen(),
+      binding: GoldNotificationsBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

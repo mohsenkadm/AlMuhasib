@@ -4,7 +4,8 @@ enum ApplicationSystemType {
   carContracts(1),
   hotelManagement(2),
   carTrading(3),
-  realEstateContracts(4);
+  realEstateContracts(4),
+  goldShop(5);
 
   const ApplicationSystemType(this.value);
 

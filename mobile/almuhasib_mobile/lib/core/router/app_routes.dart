@@ -7,6 +7,7 @@ abstract final class AppRoutes {
   static const launchCarTrade = '/launch/car-trade';
   static const launchHotel = '/launch/hotel';
   static const launchRealEstate = '/launch/real-estate';
+  static const launchGoldShop = '/launch/gold-shop';
 
   static const home = '/home';
   static const reports = '/reports';
@@ -92,6 +93,15 @@ abstract final class AppRoutes {
   static const realEstateExpenses = '/real-estate/expenses';
   static const realEstateSettings = '/real-estate/settings';
 
+  static const goldShopHome = '/gold-shop/home';
+  static const goldShopSales = '/gold-shop/sales';
+  static const goldShopSaleDetail = '/gold-shop/sales/:id';
+  static const goldShopCustomers = '/gold-shop/customers';
+  static const goldShopMore = '/gold-shop/more';
+  static const goldShopPrices = '/gold-shop/prices';
+  static const goldShopNotifications = '/gold-shop/notifications';
+  static const goldShopSettings = '/gold-shop/settings';
+
   static const profile = '/profile';
   static const about = '/about';
   static const privacy = '/privacy';
@@ -150,4 +160,5 @@ abstract final class AppRoutes {
       '/car-trade/transactions/$syncId';
   static String realEstateContractDetailPath(String syncId) =>
       '/real-estate/contracts/$syncId';
+  static String goldShopSaleDetailPath(int id) => '/gold-shop/sales/$id';
 }
