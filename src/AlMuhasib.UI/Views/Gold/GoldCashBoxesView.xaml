@@ -1,14 +1,83 @@
 <UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldCashBoxesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <Grid Margin="24">
-        <TextBlock Text="{Binding PageTitle}"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Foreground="#B8860B"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Right"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,16">
+            <TextBlock Text="القاصات" FontSize="24" FontWeight="Bold" Foreground="#B8860B" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Command="{Binding OpenAddDialogCommand}" Style="{StaticResource PrimaryButton}"
+                        IsEnabled="{Binding CanAdd}" Margin="0,0,8,0" Content="قاصة جديدة"/>
+                <Button Command="{Binding EnsureDefaultsCommand}" Style="{StaticResource OutlinedButton}"
+                        Margin="0,0,8,0" Content="إنشاء الافتراضيات"/>
+                <Button Command="{Binding LoadCommand}" Style="{StaticResource FlatButton}">
+                    <materialDesign:PackIcon Kind="Refresh"/>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <TextBlock Grid.Row="1" Text="{Binding Message}" Foreground="#2E7D32" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="1" Text="{Binding ErrorMessage}" Foreground="#C62828" Margin="0,20,0,8"/>
+
+        <materialDesign:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0">
+            <DataGrid ItemsSource="{Binding CashBoxes}" SelectedItem="{Binding SelectedCashBox}"
+                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="العملة" Binding="{Binding Currency}" Width="100"/>
+                    <DataGridTextColumn Header="الرصيد" Binding="{Binding Balance, StringFormat=N0}" Width="140"/>
+                    <DataGridCheckBoxColumn Header="افتراضي" Binding="{Binding IsDefault}" Width="80"/>
+                    <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="70"/>
+                    <DataGridTemplateColumn Header="إجراءات" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" Style="{StaticResource FlatButton}" ToolTip="تعديل">
+                                        <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                    </Button>
+                                    <Button Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" Style="{StaticResource FlatButton}" ToolTip="حذف">
+                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" Foreground="#C62828"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </materialDesign:Card>
+
+        <materialDesign:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False"
+                                   Style="{StaticResource ModernDialogHost}" Grid.RowSpan="3">
+            <materialDesign:DialogHost.DialogContent>
+                <materialDesign:Card Padding="24" MinWidth="400">
+                    <StackPanel>
+                        <TextBlock Text="بيانات القاصة" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                        <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="اسم القاصة *" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding Currencies}" SelectedValue="{Binding EditCurrency}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="العملة" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox Text="{Binding EditBalance, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="الرصيد" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <CheckBox Content="قاصة افتراضية" IsChecked="{Binding EditIsDefault}" Margin="0,0,0,8"/>
+                        <CheckBox Content="نشطة" IsChecked="{Binding EditIsActive}" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CloseDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
     </Grid>
 </UserControl>

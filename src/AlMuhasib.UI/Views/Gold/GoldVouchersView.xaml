@@ -1,14 +1,93 @@
 <UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldVouchersView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
     <Grid Margin="24">
-        <TextBlock Text="{Binding PageTitle}"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Foreground="#B8860B"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Right"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,16">
+            <TextBlock Text="السندات" FontSize="24" FontWeight="Bold" Foreground="#B8860B" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Command="{Binding OpenCreateDialogCommand}" Style="{StaticResource PrimaryButton}"
+                        IsEnabled="{Binding CanAdd}" Margin="0,0,8,0" Content="سند جديد"/>
+                <Button Command="{Binding LoadCommand}" Style="{StaticResource FlatButton}">
+                    <materialDesign:PackIcon Kind="Refresh"/>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource FilterBar}" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <ComboBox Width="140" Margin="0,0,12,0" ItemsSource="{Binding TypeFilters}"
+                          SelectedValue="{Binding TypeFilter}" SelectedValuePath="Value" DisplayMemberPath="Label"
+                          materialDesign:HintAssist.Hint="النوع" Style="{StaticResource FilledComboBox}"/>
+                <ComboBox Width="140" Margin="0,0,12,0" ItemsSource="{Binding Currencies}"
+                          SelectedValue="{Binding CurrencyFilter}" SelectedValuePath="Value" DisplayMemberPath="Label"
+                          materialDesign:HintAssist.Hint="العملة" Style="{StaticResource FilledComboBox}"/>
+                <DatePicker Width="140" Margin="0,0,12,0" SelectedDate="{Binding DateFrom}"
+                            materialDesign:HintAssist.Hint="من تاريخ" Style="{StaticResource FilledDatePicker}"/>
+                <DatePicker Width="140" Margin="0,0,12,0" SelectedDate="{Binding DateTo}"
+                            materialDesign:HintAssist.Hint="إلى تاريخ" Style="{StaticResource FilledDatePicker}"/>
+            </StackPanel>
+        </Border>
+
+        <materialDesign:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0">
+            <DataGrid ItemsSource="{Binding Vouchers}" SelectedItem="{Binding SelectedVoucher}"
+                      AutoGenerateColumns="False" IsReadOnly="True" Style="{StaticResource ModernDataGrid}" Margin="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم السند" Binding="{Binding VoucherNumber}" Width="130"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding VoucherDate, StringFormat=yyyy/MM/dd}" Width="110"/>
+                    <DataGridTextColumn Header="النوع" Binding="{Binding VoucherType}" Width="90"/>
+                    <DataGridTextColumn Header="العملة" Binding="{Binding Currency}" Width="80"/>
+                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"/>
+                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </materialDesign:Card>
+
+        <controls:PaginationBar Grid.Row="3" Margin="0,8,0,0"/>
+
+        <materialDesign:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False"
+                                   Style="{StaticResource ModernDialogHost}" Grid.RowSpan="4">
+            <materialDesign:DialogHost.DialogContent>
+                <materialDesign:Card Padding="24" MinWidth="420">
+                    <StackPanel>
+                        <TextBlock Text="إنشاء سند" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                        <TextBox Text="{Binding EditVoucherNumber}" IsReadOnly="True"
+                                 materialDesign:HintAssist.Hint="رقم السند" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding VoucherTypes}" SelectedValue="{Binding EditType}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="نوع السند" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <DatePicker SelectedDate="{Binding EditDate}" materialDesign:HintAssist.Hint="التاريخ"
+                                    Style="{StaticResource FilledDatePicker}" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding Currencies}" SelectedValue="{Binding EditCurrency}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                  materialDesign:HintAssist.Hint="العملة" Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox Text="{Binding EditAmount, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="المبلغ" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding CashBoxes}" SelectedItem="{Binding EditCashBox}"
+                                  DisplayMemberPath="Name" materialDesign:HintAssist.Hint="القاصة"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding EditCustomer}"
+                                  DisplayMemberPath="Name" materialDesign:HintAssist.Hint="الزبون (اختياري)"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                        <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="ملاحظات" Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CloseDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
     </Grid>
 </UserControl>
