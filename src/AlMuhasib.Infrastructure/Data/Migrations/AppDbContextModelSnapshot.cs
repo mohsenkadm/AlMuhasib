@@ -1255,6 +1255,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("LoyaltyPointsEarned")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LoyaltyPointsRedeemed")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("LoyaltyRedeemDiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("NetAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");

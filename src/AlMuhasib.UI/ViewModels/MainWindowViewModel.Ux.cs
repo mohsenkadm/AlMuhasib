@@ -59,6 +59,11 @@ public partial class MainWindowViewModel
             var t when t == typeof(PackagingTypesViewModel) => flags.UnitsOfMeasure,
             var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
+            var t when t == typeof(LoyaltySettingsViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(LoyaltyAccountsViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(LoyaltyLedgerViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(LoyaltySummaryReportViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(LoyaltyTopCustomersReportViewModel) => flags.LoyaltySystem,
             _ => true
         };
     }

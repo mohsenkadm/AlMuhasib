@@ -100,6 +100,7 @@ public partial class SalesInvoiceViewModel
         ShowTransportFee = _featureFlags.TransportFees;
         ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
         ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
+        RefreshLoyaltyFeatureVisibility();
 
         foreach (var row in Items)
         {
@@ -121,6 +122,7 @@ public partial class SalesInvoiceViewModel
             SelectedDriver = null;
 
         RecalculateTotals();
+        _ = RefreshLoyaltyQuoteAsync();
 
         var industryStillEnabled = IsIndustryEnabled(_appliedIndustryTag);
         MarketTemplateFieldsEnabled = _featureFlags.AnyMarketTemplateEnabled && industryStillEnabled;

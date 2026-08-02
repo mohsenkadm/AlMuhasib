@@ -12,14 +12,24 @@ public class InvoiceService : IInvoiceService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly LoyaltyService _loyaltyService;
 
-    public InvoiceService(IDbContextFactory<AppDbContext> contextFactory, ICurrentUserService currentUserService)
+    public InvoiceService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        ICurrentUserService currentUserService,
+        LoyaltyService loyaltyService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _loyaltyService = loyaltyService;
     }
 
-    public async Task<Invoice> CreateInvoiceAsync(Invoice invoice, IEnumerable<InvoiceItem> items, bool skipStockUpdate = false)
+    public async Task<Invoice> CreateInvoiceAsync(
+        Invoice invoice,
+        IEnumerable<InvoiceItem> items,
+        bool skipStockUpdate = false,
+        int loyaltyRedeemPoints = 0,
+        bool applyLoyalty = false)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -50,8 +60,24 @@ public class InvoiceService : IInvoiceService
             }
 
             invoice.TotalAmount = subtotal;
+            if (invoice.LoyaltyRedeemDiscountAmount < 0m)
+                invoice.LoyaltyRedeemDiscountAmount = 0m;
             if (invoice.DiscountAmount < 0m)
                 invoice.DiscountAmount = 0m;
+
+            // دمج/التحقق من خصم الولاء قبل احتساب الصافي والقاصة
+            if (applyLoyalty && (loyaltyRedeemPoints > 0 || invoice.LoyaltyRedeemDiscountAmount > 0m))
+            {
+                await _loyaltyService.PrepareInvoiceRedeemDiscountAsync(
+                    context, invoice, loyaltyRedeemPoints, CancellationToken.None);
+            }
+            else if (!applyLoyalty)
+            {
+                invoice.LoyaltyPointsEarned = 0;
+                invoice.LoyaltyPointsRedeemed = 0;
+                invoice.LoyaltyRedeemDiscountAmount = 0m;
+            }
+
             if (invoice.DiscountAmount > Math.Max(0m, subtotal))
                 invoice.DiscountAmount = Math.Max(0m, subtotal);
             if (invoice.TransportFeeAmount < 0m)
@@ -164,6 +190,18 @@ public class InvoiceService : IInvoiceService
                     cashBox.UpdatedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
+            }
+
+            // سجل كسب/استبدال نقاط الولاء ضمن نفس المعاملة
+            if (applyLoyalty)
+            {
+                await _loyaltyService.ApplyInvoiceLoyaltyAsync(
+                    context,
+                    invoice,
+                    loyaltyRedeemPoints,
+                    username,
+                    _currentUserService.UserId,
+                    CancellationToken.None);
             }
 
             if (_currentUserService.UserId.HasValue)

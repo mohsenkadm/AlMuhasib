@@ -66,6 +66,9 @@ public class AppDbContext : DbContext
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
     public DbSet<BusinessSettings> BusinessSettings => Set<BusinessSettings>();
     public DbSet<PackagingType> PackagingTypes => Set<PackagingType>();
+    public DbSet<LoyaltySettings> LoyaltySettings => Set<LoyaltySettings>();
+    public DbSet<CustomerLoyaltyAccount> CustomerLoyaltyAccounts => Set<CustomerLoyaltyAccount>();
+    public DbSet<LoyaltyPointTransaction> LoyaltyPointTransactions => Set<LoyaltyPointTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

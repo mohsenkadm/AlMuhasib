@@ -198,6 +198,11 @@ public partial class App : Application
         services.AddTransient<DriversViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PersonProfileViewModel>();
+        services.AddTransient<LoyaltySettingsViewModel>();
+        services.AddTransient<LoyaltyAccountsViewModel>();
+        services.AddTransient<LoyaltyLedgerViewModel>();
+        services.AddTransient<LoyaltySummaryReportViewModel>();
+        services.AddTransient<LoyaltyTopCustomersReportViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
         services.AddTransient<SalesInvoiceViewModel>();
         services.AddTransient<PosQuickSaleViewModel>();

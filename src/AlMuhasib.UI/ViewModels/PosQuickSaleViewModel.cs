@@ -84,7 +84,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IFeatureFlagService featureFlags,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
-        IProductColorService productColorService)
+        IProductColorService productColorService,
+        ILoyaltyService loyaltyService)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -100,6 +101,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         PageTitle = "بيع سريع (POS)";
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         ConfigurePosFeatureServices(productSerialService, productSizeService, productColorService);
+        ConfigureLoyaltyService(loyaltyService);
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -522,7 +524,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
-                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
+                DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
+                    + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
+                LoyaltyRedeemDiscountAmount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
+                LoyaltyPointsRedeemed = ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
                 PaidAmount = isCredit ? paidSnapshot : GrandTotal,
                 CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
                 Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
@@ -540,7 +545,13 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 CustomFieldsJson = line.ToCustomFieldsJson()
             }).ToList();
 
-            var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);
+            var applyLoyalty = ShowLoyaltyPanel && customerId is not null;
+            var saved = await _invoiceService.CreateInvoiceAsync(
+                invoice,
+                items,
+                skipStockUpdate: false,
+                loyaltyRedeemPoints: applyLoyalty ? Math.Max(0, LoyaltyRedeemPoints) : 0,
+                applyLoyalty: applyLoyalty);
             LastSavedInvoiceNumber = saved.InvoiceNumber;
 
             await ApplyPosFeatureSideEffectsOnSaveAsync(cartSnapshot, items);
@@ -553,10 +564,15 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             CartLines.Clear();
             PaidAmount = 0;
+            LoyaltyRedeemPoints = 0;
+            LoyaltyDiscountAmount = 0m;
             StatusMessage = isCredit
                 ? $"تم البيع الآجل — {saved.InvoiceNumber} — مدفوع {paidSnapshot:N0} — متبقي {saved.RemainingAmount:N0} د.ع"
                 : $"تم البيع — {saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع";
+            if (applyLoyalty && saved.LoyaltyPointsEarned > 0)
+                StatusMessage += $" — +{saved.LoyaltyPointsEarned} نقطة ولاء";
             _sound.Play(SoundEffect.Success);
+            _ = RefreshLoyaltyQuoteAsync();
 
             if (printReceipt)
             {
@@ -656,10 +672,17 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (e.NewItems is not null)
         {
             foreach (PosCartLine line in e.NewItems)
-                line.PropertyChanged += (_, _) => RecalcCartTotals();
+            {
+                line.PropertyChanged += (_, _) =>
+                {
+                    RecalcCartTotals();
+                    _ = RefreshLoyaltyQuoteAsync();
+                };
+            }
         }
 
         RecalcCartTotals();
+        _ = RefreshLoyaltyQuoteAsync();
     }
 
     private void RecalcCartTotals()
@@ -671,7 +694,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         else
             InvoiceDiscountAmount = 0m;
 
-        GrandTotal = Math.Max(0m, SubTotal - InvoiceDiscountAmount);
+        var loyaltyDiscount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m;
+        GrandTotal = Math.Max(0m, SubTotal - InvoiceDiscountAmount - loyaltyDiscount);
         CartLineCount = CartLines.Count;
         RecalcChange();
     }

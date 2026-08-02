@@ -1,0 +1,127 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.Loyalty.LoyaltyPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             x:Name="Root"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <CubicEase x:Key="EaseOut" EasingMode="EaseOut"/>
+    </UserControl.Resources>
+
+    <Border x:Name="PanelRoot"
+            CornerRadius="14"
+            Padding="14,12"
+            Margin="0,0,0,10"
+            Opacity="0"
+            Visibility="{Binding ShowLoyaltyPanel, Converter={StaticResource BoolVis}}">
+        <Border.RenderTransform>
+            <TranslateTransform Y="18"/>
+        </Border.RenderTransform>
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#B71C1C" Offset="0"/>
+                <GradientStop Color="#E53935" Offset="0.55"/>
+                <GradientStop Color="#FF7043" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.Background>
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.28" Color="#B71C1C"/>
+        </Border.Effect>
+
+        <StackPanel>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#33FFFFFF" CornerRadius="10" Padding="8" Margin="0,0,10,0">
+                        <materialDesign:PackIcon Kind="GiftOutline" Width="22" Height="22" Foreground="White"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="نظام الولاء" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="{Binding LoyaltyCustomerLabel}" FontSize="11" Foreground="#FFEBEE"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="12" Padding="12,8" VerticalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding LoyaltyBalance}" FontSize="22" FontWeight="Bold"
+                                   Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="نقطة متاحة" FontSize="10" Foreground="#FFCDD2" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Background="#22FFFFFF" CornerRadius="10" Padding="10,8" Margin="0,0,0,8"
+                    Visibility="{Binding HasLoyaltyCustomer, Converter={StaticResource BoolVis}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="متوقع كسبها" FontSize="11" Foreground="#FFCDD2"/>
+                        <TextBlock Text="{Binding LoyaltyExpectedEarnPoints, StringFormat='{}{0} نقطة'}"
+                                   FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="أقصى استبدال" FontSize="11" Foreground="#FFCDD2"/>
+                        <TextBlock Text="{Binding LoyaltyMaxRedeemPoints, StringFormat='{}{0} نقطة'}"
+                                   FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <StackPanel Visibility="{Binding HasLoyaltyCustomer, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="استبدال نقاط (خصم على الفاتورة)" FontSize="12" FontWeight="SemiBold"
+                           Foreground="White" Margin="0,0,0,6"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding LoyaltyRedeemPoints, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="عدد النقاط"
+                             materialDesign:HintAssist.Foreground="White"
+                             Foreground="White"
+                             CaretBrush="White"
+                             BorderBrush="#66FFFFFF"
+                             Background="#22FFFFFF"
+                             Padding="10,8"/>
+                    <Button Grid.Column="1" Margin="8,0,0,0" Padding="10,8"
+                            Command="{Binding RedeemMaxLoyaltyCommand}"
+                            Background="#33FFFFFF" BorderBrush="#66FFFFFF" Foreground="White"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            ToolTip="استبدال الكل المتاح">
+                        <materialDesign:PackIcon Kind="ArrowCollapseDown" Width="18" Height="18"/>
+                    </Button>
+                    <Button Grid.Column="2" Margin="6,0,0,0" Padding="10,8"
+                            Command="{Binding ClearLoyaltyRedeemCommand}"
+                            Background="#33FFFFFF" BorderBrush="#66FFFFFF" Foreground="White"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            ToolTip="مسح الاستبدال">
+                        <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                    </Button>
+                </Grid>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="خصم الولاء" Foreground="#FFEBEE" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding LoyaltyDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
+                               FontWeight="Bold" Foreground="White" FontSize="16"/>
+                </Grid>
+            </StackPanel>
+
+            <TextBlock Text="{Binding LoyaltyStatusMessage}"
+                       FontSize="11" Foreground="#FFEBEE" TextWrapping="Wrap" Margin="0,8,0,0"
+                       Visibility="{Binding HasLoyaltyStatusMessage, Converter={StaticResource BoolVis}}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

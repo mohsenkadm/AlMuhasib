@@ -48,6 +48,19 @@ public static class AccountingMenuBuilder
                     ("ملف الشخص", PackIconKind.AccountDetails, typeof(PersonProfileViewModel), "PersonProfile"),
                 ]),
             FlyoutGroup(
+                key: "loyalty",
+                title: "نظام الولاء",
+                icon: PackIconKind.GiftOutline,
+                accent: "#C62828",
+                accentLight: "#FFEBEE",
+                [
+                    ("إعدادات الولاء", PackIconKind.TuneVariant, typeof(LoyaltySettingsViewModel), "LoyaltySettings"),
+                    ("حسابات ولاء الزبائن", PackIconKind.AccountStar, typeof(LoyaltyAccountsViewModel), "LoyaltyAccounts"),
+                    ("سجل حركات النقاط", PackIconKind.SwapVertical, typeof(LoyaltyLedgerViewModel), "LoyaltyLedger"),
+                    ("تقرير ملخص الولاء", PackIconKind.ChartPie, typeof(LoyaltySummaryReportViewModel), "LoyaltyReports"),
+                    ("أكثر الزبائن ولاءً", PackIconKind.Trophy, typeof(LoyaltyTopCustomersReportViewModel), "LoyaltyReports"),
+                ]),
+            FlyoutGroup(
                 key: "purchases",
                 title: "المشتريات",
                 icon: PackIconKind.CartArrowDown,

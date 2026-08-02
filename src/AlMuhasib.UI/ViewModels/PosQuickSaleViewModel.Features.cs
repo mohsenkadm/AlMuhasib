@@ -62,7 +62,9 @@ public partial class PosQuickSaleViewModel
             SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         }
 
+        RefreshLoyaltyFeatureVisibility();
         RecalcCartTotals();
+        _ = RefreshLoyaltyQuoteAsync();
     }
 
     private void ApplyMarketTemplateHeaders()

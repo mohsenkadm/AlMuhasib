@@ -45,6 +45,15 @@ public class Invoice : BaseEntity
     /// <summary>ملاحظة الإيقاف.</summary>
     public string? HoldNote { get; set; }
 
+    /// <summary>نقاط الولاء المكتسبة من هذه الفاتورة.</summary>
+    public int LoyaltyPointsEarned { get; set; }
+
+    /// <summary>نقاط الولاء المستبدلة على هذه الفاتورة.</summary>
+    public int LoyaltyPointsRedeemed { get; set; }
+
+    /// <summary>جزء خصم الفاتورة الناتج عن استبدال نقاط الولاء.</summary>
+    public decimal LoyaltyRedeemDiscountAmount { get; set; }
+
     // Navigation
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
