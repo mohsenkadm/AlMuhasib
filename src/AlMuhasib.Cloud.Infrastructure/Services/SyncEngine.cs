@@ -32,6 +32,8 @@ public sealed partial class SyncEngine : ISyncEngine
             return await PushCarTradeAsync(tenantId, request, ct);
         if (tenantType == (int)ApplicationSystemType.RealEstateContracts)
             return await PushRealEstateAsync(tenantId, request, ct);
+        if (tenantType == (int)ApplicationSystemType.GoldShop)
+            return await PushGoldShopAsync(tenantId, request, ct);
 
         var resolver = new SyncIdResolver(_db, tenantId);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
@@ -257,6 +259,8 @@ public sealed partial class SyncEngine : ISyncEngine
             return await PullCarTradeAsync(tenantId, request, ct);
         if (tenantType == (int)ApplicationSystemType.RealEstateContracts)
             return await PullRealEstateAsync(tenantId, request, ct);
+        if (tenantType == (int)ApplicationSystemType.GoldShop)
+            return await PullGoldShopAsync(tenantId, request, ct);
 
         var since = request.Since ?? DateTime.MinValue;
         var bundle = new SyncDataBundle();
