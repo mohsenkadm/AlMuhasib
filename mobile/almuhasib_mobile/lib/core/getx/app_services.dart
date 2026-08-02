@@ -11,6 +11,7 @@ import '../../features/car_trade/data/car_trade_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/data_tab/data/data_repository.dart';
 import '../../features/data_tab/data/finance_repository.dart';
+import '../../features/gold_shop/data/gold_shop_api.dart';
 import '../../features/hotel/data/hotel_repository.dart';
 import '../../features/hotel/restaurant/data/restaurant_repository.dart';
 import '../../features/operations/data/mobile_operations_repository.dart';
@@ -81,6 +82,7 @@ class AppServices {
       RealEstateRepository(apiClient),
       permanent: true,
     );
+    Get.put<GoldShopApi>(GoldShopApi(apiClient), permanent: true);
     Get.put<RestaurantRepository>(
       RestaurantRepository(apiClient),
       permanent: true,
@@ -111,6 +113,7 @@ class AppServices {
   static CarTradeRepository get carTrade => Get.find<CarTradeRepository>();
   static RealEstateRepository get realEstate =>
       Get.find<RealEstateRepository>();
+  static GoldShopApi get goldShop => Get.find<GoldShopApi>();
   static RestaurantRepository get restaurant => Get.find<RestaurantRepository>();
   static AppInfoService get appInfo => Get.find<AppInfoService>();
 }

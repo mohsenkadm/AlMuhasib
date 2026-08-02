@@ -30,8 +30,12 @@ public static class ScreenPermissionRegistry
 
     public static bool IsRealEstateContracts => _registry?.IsRealEstateContracts == true;
 
+    public static bool IsGoldShop => _registry?.IsGoldShop == true;
+
     public static IReadOnlyList<(string Name, string Label)> AllScreens =>
-        IsHotelManagement
+        IsGoldShop
+            ? GoldShopPermissionRegistry.Screens
+            : IsHotelManagement
             ? HotelPermissionRegistryScreens
             : IsCarTrading
                 ? CarTradePermissionRegistryScreens
@@ -166,7 +170,9 @@ public static class ScreenPermissionRegistry
     ];
 
     public static string GetScreenName(Type viewModelType) =>
-        IsHotelManagement
+        IsGoldShop
+            ? GoldShopPermissionRegistry.GetScreenName(viewModelType)
+            : IsHotelManagement
             ? HotelPermissionRegistry.GetScreenName(viewModelType)
             : IsCarTrading
                 ? CarTradePermissionRegistry.GetScreenName(viewModelType)
@@ -180,7 +186,9 @@ public static class ScreenPermissionRegistry
         ViewModelToScreen.TryGetValue(viewModelType, out var name) ? name : viewModelType.Name;
 
     public static Type? GetDefaultViewModelType(string screenName) =>
-        IsHotelManagement
+        IsGoldShop
+            ? GoldShopPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsHotelManagement
             ? HotelPermissionRegistry.GetDefaultViewModelType(screenName)
             : IsCarTrading
                 ? CarTradePermissionRegistry.GetDefaultViewModelType(screenName)
@@ -194,7 +202,9 @@ public static class ScreenPermissionRegistry
         ScreenToDefaultViewModel.TryGetValue(screenName, out var type) ? type : null;
 
     public static string GetLabel(string screenName) =>
-        IsHotelManagement
+        IsGoldShop
+            ? GoldShopPermissionRegistry.GetLabel(screenName)
+            : IsHotelManagement
             ? HotelPermissionRegistry.GetLabel(screenName)
             : IsCarTrading
                 ? CarTradePermissionRegistry.GetLabel(screenName)

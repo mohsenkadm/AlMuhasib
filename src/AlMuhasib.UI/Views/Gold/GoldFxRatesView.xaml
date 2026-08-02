@@ -1,0 +1,91 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldFxRatesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Grid.Row="0" Padding="0" Margin="0,0,0,14" UniformCornerRadius="16"
+                 BorderBrush="#D4AF37" BorderThickness="1" md:ElevationAssist.Elevation="Dp3">
+            <Grid MinHeight="100">
+                <Border CornerRadius="16">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#8B6914" Offset="0"/>
+                            <GradientStop Color="#B8860B" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Grid Margin="22,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="أسعار الصرف" FontSize="14" Foreground="#FFF8E1"/>
+                        <TextBlock Text="{Binding LatestRateDisplay}" FontSize="24" FontWeight="Bold"
+                                   Foreground="White" Margin="0,4,0,0"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                            Foreground="White" VerticalAlignment="Center">
+                        <md:PackIcon Kind="Refresh" Width="22" Height="22" Foreground="White"/>
+                    </Button>
+                </Grid>
+            </Grid>
+        </md:Card>
+
+        <md:Card Grid.Row="1" Padding="20" Margin="0,0,0,14" UniformCornerRadius="14"
+                 BorderBrush="#E8D5A3" BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="تسجيل سعر جديد (USD → IQD)" FontWeight="Bold" Foreground="#B8860B" Margin="0,0,0,12"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1.2*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding NewUsdToIqd, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="سعر الدولار بالدينار"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,10,0"/>
+                    <DatePicker Grid.Column="1" SelectedDate="{Binding NewRateDate}"
+                                md:HintAssist.Hint="التاريخ"
+                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="2" Text="{Binding NewNotes, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="ملاحظات"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,10,0"/>
+                    <Button Grid.Column="3" Content="حفظ" Command="{Binding SaveRateCommand}"
+                            Style="{StaticResource PrimaryButton}" Height="40" Padding="22,0"
+                            IsEnabled="{Binding CanAdd}"/>
+                </Grid>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Grid.Row="2" Padding="0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
+            <DockPanel>
+                <controls:ListTableHeaderBar DockPanel.Dock="Top" Title="سجل أسعار الصرف"
+                                             ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
+                <DataGrid ItemsSource="{Binding Rates}"
+                          SelectedItem="{Binding SelectedRate}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}" Margin="8">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding RateDate, StringFormat=yyyy/MM/dd}" Width="120"/>
+                        <DataGridTextColumn Header="USD → IQD" Binding="{Binding UsdToIqd, StringFormat=N0}" Width="140"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"/>
+                        <DataGridTextColumn Header="أُنشئ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </md:Card>
+    </Grid>
+</UserControl>

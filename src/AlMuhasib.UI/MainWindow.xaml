@@ -16,6 +16,8 @@
         xmlns:reVm="clr-namespace:AlMuhasib.UI.ViewModels.RealEstate"
         xmlns:hotelViews="clr-namespace:AlMuhasib.UI.Views.Hotel"
         xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
+        xmlns:goldViews="clr-namespace:AlMuhasib.UI.Views.Gold"
+        xmlns:goldVm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
         xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
         xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
@@ -1260,6 +1262,63 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type hotelVm:HotelSetupWizardViewModel}">
                             <hotelViews:HotelSetupWizardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldDashboardViewModel}">
+                            <goldViews:GoldDashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldMithqalPricesViewModel}">
+                            <goldViews:GoldMithqalPricesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldFxRatesViewModel}">
+                            <goldViews:GoldFxRatesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldItemsViewModel}">
+                            <goldViews:GoldItemsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldStockViewModel}">
+                            <goldViews:GoldStockView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldStockAdjustmentViewModel}">
+                            <goldViews:GoldStockAdjustmentView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSaleInvoiceViewModel}">
+                            <goldViews:GoldSaleInvoiceView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCreditSalesViewModel}">
+                            <goldViews:GoldCreditSalesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCollectionViewModel}">
+                            <goldViews:GoldCollectionView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldPurchaseInvoiceViewModel}">
+                            <goldViews:GoldPurchaseInvoiceView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCustomersViewModel}">
+                            <goldViews:GoldCustomersView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCustomerStatementViewModel}">
+                            <goldViews:GoldCustomerStatementView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCashBoxesViewModel}">
+                            <goldViews:GoldCashBoxesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldVouchersViewModel}">
+                            <goldViews:GoldVouchersView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldNotificationsViewModel}">
+                            <goldViews:GoldNotificationsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSettingsViewModel}">
+                            <goldViews:GoldSettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldStockReportViewModel}">
+                            <goldViews:GoldStockReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSalesReportViewModel}">
+                            <goldViews:GoldSalesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldCreditReportViewModel}">
+                            <goldViews:GoldCreditReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />

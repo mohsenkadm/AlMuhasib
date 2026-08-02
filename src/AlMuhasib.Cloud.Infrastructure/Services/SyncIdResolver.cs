@@ -116,6 +116,18 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveRealEstateExpenseTypeAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.RealEstateExpenseTypes, syncId, ct);
 
+    public async Task<int?> ResolveGoldCustomerAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.GoldCustomers, syncId, ct);
+
+    public async Task<int?> ResolveGoldCashBoxAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.GoldCashBoxes, syncId, ct);
+
+    public async Task<int?> ResolveGoldItemAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.GoldItems, syncId, ct);
+
+    public async Task<int?> ResolveGoldInvoiceAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.GoldInvoices, syncId, ct);
+
     public async Task<int> ResolveTransferAccountAsync(TransferAccountType type, Guid syncId, CancellationToken ct) =>
         type switch
         {

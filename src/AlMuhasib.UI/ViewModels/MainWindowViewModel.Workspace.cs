@@ -95,6 +95,22 @@ public partial class MainWindowViewModel
             return;
         }
 
+        if (_moduleRegistry.IsGoldShop)
+        {
+            ShowQuickPos = false;
+            ShowQuickSale = false;
+            ShowQuickPurchase = false;
+            ShowQuickReceipt = false;
+            ShowQuickPayment = false;
+            ShowQuickInstallments = false;
+            ShowQuickInstallmentInvoice = false;
+            ShowQuickReturn = false;
+            ShowQuickAssistant = false;
+            ShowQuickNewCarContract = false;
+            ShowQuickCarContractsList = false;
+            return;
+        }
+
         ShowQuickNewCarContract = false;
         ShowQuickCarContractsList = false;
 

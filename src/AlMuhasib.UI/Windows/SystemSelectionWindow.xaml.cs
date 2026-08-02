@@ -30,6 +30,9 @@ public partial class SystemSelectionWindow : Window
     private void OnRealEstateSelected(object sender, MouseButtonEventArgs e) =>
         SelectSystem(ApplicationSystemType.RealEstateContracts, RealEstateCard, "#00695C", "#E0F2F1");
 
+    private void OnGoldSelected(object sender, MouseButtonEventArgs e) =>
+        SelectSystem(ApplicationSystemType.GoldShop, GoldCard, "#B8860B", "#FFF8E1");
+
     private void SelectSystem(ApplicationSystemType system, Border card, string accent, string bg)
     {
         SelectedSystem = system;
@@ -40,6 +43,7 @@ public partial class SystemSelectionWindow : Window
         ResetCard(CarTradeCard);
         ResetCard(HotelCard);
         ResetCard(RealEstateCard);
+        ResetCard(GoldCard);
 
         card.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent)!);
         card.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bg)!);

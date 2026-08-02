@@ -202,6 +202,37 @@ class SystemProfile {
         ),
       ],
     ),
+    ApplicationSystemType.goldShop: SystemProfile(
+      type: ApplicationSystemType.goldShop,
+      nameKey: 'system_gold_shop_name',
+      taglineKey: 'system_gold_shop_tagline',
+      icon: Icons.diamond_rounded,
+      primary: Color(0xFFB8860B),
+      secondary: Color(0xFFD4AF37),
+      accent: Color(0xFF8B6914),
+      homeRoute: '/gold-shop/home',
+      launchRoute: '/launch/gold-shop',
+      onboardingSlides: [
+        SystemOnboardingSlide(
+          icon: Icons.diamond_outlined,
+          titleKey: 'onboarding_gold_shop_title_1',
+          descKey: 'onboarding_gold_shop_desc_1',
+          colors: [Color(0xFFB8860B), Color(0xFFD4AF37)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.receipt_long_outlined,
+          titleKey: 'onboarding_gold_shop_title_2',
+          descKey: 'onboarding_gold_shop_desc_2',
+          colors: [Color(0xFF8B6914), Color(0xFFB8860B)],
+        ),
+        SystemOnboardingSlide(
+          icon: Icons.sync_outlined,
+          titleKey: 'onboarding_gold_shop_title_3',
+          descKey: 'onboarding_gold_shop_desc_3',
+          colors: [Color(0xFF5D4E37), Color(0xFFD4AF37)],
+        ),
+      ],
+    ),
   };
 }
 
@@ -210,6 +241,7 @@ const carRoutePrefixes = ['/car'];
 const carTradeRoutePrefixes = ['/car-trade'];
 const hotelRoutePrefixes = ['/hotel'];
 const realEstateRoutePrefixes = ['/real-estate'];
+const goldShopRoutePrefixes = ['/gold-shop'];
 
 bool routeBelongsToSystem(String path, ApplicationSystemType type) {
   bool matches(List<String> prefixes) =>
@@ -222,6 +254,7 @@ bool routeBelongsToSystem(String path, ApplicationSystemType type) {
     ApplicationSystemType.carTrading => matches(carTradeRoutePrefixes),
     ApplicationSystemType.realEstateContracts =>
       matches(realEstateRoutePrefixes),
+    ApplicationSystemType.goldShop => matches(goldShopRoutePrefixes),
   };
 }
 

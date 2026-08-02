@@ -36,7 +36,7 @@ public sealed class NotificationCenterService : INotificationCenterService
         await using var scope = _scopeFactory.CreateAsyncScope();
         var smartAlertService = scope.ServiceProvider.GetRequiredService<ISmartAlertService>();
 
-        if (_systemProfile.ActiveSystem != ApplicationSystemType.HotelManagement)
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
         {
             var installmentService = scope.ServiceProvider.GetRequiredService<IInstallmentService>();
             await installmentService.UpdateOverdueStatusesAsync();
@@ -64,7 +64,7 @@ public sealed class NotificationCenterService : INotificationCenterService
             });
         }
 
-        if (_systemProfile.ActiveSystem != ApplicationSystemType.HotelManagement)
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
             AppendQueueNotifications(items, now);
 
         return items

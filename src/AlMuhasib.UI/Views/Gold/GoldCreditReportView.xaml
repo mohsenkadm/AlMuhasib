@@ -1,0 +1,52 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldCreditReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,16">
+            <TextBlock Text="تقرير الآجل" FontSize="24" FontWeight="Bold" Foreground="#B8860B" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <CheckBox Content="المتأخر فقط" IsChecked="{Binding OverdueOnly}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <Button Content="تحديث" Command="{Binding LoadCommand}" Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </DockPanel>
+
+        <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
+            <controls:AnimatedStatCard Title="عدد الزبائن" TextValue="{Binding CustomerCount}"
+                                       Icon="AccountGroup" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+            <controls:AnimatedStatCard Title="آجل د.ع" TextValue="{Binding TotalCreditIqd, StringFormat=N0}"
+                                       Icon="Cash" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+            <controls:AnimatedStatCard Title="آجل $" TextValue="{Binding TotalCreditUsd, StringFormat=N2}"
+                                       Icon="CurrencyUsd" IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+            <controls:AnimatedStatCard Title="فواتير مفتوحة" TextValue="{Binding OpenInvoiceCount}"
+                                       Icon="FileDocumentAlert" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+        </UniformGrid>
+
+        <TextBlock Grid.Row="2" Text="{Binding ErrorMessage}" Foreground="#C62828" Margin="0,0,0,8"/>
+
+        <materialDesign:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0">
+            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                      Style="{StaticResource ModernDataGrid}" Margin="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الزبون" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"/>
+                    <DataGridTextColumn Header="آجل د.ع" Binding="{Binding CreditBalanceIqd, StringFormat=N0}" Width="130"/>
+                    <DataGridTextColumn Header="آجل $" Binding="{Binding CreditBalanceUsd, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="فواتير مفتوحة" Binding="{Binding OpenInvoiceCount}" Width="120"/>
+                    <DataGridTextColumn Header="آخر حركة" Binding="{Binding LastTransactionDate, StringFormat=yyyy/MM/dd}" Width="120"/>
+                    <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="70"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

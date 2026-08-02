@@ -16,6 +16,7 @@ using AlMuhasib.UI.ViewModels.Car;
 using AlMuhasib.UI.ViewModels.CarTrade;
 using AlMuhasib.UI.ViewModels.Hotel;
 using AlMuhasib.UI.ViewModels.RealEstate;
+using AlMuhasib.UI.ViewModels.Gold;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Windows;
@@ -339,6 +340,26 @@ public partial class App : Application
         services.AddSingleton<IRealEstateContractPrintService, RealEstateContractPrintService>();
         services.AddSingleton<ICarTradePrintService, CarTradePrintService>();
         services.AddSingleton<IHotelInvoicePrintService, HotelInvoicePrintService>();
+
+        services.AddTransient<GoldDashboardViewModel>();
+        services.AddTransient<GoldMithqalPricesViewModel>();
+        services.AddTransient<GoldFxRatesViewModel>();
+        services.AddTransient<GoldItemsViewModel>();
+        services.AddTransient<GoldStockViewModel>();
+        services.AddTransient<GoldStockAdjustmentViewModel>();
+        services.AddTransient<GoldSaleInvoiceViewModel>();
+        services.AddTransient<GoldCreditSalesViewModel>();
+        services.AddTransient<GoldCollectionViewModel>();
+        services.AddTransient<GoldPurchaseInvoiceViewModel>();
+        services.AddTransient<GoldCustomersViewModel>();
+        services.AddTransient<GoldCustomerStatementViewModel>();
+        services.AddTransient<GoldCashBoxesViewModel>();
+        services.AddTransient<GoldVouchersViewModel>();
+        services.AddTransient<GoldNotificationsViewModel>();
+        services.AddTransient<GoldSettingsViewModel>();
+        services.AddTransient<GoldStockReportViewModel>();
+        services.AddTransient<GoldSalesReportViewModel>();
+        services.AddTransient<GoldCreditReportViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

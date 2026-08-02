@@ -74,6 +74,20 @@ public sealed class SyncDataBundle
     public List<RealEstatePartySyncDto> RealEstateParties { get; set; } = [];
     public List<RealEstateExpenseTypeSyncDto> RealEstateExpenseTypes { get; set; } = [];
     public List<RealEstateExpenseSyncDto> RealEstateExpenses { get; set; } = [];
+
+    public List<GoldSettingsSyncDto> GoldSettings { get; set; } = [];
+    public List<GoldFxRateSyncDto> GoldFxRates { get; set; } = [];
+    public List<GoldKaratSyncDto> GoldKarats { get; set; } = [];
+    public List<GoldMithqalPriceSyncDto> GoldMithqalPrices { get; set; } = [];
+    public List<GoldItemSyncDto> GoldItems { get; set; } = [];
+    public List<GoldStockBalanceSyncDto> GoldStockBalances { get; set; } = [];
+    public List<GoldCustomerSyncDto> GoldCustomers { get; set; } = [];
+    public List<GoldCashBoxSyncDto> GoldCashBoxes { get; set; } = [];
+    public List<GoldInvoiceSyncDto> GoldInvoices { get; set; } = [];
+    public List<GoldInvoiceLineSyncDto> GoldInvoiceLines { get; set; } = [];
+    public List<GoldPaymentSyncDto> GoldPayments { get; set; } = [];
+    public List<GoldVoucherSyncDto> GoldVouchers { get; set; } = [];
+    public List<GoldNotificationSyncDto> GoldNotifications { get; set; } = [];
 }
 
 public sealed class SyncPushRequest

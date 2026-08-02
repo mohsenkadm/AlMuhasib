@@ -86,6 +86,19 @@ public class CloudDbContext : DbContext
     public DbSet<CloudRealEstateParty> RealEstateParties => Set<CloudRealEstateParty>();
     public DbSet<CloudRealEstateExpenseType> RealEstateExpenseTypes => Set<CloudRealEstateExpenseType>();
     public DbSet<CloudRealEstateExpense> RealEstateExpenses => Set<CloudRealEstateExpense>();
+    public DbSet<CloudGoldSettings> GoldSettings => Set<CloudGoldSettings>();
+    public DbSet<CloudGoldFxRate> GoldFxRates => Set<CloudGoldFxRate>();
+    public DbSet<CloudGoldKarat> GoldKarats => Set<CloudGoldKarat>();
+    public DbSet<CloudGoldMithqalPrice> GoldMithqalPrices => Set<CloudGoldMithqalPrice>();
+    public DbSet<CloudGoldItem> GoldItems => Set<CloudGoldItem>();
+    public DbSet<CloudGoldStockBalance> GoldStockBalances => Set<CloudGoldStockBalance>();
+    public DbSet<CloudGoldCustomer> GoldCustomers => Set<CloudGoldCustomer>();
+    public DbSet<CloudGoldCashBox> GoldCashBoxes => Set<CloudGoldCashBox>();
+    public DbSet<CloudGoldInvoice> GoldInvoices => Set<CloudGoldInvoice>();
+    public DbSet<CloudGoldInvoiceLine> GoldInvoiceLines => Set<CloudGoldInvoiceLine>();
+    public DbSet<CloudGoldPayment> GoldPayments => Set<CloudGoldPayment>();
+    public DbSet<CloudGoldVoucher> GoldVouchers => Set<CloudGoldVoucher>();
+    public DbSet<CloudGoldNotification> GoldNotifications => Set<CloudGoldNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -294,6 +307,136 @@ public class CloudDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.RelatedContractId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudGoldSettings>(e =>
+        {
+            e.Property(s => s.MithqalGrams).HasPrecision(18, 3);
+            e.Property(s => s.ScaleComPort).HasMaxLength(50);
+            e.Property(s => s.ScaleStabilityThresholdGrams).HasPrecision(18, 3);
+            e.Property(s => s.LowStockAlertGrams).HasPrecision(18, 3);
+            e.Property(s => s.EnabledKaratsCsv).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<CloudGoldFxRate>(e =>
+        {
+            e.Property(r => r.UsdToIqd).HasPrecision(18, 2);
+            e.Property(r => r.Notes).HasMaxLength(500);
+            e.HasIndex(r => new { r.TenantId, r.RateDate });
+        });
+
+        modelBuilder.Entity<CloudGoldKarat>(e =>
+        {
+            e.Property(k => k.Name).HasMaxLength(50);
+            e.Property(k => k.PurityFactor).HasPrecision(18, 6);
+            e.HasIndex(k => new { k.TenantId, k.KaratValue });
+        });
+
+        modelBuilder.Entity<CloudGoldMithqalPrice>(e =>
+        {
+            e.Property(p => p.PricePerMithqal).HasPrecision(18, 2);
+            e.Property(p => p.FxRateUsed).HasPrecision(18, 2);
+            e.Property(p => p.Notes).HasMaxLength(500);
+            e.HasIndex(p => new { p.TenantId, p.PriceDate, p.KaratValue });
+        });
+
+        modelBuilder.Entity<CloudGoldItem>(e =>
+        {
+            e.Property(i => i.Name).HasMaxLength(200);
+            e.Property(i => i.Barcode).HasMaxLength(100);
+            e.Property(i => i.Category).HasMaxLength(100);
+            e.Property(i => i.Notes).HasMaxLength(2000);
+            e.Property(i => i.WeightGrams).HasPrecision(18, 3);
+            e.Property(i => i.SuggestedMakingCharge).HasPrecision(18, 2);
+            e.Property(i => i.CostPerGram).HasPrecision(18, 2);
+            e.HasIndex(i => new { i.TenantId, i.Barcode });
+        });
+
+        modelBuilder.Entity<CloudGoldStockBalance>(e =>
+        {
+            e.Property(s => s.GramsOnHand).HasPrecision(18, 3);
+            e.Property(s => s.AverageCostPerGram).HasPrecision(18, 2);
+            e.HasIndex(s => new { s.TenantId, s.KaratValue });
+        });
+
+        modelBuilder.Entity<CloudGoldCustomer>(e =>
+        {
+            e.Property(c => c.Name).HasMaxLength(200);
+            e.Property(c => c.Phone).HasMaxLength(50);
+            e.Property(c => c.Address).HasMaxLength(500);
+            e.Property(c => c.Notes).HasMaxLength(2000);
+            e.Property(c => c.CreditBalanceIqd).HasPrecision(18, 2);
+            e.Property(c => c.CreditBalanceUsd).HasPrecision(18, 2);
+            e.HasIndex(c => new { c.TenantId, c.Name });
+        });
+
+        modelBuilder.Entity<CloudGoldCashBox>(e =>
+        {
+            e.Property(c => c.Name).HasMaxLength(100);
+            e.Property(c => c.Balance).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<CloudGoldInvoice>(e =>
+        {
+            e.Property(i => i.InvoiceNumber).HasMaxLength(50);
+            e.Property(i => i.FxRate).HasPrecision(18, 2);
+            e.Property(i => i.TotalGoldValue).HasPrecision(18, 2);
+            e.Property(i => i.TotalMakingCharge).HasPrecision(18, 2);
+            e.Property(i => i.DiscountAmount).HasPrecision(18, 2);
+            e.Property(i => i.TotalAmount).HasPrecision(18, 2);
+            e.Property(i => i.TotalAmountIqd).HasPrecision(18, 2);
+            e.Property(i => i.TotalAmountUsd).HasPrecision(18, 2);
+            e.Property(i => i.PaidAmount).HasPrecision(18, 2);
+            e.Property(i => i.RemainingAmount).HasPrecision(18, 2);
+            e.Property(i => i.TotalWeightGrams).HasPrecision(18, 3);
+            e.Property(i => i.Notes).HasMaxLength(2000);
+            e.HasIndex(i => new { i.TenantId, i.InvoiceNumber });
+            e.HasOne(i => i.Customer)
+                .WithMany()
+                .HasForeignKey(i => i.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudGoldInvoiceLine>(e =>
+        {
+            e.Property(l => l.WeightGrams).HasPrecision(18, 3);
+            e.Property(l => l.MithqalPrice).HasPrecision(18, 2);
+            e.Property(l => l.PricePerGram).HasPrecision(18, 2);
+            e.Property(l => l.GoldValue).HasPrecision(18, 2);
+            e.Property(l => l.MakingCharge).HasPrecision(18, 2);
+            e.Property(l => l.LineTotal).HasPrecision(18, 2);
+            e.Property(l => l.Description).HasMaxLength(500);
+            e.HasOne(l => l.Invoice)
+                .WithMany(i => i.Lines)
+                .HasForeignKey(l => l.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudGoldPayment>(e =>
+        {
+            e.Property(p => p.Amount).HasPrecision(18, 2);
+            e.Property(p => p.FxRate).HasPrecision(18, 2);
+            e.Property(p => p.Notes).HasMaxLength(1000);
+            e.HasOne(p => p.Invoice)
+                .WithMany(i => i.Payments)
+                .HasForeignKey(p => p.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CloudGoldVoucher>(e =>
+        {
+            e.Property(v => v.VoucherNumber).HasMaxLength(50);
+            e.Property(v => v.Amount).HasPrecision(18, 2);
+            e.Property(v => v.Notes).HasMaxLength(2000);
+            e.HasIndex(v => new { v.TenantId, v.VoucherNumber });
+        });
+
+        modelBuilder.Entity<CloudGoldNotification>(e =>
+        {
+            e.Property(n => n.Title).HasMaxLength(200);
+            e.Property(n => n.Message).HasMaxLength(2000);
+            e.Property(n => n.RelatedEntity).HasMaxLength(100);
+            e.HasIndex(n => new { n.TenantId, n.IsRead });
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
