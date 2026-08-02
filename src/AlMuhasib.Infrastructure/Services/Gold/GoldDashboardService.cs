@@ -67,6 +67,18 @@ public sealed class GoldDashboardService : IGoldDashboardService
         var pricesUpdatedToday = await context.GoldMithqalPrices.AsNoTracking()
             .AnyAsync(p => p.PriceDate.Date == today, cancellationToken);
 
+        var todayExpenses = await context.GoldExpenses.AsNoTracking()
+            .Where(e => e.ExpenseDate.Date == today)
+            .ToListAsync(cancellationToken);
+
+        var todayExpensesIqd = todayExpenses.Where(e => e.Currency == GoldCurrency.IQD).Sum(e => e.Amount);
+        var todayExpensesUsd = todayExpenses.Where(e => e.Currency == GoldCurrency.USD).Sum(e => e.Amount);
+        var hasExpenseToday = todayExpenses.Count > 0;
+
+        var lowStockRows = stockRows.Where(s => s.IsLowStock).ToList();
+        var lowStockKaratCount = lowStockRows.Select(s => s.KaratValue).Distinct().Count();
+        var lowWarehouseStockCount = lowStockRows.Select(s => s.WarehouseId).Distinct().Count();
+
         var latestFx = await context.GoldFxRates.AsNoTracking()
             .OrderByDescending(r => r.RateDate)
             .ThenByDescending(r => r.Id)
@@ -89,6 +101,9 @@ public sealed class GoldDashboardService : IGoldDashboardService
             TodaySalesUsd = todaySales.Sum(i => i.TotalAmountUsd),
             TodayPurchasesIqd = todayPurchases.Sum(i => i.TotalAmountIqd),
             TodayPurchasesUsd = todayPurchases.Sum(i => i.TotalAmountUsd),
+            TodayExpensesIqd = todayExpensesIqd,
+            TodayExpensesUsd = todayExpensesUsd,
+            HasExpenseToday = hasExpenseToday,
             CashBalanceIqd = cashBoxes.Where(c => c.Currency == GoldCurrency.IQD).Sum(c => c.Balance),
             CashBalanceUsd = cashBoxes.Where(c => c.Currency == GoldCurrency.USD).Sum(c => c.Balance),
             TotalStockGrams = stockRows.Sum(s => s.GramsOnHand),
@@ -97,7 +112,8 @@ public sealed class GoldDashboardService : IGoldDashboardService
             OpenCreditIqd = customersWithCredit.Sum(c => c.CreditBalanceIqd),
             OpenCreditUsd = customersWithCredit.Sum(c => c.CreditBalanceUsd),
             OverdueCreditCount = overdueCount,
-            LowStockKaratCount = stockRows.Count(s => s.IsLowStock),
+            LowStockKaratCount = lowStockKaratCount,
+            LowWarehouseStockCount = lowWarehouseStockCount,
             PricesUpdatedToday = pricesUpdatedToday,
             LatestUsdToIqd = latestFx?.UsdToIqd,
             StockByKarat = stockRows,

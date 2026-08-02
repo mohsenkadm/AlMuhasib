@@ -3,6 +3,7 @@ using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
+using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -28,6 +29,8 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [ObservableProperty] private decimal _todaySalesUsd;
     [ObservableProperty] private decimal _todayPurchasesIqd;
     [ObservableProperty] private decimal _todayPurchasesUsd;
+    [ObservableProperty] private decimal _todayExpensesIqd;
+    [ObservableProperty] private decimal _todayExpensesUsd;
     [ObservableProperty] private decimal _cashBalanceIqd;
     [ObservableProperty] private decimal _cashBalanceUsd;
     [ObservableProperty] private decimal _totalStockGrams;
@@ -36,13 +39,18 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [ObservableProperty] private decimal _openCreditIqd;
     [ObservableProperty] private int _overdueCreditCount;
     [ObservableProperty] private int _lowStockKaratCount;
+    [ObservableProperty] private int _lowWarehouseStockCount;
     [ObservableProperty] private bool _pricesUpdatedToday;
+    [ObservableProperty] private bool _hasExpenseToday;
     [ObservableProperty] private decimal? _latestUsdToIqd;
     [ObservableProperty] private string _todaySalesDisplay = "—";
+    [ObservableProperty] private string _todayExpensesDisplay = "—";
     [ObservableProperty] private string _cashBalanceDisplay = "—";
     [ObservableProperty] private string _stockDisplay = "—";
     [ObservableProperty] private string _creditDisplay = "—";
     [ObservableProperty] private string _fxRateDisplay = "—";
+    [ObservableProperty] private int _dailyTaskCount;
+    [ObservableProperty] private int _smartAlertCount;
 
     [ObservableProperty] private ISeries[] _stockSeries = [];
     [ObservableProperty] private ISeries[] _salesSeries = [];
@@ -50,6 +58,7 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [ObservableProperty] private Axis[] _salesYAxes = [];
 
     public ObservableCollection<GoldAlertItem> Alerts { get; } = [];
+    public ObservableCollection<DailyTaskItem> DailyTasks { get; } = [];
     public ObservableCollection<GoldInvoiceListItem> RecentInvoices { get; } = [];
     public ObservableCollection<GoldMithqalPriceRow> LatestPrices { get; } = [];
     public ObservableCollection<GoldStockRow> StockByKarat { get; } = [];
@@ -94,6 +103,13 @@ public partial class GoldDashboardViewModel : ViewModelBase
                 : (await _alertService.GetAlertsAsync()).ToList();
             foreach (var alert in alerts)
                 Alerts.Add(alert);
+            SmartAlertCount = Alerts.Count;
+
+            DailyTasks.Clear();
+            var tasks = await _alertService.GetDailyTasksAsync();
+            foreach (var task in tasks)
+                DailyTasks.Add(task);
+            DailyTaskCount = DailyTasks.Count;
         }
         catch (Exception ex)
         {
@@ -112,6 +128,9 @@ public partial class GoldDashboardViewModel : ViewModelBase
         TodaySalesUsd = data.TodaySalesUsd;
         TodayPurchasesIqd = data.TodayPurchasesIqd;
         TodayPurchasesUsd = data.TodayPurchasesUsd;
+        TodayExpensesIqd = data.TodayExpensesIqd;
+        TodayExpensesUsd = data.TodayExpensesUsd;
+        HasExpenseToday = data.HasExpenseToday;
         CashBalanceIqd = data.CashBalanceIqd;
         CashBalanceUsd = data.CashBalanceUsd;
         TotalStockGrams = data.TotalStockGrams;
@@ -120,10 +139,12 @@ public partial class GoldDashboardViewModel : ViewModelBase
         OpenCreditIqd = data.OpenCreditIqd;
         OverdueCreditCount = data.OverdueCreditCount;
         LowStockKaratCount = data.LowStockKaratCount;
+        LowWarehouseStockCount = data.LowWarehouseStockCount;
         PricesUpdatedToday = data.PricesUpdatedToday;
         LatestUsdToIqd = data.LatestUsdToIqd;
 
         TodaySalesDisplay = $"{data.TodaySalesIqd:N0} د.ع\n{data.TodaySalesUsd:N2} $";
+        TodayExpensesDisplay = $"{data.TodayExpensesIqd:N0} د.ع\n{data.TodayExpensesUsd:N2} $";
         CashBalanceDisplay = $"{data.CashBalanceIqd:N0} د.ع\n{data.CashBalanceUsd:N2} $";
         StockDisplay = $"{data.TotalStockGrams:N2} غ\n{data.TotalStockValueIqd:N0} د.ع";
         CreditDisplay = $"{data.OpenCreditCount} فاتورة\n{data.OpenCreditIqd:N0} د.ع";
@@ -180,8 +201,47 @@ public partial class GoldDashboardViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task ExecuteDailyTaskAsync(DailyTaskItem? task)
+    {
+        if (task is null || task.Action == SmartAlertAction.None) return;
+        await _mainWindow.ExecuteDailyTaskAsync(task.Action);
+    }
+
+    [RelayCommand]
+    private async Task ExecuteAlertAsync(GoldAlertItem? alert)
+    {
+        if (alert is null) return;
+        var action = MapAlertAction(alert.Type);
+        if (action == SmartAlertAction.None) return;
+        await _mainWindow.ExecuteDailyTaskAsync(action);
+    }
+
+    private static SmartAlertAction MapAlertAction(GoldNotificationType type) => type switch
+    {
+        GoldNotificationType.PriceNotUpdated => SmartAlertAction.OpenGoldMithqalPrices,
+        GoldNotificationType.OverdueCredit => SmartAlertAction.OpenGoldCollection,
+        GoldNotificationType.LowStock => SmartAlertAction.OpenGoldStock,
+        GoldNotificationType.LowWarehouseStock => SmartAlertAction.OpenGoldWarehouses,
+        GoldNotificationType.NoExpenseToday => SmartAlertAction.OpenGoldExpenses,
+        GoldNotificationType.NegativeCash => SmartAlertAction.OpenGoldExpenses,
+        _ => SmartAlertAction.None
+    };
+
+    [RelayCommand]
     private async Task OpenSaleAsync() =>
         await _mainWindow.OpenTabAsync(typeof(GoldSaleInvoiceViewModel), "فاتورة بيع", PackIconKind.CashRegister);
+
+    [RelayCommand]
+    private async Task OpenExchangeAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldExchangeInvoiceViewModel), "تبديل ذهب", PackIconKind.SwapHorizontal);
+
+    [RelayCommand]
+    private async Task OpenExpenseAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldExpensesViewModel), "مصروف جديد", PackIconKind.CashMinus);
+
+    [RelayCommand]
+    private async Task OpenWarehouseTransferAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldWarehouseTransferViewModel), "نقل مخزني", PackIconKind.TruckDelivery);
 
     [RelayCommand]
     private async Task OpenPurchaseAsync() =>

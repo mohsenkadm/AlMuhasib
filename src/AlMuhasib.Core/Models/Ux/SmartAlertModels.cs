@@ -25,7 +25,15 @@ public enum SmartAlertAction
     OpenCollectionDashboard,
     OpenHotelCheckInOut,
     OpenHotelRooms,
-    OpenHotelHousekeeping
+    OpenHotelHousekeeping,
+    OpenGoldMithqalPrices,
+    OpenGoldCollection,
+    OpenGoldStock,
+    OpenGoldExpenses,
+    OpenGoldWarehouses,
+    OpenGoldSale,
+    OpenGoldExchange,
+    OpenGoldWarehouseTransfer
 }
 
 public class SmartAlert

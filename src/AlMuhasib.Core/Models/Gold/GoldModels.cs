@@ -17,6 +17,10 @@ public class GoldDashboardData
     public decimal OpenCreditUsd { get; set; }
     public int OverdueCreditCount { get; set; }
     public int LowStockKaratCount { get; set; }
+    public int LowWarehouseStockCount { get; set; }
+    public decimal TodayExpensesIqd { get; set; }
+    public decimal TodayExpensesUsd { get; set; }
+    public bool HasExpenseToday { get; set; }
     public bool PricesUpdatedToday { get; set; }
     public decimal? LatestUsdToIqd { get; set; }
     public List<GoldStockRow> StockByKarat { get; set; } = [];

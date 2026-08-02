@@ -7,5 +7,7 @@ public enum GoldNotificationType
     LowStock = 2,
     ScaleDisconnected = 3,
     NegativeCash = 4,
-    Info = 5
+    Info = 5,
+    NoExpenseToday = 6,
+    LowWarehouseStock = 7
 }

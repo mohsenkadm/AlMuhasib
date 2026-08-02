@@ -2,6 +2,7 @@ using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
+using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Infrastructure.Data.Gold;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +33,77 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             .ToListAsync(cancellationToken);
 
         return notifications.Select(ToAlert).ToList();
+    }
+
+    public async Task<IReadOnlyList<DailyTaskItem>> GetDailyTasksAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var today = DateTime.Today;
+        var settings = await GoldSettingsService.EnsureSettingsAsync(context, cancellationToken);
+        var tasks = new List<DailyTaskItem>();
+
+        var pricesToday = await context.GoldMithqalPrices.AsNoTracking()
+            .AnyAsync(p => p.PriceDate.Date == today, cancellationToken);
+        if (!pricesToday)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تحديث أسعار المثقال",
+                Description = "أسعار اليوم غير مسجّلة — حدّث التسعير قبل البيع",
+                Action = SmartAlertAction.OpenGoldMithqalPrices,
+                Priority = 1
+            });
+        }
+
+        var cutoff = today.AddDays(-(settings.OverdueDaysThreshold <= 0 ? 30 : settings.OverdueDaysThreshold));
+        var overdueCount = await context.GoldInvoices.AsNoTracking()
+            .Where(i => i.CustomerId.HasValue &&
+                        i.RemainingAmount > 0 &&
+                        i.Status != GoldInvoiceStatus.Cancelled &&
+                        i.InvoiceDate.Date <= cutoff)
+            .Select(i => i.CustomerId!.Value)
+            .Distinct()
+            .CountAsync(cancellationToken);
+        if (overdueCount > 0)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تحصيل الذمم المتأخرة",
+                Description = $"{overdueCount} زبون لديهم ذمم متأخرة",
+                Action = SmartAlertAction.OpenGoldCollection,
+                Priority = 2
+            });
+        }
+
+        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
+        var lowStock = stockRows.Where(s => s.IsLowStock).ToList();
+        if (lowStock.Count > 0)
+        {
+            var karatCount = lowStock.Select(s => s.KaratValue).Distinct().Count();
+            var warehouseCount = lowStock.Select(s => s.WarehouseId).Distinct().Count();
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "مراجعة المخزون المنخفض",
+                Description = $"{karatCount} عيار في {warehouseCount} مخزن تحت الحد",
+                Action = SmartAlertAction.OpenGoldStock,
+                Priority = 3
+            });
+        }
+
+        var hasExpenseToday = await context.GoldExpenses.AsNoTracking()
+            .AnyAsync(e => e.ExpenseDate.Date == today, cancellationToken);
+        if (!hasExpenseToday)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تسجيل مصروف اليوم",
+                Description = "لا يوجد مصروف مسجّل اليوم — أضف مصروفاً إن وُجد",
+                Action = SmartAlertAction.OpenGoldExpenses,
+                Priority = 4
+            });
+        }
+
+        return tasks.OrderBy(t => t.Priority).ToList();
     }
 
     public async Task RefreshAlertsAsync(CancellationToken cancellationToken = default)
@@ -73,19 +145,46 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             overdueCustomers.Count > 0 ? overdueCustomers[0] : null,
             cancellationToken);
 
-        // Low stock
+        // Low stock (karat)
         var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
         var lowStock = stockRows.Where(s => s.IsLowStock).ToList();
+        var lowKaratCount = lowStock.Select(s => s.KaratValue).Distinct().Count();
         await UpsertOpenAlertAsync(
             context,
             GoldNotificationType.LowStock,
-            lowStock.Count > 0,
+            lowKaratCount > 0,
             "مخزون منخفض",
-            lowStock.Count == 0
+            lowKaratCount == 0
                 ? string.Empty
-                : $"يوجد {lowStock.Count} عيار بمخزون أقل من الحد ({settings.LowStockAlertGrams} غم).",
+                : $"يوجد {lowKaratCount} عيار بمخزون أقل من الحد ({settings.LowStockAlertGrams} غم).",
             "GoldStockBalance",
             lowStock.FirstOrDefault()?.KaratValue,
+            cancellationToken);
+
+        // Low warehouse stock
+        var lowWarehouseIds = lowStock.Select(s => s.WarehouseId).Distinct().ToList();
+        await UpsertOpenAlertAsync(
+            context,
+            GoldNotificationType.LowWarehouseStock,
+            lowWarehouseIds.Count > 0,
+            "مخزون مخزني منخفض",
+            lowWarehouseIds.Count == 0
+                ? string.Empty
+                : $"يوجد {lowWarehouseIds.Count} مخزن/مخازن بأرصدة تحت الحد ({settings.LowStockAlertGrams} غم).",
+            "GoldWarehouse",
+            lowWarehouseIds.Count > 0 ? lowWarehouseIds[0] : null,
+            cancellationToken);
+
+        // No expense recorded today
+        var hasExpenseToday = await context.GoldExpenses.AnyAsync(e => e.ExpenseDate.Date == today, cancellationToken);
+        await UpsertOpenAlertAsync(
+            context,
+            GoldNotificationType.NoExpenseToday,
+            !hasExpenseToday,
+            "لا يوجد مصروف اليوم",
+            "لم يُسجَّل أي مصروف لليوم. سجّل المصروفات اليومية إن وُجدت للحفاظ على دقة القاصة.",
+            "GoldExpense",
+            null,
             cancellationToken);
 
         // Negative cash

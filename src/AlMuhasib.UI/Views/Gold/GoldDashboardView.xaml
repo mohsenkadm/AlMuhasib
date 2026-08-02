@@ -13,6 +13,8 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+        <converters:TaskPriorityToBrushConverter x:Key="TaskPriorityBrush"/>
+        <converters:TaskPriorityToLightBrushConverter x:Key="TaskPriorityLightBrush"/>
 
         <Style x:Key="GoldQuickAction" TargetType="Button">
             <Setter Property="Height" Value="84"/>
@@ -66,6 +68,33 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="GoldTaskButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder" Background="Transparent" SnapsToDevicePixels="True">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -110,62 +139,78 @@
                                 <TextBlock Text="{Binding WelcomeText}" FontSize="26" FontWeight="Bold" Foreground="White"/>
                                 <TextBlock Text="{Binding SubtitleText}" Margin="0,6,0,0" FontSize="13" Foreground="#FFFDE7" Opacity="0.92"/>
                             </StackPanel>
-                            <Button Grid.Column="1" Command="{Binding LoadDataCommand}"
-                                    Style="{StaticResource FlatButton}" Foreground="White"
-                                    VerticalAlignment="Top" ToolTip="تحديث">
-                                <md:PackIcon Kind="Refresh" Width="22" Height="22" Foreground="White"/>
-                            </Button>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                <Border Background="#33FFFFFF" CornerRadius="14" Padding="14,10" Margin="0,0,0,8"
+                                        BorderBrush="#55FFFFFF" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="ClipboardList" Width="18" Height="18"
+                                                     Foreground="White" VerticalAlignment="Center"/>
+                                        <StackPanel Margin="10,0,0,0">
+                                            <TextBlock Text="مهام اليوم" FontSize="11" Foreground="#FFF8E1"/>
+                                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="White">
+                                                <Run Text="{Binding DailyTaskCount, Mode=OneWay}"/>
+                                                <Run Text=" مهمة" FontSize="12" FontWeight="Normal"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Button Command="{Binding LoadDataCommand}"
+                                        Style="{StaticResource FlatButton}" Foreground="White"
+                                        HorizontalAlignment="Left" ToolTip="تحديث">
+                                    <md:PackIcon Kind="Refresh" Width="22" Height="22" Foreground="White"/>
+                                </Button>
+                            </StackPanel>
                         </Grid>
                     </Grid>
                 </md:Card>
 
-                <!-- Quick actions -->
+                <!-- Quick actions: تبديل / مصروف / نقل / بيع -->
                 <UniformGrid Columns="4" Margin="0,0,0,18">
-                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenSaleCommand}" Margin="0,0,8,0">
+                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenExchangeCommand}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
+                                <md:PackIcon Kind="SwapHorizontal" Width="24" Height="24" Foreground="#B8860B"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="تبديل ذهب" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
+                                <TextBlock Text="فتح فاتورة تبديل" FontSize="11" Foreground="#8D6E63"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenExpenseCommand}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
+                                <md:PackIcon Kind="CashMinus" Width="24" Height="24" Foreground="#B8860B"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="مصروف جديد" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
+                                <TextBlock Text="تسجيل مصروف" FontSize="11" Foreground="#8D6E63"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenWarehouseTransferCommand}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
+                                <md:PackIcon Kind="TruckDelivery" Width="24" Height="24" Foreground="#B8860B"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="نقل مخزني" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
+                                <TextBlock Text="نقل بين المخازن" FontSize="11" Foreground="#8D6E63"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenSaleCommand}">
                         <StackPanel Orientation="Horizontal">
                             <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
                                 <md:PackIcon Kind="CashRegister" Width="24" Height="24" Foreground="#B8860B"
                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="بيع" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
-                                <TextBlock Text="فاتورة بيع ذهب" FontSize="11" Foreground="#8D6E63"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenPurchaseCommand}" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
-                                <md:PackIcon Kind="CartArrowDown" Width="24" Height="24" Foreground="#B8860B"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="شراء" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
-                                <TextBlock Text="فاتورة شراء" FontSize="11" Foreground="#8D6E63"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenMithqalPricesCommand}" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
-                                <md:PackIcon Kind="CurrencyUsd" Width="24" Height="24" Foreground="#B8860B"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="أسعار المثقال" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
-                                <TextBlock Text="تحديث التسعير" FontSize="11" Foreground="#8D6E63"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource GoldQuickAction}" Command="{Binding OpenCollectionCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="44" Height="44" CornerRadius="12" Background="#FFF3CD">
-                                <md:PackIcon Kind="CashCheck" Width="24" Height="24" Foreground="#B8860B"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="تحصيل" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
-                                <TextBlock Text="تحصيل الآجل" FontSize="11" Foreground="#8D6E63"/>
+                                <TextBlock Text="فاتورة بيع" FontWeight="Bold" FontSize="15" Foreground="#5D4037"/>
+                                <TextBlock Text="بيع ذهب" FontSize="11" Foreground="#8D6E63"/>
                             </StackPanel>
                         </StackPanel>
                     </Button>
@@ -181,28 +226,35 @@
                                               AccentLightBrush="#FFF8E1"
                                               ValueBrush="#5D4037"/>
                     <controls:DashboardKpiCard Margin="0,0,10,0"
+                                              Title="مصروفات اليوم"
+                                              Value="{Binding TodayExpensesDisplay}"
+                                              Icon="CashMinus"
+                                              AccentBrush="#C9A227"
+                                              AccentLightBrush="#FFFDE7"
+                                              ValueBrush="#5D4037"/>
+                    <controls:DashboardKpiCard Margin="0,0,10,0"
                                               Title="رصيد القاصة"
                                               Value="{Binding CashBalanceDisplay}"
                                               Icon="Cash"
                                               AccentBrush="#D4AF37"
                                               AccentLightBrush="#FFFDE7"
                                               ValueBrush="#5D4037"/>
-                    <controls:DashboardKpiCard Margin="0,0,10,0"
-                                              Title="المخزون"
-                                              Value="{Binding StockDisplay}"
-                                              Icon="Gold"
-                                              AccentBrush="#8B6914"
-                                              AccentLightBrush="#FFF8E1"
-                                              ValueBrush="#5D4037"/>
-                    <controls:DashboardKpiCard Title="الآجل المفتوح"
-                                               Value="{Binding CreditDisplay}"
-                                               Icon="CreditCardClock"
-                                               AccentBrush="#A67C00"
-                                               AccentLightBrush="#FFF3CD"
+                    <controls:DashboardKpiCard Title="المخزون"
+                                               Value="{Binding StockDisplay}"
+                                               Icon="Gold"
+                                               AccentBrush="#8B6914"
+                                               AccentLightBrush="#FFF8E1"
                                                ValueBrush="#5D4037"/>
                 </UniformGrid>
 
-                <UniformGrid Columns="3" Margin="0,0,0,18">
+                <UniformGrid Columns="4" Margin="0,0,0,18">
+                    <md:Card Padding="16" Margin="0,0,10,0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="الآجل المفتوح" Foreground="#8D6E63" FontSize="12"/>
+                            <TextBlock Text="{Binding CreditDisplay}" FontSize="16" FontWeight="Bold" Foreground="#5D4037" Margin="0,4,0,0"/>
+                            <TextBlock Text="ذمم الزبائن" FontSize="11" Foreground="#A1887F"/>
+                        </StackPanel>
+                    </md:Card>
                     <md:Card Padding="16" Margin="0,0,10,0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="سعر الصرف" Foreground="#8D6E63" FontSize="12"/>
@@ -212,39 +264,192 @@
                     </md:Card>
                     <md:Card Padding="16" Margin="0,0,10,0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="مخزون منخفض" Foreground="#8D6E63" FontSize="12"/>
+                            <TextBlock Text="مخزون عيارات منخفض" Foreground="#8D6E63" FontSize="12"/>
                             <TextBlock Text="{Binding LowStockKaratCount}" FontSize="22" FontWeight="Bold" Foreground="#C62828" Margin="0,4,0,0"/>
                             <TextBlock Text="عيارات تحت الحد" FontSize="11" Foreground="#A1887F"/>
                         </StackPanel>
                     </md:Card>
                     <md:Card Padding="16" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="أسعار اليوم" Foreground="#8D6E63" FontSize="12"/>
-                            <TextBlock FontSize="18" FontWeight="Bold" Margin="0,4,0,0">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="لم تُحدَّث"/>
-                                        <Setter Property="Foreground" Value="#C62828"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding PricesUpdatedToday}" Value="True">
-                                                <Setter Property="Text" Value="محدّثة ✓"/>
-                                                <Setter Property="Foreground" Value="#2E7D32"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="مثقال حسب العيار" FontSize="11" Foreground="#A1887F"/>
+                            <TextBlock Text="مخازن منخفضة" Foreground="#8D6E63" FontSize="12"/>
+                            <TextBlock Text="{Binding LowWarehouseStockCount}" FontSize="22" FontWeight="Bold" Foreground="#C62828" Margin="0,4,0,0"/>
+                            <TextBlock Text="مخازن تحتاج مراجعة" FontSize="11" Foreground="#A1887F"/>
                         </StackPanel>
                     </md:Card>
                 </UniformGrid>
 
-                <!-- Charts + Alerts -->
+                <!-- Daily tasks + Smart alerts (Accounting layout) -->
+                <md:Card Padding="16" Margin="0,0,0,18" UniformCornerRadius="14"
+                         BorderBrush="#E8D5A3" BorderThickness="1" md:ElevationAssist.Elevation="Dp2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="#FFFBF0" CornerRadius="16" Padding="18,16"
+                                BorderBrush="#E8D5A3" BorderThickness="1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border Width="42" Height="42" CornerRadius="12" Background="#FFF3CD" Margin="0,0,12,0">
+                                        <md:PackIcon Kind="ClipboardList" Width="22" Height="22" Foreground="#B8860B"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock FontWeight="Bold" FontSize="15" Foreground="#5D4037">
+                                            <Run Text="مهام اليوم"/>
+                                            <Run Text=" (" Foreground="#A1887F"/>
+                                            <Run Text="{Binding DailyTaskCount, Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text=")" Foreground="#A1887F"/>
+                                        </TextBlock>
+                                        <TextBlock Text="إنجاز المهام العاجلة يحافظ على تدفق العمل"
+                                                   FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding DailyTasks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource GoldTaskButton}"
+                                                    Command="{Binding DataContext.ExecuteDailyTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Border Background="#FFFFFF" CornerRadius="14" Padding="14,12"
+                                                        BorderBrush="#E8D5A3" BorderThickness="1" MinHeight="64">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="42" Height="42" CornerRadius="12" Margin="0,0,12,0"
+                                                                Background="{Binding Priority, Converter={StaticResource TaskPriorityLightBrush}}">
+                                                            <TextBlock Text="{Binding Priority}" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{Binding Priority, Converter={StaticResource TaskPriorityBrush}}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14"
+                                                                       Foreground="#5D4037"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="12"
+                                                                       Foreground="#8D6E63" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                        <Border Grid.Column="2" Background="#FFF3CD"
+                                                                CornerRadius="10" Padding="8,6" VerticalAlignment="Center">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="تنفيذ" FontSize="11" FontWeight="SemiBold"
+                                                                           Foreground="#B8860B" VerticalAlignment="Center"/>
+                                                                <md:PackIcon Kind="ChevronLeft" Foreground="#B8860B"
+                                                                             Width="16" Height="16" Margin="4,0,0,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Border Background="#E8F5E9" CornerRadius="12" Padding="14,12" Margin="0,10,0,0"
+                                        BorderBrush="#A5D6A7" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <md:PackIcon Kind="CheckCircleOutline" Width="18" Height="18"
+                                                     Foreground="#2E7D32" VerticalAlignment="Center"/>
+                                        <TextBlock Text="لا توجد مهام عاجلة اليوم — عمل رائع!"
+                                                   FontSize="12" Foreground="#2E7D32"
+                                                   Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DailyTaskCount}" Value="0">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="#FFF8E1" CornerRadius="16" Padding="18,16"
+                                BorderBrush="#E8D5A3" BorderThickness="1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border Width="42" Height="42" CornerRadius="12" Background="#FFECB3" Margin="0,0,12,0">
+                                        <md:PackIcon Kind="BellRing" Width="22" Height="22" Foreground="#C62828"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock FontWeight="Bold" FontSize="15" Foreground="#5D4037">
+                                            <Run Text="تنبيهات ذكية"/>
+                                            <Run Text=" (" Foreground="#A1887F"/>
+                                            <Run Text="{Binding SmartAlertCount, Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text=")" Foreground="#A1887F"/>
+                                        </TextBlock>
+                                        <TextBlock Text="متابعة فورية للحالات التي تحتاج انتباهك"
+                                                   FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding Alerts}" MaxHeight="280">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource GoldTaskButton}"
+                                                    Command="{Binding DataContext.ExecuteAlertCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Border Background="#FFFFFF" CornerRadius="12" Padding="14,12" Margin="0,0,0,8"
+                                                        BorderBrush="#E8D5A3" BorderThickness="1">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="10" Height="10" CornerRadius="5"
+                                                                Background="#B8860B" VerticalAlignment="Top" Margin="0,6,10,0"/>
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"
+                                                                       Foreground="#8B6914"/>
+                                                            <TextBlock Text="{Binding Message}" FontSize="12"
+                                                                       Foreground="#6D4C41"
+                                                                       TextWrapping="Wrap" Margin="0,5,0,0" LineHeight="18"/>
+                                                        </StackPanel>
+                                                        <md:PackIcon Grid.Column="2" Kind="ChevronLeft" Foreground="#BCAAA4"
+                                                                     Width="16" Height="16" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="لا توجد تنبيهات حالياً"
+                                           FontSize="12" Foreground="#A1887F"
+                                           HorizontalAlignment="Center" Margin="0,12,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SmartAlertCount}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+
+                <!-- Charts -->
                 <Grid Margin="0,0,0,18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="0.85*"/>
                     </Grid.ColumnDefinitions>
 
                     <md:Card Grid.Column="0" Padding="16" Margin="0,0,10,0" UniformCornerRadius="14"
@@ -255,7 +460,7 @@
                         </StackPanel>
                     </md:Card>
 
-                    <md:Card Grid.Column="1" Padding="16" Margin="0,0,10,0" UniformCornerRadius="14"
+                    <md:Card Grid.Column="1" Padding="16" UniformCornerRadius="14"
                              BorderBrush="#E8D5A3" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="مبيعات حديثة (مؤشر)" FontWeight="Bold" Foreground="#5D4037" Margin="0,0,0,8"/>
@@ -264,30 +469,6 @@
                                                 YAxes="{Binding SalesYAxes}"
                                                 Height="240"/>
                         </StackPanel>
-                    </md:Card>
-
-                    <md:Card Grid.Column="2" Padding="16" UniformCornerRadius="14"
-                             BorderBrush="#E8D5A3" BorderThickness="1">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="التنبيهات" FontWeight="Bold"
-                                       Foreground="#5D4037" Margin="0,0,0,10"/>
-                            <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding Alerts}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="10"
-                                                    Background="#FFF8E1" BorderBrush="#E8D5A3" BorderThickness="1">
-                                                <StackPanel>
-                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="#8B6914"/>
-                                                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="12"
-                                                               Foreground="#6D4C41" Margin="0,2,0,0"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </DockPanel>
                     </md:Card>
                 </Grid>
 
