@@ -19,7 +19,7 @@ public partial class PosQuickSaleView : UserControl
         PosFeatureColumnSync.Attach(
             this,
             ColPosSize, ColPosColor, ColPosCustom1, ColPosCustom2,
-            ColPosUnit, ColPosBatch, ColPosSerial, ColPosPricing, ColPosDiscount);
+            ColPosBatch, ColPosSerial, ColPosPricing, ColPosDiscount);
     }
 
     private void Root_Loaded(object sender, RoutedEventArgs e)

@@ -151,8 +151,6 @@ public partial class PosQuickSaleViewModel
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
-                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
-                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 Notes = "بيع تقسيط POS"
             };
             var items = CartLines.Select(l => new InvoiceItem
@@ -236,8 +234,6 @@ public partial class PosQuickSaleViewModel
             PartyName = inv.Customer?.Name ?? SelectedPosCustomer?.Name ?? "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
-            DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
-            TransportFeeAmount = ShowTransportFee ? inv.TransportFeeAmount : 0m,
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = false,
@@ -327,15 +323,13 @@ public partial class PosQuickSaleViewModel
     {
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
-        var model = new InvoicePrintModel
+        export.PrintThermalReceipt(new InvoicePrintModel
         {
             InvoiceNumber = saved.InvoiceNumber,
             Date = saved.Date,
             PartyName = SelectedPosCustomer?.Name ?? "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
-            DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
-            TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             Subtotal = totalSnapshot,
             GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
             PharmacyUsageReceipt = pharmacyUsage && ShowPharmacy,
@@ -348,31 +342,6 @@ public partial class PosQuickSaleViewModel
                 TotalPrice = l.LineTotal,
                 UsageInstructions = l.UsageInstructions
             }).ToList()
-        };
-        export.PrintThermalReceipt(model);
-
-        if (ShowDriverSelection)
-        {
-            export.PrintThermalReceipt(new InvoicePrintModel
-            {
-                Title = "نسخة مخزن",
-                InvoiceNumber = model.InvoiceNumber,
-                Date = model.Date,
-                PartyName = model.PartyName,
-                PartyLabel = model.PartyLabel,
-                WarehouseName = model.WarehouseName,
-                DriverName = model.DriverName,
-                HideAmounts = true,
-                Items = model.Items.Select(i => new InvoicePrintItem
-                {
-                    Number = i.Number,
-                    ItemName = i.ItemName,
-                    Quantity = i.Quantity,
-                    UnitPrice = 0,
-                    TotalPrice = 0,
-                    UsageInstructions = i.UsageInstructions
-                }).ToList()
-            });
-        }
+        });
     }
 }

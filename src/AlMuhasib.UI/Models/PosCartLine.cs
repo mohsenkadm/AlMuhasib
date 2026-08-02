@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
-using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -42,12 +41,6 @@ public partial class PosCartLine : ObservableObject
     [ObservableProperty] private string _customField1 = string.Empty;
     [ObservableProperty] private string _customField2 = string.Empty;
 
-    // Units
-    public ObservableCollection<ProductUnit> AvailableUnits { get; } = [];
-    [ObservableProperty] private ProductUnit? _selectedUnit;
-    [ObservableProperty] private string _selectedUnitName = string.Empty;
-    [ObservableProperty] private decimal _unitConversionFactor = 1m;
-
     // Batch / expiry
     public ObservableCollection<ProductBatch> AvailableBatches { get; } = [];
     [ObservableProperty] private ProductBatch? _selectedBatch;
@@ -64,10 +57,6 @@ public partial class PosCartLine : ObservableObject
     [ObservableProperty] private ProductPricingOption? _selectedPricingOption;
     [ObservableProperty] private string _pricingTypeName = string.Empty;
 
-    // Weight
-    public decimal ProductWeight { get; set; }
-    public string? ProductWeightUnit { get; set; }
-
     public string? UsageInstructions => SourceProduct?.UsageInstructions;
 
     public string DisplayName
@@ -82,7 +71,6 @@ public partial class PosCartLine : ObservableObject
                 name = $"{name} — {string.Join(" — ", attrs)}";
 
             var extras = new List<string>(4);
-            if (!string.IsNullOrWhiteSpace(SelectedUnitName)) extras.Add(SelectedUnitName);
             if (!string.IsNullOrWhiteSpace(BatchNumber)) extras.Add($"دفعة: {BatchNumber}");
             if (ExpiryDate.HasValue) extras.Add($"انتهاء: {ExpiryDate:yyyy-MM-dd}");
             if (!string.IsNullOrWhiteSpace(SerialNumber)) extras.Add($"سيريال: {SerialNumber}");
@@ -94,8 +82,6 @@ public partial class PosCartLine : ObservableObject
             return extras.Count == 0 ? name : $"{name} | {string.Join(" | ", extras)}";
         }
     }
-
-    public decimal StockQuantity => Quantity * (UnitConversionFactor <= 0 ? 1m : UnitConversionFactor);
 
     partial void OnQuantityChanged(decimal value)
     {
@@ -119,21 +105,6 @@ public partial class PosCartLine : ObservableObject
         CustomField2 = value.ColorName;
         if (string.IsNullOrWhiteSpace(CustomField2Label))
             CustomField2Label = ClothingSizeInvoiceHelper.ColorLabel;
-        OnPropertyChanged(nameof(DisplayName));
-    }
-
-    partial void OnSelectedUnitChanged(ProductUnit? value)
-    {
-        if (value is null)
-        {
-            SelectedUnitName = string.Empty;
-            UnitConversionFactor = 1m;
-        }
-        else
-        {
-            SelectedUnitName = value.UnitName;
-            UnitConversionFactor = value.ConversionFactor <= 0 ? 1m : value.ConversionFactor;
-        }
         OnPropertyChanged(nameof(DisplayName));
     }
 
@@ -168,7 +139,6 @@ public partial class PosCartLine : ObservableObject
     partial void OnSerialNumberChanged(string value) => OnPropertyChanged(nameof(DisplayName));
     partial void OnCustomField1Changed(string value) => OnPropertyChanged(nameof(DisplayName));
     partial void OnCustomField2Changed(string value) => OnPropertyChanged(nameof(DisplayName));
-    partial void OnSelectedUnitNameChanged(string value) => OnPropertyChanged(nameof(DisplayName));
 
     public void RefreshProductDiscount()
     {
@@ -193,10 +163,6 @@ public partial class PosCartLine : ObservableObject
         if (!string.IsNullOrWhiteSpace(CustomField2Label) && !string.IsNullOrWhiteSpace(CustomField2))
             dict[CustomField2Label] = CustomField2.Trim();
 
-        if (!string.IsNullOrWhiteSpace(SelectedUnitName))
-            dict["__unit"] = SelectedUnitName.Trim();
-        if (UnitConversionFactor != 1m)
-            dict["__unitFactor"] = UnitConversionFactor.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (!string.IsNullOrWhiteSpace(BatchNumber))
             dict["__batch"] = BatchNumber.Trim();
         if (ExpiryDate.HasValue)
@@ -213,12 +179,6 @@ public partial class PosCartLine : ObservableObject
             dict["__colorId"] = ProductColorId.Value.ToString();
         if (!string.IsNullOrWhiteSpace(ColorName))
             dict["__color"] = ColorName.Trim();
-        if (ProductWeight > 0)
-        {
-            dict["__weight"] = ProductWeight.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            if (!string.IsNullOrWhiteSpace(ProductWeightUnit))
-                dict["__weightUnit"] = ProductWeightUnit.Trim();
-        }
 
         return dict.Count == 0 ? null : JsonSerializer.Serialize(dict, JsonOptions);
     }
@@ -246,9 +206,7 @@ public partial class PosCartLine : ObservableObject
             ProductSizeId = productSizeId,
             SizeName = sizeName ?? string.Empty,
             ProductColorId = productColorId,
-            ColorName = colorName ?? string.Empty,
-            ProductWeight = product.Weight,
-            ProductWeightUnit = product.WeightUnit
+            ColorName = colorName ?? string.Empty
         };
 
         if (!string.IsNullOrWhiteSpace(sizeName))

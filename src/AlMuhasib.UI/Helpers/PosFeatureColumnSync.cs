@@ -16,7 +16,6 @@ public static class PosFeatureColumnSync
         DataGridColumn? color,
         DataGridColumn? custom1,
         DataGridColumn? custom2,
-        DataGridColumn? unit,
         DataGridColumn? batch,
         DataGridColumn? serial,
         DataGridColumn? pricing,
@@ -31,7 +30,6 @@ public static class PosFeatureColumnSync
             Set(color, pos.ShowClothingSizes);
             Set(custom1, pos.ShowCustomField1);
             Set(custom2, pos.ShowCustomField2);
-            Set(unit, pos.ShowUnitsOfMeasure);
             Set(batch, pos.ShowExpiryTracking);
             Set(serial, pos.ShowSerialNumbers);
             Set(pricing, pos.ShowProductPricing);
@@ -45,7 +43,6 @@ public static class PosFeatureColumnSync
                 case nameof(PosQuickSaleViewModel.ShowClothingSizes):
                 case nameof(PosQuickSaleViewModel.ShowCustomField1):
                 case nameof(PosQuickSaleViewModel.ShowCustomField2):
-                case nameof(PosQuickSaleViewModel.ShowUnitsOfMeasure):
                 case nameof(PosQuickSaleViewModel.ShowExpiryTracking):
                 case nameof(PosQuickSaleViewModel.ShowSerialNumbers):
                 case nameof(PosQuickSaleViewModel.ShowProductPricing):

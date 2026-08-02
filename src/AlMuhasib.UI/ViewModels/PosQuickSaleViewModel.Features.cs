@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
@@ -12,37 +11,25 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class PosQuickSaleViewModel
 {
-    private IProductUnitService? _productUnitService;
     private IProductSerialService? _productSerialService;
     private IProductSizeService? _productSizeService;
     private IProductColorService? _productColorService;
 
-    [ObservableProperty] private bool _showUnitsOfMeasure;
-    [ObservableProperty] private bool _showMenuWeight;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showClothingSizes;
-    [ObservableProperty] private bool _showTransportFee;
-    [ObservableProperty] private bool _showDriverSelection;
     [ObservableProperty] private bool _showPharmacy;
     [ObservableProperty] private bool _showCustomField1;
     [ObservableProperty] private bool _showCustomField2;
     [ObservableProperty] private string _customField1Header = string.Empty;
     [ObservableProperty] private string _customField2Header = string.Empty;
-    [ObservableProperty] private decimal _transportFeeAmount;
-    [ObservableProperty] private string _invoiceWeightSummaryText = string.Empty;
-    [ObservableProperty] private Driver? _selectedDriver;
-
-    public ObservableCollection<Driver> Drivers { get; } = [];
 
     private void ConfigurePosFeatureServices(
-        IProductUnitService productUnitService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
         IProductColorService productColorService)
     {
-        _productUnitService = productUnitService;
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
         _productColorService = productColorService;
@@ -53,14 +40,10 @@ public partial class PosQuickSaleViewModel
     private void RefreshAllFeatureVisibility()
     {
         ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
-        ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
-        ShowMenuWeight = _featureFlags.MenuWeight;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
-        ShowTransportFee = _featureFlags.TransportFees;
-        ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
         ShowPharmacy = _featureFlags.TemplatePharmacy;
 
         ApplyMarketTemplateHeaders();
@@ -79,13 +62,6 @@ public partial class PosQuickSaleViewModel
             SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         }
 
-        if (!ShowTransportFee)
-            TransportFeeAmount = 0m;
-
-        if (!ShowDriverSelection)
-            SelectedDriver = null;
-
-        RefreshInvoiceWeightSummary();
         RecalcCartTotals();
     }
 
@@ -135,14 +111,6 @@ public partial class PosQuickSaleViewModel
         ShowCustomField2 = false;
     }
 
-    private async Task LoadDriversIfNeededAsync()
-    {
-        if (!ShowDriverSelection) return;
-        Drivers.Clear();
-        foreach (var d in await _unitOfWork.Drivers.GetAllAsync())
-            Drivers.Add(d);
-    }
-
     private async Task AddOrIncrementProductAsync(Product product)
     {
         var price = _suggestedPrices.GetValueOrDefault(product.Id);
@@ -166,7 +134,6 @@ public partial class PosQuickSaleViewModel
         {
             existing.Quantity += 1;
             StatusMessage = $"زيادة كمية {product.Name}";
-            RefreshInvoiceWeightSummary();
             return;
         }
 
@@ -175,7 +142,6 @@ public partial class PosQuickSaleViewModel
         await EnrichLineFeatureDataAsync(line);
         CartLines.Add(line);
         StatusMessage = $"أُضيف {product.Name}";
-        RefreshInvoiceWeightSummary();
     }
 
     private async Task AddClothingProductAsync(Product product, decimal price, int? pricingTypeId)
@@ -232,18 +198,11 @@ public partial class PosQuickSaleViewModel
                 sizeId, sizeName, chosenColor?.Id, chosenColor?.ColorName);
 
             ApplyTemplateLabelsToLine(line);
-            if (chosenColor is not null)
-            {
-                line.AvailableColors.Clear();
-                // keep selected color info already set
-            }
-
             await EnrichLineFeatureDataAsync(line);
             CartLines.Add(line);
         }
 
         StatusMessage = $"أُضيف {product.Name} بالقياسات المختارة";
-        RefreshInvoiceWeightSummary();
     }
 
     private PosCartLine? FindMergeableLine(int productId, int? pricingTypeId, int? sizeId, int? colorId, string? serial)
@@ -275,15 +234,6 @@ public partial class PosQuickSaleViewModel
 
     private async Task EnrichLineFeatureDataAsync(PosCartLine line)
     {
-        if (ShowUnitsOfMeasure && _productUnitService is not null)
-        {
-            var units = await _productUnitService.GetByProductAsync(line.ProductId);
-            line.AvailableUnits.Clear();
-            foreach (var u in units)
-                line.AvailableUnits.Add(u);
-            line.SelectedUnit = units.FirstOrDefault(u => u.IsDefault) ?? units.FirstOrDefault();
-        }
-
         if (ShowExpiryTracking && SelectedWarehouse is not null)
         {
             var batches = await _productBatchService.GetByProductAsync(
@@ -345,7 +295,7 @@ public partial class PosQuickSaleViewModel
         {
             var line = lines[i];
             var item = savedItems[i];
-            var stockQty = Math.Abs(line.StockQuantity);
+            var stockQty = Math.Abs(line.Quantity);
             if (stockQty <= 0) continue;
 
             if (ShowExpiryTracking && SelectedWarehouse is not null)
@@ -388,24 +338,4 @@ public partial class PosQuickSaleViewModel
             }
         }
     }
-
-    private void RefreshInvoiceWeightSummary()
-    {
-        if (!ShowMenuWeight)
-        {
-            InvoiceWeightSummaryText = string.Empty;
-            return;
-        }
-
-        var total = CartLines.Sum(l =>
-        {
-            if (l.ProductWeight <= 0) return 0m;
-            var factor = l.UnitConversionFactor <= 0 ? 1m : l.UnitConversionFactor;
-            return l.ProductWeight * l.Quantity * factor;
-        });
-        var unit = CartLines.Select(l => l.ProductWeightUnit).FirstOrDefault(u => !string.IsNullOrWhiteSpace(u)) ?? "كغ";
-        InvoiceWeightSummaryText = total > 0 ? $"وزن الفاتورة: {total:N3} {unit}" : "وزن الفاتورة: —";
-    }
-
-    partial void OnTransportFeeAmountChanged(decimal value) => RecalcCartTotals();
 }

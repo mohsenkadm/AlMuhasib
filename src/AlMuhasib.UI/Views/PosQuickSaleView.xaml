@@ -357,16 +357,6 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn x:Name="ColPosUnit" Header="التعبئة" Width="88" Visibility="Collapsed">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailableUnits}"
-                                                  SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
-                                                  DisplayMemberPath="UnitName"
-                                                  FontSize="11"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn x:Name="ColPosBatch" Header="الدفعة" Width="110" Visibility="Collapsed">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -466,24 +456,6 @@
                                                FontWeight="SemiBold" Foreground="#2E7D32"/>
                                 </Grid>
                             </StackPanel>
-
-                            <TextBlock Text="{Binding InvoiceWeightSummaryText}" Margin="0,8,0,0"
-                                       FontSize="12" Foreground="#546E7A"
-                                       Visibility="{Binding ShowMenuWeight, Converter={StaticResource BoolVis}}"/>
-
-                            <TextBox Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="أجور النقل"
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     Margin="0,8,0,0"
-                                     Visibility="{Binding ShowTransportFee, Converter={StaticResource BoolVis}}"/>
-
-                            <ComboBox ItemsSource="{Binding Drivers}"
-                                      SelectedItem="{Binding SelectedDriver}"
-                                      DisplayMemberPath="Name"
-                                      materialDesign:HintAssist.Hint="السائق"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                      Margin="0,8,0,0"
-                                      Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolVis}}"/>
 
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>

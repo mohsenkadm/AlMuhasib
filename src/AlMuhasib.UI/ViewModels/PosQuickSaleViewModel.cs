@@ -82,7 +82,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IProductPriceService productPriceService,
         IProductBatchService productBatchService,
         IFeatureFlagService featureFlags,
-        IProductUnitService productUnitService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
         IProductColorService productColorService)
@@ -100,8 +99,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
-        ConfigurePosFeatureServices(
-            productUnitService, productSerialService, productSizeService, productColorService);
+        ConfigurePosFeatureServices(productSerialService, productSizeService, productColorService);
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -158,7 +156,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             await LoadPosCustomersAsync();
             await LoadHeldInvoicesAsync();
-            await LoadDriversIfNeededAsync();
 
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
@@ -232,7 +229,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     {
         if (line is null) return;
         CartLines.Remove(line);
-        RefreshInvoiceWeightSummary();
     }
 
     [RelayCommand]
@@ -449,7 +445,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == line.ProductId);
             var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-            var needed = line.StockQuantity;
+            var needed = line.Quantity;
             if (needed > available)
             {
                 BeautifulMessageDialog.ShowWarning(
@@ -465,7 +461,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 if (line.BatchId is int batchId)
                 {
                     var batch = line.AvailableBatches.FirstOrDefault(b => b.Id == batchId);
-                    if (batch is not null && batch.Quantity < line.StockQuantity)
+                    if (batch is not null && batch.Quantity < line.Quantity)
                     {
                         BeautifulMessageDialog.ShowWarning(
                             $"«{line.ProductName}»: كمية الدفعة غير كافية");
@@ -477,7 +473,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 try
                 {
                     await _productBatchService.AllocateFefoAsync(
-                        line.ProductId, SelectedWarehouse.Id, line.StockQuantity);
+                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -527,8 +523,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
-                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
-                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 PaidAmount = isCredit ? paidSnapshot : GrandTotal,
                 CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
                 Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
@@ -677,11 +671,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         else
             InvoiceDiscountAmount = 0m;
 
-        var transport = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m;
-        var net = Math.Max(0m, SubTotal - InvoiceDiscountAmount) + transport;
-        GrandTotal = net;
+        GrandTotal = Math.Max(0m, SubTotal - InvoiceDiscountAmount);
         CartLineCount = CartLines.Count;
-        RefreshInvoiceWeightSummary();
         RecalcChange();
     }
 
