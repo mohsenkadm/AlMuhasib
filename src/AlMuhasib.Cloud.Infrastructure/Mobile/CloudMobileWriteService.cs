@@ -68,6 +68,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Name = request.Name.Trim(),
             Barcode = request.Barcode,
             ScientificName = request.ScientificName,
+            UsageInstructions = request.UsageInstructions,
             Description = request.Description,
             CategorySyncId = request.CategorySyncId,
             CreatedAt = now,

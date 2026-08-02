@@ -407,6 +407,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Description = dto.Description;
         existing.Barcode = dto.Barcode;
         existing.ScientificName = dto.ScientificName;
+        existing.UsageInstructions = dto.UsageInstructions;
         existing.CategoryId = categoryId;
         existing.Weight = dto.Weight;
         existing.WeightUnit = dto.WeightUnit;
@@ -824,6 +825,7 @@ public sealed partial class SyncEngine : ISyncEngine
             SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode, ScientificName = p.ScientificName,
+            UsageInstructions = p.UsageInstructions,
             Weight = p.Weight, WeightUnit = p.WeightUnit,
             DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
             CategorySyncId = catMap.GetValueOrDefault(p.CategoryId)

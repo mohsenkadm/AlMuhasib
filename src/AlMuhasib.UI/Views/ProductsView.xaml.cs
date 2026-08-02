@@ -16,7 +16,7 @@ public partial class ProductsView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
-        ProductFeatureColumnSync.Attach(this, ColScientificName);
+        ProductFeatureColumnSync.Attach(this, ColScientificName, ColUsageInstructions);
     }
 
     private void ProductsGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)

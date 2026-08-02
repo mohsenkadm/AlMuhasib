@@ -25,7 +25,8 @@ public partial class SalesInvoiceView : UserControl
             ColBatch,
             expiry: null,
             ColSerial,
-            ColPricingType);
+            ColPricingType,
+            ColUsageInstructions);
     }
 
     private void Root_PreviewKeyDown(object sender, KeyEventArgs e)

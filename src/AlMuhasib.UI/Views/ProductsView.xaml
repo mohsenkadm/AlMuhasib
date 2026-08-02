@@ -247,6 +247,23 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- Usage instructions (pharmacy template) -->
+                        <DataGridTextColumn x:Name="ColUsageInstructions"
+                                            Header="طريقة الاستخدام"
+                                            Binding="{Binding UsageInstructions}"
+                                            Width="1.4*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UsageInstructions">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#546E7A"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="TextWrapping" Value="NoWrap"/>
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
                         <!-- Category -->
                         <DataGridTextColumn Header="التصنيف"
                                             Binding="{Binding Category.Name}"
@@ -387,6 +404,10 @@
                                                 <TextBlock Style="{StaticResource MasterDataCardMeta}"
                                                            Text="{Binding ScientificName, Mode=OneWay, StringFormat=علمي: {0}}"
                                                            Visibility="{Binding HasScientificName, Converter={StaticResource BoolToVis}}"/>
+                                                <TextBlock Style="{StaticResource MasterDataCardMeta}"
+                                                           Text="{Binding UsageInstructions, Mode=OneWay, StringFormat=الاستخدام: {0}}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Visibility="{Binding HasUsageInstructions, Converter={StaticResource BoolToVis}}"/>
                                                 <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
                                                            Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"/>
                                             </StackPanel>
@@ -554,6 +575,19 @@
                                      Style="{StaticResource FilledTextBox}"
                                      Margin="0,0,0,16"
                                      Visibility="{Binding ShowScientificName, Converter={StaticResource BoolToVis}}" />
+
+                            <!-- Usage instructions (pharmacy template) — large notes field -->
+                            <TextBox Text="{Binding EditUsageInstructions, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="طريقة استخدام الدواء"
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     MinHeight="110"
+                                     MaxHeight="200"
+                                     Margin="0,0,0,16"
+                                     Visibility="{Binding ShowUsageInstructions, Converter={StaticResource BoolToVis}}" />
 
                             <!-- Category -->
                             <ComboBox ItemsSource="{Binding Categories}"

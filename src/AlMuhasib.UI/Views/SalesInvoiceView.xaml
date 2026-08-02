@@ -390,6 +390,21 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn x:Name="ColUsageInstructions" Header="طريقة الاستخدام" Width="160" MinWidth="120"
+                                                        Visibility="Collapsed" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding UsageInstructions}"
+                                                       TextWrapping="Wrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxHeight="48"
+                                                       VerticalAlignment="Center"
+                                                       ToolTip="{Binding UsageInstructions}"
+                                                       Foreground="#546E7A"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn x:Name="ColUnit" Header="التعبئة" Width="100"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>

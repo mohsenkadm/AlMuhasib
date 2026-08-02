@@ -86,6 +86,9 @@ public partial class ProductsViewModel : ViewModelBase
     private string _editScientificName = string.Empty;
 
     [ObservableProperty]
+    private string _editUsageInstructions = string.Empty;
+
+    [ObservableProperty]
     private Category? _editCategory;
 
     [ObservableProperty]
@@ -334,6 +337,7 @@ public partial class ProductsViewModel : ViewModelBase
                 Product = product,
                 Name = product.Name,
                 ScientificName = product.ScientificName,
+                UsageInstructions = product.UsageInstructions,
                 Barcode = product.Barcode,
                 Description = product.Description,
                 CategoryName = categoryName
@@ -454,6 +458,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditDescription = string.Empty;
         EditBarcode = string.Empty;
         EditScientificName = string.Empty;
+        EditUsageInstructions = string.Empty;
         EditCategory = null;
         EditWeight = 0m;
         EditWeightUnit = "كغ";
@@ -480,6 +485,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditDescription = product.Description ?? string.Empty;
         EditBarcode = product.Barcode ?? string.Empty;
         EditScientificName = product.ScientificName ?? string.Empty;
+        EditUsageInstructions = product.UsageInstructions ?? string.Empty;
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         EditWeight = product.Weight;
         EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
@@ -542,6 +548,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
                 product.Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim();
                 product.ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim();
+                product.UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim();
                 product.CategoryId = EditCategory.Id;
                 product.Weight = EditWeight < 0 ? 0m : EditWeight;
                 product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
@@ -558,6 +565,7 @@ public partial class ProductsViewModel : ViewModelBase
                     Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
                     Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim(),
                     ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim(),
+                    UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim(),
                     CategoryId = EditCategory.Id,
                     Weight = EditWeight < 0 ? 0m : EditWeight,
                     WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim()
@@ -736,12 +744,13 @@ public partial class ProductsViewModel : ViewModelBase
             if (dialog.ShowDialog() != true)
                 return;
 
-            if (ShowScientificName)
+            if (ShowScientificName || ShowUsageInstructions)
             {
                 var exportData = allItems.Select(p => new
                 {
                     الاسم = p.Name,
                     الاسم_العلمي = p.ScientificName ?? "",
+                    طريقة_الاستخدام = p.UsageInstructions ?? "",
                     الصنف = p.Category?.Name ?? "",
                     الباركود = p.Barcode ?? "",
                     الوصف = p.Description ?? "",

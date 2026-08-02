@@ -67,11 +67,13 @@ public partial class PosQuickSaleViewModel
             var items = CartLines.Select(l => new InvoiceItem
             {
                 ProductId = l.ProductId,
+                PricingTypeId = l.PricingTypeId,
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
-                TotalPrice = l.LineTotal
+                TotalPrice = l.LineTotal,
+                CustomFieldsJson = l.ToCustomFieldsJson()
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items, skipStockUpdate: true);
             CartLines.Clear();
@@ -154,13 +156,16 @@ public partial class PosQuickSaleViewModel
             var items = CartLines.Select(l => new InvoiceItem
             {
                 ProductId = l.ProductId,
+                PricingTypeId = l.PricingTypeId,
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
-                TotalPrice = l.LineTotal
+                TotalPrice = l.LineTotal,
+                CustomFieldsJson = l.ToCustomFieldsJson()
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);
+            await ApplyPosFeatureSideEffectsOnSaveAsync(cartSnapshot, items);
             var installmentService = scope.ServiceProvider.GetRequiredService<IInstallmentService>();
             await installmentService.CreatePlanAsync(saved.Id, SelectedPosCustomer.Id, null,
                 saved.NetAmount, InstallmentCount, DateTime.Today.AddMonths(1));
@@ -221,6 +226,7 @@ public partial class PosQuickSaleViewModel
 
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
+        var productUsage = await LoadUsageInstructionsMapAsync(items.Select(i => i.ProductId));
         export.PrintThermalReceipt(new InvoicePrintModel
         {
             InvoiceNumber = inv.InvoiceNumber,
@@ -230,6 +236,7 @@ public partial class PosQuickSaleViewModel
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
+            PharmacyUsageReceipt = false,
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
@@ -238,12 +245,81 @@ public partial class PosQuickSaleViewModel
                     it.CustomFieldsJson),
                 Quantity = it.Quantity,
                 UnitPrice = it.UnitPrice,
-                TotalPrice = it.TotalPrice
+                TotalPrice = it.TotalPrice,
+                UsageInstructions = it.ProductId is int pid ? productUsage.GetValueOrDefault(pid) : null
             }).ToList()
         });
     }
 
-    private void PrintReceiptForInvoice(Invoice saved, IReadOnlyList<PosCartLine> cartSnapshot, decimal totalSnapshot)
+    [RelayCommand]
+    private async Task PrintPharmacyReceiptAsync()
+    {
+        if (!ShowPharmacy)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الصيدلية أولاً");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(LastSavedInvoiceNumber))
+        {
+            BeautifulMessageDialog.ShowWarning("لا توجد فاتورة محفوظة للطباعة");
+            return;
+        }
+
+        var inv = (await _unitOfWork.Invoices.FindAsync(i => i.InvoiceNumber == LastSavedInvoiceNumber))
+            .FirstOrDefault();
+        if (inv is null)
+        {
+            BeautifulMessageDialog.ShowWarning("لم يُعثر على الفاتورة");
+            return;
+        }
+
+        var items = inv.Items?.Count > 0
+            ? inv.Items
+            : (await _unitOfWork.InvoiceItems.FindAsync(i => i.InvoiceId == inv.Id)).ToList();
+
+        var productUsage = await LoadUsageInstructionsMapAsync(items.Select(i => i.ProductId));
+
+        using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
+        var export = scope.ServiceProvider.GetRequiredService<IExportService>();
+        export.PrintThermalReceipt(new InvoicePrintModel
+        {
+            InvoiceNumber = inv.InvoiceNumber,
+            Date = inv.Date,
+            PartyName = inv.Customer?.Name ?? SelectedPosCustomer?.Name ?? "—",
+            PartyLabel = "العميل",
+            WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            Subtotal = items.Sum(i => i.TotalPrice),
+            GrandTotal = inv.NetAmount,
+            PharmacyUsageReceipt = true,
+            Items = items.Select((it, idx) => new InvoicePrintItem
+            {
+                Number = idx + 1,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    it.ItemName,
+                    it.CustomFieldsJson),
+                Quantity = it.Quantity,
+                UnitPrice = it.UnitPrice,
+                TotalPrice = it.TotalPrice,
+                UsageInstructions = it.ProductId is int pid ? productUsage.GetValueOrDefault(pid) : null
+            }).ToList()
+        });
+    }
+
+    private async Task<Dictionary<int, string?>> LoadUsageInstructionsMapAsync(IEnumerable<int?> productIds)
+    {
+        var ids = productIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        var map = new Dictionary<int, string?>();
+        foreach (var id in ids)
+        {
+            var product = _allProducts.FirstOrDefault(p => p.Id == id)
+                          ?? await _unitOfWork.Products.GetByIdAsync(id);
+            map[id] = product?.UsageInstructions;
+        }
+        return map;
+    }
+
+    private void PrintReceiptForInvoice(Invoice saved, IReadOnlyList<PosCartLine> cartSnapshot, decimal totalSnapshot, bool pharmacyUsage = false)
     {
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
@@ -256,13 +332,15 @@ public partial class PosQuickSaleViewModel
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             Subtotal = totalSnapshot,
             GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
+            PharmacyUsageReceipt = pharmacyUsage && ShowPharmacy,
             Items = cartSnapshot.Select((l, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
-                ItemName = l.ProductName,
+                ItemName = l.DisplayName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
-                TotalPrice = l.LineTotal
+                TotalPrice = l.LineTotal,
+                UsageInstructions = l.UsageInstructions
             }).ToList()
         });
     }

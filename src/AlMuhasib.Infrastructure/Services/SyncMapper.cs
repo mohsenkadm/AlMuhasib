@@ -283,6 +283,7 @@ internal static class SyncMapper
         d.Description = p.Description;
         d.Barcode = p.Barcode;
         d.ScientificName = p.ScientificName;
+        d.UsageInstructions = p.UsageInstructions;
         d.CategorySyncId = cats[p.CategoryId];
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
@@ -300,6 +301,7 @@ internal static class SyncMapper
         d.Description = p.Description;
         d.Barcode = p.Barcode;
         d.ScientificName = p.ScientificName;
+        d.UsageInstructions = p.UsageInstructions;
         d.CategorySyncId = catSyncId;
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
@@ -464,7 +466,7 @@ internal static class SyncMapper
             var entity = await FindBySyncIdAsync(db.Products, dto.SyncId, ct) ?? new Product();
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Products.Add(entity);
-            ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.ScientificName = dto.ScientificName; entity.CategoryId = catId;
+            ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.ScientificName = dto.ScientificName; entity.UsageInstructions = dto.UsageInstructions; entity.CategoryId = catId;
             entity.Weight = dto.Weight;
             entity.WeightUnit = dto.WeightUnit;
             entity.DiscountType = dto.DiscountType;

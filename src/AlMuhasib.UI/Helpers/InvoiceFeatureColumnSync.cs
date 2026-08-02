@@ -18,7 +18,8 @@ public static class InvoiceFeatureColumnSync
         DataGridColumn? batch,
         DataGridColumn? expiry,
         DataGridColumn? serial,
-        DataGridColumn? pricing = null)
+        DataGridColumn? pricing = null,
+        DataGridColumn? usageInstructions = null)
     {
         void SyncFromContext()
         {
@@ -32,6 +33,7 @@ public static class InvoiceFeatureColumnSync
                     Set(expiry, null);
                     Set(serial, sales.ShowSerialNumbers);
                     Set(pricing, sales.ShowProductPricing);
+                    Set(usageInstructions, sales.ShowPharmacyUsage);
                     break;
                 case PurchaseInvoiceViewModel purchase:
                     Set(custom1, purchase.ShowClothingSizes);
@@ -41,6 +43,7 @@ public static class InvoiceFeatureColumnSync
                     Set(expiry, purchase.ShowExpiryTracking);
                     Set(serial, purchase.ShowSerialNumbers);
                     Set(pricing, false);
+                    Set(usageInstructions, false);
                     break;
                 case InstallmentInvoiceViewModel installment:
                     Set(custom1, false);
@@ -50,6 +53,7 @@ public static class InvoiceFeatureColumnSync
                     Set(expiry, false);
                     Set(serial, false);
                     Set(pricing, false);
+                    Set(usageInstructions, false);
                     break;
                 default:
                     Set(custom1, false);
@@ -59,6 +63,7 @@ public static class InvoiceFeatureColumnSync
                     Set(expiry, false);
                     Set(serial, false);
                     Set(pricing, false);
+                    Set(usageInstructions, false);
                     break;
             }
         }
@@ -89,6 +94,7 @@ public static class InvoiceFeatureColumnSync
                 case "ShowSerialNumbers":
                 case "ShowProductPricing":
                 case "ShowClothingSizes":
+                case "ShowPharmacyUsage":
                 case "CustomField1Header":
                 case "CustomField2Header":
                 case "ClothingSizeHeader":

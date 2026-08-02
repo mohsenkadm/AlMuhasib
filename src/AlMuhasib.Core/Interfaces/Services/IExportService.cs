@@ -70,6 +70,8 @@ public class InvoicePrintModel
     public decimal? CompanyFeeAmount { get; set; }
     public List<InstallmentPrintRow>? Schedule { get; set; }
     public string? FileNumber { get; set; }
+    /// <summary>طباعة إيصال صيدلية يتضمن طريقة الاستخدام تحت كل صنف.</summary>
+    public bool PharmacyUsageReceipt { get; set; }
 }
 
 public class InvoicePrintItem
@@ -79,6 +81,8 @@ public class InvoicePrintItem
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
+    /// <summary>طريقة استخدام الدواء — تُطبع في إيصال الصيدلية.</summary>
+    public string? UsageInstructions { get; set; }
 }
 
 public class InstallmentPrintRow

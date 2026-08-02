@@ -2855,6 +2855,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UsageInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<decimal>("Weight")
                         .HasColumnType("decimal(18,4)");
 
@@ -2873,7 +2877,7 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductPrice", b =>
-                {
+            {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
