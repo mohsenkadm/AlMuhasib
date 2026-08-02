@@ -17,6 +17,7 @@ public partial class GoldItemsViewModel : ViewModelBase
 {
     private readonly IGoldInventoryService _inventoryService;
     private readonly IGoldPricingService _pricingService;
+    private readonly IGoldPrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _debounceTimer;
@@ -51,11 +52,13 @@ public partial class GoldItemsViewModel : ViewModelBase
     public GoldItemsViewModel(
         IGoldInventoryService inventoryService,
         IGoldPricingService pricingService,
+        IGoldPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _inventoryService = inventoryService;
         _pricingService = pricingService;
+        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أصناف الذهب";
@@ -346,6 +349,32 @@ public partial class GoldItemsViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintLabelAsync(GoldItem? item)
+    {
+        item ??= SelectedItem;
+        if (item is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر صنفاً لطباعة الملصق");
+            return;
+        }
+
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        try
+        {
+            await _printService.PrintItemLabelAsync(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر طباعة الملصق:\n{ex.Message}");
         }
     }
 }

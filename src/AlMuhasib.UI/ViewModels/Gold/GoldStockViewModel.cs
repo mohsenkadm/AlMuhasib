@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
@@ -14,25 +15,31 @@ namespace AlMuhasib.UI.ViewModels.Gold;
 public partial class GoldStockViewModel : ViewModelBase
 {
     private readonly IGoldInventoryService _inventoryService;
+    private readonly IGoldWarehouseService _warehouseService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
     private List<GoldStockRow> _allRows = [];
+    private bool _isLoadingWarehouses;
 
     [ObservableProperty] private GoldStockRow? _selectedRow;
     [ObservableProperty] private int _lowStockCount;
     [ObservableProperty] private decimal _totalGrams;
     [ObservableProperty] private decimal _totalValue;
+    [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
 
     public ObservableCollection<GoldStockRow> StockRows { get; } = [];
+    public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
 
     public GoldStockViewModel(
         IGoldInventoryService inventoryService,
+        IGoldWarehouseService warehouseService,
         IExportService exportService,
         ICurrentUserService currentUserService,
         MainWindowViewModel mainWindow)
     {
         _inventoryService = inventoryService;
+        _warehouseService = warehouseService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
@@ -42,7 +49,26 @@ public partial class GoldStockViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.Stock);
+        await LoadWarehousesAsync();
         await LoadAsync();
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        _isLoadingWarehouses = true;
+        try
+        {
+            Warehouses.Clear();
+            Warehouses.Add(new GoldWarehouse { Id = 0, Name = "كل المخازن" });
+            foreach (var w in await _warehouseService.GetAllAsync(activeOnly: true))
+                Warehouses.Add(w);
+
+            SelectedWarehouse = Warehouses.FirstOrDefault();
+        }
+        finally
+        {
+            _isLoadingWarehouses = false;
+        }
     }
 
     [RelayCommand]
@@ -52,7 +78,11 @@ public partial class GoldStockViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            _allRows = (await _inventoryService.GetStockBalancesAsync()).ToList();
+            int? warehouseId = SelectedWarehouse is null || SelectedWarehouse.Id == 0
+                ? null
+                : SelectedWarehouse.Id;
+
+            _allRows = (await _inventoryService.GetStockBalancesAsync(warehouseId)).ToList();
             LowStockCount = _allRows.Count(r => r.IsLowStock);
             TotalGrams = _allRows.Sum(r => r.GramsOnHand);
             TotalValue = _allRows.Sum(r => r.StockValue);
@@ -66,6 +96,12 @@ public partial class GoldStockViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    partial void OnSelectedWarehouseChanged(GoldWarehouse? value)
+    {
+        if (_isLoadingWarehouses) return;
+        _ = LoadAsync();
     }
 
     private void ApplyFilters()
@@ -101,6 +137,7 @@ public partial class GoldStockViewModel : ViewModelBase
 
             var exportData = _allRows.Select(r => new
             {
+                المخزن = r.WarehouseName,
                 العيار = r.KaratName,
                 القيمة = r.KaratValue,
                 الوزن = r.GramsOnHand,
@@ -137,9 +174,10 @@ public partial class GoldStockViewModel : ViewModelBase
             if (_allRows.Count == 0)
                 await LoadAsync();
 
-            var columns = new[] { "العيار", "القيمة", "الوزن (غ)", "متوسط التكلفة/غ", "قيمة المخزون", "عدد القطع", "تنبيه" };
+            var columns = new[] { "المخزن", "العيار", "القيمة", "الوزن (غ)", "متوسط التكلفة/غ", "قيمة المخزون", "عدد القطع", "تنبيه" };
             IList<object[]> rows = _allRows.Select(r => new object[]
             {
+                r.WarehouseName,
                 r.KaratName,
                 r.KaratValue,
                 r.GramsOnHand.ToString("N2"),
@@ -148,7 +186,7 @@ public partial class GoldStockViewModel : ViewModelBase
                 r.PieceCount,
                 r.IsLowStock ? "منخفض" : ""
             }).ToList();
-            _exportService.PrintTable("أرصدة المخزون حسب العيار", columns, rows);
+            _exportService.PrintTable("مخزون الذهب", columns, rows);
         }
         catch (Exception ex)
         {

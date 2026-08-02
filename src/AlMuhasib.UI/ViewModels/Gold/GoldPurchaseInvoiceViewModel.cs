@@ -17,13 +17,19 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
     private readonly IGoldPurchaseService _purchaseService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldCustomerService _customerService;
+    private readonly IGoldSupplierService _supplierService;
+    private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
     private readonly IGoldScaleService _scaleService;
+    private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private GoldInvoice? _lastSavedInvoice;
 
     public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
+    public ObservableCollection<GoldSupplierListItem> Suppliers { get; } = [];
+    public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
 
@@ -43,6 +49,8 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
     [ObservableProperty] private DateTime _invoiceDate = DateTime.Today;
     [ObservableProperty] private GoldPaymentMethod _paymentMethod = GoldPaymentMethod.Cash;
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
+    [ObservableProperty] private GoldSupplierListItem? _selectedSupplier;
+    [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
     [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
@@ -54,6 +62,7 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldSaleLineDraft? _selectedLine;
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
+    [ObservableProperty] private bool _canPrintInvoice;
     [ObservableProperty] private decimal _totalGoldValue;
     [ObservableProperty] private decimal _totalMakingCharge;
     [ObservableProperty] private decimal _grandTotal;
@@ -64,16 +73,22 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         IGoldPurchaseService purchaseService,
         IGoldPricingService pricingService,
         IGoldCustomerService customerService,
+        IGoldSupplierService supplierService,
+        IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
         IGoldScaleService scaleService,
+        IGoldPrintService printService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _purchaseService = purchaseService;
         _pricingService = pricingService;
         _customerService = customerService;
+        _supplierService = supplierService;
+        _warehouseService = warehouseService;
         _cashService = cashService;
         _scaleService = scaleService;
+        _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "فاتورة شراء خردة";
@@ -100,6 +115,16 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
             var (customers, _) = await _customerService.GetPagedAsync(1, 500, activeOnly: true);
             foreach (var c in customers)
                 Customers.Add(c);
+
+            Suppliers.Clear();
+            var (suppliers, _) = await _supplierService.GetPagedAsync(1, 500, activeOnly: true);
+            foreach (var s in suppliers)
+                Suppliers.Add(s);
+
+            Warehouses.Clear();
+            foreach (var w in await _warehouseService.GetAllAsync(activeOnly: true))
+                Warehouses.Add(w);
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
 
             Karats.Clear();
             foreach (var k in await _pricingService.GetKaratsAsync())
@@ -312,6 +337,8 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
                 InvoiceDate = InvoiceDate.Date,
                 PaymentMethod = PaymentMethod,
                 CustomerId = SelectedCustomer?.Id,
+                SupplierId = SelectedSupplier?.Id,
+                WarehouseId = SelectedWarehouse?.Id,
                 PricingCurrency = PricingCurrency,
                 PaymentCurrency = PaymentCurrency,
                 FxRate = FxRate,
@@ -333,9 +360,18 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
             };
 
             var invoice = await _purchaseService.CreatePurchaseAsync(request);
+            _lastSavedInvoice = invoice;
+            CanPrintInvoice = CanPrint;
             Message = $"تم حفظ فاتورة الشراء {invoice.InvoiceNumber}";
             _toast.ShowSuccess(Message);
-            BeautifulMessageDialog.ShowSuccess(Message);
+
+            if (BeautifulMessageDialog.ShowConfirm(
+                    $"{Message}\n\nهل تريد طباعة الفاتورة؟",
+                    "طباعة"))
+            {
+                await PrintInvoiceAsync();
+            }
+
             await ResetFormAsync();
         }
         catch (Exception ex)
@@ -350,6 +386,25 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
+    private async Task PrintInvoiceAsync()
+    {
+        if (_lastSavedInvoice is null || !CanPrint)
+            return;
+
+        try
+        {
+            await _printService.PrintInvoiceAsync(_lastSavedInvoice);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError(ex.Message, "الطباعة");
+        }
+    }
+
+    partial void OnCanPrintInvoiceChanged(bool value) => PrintInvoiceCommand.NotifyCanExecuteChanged();
+
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();
 
@@ -358,6 +413,8 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         InvoiceDate = DateTime.Today;
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
+        SelectedSupplier = null;
+        SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
         DiscountAmount = 0;
         PaidAmount = 0;
         Notes = string.Empty;

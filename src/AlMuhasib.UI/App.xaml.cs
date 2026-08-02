@@ -347,19 +347,30 @@ public partial class App : Application
         services.AddTransient<GoldItemsViewModel>();
         services.AddTransient<GoldStockViewModel>();
         services.AddTransient<GoldStockAdjustmentViewModel>();
+        services.AddTransient<GoldWarehousesViewModel>();
+        services.AddTransient<GoldWarehouseTransferViewModel>();
         services.AddTransient<GoldSaleInvoiceViewModel>();
         services.AddTransient<GoldCreditSalesViewModel>();
         services.AddTransient<GoldCollectionViewModel>();
+        services.AddTransient<GoldExchangeInvoiceViewModel>();
         services.AddTransient<GoldPurchaseInvoiceViewModel>();
+        services.AddTransient<GoldSuppliersViewModel>();
         services.AddTransient<GoldCustomersViewModel>();
         services.AddTransient<GoldCustomerStatementViewModel>();
         services.AddTransient<GoldCashBoxesViewModel>();
         services.AddTransient<GoldVouchersViewModel>();
+        services.AddTransient<GoldExpensesViewModel>();
+        services.AddTransient<GoldExpenseTypesViewModel>();
         services.AddTransient<GoldNotificationsViewModel>();
         services.AddTransient<GoldSettingsViewModel>();
         services.AddTransient<GoldStockReportViewModel>();
         services.AddTransient<GoldSalesReportViewModel>();
         services.AddTransient<GoldCreditReportViewModel>();
+        services.AddTransient<GoldAgingReportViewModel>();
+        services.AddTransient<GoldKaratMovementReportViewModel>();
+        services.AddTransient<GoldProfitabilityReportViewModel>();
+        services.AddTransient<GoldAuditReportViewModel>();
+        services.AddTransient<GoldPurchasesReportViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

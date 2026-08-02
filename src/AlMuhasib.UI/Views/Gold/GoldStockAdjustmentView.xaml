@@ -32,6 +32,13 @@
                     <TextBlock Text="{Binding CurrentBalanceText}" FontSize="13" Foreground="#8B6914"
                                Background="#FFF8E1" Padding="12,8" Margin="0,0,0,16"/>
 
+                    <ComboBox ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding SelectedWarehouse}"
+                              DisplayMemberPath="Name"
+                              md:HintAssist.Hint="المخزن"
+                              Style="{StaticResource FilledComboBox}"
+                              Margin="0,0,0,14"/>
+
                     <ComboBox ItemsSource="{Binding Karats}"
                               SelectedValue="{Binding KaratValue}"
                               SelectedValuePath="KaratValue"

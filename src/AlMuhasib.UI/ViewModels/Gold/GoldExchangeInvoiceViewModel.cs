@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
@@ -12,24 +11,24 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
-public partial class GoldSaleInvoiceViewModel : ViewModelBase
+public partial class GoldExchangeInvoiceViewModel : ViewModelBase
 {
-    private readonly IGoldSaleService _saleService;
+    private readonly IGoldExchangeService _exchangeService;
     private readonly IGoldPricingService _pricingService;
     private readonly IGoldCustomerService _customerService;
-    private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
+    private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldScaleService _scaleService;
     private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
-    private int _quoteVersion;
     private GoldInvoice? _lastSavedInvoice;
 
-    public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
+    public ObservableCollection<GoldSaleLineDraft> InLines { get; } = [];
+    public ObservableCollection<GoldSaleLineDraft> OutLines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
-    public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
+    public ObservableCollection<GoldWarehouse> Warehouses { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
 
     public IReadOnlyList<GoldPaymentMethodOption> PaymentMethods { get; } =
@@ -53,74 +52,76 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private GoldCashBox? _selectedCashBox;
-    [ObservableProperty] private decimal _discountAmount;
+    [ObservableProperty] private decimal _exchangeCashDifference;
     [ObservableProperty] private decimal _paidAmount;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private bool _weightFromScale;
-    [ObservableProperty] private GoldSaleLineDraft? _selectedLine;
+    [ObservableProperty] private GoldSaleLineDraft? _selectedInLine;
+    [ObservableProperty] private GoldSaleLineDraft? _selectedOutLine;
+    [ObservableProperty] private bool _isOutSectionActive;
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
+    [ObservableProperty] private decimal _inTotalValue;
+    [ObservableProperty] private decimal _outTotalValue;
+    [ObservableProperty] private decimal _computedDifference;
     [ObservableProperty] private bool _canPrintInvoice;
 
-    [ObservableProperty] private decimal _totalGoldValue;
-    [ObservableProperty] private decimal _totalMakingCharge;
-    [ObservableProperty] private decimal _grandTotal;
-    [ObservableProperty] private decimal _totalIqd;
-    [ObservableProperty] private decimal _totalUsd;
-
-    public GoldSaleInvoiceViewModel(
-        IGoldSaleService saleService,
+    public GoldExchangeInvoiceViewModel(
+        IGoldExchangeService exchangeService,
         IGoldPricingService pricingService,
         IGoldCustomerService customerService,
-        IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
+        IGoldWarehouseService warehouseService,
         IGoldScaleService scaleService,
         IGoldPrintService printService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
-        _saleService = saleService;
+        _exchangeService = exchangeService;
         _pricingService = pricingService;
         _customerService = customerService;
-        _warehouseService = warehouseService;
         _cashService = cashService;
+        _warehouseService = warehouseService;
         _scaleService = scaleService;
         _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
-        PageTitle = "فاتورة بيع ذهب";
-        Lines.CollectionChanged += OnLinesCollectionChanged;
+        PageTitle = "تبديل ذهب";
+        InLines.CollectionChanged += (_, _) => RecalculateTotals();
+        OutLines.CollectionChanged += (_, _) => RecalculateTotals();
     }
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.SaleInvoice);
+        LoadPermissions(_currentUserService, GoldShopPermissionRegistry.ExchangeInvoice);
         await LoadLookupsAsync();
-        AddLine();
+        AddInLine();
+        AddOutLine();
     }
 
-    public override bool HasUnsavedChanges => Lines.Any(l => l.WeightGrams > 0);
+    public override bool HasUnsavedChanges =>
+        InLines.Any(l => l.WeightGrams > 0) || OutLines.Any(l => l.WeightGrams > 0);
 
     private async Task LoadLookupsAsync()
     {
         IsBusy = true;
         try
         {
-            InvoiceNumber = await _saleService.GetNextInvoiceNumberAsync();
+            InvoiceNumber = await _exchangeService.GetNextInvoiceNumberAsync();
 
             Customers.Clear();
             var (customers, _) = await _customerService.GetPagedAsync(1, 500, activeOnly: true);
             foreach (var c in customers)
                 Customers.Add(c);
 
+            Karats.Clear();
+            foreach (var k in await _pricingService.GetKaratsAsync())
+                Karats.Add(k);
+
             Warehouses.Clear();
             foreach (var w in await _warehouseService.GetAllAsync(activeOnly: true))
                 Warehouses.Add(w);
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
-
-            Karats.Clear();
-            foreach (var k in await _pricingService.GetKaratsAsync())
-                Karats.Add(k);
 
             var fx = await _pricingService.GetLatestFxRateAsync();
             if (fx is not null && fx.UsdToIqd > 0)
@@ -154,40 +155,54 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
 
     partial void OnPricingCurrencyChanged(GoldCurrency value)
     {
-        foreach (var line in Lines)
+        foreach (var line in InLines)
+            _ = QuoteLineAsync(line);
+        foreach (var line in OutLines)
             _ = QuoteLineAsync(line);
     }
 
-    partial void OnDiscountAmountChanged(decimal value) => RecalculateTotals();
     partial void OnFxRateChanged(decimal value) => RecalculateTotals();
 
-    private void OnLinesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RecalculateTotals();
-
     [RelayCommand]
-    private void AddLine()
+    private void AddInLine()
     {
         var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
         var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
-        Lines.Add(line);
-        SelectedLine = line;
+        InLines.Add(line);
+        SelectedInLine = line;
+        IsOutSectionActive = false;
     }
 
     [RelayCommand]
-    private void RemoveLine(GoldSaleLineDraft? line)
+    private void AddOutLine()
     {
-        line ??= SelectedLine;
-        if (line is null || Lines.Count <= 1)
+        var defaultKarat = Karats.FirstOrDefault()?.KaratValue ?? 21;
+        var line = new GoldSaleLineDraft(l => _ = QuoteLineAsync(l)) { KaratValue = defaultKarat };
+        OutLines.Add(line);
+        SelectedOutLine = line;
+        IsOutSectionActive = true;
+    }
+
+    [RelayCommand]
+    private void RemoveInLine(GoldSaleLineDraft? line)
+    {
+        line ??= SelectedInLine;
+        if (line is null || InLines.Count <= 1)
             return;
-        Lines.Remove(line);
-        SelectedLine = Lines.LastOrDefault();
+        InLines.Remove(line);
+        SelectedInLine = InLines.LastOrDefault();
         RecalculateTotals();
     }
 
     [RelayCommand]
-    private async Task QuoteSelectedLineAsync()
+    private void RemoveOutLine(GoldSaleLineDraft? line)
     {
-        if (SelectedLine is not null)
-            await QuoteLineAsync(SelectedLine);
+        line ??= SelectedOutLine;
+        if (line is null || OutLines.Count <= 1)
+            return;
+        OutLines.Remove(line);
+        SelectedOutLine = OutLines.LastOrDefault();
+        RecalculateTotals();
     }
 
     private async Task QuoteLineAsync(GoldSaleLineDraft line)
@@ -200,7 +215,6 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             return;
         }
 
-        var version = ++_quoteVersion;
         line.IsQuoting = true;
         try
         {
@@ -211,12 +225,6 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 PricingCurrency,
                 line.MithqalPrice > 0 ? line.MithqalPrice : null,
                 FxRate > 0 ? FxRate : null);
-
-            if (version != _quoteVersion && line.IsQuoting)
-            {
-                // Still apply latest for this line if weights match intent
-            }
-
             line.ApplyQuote(quote);
             if (quote.FxRate is > 0)
                 FxRate = quote.FxRate.Value;
@@ -235,39 +243,23 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
 
     private void RecalculateTotals()
     {
-        TotalGoldValue = Lines.Sum(l => l.GoldValue);
-        TotalMakingCharge = Lines.Sum(l => l.MakingCharge);
-        GrandTotal = Math.Max(0, TotalGoldValue + TotalMakingCharge - DiscountAmount);
-
-        if (FxRate > 0)
-        {
-            if (PricingCurrency == GoldCurrency.USD)
-            {
-                TotalUsd = GrandTotal;
-                TotalIqd = Math.Round(GrandTotal * FxRate, 0);
-            }
-            else
-            {
-                TotalIqd = GrandTotal;
-                TotalUsd = Math.Round(GrandTotal / FxRate, 2);
-            }
-        }
-        else
-        {
-            TotalIqd = PricingCurrency == GoldCurrency.IQD ? GrandTotal : 0;
-            TotalUsd = PricingCurrency == GoldCurrency.USD ? GrandTotal : 0;
-        }
+        InTotalValue = InLines.Sum(l => l.LineTotal);
+        OutTotalValue = OutLines.Sum(l => l.LineTotal);
+        ComputedDifference = OutTotalValue - InTotalValue;
+        if (ExchangeCashDifference == 0 || Math.Abs(ExchangeCashDifference - ComputedDifference) < 0.01m)
+            ExchangeCashDifference = ComputedDifference;
 
         if (PaymentMethod == GoldPaymentMethod.Cash && PaidAmount <= 0)
-            PaidAmount = PaymentCurrency == PricingCurrency
-                ? GrandTotal
-                : (PaymentCurrency == GoldCurrency.IQD ? TotalIqd : TotalUsd);
+            PaidAmount = Math.Abs(ExchangeCashDifference);
     }
 
     [RelayCommand]
     private async Task ReadScaleAsync()
     {
-        var target = SelectedLine ?? Lines.LastOrDefault();
+        var target = IsOutSectionActive
+            ? (SelectedOutLine ?? OutLines.LastOrDefault())
+            : (SelectedInLine ?? InLines.LastOrDefault());
+
         if (target is null)
         {
             Message = "أضف بنداً أولاً";
@@ -311,7 +303,9 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             }
 
             FxRate = fx.UsdToIqd;
-            foreach (var line in Lines)
+            foreach (var line in InLines)
+                await QuoteLineAsync(line);
+            foreach (var line in OutLines)
                 await QuoteLineAsync(line);
             _toast.ShowSuccess($"سعر الصرف: {FxRate:N0}");
         }
@@ -333,17 +327,18 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
             return;
         }
 
-        if (PaymentMethod == GoldPaymentMethod.Credit && SelectedCustomer is null)
+        var validIn = InLines.Where(l => l.WeightGrams > 0 && l.MithqalPrice > 0).ToList();
+        var validOut = OutLines.Where(l => l.WeightGrams > 0 && l.MithqalPrice > 0).ToList();
+        if (validIn.Count == 0 && validOut.Count == 0)
         {
-            ErrorMessage = "البيع الآجل يتطلب اختيار زبون";
+            ErrorMessage = "أضف بنداً وارداً أو صادراً بوزن وسعر مثقال";
             _toast.ShowWarning(ErrorMessage);
             return;
         }
 
-        var validLines = Lines.Where(l => l.WeightGrams > 0 && l.MithqalPrice > 0).ToList();
-        if (validLines.Count == 0)
+        if (PaymentMethod == GoldPaymentMethod.Credit && SelectedCustomer is null && ExchangeCashDifference != 0)
         {
-            ErrorMessage = "أضف بنداً واحداً على الأقل بوزن وسعر مثقال";
+            ErrorMessage = "فرق المبادلة الآجل يتطلب اختيار زبون";
             _toast.ShowWarning(ErrorMessage);
             return;
         }
@@ -358,7 +353,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         try
         {
             RecalculateTotals();
-            var request = new GoldSaleRequest
+            var request = new GoldExchangeRequest
             {
                 InvoiceDate = InvoiceDate.Date,
                 PaymentMethod = PaymentMethod,
@@ -367,27 +362,21 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 PricingCurrency = PricingCurrency,
                 PaymentCurrency = PaymentCurrency,
                 FxRate = FxRate,
-                DiscountAmount = DiscountAmount,
-                PaidAmount = PaymentMethod == GoldPaymentMethod.Cash ? PaidAmount : PaidAmount,
+                ExchangeCashDifference = ExchangeCashDifference,
+                PaidAmount = PaidAmount,
                 CashBoxId = SelectedCashBox?.Id,
                 Notes = Notes,
-                WeightFromScale = WeightFromScale || validLines.Any(l => l.WeightFromScale),
-                Lines = validLines.Select(l => new GoldSaleLineRequest
-                {
-                    ItemId = l.ItemId,
-                    KaratValue = l.KaratValue,
-                    WeightGrams = l.WeightGrams,
-                    MithqalPrice = l.MithqalPrice,
-                    MakingCharge = l.MakingCharge,
-                    Description = l.Description,
-                    WeightFromScale = l.WeightFromScale
-                }).ToList()
+                WeightFromScale = WeightFromScale
+                    || validIn.Any(l => l.WeightFromScale)
+                    || validOut.Any(l => l.WeightFromScale),
+                InLines = validIn.Select(ToLineRequest).ToList(),
+                OutLines = validOut.Select(ToLineRequest).ToList()
             };
 
-            var invoice = await _saleService.CreateSaleAsync(request);
+            var invoice = await _exchangeService.CreateExchangeAsync(request);
             _lastSavedInvoice = invoice;
             CanPrintInvoice = CanPrint;
-            Message = $"تم حفظ فاتورة البيع {invoice.InvoiceNumber}";
+            Message = $"تم حفظ فاتورة التبديل {invoice.InvoiceNumber}";
             _toast.ShowSuccess(Message);
 
             if (BeautifulMessageDialog.ShowConfirm(
@@ -433,21 +422,33 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();
 
+    private static GoldSaleLineRequest ToLineRequest(GoldSaleLineDraft l) => new()
+    {
+        ItemId = l.ItemId,
+        KaratValue = l.KaratValue,
+        WeightGrams = l.WeightGrams,
+        MithqalPrice = l.MithqalPrice,
+        MakingCharge = l.MakingCharge,
+        Description = l.Description,
+        WeightFromScale = l.WeightFromScale
+    };
+
     private async Task ResetFormAsync()
     {
         InvoiceDate = DateTime.Today;
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
-        SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
-        DiscountAmount = 0;
+        ExchangeCashDifference = 0;
         PaidAmount = 0;
         Notes = string.Empty;
         WeightFromScale = false;
-        Lines.Clear();
-        AddLine();
+        InLines.Clear();
+        OutLines.Clear();
+        AddInLine();
+        AddOutLine();
         try
         {
-            InvoiceNumber = await _saleService.GetNextInvoiceNumberAsync();
+            InvoiceNumber = await _exchangeService.GetNextInvoiceNumberAsync();
             var fx = await _pricingService.GetLatestFxRateAsync();
             if (fx is not null && fx.UsdToIqd > 0)
                 FxRate = fx.UsdToIqd;

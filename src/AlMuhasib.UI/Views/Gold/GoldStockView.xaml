@@ -43,6 +43,13 @@
                             <TextBlock Text="تحديث"/>
                         </StackPanel>
                     </Button>
+
+                    <ComboBox ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding SelectedWarehouse}"
+                              DisplayMemberPath="Name"
+                              md:HintAssist.Hint="المخزن"
+                              Style="{StaticResource FilledComboBox}"
+                              MinWidth="200" Margin="16,0,0,0"/>
                 </StackPanel>
             </Grid>
         </md:Card>
@@ -114,6 +121,8 @@
                         </Style>
                     </DataGrid.RowStyle>
                     <DataGrid.Columns>
+                        <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
                         <DataGridTextColumn Header="العيار" Binding="{Binding KaratName}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratName"/>
                         <DataGridTextColumn Header="القيمة" Binding="{Binding KaratValue}" Width="70"

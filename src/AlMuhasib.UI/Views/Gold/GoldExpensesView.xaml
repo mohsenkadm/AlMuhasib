@@ -1,0 +1,204 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldExpensesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Add expense form -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="إضافة مصروف جديد" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,16"/>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Column="0" ItemsSource="{Binding ExpenseTypes}"
+                              SelectedItem="{Binding FormExpenseType}" DisplayMemberPath="Name"
+                              md:HintAssist.Hint="نوع المصروف" Style="{StaticResource FilledComboBox}"/>
+                    <TextBox Grid.Column="2" Text="{Binding FormAmount, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="المبلغ" Style="{StaticResource NumericTextBox}"/>
+                    <DatePicker Grid.Column="4" SelectedDate="{Binding FormDate}"
+                                md:HintAssist.Hint="التاريخ" Style="{StaticResource FilledDatePicker}"/>
+                    <ComboBox Grid.Column="6" ItemsSource="{Binding Currencies}"
+                              SelectedValue="{Binding FormCurrency}" SelectedValuePath="Value"
+                              DisplayMemberPath="Label" md:HintAssist.Hint="العملة"
+                              Style="{StaticResource FilledComboBox}"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Column="0" ItemsSource="{Binding CashBoxes}"
+                              SelectedItem="{Binding FormCashBox}" DisplayMemberPath="Name"
+                              md:HintAssist.Hint="القاصة" Style="{StaticResource FilledComboBox}"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding FormWarehouse}" DisplayMemberPath="Name"
+                              md:HintAssist.Hint="المخزن (اختياري)" Style="{StaticResource FilledComboBox}"/>
+                    <TextBox Grid.Column="4" Text="{Binding FormNotes, UpdateSourceTrigger=PropertyChanged}"
+                             md:HintAssist.Hint="ملاحظات" Style="{StaticResource FilledTextBox}"/>
+                    <Button Grid.Column="6" Content="حفظ المصروف" Command="{Binding AddExpenseCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8"
+                            IsEnabled="{Binding CanAdd}"/>
+                </Grid>
+            </StackPanel>
+        </md:Card>
+
+        <!-- Filters -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="16" Margin="0,0,0,12" md:ElevationAssist.Elevation="Dp1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0" ItemsSource="{Binding ExpenseTypes}"
+                          SelectedItem="{Binding FilterExpenseType}" DisplayMemberPath="Name"
+                          md:HintAssist.Hint="نوع المصروف" Style="{StaticResource FilledComboBox}"/>
+                <ComboBox Grid.Column="2" ItemsSource="{Binding CashBoxes}"
+                          SelectedItem="{Binding FilterCashBox}" DisplayMemberPath="Name"
+                          md:HintAssist.Hint="القاصة" Style="{StaticResource FilledComboBox}"/>
+                <ComboBox Grid.Column="4" ItemsSource="{Binding Currencies}"
+                          SelectedValue="{Binding FilterCurrency}" SelectedValuePath="Value"
+                          DisplayMemberPath="Label" md:HintAssist.Hint="العملة"
+                          Style="{StaticResource FilledComboBox}"/>
+                <DatePicker Grid.Column="6" SelectedDate="{Binding FilterFromDate}"
+                            md:HintAssist.Hint="من تاريخ" Style="{StaticResource FilledDatePicker}" Width="140"/>
+                <DatePicker Grid.Column="8" SelectedDate="{Binding FilterToDate}"
+                            md:HintAssist.Hint="إلى تاريخ" Style="{StaticResource FilledDatePicker}" Width="140"/>
+                <TextBox Grid.Column="10" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         md:HintAssist.Hint="بحث في الملاحظات" Style="{StaticResource FilledTextBox}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Grid.Column="12" Command="{Binding SearchCommand}" ToolTip="بحث"
+                        Style="{StaticResource PrimaryButton}" md:ButtonAssist.CornerRadius="8">
+                    <md:PackIcon Kind="Magnify"/>
+                </Button>
+                <Button Grid.Column="14" Command="{Binding ClearFiltersCommand}" ToolTip="مسح الفلاتر"
+                        Style="{StaticResource FlatButton}">
+                    <md:PackIcon Kind="FilterRemoveOutline"/>
+                </Button>
+            </Grid>
+        </md:Card>
+
+        <!-- List -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجل المصاريف"
+                                             TargetDataGrid="{Binding ElementName=GoldExpensesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="GoldExpensesGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Expenses}"
+                          SelectedItem="{Binding SelectedExpense}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseDate"/>
+                        <DataGridTextColumn Header="النوع" Binding="{Binding ExpenseTypeName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ExpenseTypeName"/>
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding Currency}" Width="80"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Currency"/>
+                        <DataGridTextColumn Header="القاصة" Binding="{Binding CashBoxName}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CashBoxName"/>
+                        <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="160"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="80" MinWidth="80"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.DeleteExpenseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource TableDeleteIconButton}"
+                                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Border Grid.Row="2" Padding="16,8" Background="#FFF8E1" BorderBrush="#E8D5A3" BorderThickness="0,1,0,0">
+                    <TextBlock FontWeight="SemiBold" Foreground="#8B6914">
+                        <Run Text="مجموع الصفحة:"/>
+                        <Run Text="{Binding TotalFiltered, StringFormat=N0, Mode=OneWay}"/>
+                    </TextBlock>
+                </Border>
+
+                <controls:PaginationBar Grid.Row="3"/>
+            </Grid>
+        </md:Card>
+    </Grid>
+</UserControl>
