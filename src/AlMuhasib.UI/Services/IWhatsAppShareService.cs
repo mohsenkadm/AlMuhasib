@@ -4,7 +4,16 @@ namespace AlMuhasib.UI.Services;
 
 public interface IWhatsAppShareService
 {
+    /// <summary>مشاركة ملف PDF عام عبر واتساب بعد تطبيع الرقم العراقي.</summary>
+    void SharePdf(string? phone, string partyName, string pdfPath, string message, string title);
+
     void ShareInvoice(InvoicePrintModel model, string? customerPhone, string customerName);
 
     void ShareInstallmentPaymentReceipt(InstallmentPaymentReceiptPrintModel model);
+
+    void ShareVoucher(VoucherPrintModel model, string? partyPhone, string partyName);
+
+    void ShareInvestorTransaction(InvestorTransactionPrintModel model);
+
+    void ShareStatement(StatementPrintModel model, string? partyPhone, string partyName);
 }

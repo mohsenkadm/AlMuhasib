@@ -20,6 +20,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IProductPriceService _productPriceService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly bool _updateProductPriceOnPurchase;
@@ -102,11 +103,18 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     public bool CanSave => !IsSaved;
     public bool CanPrint => IsSaved;
 
+    partial void OnIsSavedChanged(bool value)
+    {
+        PrintInvoiceCommand.NotifyCanExecuteChanged();
+        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+    }
+
     public PurchaseInvoiceViewModel(
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
         IInvoiceTemplateService templateService,
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService,
@@ -123,6 +131,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _templateService = templateService;
         _draftService = draftService;
         _queueService = queueService;
@@ -684,18 +693,37 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
         }
     }
 
-    // ── Print ──────────────────────────────────────────────
+    // ── Print / WhatsApp ───────────────────────────────────
     [RelayCommand(CanExecute = nameof(CanPrint))]
     private void PrintInvoice()
     {
         if (_savedInvoice is null) return;
-        var model = new InvoicePrintModel
+        _exportService.PrintInvoice(BuildSavedInvoicePrintModel());
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPrint))]
+    private void SendInvoiceWhatsApp()
+    {
+        if (_savedInvoice is null) return;
+        _whatsAppShare.ShareInvoice(
+            BuildSavedInvoicePrintModel(),
+            SelectedSupplier?.Phone,
+            SelectedSupplier?.Name ?? SupplierSearchText);
+    }
+
+    private InvoicePrintModel BuildSavedInvoicePrintModel()
+    {
+        if (_savedInvoice is null)
+            throw new InvalidOperationException("لا توجد فاتورة محفوظة");
+
+        return new InvoicePrintModel
         {
             Title = IsReturnMode ? "مرتجع مشتريات" : "فاتورة مشتريات",
             InvoiceNumber = _savedInvoice.InvoiceNumber,
             Date = _savedInvoice.Date,
             PartyLabel = "المورد",
             PartyName = SelectedSupplier?.Name ?? SupplierSearchText,
+            PartyPhone = SelectedSupplier?.Phone,
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             PaymentMethod = IsCashPayment ? "نقدي" : "آجل",
             Notes = _savedInvoice.Notes,
@@ -714,7 +742,6 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
                 TotalPrice = item.TotalPrice
             }).ToList()
         };
-        _exportService.PrintInvoice(model);
     }
 
     // ── New invoice (reset) ────────────────────────────────

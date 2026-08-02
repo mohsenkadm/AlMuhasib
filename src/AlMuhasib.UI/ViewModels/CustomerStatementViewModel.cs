@@ -12,6 +12,8 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class CustomerStatementViewModel : ReportViewModelBase
 {
+    private readonly IWhatsAppShareService _whatsAppShare;
+
     [ObservableProperty] private string _customerName = "—";
     [ObservableProperty] private string _totalDebit = "0";
     [ObservableProperty] private string _totalCredit = "0";
@@ -29,9 +31,11 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
     public ObservableCollection<CustomerStatementRow> Rows { get; } = [];
 
     public CustomerStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IWhatsAppShareService whatsAppShare)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _whatsAppShare = whatsAppShare;
         PageTitle = "كشف حساب عميل";
         DateFrom = null;
         DateTo = null;
@@ -133,6 +137,44 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
             $"الرصيد: {Balance}"
         };
         _exportService.PrintTable(title, cols, rows, summary);
+    }
+
+    [RelayCommand]
+    private void ShareWhatsApp()
+    {
+        if (SelectedCustomer is null || _allRows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى تحميل كشف الحساب أولاً");
+            return;
+        }
+
+        var model = new StatementPrintModel
+        {
+            Title = $"كشف حساب — {CustomerName}",
+            PartyName = CustomerName,
+            PartyPhone = SelectedCustomer.Phone,
+            FromDate = DateFrom,
+            ToDate = DateTo,
+            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد"],
+            Rows = _allRows.Select(r => new object[]
+            {
+                r.Date.ToString("yyyy/MM/dd"),
+                r.Description,
+                r.Debit,
+                r.Credit,
+                r.RunningBalance
+            }).ToList(),
+            SummaryLines =
+            [
+                $"الفترة: {PeriodLabel}",
+                $"عدد الحركات: {TransactionCount}",
+                $"إجمالي المدين: {TotalDebit}",
+                $"إجمالي الدائن: {TotalCredit}",
+                $"الرصيد: {Balance}"
+            ]
+        };
+
+        _whatsAppShare.ShareStatement(model, SelectedCustomer.Phone, CustomerName);
     }
 
     private string BuildPeriodLabel()

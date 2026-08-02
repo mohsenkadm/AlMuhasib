@@ -15,17 +15,20 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     private readonly IInvestorService _investorService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly ICurrentUserService _currentUserService;
     private readonly IInvestorRefreshService _investorRefresh;
     private readonly IUserPreferencesService _userPreferences;
 
     public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
         ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh,
         IUserPreferencesService userPreferences)
     {
         _investorService = investorService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _currentUserService = currentUserService;
         _investorRefresh = investorRefresh;
         _userPreferences = userPreferences;
@@ -216,9 +219,16 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         try
         {
             IsBusy = true;
+            var investor = DepositInvestor;
+            var amount = DepositAmount;
+            var date = DepositDate;
+            var cashBoxName = DepositCashBox.Name;
+            var notes = string.IsNullOrWhiteSpace(DepositNotes) ? null : DepositNotes.Trim();
+
             await _investorService.DepositAsync(
-                DepositInvestor.Id, DepositAmount, DepositDate, DepositCashBox.Id,
-                string.IsNullOrWhiteSpace(DepositNotes) ? null : DepositNotes.Trim());
+                investor.Id, amount, date, DepositCashBox.Id, notes);
+
+            StageWhatsAppReceipt(BuildDepositPrintModel(investor, amount, date, cashBoxName, notes));
 
             BeautifulMessageDialog.ShowSuccess("تم تسجيل الإيداع بنجاح");
             DepositAmount = 0;
@@ -289,9 +299,16 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         try
         {
             IsBusy = true;
+            var investor = WithdrawInvestor;
+            var amount = WithdrawAmount;
+            var date = WithdrawDate;
+            var cashBoxName = WithdrawCashBox.Name;
+            var notes = string.IsNullOrWhiteSpace(WithdrawNotes) ? null : WithdrawNotes.Trim();
+
             await _investorService.WithdrawAsync(
-                WithdrawInvestor.Id, WithdrawAmount, WithdrawDate, WithdrawCashBox.Id,
-                string.IsNullOrWhiteSpace(WithdrawNotes) ? null : WithdrawNotes.Trim());
+                investor.Id, amount, date, WithdrawCashBox.Id, notes);
+
+            StageWhatsAppReceipt(BuildWithdrawalPrintModel(investor, amount, date, cashBoxName, notes));
 
             BeautifulMessageDialog.ShowSuccess("تم تسجيل السحب بنجاح");
             WithdrawAmount = 0;
@@ -385,9 +402,14 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             IsBusy = true;
+            var distributionDate = DistributionDate;
+            var included = ProfitPreviews.Where(p => p.IsIncluded && p.ProfitAmount > 0).ToList();
+
             await _investorService.DistributeProfitsAsync(
-                DistributionDate, DistributionCashBox.Id,
+                distributionDate, DistributionCashBox.Id,
                 DistributableProfits, ProfitPreviews);
+
+            StageProfitWhatsApp(included, distributionDate);
 
             BeautifulMessageDialog.ShowSuccess("تم توزيع الأرباح بنجاح");
 

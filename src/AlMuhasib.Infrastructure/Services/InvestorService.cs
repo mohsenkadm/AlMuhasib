@@ -201,7 +201,17 @@ public class InvestorService : IInvestorService
         {
             var eligible = await GetEligibleDepositAsync(investor.Id, distributionDate);
             if (eligible <= 0) continue;
-            previews.Add(new ProfitPreviewItem { InvestorId = investor.Id, InvestorName = investor.Name, TotalDeposit = investor.TotalDeposit, EligibleDeposit = eligible, ProfitPercentage = investor.ProfitPercentage, ProfitAmount = Math.Round(eligible * investor.ProfitPercentage / 100m, 0), IsIncluded = true });
+            previews.Add(new ProfitPreviewItem
+            {
+                InvestorId = investor.Id,
+                InvestorName = investor.Name,
+                InvestorPhone = investor.Phone,
+                TotalDeposit = investor.TotalDeposit,
+                EligibleDeposit = eligible,
+                ProfitPercentage = investor.ProfitPercentage,
+                ProfitAmount = Math.Round(eligible * investor.ProfitPercentage / 100m, 0),
+                IsIncluded = true
+            });
         }
         return previews;
     }

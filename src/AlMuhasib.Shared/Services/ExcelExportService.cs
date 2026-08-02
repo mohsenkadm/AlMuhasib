@@ -836,6 +836,30 @@ public class ExcelExportService : IExportService
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
     }
 
+    public string ExportVoucherToPdf(VoucherPrintModel model)
+    {
+        var bytes = DocumentPdfGenerator.GenerateVoucher(model);
+        var name = string.IsNullOrWhiteSpace(model.VoucherNumber)
+            ? $"سند_{model.Date:yyyyMMdd_HHmm}"
+            : $"سند_{model.VoucherNumber}";
+        return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
+    }
+
+    public string ExportInvestorTransactionToPdf(InvestorTransactionPrintModel model)
+    {
+        var bytes = DocumentPdfGenerator.GenerateInvestorTransaction(model);
+        var name = $"{model.TransactionTypeLabel}_{model.InvestorName}_{model.Date:yyyyMMdd_HHmm}";
+        return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
+    }
+
+    public string ExportStatementToPdf(StatementPrintModel model)
+    {
+        var bytes = DocumentPdfGenerator.GenerateStatement(model);
+        var party = string.IsNullOrWhiteSpace(model.PartyName) ? "كشف" : model.PartyName;
+        var name = $"كشف_{party}_{DateTime.Now:yyyyMMdd_HHmm}";
+        return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
+    }
+
     private static string SavePdfToWhatsAppFolder(byte[] pdfBytes, string baseFileName)
     {
         var folder = Path.Combine(
