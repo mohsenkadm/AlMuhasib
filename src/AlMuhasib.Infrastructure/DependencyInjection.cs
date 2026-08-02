@@ -1,16 +1,19 @@
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Infrastructure.Data.Car;
 using AlMuhasib.Infrastructure.Data.CarTrade;
+using AlMuhasib.Infrastructure.Data.Gold;
 using AlMuhasib.Infrastructure.Data.Hotel;
 using AlMuhasib.Infrastructure.Data.RealEstate;
 using AlMuhasib.Infrastructure.Repositories;
 using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.Infrastructure.Services.Car;
 using AlMuhasib.Infrastructure.Services.CarTrade;
+using AlMuhasib.Infrastructure.Services.Gold;
 using AlMuhasib.Infrastructure.Services.Hotel;
 using AlMuhasib.Infrastructure.Services.Hotel.Restaurant;
 using AlMuhasib.Infrastructure.Services.RealEstate;
@@ -49,6 +52,9 @@ public static class DependencyInjection
                 break;
             case ApplicationSystemType.RealEstateContracts:
                 RegisterRealEstateInfrastructure(services, connectionString, isBranchClient);
+                break;
+            case ApplicationSystemType.GoldShop:
+                RegisterGoldShopInfrastructure(services, connectionString, isBranchClient);
                 break;
             default:
                 RegisterAccountingInfrastructure(services, connectionString, isBranchClient);
@@ -250,6 +256,39 @@ public static class DependencyInjection
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<RealEstateDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, RealEstateSyncService>();
+        services.AddHttpClient("CloudSync");
+    }
+
+    private static void RegisterGoldShopInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
+    {
+        services.AddDbContextFactory<GoldDbContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                b => b.MigrationsAssembly(typeof(GoldDbContext).Assembly.FullName)));
+
+        services.AddScoped<IUnitOfWork, GoldUnitOfWork>();
+        services.AddScoped<IAuthService, GoldAuthService>();
+        services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, GoldDatabaseMigrationService>();
+        services.AddScoped<IGoldSettingsService, GoldSettingsService>();
+        services.AddScoped<IGoldPricingService, GoldPricingService>();
+        services.AddScoped<IGoldInventoryService, GoldInventoryService>();
+        services.AddScoped<IGoldCustomerService, GoldCustomerService>();
+        services.AddScoped<IGoldCashService, GoldCashService>();
+        services.AddScoped<IGoldSaleService, GoldSaleService>();
+        services.AddScoped<IGlobalSearchService, GoldGlobalSearchService>();
+        services.AddScoped<IAuditLogService, GoldAuditLogService>();
+        services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
+        services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
+        services.AddScoped<IUserTaskService, NoOpUserTaskService>();
+        services.AddScoped<IUserNoteService, NoOpUserNoteService>();
+        services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<GoldDbContext>>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, GoldSyncService>();
         services.AddHttpClient("CloudSync");
     }
 }
