@@ -40,6 +40,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
             ApplicationSystemType.CarTrading => "نظام بيع وشراء السيارات",
             ApplicationSystemType.HotelManagement => "نظام إدارة الفنادق",
             ApplicationSystemType.RealEstateContracts => "نظام عقود العقارات",
+            ApplicationSystemType.GoldShop => "نظام الذهب",
             _ => "نظام المحاسبة"
         };
         CurrentDatabaseDisplay = _systemProfile.ActiveDatabaseName;
@@ -147,6 +148,18 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ConfirmAndSwitch(ApplicationSystemType.RealEstateContracts, "نظام عقود العقارات");
     }
 
+    [RelayCommand]
+    private void SwitchToGoldShop()
+    {
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.GoldShop)
+        {
+            _toast.ShowInfo("أنت تستخدم نظام الذهب حالياً");
+            return;
+        }
+
+        ConfirmAndSwitch(ApplicationSystemType.GoldShop, "نظام الذهب");
+    }
+
     private void ConfirmAndSwitch(ApplicationSystemType target, string targetLabel)
     {
         var message =
@@ -170,6 +183,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ApplicationSystemType.CarTrading => "AlMuhasibCarTradingDb",
         ApplicationSystemType.HotelManagement => "AlMuhasibHotelsDb",
         ApplicationSystemType.RealEstateContracts => "AlMuhasibRealEstateDb",
+        ApplicationSystemType.GoldShop => "AlMuhasibGoldShopDb",
         _ => "AlMuhasibDb"
     };
 }

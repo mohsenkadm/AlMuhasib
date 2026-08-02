@@ -122,6 +122,8 @@ public sealed class VoiceCommandCatalog
             AddCarTradeCommands(Add, canOpenScreen);
         else if (moduleRegistry.IsHotelManagement)
             AddHotelCommands(Add, canOpenScreen);
+        else if (moduleRegistry.IsGoldShop)
+            AddGoldShopCommands(Add, canOpenScreen);
         else
             AddAccountingCommands(Add, canOpenScreen);
 
@@ -217,6 +219,11 @@ public sealed class VoiceCommandCatalog
         if (canOpen(typeof(HotelRoomsViewModel)))
             add(MakeScreen("hotel-rooms", typeof(HotelRoomsViewModel), "الغرف", PackIconKind.Door,
                 ["الغرف", "غرف"]));
+    }
+
+    private static void AddGoldShopCommands(Action<VoiceCommandDefinition> _, Func<Type, bool> __)
+    {
+        // Gold shop voice commands will be filled in a later step.
     }
 
     private static VoiceCommandDefinition MakeScreen(string id, Type vm, string title, PackIconKind _, string[] phrases) =>

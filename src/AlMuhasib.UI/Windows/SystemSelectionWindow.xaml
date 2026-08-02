@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="اختيار نوع النظام"
-        Height="620" Width="1480"
+        Height="620" Width="1680"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -32,8 +32,10 @@
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <Grid MinWidth="1380">
+                <Grid MinWidth="1600">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
@@ -120,6 +122,22 @@
                             <TextBlock Text="عقود العقارات" FontSize="16" FontWeight="Bold"
                                        Foreground="#263238" HorizontalAlignment="Center"/>
                             <TextBlock Text="بيع وشراء الدور والأراضي مع الآجل وكشف الديون والطباعة والتقارير"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C"
+                                       Margin="0,8,0,0" MaxWidth="220"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="GoldCard" Grid.Column="10" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            MouseLeftButtonUp="OnGoldSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="#FFF8E1" Margin="0,0,0,12">
+                                <md:PackIcon Kind="DiamondStone" Width="36" Height="36"
+                                             Foreground="#B8860B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="نظام الذهب" FontSize="16" FontWeight="Bold"
+                                       Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="إدارة محلات الذهب العراقية: أسعار المثقال، المخزون، البيع والشراء والآجل"
                                        TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C"
                                        Margin="0,8,0,0" MaxWidth="220"/>
                         </StackPanel>

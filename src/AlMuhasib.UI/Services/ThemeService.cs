@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using MaterialDesignThemes.Wpf;
 
@@ -11,10 +12,12 @@ public sealed class ThemeService
     public static event EventHandler? ThemeChanged;
 
     private readonly IUserPreferencesService _preferences;
+    private readonly ISystemProfileService _systemProfile;
 
-    public ThemeService(IUserPreferencesService preferences)
+    public ThemeService(IUserPreferencesService preferences, ISystemProfileService systemProfile)
     {
         _preferences = preferences;
+        _systemProfile = systemProfile;
     }
 
     public void ApplyFromPreferences()
@@ -37,9 +40,15 @@ public sealed class ThemeService
 
     public void ApplyTheme(bool isDark, double fontScale)
     {
+        var isGold = _systemProfile.ActiveSystem == ApplicationSystemType.GoldShop;
         var palette = new PaletteHelper();
         var theme = palette.GetTheme();
         theme.SetBaseTheme(isDark ? BaseTheme.Dark : BaseTheme.Light);
+        if (isGold)
+        {
+            theme.SetPrimaryColor((Color)ColorConverter.ConvertFromString("#B8860B")!);
+            theme.SetSecondaryColor((Color)ColorConverter.ConvertFromString("#D4AF37")!);
+        }
         palette.SetTheme(theme);
 
         if (Application.Current is null) return;
@@ -58,8 +67,27 @@ public sealed class ThemeService
         SetBrush(res, "CardBorderBrush", isDark ? "#2D3544" : "#E8EEF5");
         SetBrush(res, "MutedIconBackgroundBrush", isDark ? "#2A3344" : "#ECEFF1");
         SetBrush(res, "ChartEmptyIconBrush", isDark ? "#546E7A" : "#BDBDBD");
-        SetBrush(res, "PrimaryHueLightBrush", isDark ? "#1A2744" : "#E3F2FD");
-        SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? "#ECEFF1" : "#212121");
+
+        if (isGold)
+        {
+            SetBrush(res, "PrimaryHueMidBrush", isDark ? "#D4AF37" : "#B8860B");
+            SetBrush(res, "PrimaryHueMidForegroundBrush", "#FFFFFF");
+            SetBrush(res, "PrimaryHueLightBrush", isDark ? "#3D2E14" : "#FFF8E1");
+            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? "#ECEFF1" : "#212121");
+            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#FFF8E1" : "#6D4C00");
+            SetBrush(res, "PrimaryHueDarkForegroundBrush", isDark ? "#212121" : "#FFFFFF");
+            SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#D4AF37" : "#C9A227");
+            SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#FFF8E1" : "#6D4C00");
+        }
+        else
+        {
+            SetBrush(res, "PrimaryHueLightBrush", isDark ? "#1A2744" : "#E3F2FD");
+            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? "#ECEFF1" : "#212121");
+            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
+            SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#42A5F5" : "#90CAF9");
+            SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#E3F2FD" : "#1565C0");
+        }
+
         SetBrush(res, "SearchPanelBackgroundBrush", isDark ? "#1E2430" : "#FAFCFE");
         SetBrush(res, "SearchPanelBorderBrush", isDark ? "#3D4A5C" : "#D5E3F0");
         SetBrush(res, "SearchResultHoverBrush", isDark ? "#263045" : "#E8F4FD");
@@ -73,9 +101,7 @@ public sealed class ThemeService
         SetBrush(res, "ChromeTabInactiveBorderBrush", isDark ? "#3D4A5C" : "#B8C9DB");
         SetBrush(res, "ChromeTabHoverBrush", isDark ? "#323D52" : "#EBF4FC");
         SetBrush(res, "ChromeTabSelectedBrush", isDark ? "#1E2430" : "#FFFFFF");
-        SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#42A5F5" : "#90CAF9");
         SetBrush(res, "ChromeTabForegroundBrush", isDark ? "#CFD8DC" : "#37474F");
-        SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#E3F2FD" : "#1565C0");
 
         // DataGrids
         SetBrush(res, "DataGridBackgroundBrush", isDark ? "#1E2430" : "#FFFFFF");
@@ -93,7 +119,9 @@ public sealed class ThemeService
         ApplyPanelChromeBrushes(res, isDark);
         ApplyDashboardBrushes(res, isDark);
 
-        SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
+        if (!isGold)
+            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
+
         SetBrush(res, "HighlightLightBrush", isDark ? "#2A2540" : "#EDE7F6");
         SetBrush(res, "HighlightBorderBrush", isDark ? "#5E35B1" : "#D1C4E9");
         SetBrush(res, "HighlightBrush", isDark ? "#B39DDB" : "#7E57C2");
