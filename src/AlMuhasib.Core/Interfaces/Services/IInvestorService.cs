@@ -38,6 +38,7 @@ public class ProfitPreviewItem
 {
     public int InvestorId { get; set; }
     public string InvestorName { get; set; } = string.Empty;
+    public string? InvestorPhone { get; set; }
     public decimal TotalDeposit { get; set; }
     public decimal EligibleDeposit { get; set; }
     public decimal ProfitPercentage { get; set; }

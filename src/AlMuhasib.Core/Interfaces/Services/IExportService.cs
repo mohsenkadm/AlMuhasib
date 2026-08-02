@@ -23,6 +23,15 @@ public interface IExportService
     /// <summary>Exports installment payment receipt to PDF and returns the full path.</summary>
     string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model);
 
+    /// <summary>تصدير سند قبض/صرف إلى PDF.</summary>
+    string ExportVoucherToPdf(VoucherPrintModel model);
+
+    /// <summary>تصدير إيصال حركة مستثمر (إيداع/سحب/توزيع أرباح) إلى PDF.</summary>
+    string ExportInvestorTransactionToPdf(InvestorTransactionPrintModel model);
+
+    /// <summary>تصدير كشف حساب جدولي إلى PDF.</summary>
+    string ExportStatementToPdf(StatementPrintModel model);
+
     /// <summary>طباعة إيصال كاشير حسب حجم الورق (A4 / 80mm / 58mm / 50mm).</summary>
     void PrintThermalReceipt(InvoicePrintModel model);
 
@@ -142,4 +151,48 @@ public class InstallmentPaymentReceiptLine
     public decimal PaidAmount { get; set; }
     public decimal RemainingAfter { get; set; }
     public string StatusText { get; set; } = string.Empty;
+}
+
+/// <summary>سند قبض/صرف للطباعة وواتساب.</summary>
+public class VoucherPrintModel
+{
+    public string Title { get; set; } = "سند";
+    public string VoucherNumber { get; set; } = string.Empty;
+    public string VoucherTypeLabel { get; set; } = string.Empty;
+    public DateTime Date { get; set; } = DateTime.Now;
+    public decimal Amount { get; set; }
+    public decimal BankFees { get; set; }
+    public string? PartyLabel { get; set; }
+    public string? PartyName { get; set; }
+    public string? PartyPhone { get; set; }
+    public string? CashBoxName { get; set; }
+    public string? BankAccountName { get; set; }
+    public string? Notes { get; set; }
+}
+
+/// <summary>إيصال حركة مستثمر (إيداع / سحب / توزيع أرباح).</summary>
+public class InvestorTransactionPrintModel
+{
+    public string Title { get; set; } = "إيصال مستثمر";
+    public string TransactionTypeLabel { get; set; } = string.Empty;
+    public string InvestorName { get; set; } = string.Empty;
+    public string? InvestorPhone { get; set; }
+    public DateTime Date { get; set; } = DateTime.Now;
+    public decimal Amount { get; set; }
+    public string? CashBoxName { get; set; }
+    public string? Notes { get; set; }
+    public decimal? BalanceAfter { get; set; }
+}
+
+/// <summary>كشف حساب جدولي للطباعة وواتساب.</summary>
+public class StatementPrintModel
+{
+    public string Title { get; set; } = "كشف حساب";
+    public string PartyName { get; set; } = string.Empty;
+    public string? PartyPhone { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public string[] Columns { get; set; } = [];
+    public IList<object[]> Rows { get; set; } = [];
+    public IList<string>? SummaryLines { get; set; }
 }

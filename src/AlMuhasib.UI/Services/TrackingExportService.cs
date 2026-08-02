@@ -44,6 +44,15 @@ public sealed class TrackingExportService : IExportService
     public string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model) =>
         _inner.ExportInstallmentPaymentReceiptToPdf(model);
 
+    public string ExportVoucherToPdf(VoucherPrintModel model) =>
+        _inner.ExportVoucherToPdf(model);
+
+    public string ExportInvestorTransactionToPdf(InvestorTransactionPrintModel model) =>
+        _inner.ExportInvestorTransactionToPdf(model);
+
+    public string ExportStatementToPdf(StatementPrintModel model) =>
+        _inner.ExportStatementToPdf(model);
+
     public void PrintThermalReceipt(InvoicePrintModel model)
     {
         PrintPreferences.Load();

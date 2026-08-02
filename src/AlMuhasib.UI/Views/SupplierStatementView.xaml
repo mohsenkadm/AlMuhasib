@@ -93,7 +93,17 @@
                                                      ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                                      ExportCommand="{Binding ExportToExcelCommand}"
                                                      PrintCommand="{Binding PrintCommand}"
-                                                     ShowCardToggle="False"/>
+                                                     ShowCardToggle="False">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <Button Command="{Binding ShareWhatsAppCommand}"
+                                        ToolTip="إرسال الكشف عبر واتساب"
+                                        Background="#E8F8EF" BorderBrush="#A5D6A7" BorderThickness="1"
+                                        Width="36" Height="36" Cursor="Hand"
+                                        materialDesign:ButtonAssist.CornerRadius="8">
+                                    <materialDesign:PackIcon Kind="Whatsapp" Width="20" Height="20" Foreground="#25D366"/>
+                                </Button>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
 
 
                         <DataGrid x:Name="SupplierStatementGrid"

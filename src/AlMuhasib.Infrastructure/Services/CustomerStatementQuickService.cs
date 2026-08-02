@@ -30,6 +30,11 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
         var statement = await _reportService.GetCustomerStatementAsync(customerId, from, to);
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var phone = await context.Customers.AsNoTracking()
+            .Where(c => c.Id == customerId)
+            .Select(c => c.Phone)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var overdue = await context.Installments.AsNoTracking()
             .Include(i => i.InstallmentPlan)
             .Where(i => i.InstallmentPlan!.CustomerId == customerId
@@ -41,6 +46,7 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
         {
             CustomerId = customerId,
             CustomerName = statement.CustomerName,
+            Phone = phone,
             Balance = statement.Balance,
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
@@ -60,24 +66,24 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
     public async Task<string> ExportToPdfAsync(int customerId, string filePath, CancellationToken cancellationToken = default)
     {
         var data = await GetStatementAsync(customerId, cancellationToken);
-        var cols = new[] { "التاريخ", "البيان", "مدين", "دائن", "الرصيد" };
-        var rows = data.Lines.Select(r => new object[]
-        {
-            r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance
-        }).ToList();
+        var model = BuildStatementModel(data);
+        var generatedPath = _exportService.ExportStatementToPdf(model);
 
-        _exportService.ExportToExcel(filePath.Replace(".pdf", ".xlsx"),
-            $"كشف حساب {data.CustomerName}", cols, rows);
-
-        // Use print-to-PDF path via table export — Excel as fallback; PDF via PrintTable if available
-        if (filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(filePath) &&
+            !string.Equals(generatedPath, filePath, StringComparison.OrdinalIgnoreCase))
         {
-            // QuestPDF not wired for statements — export excel alongside
-            var xlsxPath = filePath.Replace(".pdf", ".xlsx");
-            return xlsxPath;
+            var directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            var target = filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                ? filePath
+                : Path.ChangeExtension(filePath, ".pdf");
+            File.Copy(generatedPath, target, overwrite: true);
+            return target;
         }
 
-        return filePath;
+        return generatedPath;
     }
 
     public void Print(int customerId)
@@ -88,6 +94,36 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
         {
             r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance
         }).ToList();
-        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows);
+        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows,
+        [
+            $"الرصيد: {data.Balance:N0} د.ع",
+            $"مدين: {data.TotalDebit:N0} د.ع",
+            $"دائن: {data.TotalCredit:N0} د.ع"
+        ]);
     }
+
+    public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data) =>
+        new()
+        {
+            Title = $"كشف حساب — {data.CustomerName}",
+            PartyName = data.CustomerName,
+            PartyPhone = data.Phone,
+            FromDate = DateTime.Today.AddYears(-2),
+            ToDate = DateTime.Today,
+            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد"],
+            Rows = data.Lines.Select(r => new object[]
+            {
+                r.Date.ToString("yyyy/MM/dd"),
+                r.Description,
+                r.Debit,
+                r.Credit,
+                r.RunningBalance
+            }).ToList(),
+            SummaryLines =
+            [
+                $"الرصيد: {data.Balance:N0} د.ع",
+                $"إجمالي المدين: {data.TotalDebit:N0} د.ع",
+                $"إجمالي الدائن: {data.TotalCredit:N0} د.ع"
+            ]
+        };
 }

@@ -160,6 +160,7 @@ public partial class MainWindowViewModel : ObservableObject
         IUserTaskService userTaskService,
         IUserNoteService userNoteService,
         ICustomerStatementQuickService customerStatementQuick,
+        IWhatsAppShareService whatsAppShare,
         IOfflineReminderService offlineReminder,
         IRecentExcelExportService recentExcelExport,
         IVoiceRecognitionService voiceRecognition,
@@ -190,6 +191,7 @@ public partial class MainWindowViewModel : ObservableObject
         _userTaskService = userTaskService;
         _userNoteService = userNoteService;
         _customerStatementQuick = customerStatementQuick;
+        _whatsAppShare = whatsAppShare;
         _recentExcelExport = recentExcelExport;
         _recentExcelExport.ExportsChanged += OnRecentExcelExportsChanged;
 

@@ -6,11 +6,14 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class SupplierStatementViewModel : ReportViewModelBase
 {
+    private readonly IWhatsAppShareService _whatsAppShare;
+
     [ObservableProperty] private string _supplierName = "—";
     [ObservableProperty] private string _totalDebit = "0";
     [ObservableProperty] private string _totalCredit = "0";
@@ -24,9 +27,13 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
     public ObservableCollection<SupplierStatementRow> Rows { get; } = [];
 
     public SupplierStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IWhatsAppShareService whatsAppShare)
         : base(reportService, unitOfWork, exportService, currentUserService)
-    { PageTitle = "كشف حساب مورد"; }
+    {
+        _whatsAppShare = whatsAppShare;
+        PageTitle = "كشف حساب مورد";
+    }
 
     public override async Task InitializeAsync()
     {
@@ -76,5 +83,42 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
         var cols = new[] { "التاريخ", "البيان", "مدين", "دائن", "الرصيد" };
         var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance }).ToList();
         _exportService.PrintTable($"كشف حساب {SupplierName}", cols, rows);
+    }
+
+    [RelayCommand]
+    private void ShareWhatsApp()
+    {
+        if (SelectedSupplierId is null || _allRows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى تحميل كشف الحساب أولاً");
+            return;
+        }
+
+        var supplier = Suppliers.FirstOrDefault(s => s.Id == SelectedSupplierId.Value);
+        var model = new StatementPrintModel
+        {
+            Title = $"كشف حساب — {SupplierName}",
+            PartyName = SupplierName,
+            PartyPhone = supplier?.Phone,
+            FromDate = DateFrom,
+            ToDate = DateTo,
+            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد"],
+            Rows = _allRows.Select(r => new object[]
+            {
+                r.Date.ToString("yyyy/MM/dd"),
+                r.Description,
+                r.Debit,
+                r.Credit,
+                r.RunningBalance
+            }).ToList(),
+            SummaryLines =
+            [
+                $"إجمالي المدين: {TotalDebit}",
+                $"إجمالي الدائن: {TotalCredit}",
+                $"الرصيد: {Balance}"
+            ]
+        };
+
+        _whatsAppShare.ShareStatement(model, supplier?.Phone, SupplierName);
     }
 }

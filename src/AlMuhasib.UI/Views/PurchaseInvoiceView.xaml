@@ -603,6 +603,15 @@
                                         <TextBlock Text="طباعة" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
+                                <Button Command="{Binding SendInvoiceWhatsAppCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="16,0" Margin="0,0,8,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        ToolTip="إرسال نسخة PDF عبر واتساب">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18" VerticalAlignment="Center" Foreground="#25D366"/>
+                                        <TextBlock Text="واتساب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Command="{Binding SaveInvoiceCommand}" Style="{StaticResource PrimaryButton}"
                                         Height="40" Padding="22,0" materialDesign:ButtonAssist.CornerRadius="10"
                                         FontWeight="SemiBold" IsEnabled="{Binding CanSave}">

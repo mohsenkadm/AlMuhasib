@@ -121,7 +121,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
                                 <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                                <DataGridTemplateColumn Header="الإجراءات" Width="310" MinWidth="310"
+                                <DataGridTemplateColumn Header="الإجراءات" Width="350" MinWidth="350"
                                                         behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellStyle>
                                         <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -140,6 +140,12 @@
                                                 </Button>
                                                 <Button Style="{StaticResource TablePrintIconButton}" Command="{Binding DataContext.PrintRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
                                                     <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Style="{StaticResource TableWhatsAppIconButton}"
+                                                        Command="{Binding DataContext.SendWhatsAppRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="إرسال الفاتورة عبر واتساب">
+                                                    <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"/>
                                                 </Button>
                                                 <Button Style="{StaticResource TableSecondaryIconButton}" Command="{Binding DataContext.CopyInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
                                                         ToolTip="نسخ إلى فاتورة جديدة">

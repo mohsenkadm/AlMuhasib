@@ -19,13 +19,20 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private readonly ICashBankService _cashBankService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly ICurrentUserService _currentUserService;
 
-    public VouchersViewModel(ICashBankService cashBankService, IUnitOfWork unitOfWork, IExportService exportService, ICurrentUserService currentUserService)
+    public VouchersViewModel(
+        ICashBankService cashBankService,
+        IUnitOfWork unitOfWork,
+        IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
+        ICurrentUserService currentUserService)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _currentUserService = currentUserService;
         PageTitle = "السندات";
     }
@@ -350,7 +357,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     }
 
     // ══════════════════════════════════════════════════════
-    // PRINT VOUCHER
+    // PRINT / WHATSAPP VOUCHER
     // ══════════════════════════════════════════════════════
     [RelayCommand]
     private void PrintVoucher(Voucher? voucher)
@@ -382,6 +389,54 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             rows.Add(new object[] { "ملاحظات", voucher.Notes });
 
         _exportService.PrintTable($"{GetVoucherTypeName(voucher.VoucherType)} - {voucher.VoucherNumber}", columns, rows);
+    }
+
+    [RelayCommand]
+    private void SendVoucherWhatsApp(Voucher? voucher)
+    {
+        if (voucher is null) return;
+
+        var model = BuildVoucherPrintModel(voucher);
+        var phone = voucher.Customer?.Phone ?? voucher.Investor?.Phone;
+        var name = voucher.Customer?.Name ?? voucher.Investor?.Name ?? model.PartyName ?? "الطرف";
+        _whatsAppShare.ShareVoucher(model, phone, name);
+    }
+
+    private static VoucherPrintModel BuildVoucherPrintModel(Voucher voucher)
+    {
+        var typeName = GetVoucherTypeName(voucher.VoucherType);
+        string? partyLabel = null;
+        string? partyName = null;
+        string? partyPhone = null;
+
+        if (voucher.Customer is not null)
+        {
+            partyLabel = "العميل";
+            partyName = voucher.Customer.Name;
+            partyPhone = voucher.Customer.Phone;
+        }
+        else if (voucher.Investor is not null)
+        {
+            partyLabel = "المستثمر";
+            partyName = voucher.Investor.Name;
+            partyPhone = voucher.Investor.Phone;
+        }
+
+        return new VoucherPrintModel
+        {
+            Title = typeName,
+            VoucherNumber = voucher.VoucherNumber,
+            VoucherTypeLabel = typeName,
+            Date = voucher.Date,
+            Amount = voucher.Amount,
+            BankFees = voucher.BankFees,
+            PartyLabel = partyLabel,
+            PartyName = partyName,
+            PartyPhone = partyPhone,
+            CashBoxName = voucher.CashBox?.Name,
+            BankAccountName = voucher.BankAccount?.Name,
+            Notes = voucher.Notes
+        };
     }
 
     // ══════════════════════════════════════════════════════

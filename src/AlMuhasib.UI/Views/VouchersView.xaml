@@ -276,16 +276,27 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Investor.Name" />
                         <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes" />
-                        <DataGridTemplateColumn Header="طباعة" Width="70"
+                        <DataGridTemplateColumn Header="إرسال" Width="120"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Command="{Binding DataContext.PrintVoucherCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource FlatButton}"
-                                            Padding="4" ToolTip="طباعة">
-                                        <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" />
-                                    </Button>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Command="{Binding DataContext.PrintVoucherCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TablePrintIconButton}"
+                                                ToolTip="طباعة">
+                                            <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" />
+                                        </Button>
+                                        <Button Command="{Binding DataContext.SendVoucherWhatsAppCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableWhatsAppIconButton}"
+                                                ToolTip="إرسال السند عبر واتساب">
+                                            <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18" />
+                                        </Button>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

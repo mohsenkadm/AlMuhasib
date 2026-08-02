@@ -18,6 +18,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class PurchasesReportViewModel : ReportViewModelBase
 {
     private readonly IInvoiceService _invoiceService;
+    private readonly IWhatsAppShareService _whatsAppShare;
 
     [ObservableProperty] private string _totalPurchases = "0";
     [ObservableProperty] private string _invoiceCount = "0";
@@ -47,10 +48,11 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
 
     public PurchasesReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IInvoiceService invoiceService)
+        IInvoiceService invoiceService, IWhatsAppShareService whatsAppShare)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _invoiceService = invoiceService;
+        _whatsAppShare = whatsAppShare;
         PageTitle = "تقرير المشتريات";
         InitReportActionServices(invoiceService);
         RegisterThemeChartReload(LoadDataAsync);
@@ -130,36 +132,70 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
         if (row is null) return;
         try
         {
-            var invoice = await _invoiceService.GetByIdWithDetailsAsync(row.InvoiceId);
-            if (invoice is null) { BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة"); return; }
-
-            var model = new InvoicePrintModel
-            {
-                Title = "فاتورة مشتريات",
-                InvoiceNumber = invoice.InvoiceNumber,
-                Date = invoice.Date,
-                PartyLabel = "المورد",
-                PartyName = invoice.Supplier?.Name ?? "—",
-                WarehouseName = invoice.Warehouse?.Name ?? "—",
-                PaymentMethod = row.PaymentMethod,
-                Notes = invoice.Notes,
-                Subtotal = invoice.TotalAmount,
-                RoundingAmount = invoice.RoundingAmount,
-                GrandTotal = invoice.NetAmount,
-                Items = invoice.Items.Select((item, i) => new InvoicePrintItem
-                {
-                    Number = i + 1,
-                    ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
-                        item.ItemName,
-                        item.CustomFieldsJson),
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice
-                }).ToList()
-            };
+            var model = await BuildPurchaseInvoicePrintModelAsync(row);
+            if (model is null) return;
             _exportService.PrintInvoice(model);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    [RelayCommand]
+    private async Task SendWhatsAppRow(PurchasesReportRow? row)
+    {
+        if (row is null) return;
+        try
+        {
+            var invoice = await _invoiceService.GetByIdWithDetailsAsync(row.InvoiceId);
+            if (invoice is null) { BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة"); return; }
+
+            var model = BuildPurchaseInvoicePrintModel(invoice, row);
+            _whatsAppShare.ShareInvoice(
+                model,
+                invoice.Supplier?.Phone,
+                invoice.Supplier?.Name ?? model.PartyName);
+        }
+        catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    private async Task<InvoicePrintModel?> BuildPurchaseInvoicePrintModelAsync(PurchasesReportRow row)
+    {
+        var invoice = await _invoiceService.GetByIdWithDetailsAsync(row.InvoiceId);
+        if (invoice is null)
+        {
+            BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة");
+            return null;
+        }
+
+        return BuildPurchaseInvoicePrintModel(invoice, row);
+    }
+
+    private static InvoicePrintModel BuildPurchaseInvoicePrintModel(Invoice invoice, PurchasesReportRow row)
+    {
+        return new InvoicePrintModel
+        {
+            Title = "فاتورة مشتريات",
+            InvoiceNumber = invoice.InvoiceNumber,
+            Date = invoice.Date,
+            PartyLabel = "المورد",
+            PartyName = invoice.Supplier?.Name ?? "—",
+            PartyPhone = invoice.Supplier?.Phone,
+            WarehouseName = invoice.Warehouse?.Name ?? "—",
+            PaymentMethod = row.PaymentMethod,
+            Notes = invoice.Notes,
+            Subtotal = invoice.TotalAmount,
+            RoundingAmount = invoice.RoundingAmount,
+            GrandTotal = invoice.NetAmount,
+            Items = invoice.Items.Select((item, i) => new InvoicePrintItem
+            {
+                Number = i + 1,
+                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                    item.ItemName,
+                    item.CustomFieldsJson),
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                TotalPrice = item.TotalPrice
+            }).ToList()
+        };
     }
 
     [RelayCommand]
