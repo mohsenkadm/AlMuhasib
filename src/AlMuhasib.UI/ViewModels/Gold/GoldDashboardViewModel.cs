@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services.Gold;
+using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Charts;
@@ -22,7 +23,9 @@ public partial class GoldDashboardViewModel : ViewModelBase
     private readonly MainWindowViewModel _mainWindow;
 
     [ObservableProperty] private bool _isLoaded;
-    [ObservableProperty] private string _welcomeText = string.Empty;
+    [ObservableProperty] private string _welcomeGreeting = string.Empty;
+    [ObservableProperty] private string _userDisplayName = string.Empty;
+    [ObservableProperty] private string _displayDate = string.Empty;
     [ObservableProperty] private string _subtitleText = string.Empty;
 
     [ObservableProperty] private decimal _todaySalesIqd;
@@ -43,14 +46,24 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [ObservableProperty] private bool _pricesUpdatedToday;
     [ObservableProperty] private bool _hasExpenseToday;
     [ObservableProperty] private decimal? _latestUsdToIqd;
+
     [ObservableProperty] private string _todaySalesDisplay = "—";
+    [ObservableProperty] private string _todayPurchasesDisplay = "—";
     [ObservableProperty] private string _todayExpensesDisplay = "—";
     [ObservableProperty] private string _cashBalanceDisplay = "—";
     [ObservableProperty] private string _stockDisplay = "—";
+    [ObservableProperty] private string _stockGramsDisplay = "—";
+    [ObservableProperty] private string _inventoryValueDisplay = "—";
     [ObservableProperty] private string _creditDisplay = "—";
+    [ObservableProperty] private string _overdueDisplay = "—";
     [ObservableProperty] private string _fxRateDisplay = "—";
     [ObservableProperty] private int _dailyTaskCount;
     [ObservableProperty] private int _smartAlertCount;
+
+    [ObservableProperty] private bool _showQuickSale = true;
+    [ObservableProperty] private bool _showQuickPurchase = true;
+    [ObservableProperty] private bool _showQuickExchange = true;
+    [ObservableProperty] private bool _showQuickMithqal = true;
 
     [ObservableProperty] private ISeries[] _stockSeries = [];
     [ObservableProperty] private ISeries[] _salesSeries = [];
@@ -62,6 +75,7 @@ public partial class GoldDashboardViewModel : ViewModelBase
     public ObservableCollection<GoldInvoiceListItem> RecentInvoices { get; } = [];
     public ObservableCollection<GoldMithqalPriceRow> LatestPrices { get; } = [];
     public ObservableCollection<GoldStockRow> StockByKarat { get; } = [];
+    public ObservableCollection<GoldCashBoxSummary> CashBoxes { get; } = [];
 
     public GoldDashboardViewModel(
         IGoldDashboardService dashboardService,
@@ -79,12 +93,31 @@ public partial class GoldDashboardViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.Dashboard);
-        var name = string.IsNullOrWhiteSpace(_currentUserService.Username)
+        ApplyQuickActionVisibility();
+
+        WelcomeGreeting = GetTimeGreeting();
+        UserDisplayName = string.IsNullOrWhiteSpace(_currentUserService.Username)
             ? "مرحباً"
             : _currentUserService.Username;
-        WelcomeText = $"أهلاً، {name}";
-        SubtitleText = $"نظرة على محل الذهب — {DateTime.Now:dddd، d MMMM yyyy}";
+        DisplayDate = DateTime.Now.ToString("dddd، d MMMM yyyy");
+        SubtitleText = "نظرة شاملة على أداء محل الذهب — مؤشرات محدّثة لحظياً";
         await LoadDataAsync();
+    }
+
+    private void ApplyQuickActionVisibility()
+    {
+        ShowQuickSale = _currentUserService.CanView(GoldShopPermissionRegistry.SaleInvoice);
+        ShowQuickPurchase = _currentUserService.CanView(GoldShopPermissionRegistry.PurchaseInvoice);
+        ShowQuickExchange = _currentUserService.CanView(GoldShopPermissionRegistry.ExchangeInvoice);
+        ShowQuickMithqal = _currentUserService.CanView(GoldShopPermissionRegistry.MithqalPrices);
+    }
+
+    private static string GetTimeGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        if (hour < 12) return "صباح الخير";
+        if (hour < 17) return "مساء الخير";
+        return "مساء الخير";
     }
 
     [RelayCommand]
@@ -143,11 +176,15 @@ public partial class GoldDashboardViewModel : ViewModelBase
         PricesUpdatedToday = data.PricesUpdatedToday;
         LatestUsdToIqd = data.LatestUsdToIqd;
 
-        TodaySalesDisplay = $"{data.TodaySalesIqd:N0} د.ع\n{data.TodaySalesUsd:N2} $";
-        TodayExpensesDisplay = $"{data.TodayExpensesIqd:N0} د.ع\n{data.TodayExpensesUsd:N2} $";
-        CashBalanceDisplay = $"{data.CashBalanceIqd:N0} د.ع\n{data.CashBalanceUsd:N2} $";
+        TodaySalesDisplay = FormatDual(data.TodaySalesIqd, data.TodaySalesUsd);
+        TodayPurchasesDisplay = FormatDual(data.TodayPurchasesIqd, data.TodayPurchasesUsd);
+        TodayExpensesDisplay = FormatDual(data.TodayExpensesIqd, data.TodayExpensesUsd);
+        CashBalanceDisplay = FormatDual(data.CashBalanceIqd, data.CashBalanceUsd);
+        StockGramsDisplay = $"{data.TotalStockGrams:N2} غ";
         StockDisplay = $"{data.TotalStockGrams:N2} غ\n{data.TotalStockValueIqd:N0} د.ع";
-        CreditDisplay = $"{data.OpenCreditCount} فاتورة\n{data.OpenCreditIqd:N0} د.ع";
+        InventoryValueDisplay = $"{data.TotalStockValueIqd:N0} د.ع";
+        CreditDisplay = $"{data.OpenCreditCount} زبون\n{data.OpenCreditIqd:N0} د.ع";
+        OverdueDisplay = $"{data.OverdueCreditCount} متأخر";
         FxRateDisplay = data.LatestUsdToIqd.HasValue
             ? $"{data.LatestUsdToIqd.Value:N0} د.ع"
             : "غير محدد";
@@ -157,12 +194,21 @@ public partial class GoldDashboardViewModel : ViewModelBase
             StockByKarat.Add(row);
 
         StockSeries = data.StockByKarat
-            .Where(s => s.GramsOnHand > 0)
+            .GroupBy(s => new { s.KaratValue, s.KaratName })
+            .Select(g => new
+            {
+                g.Key.KaratValue,
+                g.Key.KaratName,
+                Grams = g.Sum(x => x.GramsOnHand)
+            })
+            .Where(s => s.Grams > 0)
             .Select((s, i) => (ISeries)ChartThemeConfig.Pie(
-                s.GramsOnHand,
+                s.Grams,
                 string.IsNullOrWhiteSpace(s.KaratName) ? $"عيار {s.KaratValue}" : s.KaratName,
                 i))
             .ToArray();
+
+        BuildSalesChart(data.SalesLast30Days);
 
         RecentInvoices.Clear();
         foreach (var invoice in data.RecentInvoices)
@@ -172,33 +218,31 @@ public partial class GoldDashboardViewModel : ViewModelBase
         foreach (var price in data.LatestPrices)
             LatestPrices.Add(price);
 
-        BuildSalesPlaceholderChart(data.RecentInvoices);
+        CashBoxes.Clear();
+        foreach (var box in data.CashBoxes)
+            CashBoxes.Add(box);
     }
 
-    private void BuildSalesPlaceholderChart(IEnumerable<GoldInvoiceListItem> invoices)
+    private void BuildSalesChart(List<DailySalesPoint> points)
     {
-        var sales = invoices
-            .Where(i => i.InvoiceType == GoldInvoiceType.Sale)
-            .GroupBy(i => i.InvoiceDate.Date)
-            .OrderBy(g => g.Key)
-            .TakeLast(7)
-            .ToList();
-
-        if (sales.Count == 0)
+        if (points.Count == 0)
         {
             SalesSeries = [];
-            SalesXAxes = [];
-            SalesYAxes = [];
+            SalesXAxes = [ChartThemeConfig.CreateXAxis([])];
+            SalesYAxes = [ChartThemeConfig.CreateYAxis()];
             return;
         }
 
-        SalesSeries =
-        [
-            ChartThemeConfig.Column(sales.Select(g => g.Sum(x => x.TotalAmountIqd)).ToArray(), "مبيعات", 0)
-        ];
-        SalesXAxes = [ChartThemeConfig.CreateXAxis(sales.Select(g => g.Key.ToString("MM/dd")).ToArray(), -35)];
+        var amounts = points.Select(p => p.Amount).ToArray();
+        var labels = points.Select(p => p.Date.ToString("MM/dd")).ToArray();
+
+        SalesSeries = [ChartThemeConfig.Line(amounts, "المبيعات", 0)];
+        SalesXAxes = [ChartThemeConfig.CreateXAxis(labels, points.Count > 10 ? -35 : 0)];
         SalesYAxes = [ChartThemeConfig.CreateYAxis()];
     }
+
+    private static string FormatDual(decimal iqd, decimal usd) =>
+        $"{iqd:N0} د.ع\n{usd:N2} $";
 
     [RelayCommand]
     private async Task ExecuteDailyTaskAsync(DailyTaskItem? task)
@@ -262,4 +306,8 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenFxRatesAsync() =>
         await _mainWindow.OpenTabAsync(typeof(GoldFxRatesViewModel), "أسعار الصرف", PackIconKind.CashMultiple);
+
+    [RelayCommand]
+    private async Task OpenCashBoxesAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldCashBoxesViewModel), "القاصات", PackIconKind.SafeSquareOutline);
 }

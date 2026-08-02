@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums.Gold;
+using AlMuhasib.Core.Models;
 
 namespace AlMuhasib.Core.Models.Gold;
 
@@ -23,10 +24,25 @@ public class GoldDashboardData
     public bool HasExpenseToday { get; set; }
     public bool PricesUpdatedToday { get; set; }
     public decimal? LatestUsdToIqd { get; set; }
+    public List<DailySalesPoint> SalesLast30Days { get; set; } = [];
+    public List<GoldCashBoxSummary> CashBoxes { get; set; } = [];
     public List<GoldStockRow> StockByKarat { get; set; } = [];
     public List<GoldInvoiceListItem> RecentInvoices { get; set; } = [];
     public List<GoldAlertItem> Alerts { get; set; } = [];
     public List<GoldMithqalPriceRow> LatestPrices { get; set; } = [];
+}
+
+public class GoldCashBoxSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Balance { get; set; }
+    public GoldCurrency Currency { get; set; }
+    public string CurrencyLabel => Currency == GoldCurrency.USD ? "$" : "د.ع";
+    public string BalanceDisplay =>
+        Currency == GoldCurrency.USD
+            ? $"{Balance:N2} $"
+            : $"{Balance:N0} د.ع";
 }
 
 public class GoldStockRow
