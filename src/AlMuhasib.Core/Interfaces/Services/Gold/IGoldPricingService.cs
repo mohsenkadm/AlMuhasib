@@ -32,5 +32,7 @@ public interface IGoldPricingService
         GoldCurrency pricingCurrency,
         decimal? mithqalPriceOverride = null,
         decimal? fxRateOverride = null,
+        GoldMakingChargeMode makingChargeMode = GoldMakingChargeMode.Fixed,
+        decimal makingChargeRate = 0,
         CancellationToken cancellationToken = default);
 }

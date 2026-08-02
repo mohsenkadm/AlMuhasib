@@ -210,7 +210,9 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                 line.MakingCharge,
                 PricingCurrency,
                 line.MithqalPrice > 0 ? line.MithqalPrice : null,
-                FxRate > 0 ? FxRate : null);
+                FxRate > 0 ? FxRate : null,
+                line.MakingChargeMode,
+                line.MakingChargeRate);
 
             if (version != _quoteVersion && line.IsQuoting)
             {
@@ -379,6 +381,8 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
                     WeightGrams = l.WeightGrams,
                     MithqalPrice = l.MithqalPrice,
                     MakingCharge = l.MakingCharge,
+                    MakingChargeMode = l.MakingChargeMode,
+                    MakingChargeRate = l.MakingChargeRate,
                     Description = l.Description,
                     WeightFromScale = l.WeightFromScale
                 }).ToList()

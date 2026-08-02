@@ -32,6 +32,8 @@ public class GoldInvoice : BaseEntity
     public int? CashBoxId { get; set; }
     public string Notes { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    /// <summary>Optional link to the original sale for sale-return invoices.</summary>
+    public int? RelatedInvoiceId { get; set; }
 
     public ICollection<GoldInvoiceLine> Lines { get; set; } = [];
     public ICollection<GoldPayment> Payments { get; set; } = [];

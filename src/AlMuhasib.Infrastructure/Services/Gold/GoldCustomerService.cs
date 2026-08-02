@@ -79,6 +79,7 @@ public sealed class GoldCustomerService : IGoldCustomerService
                 Address = c.Address,
                 CreditBalanceIqd = c.CreditBalanceIqd,
                 CreditBalanceUsd = c.CreditBalanceUsd,
+                GoldCreditGrams = c.GoldCreditGrams,
                 IsActive = c.IsActive,
                 OpenInvoiceCount = stats?.OpenCount ?? 0,
                 LastTransactionDate = stats?.LastDate
@@ -121,6 +122,7 @@ public sealed class GoldCustomerService : IGoldCustomerService
         // unless explicitly provided as absolute values from admin UI.
         existing.CreditBalanceIqd = customer.CreditBalanceIqd;
         existing.CreditBalanceUsd = customer.CreditBalanceUsd;
+        existing.GoldCreditGrams = customer.GoldCreditGrams < 0 ? 0 : customer.GoldCreditGrams;
 
         await context.SaveChangesAsync(cancellationToken);
         return existing;
@@ -200,6 +202,7 @@ public sealed class GoldCustomerService : IGoldCustomerService
                 Address = c.Address,
                 CreditBalanceIqd = c.CreditBalanceIqd,
                 CreditBalanceUsd = c.CreditBalanceUsd,
+                GoldCreditGrams = c.GoldCreditGrams,
                 IsActive = c.IsActive,
                 OpenInvoiceCount = stats?.Count ?? 0,
                 LastTransactionDate = stats?.LastDate
@@ -221,5 +224,16 @@ public sealed class GoldCustomerService : IGoldCustomerService
             customer.CreditBalanceIqd = 0;
         if (customer.CreditBalanceUsd < 0)
             customer.CreditBalanceUsd = 0;
+    }
+
+    /// <summary>
+    /// Adjusts grams of gold the customer owes from credit sales.
+    /// Cash collection does not call this; sale return / scrap purchase / cancel do.
+    /// </summary>
+    internal static void AdjustGoldCreditGrams(GoldCustomer customer, decimal gramsDelta)
+    {
+        customer.GoldCreditGrams = GoldCurrencyHelper.Round(customer.GoldCreditGrams + gramsDelta, 3);
+        if (customer.GoldCreditGrams < 0)
+            customer.GoldCreditGrams = 0;
     }
 }

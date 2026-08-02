@@ -70,7 +70,7 @@ internal static class GoldSyncMapper
                 .Select(t => MapTransfer(t, warehouseMap))
                 .ToList(),
             GoldCashBoxes = cashBoxes.Where(ShouldSync).Select(MapCashBox).ToList(),
-            GoldInvoices = changedInvoices.Select(i => MapInvoice(i, customerMap, supplierMap, warehouseMap, cashBoxMap)).ToList(),
+            GoldInvoices = changedInvoices.Select(i => MapInvoice(i, customerMap, supplierMap, warehouseMap, cashBoxMap, invoiceMap)).ToList(),
             GoldInvoiceLines = changedLines
                 .Where(l => invoiceMap.ContainsKey(l.InvoiceId))
                 .Select(l => MapInvoiceLine(l, invoiceMap, itemMap))
@@ -153,7 +153,8 @@ internal static class GoldSyncMapper
             AllowManualWeightEdit = s.AllowManualWeightEdit,
             LowStockAlertGrams = s.LowStockAlertGrams,
             OverdueDaysThreshold = s.OverdueDaysThreshold,
-            EnabledKaratsCsv = s.EnabledKaratsCsv
+            EnabledKaratsCsv = s.EnabledKaratsCsv,
+            DefaultMakingChargeMode = s.DefaultMakingChargeMode
         };
         CopyBase(s, d);
         return d;
@@ -314,6 +315,7 @@ internal static class GoldSyncMapper
             Notes = c.Notes,
             CreditBalanceIqd = c.CreditBalanceIqd,
             CreditBalanceUsd = c.CreditBalanceUsd,
+            GoldCreditGrams = c.GoldCreditGrams,
             IsActive = c.IsActive
         };
         CopyBase(c, d);
@@ -339,7 +341,8 @@ internal static class GoldSyncMapper
         Dictionary<int, Guid> customerMap,
         Dictionary<int, Guid> supplierMap,
         Dictionary<int, Guid> warehouseMap,
-        Dictionary<int, Guid> cashBoxMap)
+        Dictionary<int, Guid> cashBoxMap,
+        Dictionary<int, Guid> invoiceMap)
     {
         var d = new GoldInvoiceSyncDto
         {
@@ -367,13 +370,17 @@ internal static class GoldSyncMapper
             TotalWeightGrams = i.TotalWeightGrams,
             CashBoxSyncId = i.CashBoxId.HasValue ? cashBoxMap.GetValueOrDefault(i.CashBoxId.Value) : null,
             Notes = i.Notes,
-            WeightFromScale = i.WeightFromScale
+            WeightFromScale = i.WeightFromScale,
+            RelatedInvoiceSyncId = i.RelatedInvoiceId.HasValue
+                ? invoiceMap.GetValueOrDefault(i.RelatedInvoiceId.Value)
+                : null
         };
         CopyBase(i, d);
         if (d.CustomerSyncId == Guid.Empty) d.CustomerSyncId = null;
         if (d.SupplierSyncId == Guid.Empty) d.SupplierSyncId = null;
         if (d.WarehouseSyncId == Guid.Empty) d.WarehouseSyncId = null;
         if (d.CashBoxSyncId == Guid.Empty) d.CashBoxSyncId = null;
+        if (d.RelatedInvoiceSyncId == Guid.Empty) d.RelatedInvoiceSyncId = null;
         return d;
     }
 
@@ -392,6 +399,8 @@ internal static class GoldSyncMapper
             PricePerGram = l.PricePerGram,
             GoldValue = l.GoldValue,
             MakingCharge = l.MakingCharge,
+            MakingChargeMode = l.MakingChargeMode,
+            MakingChargeRate = l.MakingChargeRate,
             LineTotal = l.LineTotal,
             Description = l.Description,
             WeightFromScale = l.WeightFromScale,
@@ -485,6 +494,7 @@ internal static class GoldSyncMapper
             existing.LowStockAlertGrams = dto.LowStockAlertGrams;
             existing.OverdueDaysThreshold = dto.OverdueDaysThreshold;
             existing.EnabledKaratsCsv = dto.EnabledKaratsCsv;
+            existing.DefaultMakingChargeMode = dto.DefaultMakingChargeMode;
             ApplyBase(existing, dto);
             await db.SaveChangesAsync(ct);
         }
@@ -790,6 +800,7 @@ internal static class GoldSyncMapper
             existing.Notes = dto.Notes;
             existing.CreditBalanceIqd = dto.CreditBalanceIqd;
             existing.CreditBalanceUsd = dto.CreditBalanceUsd;
+            existing.GoldCreditGrams = dto.GoldCreditGrams;
             existing.IsActive = dto.IsActive;
             ApplyBase(existing, dto);
             await db.SaveChangesAsync(ct);
@@ -889,6 +900,22 @@ internal static class GoldSyncMapper
         foreach (var i in await db.GoldInvoices.IgnoreQueryFilters().ToListAsync(ct))
             map.TryAdd(i.SyncId, i.Id);
 
+        // Second pass: resolve RelatedInvoiceId after all invoices are mapped.
+        foreach (var dto in dtos)
+        {
+            if (!dto.RelatedInvoiceSyncId.HasValue || dto.RelatedInvoiceSyncId == Guid.Empty)
+                continue;
+            if (!map.TryGetValue(dto.SyncId, out var invoiceId))
+                continue;
+            if (!map.TryGetValue(dto.RelatedInvoiceSyncId.Value, out var relatedId))
+                continue;
+
+            var existing = await db.GoldInvoices.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(i => i.Id == invoiceId, ct);
+            if (existing is not null)
+                existing.RelatedInvoiceId = relatedId;
+        }
+
         return map;
     }
 
@@ -921,6 +948,8 @@ internal static class GoldSyncMapper
             existing.PricePerGram = dto.PricePerGram;
             existing.GoldValue = dto.GoldValue;
             existing.MakingCharge = dto.MakingCharge;
+            existing.MakingChargeMode = dto.MakingChargeMode;
+            existing.MakingChargeRate = dto.MakingChargeRate;
             existing.LineTotal = dto.LineTotal;
             existing.Description = dto.Description;
             existing.WeightFromScale = dto.WeightFromScale;

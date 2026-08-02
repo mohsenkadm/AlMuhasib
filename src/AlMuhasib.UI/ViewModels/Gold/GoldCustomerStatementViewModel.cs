@@ -25,6 +25,7 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
     [ObservableProperty] private decimal _totalRemaining;
     [ObservableProperty] private decimal _creditBalanceIqd;
     [ObservableProperty] private decimal _creditBalanceUsd;
+    [ObservableProperty] private decimal _goldCreditGrams;
 
     public GoldCustomerStatementViewModel(
         IGoldCustomerService customerService,
@@ -73,7 +74,7 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
     {
         Invoices.Clear();
         TotalAmount = TotalPaid = TotalRemaining = 0;
-        CreditBalanceIqd = CreditBalanceUsd = 0;
+        CreditBalanceIqd = CreditBalanceUsd = GoldCreditGrams = 0;
 
         if (SelectedCustomer is null)
             return;
@@ -91,6 +92,7 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
             TotalRemaining = invoices.Sum(i => i.RemainingAmount);
             CreditBalanceIqd = SelectedCustomer.CreditBalanceIqd;
             CreditBalanceUsd = SelectedCustomer.CreditBalanceUsd;
+            GoldCreditGrams = SelectedCustomer.GoldCreditGrams;
         }
         catch (Exception ex)
         {

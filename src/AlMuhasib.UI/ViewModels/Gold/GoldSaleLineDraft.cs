@@ -18,6 +18,8 @@ public partial class GoldSaleLineDraft : ObservableObject
     [ObservableProperty] private decimal _weightGrams;
     [ObservableProperty] private decimal _mithqalPrice;
     [ObservableProperty] private decimal _makingCharge;
+    [ObservableProperty] private GoldMakingChargeMode _makingChargeMode = GoldMakingChargeMode.Fixed;
+    [ObservableProperty] private decimal _makingChargeRate;
     [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private bool _weightFromScale;
     [ObservableProperty] private decimal _goldValue;
@@ -29,19 +31,34 @@ public partial class GoldSaleLineDraft : ObservableObject
     partial void OnKaratValueChanged(int value) => RequestQuote();
     partial void OnWeightGramsChanged(decimal value) => RequestQuote();
     partial void OnMakingChargeChanged(decimal value) => RequestQuote();
+    partial void OnMakingChargeModeChanged(GoldMakingChargeMode value) => RequestQuote();
+    partial void OnMakingChargeRateChanged(decimal value) => RequestQuote();
 
-    public void RequestQuote() => _onQuoteNeeded?.Invoke(this);
+    public void RequestQuote()
+    {
+        if (IsQuoting)
+            return;
+        _onQuoteNeeded?.Invoke(this);
+    }
 
     public void ApplyQuote(Core.Models.Gold.GoldPricingQuote quote)
     {
         MithqalPrice = quote.MithqalPrice;
         GoldValue = quote.GoldValue;
+        MakingCharge = quote.MakingCharge;
+        MakingChargeMode = quote.MakingChargeMode;
+        MakingChargeRate = quote.MakingChargeRate;
         LineTotal = quote.LineTotal;
         LineTotalIqd = quote.LineTotalIqd;
         LineTotalUsd = quote.LineTotalUsd;
         if (string.IsNullOrWhiteSpace(Description))
             Description = $"عيار {quote.KaratValue}";
     }
+}
+
+public sealed record GoldMakingChargeModeOption(GoldMakingChargeMode Value, string Label)
+{
+    public override string ToString() => Label;
 }
 
 public sealed record GoldCurrencyOption(GoldCurrency Value, string Label)

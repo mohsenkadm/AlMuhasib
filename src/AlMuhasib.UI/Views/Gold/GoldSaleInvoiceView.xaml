@@ -213,6 +213,8 @@
                                                 Binding="{Binding WeightGrams, UpdateSourceTrigger=PropertyChanged, StringFormat=N3}"/>
                             <DataGridTextColumn Header="سعر المثقال" Width="120"
                                                 Binding="{Binding MithqalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
+                            <DataGridTextColumn Header="معدل الأجور" Width="100"
+                                                Binding="{Binding MakingChargeRate, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"/>
                             <DataGridTextColumn Header="أجور الصياغة" Width="120"
                                                 Binding="{Binding MakingCharge, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"/>
                             <DataGridTextColumn Header="قيمة الذهب" Width="120" IsReadOnly="True"

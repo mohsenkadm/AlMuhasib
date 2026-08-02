@@ -8,5 +8,7 @@ public class GoldCustomer : BaseEntity
     public string Notes { get; set; } = string.Empty;
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
+    /// <summary>Grams of gold sold on credit that the customer still owes (not reduced by cash collection).</summary>
+    public decimal GoldCreditGrams { get; set; }
     public bool IsActive { get; set; } = true;
 }

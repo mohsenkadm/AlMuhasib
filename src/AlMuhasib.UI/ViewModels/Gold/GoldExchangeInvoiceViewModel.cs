@@ -224,7 +224,9 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
                 line.MakingCharge,
                 PricingCurrency,
                 line.MithqalPrice > 0 ? line.MithqalPrice : null,
-                FxRate > 0 ? FxRate : null);
+                FxRate > 0 ? FxRate : null,
+                line.MakingChargeMode,
+                line.MakingChargeRate);
             line.ApplyQuote(quote);
             if (quote.FxRate is > 0)
                 FxRate = quote.FxRate.Value;
@@ -429,6 +431,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         WeightGrams = l.WeightGrams,
         MithqalPrice = l.MithqalPrice,
         MakingCharge = l.MakingCharge,
+        MakingChargeMode = l.MakingChargeMode,
+        MakingChargeRate = l.MakingChargeRate,
         Description = l.Description,
         WeightFromScale = l.WeightFromScale
     };

@@ -35,6 +35,7 @@ public static class GoldShopMenuBuilder
                     ("أصناف الذهب", PackIconKind.DiamondStone, typeof(GoldItemsViewModel), GoldShopPermissionRegistry.Items),
                     ("المخزون", PackIconKind.PackageVariantClosed, typeof(GoldStockViewModel), GoldShopPermissionRegistry.Stock),
                     ("تسوية مخزون", PackIconKind.TuneVerticalVariant, typeof(GoldStockAdjustmentViewModel), GoldShopPermissionRegistry.StockAdjustment),
+                    ("رصيد افتتاحي", PackIconKind.PackageDown, typeof(GoldOpeningStockViewModel), GoldShopPermissionRegistry.OpeningStock),
                     ("مخازن", PackIconKind.Warehouse, typeof(GoldWarehousesViewModel), GoldShopPermissionRegistry.Warehouses),
                     ("نقل مخازن", PackIconKind.SwapHorizontal, typeof(GoldWarehouseTransferViewModel), GoldShopPermissionRegistry.WarehouseTransfer),
                 ]),
@@ -45,6 +46,7 @@ public static class GoldShopMenuBuilder
                 accent: "#D4AF37",
                 accentLight: "#FFFDE7",
                 [
+                    ("مرتجع بيع", PackIconKind.BackupRestore, typeof(GoldSaleReturnViewModel), GoldShopPermissionRegistry.SaleReturn),
                     ("مبيعات الآجل", PackIconKind.CreditCardClock, typeof(GoldCreditSalesViewModel), GoldShopPermissionRegistry.CreditSales),
                     ("التحصيل", PackIconKind.CashCheck, typeof(GoldCollectionViewModel), GoldShopPermissionRegistry.Collection),
                     ("تبديل ذهب", PackIconKind.SwapHorizontal, typeof(GoldExchangeInvoiceViewModel), GoldShopPermissionRegistry.ExchangeInvoice),
@@ -68,6 +70,7 @@ public static class GoldShopMenuBuilder
                 [
                     ("الزبائن", PackIconKind.AccountGroup, typeof(GoldCustomersViewModel), GoldShopPermissionRegistry.Customers),
                     ("كشف حساب زبون", PackIconKind.AccountDetails, typeof(GoldCustomerStatementViewModel), GoldShopPermissionRegistry.CustomerStatement),
+                    ("رصيد افتتاحي زبون", PackIconKind.AccountCash, typeof(GoldOpeningCustomerBalanceViewModel), GoldShopPermissionRegistry.OpeningCustomerBalance),
                 ]),
             FlyoutGroup(
                 key: "finance",

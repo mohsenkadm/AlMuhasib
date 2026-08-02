@@ -13,6 +13,9 @@ public class GoldInvoiceLine : BaseEntity
     public decimal PricePerGram { get; set; }
     public decimal GoldValue { get; set; }
     public decimal MakingCharge { get; set; }
+    public GoldMakingChargeMode MakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    /// <summary>Per-gram amount or percent-of-gold rate, depending on <see cref="MakingChargeMode"/>.</summary>
+    public decimal MakingChargeRate { get; set; }
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }

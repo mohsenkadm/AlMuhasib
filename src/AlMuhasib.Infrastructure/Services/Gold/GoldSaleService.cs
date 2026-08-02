@@ -104,19 +104,30 @@ public sealed class GoldSaleService : IGoldSaleService
                 CashBoxId = request.CashBoxId
             };
 
+            var purityByKarat = await context.GoldKarats.AsNoTracking()
+                .ToDictionaryAsync(k => k.KaratValue, k => k.PurityFactor, cancellationToken);
+
             decimal totalGold = 0, totalMaking = 0, totalWeight = 0;
 
             foreach (var lineReq in request.Lines)
             {
-                if (lineReq.WeightGrams <= 0)
-                    throw new InvalidOperationException("وزن البند يجب أن يكون أكبر من صفر");
-                if (lineReq.MithqalPrice <= 0)
-                    throw new InvalidOperationException("سعر المثقال يجب أن يكون أكبر من صفر");
+                purityByKarat.TryGetValue(lineReq.KaratValue, out var purity);
+                if (purity <= 0) purity = 1m;
 
-                var pricePerGram = GoldCurrencyHelper.Round(lineReq.MithqalPrice / mithqalGrams, 6);
-                var goldValue = GoldCurrencyHelper.Round(lineReq.WeightGrams * pricePerGram);
-                var making = Math.Max(0, lineReq.MakingCharge);
-                var lineTotal = GoldCurrencyHelper.Round(goldValue + making);
+                if (lineReq.MakingChargeMode == GoldMakingChargeMode.Fixed
+                    && lineReq.MakingChargeRate == 0
+                    && lineReq.MakingCharge == 0
+                    && settings.DefaultMakingChargeMode != GoldMakingChargeMode.Fixed)
+                {
+                    lineReq.MakingChargeMode = settings.DefaultMakingChargeMode;
+                }
+
+                var line = GoldLinePricingHelper.BuildInvoiceLine(
+                    lineReq,
+                    mithqalGrams,
+                    purity,
+                    GoldInvoiceLineDirection.Out,
+                    "بيع");
 
                 if (lineReq.ItemId.HasValue)
                 {
@@ -138,25 +149,10 @@ public sealed class GoldSaleService : IGoldSaleService
                     warehouseId,
                     cancellationToken);
 
-                invoice.Lines.Add(new GoldInvoiceLine
-                {
-                    ItemId = lineReq.ItemId,
-                    KaratValue = lineReq.KaratValue,
-                    WeightGrams = lineReq.WeightGrams,
-                    MithqalPrice = lineReq.MithqalPrice,
-                    PricePerGram = pricePerGram,
-                    GoldValue = goldValue,
-                    MakingCharge = making,
-                    LineTotal = lineTotal,
-                    Description = string.IsNullOrWhiteSpace(lineReq.Description)
-                        ? $"عيار {lineReq.KaratValue}"
-                        : lineReq.Description,
-                    WeightFromScale = lineReq.WeightFromScale,
-                    LineDirection = GoldInvoiceLineDirection.Out
-                });
+                invoice.Lines.Add(line);
 
-                totalGold += goldValue;
-                totalMaking += making;
+                totalGold += line.GoldValue;
+                totalMaking += line.MakingCharge;
                 totalWeight += lineReq.WeightGrams;
             }
 
@@ -227,6 +223,14 @@ public sealed class GoldSaleService : IGoldSaleService
                 GoldCustomerService.AdjustCredit(customer, request.PaymentCurrency, creditInPaymentCurrency);
             }
 
+            // Credit sale (or partial unpaid): track grams sold on credit. Cash collection does not reduce grams.
+            if (customer is not null
+                && invoice.TotalWeightGrams > 0
+                && (request.PaymentMethod == GoldPaymentMethod.Credit || invoice.RemainingAmount > 0))
+            {
+                GoldCustomerService.AdjustGoldCreditGrams(customer, invoice.TotalWeightGrams);
+            }
+
             await context.GoldInvoices.AddAsync(invoice, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
@@ -237,6 +241,228 @@ public sealed class GoldSaleService : IGoldSaleService
                 .Include(i => i.Lines)
                 .Include(i => i.Payments)
                 .FirstAsync(i => i.Id == invoice.Id, cancellationToken));
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<GoldInvoice> CreateSaleReturnAsync(
+        GoldSaleReturnRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Lines is null || request.Lines.Count == 0)
+            throw new InvalidOperationException("يجب إضافة بند واحد على الأقل لمرتجع البيع");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var tx = await context.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var settings = await GoldSettingsService.EnsureSettingsAsync(context, cancellationToken);
+            var mithqalGrams = settings.MithqalGrams <= 0 ? 5m : settings.MithqalGrams;
+            var fx = request.FxRate > 0
+                ? request.FxRate
+                : (await context.GoldFxRates
+                    .OrderByDescending(r => r.RateDate)
+                    .ThenByDescending(r => r.Id)
+                    .Select(r => (decimal?)r.UsdToIqd)
+                    .FirstOrDefaultAsync(cancellationToken)) ?? 1m;
+
+            GoldCustomer? customer = null;
+            if (request.CustomerId.HasValue)
+            {
+                customer = await context.GoldCustomers.FirstOrDefaultAsync(c => c.Id == request.CustomerId.Value, cancellationToken)
+                    ?? throw new InvalidOperationException("الزبون غير موجود");
+            }
+            else if (request.PaymentMethod == GoldPaymentMethod.Credit)
+            {
+                throw new InvalidOperationException("مرتجع الآجل يتطلب اختيار زبون");
+            }
+
+            if (request.RelatedInvoiceId.HasValue)
+            {
+                var original = await context.GoldInvoices.AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        i => i.Id == request.RelatedInvoiceId.Value && i.InvoiceType == GoldInvoiceType.Sale,
+                        cancellationToken)
+                    ?? throw new InvalidOperationException("فاتورة البيع الأصلية غير موجودة");
+
+                if (original.Status == GoldInvoiceStatus.Cancelled)
+                    throw new InvalidOperationException("لا يمكن إرجاع فاتورة ملغاة");
+
+                request.CustomerId ??= original.CustomerId;
+                if (customer is null && request.CustomerId.HasValue)
+                {
+                    customer = await context.GoldCustomers.FirstOrDefaultAsync(c => c.Id == request.CustomerId.Value, cancellationToken);
+                }
+            }
+
+            var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(
+                context,
+                request.WarehouseId,
+                cancellationToken);
+
+            var purityByKarat = await context.GoldKarats.AsNoTracking()
+                .ToDictionaryAsync(k => k.KaratValue, k => k.PurityFactor, cancellationToken);
+
+            var invoice = new GoldInvoice
+            {
+                InvoiceNumber = await GoldInvoiceQueryHelper.GetNextInvoiceNumberAsync(
+                    context, GoldInvoiceType.SaleReturn, cancellationToken),
+                InvoiceDate = request.InvoiceDate.Date,
+                InvoiceType = GoldInvoiceType.SaleReturn,
+                PaymentMethod = request.PaymentMethod,
+                CustomerId = request.CustomerId ?? customer?.Id,
+                WarehouseId = warehouseId,
+                RelatedInvoiceId = request.RelatedInvoiceId,
+                PricingCurrency = request.PricingCurrency,
+                PaymentCurrency = request.PaymentCurrency,
+                FxRate = fx,
+                DiscountAmount = Math.Max(0, request.DiscountAmount),
+                Notes = request.Notes ?? string.Empty,
+                WeightFromScale = request.WeightFromScale,
+                CashBoxId = request.CashBoxId
+            };
+
+            decimal totalGold = 0, totalMaking = 0, totalWeight = 0;
+
+            foreach (var lineReq in request.Lines)
+            {
+                purityByKarat.TryGetValue(lineReq.KaratValue, out var purity);
+                if (purity <= 0) purity = 1m;
+
+                var line = GoldLinePricingHelper.BuildInvoiceLine(
+                    lineReq,
+                    mithqalGrams,
+                    purity,
+                    GoldInvoiceLineDirection.In,
+                    "مرتجع بيع");
+
+                // Return increases stock
+                await GoldInventoryService.AdjustStockInternalAsync(
+                    context,
+                    line.KaratValue,
+                    line.WeightGrams,
+                    line.PricePerGram > 0 ? line.PricePerGram : null,
+                    warehouseId,
+                    cancellationToken);
+
+                if (lineReq.ItemId.HasValue)
+                {
+                    var item = await context.GoldItems.FirstOrDefaultAsync(i => i.Id == lineReq.ItemId.Value, cancellationToken);
+                    if (item is not null && item.Status == GoldItemStatus.Sold)
+                        item.Status = GoldItemStatus.InStock;
+                }
+
+                invoice.Lines.Add(line);
+                totalGold += line.GoldValue;
+                totalMaking += line.MakingCharge;
+                totalWeight += line.WeightGrams;
+            }
+
+            invoice.TotalGoldValue = GoldCurrencyHelper.Round(totalGold);
+            invoice.TotalMakingCharge = GoldCurrencyHelper.Round(totalMaking);
+            invoice.TotalWeightGrams = GoldCurrencyHelper.Round(totalWeight);
+            invoice.TotalAmount = GoldCurrencyHelper.Round(
+                invoice.TotalGoldValue + invoice.TotalMakingCharge - invoice.DiscountAmount);
+            if (invoice.TotalAmount < 0)
+                invoice.TotalAmount = 0;
+
+            GoldCurrencyHelper.ApplyDualTotals(invoice);
+
+            var refundInPricing = GoldCurrencyHelper.ConvertAmount(
+                Math.Max(0, request.PaidAmount),
+                request.PaymentCurrency,
+                request.PricingCurrency,
+                fx);
+
+            if (request.PaymentMethod == GoldPaymentMethod.Cash && refundInPricing <= 0)
+                refundInPricing = invoice.TotalAmount;
+
+            if (refundInPricing > invoice.TotalAmount)
+                refundInPricing = invoice.TotalAmount;
+
+            invoice.PaidAmount = GoldCurrencyHelper.Round(refundInPricing);
+            invoice.RemainingAmount = GoldCurrencyHelper.Round(invoice.TotalAmount - invoice.PaidAmount);
+            invoice.Status = GoldCurrencyHelper.ResolveStatus(
+                invoice.TotalAmount, invoice.PaidAmount, request.PaymentMethod);
+
+            await GoldCashService.EnsureDefaultCashBoxesAsync(context, cancellationToken);
+
+            // Cash refund: money leaves the till
+            if (invoice.PaidAmount > 0 && request.PaymentMethod != GoldPaymentMethod.Credit)
+            {
+                var refundInPaymentCurrency = GoldCurrencyHelper.ConvertAmount(
+                    invoice.PaidAmount,
+                    request.PricingCurrency,
+                    request.PaymentCurrency,
+                    fx);
+
+                var cashBox = await GoldCashService.ResolveCashBoxAsync(
+                    context,
+                    request.CashBoxId,
+                    request.PaymentCurrency,
+                    cancellationToken);
+                invoice.CashBoxId = cashBox.Id;
+                GoldCashService.AdjustCashBoxBalance(cashBox, -refundInPaymentCurrency);
+
+                invoice.Payments.Add(new GoldPayment
+                {
+                    PaymentDate = request.InvoiceDate.Date,
+                    Amount = GoldCurrencyHelper.Round(refundInPaymentCurrency),
+                    Currency = request.PaymentCurrency,
+                    FxRate = fx,
+                    CashBoxId = cashBox.Id,
+                    Notes = "استرداد نقدي لمرتجع بيع"
+                });
+            }
+
+            // Credit return: reduce customer money credit for unpaid portion of return value
+            if (invoice.RemainingAmount > 0 || request.PaymentMethod == GoldPaymentMethod.Credit)
+            {
+                if (customer is null)
+                    throw new InvalidOperationException("مرتجع الآجل يتطلب زبون");
+
+                var creditReduce = request.PaymentMethod == GoldPaymentMethod.Credit
+                    ? GoldCurrencyHelper.ConvertAmount(
+                        invoice.TotalAmount,
+                        request.PricingCurrency,
+                        request.PaymentCurrency,
+                        fx)
+                    : GoldCurrencyHelper.ConvertAmount(
+                        invoice.RemainingAmount,
+                        request.PricingCurrency,
+                        request.PaymentCurrency,
+                        fx);
+
+                if (creditReduce > 0)
+                    GoldCustomerService.AdjustCredit(customer, request.PaymentCurrency, -creditReduce);
+
+                if (request.PaymentMethod == GoldPaymentMethod.Credit)
+                {
+                    invoice.PaidAmount = 0;
+                    invoice.RemainingAmount = 0;
+                    invoice.Status = GoldInvoiceStatus.Completed;
+                }
+            }
+
+            // Sale return always reduces tracked credit grams (return of gold).
+            if (customer is not null && invoice.TotalWeightGrams > 0)
+                GoldCustomerService.AdjustGoldCreditGrams(customer, -invoice.TotalWeightGrams);
+
+            await context.GoldInvoices.AddAsync(invoice, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            return await context.GoldInvoices
+                .AsNoTracking()
+                .Include(i => i.Customer)
+                .Include(i => i.Lines)
+                .Include(i => i.Payments)
+                .FirstAsync(i => i.Id == invoice.Id, cancellationToken);
         }
         catch
         {
@@ -393,17 +619,26 @@ public sealed class GoldSaleService : IGoldSaleService
                 }
             }
 
-            // Reverse remaining credit
-            if (invoice.Customer is not null && invoice.RemainingAmount > 0)
+            // Reverse remaining credit (money + credit grams from sale)
+            if (invoice.Customer is not null)
             {
                 try
                 {
-                    var credit = GoldCurrencyHelper.ConvertAmount(
-                        invoice.RemainingAmount,
-                        invoice.PricingCurrency,
-                        invoice.PaymentCurrency,
-                        invoice.FxRate > 0 ? invoice.FxRate : 1m);
-                    GoldCustomerService.AdjustCredit(invoice.Customer, invoice.PaymentCurrency, -credit);
+                    if (invoice.RemainingAmount > 0)
+                    {
+                        var credit = GoldCurrencyHelper.ConvertAmount(
+                            invoice.RemainingAmount,
+                            invoice.PricingCurrency,
+                            invoice.PaymentCurrency,
+                            invoice.FxRate > 0 ? invoice.FxRate : 1m);
+                        GoldCustomerService.AdjustCredit(invoice.Customer, invoice.PaymentCurrency, -credit);
+                    }
+
+                    if (invoice.TotalWeightGrams > 0 &&
+                        (invoice.PaymentMethod == GoldPaymentMethod.Credit || invoice.RemainingAmount > 0))
+                    {
+                        GoldCustomerService.AdjustGoldCreditGrams(invoice.Customer, -invoice.TotalWeightGrams);
+                    }
                 }
                 catch
                 {
@@ -432,5 +667,11 @@ public sealed class GoldSaleService : IGoldSaleService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await GoldInvoiceQueryHelper.GetNextInvoiceNumberAsync(context, GoldInvoiceType.Sale, cancellationToken);
+    }
+
+    public async Task<string> GetNextSaleReturnNumberAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await GoldInvoiceQueryHelper.GetNextInvoiceNumberAsync(context, GoldInvoiceType.SaleReturn, cancellationToken);
     }
 }

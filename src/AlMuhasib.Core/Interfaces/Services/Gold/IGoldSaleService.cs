@@ -18,7 +18,9 @@ public interface IGoldSaleService
 
     Task<GoldInvoice?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<GoldInvoice> CreateSaleAsync(GoldSaleRequest request, CancellationToken cancellationToken = default);
+    Task<GoldInvoice> CreateSaleReturnAsync(GoldSaleReturnRequest request, CancellationToken cancellationToken = default);
     Task<GoldInvoice> RecordPaymentAsync(GoldPaymentRequest request, CancellationToken cancellationToken = default);
     Task CancelAsync(int id, string cancelledBy, string? reason = null, CancellationToken cancellationToken = default);
     Task<string> GetNextInvoiceNumberAsync(CancellationToken cancellationToken = default);
+    Task<string> GetNextSaleReturnNumberAsync(CancellationToken cancellationToken = default);
 }
