@@ -204,6 +204,10 @@
                                                     Description="خصم على المنتجات والفواتير (نسبة أو قيمة) في البيع والأقساط ونقطة البيع"
                                                     Icon="Percent" IconBackground="#E8F5E9" IconForeground="#2E7D32"
                                                     IsChecked="{Binding ProductDiscountEnabled}"/>
+                        <controls:FeatureToggleCard Title="نظام الولاء"
+                                                    Description="نقاط للزبائن تُكسب من فواتير البيع وتُستبدل خصماً — مع تقارير وحسابات في قائمة الولاء"
+                                                    Icon="GiftOutline" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    IsChecked="{Binding LoyaltySystem}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

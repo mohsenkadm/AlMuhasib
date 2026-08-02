@@ -182,7 +182,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
-        IProductColorService productColorService)
+        IProductColorService productColorService,
+        ILoyaltyService loyaltyService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -209,6 +210,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         ConfigureFeatureServices(
             featureFlags, productUnitService, productBatchService, productSerialService,
             productSizeService, productColorService);
+        ConfigureLoyaltyService(loyaltyService);
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
     }
 
@@ -290,6 +292,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             CreditDueDate = null;
         else
             CreditDueDate = DateTime.Today.AddMonths(1);
+        _ = RefreshLoyaltyQuoteAsync();
     }
 
     public override async Task InitializeAsync()
@@ -461,6 +464,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         // When user picks from dropdown, update search text to show selected name
         if (value is not null)
             CustomerSearchText = value.Name;
+        _ = RefreshLoyaltyQuoteAsync();
     }
 
     partial void OnCustomerSearchTextChanged(string value)
@@ -690,11 +694,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         else
             InvoiceDiscountAmount = 0m;
 
+        var totalDiscount = InvoiceDiscountAmount + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m);
+
         var (computedSub, discount, rounding, grand) = InvoiceTotalsCalculator.Compute(
             Items.Select(i => i.TotalPrice),
             _invoiceService,
             InvoiceType.Sale,
-            InvoiceDiscountAmount,
+            totalDiscount,
             ShowTransportFee ? TransportFeeAmount : 0m);
         _ = computedSub;
         _ = discount;
@@ -848,7 +854,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase
                 CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
                 CreditDueDate = IsCreditPayment ? CreditDueDate : null,
-                DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
+                DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
+                    + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
+                LoyaltyRedeemDiscountAmount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
+                LoyaltyPointsRedeemed = ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -916,7 +925,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             }
             else
             {
-                saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
+                var applyLoyalty = ShowLoyaltyPanel && customerId is not null;
+                saved = await _invoiceService.CreateInvoiceAsync(
+                    invoice,
+                    invoiceItems,
+                    skipStockUpdate: false,
+                    loyaltyRedeemPoints: applyLoyalty ? Math.Max(0, LoyaltyRedeemPoints) : 0,
+                    applyLoyalty: applyLoyalty);
             }
 
             try

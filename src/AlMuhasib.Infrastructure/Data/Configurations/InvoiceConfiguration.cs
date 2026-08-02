@@ -35,6 +35,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.RoundingAmount).HasPrecision(18, 2);
         builder.Property(i => i.PaidAmount).HasPrecision(18, 2);
         builder.Property(i => i.RemainingAmount).HasPrecision(18, 2);
+        builder.Property(i => i.LoyaltyRedeemDiscountAmount).HasPrecision(18, 2);
 
         builder.Property(i => i.Notes).HasMaxLength(1000);
 

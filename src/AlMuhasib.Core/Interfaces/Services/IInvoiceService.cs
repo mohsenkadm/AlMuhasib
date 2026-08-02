@@ -5,7 +5,12 @@ namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IInvoiceService
 {
-    Task<Invoice> CreateInvoiceAsync(Invoice invoice, IEnumerable<InvoiceItem> items, bool skipStockUpdate = false);
+    Task<Invoice> CreateInvoiceAsync(
+        Invoice invoice,
+        IEnumerable<InvoiceItem> items,
+        bool skipStockUpdate = false,
+        int loyaltyRedeemPoints = 0,
+        bool applyLoyalty = false);
     Task<Invoice?> GetByIdAsync(int id);
     Task<Invoice?> GetByIdWithDetailsAsync(int id);
     Task<(IEnumerable<Invoice> Items, int TotalCount)> GetPagedAsync(

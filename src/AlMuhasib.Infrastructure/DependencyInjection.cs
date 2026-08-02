@@ -81,6 +81,8 @@ public static class DependencyInjection
         services.AddScoped<IPackagingTypeService, PackagingTypeService>();
         services.AddScoped<IProductPriceService, ProductPriceService>();
         services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
+        services.AddScoped<LoyaltyService>();
+        services.AddScoped<ILoyaltyService>(sp => sp.GetRequiredService<LoyaltyService>());
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<ICashBankService, CashBankService>();

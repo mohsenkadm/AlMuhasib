@@ -8,6 +8,7 @@
         xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
         xmlns:models="clr-namespace:AlMuhasib.UI.Models"
         xmlns:views="clr-namespace:AlMuhasib.UI.Views"
+        xmlns:loyaltyViews="clr-namespace:AlMuhasib.UI.Views.Loyalty"
         xmlns:carViews="clr-namespace:AlMuhasib.UI.Views.Car"
         xmlns:carVm="clr-namespace:AlMuhasib.UI.ViewModels.Car"
         xmlns:carTradeViews="clr-namespace:AlMuhasib.UI.Views.CarTrade"
@@ -1649,6 +1650,21 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:BusinessFeaturesSettingsViewModel}">
                             <views:BusinessFeaturesSettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LoyaltySettingsViewModel}">
+                            <loyaltyViews:LoyaltySettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LoyaltyAccountsViewModel}">
+                            <loyaltyViews:LoyaltyAccountsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LoyaltyLedgerViewModel}">
+                            <loyaltyViews:LoyaltyLedgerView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LoyaltySummaryReportViewModel}">
+                            <loyaltyViews:LoyaltySummaryReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:LoyaltyTopCustomersReportViewModel}">
+                            <loyaltyViews:LoyaltyTopCustomersReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:MigrationWizardViewModel}">
                             <views:MigrationWizardView />

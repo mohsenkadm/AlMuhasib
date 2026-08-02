@@ -22,6 +22,9 @@ public class BusinessFeatureFlags
     /// <summary>تفعيل الخصم على المنتجات والفواتير (بيع/أقساط/POS) — معطّل افتراضياً.</summary>
     public bool ProductDiscountEnabled { get; set; }
 
+    /// <summary>نظام الولاء (نقاط زبائن + استبدال كخصم) — معطّل افتراضياً.</summary>
+    public bool LoyaltySystem { get; set; }
+
     /// <summary>أجور النقل في فواتير البيع والشراء والأقساط — معطّل افتراضياً.</summary>
     public bool TransportFees { get; set; }
 

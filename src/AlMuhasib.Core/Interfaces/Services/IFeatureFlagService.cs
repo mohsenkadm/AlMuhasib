@@ -16,6 +16,7 @@ public interface IFeatureFlagService
     bool ProductPricingEnabled { get; }
     bool UpdateProductPriceOnPurchase { get; }
     bool ProductDiscountEnabled { get; }
+    bool LoyaltySystem { get; }
     bool TransportFees { get; }
     bool WarehouseInvoiceAndDriver { get; }
     bool TemplateMobileShop { get; }

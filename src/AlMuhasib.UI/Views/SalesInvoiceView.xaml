@@ -8,6 +8,7 @@
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:loyalty="clr-namespace:AlMuhasib.UI.Controls.Loyalty"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SalesInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
@@ -630,6 +631,20 @@
                                                    FontSize="13" FontWeight="SemiBold" Foreground="#2E7D32"/>
                                     </Grid>
                                 </StackPanel>
+
+                                <loyalty:LoyaltyPanel DataContext="{Binding}"/>
+
+                                <Grid Margin="0,0,0,10"
+                                      Visibility="{Binding ShowLoyaltyPanel, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="خصم الولاء:" FontSize="13" Foreground="#C62828" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding LoyaltyDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
+                                               FontSize="13" FontWeight="SemiBold" Foreground="#C62828"/>
+                                </Grid>
 
                                 <!-- Rounding -->
                                 <Grid Margin="0,0,0,10">
