@@ -279,6 +279,9 @@ public static class DependencyInjection
         services.AddScoped<IGoldCustomerService, GoldCustomerService>();
         services.AddScoped<IGoldCashService, GoldCashService>();
         services.AddScoped<IGoldSaleService, GoldSaleService>();
+        services.AddScoped<IGoldPurchaseService, GoldPurchaseService>();
+        services.AddScoped<IGoldDashboardService, GoldDashboardService>();
+        services.AddScoped<IGoldReportService, GoldReportService>();
         services.AddScoped<IGlobalSearchService, GoldGlobalSearchService>();
         services.AddScoped<IAuditLogService, GoldAuditLogService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
