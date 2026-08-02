@@ -81,6 +81,11 @@ public sealed class GoldSaleService : IGoldSaleService
                 throw new InvalidOperationException("البيع الآجل يتطلب اختيار زبون");
             }
 
+            var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(
+                context,
+                request.WarehouseId,
+                cancellationToken);
+
             var invoice = new GoldInvoice
             {
                 InvoiceNumber = await GoldInvoiceQueryHelper.GetNextInvoiceNumberAsync(context, GoldInvoiceType.Sale, cancellationToken),
@@ -88,6 +93,8 @@ public sealed class GoldSaleService : IGoldSaleService
                 InvoiceType = GoldInvoiceType.Sale,
                 PaymentMethod = request.PaymentMethod,
                 CustomerId = request.CustomerId,
+                SupplierId = request.SupplierId,
+                WarehouseId = warehouseId,
                 PricingCurrency = request.PricingCurrency,
                 PaymentCurrency = request.PaymentCurrency,
                 FxRate = fx,
@@ -128,6 +135,7 @@ public sealed class GoldSaleService : IGoldSaleService
                     lineReq.KaratValue,
                     -lineReq.WeightGrams,
                     null,
+                    warehouseId,
                     cancellationToken);
 
                 invoice.Lines.Add(new GoldInvoiceLine
@@ -143,7 +151,8 @@ public sealed class GoldSaleService : IGoldSaleService
                     Description = string.IsNullOrWhiteSpace(lineReq.Description)
                         ? $"عيار {lineReq.KaratValue}"
                         : lineReq.Description,
-                    WeightFromScale = lineReq.WeightFromScale
+                    WeightFromScale = lineReq.WeightFromScale,
+                    LineDirection = GoldInvoiceLineDirection.Out
                 });
 
                 totalGold += goldValue;
@@ -336,15 +345,21 @@ public sealed class GoldSaleService : IGoldSaleService
                 return;
 
             // Best-effort stock restoration
+            var warehouseId = invoice.WarehouseId
+                ?? (await GoldWarehouseService.EnsureDefaultInternalAsync(context, cancellationToken)).Id;
             foreach (var line in invoice.Lines)
             {
                 try
                 {
+                    var delta = line.LineDirection == GoldInvoiceLineDirection.In
+                        ? -line.WeightGrams
+                        : line.WeightGrams;
                     await GoldInventoryService.AdjustStockInternalAsync(
                         context,
                         line.KaratValue,
-                        line.WeightGrams,
+                        delta,
                         line.PricePerGram > 0 ? line.PricePerGram : null,
+                        warehouseId,
                         cancellationToken);
                 }
                 catch

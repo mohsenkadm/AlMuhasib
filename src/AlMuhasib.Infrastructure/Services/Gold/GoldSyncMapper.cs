@@ -26,6 +26,11 @@ internal static class GoldSyncMapper
         var items = await db.GoldItems.IgnoreQueryFilters().ToListAsync(ct);
         var stocks = await db.GoldStockBalances.IgnoreQueryFilters().ToListAsync(ct);
         var customers = await db.GoldCustomers.IgnoreQueryFilters().ToListAsync(ct);
+        var suppliers = await db.GoldSuppliers.IgnoreQueryFilters().ToListAsync(ct);
+        var warehouses = await db.GoldWarehouses.IgnoreQueryFilters().ToListAsync(ct);
+        var expenseTypes = await db.GoldExpenseTypes.IgnoreQueryFilters().ToListAsync(ct);
+        var expenses = await db.GoldExpenses.IgnoreQueryFilters().ToListAsync(ct);
+        var transfers = await db.GoldWarehouseTransfers.IgnoreQueryFilters().ToListAsync(ct);
         var cashBoxes = await db.GoldCashBoxes.IgnoreQueryFilters().ToListAsync(ct);
         var invoices = await db.GoldInvoices.IgnoreQueryFilters()
             .Include(i => i.Lines)
@@ -35,6 +40,9 @@ internal static class GoldSyncMapper
         var notifications = await db.GoldNotifications.IgnoreQueryFilters().ToListAsync(ct);
 
         var customerMap = customers.ToDictionary(c => c.Id, c => c.SyncId);
+        var supplierMap = suppliers.ToDictionary(s => s.Id, s => s.SyncId);
+        var warehouseMap = warehouses.ToDictionary(w => w.Id, w => w.SyncId);
+        var expenseTypeMap = expenseTypes.ToDictionary(t => t.Id, t => t.SyncId);
         var cashBoxMap = cashBoxes.ToDictionary(c => c.Id, c => c.SyncId);
         var itemMap = items.ToDictionary(i => i.Id, i => i.SyncId);
         var invoiceMap = invoices.ToDictionary(i => i.Id, i => i.SyncId);
@@ -50,10 +58,19 @@ internal static class GoldSyncMapper
             GoldKarats = karats.Where(ShouldSync).Select(MapKarat).ToList(),
             GoldMithqalPrices = prices.Where(ShouldSync).Select(MapMithqalPrice).ToList(),
             GoldItems = items.Where(ShouldSync).Select(MapItem).ToList(),
-            GoldStockBalances = stocks.Where(ShouldSync).Select(MapStock).ToList(),
+            GoldWarehouses = warehouses.Where(ShouldSync).Select(MapWarehouse).ToList(),
+            GoldStockBalances = stocks.Where(ShouldSync).Select(s => MapStock(s, warehouseMap)).ToList(),
             GoldCustomers = customers.Where(ShouldSync).Select(MapCustomer).ToList(),
+            GoldSuppliers = suppliers.Where(ShouldSync).Select(MapSupplier).ToList(),
+            GoldExpenseTypes = expenseTypes.Where(ShouldSync).Select(MapExpenseType).ToList(),
+            GoldExpenses = expenses.Where(ShouldSync)
+                .Select(e => MapExpense(e, expenseTypeMap, cashBoxMap, warehouseMap))
+                .ToList(),
+            GoldWarehouseTransfers = transfers.Where(ShouldSync)
+                .Select(t => MapTransfer(t, warehouseMap))
+                .ToList(),
             GoldCashBoxes = cashBoxes.Where(ShouldSync).Select(MapCashBox).ToList(),
-            GoldInvoices = changedInvoices.Select(i => MapInvoice(i, customerMap, cashBoxMap)).ToList(),
+            GoldInvoices = changedInvoices.Select(i => MapInvoice(i, customerMap, supplierMap, warehouseMap, cashBoxMap)).ToList(),
             GoldInvoiceLines = changedLines
                 .Where(l => invoiceMap.ContainsKey(l.InvoiceId))
                 .Select(l => MapInvoiceLine(l, invoiceMap, itemMap))
@@ -79,10 +96,15 @@ internal static class GoldSyncMapper
             await ApplyKaratsAsync(db, data.GoldKarats, ct);
             await ApplyMithqalPricesAsync(db, data.GoldMithqalPrices, ct);
             var itemMap = await ApplyItemsAsync(db, data.GoldItems, ct);
-            await ApplyStockBalancesAsync(db, data.GoldStockBalances, ct);
+            var warehouseMap = await ApplyWarehousesAsync(db, data.GoldWarehouses, ct);
+            await ApplyStockBalancesAsync(db, data.GoldStockBalances, warehouseMap, ct);
             var customerMap = await ApplyCustomersAsync(db, data.GoldCustomers, ct);
+            var supplierMap = await ApplySuppliersAsync(db, data.GoldSuppliers, ct);
+            var expenseTypeMap = await ApplyExpenseTypesAsync(db, data.GoldExpenseTypes, ct);
             var cashBoxMap = await ApplyCashBoxesAsync(db, data.GoldCashBoxes, ct);
-            var invoiceMap = await ApplyInvoicesAsync(db, data.GoldInvoices, customerMap, cashBoxMap, ct);
+            await ApplyExpensesAsync(db, data.GoldExpenses, expenseTypeMap, cashBoxMap, warehouseMap, ct);
+            await ApplyTransfersAsync(db, data.GoldWarehouseTransfers, warehouseMap, ct);
+            var invoiceMap = await ApplyInvoicesAsync(db, data.GoldInvoices, customerMap, supplierMap, warehouseMap, cashBoxMap, ct);
             await ApplyInvoiceLinesAsync(db, data.GoldInvoiceLines, invoiceMap, itemMap, ct);
             await ApplyPaymentsAsync(db, data.GoldPayments, invoiceMap, cashBoxMap, ct);
             await ApplyVouchersAsync(db, data.GoldVouchers, cashBoxMap, customerMap, ct);
@@ -193,15 +215,92 @@ internal static class GoldSyncMapper
         return d;
     }
 
-    private static GoldStockBalanceSyncDto MapStock(GoldStockBalance s)
+    private static GoldStockBalanceSyncDto MapStock(GoldStockBalance s, Dictionary<int, Guid> warehouseMap)
     {
         var d = new GoldStockBalanceSyncDto
         {
+            WarehouseId = s.WarehouseId,
+            WarehouseSyncId = warehouseMap.GetValueOrDefault(s.WarehouseId),
             KaratValue = s.KaratValue,
             GramsOnHand = s.GramsOnHand,
             AverageCostPerGram = s.AverageCostPerGram
         };
         CopyBase(s, d);
+        if (d.WarehouseSyncId == Guid.Empty) d.WarehouseSyncId = null;
+        return d;
+    }
+
+    private static GoldWarehouseSyncDto MapWarehouse(GoldWarehouse w)
+    {
+        var d = new GoldWarehouseSyncDto
+        {
+            Name = w.Name,
+            IsDefault = w.IsDefault,
+            IsActive = w.IsActive,
+            Notes = w.Notes
+        };
+        CopyBase(w, d);
+        return d;
+    }
+
+    private static GoldSupplierSyncDto MapSupplier(GoldSupplier s)
+    {
+        var d = new GoldSupplierSyncDto
+        {
+            Name = s.Name,
+            Phone = s.Phone,
+            Address = s.Address,
+            Notes = s.Notes,
+            CreditBalanceIqd = s.CreditBalanceIqd,
+            CreditBalanceUsd = s.CreditBalanceUsd,
+            IsActive = s.IsActive
+        };
+        CopyBase(s, d);
+        return d;
+    }
+
+    private static GoldExpenseTypeSyncDto MapExpenseType(GoldExpenseType t)
+    {
+        var d = new GoldExpenseTypeSyncDto { Name = t.Name, IsActive = t.IsActive };
+        CopyBase(t, d);
+        return d;
+    }
+
+    private static GoldExpenseSyncDto MapExpense(
+        GoldExpense e,
+        Dictionary<int, Guid> expenseTypeMap,
+        Dictionary<int, Guid> cashBoxMap,
+        Dictionary<int, Guid> warehouseMap)
+    {
+        var d = new GoldExpenseSyncDto
+        {
+            ExpenseDate = e.ExpenseDate,
+            ExpenseTypeSyncId = expenseTypeMap.GetValueOrDefault(e.ExpenseTypeId),
+            Amount = e.Amount,
+            Currency = e.Currency,
+            CashBoxSyncId = cashBoxMap.GetValueOrDefault(e.CashBoxId),
+            Notes = e.Notes,
+            WarehouseSyncId = e.WarehouseId.HasValue ? warehouseMap.GetValueOrDefault(e.WarehouseId.Value) : null
+        };
+        CopyBase(e, d);
+        if (d.WarehouseSyncId == Guid.Empty) d.WarehouseSyncId = null;
+        return d;
+    }
+
+    private static GoldWarehouseTransferSyncDto MapTransfer(
+        GoldWarehouseTransfer t,
+        Dictionary<int, Guid> warehouseMap)
+    {
+        var d = new GoldWarehouseTransferSyncDto
+        {
+            TransferDate = t.TransferDate,
+            FromWarehouseSyncId = warehouseMap.GetValueOrDefault(t.FromWarehouseId),
+            ToWarehouseSyncId = warehouseMap.GetValueOrDefault(t.ToWarehouseId),
+            KaratValue = t.KaratValue,
+            WeightGrams = t.WeightGrams,
+            Notes = t.Notes
+        };
+        CopyBase(t, d);
         return d;
     }
 
@@ -238,6 +337,8 @@ internal static class GoldSyncMapper
     private static GoldInvoiceSyncDto MapInvoice(
         GoldInvoice i,
         Dictionary<int, Guid> customerMap,
+        Dictionary<int, Guid> supplierMap,
+        Dictionary<int, Guid> warehouseMap,
         Dictionary<int, Guid> cashBoxMap)
     {
         var d = new GoldInvoiceSyncDto
@@ -248,6 +349,10 @@ internal static class GoldSyncMapper
             PaymentMethod = i.PaymentMethod,
             Status = i.Status,
             CustomerSyncId = i.CustomerId.HasValue ? customerMap.GetValueOrDefault(i.CustomerId.Value) : null,
+            SupplierSyncId = i.SupplierId.HasValue ? supplierMap.GetValueOrDefault(i.SupplierId.Value) : null,
+            WarehouseSyncId = i.WarehouseId.HasValue ? warehouseMap.GetValueOrDefault(i.WarehouseId.Value) : null,
+            IsExchange = i.IsExchange,
+            ExchangeCashDifference = i.ExchangeCashDifference,
             PricingCurrency = i.PricingCurrency,
             PaymentCurrency = i.PaymentCurrency,
             FxRate = i.FxRate,
@@ -266,6 +371,8 @@ internal static class GoldSyncMapper
         };
         CopyBase(i, d);
         if (d.CustomerSyncId == Guid.Empty) d.CustomerSyncId = null;
+        if (d.SupplierSyncId == Guid.Empty) d.SupplierSyncId = null;
+        if (d.WarehouseSyncId == Guid.Empty) d.WarehouseSyncId = null;
         if (d.CashBoxSyncId == Guid.Empty) d.CashBoxSyncId = null;
         return d;
     }
@@ -287,7 +394,8 @@ internal static class GoldSyncMapper
             MakingCharge = l.MakingCharge,
             LineTotal = l.LineTotal,
             Description = l.Description,
-            WeightFromScale = l.WeightFromScale
+            WeightFromScale = l.WeightFromScale,
+            LineDirection = l.LineDirection
         };
         CopyBase(l, d);
         if (d.ItemSyncId == Guid.Empty) d.ItemSyncId = null;
@@ -480,7 +588,11 @@ internal static class GoldSyncMapper
         return map;
     }
 
-    private static async Task ApplyStockBalancesAsync(GoldDbContext db, List<GoldStockBalanceSyncDto> dtos, CancellationToken ct)
+    private static async Task ApplyStockBalancesAsync(
+        GoldDbContext db,
+        List<GoldStockBalanceSyncDto> dtos,
+        Dictionary<Guid, int> warehouseMap,
+        CancellationToken ct)
     {
         foreach (var dto in dtos)
         {
@@ -492,9 +604,168 @@ internal static class GoldSyncMapper
                 db.GoldStockBalances.Add(existing);
             }
 
+            if (dto.WarehouseSyncId.HasValue && warehouseMap.TryGetValue(dto.WarehouseSyncId.Value, out var whId))
+                existing.WarehouseId = whId;
+            else if (dto.WarehouseId > 0)
+                existing.WarehouseId = dto.WarehouseId;
+
             existing.KaratValue = dto.KaratValue;
             existing.GramsOnHand = dto.GramsOnHand;
             existing.AverageCostPerGram = dto.AverageCostPerGram;
+            ApplyBase(existing, dto);
+        }
+    }
+
+    private static async Task<Dictionary<Guid, int>> ApplyWarehousesAsync(
+        GoldDbContext db, List<GoldWarehouseSyncDto> dtos, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, int>();
+        foreach (var dto in dtos)
+        {
+            var existing = await db.GoldWarehouses.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(w => w.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new GoldWarehouse();
+                db.GoldWarehouses.Add(existing);
+            }
+
+            existing.Name = dto.Name;
+            existing.IsDefault = dto.IsDefault;
+            existing.IsActive = dto.IsActive;
+            existing.Notes = dto.Notes;
+            ApplyBase(existing, dto);
+            await db.SaveChangesAsync(ct);
+            map[dto.SyncId] = existing.Id;
+        }
+
+        foreach (var w in await db.GoldWarehouses.IgnoreQueryFilters().ToListAsync(ct))
+            map.TryAdd(w.SyncId, w.Id);
+
+        return map;
+    }
+
+    private static async Task<Dictionary<Guid, int>> ApplySuppliersAsync(
+        GoldDbContext db, List<GoldSupplierSyncDto> dtos, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, int>();
+        foreach (var dto in dtos)
+        {
+            var existing = await db.GoldSuppliers.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new GoldSupplier();
+                db.GoldSuppliers.Add(existing);
+            }
+
+            existing.Name = dto.Name;
+            existing.Phone = dto.Phone;
+            existing.Address = dto.Address;
+            existing.Notes = dto.Notes;
+            existing.CreditBalanceIqd = dto.CreditBalanceIqd;
+            existing.CreditBalanceUsd = dto.CreditBalanceUsd;
+            existing.IsActive = dto.IsActive;
+            ApplyBase(existing, dto);
+            await db.SaveChangesAsync(ct);
+            map[dto.SyncId] = existing.Id;
+        }
+
+        foreach (var s in await db.GoldSuppliers.IgnoreQueryFilters().ToListAsync(ct))
+            map.TryAdd(s.SyncId, s.Id);
+
+        return map;
+    }
+
+    private static async Task<Dictionary<Guid, int>> ApplyExpenseTypesAsync(
+        GoldDbContext db, List<GoldExpenseTypeSyncDto> dtos, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, int>();
+        foreach (var dto in dtos)
+        {
+            var existing = await db.GoldExpenseTypes.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new GoldExpenseType();
+                db.GoldExpenseTypes.Add(existing);
+            }
+
+            existing.Name = dto.Name;
+            existing.IsActive = dto.IsActive;
+            ApplyBase(existing, dto);
+            await db.SaveChangesAsync(ct);
+            map[dto.SyncId] = existing.Id;
+        }
+
+        foreach (var t in await db.GoldExpenseTypes.IgnoreQueryFilters().ToListAsync(ct))
+            map.TryAdd(t.SyncId, t.Id);
+
+        return map;
+    }
+
+    private static async Task ApplyExpensesAsync(
+        GoldDbContext db,
+        List<GoldExpenseSyncDto> dtos,
+        Dictionary<Guid, int> expenseTypeMap,
+        Dictionary<Guid, int> cashBoxMap,
+        Dictionary<Guid, int> warehouseMap,
+        CancellationToken ct)
+    {
+        foreach (var dto in dtos)
+        {
+            if (!expenseTypeMap.TryGetValue(dto.ExpenseTypeSyncId, out var typeId))
+                continue;
+            if (!cashBoxMap.TryGetValue(dto.CashBoxSyncId, out var boxId))
+                continue;
+
+            var existing = await db.GoldExpenses.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(e => e.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new GoldExpense();
+                db.GoldExpenses.Add(existing);
+            }
+
+            existing.ExpenseDate = dto.ExpenseDate;
+            existing.ExpenseTypeId = typeId;
+            existing.Amount = dto.Amount;
+            existing.Currency = dto.Currency;
+            existing.CashBoxId = boxId;
+            existing.Notes = dto.Notes;
+            existing.WarehouseId = dto.WarehouseSyncId.HasValue && warehouseMap.TryGetValue(dto.WarehouseSyncId.Value, out var whId)
+                ? whId : null;
+            ApplyBase(existing, dto);
+        }
+    }
+
+    private static async Task ApplyTransfersAsync(
+        GoldDbContext db,
+        List<GoldWarehouseTransferSyncDto> dtos,
+        Dictionary<Guid, int> warehouseMap,
+        CancellationToken ct)
+    {
+        foreach (var dto in dtos)
+        {
+            if (!warehouseMap.TryGetValue(dto.FromWarehouseSyncId, out var fromId))
+                continue;
+            if (!warehouseMap.TryGetValue(dto.ToWarehouseSyncId, out var toId))
+                continue;
+
+            var existing = await db.GoldWarehouseTransfers.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.SyncId == dto.SyncId, ct);
+            if (existing is null)
+            {
+                existing = new GoldWarehouseTransfer();
+                db.GoldWarehouseTransfers.Add(existing);
+            }
+
+            existing.TransferDate = dto.TransferDate;
+            existing.FromWarehouseId = fromId;
+            existing.ToWarehouseId = toId;
+            existing.KaratValue = dto.KaratValue;
+            existing.WeightGrams = dto.WeightGrams;
+            existing.Notes = dto.Notes;
             ApplyBase(existing, dto);
         }
     }
@@ -565,6 +836,8 @@ internal static class GoldSyncMapper
         GoldDbContext db,
         List<GoldInvoiceSyncDto> dtos,
         Dictionary<Guid, int> customerMap,
+        Dictionary<Guid, int> supplierMap,
+        Dictionary<Guid, int> warehouseMap,
         Dictionary<Guid, int> cashBoxMap,
         CancellationToken ct)
     {
@@ -586,6 +859,12 @@ internal static class GoldSyncMapper
             existing.Status = dto.Status;
             existing.CustomerId = dto.CustomerSyncId.HasValue && customerMap.TryGetValue(dto.CustomerSyncId.Value, out var cid)
                 ? cid : null;
+            existing.SupplierId = dto.SupplierSyncId.HasValue && supplierMap.TryGetValue(dto.SupplierSyncId.Value, out var sid)
+                ? sid : null;
+            existing.WarehouseId = dto.WarehouseSyncId.HasValue && warehouseMap.TryGetValue(dto.WarehouseSyncId.Value, out var whId)
+                ? whId : null;
+            existing.IsExchange = dto.IsExchange;
+            existing.ExchangeCashDifference = dto.ExchangeCashDifference;
             existing.PricingCurrency = dto.PricingCurrency;
             existing.PaymentCurrency = dto.PaymentCurrency;
             existing.FxRate = dto.FxRate;
@@ -645,6 +924,7 @@ internal static class GoldSyncMapper
             existing.LineTotal = dto.LineTotal;
             existing.Description = dto.Description;
             existing.WeightFromScale = dto.WeightFromScale;
+            existing.LineDirection = dto.LineDirection;
             ApplyBase(existing, dto);
         }
     }

@@ -77,6 +77,18 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                     ?? throw new InvalidOperationException("الزبون/المورد غير موجود");
             }
 
+            GoldSupplier? supplier = null;
+            if (request.SupplierId.HasValue)
+            {
+                supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId.Value, cancellationToken)
+                    ?? throw new InvalidOperationException("المورد غير موجود");
+            }
+
+            var warehouseId = await GoldWarehouseService.ResolveWarehouseIdAsync(
+                context,
+                request.WarehouseId,
+                cancellationToken);
+
             var invoice = new GoldInvoice
             {
                 InvoiceNumber = await GoldInvoiceQueryHelper.GetNextInvoiceNumberAsync(context, GoldInvoiceType.Purchase, cancellationToken),
@@ -84,6 +96,8 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                 InvoiceType = GoldInvoiceType.Purchase,
                 PaymentMethod = request.PaymentMethod,
                 CustomerId = request.CustomerId,
+                SupplierId = request.SupplierId,
+                WarehouseId = warehouseId,
                 PricingCurrency = request.PricingCurrency,
                 PaymentCurrency = request.PaymentCurrency,
                 FxRate = fx,
@@ -113,6 +127,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                     lineReq.KaratValue,
                     lineReq.WeightGrams,
                     pricePerGram,
+                    warehouseId,
                     cancellationToken);
 
                 invoice.Lines.Add(new GoldInvoiceLine
@@ -128,7 +143,8 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                     Description = string.IsNullOrWhiteSpace(lineReq.Description)
                         ? $"شراء كسر عيار {lineReq.KaratValue}"
                         : lineReq.Description,
-                    WeightFromScale = lineReq.WeightFromScale
+                    WeightFromScale = lineReq.WeightFromScale,
+                    LineDirection = GoldInvoiceLineDirection.In
                 });
 
                 totalGold += goldValue;
@@ -194,17 +210,19 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
 
             if (invoice.RemainingAmount > 0)
             {
-                if (customer is null)
+                if (supplier is null && customer is null)
                     throw new InvalidOperationException("لا يمكن ترك مبلغ متبقٍ بدون زبون/مورد");
 
-                // Outstanding purchase credit owed to supplier is stored as negative customer credit conceptually,
-                // but we track supplier payable as credit balance increase in payment currency (amount we owe).
                 var creditInPaymentCurrency = GoldCurrencyHelper.ConvertAmount(
                     invoice.RemainingAmount,
                     request.PricingCurrency,
                     request.PaymentCurrency,
                     fx);
-                GoldCustomerService.AdjustCredit(customer, request.PaymentCurrency, creditInPaymentCurrency);
+
+                if (supplier is not null)
+                    GoldSupplierService.AdjustCredit(supplier, request.PaymentCurrency, creditInPaymentCurrency);
+                else if (customer is not null)
+                    GoldCustomerService.AdjustCredit(customer, request.PaymentCurrency, creditInPaymentCurrency);
             }
 
             await context.GoldInvoices.AddAsync(invoice, cancellationToken);
@@ -273,6 +291,13 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             if (invoice.Customer is not null)
                 GoldCustomerService.AdjustCredit(invoice.Customer, request.Currency, -paidInPaymentCurrency);
 
+            if (invoice.SupplierId.HasValue)
+            {
+                var supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == invoice.SupplierId.Value, cancellationToken);
+                if (supplier is not null)
+                    GoldSupplierService.AdjustCredit(supplier, request.Currency, -paidInPaymentCurrency);
+            }
+
             invoice.PaidAmount = GoldCurrencyHelper.Round(invoice.PaidAmount + paidInPricing);
             invoice.RemainingAmount = GoldCurrencyHelper.Round(invoice.TotalAmount - invoice.PaidAmount);
             if (invoice.RemainingAmount < 0)
@@ -324,6 +349,9 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             if (invoice.Status == GoldInvoiceStatus.Cancelled)
                 return;
 
+            var warehouseId = invoice.WarehouseId
+                ?? (await GoldWarehouseService.EnsureDefaultInternalAsync(context, cancellationToken)).Id;
+
             foreach (var line in invoice.Lines)
             {
                 try
@@ -333,6 +361,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                         line.KaratValue,
                         -line.WeightGrams,
                         null,
+                        warehouseId,
                         cancellationToken);
                 }
                 catch
@@ -368,6 +397,27 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                         invoice.PaymentCurrency,
                         invoice.FxRate > 0 ? invoice.FxRate : 1m);
                     GoldCustomerService.AdjustCredit(invoice.Customer, invoice.PaymentCurrency, -credit);
+                }
+                catch
+                {
+                    // best effort
+                }
+            }
+
+            if (invoice.SupplierId.HasValue && invoice.RemainingAmount > 0)
+            {
+                try
+                {
+                    var supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == invoice.SupplierId.Value, cancellationToken);
+                    if (supplier is not null)
+                    {
+                        var credit = GoldCurrencyHelper.ConvertAmount(
+                            invoice.RemainingAmount,
+                            invoice.PricingCurrency,
+                            invoice.PaymentCurrency,
+                            invoice.FxRate > 0 ? invoice.FxRate : 1m);
+                        GoldSupplierService.AdjustCredit(supplier, invoice.PaymentCurrency, -credit);
+                    }
                 }
                 catch
                 {

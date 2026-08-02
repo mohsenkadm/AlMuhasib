@@ -61,7 +61,13 @@ internal static class GoldInvoiceQueryHelper
         GoldInvoiceType type,
         CancellationToken cancellationToken)
     {
-        var prefix = type == GoldInvoiceType.Sale ? "GS" : "GP";
+        var prefix = type switch
+        {
+            GoldInvoiceType.Sale => "GS",
+            GoldInvoiceType.Purchase => "GP",
+            GoldInvoiceType.Exchange => "GX",
+            _ => "G"
+        };
         var last = await context.GoldInvoices
             .IgnoreQueryFilters()
             .Where(i => i.InvoiceType == type && i.InvoiceNumber.StartsWith(prefix + "-"))

@@ -20,12 +20,20 @@ public interface IGoldInventoryService
     Task<GoldItem> UpdateItemAsync(GoldItem item, CancellationToken cancellationToken = default);
     Task DeleteItemAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<GoldStockRow>> GetStockBalancesAsync(CancellationToken cancellationToken = default);
-    Task<GoldStockBalance?> GetStockBalanceByKaratAsync(int karatValue, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<GoldStockRow>> GetStockBalancesAsync(
+        int? warehouseId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<GoldStockBalance?> GetStockBalanceByKaratAsync(
+        int karatValue,
+        int? warehouseId = null,
+        CancellationToken cancellationToken = default);
+
     Task AdjustStockAsync(
         int karatValue,
         decimal gramsDelta,
         decimal? costPerGram = null,
         string? notes = null,
+        int? warehouseId = null,
         CancellationToken cancellationToken = default);
 }

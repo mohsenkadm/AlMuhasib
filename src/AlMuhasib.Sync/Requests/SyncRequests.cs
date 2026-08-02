@@ -82,6 +82,11 @@ public sealed class SyncDataBundle
     public List<GoldItemSyncDto> GoldItems { get; set; } = [];
     public List<GoldStockBalanceSyncDto> GoldStockBalances { get; set; } = [];
     public List<GoldCustomerSyncDto> GoldCustomers { get; set; } = [];
+    public List<GoldSupplierSyncDto> GoldSuppliers { get; set; } = [];
+    public List<GoldWarehouseSyncDto> GoldWarehouses { get; set; } = [];
+    public List<GoldExpenseTypeSyncDto> GoldExpenseTypes { get; set; } = [];
+    public List<GoldExpenseSyncDto> GoldExpenses { get; set; } = [];
+    public List<GoldWarehouseTransferSyncDto> GoldWarehouseTransfers { get; set; } = [];
     public List<GoldCashBoxSyncDto> GoldCashBoxes { get; set; } = [];
     public List<GoldInvoiceSyncDto> GoldInvoices { get; set; } = [];
     public List<GoldInvoiceLineSyncDto> GoldInvoiceLines { get; set; } = [];

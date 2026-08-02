@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums.Gold;
+
 namespace AlMuhasib.Core.Entities.Gold;
 
 public class GoldInvoiceLine : BaseEntity
@@ -14,4 +16,6 @@ public class GoldInvoiceLine : BaseEntity
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    /// <summary>Default Out for sales; exchange uses In (stock+) and Out (stock-).</summary>
+    public GoldInvoiceLineDirection LineDirection { get; set; } = GoldInvoiceLineDirection.Out;
 }

@@ -45,7 +45,7 @@ public sealed class GoldDashboardService : IGoldDashboardService
             .Where(c => c.IsActive)
             .ToListAsync(cancellationToken);
 
-        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, cancellationToken);
+        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
 
         var customersWithCredit = await context.GoldCustomers.AsNoTracking()
             .Where(c => c.CreditBalanceIqd > 0 || c.CreditBalanceUsd > 0)

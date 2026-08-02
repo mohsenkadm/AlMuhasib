@@ -11,6 +11,12 @@ public class GoldInvoice : BaseEntity
     public GoldInvoiceStatus Status { get; set; } = GoldInvoiceStatus.Completed;
     public int? CustomerId { get; set; }
     public GoldCustomer? Customer { get; set; }
+    public int? SupplierId { get; set; }
+    public GoldSupplier? Supplier { get; set; }
+    public int? WarehouseId { get; set; }
+    public GoldWarehouse? Warehouse { get; set; }
+    public bool IsExchange { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
     public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }

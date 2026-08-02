@@ -74,7 +74,7 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             cancellationToken);
 
         // Low stock
-        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, cancellationToken);
+        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
         var lowStock = stockRows.Where(s => s.IsLowStock).ToList();
         await UpsertOpenAlertAsync(
             context,

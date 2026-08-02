@@ -70,6 +70,7 @@ public sealed class GoldSettingsService : IGoldSettingsService
         await EnsureSettingsAsync(context, cancellationToken);
         await EnsureDefaultKaratsAsync(context, cancellationToken);
         await EnsureDefaultCashBoxesAsync(context, cancellationToken);
+        await GoldWarehouseService.EnsureDefaultInternalAsync(context, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
     }
 
