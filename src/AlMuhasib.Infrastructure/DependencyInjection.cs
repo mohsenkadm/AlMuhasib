@@ -282,10 +282,13 @@ public static class DependencyInjection
         services.AddScoped<IGoldPurchaseService, GoldPurchaseService>();
         services.AddScoped<IGoldDashboardService, GoldDashboardService>();
         services.AddScoped<IGoldReportService, GoldReportService>();
+        services.AddSingleton<IGoldScaleService, GoldScaleService>();
+        services.AddScoped<IGoldSmartAlertService, GoldSmartAlertService>();
+        services.AddScoped<ISmartAlertService, GoldSmartAlertBridge>();
+
         services.AddScoped<IGlobalSearchService, GoldGlobalSearchService>();
         services.AddScoped<IAuditLogService, GoldAuditLogService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
-        services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();

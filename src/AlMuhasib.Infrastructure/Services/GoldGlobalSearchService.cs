@@ -1,4 +1,4 @@
-using AlMuhasib.Core.Enums.Gold;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Infrastructure.Data.Gold;
@@ -26,80 +26,65 @@ public sealed class GoldGlobalSearchService : IGlobalSearchService
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var like = $"%{term}%";
-        var results = new List<GlobalSearchHit>(maxResults);
+        var hits = new List<GlobalSearchHit>();
 
-        var invoices = await context.GoldInvoices.AsNoTracking()
-            .Where(i =>
-                EF.Functions.Like(i.InvoiceNumber, like) ||
-                (i.Customer != null && EF.Functions.Like(i.Customer.Name, like)) ||
-                EF.Functions.Like(i.Notes, like))
-            .OrderByDescending(i => i.InvoiceDate)
+        var customers = await context.GoldCustomers.AsNoTracking()
+            .Where(c => EF.Functions.Like(c.Name, like) || EF.Functions.Like(c.Phone, like))
+            .OrderBy(c => c.Name)
             .Take(maxResults)
-            .Select(i => new GlobalSearchHit
+            .Select(c => new GlobalSearchHit
             {
-                Kind = i.InvoiceType == GoldInvoiceType.Sale
+                Kind = GlobalSearchKind.Customer,
+                EntityId = c.Id,
+                Title = c.Name,
+                Subtitle = c.Phone,
+                ScreenName = "GoldCustomers"
+            })
+            .ToListAsync(cancellationToken);
+        hits.AddRange(customers);
+
+        if (hits.Count < maxResults)
+        {
+            var invoices = await context.GoldInvoices.AsNoTracking()
+                .Include(i => i.Customer)
+                .Where(i => EF.Functions.Like(i.InvoiceNumber, like) ||
+                            (i.Customer != null && EF.Functions.Like(i.Customer.Name, like)))
+                .OrderByDescending(i => i.InvoiceDate)
+                .Take(maxResults - hits.Count)
+                .ToListAsync(cancellationToken);
+
+            hits.AddRange(invoices.Select(i => new GlobalSearchHit
+            {
+                Kind = i.InvoiceType == Core.Enums.Gold.GoldInvoiceType.Sale
                     ? GlobalSearchKind.SalesInvoice
                     : GlobalSearchKind.PurchaseInvoice,
                 EntityId = i.Id,
                 Title = i.InvoiceNumber,
-                Subtitle = i.Customer != null ? i.Customer.Name : i.InvoiceType.ToString(),
-                ScreenName = GoldPermissionRegistryScreen.GoldInvoices
-            })
-            .ToListAsync(cancellationToken);
-        results.AddRange(invoices);
-
-        if (results.Count < maxResults)
-        {
-            var remaining = maxResults - results.Count;
-            var customers = await context.GoldCustomers.AsNoTracking()
-                .Where(c =>
-                    EF.Functions.Like(c.Name, like) ||
-                    EF.Functions.Like(c.Phone, like))
-                .OrderBy(c => c.Name)
-                .Take(remaining)
-                .Select(c => new GlobalSearchHit
-                {
-                    Kind = GlobalSearchKind.Customer,
-                    EntityId = c.Id,
-                    Title = c.Name,
-                    Subtitle = c.Phone,
-                    ScreenName = GoldPermissionRegistryScreen.GoldCustomers
-                })
-                .ToListAsync(cancellationToken);
-            results.AddRange(customers);
+                Subtitle = i.Customer?.Name ?? i.Notes,
+                ScreenName = i.InvoiceType == Core.Enums.Gold.GoldInvoiceType.Sale
+                    ? "GoldSales"
+                    : "GoldPurchases"
+            }));
         }
 
-        if (results.Count < maxResults)
+        if (hits.Count < maxResults)
         {
-            var remaining = maxResults - results.Count;
             var items = await context.GoldItems.AsNoTracking()
-                .Where(i =>
-                    EF.Functions.Like(i.Name, like) ||
-                    EF.Functions.Like(i.Barcode, like) ||
-                    EF.Functions.Like(i.Category, like))
+                .Where(i => EF.Functions.Like(i.Name, like) || EF.Functions.Like(i.Barcode, like))
                 .OrderBy(i => i.Name)
-                .Take(remaining)
+                .Take(maxResults - hits.Count)
                 .Select(i => new GlobalSearchHit
                 {
                     Kind = GlobalSearchKind.Product,
                     EntityId = i.Id,
                     Title = i.Name,
-                    Subtitle = string.IsNullOrEmpty(i.Barcode)
-                        ? $"عيار {i.KaratValue}"
-                        : i.Barcode,
-                    ScreenName = GoldPermissionRegistryScreen.GoldItems
+                    Subtitle = i.Barcode,
+                    ScreenName = "GoldInventory"
                 })
                 .ToListAsync(cancellationToken);
-            results.AddRange(items);
+            hits.AddRange(items);
         }
 
-        return results.Take(maxResults).ToList();
+        return hits.Take(maxResults).ToList();
     }
-}
-
-internal static class GoldPermissionRegistryScreen
-{
-    public const string GoldInvoices = "GoldInvoices";
-    public const string GoldCustomers = "GoldCustomers";
-    public const string GoldItems = "GoldItems";
 }
