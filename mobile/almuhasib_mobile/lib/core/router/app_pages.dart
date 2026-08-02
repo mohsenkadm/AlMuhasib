@@ -31,6 +31,7 @@ import '../../features/finance/presentation/finance_list_screen.dart';
 import '../../features/gold_shop/gold_shop_shell.dart';
 import '../../features/gold_shop/notifications/gold_notifications_screen.dart';
 import '../../features/gold_shop/prices/gold_prices_screen.dart';
+import '../../features/gold_shop/sales/gold_create_sale_screen.dart';
 import '../../features/gold_shop/sales/gold_sale_detail_screen.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
@@ -650,6 +651,14 @@ abstract final class AppPages {
       page: () => const GoldShopShellPage(initialTab: 3),
       binding: GoldShopShellBinding(),
       middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.goldShopSaleNew,
+      page: () => const GoldCreateSaleScreen(),
+      binding: GoldCreateSaleBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
     ),
     GetPage(
       name: AppRoutes.goldShopSaleDetail,

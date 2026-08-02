@@ -471,6 +471,145 @@ class GoldNotificationItem {
   final DateTime createdAt;
 }
 
+class GoldWarehouseItem {
+  GoldWarehouseItem({
+    required this.id,
+    required this.name,
+    this.isDefault = false,
+    this.isActive = true,
+    this.notes = '',
+  });
+
+  factory GoldWarehouseItem.fromJson(Map<String, dynamic> json) {
+    return GoldWarehouseItem(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      isDefault: json['isDefault'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? true,
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  final int id;
+  final String name;
+  final bool isDefault;
+  final bool isActive;
+  final String notes;
+}
+
+class GoldSupplierItem {
+  GoldSupplierItem({
+    required this.id,
+    required this.name,
+    this.phone = '',
+    this.address = '',
+    this.creditBalanceIqd = 0,
+    this.creditBalanceUsd = 0,
+    this.isActive = true,
+  });
+
+  factory GoldSupplierItem.fromJson(Map<String, dynamic> json) {
+    return GoldSupplierItem(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      creditBalanceIqd: _num(json['creditBalanceIqd']),
+      creditBalanceUsd: _num(json['creditBalanceUsd']),
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  final int id;
+  final String name;
+  final String phone;
+  final String address;
+  final double creditBalanceIqd;
+  final double creditBalanceUsd;
+  final bool isActive;
+}
+
+class CreateGoldSaleLineRequest {
+  CreateGoldSaleLineRequest({
+    required this.karatValue,
+    required this.weightGrams,
+    required this.mithqalPrice,
+    this.makingCharge = 0,
+    this.description = '',
+    this.itemId,
+    this.weightFromScale = false,
+  });
+
+  final int? itemId;
+  final int karatValue;
+  final double weightGrams;
+  final double mithqalPrice;
+  final double makingCharge;
+  final String description;
+  final bool weightFromScale;
+
+  Map<String, dynamic> toJson() => {
+        if (itemId != null) 'itemId': itemId,
+        'karatValue': karatValue,
+        'weightGrams': weightGrams,
+        'mithqalPrice': mithqalPrice,
+        'makingCharge': makingCharge,
+        'description': description,
+        'weightFromScale': weightFromScale,
+      };
+}
+
+class CreateGoldSaleRequest {
+  CreateGoldSaleRequest({
+    required this.lines,
+    this.invoiceDate,
+    this.paymentMethod = 'Cash',
+    this.customerId,
+    this.supplierId,
+    this.warehouseId,
+    this.pricingCurrency = 'USD',
+    this.paymentCurrency = 'IQD',
+    this.fxRate = 0,
+    this.discountAmount = 0,
+    this.paidAmount = 0,
+    this.cashBoxId,
+    this.notes = '',
+    this.weightFromScale = false,
+  });
+
+  final DateTime? invoiceDate;
+  final String paymentMethod;
+  final int? customerId;
+  final int? supplierId;
+  final int? warehouseId;
+  final String pricingCurrency;
+  final String paymentCurrency;
+  final double fxRate;
+  final double discountAmount;
+  final double paidAmount;
+  final int? cashBoxId;
+  final String notes;
+  final bool weightFromScale;
+  final List<CreateGoldSaleLineRequest> lines;
+
+  Map<String, dynamic> toJson() => {
+        'invoiceDate': (invoiceDate ?? DateTime.now()).toIso8601String(),
+        'paymentMethod': paymentMethod,
+        if (customerId != null) 'customerId': customerId,
+        if (supplierId != null) 'supplierId': supplierId,
+        if (warehouseId != null) 'warehouseId': warehouseId,
+        'pricingCurrency': pricingCurrency,
+        'paymentCurrency': paymentCurrency,
+        'fxRate': fxRate,
+        'discountAmount': discountAmount,
+        'paidAmount': paidAmount,
+        if (cashBoxId != null) 'cashBoxId': cashBoxId,
+        'notes': notes,
+        'weightFromScale': weightFromScale,
+        'lines': lines.map((e) => e.toJson()).toList(),
+      };
+}
+
 double _num(dynamic v) {
   if (v is num) return v.toDouble();
   return double.tryParse(v?.toString() ?? '') ?? 0;

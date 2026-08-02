@@ -28,6 +28,8 @@ class GoldSalesScreen extends GetView<GoldSalesController> {
         onRetry: controller.load,
         emptyMessage: 'gold_no_sales'.tr(),
         emptyIcon: Icons.receipt_long_outlined,
+        fabLabel: 'gold_new_sale'.tr(),
+        onFab: () => Get.toNamed(AppRoutes.goldShopSaleNew),
         filterPanel: AppFilterBar(
           onSearchChanged: controller.updateSearch,
           filterChips: [

@@ -96,6 +96,7 @@ abstract final class AppRoutes {
   static const goldShopHome = '/gold-shop/home';
   static const goldShopSales = '/gold-shop/sales';
   static const goldShopSaleDetail = '/gold-shop/sales/:id';
+  static const goldShopSaleNew = '/gold-shop/sales/new';
   static const goldShopCustomers = '/gold-shop/customers';
   static const goldShopMore = '/gold-shop/more';
   static const goldShopPrices = '/gold-shop/prices';

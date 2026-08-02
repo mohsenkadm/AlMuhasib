@@ -106,6 +106,8 @@ public class GoldInvoiceListDto
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public string Notes { get; set; } = string.Empty;
+    public int? WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
 }
 
 public sealed class GoldInvoiceDetailDto : GoldInvoiceListDto
@@ -163,7 +165,8 @@ internal static class GoldShopInvoiceMapper
         TotalAmountUsd = i.TotalAmountUsd,
         PaidAmount = i.PaidAmount,
         RemainingAmount = i.RemainingAmount,
-        Notes = i.Notes
+        Notes = i.Notes,
+        WarehouseId = i.WarehouseId
     };
 
     public static GoldInvoiceDetailDto ToDetail(CloudGoldInvoice i)

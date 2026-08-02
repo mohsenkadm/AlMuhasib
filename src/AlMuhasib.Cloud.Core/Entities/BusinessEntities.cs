@@ -825,6 +825,8 @@ public class CloudGoldItem : CloudBaseEntity
 
 public class CloudGoldStockBalance : CloudBaseEntity
 {
+    public int WarehouseId { get; set; }
+    public CloudGoldWarehouse? Warehouse { get; set; }
     public int KaratValue { get; set; }
     public decimal GramsOnHand { get; set; }
     public decimal AverageCostPerGram { get; set; }
@@ -839,6 +841,57 @@ public class CloudGoldCustomer : CloudBaseEntity
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
     public bool IsActive { get; set; } = true;
+}
+
+public class CloudGoldSupplier : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public decimal CreditBalanceIqd { get; set; }
+    public decimal CreditBalanceUsd { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudGoldWarehouse : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CloudGoldExpenseType : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}
+
+public class CloudGoldExpense : CloudBaseEntity
+{
+    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    public int ExpenseTypeId { get; set; }
+    public CloudGoldExpenseType? ExpenseType { get; set; }
+    public decimal Amount { get; set; }
+    public GoldCurrency Currency { get; set; } = GoldCurrency.IQD;
+    public int CashBoxId { get; set; }
+    public CloudGoldCashBox? CashBox { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public int? WarehouseId { get; set; }
+    public CloudGoldWarehouse? Warehouse { get; set; }
+}
+
+public class CloudGoldWarehouseTransfer : CloudBaseEntity
+{
+    public DateTime TransferDate { get; set; } = DateTime.Today;
+    public int FromWarehouseId { get; set; }
+    public CloudGoldWarehouse? FromWarehouse { get; set; }
+    public int ToWarehouseId { get; set; }
+    public CloudGoldWarehouse? ToWarehouse { get; set; }
+    public int KaratValue { get; set; }
+    public decimal WeightGrams { get; set; }
+    public string Notes { get; set; } = string.Empty;
 }
 
 public class CloudGoldCashBox : CloudBaseEntity
@@ -859,6 +912,12 @@ public class CloudGoldInvoice : CloudBaseEntity
     public GoldInvoiceStatus Status { get; set; } = GoldInvoiceStatus.Completed;
     public int? CustomerId { get; set; }
     public CloudGoldCustomer? Customer { get; set; }
+    public int? SupplierId { get; set; }
+    public CloudGoldSupplier? Supplier { get; set; }
+    public int? WarehouseId { get; set; }
+    public CloudGoldWarehouse? Warehouse { get; set; }
+    public bool IsExchange { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
     public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
@@ -893,6 +952,7 @@ public class CloudGoldInvoiceLine : CloudBaseEntity
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    public GoldInvoiceLineDirection LineDirection { get; set; } = GoldInvoiceLineDirection.Out;
 }
 
 public class CloudGoldPayment : CloudBaseEntity

@@ -1,6 +1,7 @@
 using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
+using AlMuhasib.Cloud.Infrastructure.Services.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,15 @@ namespace AlMuhasib.Api.Controllers.GoldShop;
 [Authorize(Policy = "Tenant")]
 public sealed class GoldShopMobileController : GoldShopApiControllerBase
 {
-    public GoldShopMobileController(ITenantContext tenantContext, CloudDbContext db) : base(db, tenantContext) { }
+    private readonly CloudGoldSaleHelper _saleHelper;
+
+    public GoldShopMobileController(
+        ITenantContext tenantContext,
+        CloudDbContext db,
+        CloudGoldSaleHelper saleHelper) : base(db, tenantContext)
+    {
+        _saleHelper = saleHelper;
+    }
 
     // Also exposed under /mobile/* for Flutter clients.
     [HttpGet("dashboard")]
@@ -78,15 +87,18 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             PricesUpdatedToday = pricesUpdatedToday,
             LatestUsdToIqd = latestFx?.UsdToIqd,
             StockByKarat = stocks
-                .OrderByDescending(s => s.KaratValue)
-                .Select(s => new GoldStockRowDto
+                .GroupBy(s => s.KaratValue)
+                .OrderByDescending(g => g.Key)
+                .Select(g => new GoldStockRowDto
                 {
-                    KaratValue = s.KaratValue,
-                    KaratName = $"{s.KaratValue}K",
-                    GramsOnHand = s.GramsOnHand,
-                    AverageCostPerGram = s.AverageCostPerGram,
-                    StockValue = s.GramsOnHand * s.AverageCostPerGram,
-                    IsLowStock = s.GramsOnHand <= lowThreshold
+                    KaratValue = g.Key,
+                    KaratName = $"{g.Key}K",
+                    GramsOnHand = g.Sum(s => s.GramsOnHand),
+                    AverageCostPerGram = g.Sum(s => s.GramsOnHand) > 0
+                        ? g.Sum(s => s.GramsOnHand * s.AverageCostPerGram) / g.Sum(s => s.GramsOnHand)
+                        : 0,
+                    StockValue = g.Sum(s => s.GramsOnHand * s.AverageCostPerGram),
+                    IsLowStock = g.Sum(s => s.GramsOnHand) <= lowThreshold
                 })
                 .ToList(),
             LatestPrices = latestPrices,
@@ -117,6 +129,59 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
     {
         if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
         return Ok(await GetLatestPricesAsync(ct));
+    }
+
+    [HttpGet("warehouses")]
+    [HttpGet("mobile/warehouses")]
+    public async Task<ActionResult<List<GoldWarehouseDto>>> GetWarehouses(CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var items = await Db.GoldWarehouses.AsNoTracking()
+            .Where(w => w.TenantId == TenantId && w.IsActive)
+            .OrderByDescending(w => w.IsDefault)
+            .ThenBy(w => w.Name)
+            .ToListAsync(ct);
+
+        return Ok(items.Select(w => new GoldWarehouseDto
+        {
+            Id = w.Id,
+            SyncId = w.SyncId,
+            Name = w.Name,
+            IsDefault = w.IsDefault,
+            IsActive = w.IsActive,
+            Notes = w.Notes
+        }).ToList());
+    }
+
+    [HttpGet("suppliers")]
+    [HttpGet("mobile/suppliers")]
+    public async Task<ActionResult<List<GoldSupplierDto>>> GetSuppliers(
+        [FromQuery] string? search = null,
+        CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var query = Db.GoldSuppliers.AsNoTracking()
+            .Where(s => s.TenantId == TenantId && s.IsActive);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(s => s.Name.Contains(term) || s.Phone.Contains(term));
+        }
+
+        var items = await query.OrderBy(s => s.Name).Take(200).ToListAsync(ct);
+        return Ok(items.Select(s => new GoldSupplierDto
+        {
+            Id = s.Id,
+            SyncId = s.SyncId,
+            Name = s.Name,
+            Phone = s.Phone,
+            Address = s.Address,
+            CreditBalanceIqd = s.CreditBalanceIqd,
+            CreditBalanceUsd = s.CreditBalanceUsd,
+            IsActive = s.IsActive
+        }).ToList());
     }
 
     [HttpGet("invoices")]
@@ -158,6 +223,62 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             return NotFound();
 
         return Ok(GoldShopInvoiceMapper.ToDetail(invoice));
+    }
+
+    [HttpPost("invoices/sale")]
+    [HttpPost("mobile/invoices/sale")]
+    public async Task<ActionResult<GoldInvoiceDetailDto>> CreateSale(
+        [FromBody] GoldCreateSaleRequestDto request,
+        CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        if (request.Lines is null || request.Lines.Count == 0)
+            return BadRequest("At least one invoice line is required.");
+
+        try
+        {
+            var username = User.Identity?.Name ?? User.FindFirst("sub")?.Value ?? "mobile";
+            var paymentMethod = ParseEnum(request.PaymentMethod, GoldPaymentMethod.Cash);
+            var pricingCurrency = ParseEnum(request.PricingCurrency, GoldCurrency.USD);
+            var paymentCurrency = ParseEnum(request.PaymentCurrency, GoldCurrency.IQD);
+
+            var created = await _saleHelper.CreateSaleAsync(
+                TenantId,
+                new CloudGoldCreateSaleRequest
+                {
+                    InvoiceDate = request.InvoiceDate == default ? DateTime.Today : request.InvoiceDate,
+                    PaymentMethod = paymentMethod,
+                    CustomerId = request.CustomerId,
+                    SupplierId = request.SupplierId,
+                    WarehouseId = request.WarehouseId,
+                    PricingCurrency = pricingCurrency,
+                    PaymentCurrency = paymentCurrency,
+                    FxRate = request.FxRate,
+                    DiscountAmount = request.DiscountAmount,
+                    PaidAmount = request.PaidAmount,
+                    CashBoxId = request.CashBoxId,
+                    Notes = request.Notes ?? string.Empty,
+                    WeightFromScale = request.WeightFromScale,
+                    Lines = request.Lines.Select(l => new CloudGoldCreateSaleLineRequest
+                    {
+                        ItemId = l.ItemId,
+                        KaratValue = l.KaratValue,
+                        WeightGrams = l.WeightGrams,
+                        MithqalPrice = l.MithqalPrice,
+                        MakingCharge = l.MakingCharge,
+                        Description = l.Description ?? string.Empty,
+                        WeightFromScale = l.WeightFromScale
+                    }).ToList()
+                },
+                username,
+                ct);
+
+            return Ok(GoldShopInvoiceMapper.ToDetail(created));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("customers")]
@@ -241,6 +362,17 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             })
             .ToList();
     }
+
+    private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback) where TEnum : struct, Enum
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return fallback;
+        if (Enum.TryParse<TEnum>(value, true, out var parsed))
+            return parsed;
+        if (int.TryParse(value, out var asInt) && Enum.IsDefined(typeof(TEnum), asInt))
+            return (TEnum)Enum.ToObject(typeof(TEnum), asInt);
+        return fallback;
+    }
 }
 
 public sealed class GoldShopDashboardDto
@@ -274,6 +406,8 @@ public sealed class GoldStockRowDto
     public decimal AverageCostPerGram { get; set; }
     public decimal StockValue { get; set; }
     public bool IsLowStock { get; set; }
+    public int? WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
 }
 
 public sealed class GoldPriceDto
@@ -301,6 +435,28 @@ public sealed class GoldCustomerDto
     public bool IsActive { get; set; }
 }
 
+public sealed class GoldSupplierDto
+{
+    public int Id { get; set; }
+    public Guid SyncId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public decimal CreditBalanceIqd { get; set; }
+    public decimal CreditBalanceUsd { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public sealed class GoldWarehouseDto
+{
+    public int Id { get; set; }
+    public Guid SyncId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
 public sealed class GoldAlertDto
 {
     public int Id { get; set; }
@@ -311,4 +467,33 @@ public sealed class GoldAlertDto
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? RelatedEntity { get; set; }
+}
+
+public sealed class GoldCreateSaleRequestDto
+{
+    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public string PaymentMethod { get; set; } = "Cash";
+    public int? CustomerId { get; set; }
+    public int? SupplierId { get; set; }
+    public int? WarehouseId { get; set; }
+    public string PricingCurrency { get; set; } = "USD";
+    public string PaymentCurrency { get; set; } = "IQD";
+    public decimal FxRate { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public int? CashBoxId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool WeightFromScale { get; set; }
+    public List<GoldCreateSaleLineDto> Lines { get; set; } = [];
+}
+
+public sealed class GoldCreateSaleLineDto
+{
+    public int? ItemId { get; set; }
+    public int KaratValue { get; set; }
+    public decimal WeightGrams { get; set; }
+    public decimal MithqalPrice { get; set; }
+    public decimal MakingCharge { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public bool WeightFromScale { get; set; }
 }

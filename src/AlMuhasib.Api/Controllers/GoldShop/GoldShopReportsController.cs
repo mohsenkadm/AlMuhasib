@@ -124,6 +124,57 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
             TotalRemainingUsd = items.Where(i => i.PaymentCurrency == GoldCurrency.USD).Sum(i => i.RemainingAmount)
         });
     }
+
+    [HttpGet("aging")]
+    public async Task<ActionResult<GoldAgingReportDto>> GetAgingReport(CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var today = DateTime.Today;
+        var items = await Db.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.TenantId == TenantId
+                        && i.InvoiceType == GoldInvoiceType.Sale
+                        && i.RemainingAmount > 0
+                        && i.Status != GoldInvoiceStatus.Cancelled)
+            .ToListAsync(ct);
+
+        static int Bucket(int days) => days switch
+        {
+            <= 30 => 0,
+            <= 60 => 1,
+            <= 90 => 2,
+            _ => 3
+        };
+
+        var rows = items.Select(i =>
+        {
+            var days = (int)(today - i.InvoiceDate.Date).TotalDays;
+            return new GoldAgingRowDto
+            {
+                Invoice = GoldShopInvoiceMapper.ToListItem(i),
+                DaysOpen = days,
+                Bucket = Bucket(days),
+                BucketLabel = Bucket(days) switch
+                {
+                    0 => "0-30",
+                    1 => "31-60",
+                    2 => "61-90",
+                    _ => "90+"
+                }
+            };
+        }).OrderByDescending(r => r.DaysOpen).ToList();
+
+        return Ok(new GoldAgingReportDto
+        {
+            Rows = rows,
+            Bucket0To30 = rows.Where(r => r.Bucket == 0).Sum(r => r.Invoice.RemainingAmount),
+            Bucket31To60 = rows.Where(r => r.Bucket == 1).Sum(r => r.Invoice.RemainingAmount),
+            Bucket61To90 = rows.Where(r => r.Bucket == 2).Sum(r => r.Invoice.RemainingAmount),
+            Bucket90Plus = rows.Where(r => r.Bucket == 3).Sum(r => r.Invoice.RemainingAmount),
+            TotalRemaining = rows.Sum(r => r.Invoice.RemainingAmount)
+        });
+    }
 }
 
 public sealed class GoldStockReportDto
@@ -161,4 +212,22 @@ public sealed class GoldCreditReportDto
     public int OverdueCount { get; set; }
     public decimal TotalRemainingIqd { get; set; }
     public decimal TotalRemainingUsd { get; set; }
+}
+
+public sealed class GoldAgingRowDto
+{
+    public GoldInvoiceListDto Invoice { get; set; } = new();
+    public int DaysOpen { get; set; }
+    public int Bucket { get; set; }
+    public string BucketLabel { get; set; } = string.Empty;
+}
+
+public sealed class GoldAgingReportDto
+{
+    public List<GoldAgingRowDto> Rows { get; set; } = [];
+    public decimal Bucket0To30 { get; set; }
+    public decimal Bucket31To60 { get; set; }
+    public decimal Bucket61To90 { get; set; }
+    public decimal Bucket90Plus { get; set; }
+    public decimal TotalRemaining { get; set; }
 }
