@@ -289,6 +289,9 @@
                             <Button Content="طباعة" Command="{Binding PrintInvoiceCommand}"
                                     Style="{StaticResource OutlinedButton}"
                                     Padding="20,10" Margin="0,0,8,0"/>
+                            <Button Content="واتساب" Command="{Binding SendInvoiceWhatsAppCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Padding="20,10" Margin="0,0,8,0"/>
                             <Button Content="فاتورة جديدة" Command="{Binding NewInvoiceCommand}"
                                     Style="{StaticResource OutlinedButton}" Padding="20,10"/>
                         </StackPanel>

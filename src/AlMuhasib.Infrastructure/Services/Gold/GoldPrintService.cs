@@ -18,11 +18,13 @@ public sealed class GoldPrintService : IGoldPrintService
         _barcodeLabelService = barcodeLabelService;
     }
 
+    public InvoicePrintModel BuildInvoicePrintModel(GoldInvoice invoice) => BuildPrintModel(invoice);
+
     public Task PrintInvoiceAsync(GoldInvoice invoice, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var model = BuildPrintModel(invoice);
+        var model = BuildInvoicePrintModel(invoice);
 
         // Routing A4 vs thermal is handled by the export layer using GoldReceiptPaperSize
         // (thermal → PrintThermalReceipt; otherwise PrintInvoice).

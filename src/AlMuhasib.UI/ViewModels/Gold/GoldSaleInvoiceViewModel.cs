@@ -22,6 +22,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     private readonly IGoldScaleService _scaleService;
     private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
     private int _quoteVersion;
@@ -81,6 +82,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         IGoldScaleService scaleService,
         IGoldSettingsService settingsService,
         IGoldPrintService printService,
+        IWhatsAppShareService whatsAppShare,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
@@ -92,6 +94,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         _scaleService = scaleService;
         _settingsService = settingsService;
         _printService = printService;
+        _whatsAppShare = whatsAppShare;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "فاتورة بيع ذهب";
@@ -468,7 +471,32 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         }
     }
 
-    partial void OnCanPrintInvoiceChanged(bool value) => PrintInvoiceCommand.NotifyCanExecuteChanged();
+    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
+    private void SendInvoiceWhatsApp()
+    {
+        if (_lastSavedInvoice is null || !CanPrint)
+            return;
+
+        try
+        {
+            var model = _printService.BuildInvoicePrintModel(_lastSavedInvoice);
+            _whatsAppShare.ShareInvoice(
+                model,
+                _lastSavedInvoice.Customer?.Phone ?? SelectedCustomer?.Phone,
+                _lastSavedInvoice.Customer?.Name ?? SelectedCustomer?.Name ?? "زبون");
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError(ex.Message, "واتساب");
+        }
+    }
+
+    partial void OnCanPrintInvoiceChanged(bool value)
+    {
+        PrintInvoiceCommand.NotifyCanExecuteChanged();
+        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();
