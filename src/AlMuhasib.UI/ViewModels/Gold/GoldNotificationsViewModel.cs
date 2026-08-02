@@ -1,19 +1,23 @@
 using System.Collections.ObjectModel;
-using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
+using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
 public partial class GoldNotificationsViewModel : PagedViewModelBase
 {
     private readonly IGoldSmartAlertService _alertService;
+    private readonly IExportService _exportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private List<GoldAlertItem> _allAlerts = [];
 
     public ObservableCollection<GoldAlertItem> Alerts { get; } = [];
 
@@ -25,10 +29,12 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
 
     public GoldNotificationsViewModel(
         IGoldSmartAlertService alertService,
+        IExportService exportService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _alertService = alertService;
+        _exportService = exportService;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "التنبيهات";
@@ -40,7 +46,17 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
         await LoadAsync();
     }
 
-    protected override Task OnPageChangedAsync() => LoadAsync();
+    protected override Task OnPageChangedAsync()
+    {
+        ApplyDisplay();
+        return Task.CompletedTask;
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        ApplyDisplay();
+    }
 
     partial void OnUnreadOnlyChanged(bool value) => _ = ReloadAsync();
 
@@ -61,13 +77,9 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
             if (UnreadOnly)
                 alerts = alerts.Where(a => !a.IsRead).ToList();
 
-            ApplyPaginationStats(alerts.Count);
-            var page = alerts.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList();
-            Alerts.Clear();
-            foreach (var a in page)
-                Alerts.Add(a);
-
-            UnreadCount = alerts.Count(a => !a.IsRead);
+            _allAlerts = alerts.ToList();
+            UnreadCount = _allAlerts.Count(a => !a.IsRead);
+            ApplyDisplay();
         }
         catch (Exception ex)
         {
@@ -78,6 +90,19 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private void ApplyDisplay()
+    {
+        var filtered = MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters)
+            ? ColumnFilterEngine.Apply(_allAlerts, ColumnFilters)
+            : _allAlerts.ToList();
+
+        ApplyPaginationStats(filtered.Count);
+        var page = filtered.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList();
+        Alerts.Clear();
+        foreach (var a in page)
+            Alerts.Add(a);
     }
 
     [RelayCommand]
@@ -140,6 +165,67 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
         catch (Exception ex)
         {
             _toast.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            if (_allAlerts.Count == 0)
+                await LoadAsync();
+
+            var exportData = _allAlerts.Select(a => new
+            {
+                النوع = a.Type.ToString(),
+                العنوان = a.Title,
+                الرسالة = a.Message,
+                التاريخ = a.CreatedAt.ToString("yyyy/MM/dd HH:mm"),
+                مقروء = a.IsRead ? "نعم" : "لا"
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"تنبيهات_الذهب_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "التنبيهات");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            if (_allAlerts.Count == 0)
+                await LoadAsync();
+
+            var columns = new[] { "النوع", "العنوان", "الرسالة", "التاريخ", "مقروء" };
+            IList<object[]> rows = _allAlerts.Select(a => new object[]
+            {
+                a.Type.ToString(),
+                a.Title,
+                a.Message,
+                a.CreatedAt.ToString("yyyy/MM/dd HH:mm"),
+                a.IsRead ? "نعم" : "لا"
+            }).ToList();
+            _exportService.PrintTable("قائمة التنبيهات", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

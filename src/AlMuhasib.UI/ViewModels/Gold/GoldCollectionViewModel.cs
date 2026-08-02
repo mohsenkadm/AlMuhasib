@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
@@ -16,8 +18,10 @@ public partial class GoldCollectionViewModel : ViewModelBase
     private readonly IGoldSaleService _saleService;
     private readonly IGoldCashService _cashService;
     private readonly IGoldPricingService _pricingService;
+    private readonly IExportService _exportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private List<GoldInvoiceListItem> _allInvoices = [];
 
     public ObservableCollection<GoldInvoiceListItem> OpenInvoices { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
@@ -43,12 +47,14 @@ public partial class GoldCollectionViewModel : ViewModelBase
         IGoldSaleService saleService,
         IGoldCashService cashService,
         IGoldPricingService pricingService,
+        IExportService exportService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _saleService = saleService;
         _cashService = cashService;
         _pricingService = pricingService;
+        _exportService = exportService;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "تحصيل الآجل";
@@ -69,9 +75,8 @@ public partial class GoldCollectionViewModel : ViewModelBase
         {
             var (open, _) = await _saleService.GetPagedAsync(1, 200, SearchText, status: GoldInvoiceStatus.Open);
             var (partial, _) = await _saleService.GetPagedAsync(1, 200, SearchText, status: GoldInvoiceStatus.PartiallyPaid);
-            OpenInvoices.Clear();
-            foreach (var inv in open.Concat(partial).OrderByDescending(i => i.InvoiceDate))
-                OpenInvoices.Add(inv);
+            _allInvoices = open.Concat(partial).OrderByDescending(i => i.InvoiceDate).ToList();
+            ApplyFilters();
 
             CashBoxes.Clear();
             foreach (var box in await _cashService.GetCashBoxesAsync())
@@ -93,6 +98,19 @@ public partial class GoldCollectionViewModel : ViewModelBase
             IsBusy = false;
         }
     }
+
+    private void ApplyFilters()
+    {
+        var filtered = MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters)
+            ? ColumnFilterEngine.Apply(_allInvoices, ColumnFilters)
+            : _allInvoices.ToList();
+
+        OpenInvoices.Clear();
+        foreach (var inv in filtered)
+            OpenInvoices.Add(inv);
+    }
+
+    protected override void OnColumnFiltersChanged() => ApplyFilters();
 
     partial void OnSelectedInvoiceChanged(GoldInvoiceListItem? value)
     {
@@ -183,6 +201,67 @@ public partial class GoldCollectionViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            if (_allInvoices.Count == 0)
+                await LoadAsync();
+
+            var exportData = _allInvoices.Select(i => new
+            {
+                رقم_الفاتورة = i.InvoiceNumber,
+                التاريخ = i.InvoiceDate.ToString("yyyy/MM/dd"),
+                الزبون = i.CustomerName ?? "",
+                المتبقي = i.RemainingAmount,
+                العملة = i.PaymentCurrency.ToString()
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"تحصيل_الآجل_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "التحصيل");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            if (_allInvoices.Count == 0)
+                await LoadAsync();
+
+            var columns = new[] { "رقم الفاتورة", "التاريخ", "الزبون", "المتبقي", "العملة" };
+            IList<object[]> rows = _allInvoices.Select(i => new object[]
+            {
+                i.InvoiceNumber,
+                i.InvoiceDate.ToString("yyyy/MM/dd"),
+                i.CustomerName ?? "",
+                i.RemainingAmount.ToString("N0"),
+                i.PaymentCurrency.ToString()
+            }).ToList();
+            _exportService.PrintTable("الفواتير المفتوحة للتحصيل", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

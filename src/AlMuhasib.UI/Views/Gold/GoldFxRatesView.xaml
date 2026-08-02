@@ -3,49 +3,45 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <Grid Margin="20">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <md:Card Grid.Row="0" Padding="0" Margin="0,0,0,14" UniformCornerRadius="16"
-                 BorderBrush="#D4AF37" BorderThickness="1" md:ElevationAssist.Elevation="Dp3">
-            <Grid MinHeight="100">
-                <Border CornerRadius="16">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#8B6914" Offset="0"/>
-                            <GradientStop Color="#B8860B" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
-                <Grid Margin="22,18">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="أسعار الصرف" FontSize="14" Foreground="#FFF8E1"/>
-                        <TextBlock Text="{Binding LatestRateDisplay}" FontSize="24" FontWeight="Bold"
-                                   Foreground="White" Margin="0,4,0,0"/>
+        <!-- Latest rate summary -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="أسعار الصرف" FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <TextBlock Text="{Binding LatestRateDisplay}" FontSize="20" FontWeight="Bold"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                        md:ButtonAssist.CornerRadius="8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="تحديث"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
-                            Foreground="White" VerticalAlignment="Center">
-                        <md:PackIcon Kind="Refresh" Width="22" Height="22" Foreground="White"/>
-                    </Button>
-                </Grid>
+                </Button>
             </Grid>
         </md:Card>
 
-        <md:Card Grid.Row="1" Padding="20" Margin="0,0,0,14" UniformCornerRadius="14"
-                 BorderBrush="#E8D5A3" BorderThickness="1">
+        <!-- New rate form -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
             <StackPanel>
-                <TextBlock Text="تسجيل سعر جديد (USD → IQD)" FontWeight="Bold" Foreground="#B8860B" Margin="0,0,0,12"/>
+                <TextBlock Text="تسجيل سعر جديد (USD → IQD)" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -63,29 +59,56 @@
                              md:HintAssist.Hint="ملاحظات"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,10,0"/>
                     <Button Grid.Column="3" Content="حفظ" Command="{Binding SaveRateCommand}"
-                            Style="{StaticResource PrimaryButton}" Height="40" Padding="22,0"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Height="40" Padding="22,0"
                             IsEnabled="{Binding CanAdd}"/>
                 </Grid>
             </StackPanel>
         </md:Card>
 
-        <md:Card Grid.Row="2" Padding="0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1">
-            <DockPanel>
-                <controls:ListTableHeaderBar DockPanel.Dock="Top" Title="سجل أسعار الصرف"
-                                             ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
-                <DataGrid ItemsSource="{Binding Rates}"
+        <!-- Rates list -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجل أسعار الصرف"
+                                             TargetDataGrid="{Binding ElementName=GoldFxRatesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="GoldFxRatesGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Rates}"
                           SelectedItem="{Binding SelectedRate}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}" Margin="8">
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="التاريخ" Binding="{Binding RateDate, StringFormat=yyyy/MM/dd}" Width="120"/>
-                        <DataGridTextColumn Header="USD → IQD" Binding="{Binding UsdToIqd, StringFormat=N0}" Width="140"/>
-                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"/>
-                        <DataGridTextColumn Header="أُنشئ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding RateDate, StringFormat=yyyy/MM/dd}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RateDate"/>
+                        <DataGridTextColumn Header="USD → IQD" Binding="{Binding UsdToIqd, StringFormat=N0}" Width="140"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UsdToIqd"/>
+                        <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                        <DataGridTextColumn Header="أُنشئ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreatedAt"/>
                     </DataGrid.Columns>
                 </DataGrid>
-            </DockPanel>
+            </Grid>
         </md:Card>
     </Grid>
 </UserControl>

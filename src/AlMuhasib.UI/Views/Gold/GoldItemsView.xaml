@@ -3,48 +3,57 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </UserControl.Resources>
-
-    <Grid Margin="20">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource FilterBar}" Margin="0,0,0,12">
+        <!-- ═══ TOP: Action Bar ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource SearchBox}"
-                         md:HintAssist.Hint="ابحث بالاسم أو الباركود أو التصنيف..."
-                         MaxWidth="420" HorizontalAlignment="Left"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Command="{Binding OpenAddDialogCommand}" Style="{StaticResource PrimaryButton}"
-                            Height="36" Padding="16,0" Margin="0,0,8,0"
-                            Visibility="{Binding CanAdd, Converter={StaticResource BoolToVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="أصناف الذهب" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddDialogCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdd}">
                         <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Plus" Width="18" Height="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="إضافة" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            <md:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إضافة صنف"/>
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource IconButton}"
-                            Width="36" Height="36" ToolTip="تحديث">
-                        <md:PackIcon Kind="Refresh" Width="20" Height="20"/>
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
                     </Button>
+
+                    <TextBox md:HintAssist.Hint="ابحث بالاسم أو الباركود أو التصنيف..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="260" Margin="16,0,0,0"/>
                 </StackPanel>
             </Grid>
-        </Border>
+        </md:Card>
 
-        <md:Card Grid.Row="1" Padding="0" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1"
-                 md:ElevationAssist.Elevation="Dp2">
+        <!-- ═══ BOTTOM: Data Grid ═══ -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -52,31 +61,54 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <controls:ListTableHeaderBar Grid.Row="0" Title="قائمة أصناف الذهب"
-                                             ShowFilter="False" ShowExport="False" ShowPrint="False" ShowCardToggle="False"/>
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة أصناف الذهب"
+                                             TargetDataGrid="{Binding ElementName=GoldItemsGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
 
-                <DataGrid Grid.Row="1" x:Name="ItemsGrid"
+                <DataGrid x:Name="GoldItemsGrid"
+                          Grid.Row="1"
                           ItemsSource="{Binding Items}"
                           SelectedItem="{Binding SelectedItem}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" HeadersVisibility="Column"
-                          Style="{StaticResource ModernDataGrid}">
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="120"/>
-                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratValue}" Width="70"/>
-                        <DataGridTextColumn Header="الوزن (غ)" Binding="{Binding WeightGrams, StringFormat=N2}" Width="90"/>
-                        <DataGridTextColumn Header="أجور الصياغة" Binding="{Binding SuggestedMakingCharge, StringFormat=N0}" Width="110"/>
-                        <DataGridTextColumn Header="تكلفة/غ" Binding="{Binding CostPerGram, StringFormat=N0}" Width="90"/>
-                        <DataGridTextColumn Header="التصنيف" Binding="{Binding Category}" Width="120"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="90"/>
-                        <DataGridTemplateColumn Header="إجراءات" Width="120" MinWidth="120">
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                        <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode"/>
+                        <DataGridTextColumn Header="العيار" Binding="{Binding KaratValue}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="KaratValue"/>
+                        <DataGridTextColumn Header="الوزن (غ)" Binding="{Binding WeightGrams, StringFormat=N2}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WeightGrams"/>
+                        <DataGridTextColumn Header="أجور الصياغة" Binding="{Binding SuggestedMakingCharge, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SuggestedMakingCharge"/>
+                        <DataGridTextColumn Header="تكلفة/غ" Binding="{Binding CostPerGram, StringFormat=N0}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CostPerGram"/>
+                        <DataGridTextColumn Header="التصنيف" Binding="{Binding Category}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Category"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="120" MinWidth="120"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource TableEditIconButton}"
@@ -100,11 +132,12 @@
             </Grid>
         </md:Card>
 
+        <!-- ═══ Add/Edit Dialog ═══ -->
         <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="460" MaxWidth="520">
                     <StackPanel>
-                        <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Foreground="#B8860B" Margin="0,0,0,16"/>
+                        <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
                         <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="الاسم *" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
                         <TextBox Text="{Binding EditBarcode, UpdateSourceTrigger=PropertyChanged}"
@@ -120,10 +153,12 @@
                                  md:HintAssist.Hint="التكلفة لكل غرام" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
                         <TextBox Text="{Binding EditCategory, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="التصنيف" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
-                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
                             <Button Content="حفظ" Command="{Binding SaveItemCommand}"
-                                    Style="{StaticResource PrimaryButton}" Padding="24,8" Margin="0,0,8,0"/>
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
                             <Button Content="إلغاء" Command="{Binding CancelDialogCommand}" Style="{StaticResource FlatButton}"/>
                         </StackPanel>
                     </StackPanel>
@@ -131,6 +166,7 @@
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
+        <!-- ═══ Delete Confirmation Dialog ═══ -->
         <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="360">
@@ -141,10 +177,11 @@
                             <Run Text="{Binding ItemToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
                             <Run Text="؟"/>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
-                                    Style="{StaticResource PrimaryButton}" Background="#D32F2F"
-                                    Padding="24,8" Margin="0,0,8,0"/>
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
                             <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
                         </StackPanel>
                     </StackPanel>

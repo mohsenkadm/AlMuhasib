@@ -3,11 +3,13 @@ using System.Windows;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
@@ -15,6 +17,7 @@ public partial class GoldItemsViewModel : ViewModelBase
 {
     private readonly IGoldInventoryService _inventoryService;
     private readonly IGoldPricingService _pricingService;
+    private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
@@ -48,10 +51,12 @@ public partial class GoldItemsViewModel : ViewModelBase
     public GoldItemsViewModel(
         IGoldInventoryService inventoryService,
         IGoldPricingService pricingService,
+        IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _inventoryService = inventoryService;
         _pricingService = pricingService;
+        _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أصناف الذهب";
     }
@@ -70,8 +75,22 @@ public partial class GoldItemsViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var (items, totalCount) = await _inventoryService.GetItemsPagedAsync(
-                CurrentPage, PageSize, string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
+            var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+
+            if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            {
+                var (allItems, _) = await _inventoryService.GetItemsPagedAsync(1, int.MaxValue, search);
+                var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+                MasterDataColumnFilterHelper.ApplyClientPagination(
+                    filtered, Items, CurrentPage, PageSize,
+                    out var filteredTotal, out var filteredPages, out var filteredText);
+                TotalCount = filteredTotal;
+                TotalPages = filteredPages;
+                PaginationText = filteredText;
+                return;
+            }
+
+            var (items, totalCount) = await _inventoryService.GetItemsPagedAsync(CurrentPage, PageSize, search);
 
             TotalCount = totalCount;
             TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
@@ -89,6 +108,12 @@ public partial class GoldItemsViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadItemsAsync();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -258,6 +283,69 @@ public partial class GoldItemsViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var (allItems, _) = await _inventoryService.GetItemsPagedAsync(1, int.MaxValue, null);
+            var exportData = allItems.Select(i => new
+            {
+                الاسم = i.Name,
+                الباركود = i.Barcode,
+                العيار = i.KaratValue,
+                الوزن = i.WeightGrams,
+                أجور_الصياغة = i.SuggestedMakingCharge,
+                تكلفة_غرام = i.CostPerGram,
+                التصنيف = i.Category,
+                الحالة = i.Status.ToString()
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"أصناف_الذهب_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "الأصناف");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _inventoryService.GetItemsPagedAsync(1, int.MaxValue, null);
+            var columns = new[] { "الاسم", "الباركود", "العيار", "الوزن", "أجور الصياغة", "تكلفة/غ", "التصنيف", "الحالة" };
+            IList<object[]> rows = allItems.Select(i => new object[]
+            {
+                i.Name,
+                i.Barcode,
+                i.KaratValue,
+                i.WeightGrams.ToString("N2"),
+                i.SuggestedMakingCharge.ToString("N0"),
+                i.CostPerGram.ToString("N0"),
+                i.Category,
+                i.Status.ToString()
+            }).ToList();
+            _exportService.PrintTable("قائمة أصناف الذهب", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

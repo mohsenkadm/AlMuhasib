@@ -2,18 +2,21 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
 public partial class GoldCustomersViewModel : ViewModelBase
 {
     private readonly IGoldCustomerService _customerService;
+    private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
@@ -43,9 +46,11 @@ public partial class GoldCustomersViewModel : ViewModelBase
 
     public GoldCustomersViewModel(
         IGoldCustomerService customerService,
+        IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _customerService = customerService;
+        _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "الزبائن";
     }
@@ -62,11 +67,23 @@ public partial class GoldCustomersViewModel : ViewModelBase
         IsBusy = true;
         try
         {
+            var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+
+            if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
+            {
+                var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, search, activeOnly: null);
+                var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+                MasterDataColumnFilterHelper.ApplyClientPagination(
+                    filtered, Customers, CurrentPage, PageSize,
+                    out var filteredTotal, out var filteredPages, out var filteredText);
+                TotalCount = filteredTotal;
+                TotalPages = filteredPages;
+                PaginationText = filteredText;
+                return;
+            }
+
             var (items, totalCount) = await _customerService.GetPagedAsync(
-                CurrentPage,
-                PageSize,
-                string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
-                activeOnly: null);
+                CurrentPage, PageSize, search, activeOnly: null);
 
             TotalCount = totalCount;
             TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
@@ -84,6 +101,12 @@ public partial class GoldCustomersViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    protected override void OnColumnFiltersChanged()
+    {
+        CurrentPage = 1;
+        _ = LoadCustomersAsync();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -252,6 +275,67 @@ public partial class GoldCustomersViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
+            var exportData = allItems.Select(c => new
+            {
+                الاسم = c.Name,
+                الهاتف = c.Phone,
+                العنوان = c.Address,
+                رصيد_آجل_د_ع = c.CreditBalanceIqd,
+                رصيد_آجل_دولار = c.CreditBalanceUsd,
+                فواتير_مفتوحة = c.OpenInvoiceCount,
+                نشط = c.IsActive ? "نعم" : "لا"
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"زبائن_الذهب_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "الزبائن");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
+            var columns = new[] { "الاسم", "الهاتف", "العنوان", "رصيد آجل د.ع", "رصيد آجل $", "فواتير مفتوحة", "نشط" };
+            IList<object[]> rows = allItems.Select(c => new object[]
+            {
+                c.Name,
+                c.Phone,
+                c.Address,
+                c.CreditBalanceIqd.ToString("N0"),
+                c.CreditBalanceUsd.ToString("N2"),
+                c.OpenInvoiceCount,
+                c.IsActive ? "نعم" : "لا"
+            }).ToList();
+            _exportService.PrintTable("قائمة زبائن الذهب", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }

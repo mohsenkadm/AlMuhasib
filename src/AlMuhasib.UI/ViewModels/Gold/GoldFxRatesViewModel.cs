@@ -1,18 +1,22 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
 public partial class GoldFxRatesViewModel : ViewModelBase
 {
     private readonly IGoldPricingService _pricingService;
+    private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private List<GoldFxRate> _allRates = [];
 
     [ObservableProperty] private decimal? _latestUsdToIqd;
     [ObservableProperty] private DateTime? _latestRateDate;
@@ -26,9 +30,11 @@ public partial class GoldFxRatesViewModel : ViewModelBase
 
     public GoldFxRatesViewModel(
         IGoldPricingService pricingService,
+        IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _pricingService = pricingService;
+        _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أسعار الصرف";
     }
@@ -56,9 +62,8 @@ public partial class GoldFxRatesViewModel : ViewModelBase
             if (latest is not null)
                 NewUsdToIqd = latest.UsdToIqd;
 
-            Rates.Clear();
-            foreach (var rate in await _pricingService.GetFxRatesAsync())
-                Rates.Add(rate);
+            _allRates = (await _pricingService.GetFxRatesAsync()).ToList();
+            ApplyFilters();
         }
         catch (Exception ex)
         {
@@ -69,6 +74,19 @@ public partial class GoldFxRatesViewModel : ViewModelBase
             IsBusy = false;
         }
     }
+
+    private void ApplyFilters()
+    {
+        var filtered = MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters)
+            ? ColumnFilterEngine.Apply(_allRates, ColumnFilters)
+            : _allRates.ToList();
+
+        Rates.Clear();
+        foreach (var rate in filtered)
+            Rates.Add(rate);
+    }
+
+    protected override void OnColumnFiltersChanged() => ApplyFilters();
 
     [RelayCommand]
     private async Task Refresh() => await LoadAsync();
@@ -109,6 +127,65 @@ public partial class GoldFxRatesViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            if (_allRates.Count == 0)
+                await LoadAsync();
+
+            var exportData = _allRates.Select(r => new
+            {
+                التاريخ = r.RateDate.ToString("yyyy/MM/dd"),
+                السعر = r.UsdToIqd,
+                ملاحظات = r.Notes,
+                أُنشئ = r.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = $"أسعار_الصرف_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "أسعار الصرف");
+                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintTable()
+    {
+        try
+        {
+            if (_allRates.Count == 0)
+                await LoadAsync();
+
+            var columns = new[] { "التاريخ", "USD → IQD", "ملاحظات", "أُنشئ" };
+            IList<object[]> rows = _allRates.Select(r => new object[]
+            {
+                r.RateDate.ToString("yyyy/MM/dd"),
+                r.UsdToIqd.ToString("N0"),
+                r.Notes,
+                r.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+            }).ToList();
+            _exportService.PrintTable("سجل أسعار الصرف", columns, rows);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
 }
