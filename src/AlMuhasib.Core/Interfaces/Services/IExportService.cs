@@ -81,6 +81,19 @@ public class InvoicePrintModel
     public string? FileNumber { get; set; }
     /// <summary>طباعة إيصال صيدلية يتضمن طريقة الاستخدام تحت كل صنف.</summary>
     public bool PharmacyUsageReceipt { get; set; }
+
+    /// <summary>When true, A4/thermal printers render gold-specific columns and totals.</summary>
+    public bool IsGoldInvoice { get; set; }
+    public decimal FxRate { get; set; }
+    public string? PricingCurrencyLabel { get; set; }
+    public string? PaymentCurrencyLabel { get; set; }
+    public decimal TotalGoldValue { get; set; }
+    public decimal TotalMakingCharge { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public decimal TotalAmountIqd { get; set; }
+    public decimal TotalAmountUsd { get; set; }
 }
 
 public class InvoicePrintItem
@@ -92,6 +105,14 @@ public class InvoicePrintItem
     public decimal TotalPrice { get; set; }
     /// <summary>طريقة استخدام الدواء — تُطبع في إيصال الصيدلية.</summary>
     public string? UsageInstructions { get; set; }
+
+    public int? KaratValue { get; set; }
+    public decimal? WeightGrams { get; set; }
+    public decimal? MithqalPrice { get; set; }
+    public decimal? PricePerGram { get; set; }
+    public decimal? GoldValue { get; set; }
+    public decimal? MakingCharge { get; set; }
+    public string? LineDirectionLabel { get; set; }
 }
 
 public class InstallmentPrintRow

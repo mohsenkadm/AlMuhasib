@@ -35,8 +35,24 @@ public sealed class TrackingExportService : IExportService
     public void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null) =>
         _inner.PrintTable(title, columns, rows, summaryLines);
 
-    public void PrintInvoice(InvoicePrintModel model) =>
+    public void PrintInvoice(InvoicePrintModel model)
+    {
+        if (model.IsGoldInvoice)
+        {
+            PrintPreferences.Load();
+            if (PosReceiptPaperSizes.IsThermal(PrintPreferences.GoldReceiptPaperSize))
+            {
+                _inner.PrintThermalReceipt(
+                    model,
+                    PrintPreferences.GoldReceiptPaperSize,
+                    PrintPreferences.PreferredPrinter,
+                    PrintPreferences.ShowPrintPreview);
+                return;
+            }
+        }
+
         _inner.PrintInvoice(model);
+    }
 
     public string ExportInvoiceToPdf(InvoicePrintModel model) =>
         _inner.ExportInvoiceToPdf(model);
@@ -56,9 +72,12 @@ public sealed class TrackingExportService : IExportService
     public void PrintThermalReceipt(InvoicePrintModel model)
     {
         PrintPreferences.Load();
+        var paperSize = model.IsGoldInvoice
+            ? PrintPreferences.GoldReceiptPaperSize
+            : PrintPreferences.PosReceiptPaperSize;
         _inner.PrintThermalReceipt(
             model,
-            PrintPreferences.PosReceiptPaperSize,
+            paperSize,
             PrintPreferences.PreferredPrinter,
             PrintPreferences.ShowPrintPreview);
     }

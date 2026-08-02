@@ -13,4 +13,6 @@ public class BarcodeLabelItem
     public string ProductName { get; set; } = string.Empty;
     public string Barcode { get; set; } = string.Empty;
     public decimal? Price { get; set; }
+    public int? KaratValue { get; set; }
+    public decimal? WeightGrams { get; set; }
 }

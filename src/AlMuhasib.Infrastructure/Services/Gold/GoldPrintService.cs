@@ -8,57 +8,24 @@ namespace AlMuhasib.Infrastructure.Services.Gold;
 public sealed class GoldPrintService : IGoldPrintService
 {
     private readonly IExportService _exportService;
+    private readonly IBarcodeLabelService? _barcodeLabelService;
 
-    public GoldPrintService(IExportService exportService)
+    public GoldPrintService(
+        IExportService exportService,
+        IBarcodeLabelService? barcodeLabelService = null)
     {
         _exportService = exportService;
+        _barcodeLabelService = barcodeLabelService;
     }
 
     public Task PrintInvoiceAsync(GoldInvoice invoice, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var typeLabel = invoice.InvoiceType switch
-        {
-            GoldInvoiceType.Sale => "فاتورة بيع ذهب",
-            GoldInvoiceType.Purchase => "فاتورة شراء ذهب",
-            GoldInvoiceType.Exchange => "فاتورة مبادلة ذهب",
-            _ => "فاتورة ذهب"
-        };
+        var model = BuildPrintModel(invoice);
 
-        var model = new InvoicePrintModel
-        {
-            Title = typeLabel,
-            InvoiceNumber = invoice.InvoiceNumber,
-            Date = invoice.InvoiceDate,
-            PartyName = invoice.Customer?.Name
-                ?? invoice.Supplier?.Name
-                ?? string.Empty,
-            PartyLabel = invoice.SupplierId.HasValue ? "المورد" : "الزبون",
-            WarehouseName = invoice.Warehouse?.Name ?? string.Empty,
-            PaymentMethod = invoice.PaymentMethod.ToString(),
-            Notes = invoice.Notes,
-            PartyPhone = invoice.Customer?.Phone ?? invoice.Supplier?.Phone,
-            PartyAddress = invoice.Customer?.Address ?? invoice.Supplier?.Address,
-            Subtotal = invoice.TotalGoldValue + invoice.TotalMakingCharge,
-            GrandTotal = invoice.IsExchange
-                ? invoice.ExchangeCashDifference
-                : invoice.TotalAmount,
-            Items = invoice.Lines
-                .OrderBy(l => l.Id)
-                .Select((l, idx) => new InvoicePrintItem
-                {
-                    Number = idx + 1,
-                    ItemName = string.IsNullOrWhiteSpace(l.Description)
-                        ? $"عيار {l.KaratValue} ({(l.LineDirection == GoldInvoiceLineDirection.In ? "وارد" : "صادر")})"
-                        : l.Description,
-                    Quantity = l.WeightGrams,
-                    UnitPrice = l.PricePerGram,
-                    TotalPrice = l.LineTotal
-                })
-                .ToList()
-        };
-
+        // Routing A4 vs thermal is handled by the export layer using GoldReceiptPaperSize
+        // (thermal → PrintThermalReceipt; otherwise PrintInvoice).
         _exportService.PrintInvoice(model);
         return Task.CompletedTask;
     }
@@ -66,6 +33,21 @@ public sealed class GoldPrintService : IGoldPrintService
     public Task PrintItemLabelAsync(GoldItem item, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (_barcodeLabelService is not null && !string.IsNullOrWhiteSpace(item.Barcode))
+        {
+            _barcodeLabelService.PrintLabels(
+            [
+                new BarcodeLabelItem
+                {
+                    ProductName = item.Name,
+                    Barcode = item.Barcode.Trim(),
+                    KaratValue = item.KaratValue,
+                    WeightGrams = item.WeightGrams
+                }
+            ]);
+            return Task.CompletedTask;
+        }
 
         var columns = new[] { "البيان", "القيمة" };
         var rows = new List<object[]>
@@ -80,4 +62,81 @@ public sealed class GoldPrintService : IGoldPrintService
         _exportService.PrintTable($"ملصق قطعة ذهب — {item.Name}", columns, rows);
         return Task.CompletedTask;
     }
+
+    internal static InvoicePrintModel BuildPrintModel(GoldInvoice invoice)
+    {
+        var typeLabel = invoice.InvoiceType switch
+        {
+            GoldInvoiceType.Sale => "فاتورة بيع ذهب",
+            GoldInvoiceType.Purchase => "فاتورة شراء ذهب",
+            GoldInvoiceType.Exchange => "فاتورة مبادلة ذهب",
+            GoldInvoiceType.SaleReturn => "مرتجع بيع ذهب",
+            _ => "فاتورة ذهب"
+        };
+
+        var paymentLabel = invoice.PaymentMethod switch
+        {
+            GoldPaymentMethod.Cash => "نقدي",
+            GoldPaymentMethod.Credit => "آجل",
+            _ => invoice.PaymentMethod.ToString()
+        };
+
+        return new InvoicePrintModel
+        {
+            Title = typeLabel,
+            InvoiceNumber = invoice.InvoiceNumber,
+            Date = invoice.InvoiceDate,
+            PartyName = invoice.Customer?.Name
+                ?? invoice.Supplier?.Name
+                ?? string.Empty,
+            PartyLabel = invoice.SupplierId.HasValue ? "المورد" : "الزبون",
+            WarehouseName = invoice.Warehouse?.Name ?? string.Empty,
+            PaymentMethod = paymentLabel,
+            Notes = invoice.Notes,
+            PartyPhone = invoice.Customer?.Phone ?? invoice.Supplier?.Phone,
+            PartyAddress = invoice.Customer?.Address ?? invoice.Supplier?.Address,
+            Subtotal = invoice.TotalGoldValue + invoice.TotalMakingCharge,
+            GrandTotal = invoice.IsExchange
+                ? invoice.ExchangeCashDifference
+                : invoice.TotalAmount,
+            IsGoldInvoice = true,
+            FxRate = invoice.FxRate,
+            PricingCurrencyLabel = FormatCurrency(invoice.PricingCurrency),
+            PaymentCurrencyLabel = FormatCurrency(invoice.PaymentCurrency),
+            TotalGoldValue = invoice.TotalGoldValue,
+            TotalMakingCharge = invoice.TotalMakingCharge,
+            DiscountAmount = invoice.DiscountAmount,
+            PaidAmount = invoice.PaidAmount,
+            RemainingAmount = invoice.RemainingAmount,
+            TotalAmountIqd = invoice.TotalAmountIqd,
+            TotalAmountUsd = invoice.TotalAmountUsd,
+            Items = invoice.Lines
+                .OrderBy(l => l.Id)
+                .Select((l, idx) => new InvoicePrintItem
+                {
+                    Number = idx + 1,
+                    ItemName = string.IsNullOrWhiteSpace(l.Description)
+                        ? $"عيار {l.KaratValue}"
+                        : l.Description,
+                    Quantity = l.WeightGrams,
+                    UnitPrice = l.PricePerGram,
+                    TotalPrice = l.LineTotal,
+                    KaratValue = l.KaratValue,
+                    WeightGrams = l.WeightGrams,
+                    MithqalPrice = l.MithqalPrice,
+                    PricePerGram = l.PricePerGram,
+                    GoldValue = l.GoldValue,
+                    MakingCharge = l.MakingCharge,
+                    LineDirectionLabel = l.LineDirection == GoldInvoiceLineDirection.In ? "وارد" : "صادر"
+                })
+                .ToList()
+        };
+    }
+
+    private static string FormatCurrency(GoldCurrency currency) => currency switch
+    {
+        GoldCurrency.IQD => "د.ع",
+        GoldCurrency.USD => "USD",
+        _ => currency.ToString()
+    };
 }

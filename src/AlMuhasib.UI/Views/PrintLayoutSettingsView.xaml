@@ -167,6 +167,25 @@
                                                VerticalAlignment="Center" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
+
+                            <TextBlock Text="ورق فواتير الذهب" FontWeight="Bold" FontSize="14" Foreground="#B8860B" Margin="0,16,0,8"/>
+                            <TextBlock Text="حجم الورق عند طباعة فواتير بيع/شراء/مبادلة الذهب (A4 أو حراري)"
+                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            <ComboBox SelectedValue="{Binding GoldReceiptPaperSize}" SelectedValuePath="Content"
+                                      materialDesign:HintAssist.Hint="ورق فواتير الذهب" Style="{StaticResource FilledComboBox}" Margin="0,0,0,8">
+                                <ComboBoxItem Content="A4"/>
+                                <ComboBoxItem Content="80mm"/>
+                                <ComboBoxItem Content="58mm"/>
+                                <ComboBoxItem Content="50mm"/>
+                            </ComboBox>
+                            <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Gold" Width="18" Height="18" Foreground="#B8860B"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding GoldReceiptPreviewHint}" FontSize="12" Foreground="#8D6E00"
+                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </materialDesign:Card>
                 </StackPanel>

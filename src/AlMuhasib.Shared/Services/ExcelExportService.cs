@@ -324,6 +324,13 @@ public class ExcelExportService : IExportService
         AddInfoRow("طريقة الدفع", m.PaymentMethod,
             m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : null,
             m.CreditDueDate?.ToString("yyyy/MM/dd"));
+        if (m.IsGoldInvoice)
+        {
+            AddInfoRow("عملة التسعير", string.IsNullOrWhiteSpace(m.PricingCurrencyLabel) ? "—" : m.PricingCurrencyLabel,
+                "عملة الدفع", string.IsNullOrWhiteSpace(m.PaymentCurrencyLabel) ? "—" : m.PaymentCurrencyLabel);
+            if (m.FxRate > 0)
+                AddInfoRow("سعر الصرف", m.FxRate.ToString("N2"));
+        }
         if (!string.IsNullOrWhiteSpace(m.PartyPhone) || !string.IsNullOrWhiteSpace(m.PartyAddress))
             AddInfoRow("هاتف العميل", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone,
                 "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
@@ -346,21 +353,30 @@ public class ExcelExportService : IExportService
         // ITEMS TABLE
         // ═══════════════════════════════════════════════
         var hideAmounts = m.HideAmounts;
+        var isGold = m.IsGoldInvoice && !hideAmounts;
         var itemsTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
-        var colWidths = hideAmounts
-            ? (compactScheduleMode ? new[] { 40.0, 380.0, 80.0 } : new[] { 50.0, 420.0, 90.0 })
-            : (compactScheduleMode
+        double[] colWidths;
+        if (hideAmounts)
+            colWidths = compactScheduleMode ? new[] { 40.0, 380.0, 80.0 } : new[] { 50.0, 420.0, 90.0 };
+        else if (isGold)
+            colWidths = new[] { 28.0, 130.0, 42.0, 58.0, 70.0, 70.0, 78.0, 70.0, 84.0 };
+        else
+            colWidths = compactScheduleMode
                 ? new[] { 32.0, 205.0, 62.0, 90.0, 105.0 }
-                : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 });
+                : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 };
         foreach (var w in colWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
 
         // Header
         var itemHeaderGroup = new TableRowGroup();
         var itemHeaderRow = new TableRow { Background = primaryBrush };
-        var headerCols = hideAmounts
-            ? new[] { "#", "المادة", "الكمية" }
-            : new[] { "#", "المادة", "الكمية", "سعر الوحدة", "الإجمالي" };
+        string[] headerCols;
+        if (hideAmounts)
+            headerCols = ["#", "المادة", "الكمية"];
+        else if (isGold)
+            headerCols = ["#", "المادة", "عيار", "وزن غ", "مثقال", "غرام", "قيمة ذهب", "أجور", "إجمالي"];
+        else
+            headerCols = ["#", "المادة", "الكمية", "سعر الوحدة", "الإجمالي"];
         foreach (var col in headerCols)
         {
             itemHeaderRow.Cells.Add(new TableCell(new Paragraph(new Run(col))
@@ -368,10 +384,10 @@ public class ExcelExportService : IExportService
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 TextAlignment = TextAlignment.Center,
-                FontSize = 12
+                FontSize = isGold ? 10 : 12
             })
             {
-                Padding = compactScheduleMode ? new Thickness(4, 4, 4, 4) : new Thickness(5, 6, 5, 6),
+                Padding = compactScheduleMode || isGold ? new Thickness(3, 4, 3, 4) : new Thickness(5, 6, 5, 6),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)),
                 BorderThickness = new Thickness(0, 0, 1, 0)
             });
@@ -388,27 +404,46 @@ public class ExcelExportService : IExportService
             if (alt) itemRow.Background = new SolidColorBrush(lightBg);
             alt = !alt;
 
-            void AddItemCell(string text, bool bold = false, TextAlignment align = TextAlignment.Center)
+            void AddItemCell(string text, bool bold = false, TextAlignment align = TextAlignment.Center, double fontSize = 11)
             {
                 itemRow.Cells.Add(new TableCell(new Paragraph(new Run(text))
                 {
                     TextAlignment = align,
-                    FontWeight = bold ? FontWeights.Bold : FontWeights.Normal
+                    FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
+                    FontSize = fontSize
                 })
                 {
-                    Padding = compactScheduleMode ? new Thickness(4, 2, 4, 2) : new Thickness(5, 4, 5, 4),
+                    Padding = compactScheduleMode || isGold ? new Thickness(3, 2, 3, 2) : new Thickness(5, 4, 5, 4),
                     BorderBrush = borderBrush,
                     BorderThickness = new Thickness(0, 0, 0, 1)
                 });
             }
 
-            AddItemCell(item.Number.ToString());
-            AddItemCell(item.ItemName, align: TextAlignment.Right);
-            AddItemCell(item.Quantity.ToString("N0"));
-            if (!hideAmounts)
+            AddItemCell(item.Number.ToString(), fontSize: isGold ? 10 : 11);
+            var nameText = item.ItemName;
+            if (!string.IsNullOrWhiteSpace(item.LineDirectionLabel))
+                nameText = $"{nameText} ({item.LineDirectionLabel})";
+            AddItemCell(nameText, align: TextAlignment.Right, fontSize: isGold ? 10 : 11);
+
+            if (isGold)
             {
-                AddItemCell(item.UnitPrice.ToString("N0") + " د.ع");
-                AddItemCell(item.TotalPrice.ToString("N0") + " د.ع", bold: true);
+                AddItemCell((item.KaratValue ?? 0).ToString(), fontSize: 10);
+                var weight = item.WeightGrams ?? item.Quantity;
+                AddItemCell(weight.ToString("N3"), fontSize: 10);
+                AddItemCell((item.MithqalPrice ?? 0).ToString("N0"), fontSize: 10);
+                AddItemCell((item.PricePerGram ?? item.UnitPrice).ToString("N0"), fontSize: 10);
+                AddItemCell((item.GoldValue ?? 0).ToString("N0"), fontSize: 10);
+                AddItemCell((item.MakingCharge ?? 0).ToString("N0"), fontSize: 10);
+                AddItemCell(item.TotalPrice.ToString("N0"), bold: true, fontSize: 10);
+            }
+            else
+            {
+                AddItemCell(item.Quantity.ToString("N0"));
+                if (!hideAmounts)
+                {
+                    AddItemCell(item.UnitPrice.ToString("N0") + " د.ع");
+                    AddItemCell(item.TotalPrice.ToString("N0") + " د.ع", bold: true);
+                }
             }
             dataGroup.Rows.Add(itemRow);
         }
@@ -431,7 +466,7 @@ public class ExcelExportService : IExportService
 
         var totalsGroup = new TableRowGroup();
 
-        void AddTotalRow(string label, decimal amount, bool isBold = false, bool isHighlighted = false)
+        void AddTotalRow(string label, decimal amount, bool isBold = false, bool isHighlighted = false, string? suffix = null)
         {
             var r = new TableRow();
             if (isHighlighted)
@@ -450,8 +485,9 @@ public class ExcelExportService : IExportService
             })
             { Padding = new Thickness(8, 6, 8, 6), BorderBrush = borderBrush, BorderThickness = new Thickness(0, 0, 0, isHighlighted ? 0 : 1) });
 
+            var amountText = amount.ToString("N0") + (suffix ?? " د.ع");
             // Amount
-            r.Cells.Add(new TableCell(new Paragraph(new Run(amount.ToString("N0") + " د.ع"))
+            r.Cells.Add(new TableCell(new Paragraph(new Run(amountText))
             {
                 FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
                 FontSize = isBold ? 14 : 12,
@@ -463,14 +499,33 @@ public class ExcelExportService : IExportService
             totalsGroup.Rows.Add(r);
         }
 
-        AddTotalRow("المجموع الفرعي", m.Subtotal);
-        if (m.RoundingAmount != 0)
-            AddTotalRow("التقريب", m.RoundingAmount);
-        if (m.TransportFeeAmount > 0)
-            AddTotalRow("أجور النقل", m.TransportFeeAmount);
-        AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
-        if (m.CompanyFeeAmount is > 0)
-            AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);
+        if (isGold)
+        {
+            AddTotalRow("قيمة الذهب", m.TotalGoldValue);
+            AddTotalRow("الأجور", m.TotalMakingCharge);
+            if (m.DiscountAmount != 0)
+                AddTotalRow("الخصم", m.DiscountAmount);
+            if (m.FxRate > 0)
+                AddTotalRow("سعر الصرف", m.FxRate, suffix: string.Empty);
+            if (m.TotalAmountIqd != 0)
+                AddTotalRow("الإجمالي د.ع", m.TotalAmountIqd);
+            if (m.TotalAmountUsd != 0)
+                AddTotalRow("الإجمالي USD", m.TotalAmountUsd, suffix: " $");
+            AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
+            AddTotalRow("المدفوع", m.PaidAmount);
+            AddTotalRow("المتبقي", m.RemainingAmount);
+        }
+        else
+        {
+            AddTotalRow("المجموع الفرعي", m.Subtotal);
+            if (m.RoundingAmount != 0)
+                AddTotalRow("التقريب", m.RoundingAmount);
+            if (m.TransportFeeAmount > 0)
+                AddTotalRow("أجور النقل", m.TransportFeeAmount);
+            AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
+            if (m.CompanyFeeAmount is > 0)
+                AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);
+        }
 
         totalsTable.RowGroups.Add(totalsGroup);
         doc.Blocks.Add(totalsTable);

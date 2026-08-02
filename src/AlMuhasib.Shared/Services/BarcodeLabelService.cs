@@ -79,6 +79,26 @@ public class BarcodeLabelService : IBarcodeLabelService
             });
             section.Blocks.Add(codeLine);
 
+            if (item.KaratValue is > 0 || item.WeightGrams is > 0)
+            {
+                var goldMeta = new Paragraph
+                {
+                    Margin = new Thickness(0, 2, 0, 0),
+                    TextAlignment = TextAlignment.Center
+                };
+                var parts = new List<string>();
+                if (item.KaratValue is > 0)
+                    parts.Add($"عيار {item.KaratValue}");
+                if (item.WeightGrams is > 0)
+                    parts.Add($"وزن {item.WeightGrams.Value:0.###} غ");
+                goldMeta.Inlines.Add(new Run(string.Join(" — ", parts))
+                {
+                    FontSize = 12,
+                    FontWeight = FontWeights.SemiBold
+                });
+                section.Blocks.Add(goldMeta);
+            }
+
             if (item.Price is > 0)
             {
                 var priceLine = new Paragraph

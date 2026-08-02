@@ -47,8 +47,10 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     [ObservableProperty] private string? _selectedPrinter;
     [ObservableProperty] private string _paperSize = "A4";
     [ObservableProperty] private string _posReceiptPaperSize = "80mm";
+    [ObservableProperty] private string _goldReceiptPaperSize = "A4";
     [ObservableProperty] private bool _showPrintPreview = true;
     [ObservableProperty] private string _posReceiptPreviewHint = string.Empty;
+    [ObservableProperty] private string _goldReceiptPreviewHint = string.Empty;
 
     [ObservableProperty] private FlowDocument? _previewDocument;
 
@@ -238,8 +240,10 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         SelectedPrinter = PrintPreferences.PreferredPrinter;
         PaperSize = PrintPreferences.PaperSize;
         PosReceiptPaperSize = PrintPreferences.PosReceiptPaperSize;
+        GoldReceiptPaperSize = PrintPreferences.GoldReceiptPaperSize;
         ShowPrintPreview = PrintPreferences.ShowPrintPreview;
         UpdatePosReceiptPreviewHint();
+        UpdateGoldReceiptPreviewHint();
     }
 
     private void SavePrinterPreferences()
@@ -247,17 +251,26 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         PrintPreferences.PreferredPrinter = SelectedPrinter;
         PrintPreferences.PaperSize = PaperSize;
         PrintPreferences.PosReceiptPaperSize = PosReceiptPaperSize;
+        PrintPreferences.GoldReceiptPaperSize = GoldReceiptPaperSize;
         PrintPreferences.ShowPrintPreview = ShowPrintPreview;
         PrintPreferences.Save();
     }
 
     partial void OnPosReceiptPaperSizeChanged(string value) => UpdatePosReceiptPreviewHint();
+    partial void OnGoldReceiptPaperSizeChanged(string value) => UpdateGoldReceiptPreviewHint();
 
     private void UpdatePosReceiptPreviewHint()
     {
         var size = PosReceiptPaperSizes.GetPageSize(PosReceiptPaperSize);
         PosReceiptPreviewHint =
             $"{PosReceiptPaperSizes.GetDisplayLabel(PosReceiptPaperSize)} — عرض تقريبي {size.Width:0}px";
+    }
+
+    private void UpdateGoldReceiptPreviewHint()
+    {
+        var size = PosReceiptPaperSizes.GetPageSize(GoldReceiptPaperSize);
+        GoldReceiptPreviewHint =
+            $"{PosReceiptPaperSizes.GetDisplayLabel(GoldReceiptPaperSize)} — عرض تقريبي {size.Width:0}px";
     }
 
     private static byte[]? PickImageBytes()
