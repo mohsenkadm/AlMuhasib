@@ -408,7 +408,7 @@ class GoldAlertItem {
 
   factory GoldAlertItem.fromJson(Map<String, dynamic> json) {
     return GoldAlertItem(
-      notificationId: json['notificationId'] as int?,
+      notificationId: json['notificationId'] as int? ?? json['id'] as int?,
       type: _enumInt(json['type'], fallback: 5),
       title: json['title'] as String? ?? '',
       message: json['message'] as String? ?? '',
@@ -479,6 +479,22 @@ double _num(dynamic v) {
 int _enumInt(dynamic v, {int fallback = 0}) {
   if (v is int) return v;
   if (v is num) return v.toInt();
-  if (v is String) return int.tryParse(v) ?? fallback;
+  if (v is String) {
+    final parsed = int.tryParse(v);
+    if (parsed != null) return parsed;
+    return switch (v.toLowerCase()) {
+      'iqd' || 'cash' || 'sale' || 'completed' || 'instock' || 'receipt' => 0,
+      'usd' || 'credit' || 'purchase' || 'open' || 'sold' || 'payment' => 1,
+      'partiallypaid' || 'reserved' => 2,
+      'cancelled' => 3,
+      'pricenotupdated' => 0,
+      'overduecredit' => 1,
+      'lowstock' => 2,
+      'scaledisconnected' => 3,
+      'negativecash' => 4,
+      'info' => 5,
+      _ => fallback,
+    };
+  }
   return fallback;
 }

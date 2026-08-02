@@ -15,7 +15,9 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
 {
     public GoldShopMobileController(ITenantContext tenantContext, CloudDbContext db) : base(db, tenantContext) { }
 
+    // Also exposed under /mobile/* for Flutter clients.
     [HttpGet("dashboard")]
+    [HttpGet("mobile/dashboard")]
     public async Task<ActionResult<GoldShopDashboardDto>> GetDashboard(CancellationToken ct)
     {
         if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
@@ -80,6 +82,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
                 .Select(s => new GoldStockRowDto
                 {
                     KaratValue = s.KaratValue,
+                    KaratName = $"{s.KaratValue}K",
                     GramsOnHand = s.GramsOnHand,
                     AverageCostPerGram = s.AverageCostPerGram,
                     StockValue = s.GramsOnHand * s.AverageCostPerGram,
@@ -95,6 +98,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
                 .ToList(),
             Alerts = notifications.Select(n => new GoldAlertDto
             {
+                Id = n.Id,
                 SyncId = n.SyncId,
                 Type = n.Type.ToString(),
                 Title = n.Title,
@@ -106,7 +110,9 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         });
     }
 
+    [HttpGet("prices")]
     [HttpGet("prices/latest")]
+    [HttpGet("mobile/prices")]
     public async Task<ActionResult<List<GoldPriceDto>>> GetLatestPrices(CancellationToken ct)
     {
         if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
@@ -114,6 +120,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
     }
 
     [HttpGet("invoices")]
+    [HttpGet("mobile/invoices")]
     public async Task<ActionResult<List<GoldInvoiceListDto>>> GetInvoices(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -135,7 +142,26 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         return Ok(items.Select(GoldShopInvoiceMapper.ToListItem).ToList());
     }
 
+    [HttpGet("invoices/{id:int}")]
+    [HttpGet("mobile/invoices/{id:int}")]
+    public async Task<ActionResult<GoldInvoiceDetailDto>> GetInvoiceById(int id, CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+
+        var invoice = await Db.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Lines)
+            .Include(i => i.Payments)
+            .FirstOrDefaultAsync(i => i.TenantId == TenantId && i.Id == id, ct);
+
+        if (invoice is null)
+            return NotFound();
+
+        return Ok(GoldShopInvoiceMapper.ToDetail(invoice));
+    }
+
     [HttpGet("customers")]
+    [HttpGet("mobile/customers")]
     public async Task<ActionResult<List<GoldCustomerDto>>> GetCustomers(
         [FromQuery] string? search = null,
         CancellationToken ct = default)
@@ -152,6 +178,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         var items = await query.OrderBy(c => c.Name).Take(200).ToListAsync(ct);
         return Ok(items.Select(c => new GoldCustomerDto
         {
+            Id = c.Id,
             SyncId = c.SyncId,
             Name = c.Name,
             Phone = c.Phone,
@@ -163,6 +190,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
     }
 
     [HttpGet("notifications")]
+    [HttpGet("mobile/notifications")]
     public async Task<ActionResult<List<GoldAlertDto>>> GetNotifications(
         [FromQuery] bool unreadOnly = false,
         CancellationToken ct = default)
@@ -176,6 +204,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         var items = await query.OrderByDescending(n => n.CreatedAt).Take(100).ToListAsync(ct);
         return Ok(items.Select(n => new GoldAlertDto
         {
+            Id = n.Id,
             SyncId = n.SyncId,
             Type = n.Type.ToString(),
             Title = n.Title,
@@ -200,12 +229,15 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             .OrderByDescending(p => p.KaratValue)
             .Select(p => new GoldPriceDto
             {
+                Id = p.Id,
                 SyncId = p.SyncId,
                 PriceDate = p.PriceDate,
                 KaratValue = p.KaratValue,
+                KaratName = $"{p.KaratValue}K",
                 PricePerMithqal = p.PricePerMithqal,
                 Currency = p.Currency.ToString(),
-                FxRateUsed = p.FxRateUsed
+                FxRateUsed = p.FxRateUsed,
+                PricePerGram = p.PricePerMithqal / 5m
             })
             .ToList();
     }
@@ -237,6 +269,7 @@ public sealed class GoldShopDashboardDto
 public sealed class GoldStockRowDto
 {
     public int KaratValue { get; set; }
+    public string KaratName { get; set; } = string.Empty;
     public decimal GramsOnHand { get; set; }
     public decimal AverageCostPerGram { get; set; }
     public decimal StockValue { get; set; }
@@ -245,16 +278,20 @@ public sealed class GoldStockRowDto
 
 public sealed class GoldPriceDto
 {
+    public int Id { get; set; }
     public Guid SyncId { get; set; }
     public DateTime PriceDate { get; set; }
     public int KaratValue { get; set; }
+    public string KaratName { get; set; } = string.Empty;
     public decimal PricePerMithqal { get; set; }
     public string Currency { get; set; } = string.Empty;
     public decimal? FxRateUsed { get; set; }
+    public decimal? PricePerGram { get; set; }
 }
 
 public sealed class GoldCustomerDto
 {
+    public int Id { get; set; }
     public Guid SyncId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -266,6 +303,7 @@ public sealed class GoldCustomerDto
 
 public sealed class GoldAlertDto
 {
+    public int Id { get; set; }
     public Guid SyncId { get; set; }
     public string Type { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

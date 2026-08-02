@@ -88,6 +88,7 @@ public sealed class GoldShopInvoicesController : GoldShopApiControllerBase
 
 public class GoldInvoiceListDto
 {
+    public int Id { get; set; }
     public Guid SyncId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; }
@@ -145,6 +146,7 @@ internal static class GoldShopInvoiceMapper
 {
     public static GoldInvoiceListDto ToListItem(CloudGoldInvoice i) => new()
     {
+        Id = i.Id,
         SyncId = i.SyncId,
         InvoiceNumber = i.InvoiceNumber,
         InvoiceDate = i.InvoiceDate,
@@ -169,6 +171,7 @@ internal static class GoldShopInvoiceMapper
         var list = ToListItem(i);
         return new GoldInvoiceDetailDto
         {
+            Id = list.Id,
             SyncId = list.SyncId,
             InvoiceNumber = list.InvoiceNumber,
             InvoiceDate = list.InvoiceDate,
