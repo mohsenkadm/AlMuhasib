@@ -75,6 +75,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 Name = p.Name,
                 Barcode = p.Barcode,
                 ScientificName = p.ScientificName,
+                UsageInstructions = p.UsageInstructions,
                 CategorySyncId = p.Category.SyncId,
                 CategoryName = p.Category.Name
             })

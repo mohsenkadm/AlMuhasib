@@ -1,12 +1,26 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using AlMuhasib.UI.Helpers;
 
 namespace AlMuhasib.UI.Views;
 
 public partial class PosQuickSaleView : UserControl
 {
-    public PosQuickSaleView() => InitializeComponent();
+    public PosQuickSaleView()
+    {
+        InitializeComponent();
+        Loaded += OnLoadedAttachColumns;
+    }
+
+    private void OnLoadedAttachColumns(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoadedAttachColumns;
+        PosFeatureColumnSync.Attach(
+            this,
+            ColPosSize, ColPosColor, ColPosCustom1, ColPosCustom2,
+            ColPosUnit, ColPosBatch, ColPosSerial, ColPosPricing, ColPosDiscount);
+    }
 
     private void Root_Loaded(object sender, RoutedEventArgs e)
     {

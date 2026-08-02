@@ -6,16 +6,19 @@ using AlMuhasib.UI.ViewModels;
 namespace AlMuhasib.UI.Helpers;
 
 /// <summary>
-/// يزامن ظهور عمود الاسم العلمي — ربط Visibility على DataGridColumn غير موثوق في WPF.
+/// يزامن ظهور أعمدة الصيدلية — ربط Visibility على DataGridColumn غير موثوق في WPF.
 /// </summary>
 public static class ProductFeatureColumnSync
 {
-    public static void Attach(FrameworkElement host, DataGridColumn? scientificName)
+    public static void Attach(FrameworkElement host, DataGridColumn? scientificName, DataGridColumn? usageInstructions = null)
     {
         void SyncFromContext()
         {
             if (host.DataContext is ProductsViewModel products)
+            {
                 Set(scientificName, products.ShowScientificName);
+                Set(usageInstructions, products.ShowUsageInstructions);
+            }
         }
 
         void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -29,7 +32,9 @@ public static class ProductFeatureColumnSync
 
         void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(ProductsViewModel.ShowScientificName) or null)
+            if (e.PropertyName is nameof(ProductsViewModel.ShowScientificName)
+                or nameof(ProductsViewModel.ShowUsageInstructions)
+                or null)
                 SyncFromContext();
         }
 

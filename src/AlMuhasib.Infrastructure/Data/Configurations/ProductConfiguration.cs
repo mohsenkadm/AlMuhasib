@@ -23,6 +23,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.ScientificName)
             .HasMaxLength(300);
 
+        builder.Property(p => p.UsageInstructions)
+            .HasMaxLength(2000);
+
         builder.Property(p => p.Weight)
             .HasPrecision(18, 4);
 

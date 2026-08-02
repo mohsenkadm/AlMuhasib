@@ -113,6 +113,7 @@ public class CloudDbContext : DbContext
         modelBuilder.Entity<CloudProduct>(e =>
         {
             e.Property(x => x.ScientificName).HasMaxLength(300);
+            e.Property(x => x.UsageInstructions).HasMaxLength(2000);
         });
 
         modelBuilder.Entity<CloudProductPrice>(e =>

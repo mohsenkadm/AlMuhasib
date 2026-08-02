@@ -14,6 +14,7 @@ public sealed class ProductLookupItem : LookupItem
 {
     public string? Barcode { get; set; }
     public string? ScientificName { get; set; }
+    public string? UsageInstructions { get; set; }
     public Guid CategorySyncId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public List<ProductPriceLookupItem> Prices { get; set; } = [];

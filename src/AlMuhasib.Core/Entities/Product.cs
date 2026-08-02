@@ -12,6 +12,9 @@ public class Product : BaseEntity
     /// <summary>الاسم العلمي (للصيدليات). يظهر عند تفعيل قالب الصيدلية.</summary>
     public string? ScientificName { get; set; }
 
+    /// <summary>طريقة استخدام الدواء (للصيدليات). يظهر عند تفعيل قالب الصيدلية.</summary>
+    public string? UsageInstructions { get; set; }
+
     public int CategoryId { get; set; }
 
     /// <summary>وزن/حجم الوحدة الأساسية للمنتج (0 = غير محدد).</summary>

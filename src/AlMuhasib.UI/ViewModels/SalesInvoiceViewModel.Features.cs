@@ -45,6 +45,7 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showTransportFee;
     [ObservableProperty] private bool _showDriverSelection;
+    [ObservableProperty] private bool _showPharmacyUsage;
     [ObservableProperty] private decimal _transportFeeAmount;
 
     public ObservableCollection<Driver> Drivers { get; } = [];
@@ -98,6 +99,7 @@ public partial class SalesInvoiceViewModel
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowTransportFee = _featureFlags.TransportFees;
         ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
+        ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
 
         foreach (var row in Items)
         {

@@ -68,9 +68,9 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.35*"/>
+                <ColumnDefinition Width="1.1*"/>
                 <ColumnDefinition Width="12"/>
-                <ColumnDefinition Width="0.95*"/>
+                <ColumnDefinition Width="1.2*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Catalog (right in RTL = col 0) -->
@@ -285,9 +285,13 @@
                               IsReadOnly="False"
                               HeadersVisibility="Column"
                               Style="{StaticResource ModernDataGrid}"
-                              RowHeight="40">
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              FrozenColumnCount="1"
+                              RowHeight="44"
+                              MinRowHeight="44">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="" Width="44" MinWidth="44" MaxWidth="44" IsReadOnly="True"
+                                                    CanUserResize="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                                 </DataGridTemplateColumn.CellStyle>
@@ -300,18 +304,119 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
-                            <DataGridTemplateColumn Header="الكمية" Width="110">
+                            <DataGridTemplateColumn Header="المنتج" Width="*" MinWidth="120" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxHeight="40"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="{Binding DisplayName}"
+                                                   Margin="4,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosSize" Header="القياس" Width="70" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SizeName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosColor" Header="اللون" Width="88" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailableColors}"
+                                                  SelectedItem="{Binding SelectedColor, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="ColorName"
+                                                  IsEditable="False"
+                                                  FontSize="11"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosCustom1" Width="90" Visibility="Collapsed">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{Binding DataContext.CustomField1Header, Source={x:Reference VmProxy}}"/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding CustomField1, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="11" BorderThickness="0" Background="Transparent"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosCustom2" Width="90" Visibility="Collapsed">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{Binding DataContext.CustomField2Header, Source={x:Reference VmProxy}}"/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding CustomField2, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="11" BorderThickness="0" Background="Transparent"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosUnit" Header="التعبئة" Width="88" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailableUnits}"
+                                                  SelectedItem="{Binding SelectedUnit, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="UnitName"
+                                                  FontSize="11"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosBatch" Header="الدفعة" Width="110" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailableBatches}"
+                                                  SelectedItem="{Binding SelectedBatch, UpdateSourceTrigger=PropertyChanged}"
+                                                  FontSize="11">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock>
+                                                        <Run Text="{Binding BatchNumber, TargetNullValue=—}"/>
+                                                        <Run Text=" / "/>
+                                                        <Run Text="{Binding ExpiryDate, StringFormat=yyyy-MM-dd, TargetNullValue=—}"/>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosSerial" Header="سيريال" Width="100" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailableSerials}"
+                                                  Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                  IsEditable="True"
+                                                  FontSize="11"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColPosPricing" Header="التسعير" Width="100" Visibility="Collapsed">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailablePricingOptions}"
+                                                  SelectedItem="{Binding SelectedPricingOption, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="Display"
+                                                  FontSize="11"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="الكمية" Width="100" MinWidth="96">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="−" Width="28" Height="28" Padding="0"
+                                            <Button Content="−" Width="26" Height="26" Padding="0"
                                                     Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
-                                            <TextBlock Text="{Binding Quantity, StringFormat=N0}" Width="36" TextAlignment="Center"
+                                            <TextBlock Text="{Binding Quantity, StringFormat=N0}" Width="32" TextAlignment="Center"
                                                        VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                            <Button Content="+" Width="28" Height="28" Padding="0"
+                                            <Button Content="+" Width="26" Height="26" Padding="0"
                                                     Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
@@ -319,10 +424,10 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="72"/>
-                            <DataGridTextColumn Header="الخصم" Binding="{Binding DiscountAmount, StringFormat=N0}" Width="64" IsReadOnly="True"
-                                                Visibility="{Binding DataContext.ShowProductDiscount, Source={x:Reference VmProxy}, Converter={StaticResource BoolVis}}"/>
-                            <DataGridTextColumn Header="المجموع" Binding="{Binding LineTotal, StringFormat=N0}" Width="78" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="68" MinWidth="60"/>
+                            <DataGridTextColumn x:Name="ColPosDiscount" Header="الخصم" Binding="{Binding DiscountAmount, StringFormat=N0}" Width="56" IsReadOnly="True"
+                                                Visibility="Collapsed"/>
+                            <DataGridTextColumn Header="المجموع" Binding="{Binding LineTotal, StringFormat=N0}" Width="72" MinWidth="64" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -362,6 +467,24 @@
                                 </Grid>
                             </StackPanel>
 
+                            <TextBlock Text="{Binding InvoiceWeightSummaryText}" Margin="0,8,0,0"
+                                       FontSize="12" Foreground="#546E7A"
+                                       Visibility="{Binding ShowMenuWeight, Converter={StaticResource BoolVis}}"/>
+
+                            <TextBox Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="أجور النقل"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Margin="0,8,0,0"
+                                     Visibility="{Binding ShowTransportFee, Converter={StaticResource BoolVis}}"/>
+
+                            <ComboBox ItemsSource="{Binding Drivers}"
+                                      SelectedItem="{Binding SelectedDriver}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="السائق"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      Margin="0,8,0,0"
+                                      Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolVis}}"/>
+
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -378,6 +501,7 @@
                     <!-- Bottom actions -->
                     <Grid Grid.Row="4" Margin="0,12,0,0">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
@@ -417,6 +541,17 @@
                             <CheckBox Grid.Column="2" Content="طباعة تلقائية" IsChecked="{Binding PrintAfterSale}"
                                       VerticalAlignment="Center" Margin="4,0,0,0" FontSize="11"/>
                         </Grid>
+                        <Button Grid.Row="2" Command="{Binding PrintPharmacyReceiptCommand}"
+                                Style="{StaticResource OutlinedButton}" Height="40" Margin="0,8,0,0"
+                                materialDesign:ButtonAssist.CornerRadius="10"
+                                BorderBrush="#2E7D32" Foreground="#2E7D32"
+                                Visibility="{Binding ShowPharmacy, Converter={StaticResource BoolVis}}"
+                                ToolTip="طباعة إيصال صيدلية يتضمن طريقة الاستخدام (80/58 حسب إعداد الطباعة)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Pill" Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="طباعة صيدلية (طريقة الاستخدام)" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </Grid>
             </Border>

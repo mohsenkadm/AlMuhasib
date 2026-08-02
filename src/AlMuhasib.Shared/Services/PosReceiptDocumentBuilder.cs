@@ -59,9 +59,13 @@ public static class PosReceiptDocumentBuilder
         var i = 1;
         foreach (var item in model.Items)
         {
+            var name = item.ItemName;
+            if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
+                name = $"{name}\nطريقة الاستخدام: {item.UsageInstructions.Trim()}";
+
             group.Rows.Add(BodyRow(
                 i.ToString(CultureInfo.InvariantCulture),
-                item.ItemName,
+                name,
                 FormatQty(item.Quantity),
                 FormatMoney(item.UnitPrice),
                 FormatMoney(item.TotalPrice)));
@@ -116,6 +120,9 @@ public static class PosReceiptDocumentBuilder
         doc.Blocks.Add(MetaParagraph($"{model.PartyLabel}: {model.PartyName}", fontSize - 0.5));
         doc.Blocks.Add(DashedLine());
 
+        if (model.PharmacyUsageReceipt)
+            doc.Blocks.Add(CenteredParagraph("وصفة / طريقة الاستخدام", fontSize, FontWeights.SemiBold));
+
         foreach (var item in model.Items)
         {
             doc.Blocks.Add(new Paragraph(new Run(item.ItemName))
@@ -127,10 +134,29 @@ public static class PosReceiptDocumentBuilder
             doc.Blocks.Add(new Paragraph(new Run(
                 $"{FormatQty(item.Quantity)} × {FormatMoney(item.UnitPrice)} = {FormatMoney(item.TotalPrice)}"))
             {
-                Margin = new Thickness(0, 0, 0, 2),
+                Margin = new Thickness(0, 0, 0, model.PharmacyUsageReceipt ? 0 : 2),
                 FontSize = fontSize - 0.5,
                 Foreground = MutedBrush
             });
+
+            if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
+            {
+                doc.Blocks.Add(new Paragraph(new Run($"طريقة الاستخدام: {item.UsageInstructions.Trim()}"))
+                {
+                    Margin = new Thickness(0, 0, 0, 4),
+                    FontSize = fontSize - 0.5,
+                    FontWeight = FontWeights.Normal
+                });
+            }
+            else if (model.PharmacyUsageReceipt)
+            {
+                doc.Blocks.Add(new Paragraph(new Run("طريقة الاستخدام: —"))
+                {
+                    Margin = new Thickness(0, 0, 0, 4),
+                    FontSize = fontSize - 0.5,
+                    Foreground = MutedBrush
+                });
+            }
         }
 
         doc.Blocks.Add(DashedLine());

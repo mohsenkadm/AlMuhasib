@@ -1005,15 +1005,26 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
-            Items = _savedItems.Select((item, i) => new InvoicePrintItem
+            Items = _savedItems.Select((item, i) =>
             {
-                Number = i + 1,
-                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                var usage = ShowPharmacyUsage
+                    ? Items.FirstOrDefault(r => r.ProductId == item.ProductId)?.UsageInstructions
+                    : null;
+                var displayName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
                     item.ItemName,
-                    item.CustomFieldsJson),
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                    item.CustomFieldsJson);
+                if (!string.IsNullOrWhiteSpace(usage))
+                    displayName = $"{displayName}\nطريقة الاستخدام: {usage}";
+
+                return new InvoicePrintItem
+                {
+                    Number = i + 1,
+                    UsageInstructions = usage,
+                    ItemName = displayName,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice
+                };
             }).ToList()
         };
     }

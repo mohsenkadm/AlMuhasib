@@ -222,6 +222,10 @@ public partial class InvoiceItemRow : ObservableObject
             CustomField2Label = "اللون";
     }
 
+    /// <summary>طريقة استخدام الدواء من بطاقة المنتج (قالب الصيدلية).</summary>
+    [ObservableProperty]
+    private string _usageInstructions = string.Empty;
+
     // ── خصم المنتج ─────────────────────────────────────────
     [ObservableProperty]
     private decimal _discountAmount;
@@ -239,11 +243,13 @@ public partial class InvoiceItemRow : ObservableObject
             ItemName = value.Name;
             ProductWeight = value.Weight;
             ProductWeightUnit = value.WeightUnit ?? string.Empty;
+            UsageInstructions = value.UsageInstructions ?? string.Empty;
         }
         else
         {
             ProductWeight = 0m;
             ProductWeightUnit = string.Empty;
+            UsageInstructions = string.Empty;
             DiscountAmount = 0m;
         }
 

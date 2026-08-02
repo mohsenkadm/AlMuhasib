@@ -81,7 +81,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         ISoundService sound,
         IProductPriceService productPriceService,
         IProductBatchService productBatchService,
-        IFeatureFlagService featureFlags)
+        IFeatureFlagService featureFlags,
+        IProductUnitService productUnitService,
+        IProductSerialService productSerialService,
+        IProductSizeService productSizeService,
+        IProductColorService productColorService)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -95,9 +99,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _featureFlags = featureFlags;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
-        ShowProductDiscount = featureFlags.ProductDiscountEnabled;
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
-        featureFlags.FlagsChanged += (_, _) => FeatureUiRefresh.Invoke(RefreshDiscountFeature);
+        ConfigurePosFeatureServices(
+            productUnitService, productSerialService, productSizeService, productColorService);
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -107,26 +111,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             _searchDebounce.Stop();
             RefreshFilteredProducts();
         };
-    }
-
-    private void RefreshDiscountFeature()
-    {
-        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
-        foreach (var line in CartLines)
-        {
-            line.ProductDiscountFeatureEnabled = ShowProductDiscount;
-            line.RefreshProductDiscount();
-        }
-
-        if (!ShowProductDiscount)
-        {
-            InvoiceDiscountType = DiscountType.None;
-            InvoiceDiscountValue = 0m;
-            InvoiceDiscountAmount = 0m;
-            SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
-        }
-
-        RecalcCartTotals();
     }
 
     partial void OnSelectedInvoiceDiscountOptionChanged(DiscountTypeOption? value)
@@ -174,6 +158,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             await LoadPosCustomersAsync();
             await LoadHeldInvoicesAsync();
+            await LoadDriversIfNeededAsync();
 
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
@@ -207,7 +192,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     partial void OnPaidAmountChanged(decimal value) => RecalcChange();
 
     [RelayCommand]
-    private void AddProductFromSearch()
+    private async Task AddProductFromSearch()
     {
         var term = SearchText.Trim();
         if (string.IsNullOrEmpty(term))
@@ -220,7 +205,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (barcodeMatch is not null)
         {
             _sound.Play(SoundEffect.Scan);
-            AddOrIncrementProduct(barcodeMatch);
+            await AddOrIncrementProductAsync(barcodeMatch);
             SearchText = string.Empty;
             return;
         }
@@ -228,7 +213,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         var first = FilteredProducts.FirstOrDefault();
         if (first is not null)
         {
-            AddOrIncrementProduct(first.Product);
+            await AddOrIncrementProductAsync(first.Product);
             SearchText = string.Empty;
         }
         else
@@ -236,10 +221,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AddProduct(PosProductTile? tile)
+    private async Task AddProduct(PosProductTile? tile)
     {
         if (tile?.Product is null) return;
-        AddOrIncrementProduct(tile.Product);
+        await AddOrIncrementProductAsync(tile.Product);
     }
 
     [RelayCommand]
@@ -247,6 +232,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     {
         if (line is null) return;
         CartLines.Remove(line);
+        RefreshInvoiceWeightSummary();
     }
 
     [RelayCommand]
@@ -463,28 +449,57 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == line.ProductId);
             var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-            if (line.Quantity > available)
+            var needed = line.StockQuantity;
+            if (needed > available)
             {
                 BeautifulMessageDialog.ShowWarning(
-                    $"الكمية من «{line.ProductName}» ({line.Quantity:N0}) تتجاوز الرصيد ({available:N0})");
+                    $"الكمية من «{line.ProductName}» ({needed:N0}) تتجاوز الرصيد ({available:N0})");
                 return;
             }
         }
 
-        if (_featureFlags.ExpiryTracking)
+        if (ShowExpiryTracking)
         {
             foreach (var line in CartLines)
             {
+                if (line.BatchId is int batchId)
+                {
+                    var batch = line.AvailableBatches.FirstOrDefault(b => b.Id == batchId);
+                    if (batch is not null && batch.Quantity < line.StockQuantity)
+                    {
+                        BeautifulMessageDialog.ShowWarning(
+                            $"«{line.ProductName}»: كمية الدفعة غير كافية");
+                        return;
+                    }
+                    continue;
+                }
+
                 try
                 {
                     await _productBatchService.AllocateFefoAsync(
-                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
+                        line.ProductId, SelectedWarehouse.Id, line.StockQuantity);
                 }
                 catch (InvalidOperationException ex)
                 {
                     BeautifulMessageDialog.ShowWarning($"«{line.ProductName}»: {ex.Message}");
                     return;
                 }
+            }
+        }
+
+        if (ShowSerialNumbers)
+        {
+            foreach (var line in CartLines.Where(l => string.IsNullOrWhiteSpace(l.SerialNumber) == false))
+            {
+                // ok — serial optional unless product has available serials and none selected
+            }
+
+            var missingSerial = CartLines.FirstOrDefault(l =>
+                l.AvailableSerials.Count > 0 && string.IsNullOrWhiteSpace(l.SerialNumber));
+            if (missingSerial is not null)
+            {
+                BeautifulMessageDialog.ShowWarning($"اختر سيريال لـ «{missingSerial.ProductName}»");
+                return;
             }
         }
 
@@ -512,6 +527,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 CashBoxId = SelectedCashBox.Id,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
+                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 PaidAmount = isCredit ? paidSnapshot : GrandTotal,
                 CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
                 Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
@@ -525,21 +542,14 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
                 DiscountAmount = ShowProductDiscount ? line.DiscountAmount : 0m,
-                TotalPrice = line.LineTotal
+                TotalPrice = line.LineTotal,
+                CustomFieldsJson = line.ToCustomFieldsJson()
             }).ToList();
 
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);
             LastSavedInvoiceNumber = saved.InvoiceNumber;
 
-            if (_featureFlags.ExpiryTracking && SelectedWarehouse is not null)
-            {
-                foreach (var line in cartSnapshot)
-                {
-                    var allocations = await _productBatchService.AllocateFefoAsync(
-                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
-                    await _productBatchService.DeductAllocationsAsync(allocations);
-                }
-            }
+            await ApplyPosFeatureSideEffectsOnSaveAsync(cartSnapshot, items);
 
             _recentActivity.Record(
                 "بيع سريع",
@@ -558,7 +568,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             {
                 try
                 {
-                    PrintReceiptForInvoice(saved, cartSnapshot, totalSnapshot);
+                    PrintReceiptForInvoice(saved, cartSnapshot, totalSnapshot, pharmacyUsage: ShowPharmacy);
                 }
                 catch (Exception printEx)
                 {
@@ -581,29 +591,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         {
             IsBusy = false;
         }
-    }
-
-    private void AddOrIncrementProduct(Product product)
-    {
-        var price = _suggestedPrices.GetValueOrDefault(product.Id);
-        int? pricingTypeId = _defaultPricingTypeByProduct.TryGetValue(product.Id, out var tid) ? tid : null;
-        if (price <= 0)
-        {
-            BeautifulMessageDialog.ShowWarning($"لا يوجد سعر سابق لـ «{product.Name}» — أدخل السعر من السلة");
-            price = 0;
-        }
-
-        var existing = CartLines.FirstOrDefault(l => l.ProductId == product.Id && l.PricingTypeId == pricingTypeId);
-        if (existing is not null)
-        {
-            existing.Quantity += 1;
-            StatusMessage = $"زيادة كمية {product.Name}";
-            return;
-        }
-
-        CartLines.Add(PosCartLine.FromProduct(
-            product, price, 1m, pricingTypeId, ShowProductDiscount));
-        StatusMessage = $"أُضيف {product.Name}";
     }
 
     private void RefreshFilteredProducts()
@@ -690,9 +677,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         else
             InvoiceDiscountAmount = 0m;
 
-        var net = Math.Max(0m, SubTotal - InvoiceDiscountAmount);
+        var transport = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m;
+        var net = Math.Max(0m, SubTotal - InvoiceDiscountAmount) + transport;
         GrandTotal = net;
         CartLineCount = CartLines.Count;
+        RefreshInvoiceWeightSummary();
         RecalcChange();
     }
 
