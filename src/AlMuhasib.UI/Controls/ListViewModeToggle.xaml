@@ -21,7 +21,6 @@
 
         <StackPanel Orientation="Horizontal">
             <RadioButton x:Name="TableButton"
-                         GroupName="ListViewMode"
                          IsChecked="{Binding IsCardView, Converter={StaticResource InverseBooleanConverter}}"
                          ToolTip="عرض جدول"
                          Cursor="Hand"
@@ -71,7 +70,6 @@
             </RadioButton>
 
             <RadioButton x:Name="CardButton"
-                         GroupName="ListViewMode"
                          IsChecked="{Binding IsCardView}"
                          ToolTip="عرض بطاقات"
                          Cursor="Hand"
