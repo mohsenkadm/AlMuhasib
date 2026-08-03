@@ -41,7 +41,12 @@ public partial class ProductPickerDisplayItem : ObservableObject
     private string _stockLabel = string.Empty;
 
     [ObservableProperty]
+    private string _searchTerm = string.Empty;
+
+    [ObservableProperty]
     private bool _pricingEnabled;
+
+    public ObservableCollection<WarehouseStockChip> WarehouseStocks { get; } = [];
 
     public ObservableCollection<ProductPricingOption> PricingOptions { get; } = [];
 
@@ -75,6 +80,7 @@ public partial class ProductPickerViewModel : ObservableObject
     private List<Category> _categories = [];
     private Dictionary<int, string> _categoryNames = [];
     private Dictionary<int, decimal> _stockByProduct = [];
+    private Dictionary<int, List<WarehouseStockChip>> _stocksByProduct = [];
     private Dictionary<int, decimal> _suggestedPrices = [];
     private Dictionary<int, List<ProductPricingOption>> _pricesByProduct = [];
     private int? _warehouseId;
@@ -265,12 +271,24 @@ public partial class ProductPickerViewModel : ObservableObject
     private async Task LoadStockAsync()
     {
         _stockByProduct.Clear();
+        _stocksByProduct.Clear();
+        var warehouses = (await _unitOfWork.Warehouses.GetAllAsync())
+            .ToDictionary(w => w.Id, w => w.Name);
         var stocks = await _unitOfWork.WarehouseStocks.FindAsync(_ => true);
         foreach (var group in stocks.GroupBy(s => s.ProductId))
         {
             _stockByProduct[group.Key] = _warehouseId is int wid
                 ? group.Where(s => s.WarehouseId == wid).Sum(s => s.Quantity)
                 : group.Sum(s => s.Quantity);
+
+            _stocksByProduct[group.Key] = group
+                .OrderBy(s => warehouses.GetValueOrDefault(s.WarehouseId, string.Empty))
+                .Select(s => new WarehouseStockChip
+                {
+                    WarehouseName = warehouses.GetValueOrDefault(s.WarehouseId, $"مخزن {s.WarehouseId}"),
+                    Quantity = s.Quantity
+                })
+                .ToList();
         }
     }
 
@@ -350,8 +368,15 @@ public partial class ProductPickerViewModel : ObservableObject
             {
                 Quantity = _quantities.GetValueOrDefault(product.Id),
                 StockLabel = FormatStock(product.Id),
-                PricingEnabled = _pricingEnabled
+                PricingEnabled = _pricingEnabled,
+                SearchTerm = term
             };
+
+            if (_stocksByProduct.TryGetValue(product.Id, out var chips))
+            {
+                foreach (var chip in chips)
+                    item.WarehouseStocks.Add(chip);
+            }
 
             if (_pricesByProduct.TryGetValue(product.Id, out var options))
             {

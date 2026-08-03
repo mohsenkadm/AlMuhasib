@@ -16,7 +16,7 @@ using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class SalesInvoiceViewModel : ViewModelBase
+public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchHost
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IUnitOfWork _unitOfWork;
@@ -74,6 +74,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
     public ObservableCollection<Product> Products { get; } = [];
 
     public ProductPickerViewModel ProductPicker { get; }
+    public ProductQuickSearchCatalog QuickSearchCatalog { get; }
 
     [ObservableProperty]
     private bool _isProductPickerOpen;
@@ -205,6 +206,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
+        QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
 
         Items.CollectionChanged += OnItemsCollectionChanged;
         ConfigureFeatureServices(
@@ -338,6 +340,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase
             Products.Clear();
             foreach (var p in products)
                 Products.Add(p);
+
+            await QuickSearchCatalog.LoadAsync(
+                Products,
+                InvoicePickerMode.Sale,
+                ShowProductPricing);
 
             AddRow();
 
@@ -498,6 +505,42 @@ public partial class SalesInvoiceViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"تعذر فتح اختيار المنتجات:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckProfitAsync()
+    {
+        var productRows = Items
+            .Where(i => i.ProductId is > 0 && !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0)
+            .ToList();
+        if (productRows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("أضف مواد إلى الفاتورة أولاً ثم افحص الربح.");
+            return;
+        }
+
+        try
+        {
+            var vm = new InvoiceProfitCheckViewModel(
+                _unitOfWork,
+                _productPriceService,
+                ShowProductPricing,
+                ShowProductDiscount);
+            await vm.LoadAsync(productRows, InvoiceDiscountType, InvoiceDiscountValue);
+
+            var owner = Application.Current.MainWindow;
+            var result = InvoiceProfitCheckDialog.Show(owner, vm);
+            if (result == true && ShowProductDiscount)
+            {
+                InvoiceDiscountType = vm.DiscountType;
+                InvoiceDiscountValue = vm.DiscountValue;
+                RecalculateTotals();
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر فحص ربح الفاتورة:\n{ex.Message}");
         }
     }
 

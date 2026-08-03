@@ -14,7 +14,7 @@ using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class PurchaseInvoiceViewModel : ViewModelBase
+public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSearchHost
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IUnitOfWork _unitOfWork;
@@ -65,6 +65,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
     public ObservableCollection<Product> Products { get; } = [];
 
     public ProductPickerViewModel ProductPicker { get; }
+    public ProductQuickSearchCatalog QuickSearchCatalog { get; }
 
     [ObservableProperty]
     private bool _isProductPickerOpen;
@@ -148,6 +149,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
+        QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
 
         Items.CollectionChanged += OnItemsCollectionChanged;
         ConfigureFeatureServices(
@@ -198,6 +200,11 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase
             Products.Clear();
             foreach (var p in products)
                 Products.Add(p);
+
+            await QuickSearchCatalog.LoadAsync(
+                Products,
+                InvoicePickerMode.Purchase,
+                _userPreferences.Current.FeatureFlags.ProductPricingEnabled);
 
             // Start with one empty row
             AddRow();
