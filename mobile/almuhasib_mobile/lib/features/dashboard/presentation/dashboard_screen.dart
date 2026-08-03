@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
@@ -220,6 +219,20 @@ class _DashboardBody extends StatelessWidget {
               color: AppColors.accent,
               compact: true,
             ),
+            AppKpiItem(
+              title: 'inventory_value'.tr(),
+              value: formatCurrency(data.totalInventoryValue),
+              icon: Icons.warehouse_outlined,
+              color: AppColors.moduleGreen,
+              compact: true,
+            ),
+            AppKpiItem(
+              title: 'bank_balance'.tr(),
+              value: formatCurrency(data.bankBalance),
+              icon: Icons.account_balance_outlined,
+              color: AppColors.moduleIndigo,
+              compact: true,
+            ),
           ],
         ).fadeSlideIn(delayMs: 120),
         const SizedBox(height: 22),
@@ -231,8 +244,45 @@ class _DashboardBody extends StatelessWidget {
         AppChartCard(
           title: 'sales_last_30_days'.tr(),
           height: 200,
-          child: _SalesChart(points: data.salesLast30Days),
+          child: AppLineChart(
+            values: data.salesLast30Days.map((e) => e.amount).toList(),
+            labels: data.salesLast30Days
+                .map((e) => shortDateFormat.format(e.date))
+                .toList(),
+            color: AppColors.primary,
+          ),
         ).fadeSlideIn(delayMs: 160),
+        if (data.cashBoxes.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          _SectionHeader(
+            title: 'cash_boxes'.tr(),
+            subtitle:
+                '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}',
+          ).fadeSlideIn(delayMs: 170),
+          const SizedBox(height: 10),
+          AppChartCard(
+            title: 'cash_distribution'.tr(),
+            height: 180,
+            child: AppDonutChart(
+              sections: data.cashBoxes
+                  .where((c) => c.balance > 0)
+                  .toList()
+                  .asMap()
+                  .entries
+                  .map(
+                    (e) => (
+                      e.value.name,
+                      e.value.balance,
+                      _chartPalette[e.key % _chartPalette.length],
+                    ),
+                  )
+                  .toList(),
+              centerLabel: 'cash_total'.tr(),
+              centerValue: formatCurrency(_totalCash),
+              valueAsCurrency: true,
+            ),
+          ).fadeSlideIn(delayMs: 180),
+        ],
         if (expenseSections.isNotEmpty) ...[
           const SizedBox(height: 22),
           _SectionHeader(
@@ -354,7 +404,7 @@ class _DashboardBody extends StatelessWidget {
         if (data.cashBoxes.isNotEmpty) ...[
           const SizedBox(height: 14),
           _SectionHeader(
-            title: 'cash_boxes'.tr(),
+            title: 'cash_box_balances'.tr(),
             subtitle:
                 '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}',
           ),
@@ -674,118 +724,6 @@ class _IconBadge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: color, size: 22),
-    );
-  }
-}
-
-class _SalesChart extends StatelessWidget {
-  const _SalesChart({required this.points});
-
-  final List<DailySalesPoint> points;
-
-  @override
-  Widget build(BuildContext context) {
-    if (points.isEmpty) {
-      return Center(child: Text('no_data'.tr()));
-    }
-
-    final spots = points.asMap().entries.map((e) {
-      return FlSpot(e.key.toDouble(), e.value.amount);
-    }).toList();
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (v) => FlLine(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
-            strokeWidth: 1,
-          ),
-        ),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(),
-          rightTitles: const AxisTitles(),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 42,
-              getTitlesWidget: (value, _) => Text(
-                value >= 1000
-                    ? '${(value / 1000).toStringAsFixed(0)}k'
-                    : '${value.toInt()}',
-                style: const TextStyle(fontSize: 10),
-              ),
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: (points.length / 4).clamp(1, 7).toDouble(),
-              getTitlesWidget: (value, _) {
-                final index = value.toInt();
-                if (index < 0 || index >= points.length) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    shortDateFormat.format(points[index].date),
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: AppColors.primary,
-            barWidth: 3.5,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                radius: 3.5,
-                color: Colors.white,
-                strokeWidth: 2.5,
-                strokeColor: AppColors.primary,
-              ),
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.28),
-                  AppColors.primary.withValues(alpha: 0.02),
-                ],
-              ),
-            ),
-          ),
-        ],
-        lineTouchData: LineTouchData(
-          handleBuiltInTouches: true,
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (touched) => touched
-                .map(
-                  (spot) => LineTooltipItem(
-                    formatCurrency(spot.y),
-                    const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ),
     );
   }
 }

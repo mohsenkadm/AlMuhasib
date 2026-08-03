@@ -1,9 +1,36 @@
+class ChartPoint {
+  ChartPoint({required this.label, required this.amount});
+
+  factory ChartPoint.fromJson(Map<String, dynamic> json) {
+    final dateRaw = json['date'];
+    String label;
+    if (dateRaw is String && dateRaw.isNotEmpty) {
+      final parsed = DateTime.tryParse(dateRaw);
+      label = parsed != null
+          ? '${parsed.month.toString().padLeft(2, '0')}/${parsed.day.toString().padLeft(2, '0')}'
+          : dateRaw;
+    } else {
+      label = json['name'] as String? ?? json['label'] as String? ?? '';
+    }
+    return ChartPoint(label: label, amount: _num(json['amount']));
+  }
+
+  final String label;
+  final double amount;
+}
+
 class SalesReportResult {
   SalesReportResult({
     required this.totalSales,
     required this.invoiceCount,
     required this.averageInvoice,
     required this.rows,
+    this.cashSales = 0,
+    this.creditSales = 0,
+    this.installmentSales = 0,
+    this.todaySales = 0,
+    this.totalCompanyFees = 0,
+    this.dailyChart = const [],
   });
 
   factory SalesReportResult.fromJson(Map<String, dynamic> json) {
@@ -11,6 +38,14 @@ class SalesReportResult {
       totalSales: _num(json['totalSales']),
       invoiceCount: json['invoiceCount'] as int? ?? 0,
       averageInvoice: _num(json['averageInvoice']),
+      cashSales: _num(json['cashSales']),
+      creditSales: _num(json['creditSales']),
+      installmentSales: _num(json['installmentSales']),
+      todaySales: _num(json['todaySales']),
+      totalCompanyFees: _num(json['totalCompanyFees']),
+      dailyChart: (json['dailyChart'] as List<dynamic>? ?? [])
+          .map((e) => ChartPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
       rows: (json['rows'] as List<dynamic>? ?? [])
           .map((e) => SalesReportRow.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -20,6 +55,12 @@ class SalesReportResult {
   final double totalSales;
   final int invoiceCount;
   final double averageInvoice;
+  final double cashSales;
+  final double creditSales;
+  final double installmentSales;
+  final double todaySales;
+  final double totalCompanyFees;
+  final List<ChartPoint> dailyChart;
   final List<SalesReportRow> rows;
 }
 
@@ -29,6 +70,9 @@ class SalesReportRow {
     required this.date,
     required this.customerName,
     required this.netAmount,
+    this.paymentMethod = '',
+    this.paidAmount = 0,
+    this.remainingAmount = 0,
   });
 
   factory SalesReportRow.fromJson(Map<String, dynamic> json) {
@@ -37,6 +81,9 @@ class SalesReportRow {
       date: DateTime.parse(json['date'] as String),
       customerName: json['customerName'] as String? ?? '',
       netAmount: _num(json['netAmount']),
+      paymentMethod: json['paymentMethod'] as String? ?? '',
+      paidAmount: _num(json['paidAmount']),
+      remainingAmount: _num(json['remainingAmount']),
     );
   }
 
@@ -44,6 +91,9 @@ class SalesReportRow {
   final DateTime date;
   final String customerName;
   final double netAmount;
+  final String paymentMethod;
+  final double paidAmount;
+  final double remainingAmount;
 }
 
 class PurchasesReportResult {
@@ -51,12 +101,24 @@ class PurchasesReportResult {
     required this.totalPurchases,
     required this.invoiceCount,
     required this.rows,
+    this.averageInvoice = 0,
+    this.todayPurchases = 0,
+    this.dailyChart = const [],
+    this.bySupplierChart = const [],
   });
 
   factory PurchasesReportResult.fromJson(Map<String, dynamic> json) {
     return PurchasesReportResult(
       totalPurchases: _num(json['totalPurchases']),
       invoiceCount: json['invoiceCount'] as int? ?? 0,
+      averageInvoice: _num(json['averageInvoice']),
+      todayPurchases: _num(json['todayPurchases']),
+      dailyChart: (json['dailyChart'] as List<dynamic>? ?? [])
+          .map((e) => ChartPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      bySupplierChart: (json['bySupplierChart'] as List<dynamic>? ?? [])
+          .map((e) => ChartPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
       rows: (json['rows'] as List<dynamic>? ?? [])
           .map((e) => PurchasesReportRow.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -65,6 +127,10 @@ class PurchasesReportResult {
 
   final double totalPurchases;
   final int invoiceCount;
+  final double averageInvoice;
+  final double todayPurchases;
+  final List<ChartPoint> dailyChart;
+  final List<ChartPoint> bySupplierChart;
   final List<PurchasesReportRow> rows;
 }
 

@@ -7,6 +7,7 @@ import '../../../core/getx/app_services.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../shared/models/mobile_models.dart';
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../../operations/presentation/forms/finance/finance_entity_forms.dart';
 
@@ -132,31 +133,33 @@ class FinanceListScreen extends GetView<FinanceListController> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (controller.error.value != null) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppExceptionHandler.messageFor(controller.error.value)),
-                      TextButton(
-                        onPressed: controller.load,
-                        child: Text('retry'.tr()),
-                      ),
-                    ],
-                  ),
+                return ErrorStateWidget(
+                  message: AppExceptionHandler.messageFor(controller.error.value),
+                  onRetry: controller.load,
                 );
               }
               if (controller.items.isEmpty) {
-                return Center(child: Text('no_data'.tr()));
+                return Center(
+                  child: EmptyStateWidget(
+                    onRetry: controller.load,
+                  ),
+                );
               }
+              final items = controller.items.toList(growable: false);
               return RefreshIndicator(
                 onRefresh: controller.load,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                  itemCount: controller.items.length,
+                  itemCount: items.length + 1,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final item = controller.items[index];
-                    return _buildTile(item);
+                    if (index == 0) {
+                      return _FinanceStatsHeader(
+                        listType: listType,
+                        items: items,
+                      );
+                    }
+                    return _buildTile(items[index - 1]);
                   },
                 ),
               );
@@ -226,5 +229,141 @@ class FinanceListScreen extends GetView<FinanceListController> {
       );
     }
     return const SizedBox.shrink();
+  }
+}
+
+class _FinanceStatsHeader extends StatelessWidget {
+  const _FinanceStatsHeader({required this.listType, required this.items});
+
+  final String listType;
+  final List<dynamic> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = items.length;
+    switch (listType) {
+      case 'vouchers':
+        final total = items
+            .whereType<VoucherListItem>()
+            .fold<double>(0, (s, e) => s + e.amount);
+        return PageStatsHeader(
+          heroTitle: 'vouchers'.tr(),
+          heroValue: formatCurrency(total),
+          heroSubtitle: '$count ${'records_count'.tr()}',
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.receipt_long_rounded,
+              color: AppColors.primary,
+            ),
+            StatsChipData(
+              label: 'sum_amount'.tr(),
+              value: formatCurrency(total),
+              icon: Icons.payments_outlined,
+              color: AppColors.moduleGreen,
+            ),
+          ],
+        );
+      case 'expenses':
+        final total = items
+            .whereType<ExpenseListItem>()
+            .fold<double>(0, (s, e) => s + e.amount);
+        return PageStatsHeader(
+          heroTitle: 'expenses'.tr(),
+          heroValue: formatCurrency(total),
+          heroSubtitle: '$count ${'records_count'.tr()}',
+          trendPositive: false,
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.money_off_outlined,
+              color: AppColors.error,
+            ),
+            StatsChipData(
+              label: 'sum_amount'.tr(),
+              value: formatCurrency(total),
+              icon: Icons.payments_outlined,
+              color: AppColors.moduleOrange,
+            ),
+          ],
+        );
+      case 'transfers':
+        final total = items
+            .whereType<TransferListItem>()
+            .fold<double>(0, (s, e) => s + e.amount);
+        return PageStatsHeader(
+          heroTitle: 'transfers'.tr(),
+          heroValue: formatCurrency(total),
+          heroSubtitle: '$count ${'records_count'.tr()}',
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.swap_horiz_rounded,
+              color: AppColors.moduleCyan,
+            ),
+            StatsChipData(
+              label: 'sum_amount'.tr(),
+              value: formatCurrency(total),
+              icon: Icons.payments_outlined,
+              color: AppColors.primary,
+            ),
+          ],
+        );
+      case 'warehouse-stocks':
+        final qty = items
+            .whereType<WarehouseStockListItem>()
+            .fold<double>(0, (s, e) => s + e.quantity);
+        return PageStatsHeader(
+          heroTitle: 'warehouse_stocks'.tr(),
+          heroValue: qty.toStringAsFixed(0),
+          heroSubtitle: '$count ${'products'.tr()}',
+          stats: [
+            StatsChipData(
+              label: 'products'.tr(),
+              value: '$count',
+              icon: Icons.inventory_2_outlined,
+              color: AppColors.moduleGreen,
+            ),
+            StatsChipData(
+              label: 'quantity'.tr(),
+              value: qty.toStringAsFixed(0),
+              icon: Icons.numbers_rounded,
+              color: AppColors.primary,
+            ),
+          ],
+        );
+      case 'warehouse-transfers':
+        final lines = items
+            .whereType<WarehouseTransferListItem>()
+            .fold<int>(0, (s, e) => s + e.items.length);
+        return PageStatsHeader(
+          heroTitle: 'warehouse_transfers'.tr(),
+          heroValue: '$count',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.move_up_rounded,
+              color: AppColors.moduleIndigo,
+            ),
+            StatsChipData(
+              label: 'lines_count'.tr(),
+              value: '$lines',
+              icon: Icons.list_alt_rounded,
+              color: AppColors.primary,
+            ),
+          ],
+        );
+      default:
+        return PageStatsHeader(
+          heroTitle: 'data_title'.tr(),
+          heroValue: '$count',
+          heroSubtitle: 'records_count'.tr(),
+        );
+    }
   }
 }

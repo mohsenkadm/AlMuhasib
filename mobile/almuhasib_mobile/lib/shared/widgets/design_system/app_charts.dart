@@ -414,6 +414,133 @@ class AppDonutChart extends StatelessWidget {
   }
 }
 
+class AppLineChart extends StatelessWidget {
+  const AppLineChart({
+    super.key,
+    required this.values,
+    this.labels = const [],
+    this.color = AppColors.primary,
+    this.valueAsCurrency = true,
+  });
+
+  final List<double> values;
+  final List<String> labels;
+  final Color color;
+  final bool valueAsCurrency;
+
+  @override
+  Widget build(BuildContext context) {
+    if (values.isEmpty || values.every((v) => v == 0)) {
+      return Center(child: Text('no_data'.tr()));
+    }
+
+    final spots = [
+      for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i]),
+    ];
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (v) => FlLine(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
+            strokeWidth: 1,
+          ),
+        ),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(),
+          rightTitles: const AxisTitles(),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 42,
+              getTitlesWidget: (value, _) => Text(
+                _compact(value),
+                style: const TextStyle(fontSize: 10),
+              ),
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: labels.isNotEmpty,
+              interval: (values.length / 4).clamp(1, 7).toDouble(),
+              getTitlesWidget: (value, _) {
+                final index = value.toInt();
+                if (index < 0 || index >= labels.length) {
+                  return const SizedBox.shrink();
+                }
+                final label = labels[index];
+                final short =
+                    label.length > 8 ? label.substring(label.length - 5) : label;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(short, style: const TextStyle(fontSize: 10)),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: color,
+            barWidth: 3.5,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: values.length <= 16,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 3.5,
+                color: Colors.white,
+                strokeWidth: 2.5,
+                strokeColor: color,
+              ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  color.withValues(alpha: 0.28),
+                  color.withValues(alpha: 0.02),
+                ],
+              ),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touched) => touched
+                .map(
+                  (spot) => LineTooltipItem(
+                    valueAsCurrency
+                        ? formatCurrency(spot.y)
+                        : spot.y.toStringAsFixed(0),
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _compact(double value) {
+    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
+    if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}k';
+    return value.toInt().toString();
+  }
+}
+
 /// Aligns two named count series onto a shared sorted label axis.
 (List<String> labels, List<double> a, List<double> b) alignNamedSeries(
   List<(String name, double value)> left,

@@ -612,18 +612,12 @@ class _ReportDetailBody extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: AppChartCard(
-                title: _humanizeKey(key),
+                title: 'daily_trend'.tr(),
                 height: 200,
-                child: AppGroupedBarChart(
+                child: AppLineChart(
+                  values: series.map((e) => e.$2).toList(),
                   labels: series.map((e) => e.$1).toList(),
-                  series: [
-                    AppChartSeries(
-                      label: _humanizeKey(key),
-                      values: series.map((e) => e.$2).toList(),
-                      color: AppColors.primary,
-                    ),
-                  ],
-                  valueAsCurrency: true,
+                  color: AppColors.primary,
                 ),
               ).fadeSlideIn(),
             ),
@@ -656,6 +650,41 @@ class _ReportDetailBody extends StatelessWidget {
                   child: AppHorizontalBarChart(
                     points: outstanding.take(8).toList(),
                     color: AppColors.moduleCyan,
+                    valueAsCurrency: true,
+                  ),
+                ).fadeSlideIn(),
+              ),
+            );
+          }
+        }
+        if (type == 'suppliers_overview') {
+          final outstanding = value
+              .whereType<Map>()
+              .map((row) {
+                final m = Map<String, dynamic>.from(row);
+                return (
+                  '${m['supplierName'] ?? m['SupplierName'] ?? m['name'] ?? m['Name'] ?? ''}',
+                  _asDouble(
+                    m['outstandingBalance'] ??
+                        m['OutstandingBalance'] ??
+                        m['balance'] ??
+                        m['Balance'],
+                  ),
+                );
+              })
+              .where((e) => e.$1.isNotEmpty && e.$2 > 0)
+              .toList()
+            ..sort((a, b) => b.$2.compareTo(a.$2));
+          if (outstanding.isNotEmpty) {
+            chartWidgets.add(
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: AppChartCard(
+                  title: 'top_supplier_balances'.tr(),
+                  height: (outstanding.take(8).length * 52.0).clamp(120, 280),
+                  child: AppHorizontalBarChart(
+                    points: outstanding.take(8).toList(),
+                    color: AppColors.modulePurple,
                     valueAsCurrency: true,
                   ),
                 ).fadeSlideIn(),
@@ -800,40 +829,90 @@ class _ReportDetailBody extends StatelessWidget {
     return spaced.isEmpty ? key : spaced;
   }
 
-  List<Widget> _buildSales(BuildContext context, SalesReportResult r) => [
-        AppBalanceHeroCard(
-          title: 'total'.tr(),
-          value: formatCurrency(r.totalSales),
-          subtitle: '${'invoice_count'.tr()}: ${r.invoiceCount}',
-        ).fadeSlideIn(),
+  List<Widget> _buildSales(BuildContext context, SalesReportResult r) {
+    final paymentSections = <(String, double, Color)>[
+      if (r.cashSales > 0) ('cash_sales'.tr(), r.cashSales, AppColors.moduleGreen),
+      if (r.creditSales > 0)
+        ('credit_sales'.tr(), r.creditSales, AppColors.moduleOrange),
+      if (r.installmentSales > 0)
+        ('installment_sales'.tr(), r.installmentSales, AppColors.moduleCyan),
+    ];
+    return [
+      PageStatsHeader(
+        heroTitle: 'total'.tr(),
+        heroValue: formatCurrency(r.totalSales),
+        heroSubtitle: '${'invoice_count'.tr()}: ${r.invoiceCount}',
+        stats: [
+          StatsChipData(
+            label: 'invoice_count'.tr(),
+            value: '${r.invoiceCount}',
+            icon: Icons.receipt_long_rounded,
+            color: AppColors.moduleGreen,
+          ),
+          StatsChipData(
+            label: 'average_invoice'.tr(),
+            value: formatCurrency(r.averageInvoice),
+            icon: Icons.analytics_outlined,
+            color: AppColors.primary,
+          ),
+          if (r.todaySales > 0)
+            StatsChipData(
+              label: 'today_sales'.tr(),
+              value: formatCurrency(r.todaySales),
+              icon: Icons.today_outlined,
+              color: AppColors.moduleCyan,
+            ),
+          if (r.totalCompanyFees > 0)
+            StatsChipData(
+              label: 'report_company_fees'.tr(),
+              value: formatCurrency(r.totalCompanyFees),
+              icon: Icons.percent_rounded,
+              color: AppColors.modulePurple,
+            ),
+        ],
+      ).fadeSlideIn(),
+      if (paymentSections.isNotEmpty) ...[
         const SizedBox(height: 14),
-        AppKpiGrid(
-          childAspectRatio: 1.55,
-          items: [
-            AppKpiItem(
-              title: 'invoice_count'.tr(),
-              value: '${r.invoiceCount}',
-              icon: Icons.receipt_long_rounded,
-              color: AppColors.moduleGreen,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'total'.tr(),
-              value: formatCurrency(r.totalSales),
-              icon: Icons.payments_outlined,
-              color: AppColors.primary,
-              compact: true,
-            ),
-          ],
+        AppChartCard(
+          title: 'payment_method_breakdown'.tr(),
+          height: 170,
+          child: AppDonutChart(
+            sections: paymentSections,
+            centerLabel: 'total'.tr(),
+            centerValue: formatCurrency(r.totalSales),
+            valueAsCurrency: true,
+          ),
         ).fadeSlideIn(delayMs: 40),
+      ],
+      if (r.dailyChart.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        AppChartCard(
+          title: 'daily_trend'.tr(),
+          height: 200,
+          child: AppLineChart(
+            values: r.dailyChart.map((e) => e.amount).toList(),
+            labels: r.dailyChart.map((e) => e.label).toList(),
+            color: AppColors.moduleGreen,
+          ),
+        ).fadeSlideIn(delayMs: 60),
+      ],
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: AppEntityCard(
                   title: e.value.invoiceNumber,
-                  subtitle:
-                      '${e.value.customerName} • ${formatDate(e.value.date)}',
+                  subtitle: [
+                    e.value.customerName,
+                    formatDate(e.value.date),
+                    if (e.value.paymentMethod.isNotEmpty) e.value.paymentMethod,
+                  ].join(' • '),
                   leading: const _IconBadge(
                     icon: Icons.point_of_sale_rounded,
                     color: AppColors.moduleGreen,
@@ -842,38 +921,74 @@ class _ReportDetailBody extends StatelessWidget {
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 
   List<Widget> _buildPurchases(
     BuildContext context,
     PurchasesReportResult r,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: 'total'.tr(),
-          value: formatCurrency(r.totalPurchases),
-          subtitle: '${'invoice_count'.tr()}: ${r.invoiceCount}',
-        ).fadeSlideIn(),
+  ) {
+    return [
+      PageStatsHeader(
+        heroTitle: 'total'.tr(),
+        heroValue: formatCurrency(r.totalPurchases),
+        heroSubtitle: '${'invoice_count'.tr()}: ${r.invoiceCount}',
+        stats: [
+          StatsChipData(
+            label: 'invoice_count'.tr(),
+            value: '${r.invoiceCount}',
+            icon: Icons.shopping_bag_outlined,
+            color: AppColors.moduleOrange,
+          ),
+          StatsChipData(
+            label: 'average_invoice'.tr(),
+            value: formatCurrency(r.averageInvoice),
+            icon: Icons.analytics_outlined,
+            color: AppColors.primary,
+          ),
+          if (r.todayPurchases > 0)
+            StatsChipData(
+              label: 'today_purchases'.tr(),
+              value: formatCurrency(r.todayPurchases),
+              icon: Icons.today_outlined,
+              color: AppColors.moduleCyan,
+            ),
+        ],
+      ).fadeSlideIn(),
+      if (r.dailyChart.isNotEmpty) ...[
         const SizedBox(height: 14),
-        AppKpiGrid(
-          childAspectRatio: 1.55,
-          items: [
-            AppKpiItem(
-              title: 'invoice_count'.tr(),
-              value: '${r.invoiceCount}',
-              icon: Icons.shopping_bag_outlined,
-              color: AppColors.moduleOrange,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'total'.tr(),
-              value: formatCurrency(r.totalPurchases),
-              icon: Icons.payments_outlined,
-              color: AppColors.primary,
-              compact: true,
-            ),
-          ],
+        AppChartCard(
+          title: 'daily_trend'.tr(),
+          height: 200,
+          child: AppLineChart(
+            values: r.dailyChart.map((e) => e.amount).toList(),
+            labels: r.dailyChart.map((e) => e.label).toList(),
+            color: AppColors.moduleOrange,
+          ),
         ).fadeSlideIn(delayMs: 40),
+      ],
+      if (r.bySupplierChart.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        AppChartCard(
+          title: 'by_supplier'.tr(),
+          height: (r.bySupplierChart.take(6).length * 52.0).clamp(100, 280),
+          child: AppHorizontalBarChart(
+            points: r.bySupplierChart
+                .take(6)
+                .map((e) => (e.label, e.amount))
+                .toList(),
+            color: AppColors.moduleOrange,
+            valueAsCurrency: true,
+          ),
+        ).fadeSlideIn(delayMs: 60),
+      ],
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
@@ -890,191 +1005,293 @@ class _ReportDetailBody extends StatelessWidget {
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 
   List<Widget> _buildProfit(
     BuildContext context,
     ProfitReportResult r,
     List<ProfitInvoiceDetailRow> profitInvoices,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: 'net_profit'.tr(),
-          value: formatCurrency(r.netProfit),
-          trendLabel: '${r.profitMargin.toStringAsFixed(1)}%',
-          trendPositive: r.netProfit >= 0,
-          subtitle: 'profit_margin'.tr(),
-        ).fadeSlideIn(),
-        const SizedBox(height: 14),
-        AppKpiGrid(
-          childAspectRatio: 1.45,
-          items: [
-            AppKpiItem(
-              title: 'report_sales'.tr(),
-              value: formatCurrency(r.totalSales),
-              icon: Icons.trending_up_rounded,
-              color: AppColors.moduleGreen,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'report_purchases'.tr(),
-              value: formatCurrency(r.totalPurchases),
-              icon: Icons.trending_down_rounded,
-              color: AppColors.moduleOrange,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'total_expenses'.tr(),
-              value: formatCurrency(r.totalExpenses),
-              icon: Icons.account_balance_wallet_outlined,
-              color: AppColors.modulePurple,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'profit_margin'.tr(),
-              value: '${r.profitMargin.toStringAsFixed(1)}%',
-              icon: Icons.percent_rounded,
-              color: AppColors.moduleIndigo,
-              compact: true,
-            ),
-          ],
-        ).fadeSlideIn(delayMs: 40),
-        if (profitInvoices.isNotEmpty) ...[
-          _SectionTitle('profit_invoice_details'.tr()),
-          ...profitInvoices.asMap().entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: AppEntityCard(
-                    title: e.value.invoiceNumber,
-                    subtitle:
-                        '${e.value.customerName} • ${formatDate(e.value.date)}',
-                    leading: const _IconBadge(
-                      icon: Icons.insights_rounded,
-                      color: AppColors.modulePurple,
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _AmountText(formatCurrency(e.value.grossProfit)),
-                        Text(
-                          '${e.value.marginPercent.toStringAsFixed(0)}%',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      ],
-                    ),
-                  ).fadeSlideInList(index: e.key),
-                ),
-              ),
+  ) {
+    final composition = <(String, double, Color)>[
+      if (r.totalSales > 0)
+        ('report_sales'.tr(), r.totalSales, AppColors.moduleGreen),
+      if (r.totalPurchases > 0)
+        ('report_purchases'.tr(), r.totalPurchases, AppColors.moduleOrange),
+      if (r.totalExpenses > 0)
+        ('total_expenses'.tr(), r.totalExpenses, AppColors.modulePurple),
+    ];
+    return [
+      PageStatsHeader(
+        heroTitle: 'net_profit'.tr(),
+        heroValue: formatCurrency(r.netProfit),
+        heroSubtitle: 'profit_margin'.tr(),
+        trendLabel: '${r.profitMargin.toStringAsFixed(1)}%',
+        trendPositive: r.netProfit >= 0,
+        useKpiGrid: true,
+        stats: [
+          StatsChipData(
+            label: 'report_sales'.tr(),
+            value: formatCurrency(r.totalSales),
+            icon: Icons.trending_up_rounded,
+            color: AppColors.moduleGreen,
+          ),
+          StatsChipData(
+            label: 'report_purchases'.tr(),
+            value: formatCurrency(r.totalPurchases),
+            icon: Icons.trending_down_rounded,
+            color: AppColors.moduleOrange,
+          ),
+          StatsChipData(
+            label: 'gross_profit'.tr(),
+            value: formatCurrency(r.grossProfit),
+            icon: Icons.insights_rounded,
+            color: AppColors.moduleCyan,
+          ),
+          StatsChipData(
+            label: 'total_expenses'.tr(),
+            value: formatCurrency(r.totalExpenses),
+            icon: Icons.account_balance_wallet_outlined,
+            color: AppColors.modulePurple,
+          ),
         ],
-      ];
+      ).fadeSlideIn(),
+      if (composition.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        AppChartCard(
+          title: 'profit_composition'.tr(),
+          height: 180,
+          child: AppDonutChart(
+            sections: composition,
+            centerLabel: 'net_profit'.tr(),
+            centerValue: formatCurrency(r.netProfit),
+            valueAsCurrency: true,
+          ),
+        ).fadeSlideIn(delayMs: 40),
+      ],
+      if (profitInvoices.isNotEmpty) ...[
+        _SectionTitle('profit_invoice_details'.tr()),
+        ...profitInvoices.asMap().entries.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AppEntityCard(
+                  title: e.value.invoiceNumber,
+                  subtitle:
+                      '${e.value.customerName} • ${formatDate(e.value.date)}',
+                  leading: const _IconBadge(
+                    icon: Icons.insights_rounded,
+                    color: AppColors.modulePurple,
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _AmountText(formatCurrency(e.value.grossProfit)),
+                      Text(
+                        '${e.value.marginPercent.toStringAsFixed(0)}%',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ],
+                  ),
+                ).fadeSlideInList(index: e.key),
+              ),
+            ),
+      ],
+    ];
+  }
 
   List<Widget> _buildBalanceSheet(
     BuildContext context,
     BalanceSheetResult r,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: 'assets_total'.tr(),
-          value: formatCurrency(r.assetsTotal),
-          subtitle: r.isBalanced
-              ? 'balance_sheet_balanced'.tr()
-              : 'equity_total'.tr(),
-          trendLabel: r.isBalanced ? '✓' : null,
-          trendPositive: r.isBalanced,
-        ).fadeSlideIn(),
+  ) {
+    final assetSections = <(String, double, Color)>[
+      if (r.cashBoxesTotal > 0)
+        ('cash_total'.tr(), r.cashBoxesTotal, AppColors.moduleCyan),
+      if (r.banksTotal > 0)
+        ('bank_balance'.tr(), r.banksTotal, AppColors.primary),
+      if (r.customerDebts > 0)
+        ('customer_debts'.tr(), r.customerDebts, AppColors.error),
+      if (r.inventoryValue > 0)
+        ('inventory_value'.tr(), r.inventoryValue, AppColors.moduleGreen),
+    ];
+    final structureSections = <(String, double, Color)>[
+      if (r.assetsTotal > 0)
+        ('assets_total'.tr(), r.assetsTotal, AppColors.moduleGreen),
+      if (r.liabilitiesTotal > 0)
+        ('liabilities_total'.tr(), r.liabilitiesTotal, AppColors.warning),
+      if (r.equityTotal > 0)
+        ('equity_total'.tr(), r.equityTotal, AppColors.moduleIndigo),
+    ];
+    return [
+      PageStatsHeader(
+        heroTitle: 'assets_total'.tr(),
+        heroValue: formatCurrency(r.assetsTotal),
+        heroSubtitle: r.isBalanced
+            ? 'balance_sheet_balanced'.tr()
+            : 'equity_total'.tr(),
+        trendLabel: r.isBalanced ? '✓' : null,
+        trendPositive: r.isBalanced,
+        useKpiGrid: true,
+        stats: [
+          StatsChipData(
+            label: 'equity_total'.tr(),
+            value: formatCurrency(r.equityTotal),
+            icon: Icons.account_balance_rounded,
+            color: AppColors.moduleIndigo,
+          ),
+          StatsChipData(
+            label: 'liabilities_total'.tr(),
+            value: formatCurrency(r.liabilitiesTotal),
+            icon: Icons.credit_card_outlined,
+            color: AppColors.warning,
+          ),
+          StatsChipData(
+            label: 'sales_profit'.tr(),
+            value: formatCurrency(r.salesProfit),
+            icon: Icons.trending_up_rounded,
+            color: AppColors.moduleGreen,
+          ),
+          StatsChipData(
+            label: 'cost_of_sales'.tr(),
+            value: formatCurrency(r.costOfSales),
+            icon: Icons.trending_down_rounded,
+            color: AppColors.moduleOrange,
+          ),
+          StatsChipData(
+            label: 'supplier_payables'.tr(),
+            value: formatCurrency(r.supplierPayables),
+            icon: Icons.local_shipping_outlined,
+            color: AppColors.moduleCyan,
+          ),
+          StatsChipData(
+            label: 'investor_deposits'.tr(),
+            value: formatCurrency(r.investorDeposits),
+            icon: Icons.savings_outlined,
+            color: AppColors.modulePink,
+          ),
+          StatsChipData(
+            label: 'customer_debts'.tr(),
+            value: formatCurrency(r.customerDebts),
+            icon: Icons.people_outline_rounded,
+            color: AppColors.error,
+          ),
+          StatsChipData(
+            label: 'inventory_value'.tr(),
+            value: formatCurrency(r.inventoryValue),
+            icon: Icons.warehouse_outlined,
+            color: AppColors.primary,
+          ),
+        ],
+      ).fadeSlideIn(),
+      if (structureSections.isNotEmpty) ...[
         const SizedBox(height: 14),
-        AppKpiGrid(
-          childAspectRatio: 1.35,
-          items: [
-            AppKpiItem(
-              title: 'equity_total'.tr(),
-              value: formatCurrency(r.equityTotal),
-              icon: Icons.account_balance_rounded,
-              color: AppColors.moduleIndigo,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'liabilities_total'.tr(),
-              value: formatCurrency(r.liabilitiesTotal),
-              icon: Icons.credit_card_outlined,
-              color: AppColors.warning,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'sales_profit'.tr(),
-              value: formatCurrency(r.salesProfit),
-              icon: Icons.trending_up_rounded,
-              color: AppColors.moduleGreen,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'cost_of_sales'.tr(),
-              value: formatCurrency(r.costOfSales),
-              icon: Icons.trending_down_rounded,
-              color: AppColors.moduleOrange,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'supplier_payables'.tr(),
-              value: formatCurrency(r.supplierPayables),
-              icon: Icons.local_shipping_outlined,
-              color: AppColors.moduleCyan,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'investor_deposits'.tr(),
-              value: formatCurrency(r.investorDeposits),
-              icon: Icons.savings_outlined,
-              color: AppColors.modulePink,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'customer_debts'.tr(),
-              value: formatCurrency(r.customerDebts),
-              icon: Icons.people_outline_rounded,
-              color: AppColors.error,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'inventory_value'.tr(),
-              value: formatCurrency(r.inventoryValue),
-              icon: Icons.warehouse_outlined,
-              color: AppColors.primary,
-              compact: true,
-            ),
-          ],
+        AppChartCard(
+          title: 'financial_structure'.tr(),
+          height: 180,
+          child: AppDonutChart(
+            sections: structureSections,
+            centerLabel: 'assets_total'.tr(),
+            centerValue: formatCurrency(r.assetsTotal),
+            valueAsCurrency: true,
+          ),
         ).fadeSlideIn(delayMs: 40),
-      ];
+      ],
+      if (assetSections.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        AppChartCard(
+          title: 'assets_breakdown'.tr(),
+          height: 180,
+          child: AppDonutChart(
+            sections: assetSections,
+            centerLabel: 'total'.tr(),
+            centerValue: formatCurrency(
+              assetSections.fold<double>(0, (s, e) => s + e.$2),
+            ),
+            valueAsCurrency: true,
+          ),
+        ).fadeSlideIn(delayMs: 60),
+      ],
+      if (r.cashBoxes.isNotEmpty) ...[
+        _SectionTitle('cash_boxes'.tr()),
+        ...r.cashBoxes.asMap().entries.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AppEntityCard(
+                  title: e.value.name,
+                  leading: const _IconBadge(
+                    icon: Icons.account_balance_wallet_outlined,
+                    color: AppColors.moduleCyan,
+                  ),
+                  trailing: _AmountText(formatCurrency(e.value.balance)),
+                ).fadeSlideInList(index: e.key),
+              ),
+            ),
+      ],
+      if (r.banks.isNotEmpty) ...[
+        _SectionTitle('bank_accounts'.tr()),
+        ...r.banks.asMap().entries.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AppEntityCard(
+                  title: e.value.name,
+                  leading: const _IconBadge(
+                    icon: Icons.account_balance_outlined,
+                    color: AppColors.primary,
+                  ),
+                  trailing: _AmountText(formatCurrency(e.value.balance)),
+                ).fadeSlideInList(index: e.key),
+              ),
+            ),
+      ],
+    ];
+  }
 
-  List<Widget> _buildOverdue(BuildContext context, OverdueResult r) => [
-        AppBalanceHeroCard(
-          title: 'total'.tr(),
-          value: formatCurrency(r.totalOverdueAmount),
-          subtitle: '${'customers'.tr()}: ${r.overdueCustomerCount}',
-          trendPositive: false,
-          trendLabel: 'report_overdue'.tr(),
-        ).fadeSlideIn(),
+  List<Widget> _buildOverdue(BuildContext context, OverdueResult r) {
+    final chartPoints = r.rows
+        .take(8)
+        .map((e) => (e.customerName, e.overdueAmount))
+        .toList();
+    return [
+      PageStatsHeader(
+        heroTitle: 'total'.tr(),
+        heroValue: formatCurrency(r.totalOverdueAmount),
+        heroSubtitle: '${'customers'.tr()}: ${r.overdueCustomerCount}',
+        trendPositive: false,
+        trendLabel: 'report_overdue'.tr(),
+        stats: [
+          StatsChipData(
+            label: 'customers'.tr(),
+            value: '${r.overdueCustomerCount}',
+            icon: Icons.people_outline_rounded,
+            color: AppColors.warning,
+          ),
+          StatsChipData(
+            label: 'records_count'.tr(),
+            value: '${r.rows.length}',
+            icon: Icons.list_alt_rounded,
+            color: AppColors.error,
+          ),
+        ],
+      ).fadeSlideIn(),
+      if (chartPoints.isNotEmpty) ...[
         const SizedBox(height: 14),
-        AppKpiGrid(
-          childAspectRatio: 1.55,
-          items: [
-            AppKpiItem(
-              title: 'customers'.tr(),
-              value: '${r.overdueCustomerCount}',
-              icon: Icons.people_outline_rounded,
-              color: AppColors.warning,
-              compact: true,
-            ),
-            AppKpiItem(
-              title: 'total'.tr(),
-              value: formatCurrency(r.totalOverdueAmount),
-              icon: Icons.warning_amber_rounded,
-              color: AppColors.error,
-              compact: true,
-            ),
-          ],
+        AppChartCard(
+          title: 'report_overdue'.tr(),
+          height: (chartPoints.length * 52.0).clamp(100, 320),
+          child: AppHorizontalBarChart(
+            points: chartPoints,
+            color: AppColors.error,
+            valueAsCurrency: true,
+          ),
         ).fadeSlideIn(delayMs: 40),
+      ],
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
@@ -1096,52 +1313,128 @@ class _ReportDetailBody extends StatelessWidget {
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 
   List<Widget> _buildStatement(
     BuildContext context,
     CustomerStatementResult r,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: r.customerName,
-          value: formatCurrency(r.balance),
-          subtitle: 'report_statement'.tr(),
-        ).fadeSlideIn(),
+  ) {
+    final totalDebit = r.rows.fold<double>(0, (s, e) => s + e.debit);
+    final totalCredit = r.rows.fold<double>(0, (s, e) => s + e.credit);
+    return [
+      PageStatsHeader(
+        heroTitle: r.customerName,
+        heroValue: formatCurrency(r.balance),
+        heroSubtitle: 'report_statement'.tr(),
+        stats: [
+          StatsChipData(
+            label: 'total_debit'.tr(),
+            value: formatCurrency(totalDebit),
+            icon: Icons.arrow_upward_rounded,
+            color: AppColors.error,
+          ),
+          StatsChipData(
+            label: 'total_credit'.tr(),
+            value: formatCurrency(totalCredit),
+            icon: Icons.arrow_downward_rounded,
+            color: AppColors.success,
+          ),
+          StatsChipData(
+            label: 'records_count'.tr(),
+            value: '${r.rows.length}',
+            icon: Icons.list_alt_rounded,
+            color: AppColors.moduleCyan,
+          ),
+        ],
+      ).fadeSlideIn(),
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: AppEntityCard(
                   title: e.value.description,
-                  subtitle: formatDate(e.value.date),
-                  leading: const _IconBadge(
-                    icon: Icons.receipt_long_rounded,
-                    color: AppColors.moduleCyan,
+                  subtitle: [
+                    formatDate(e.value.date),
+                    if (e.value.debit > 0)
+                      '${'debit_amount'.tr()}: ${formatCurrency(e.value.debit)}',
+                    if (e.value.credit > 0)
+                      '${'credit_amount'.tr()}: ${formatCurrency(e.value.credit)}',
+                  ].join(' • '),
+                  leading: _IconBadge(
+                    icon: e.value.debit > 0
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded,
+                    color: e.value.debit > 0
+                        ? AppColors.error
+                        : AppColors.success,
                   ),
                   trailing: _AmountText(formatCurrency(e.value.runningBalance)),
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 
   List<Widget> _buildInvestorStatement(
     BuildContext context,
     InvestorStatementResult r,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: r.investorName,
-          value: formatCurrency(r.balance),
-          subtitle: 'report_investor_statement'.tr(),
-        ).fadeSlideIn(),
+  ) {
+    final totalDebit = r.rows.fold<double>(0, (s, e) => s + e.debit);
+    final totalCredit = r.rows.fold<double>(0, (s, e) => s + e.credit);
+    return [
+      PageStatsHeader(
+        heroTitle: r.investorName,
+        heroValue: formatCurrency(r.balance),
+        heroSubtitle: 'report_investor_statement'.tr(),
+        stats: [
+          StatsChipData(
+            label: 'total_debit'.tr(),
+            value: formatCurrency(totalDebit),
+            icon: Icons.arrow_upward_rounded,
+            color: AppColors.error,
+          ),
+          StatsChipData(
+            label: 'total_credit'.tr(),
+            value: formatCurrency(totalCredit),
+            icon: Icons.arrow_downward_rounded,
+            color: AppColors.success,
+          ),
+          StatsChipData(
+            label: 'records_count'.tr(),
+            value: '${r.rows.length}',
+            icon: Icons.list_alt_rounded,
+            color: AppColors.modulePink,
+          ),
+        ],
+      ).fadeSlideIn(),
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: AppEntityCard(
                   title: e.value.description,
-                  subtitle: formatDate(e.value.date),
+                  subtitle: [
+                    formatDate(e.value.date),
+                    if (e.value.debit > 0)
+                      '${'debit_amount'.tr()}: ${formatCurrency(e.value.debit)}',
+                    if (e.value.credit > 0)
+                      '${'credit_amount'.tr()}: ${formatCurrency(e.value.credit)}',
+                  ].join(' • '),
                   leading: const _IconBadge(
                     icon: Icons.savings_outlined,
                     color: AppColors.modulePink,
@@ -1150,7 +1443,9 @@ class _ReportDetailBody extends StatelessWidget {
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 
   List<Widget> _buildWarehouse(
     BuildContext context,
@@ -1158,12 +1453,28 @@ class _ReportDetailBody extends StatelessWidget {
   ) =>
       [
         if (rows.isNotEmpty)
-          AppBalanceHeroCard(
-            title: 'report_warehouse'.tr(),
-            value: formatCurrency(
+          PageStatsHeader(
+            heroTitle: 'report_warehouse'.tr(),
+            heroValue: formatCurrency(
               rows.fold<double>(0, (sum, r) => sum + r.totalValue),
             ),
-            subtitle: '${rows.length} ${'products'.tr()}',
+            heroSubtitle: '${rows.length} ${'products'.tr()}',
+            stats: [
+              StatsChipData(
+                label: 'products'.tr(),
+                value: '${rows.length}',
+                icon: Icons.inventory_2_outlined,
+                color: AppColors.moduleGreen,
+              ),
+              StatsChipData(
+                label: 'quantity'.tr(),
+                value: rows
+                    .fold<double>(0, (s, r) => s + r.quantity)
+                    .toStringAsFixed(0),
+                icon: Icons.numbers_rounded,
+                color: AppColors.primary,
+              ),
+            ],
           ).fadeSlideIn(),
         _SectionTitle('report_rows'.tr()),
         ...rows.asMap().entries.map(
@@ -1195,13 +1506,49 @@ class _ReportDetailBody extends StatelessWidget {
   List<Widget> _buildTopProducts(
     BuildContext context,
     TopProductsReportResult r,
-  ) =>
-      [
-        AppBalanceHeroCard(
-          title: 'total'.tr(),
-          value: formatCurrency(r.totalRevenue),
-          subtitle: 'report_top_products'.tr(),
-        ).fadeSlideIn(),
+  ) {
+    final chartPoints = r.rows
+        .take(8)
+        .map((e) => (e.productName, e.revenue))
+        .toList();
+    return [
+      PageStatsHeader(
+        heroTitle: 'total'.tr(),
+        heroValue: formatCurrency(r.totalRevenue),
+        heroSubtitle: 'report_top_products'.tr(),
+        stats: [
+          StatsChipData(
+            label: 'products'.tr(),
+            value: '${r.productCount}',
+            icon: Icons.inventory_2_outlined,
+            color: AppColors.moduleGreen,
+          ),
+          StatsChipData(
+            label: 'records_count'.tr(),
+            value: '${r.rows.length}',
+            icon: Icons.leaderboard_outlined,
+            color: AppColors.primary,
+          ),
+        ],
+      ).fadeSlideIn(),
+      if (chartPoints.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        AppChartCard(
+          title: 'top_products_chart'.tr(),
+          height: (chartPoints.length * 52.0).clamp(100, 320),
+          child: AppHorizontalBarChart(
+            points: chartPoints,
+            color: AppColors.moduleGreen,
+            valueAsCurrency: true,
+          ),
+        ).fadeSlideIn(delayMs: 40),
+      ],
+      if (r.rows.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: EmptyStateWidget(message: 'no_data'.tr()),
+        )
+      else ...[
         _SectionTitle('report_rows'.tr()),
         ...r.rows.asMap().entries.map(
               (e) => Padding(
@@ -1214,7 +1561,9 @@ class _ReportDetailBody extends StatelessWidget {
                 ).fadeSlideInList(index: e.key),
               ),
             ),
-      ];
+      ],
+    ];
+  }
 }
 
 class _SectionTitle extends StatelessWidget {

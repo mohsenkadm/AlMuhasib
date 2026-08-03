@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/models/master_data_models.dart';
 import '../../../shared/models/mobile_models.dart';
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/common_widgets.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
 import '../../../shared/widgets/lookup_picker_sheet.dart';
 import '../../operations/presentation/forms/finance/finance_entity_forms.dart';
@@ -134,22 +135,72 @@ class InstallmentsScreen extends GetView<InstallmentsController> {
               }
               if (controller.error.value != null) {
                 return Center(
-                  child: Text(
-                    AppExceptionHandler.messageFor(controller.error.value),
+                  child: ErrorStateWidget(
+                    message: AppExceptionHandler.messageFor(
+                      controller.error.value,
+                    ),
+                    onRetry: controller.load,
                   ),
                 );
               }
               if (controller.items.isEmpty) {
-                return Center(child: Text('no_data'.tr()));
+                return Center(
+                  child: EmptyStateWidget(onRetry: controller.load),
+                );
               }
+              final items = controller.items.toList(growable: false);
+              final remaining = items.fold<double>(
+                0,
+                (s, e) => s + e.remainingAmount,
+              );
+              final paid = items.fold<double>(0, (s, e) => s + e.paidAmount);
+              final overdueCount = items
+                  .where(
+                    (e) =>
+                        e.status == 3 ||
+                        (e.remainingAmount > 0 &&
+                            e.dueDate.isBefore(DateTime.now())),
+                  )
+                  .length;
+              final unpaidCount =
+                  items.where((e) => e.remainingAmount > 0).length;
               return RefreshIndicator(
                 onRefresh: controller.load,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                  itemCount: controller.items.length,
+                  itemCount: items.length + 1,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final item = controller.items[index];
+                    if (index == 0) {
+                      return PageStatsHeader(
+                        heroTitle: 'total_remaining'.tr(),
+                        heroValue: formatCurrency(remaining),
+                        heroSubtitle:
+                            '${items.length} ${'records_count'.tr()}',
+                        trendPositive: remaining <= 0,
+                        stats: [
+                          StatsChipData(
+                            label: 'paid_amount'.tr(),
+                            value: formatCurrency(paid),
+                            icon: Icons.check_circle_outline,
+                            color: AppColors.success,
+                          ),
+                          StatsChipData(
+                            label: 'unpaid_count'.tr(),
+                            value: '$unpaidCount',
+                            icon: Icons.pending_actions_outlined,
+                            color: AppColors.moduleOrange,
+                          ),
+                          StatsChipData(
+                            label: 'overdue_count'.tr(),
+                            value: '$overdueCount',
+                            icon: Icons.warning_amber_rounded,
+                            color: AppColors.warning,
+                          ),
+                        ],
+                      );
+                    }
+                    final item = items[index - 1];
                     final overdue = item.status == 3 ||
                         (item.remainingAmount > 0 &&
                             item.dueDate.isBefore(DateTime.now()));
@@ -161,7 +212,9 @@ class InstallmentsScreen extends GetView<InstallmentsController> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: (overdue ? AppColors.warning : AppColors.primary)
+                          color: (overdue
+                                  ? AppColors.warning
+                                  : AppColors.primary)
                               .withValues(alpha: 0.14),
                           shape: BoxShape.circle,
                         ),
@@ -169,7 +222,9 @@ class InstallmentsScreen extends GetView<InstallmentsController> {
                           overdue
                               ? Icons.warning_amber_rounded
                               : Icons.event_note_outlined,
-                          color: overdue ? AppColors.warning : AppColors.primary,
+                          color: overdue
+                              ? AppColors.warning
+                              : AppColors.primary,
                         ),
                       ),
                       trailing: Column(
@@ -266,6 +321,93 @@ class InstallmentPlanDetailScreen
                 value: formatCurrency(p.totalAmount),
                 subtitle:
                     '${p.invoiceNumber} • ${p.numberOfInstallments} ${'installments'.tr()}',
+              ),
+              const SizedBox(height: 12),
+              Builder(
+                builder: (context) {
+                  final paid = p.installments
+                      .fold<double>(0, (s, i) => s + i.paidAmount);
+                  final remaining = p.installments
+                      .fold<double>(0, (s, i) => s + i.remainingAmount);
+                  final overdue = p.installments
+                      .where(
+                        (i) =>
+                            i.remainingAmount > 0 &&
+                            i.dueDate.isBefore(DateTime.now()),
+                      )
+                      .length;
+                  final progress = p.totalAmount <= 0
+                      ? 0.0
+                      : (paid / p.totalAmount).clamp(0.0, 1.0);
+                  return Column(
+                    children: [
+                      StatsStrip(
+                        items: [
+                          StatsChipData(
+                            label: 'paid_amount'.tr(),
+                            value: formatCurrency(paid),
+                            icon: Icons.check_circle_outline,
+                            color: AppColors.success,
+                          ),
+                          StatsChipData(
+                            label: 'total_remaining'.tr(),
+                            value: formatCurrency(remaining),
+                            icon: Icons.pending_outlined,
+                            color: AppColors.moduleOrange,
+                          ),
+                          StatsChipData(
+                            label: 'overdue_count'.tr(),
+                            value: '$overdue',
+                            icon: Icons.warning_amber_rounded,
+                            color: AppColors.warning,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      if (paid + remaining > 0)
+                        AppChartCard(
+                          title: 'collection_progress'.tr(),
+                          height: 160,
+                          child: AppDonutChart(
+                            sections: [
+                              if (paid > 0)
+                                (
+                                  'paid_amount'.tr(),
+                                  paid,
+                                  AppColors.success,
+                                ),
+                              if (remaining > 0)
+                                (
+                                  'total_remaining'.tr(),
+                                  remaining,
+                                  AppColors.moduleOrange,
+                                ),
+                            ],
+                            centerLabel: 'progress'.tr(),
+                            centerValue:
+                                '${(progress * 100).toStringAsFixed(0)}%',
+                            valueAsCurrency: true,
+                          ),
+                        ),
+                      if (p.companyFeeAmount > 0) ...[
+                        const SizedBox(height: 12),
+                        AppEntityCard(
+                          title: 'report_company_fees'.tr(),
+                          subtitle:
+                              '${p.companyFeePercentage.toStringAsFixed(1)}%',
+                          trailing: Text(
+                            formatCurrency(p.companyFeeAmount),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          leading: const Icon(
+                            Icons.percent_rounded,
+                            color: AppColors.modulePurple,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 16),
               ...p.installments.map(
