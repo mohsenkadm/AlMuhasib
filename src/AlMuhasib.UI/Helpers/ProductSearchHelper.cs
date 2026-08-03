@@ -11,8 +11,23 @@ public static class ProductSearchHelper
             return true;
 
         var term = searchText.Trim();
-        return product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-               || (product.Barcode?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
-               || (product.ScientificName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false);
+        if (ContainsIgnoreCase(product.Name, term)
+            || ContainsIgnoreCase(product.Barcode, term)
+            || ContainsIgnoreCase(product.ScientificName, term))
+            return true;
+
+        // مطابقة أي كلمة من كلمات البحث داخل الاسم الطويل
+        var words = HighlightTextHelper.SplitTerms(term);
+        if (words.Count <= 1)
+            return false;
+
+        return words.Any(w =>
+            ContainsIgnoreCase(product.Name, w)
+            || ContainsIgnoreCase(product.Barcode, w)
+            || ContainsIgnoreCase(product.ScientificName, w));
     }
+
+    private static bool ContainsIgnoreCase(string? source, string term) =>
+        !string.IsNullOrEmpty(source)
+        && source.Contains(term, StringComparison.OrdinalIgnoreCase);
 }

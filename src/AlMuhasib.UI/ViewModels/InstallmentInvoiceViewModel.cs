@@ -16,7 +16,7 @@ using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
-public partial class InstallmentInvoiceViewModel : ViewModelBase
+public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickSearchHost
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IInstallmentService _installmentService;
@@ -26,6 +26,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IProductPriceService _productPriceService;
+    private readonly bool _productPricingEnabled;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -73,6 +75,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
     public ObservableCollection<Product> Products { get; } = [];
 
     public ProductPickerViewModel ProductPicker { get; }
+    public ProductQuickSearchCatalog QuickSearchCatalog { get; }
 
     [ObservableProperty]
     private bool _isProductPickerOpen;
@@ -206,15 +209,18 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         _queueService = queueService;
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
+        _productPriceService = productPriceService;
+        _productPricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
 
         PageTitle = "فاتورة أقساط";
 
         ProductPicker = new ProductPickerViewModel(
             _unitOfWork,
             productPriceService,
-            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+            _productPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
+        QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
 
         Items.CollectionChanged += OnItemsCollectionChanged;
         RefreshFeatureVisibility();
@@ -268,6 +274,11 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
             Products.Clear();
             foreach (var p in products)
                 Products.Add(p);
+
+            await QuickSearchCatalog.LoadAsync(
+                Products,
+                InvoicePickerMode.Installment,
+                _productPricingEnabled);
 
             AddRow();
             GenerateSchedulePreview();
@@ -355,6 +366,42 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"تعذر فتح اختيار المنتجات:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckProfitAsync()
+    {
+        var productRows = Items
+            .Where(i => i.ProductId is > 0 && !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0)
+            .ToList();
+        if (productRows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("أضف مواد إلى الفاتورة أولاً ثم افحص الربح.");
+            return;
+        }
+
+        try
+        {
+            var vm = new InvoiceProfitCheckViewModel(
+                _unitOfWork,
+                _productPriceService,
+                _productPricingEnabled,
+                ShowProductDiscount);
+            await vm.LoadAsync(productRows, InvoiceDiscountType, InvoiceDiscountValue);
+
+            var owner = Application.Current.MainWindow;
+            var result = InvoiceProfitCheckDialog.Show(owner, vm);
+            if (result == true && ShowProductDiscount)
+            {
+                InvoiceDiscountType = vm.DiscountType;
+                InvoiceDiscountValue = vm.DiscountValue;
+                RecalculateTotals();
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر فحص ربح الفاتورة:\n{ex.Message}");
         }
     }
 

@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core"
              x:Name="Root">
 
@@ -243,16 +245,35 @@
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
-                                                               Foreground="#263238" TextTrimming="CharacterEllipsis"
-                                                               ToolTip="{Binding Name}"/>
+                                                    <TextBlock FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="#263238" TextWrapping="Wrap"
+                                                               behaviors:HighlightingTextBlockBehavior.HighlightText="{Binding Name}"
+                                                               behaviors:HighlightingTextBlockBehavior.SearchTerm="{Binding SearchTerm}"/>
                                                     <TextBlock Grid.Row="1" FontSize="10" Foreground="#607D8B" Margin="0,2,0,0"
-                                                               Text="{Binding ScientificName}" TextTrimming="CharacterEllipsis"
-                                                               Visibility="{Binding HasScientificName, Converter={StaticResource BoolVis}}"/>
+                                                               TextWrapping="Wrap"
+                                                               Visibility="{Binding HasScientificName, Converter={StaticResource BoolVis}}"
+                                                               behaviors:HighlightingTextBlockBehavior.HighlightText="{Binding ScientificName}"
+                                                               behaviors:HighlightingTextBlockBehavior.SearchTerm="{Binding SearchTerm}"/>
                                                     <TextBlock Grid.Row="2" FontSize="10" Foreground="#90A4AE" Margin="0,2,0,2"
                                                                Text="{Binding CategoryName}"/>
-                                                    <TextBlock Grid.Row="3" FontSize="10" Foreground="#1565C0" Margin="0,0,0,4"
-                                                               Text="{Binding StockLabel}" FontWeight="SemiBold"/>
+                                                    <ItemsControl Grid.Row="3" ItemsSource="{Binding WarehouseStocks}" Margin="0,0,0,4">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel Orientation="Horizontal"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="{x:Type models:WarehouseStockChip}">
+                                                                <Border Background="#E3F2FD" CornerRadius="7" Padding="6,2" Margin="0,0,4,3">
+                                                                    <TextBlock FontSize="9" Foreground="#1565C0">
+                                                                        <Run Text="{Binding WarehouseName, Mode=OneWay}"/>
+                                                                        <Run Text=":"/>
+                                                                        <Run Text="{Binding QuantityLabel, Mode=OneWay}" FontWeight="Bold"/>
+                                                                    </TextBlock>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
                                                     <ComboBox Grid.Row="4"
                                                               ItemsSource="{Binding PricingOptions}"
                                                               SelectedItem="{Binding SelectedPricingOption}"

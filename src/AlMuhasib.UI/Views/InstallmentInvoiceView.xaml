@@ -207,6 +207,16 @@
                                             <TextBlock Text="اختيار المنتجات" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                                         </StackPanel>
                                     </Button>
+                                    <Button Command="{Binding CheckProfitCommand}"
+                                            Style="{StaticResource FlatButton}"
+                                            Height="32" Padding="14,0" Margin="0,0,8,0"
+                                            materialDesign:ButtonAssist.CornerRadius="8"
+                                            ToolTip="فحص ربح وخسارة مواد الفاتورة">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ChartLine" Width="16" Height="16" VerticalAlignment="Center" Foreground="#2E7D32"/>
+                                            <TextBlock Text="فحص الربح" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="#2E7D32"/>
+                                        </StackPanel>
+                                    </Button>
                                     <Button Command="{Binding AddRowCommand}"
                                             Style="{StaticResource FlatButton}"
                                             Height="32" Padding="14,0"

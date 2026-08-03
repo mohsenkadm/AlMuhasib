@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+                    xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
                     xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core">
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -1552,48 +1553,12 @@
     </DataTemplate>
 
     <DataTemplate x:Key="InvoiceProductCellTemplate">
-        <StackPanel MaxWidth="220" VerticalAlignment="Center">
-            <ComboBox ItemsSource="{Binding DataContext.Products, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                      SelectedItem="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged}"
-                      Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}"
-                      IsEditable="True"
-                      IsTextSearchEnabled="False"
-                      MaxWidth="220"
-                      materialDesign:HintAssist.Hint="ابحث بالاسم أو العلمي..."
-                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                      BorderThickness="0"
-                      Background="Transparent"
-                      FontSize="13"
-                      Padding="0,2"
-                      behaviors:ProductComboBoxSearchBehavior.IsEnabled="True">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type entities:Product}">
-                        <StackPanel>
-                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock FontSize="10" Foreground="#78909C">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding ScientificName, StringFormat=علمي: {0}}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ScientificName}" Value="{x:Null}">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ScientificName}" Value="">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-                <ComboBox.ItemContainerStyle>
-                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}">
-                        <Setter Property="Padding" Value="8,6"/>
-                    </Style>
-                </ComboBox.ItemContainerStyle>
-            </ComboBox>
+        <StackPanel MinWidth="200" MaxWidth="320" VerticalAlignment="Center">
+            <controls:ProductQuickSearchBox
+                Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedProduct="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                MinWidth="200"
+                MaxWidth="320"/>
             <TextBlock Text="{Binding StockInfo}"
                        FontSize="10"
                        Foreground="#757575"
