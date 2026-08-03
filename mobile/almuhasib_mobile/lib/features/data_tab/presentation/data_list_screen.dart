@@ -233,19 +233,7 @@ class _DataListBody extends StatelessWidget {
         if (index == 0) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 14),
-            child: AppBalanceHeroCard(
-              title: switch (listType) {
-                'customers' => 'customers'.tr(),
-                'products' => 'products'.tr(),
-                'invoices' => 'invoices'.tr(),
-                'suppliers' => 'suppliers'.tr(),
-                'investors' => 'investors'.tr(),
-                'warehouses' => 'warehouses'.tr(),
-                _ => 'data_title'.tr(),
-              },
-              value: '${items.length}',
-              subtitle: 'records_count'.tr(),
-            ).fadeSlideIn(),
+            child: _buildStatsHeader().fadeSlideIn(),
           );
         }
 
@@ -259,6 +247,125 @@ class _DataListBody extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildStatsHeader() {
+    final count = items.length;
+    switch (listType) {
+      case 'customers':
+      case 'suppliers':
+      case 'investors':
+        final balances = items
+            .whereType<LookupItem>()
+            .map((e) => e.balance ?? 0)
+            .toList();
+        final totalBalance = balances.fold<double>(0, (s, b) => s + b);
+        final withBalance = balances.where((b) => b != 0).length;
+        final positive = balances.where((b) => b > 0).length;
+        return PageStatsHeader(
+          heroTitle: listType == 'customers'
+              ? 'total_outstanding'.tr()
+              : 'balance'.tr(),
+          heroValue: formatCurrency(totalBalance),
+          heroSubtitle: '$count ${'records_count'.tr()}',
+          trendPositive: totalBalance <= 0,
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: icon,
+              color: accent,
+            ),
+            StatsChipData(
+              label: 'with_balance'.tr(),
+              value: '$withBalance',
+              icon: Icons.account_balance_wallet_outlined,
+              color: AppColors.moduleCyan,
+            ),
+            StatsChipData(
+              label: 'debtors'.tr(),
+              value: '$positive',
+              icon: Icons.trending_up_rounded,
+              color: AppColors.warning,
+            ),
+          ],
+        );
+      case 'invoices':
+        final invoices = items.whereType<InvoiceDetailResponse>().toList();
+        final totalNet =
+            invoices.fold<double>(0, (s, i) => s + i.netAmount);
+        final sales = invoices
+            .where((i) => i.invoiceType == 1 || i.invoiceType == 2)
+            .fold<double>(0, (s, i) => s + i.netAmount);
+        final purchases = invoices
+            .where((i) => i.invoiceType == 0 || i.invoiceType == 3)
+            .fold<double>(0, (s, i) => s + i.netAmount);
+        return PageStatsHeader(
+          heroTitle: 'invoices'.tr(),
+          heroValue: formatCurrency(totalNet),
+          heroSubtitle: '$count ${'records_count'.tr()}',
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.receipt_long_rounded,
+              color: accent,
+            ),
+            StatsChipData(
+              label: 'sale'.tr(),
+              value: formatCurrency(sales),
+              icon: Icons.trending_up_rounded,
+              color: AppColors.success,
+            ),
+            StatsChipData(
+              label: 'purchase'.tr(),
+              value: formatCurrency(purchases),
+              icon: Icons.trending_down_rounded,
+              color: AppColors.error,
+            ),
+          ],
+        );
+      case 'products':
+        final products = items.whereType<ProductLookupItem>().toList();
+        final withPrices =
+            products.where((p) => p.prices.isNotEmpty).length;
+        return PageStatsHeader(
+          heroTitle: 'products'.tr(),
+          heroValue: '$count',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: icon,
+              color: accent,
+            ),
+            StatsChipData(
+              label: 'with_prices'.tr(),
+              value: '$withPrices',
+              icon: Icons.sell_outlined,
+              color: AppColors.moduleOrange,
+            ),
+          ],
+        );
+      default:
+        return PageStatsHeader(
+          heroTitle: switch (listType) {
+            'warehouses' => 'warehouses'.tr(),
+            _ => 'data_title'.tr(),
+          },
+          heroValue: '$count',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: icon,
+              color: accent,
+            ),
+          ],
+        );
+    }
   }
 
   Widget _buildRow(BuildContext context, dynamic item, int index) {
@@ -286,7 +393,11 @@ class _DataListBody extends StatelessWidget {
     }
 
     if (item is LookupItem && listType != 'invoices') {
-      final balanceText = listType == 'customers' && item.balance != null
+      final showBalance = item.balance != null &&
+          (listType == 'customers' ||
+              listType == 'suppliers' ||
+              listType == 'investors');
+      final balanceText = showBalance
           ? '${'balance'.tr()}: ${formatCurrency(item.balance!)}'
           : null;
       return AppEntityCard(
@@ -296,7 +407,7 @@ class _DataListBody extends StatelessWidget {
           if (balanceText != null) balanceText,
         ].join(' • '),
         leading: _LeadingBadge(icon: icon, color: accent, letter: item.name),
-        trailing: listType == 'customers' && item.balance != null
+        trailing: showBalance
             ? Text(
                 formatCurrency(item.balance!),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -679,6 +790,31 @@ class InvoiceDetailScreen extends GetView<InvoiceDetailController> {
               trendLabel: paymentMethodLabel(invoice.paymentMethod),
               trendPositive: isSale,
             ).fadeSlideIn(),
+            const SizedBox(height: 12),
+            StatsStrip(
+              items: [
+                StatsChipData(
+                  label: 'paid_amount'.tr(),
+                  value: formatCurrency(invoice.paidAmount),
+                  icon: Icons.check_circle_outline,
+                  color: AppColors.success,
+                ),
+                StatsChipData(
+                  label: 'total_remaining'.tr(),
+                  value: formatCurrency(invoice.remainingAmount),
+                  icon: Icons.pending_outlined,
+                  color: invoice.remainingAmount > 0
+                      ? AppColors.warning
+                      : AppColors.moduleCyan,
+                ),
+                StatsChipData(
+                  label: 'items'.tr(),
+                  value: '${invoice.items.length}',
+                  icon: Icons.inventory_2_outlined,
+                  color: AppColors.moduleOrange,
+                ),
+              ],
+            ).fadeSlideIn(delayMs: 20),
             const SizedBox(height: 14),
             AppKpiGrid(
               childAspectRatio: 1.5,
@@ -699,6 +835,21 @@ class InvoiceDetailScreen extends GetView<InvoiceDetailController> {
                 ),
               ],
             ).fadeSlideIn(delayMs: 40),
+            if (invoice.items.length >= 2) ...[
+              const SizedBox(height: 14),
+              AppChartCard(
+                title: 'invoice_lines_chart'.tr(),
+                height: (invoice.items.take(6).length * 48.0).clamp(100, 260),
+                child: AppHorizontalBarChart(
+                  points: invoice.items
+                      .take(6)
+                      .map((e) => (e.itemName, e.totalPrice))
+                      .toList(),
+                  color: tone,
+                  valueAsCurrency: true,
+                ),
+              ).fadeSlideIn(delayMs: 50),
+            ],
             if (invoice.customerName != null || invoice.supplierName != null) ...[
               const SizedBox(height: 10),
               AppEntityCard(

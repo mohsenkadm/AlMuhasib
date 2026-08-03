@@ -157,33 +157,106 @@ class DataScreen extends GetView<DataHubController> {
         ],
         body: RefreshIndicator(
           onRefresh: controller.load,
-          child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 0.92,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return AppModuleTile(
-                title: item.titleKey.tr(),
-                subtitle: item.subtitleKey.tr(),
-                icon: item.icon,
-                color: item.color,
-                onTap: () {
-                  if (item.financeType != null) {
-                    Get.toNamed(AppRoutes.financeListPath(item.financeType!));
-                  } else if (item.route != null) {
-                    Get.toNamed(item.route!);
-                  } else {
-                    Get.toNamed(AppRoutes.dataListPath(item.type));
-                  }
-                },
-              ).fadeSlideInList(index: index);
-            },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Builder(
+                    builder: (context) {
+                      final partners = items
+                          .where(
+                            (e) =>
+                                e.type == 'customers' ||
+                                e.type == 'suppliers' ||
+                                e.type == 'investors',
+                          )
+                          .length;
+                      final finance = items
+                          .where(
+                            (e) =>
+                                e.financeType != null ||
+                                e.type == 'cash-boxes' ||
+                                e.type == 'bank-accounts',
+                          )
+                          .length;
+                      final catalog = items
+                          .where(
+                            (e) =>
+                                e.type == 'products' ||
+                                e.type == 'invoices' ||
+                                e.type == 'warehouses' ||
+                                e.type.contains('pricing') ||
+                                e.type.contains('price'),
+                          )
+                          .length;
+                      return PageStatsHeader(
+                        heroTitle: 'data_title'.tr(),
+                        heroValue: '${items.length}',
+                        heroSubtitle: 'data_modules_hint'.tr(),
+                        stats: [
+                          StatsChipData(
+                            label: 'partners_modules'.tr(),
+                            value: '$partners',
+                            icon: Icons.people_outline_rounded,
+                            color: AppColors.primary,
+                          ),
+                          StatsChipData(
+                            label: 'finance_modules'.tr(),
+                            value: '$finance',
+                            icon: Icons.account_balance_wallet_outlined,
+                            color: AppColors.moduleCyan,
+                          ),
+                          StatsChipData(
+                            label: 'catalog_modules'.tr(),
+                            value: '$catalog',
+                            icon: Icons.inventory_2_outlined,
+                            color: AppColors.moduleGreen,
+                          ),
+                        ],
+                      ).fadeSlideIn();
+                    },
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 14)),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                sliver: SliverGrid(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.92,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = items[index];
+                      return AppModuleTile(
+                        title: item.titleKey.tr(),
+                        subtitle: item.subtitleKey.tr(),
+                        icon: item.icon,
+                        color: item.color,
+                        onTap: () {
+                          if (item.financeType != null) {
+                            Get.toNamed(
+                              AppRoutes.financeListPath(item.financeType!),
+                            );
+                          } else if (item.route != null) {
+                            Get.toNamed(item.route!);
+                          } else {
+                            Get.toNamed(AppRoutes.dataListPath(item.type));
+                          }
+                        },
+                      ).fadeSlideInList(index: index);
+                    },
+                    childCount: items.length,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );

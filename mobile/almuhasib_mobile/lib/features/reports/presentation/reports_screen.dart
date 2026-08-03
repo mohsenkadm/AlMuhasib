@@ -198,6 +198,33 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
         children: [
+          PageStatsHeader(
+            heroTitle: 'reports_title'.tr(),
+            heroValue: '${_reports.length}',
+            heroSubtitle: 'reports_stats_hint'.tr(),
+            stats: [
+              StatsChipData(
+                label: 'favorite_reports'.tr(),
+                value: '${_favorites.length}',
+                icon: Icons.star_rounded,
+                color: AppColors.warning,
+              ),
+              StatsChipData(
+                label: 'report_category_all'.tr(),
+                value: '${filtered.length}',
+                icon: Icons.filter_list_rounded,
+                color: AppColors.primary,
+              ),
+              StatsChipData(
+                label: 'report_group_financial'.tr(),
+                value:
+                    '${_reports.where((r) => r.group == ReportGroup.financial).length}',
+                icon: Icons.account_balance_rounded,
+                color: AppColors.moduleIndigo,
+              ),
+            ],
+          ).fadeSlideIn(),
+          const SizedBox(height: 16),
           TextField(
             controller: _search,
             onChanged: (_) => setState(() {}),
@@ -207,7 +234,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               filled: true,
               fillColor: isDark ? AppColors.surfaceDarkCard : Colors.white,
             ),
-          ).fadeSlideIn(),
+          ).fadeSlideIn(delayMs: 20),
           const SizedBox(height: 14),
           SizedBox(
             height: 42,

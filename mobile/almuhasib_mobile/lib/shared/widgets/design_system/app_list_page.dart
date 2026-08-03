@@ -33,6 +33,7 @@ class AppListPage<T> extends StatelessWidget {
     this.padding,
     this.useSearchFilterBar = true,
     this.filterPanel,
+    this.header,
   });
 
   final String title;
@@ -56,6 +57,7 @@ class AppListPage<T> extends StatelessWidget {
   final EdgeInsets? padding;
   final bool useSearchFilterBar;
   final Widget? filterPanel;
+  final Widget? header;
 
   List<T> get _resolvedItems => staticItems ?? items?.toList() ?? [];
 
@@ -66,6 +68,17 @@ class AppListPage<T> extends StatelessWidget {
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
+            if (header != null)
+              Padding(
+                padding: padding ??
+                    const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                      0,
+                    ),
+                child: header!,
+              ),
             SizedBox(
               height: MediaQuery.sizeOf(context).height * 0.45,
               child: EmptyStateWidget(
@@ -87,11 +100,20 @@ class AppListPage<T> extends StatelessWidget {
               AppSpacing.xl,
               120,
             ),
-        itemCount: data.length,
-        itemBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: itemBuilder(context, data[index], index),
-        ),
+        itemCount: data.length + (header != null ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (header != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: header!,
+            );
+          }
+          final itemIndex = header != null ? index - 1 : index;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: itemBuilder(context, data[itemIndex], itemIndex),
+          );
+        },
       );
     }
 

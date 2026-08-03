@@ -32,6 +32,30 @@ class PricingTypesScreen extends GetView<PricingTypesController> {
       },
       emptyMessage: 'no_pricing_types'.tr(),
       emptyIcon: Icons.sell_outlined,
+      header: Obx(() {
+        final list = controller.items.toList(growable: false);
+        final active = list.where((e) => e.isActive).length;
+        final defaults = list.where((e) => e.isDefault).length;
+        return PageStatsHeader(
+          heroTitle: 'pricing_types'.tr(),
+          heroValue: '${list.length}',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'pricing_type_active'.tr(),
+              value: '$active',
+              icon: Icons.check_circle_outline,
+              color: AppColors.success,
+            ),
+            StatsChipData(
+              label: 'pricing_type_default'.tr(),
+              value: '$defaults',
+              icon: Icons.star_outline_rounded,
+              color: AppColors.modulePink,
+            ),
+          ],
+        );
+      }),
       itemBuilder: (context, item, index) => AppEntityCard(
         title: item.name,
         subtitle: [

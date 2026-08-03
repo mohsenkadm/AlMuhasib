@@ -36,6 +36,31 @@ class ProductPricesScreen extends GetView<ProductPricesController> {
       },
       emptyMessage: 'no_product_prices'.tr(),
       emptyIcon: Icons.price_change_outlined,
+      header: Obx(() {
+        final list = controller.items.toList(growable: false);
+        final avgSale = list.isEmpty
+            ? 0.0
+            : list.fold<double>(0, (s, e) => s + e.salePrice) / list.length;
+        return PageStatsHeader(
+          heroTitle: 'product_prices'.tr(),
+          heroValue: '${list.length}',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '${list.length}',
+              icon: Icons.price_change_outlined,
+              color: AppColors.warning,
+            ),
+            StatsChipData(
+              label: 'sale_price'.tr(),
+              value: formatCurrency(avgSale),
+              icon: Icons.analytics_outlined,
+              color: AppColors.primary,
+            ),
+          ],
+        );
+      }),
       itemBuilder: (context, item, index) => AppEntityCard(
         title: item.productName.isEmpty ? item.pricingTypeName : item.productName,
         subtitle:
