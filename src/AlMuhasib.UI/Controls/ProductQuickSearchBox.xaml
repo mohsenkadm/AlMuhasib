@@ -92,7 +92,7 @@
                                             BorderThickness="1"
                                             Background="#FAFCFF"
                                             Cursor="Hand"
-                                            MouseLeftButtonUp="Suggestion_MouseLeftButtonUp">
+                                            PreviewMouseLeftButtonDown="Suggestion_PreviewMouseLeftButtonDown">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>

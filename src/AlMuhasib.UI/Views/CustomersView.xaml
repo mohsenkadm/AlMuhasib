@@ -35,6 +35,27 @@
                         </StackPanel>
                     </Button>
 
+                    <Button Command="{Binding DownloadImportTemplateCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            ToolTip="تنزيل قالب Excel لملء بيانات العملاء">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileDownloadOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تنزيل قالب Excel"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ImportFromExcelCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdd}"
+                            ToolTip="استيراد عملاء من ملف Excel">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="MicrosoftExcel" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="استيراد Excel"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button Command="{Binding RefreshCommand}"
                             Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8">

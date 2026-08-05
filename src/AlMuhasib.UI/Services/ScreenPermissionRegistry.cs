@@ -245,6 +245,7 @@ public static class ScreenPermissionRegistry
         [typeof(InstallmentInvoiceViewModel)] = "InstallmentInvoice",
         [typeof(CollectionDashboardViewModel)] = "Installments",
         [typeof(InstallmentsViewModel)] = "Installments",
+        [typeof(PlatformDeductionSettlementViewModel)] = "Installments",
         [typeof(OpeningInstallmentBalanceViewModel)] = "OpeningInstallments",
         [typeof(VouchersViewModel)] = "Vouchers",
         [typeof(ExpenseViewModel)] = "Expenses",

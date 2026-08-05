@@ -38,12 +38,19 @@ public static class PrintBrandingFlowDocumentHelper
   }
 
   public static void PrependBrandingHeader(FlowDocument doc, PrintBrandingSnapshot? branding = null)
+      => PrependBrandingHeader(doc, branding, maxHeaderImageHeight: null);
+
+  /// <param name="maxHeaderImageHeight">اختياري لضغط الهيدر (مثلاً عقود الطباعة على صفحة واحدة).</param>
+  public static void PrependBrandingHeader(
+      FlowDocument doc,
+      PrintBrandingSnapshot? branding,
+      double? maxHeaderImageHeight)
   {
     branding ??= PrintBrandingProvider.Current;
     if (!branding.HasHeaderContent)
       return;
 
-    var blocks = BuildHeaderBlocks(branding, doc);
+    var blocks = BuildHeaderBlocks(branding, doc, maxHeaderImageHeight);
     var existing = doc.Blocks.ToList();
     doc.Blocks.Clear();
     foreach (var block in blocks)
@@ -140,33 +147,41 @@ public static class PrintBrandingFlowDocumentHelper
     return doc;
   }
 
-  private static List<Block> BuildHeaderBlocks(PrintBrandingSnapshot branding, FlowDocument doc)
+  private static List<Block> BuildHeaderBlocks(
+      PrintBrandingSnapshot branding,
+      FlowDocument doc,
+      double? maxHeaderImageHeight = null)
   {
     var blocks = new List<Block>();
 
     if (branding.ShowHeaderImage && branding.HeaderImageData is { Length: > 0 })
     {
       var imageOnlyHeader = IsImageOnlyHeader(branding);
+      var defaultMax = imageOnlyHeader ? 235.0 : 175.0;
+      var maxHeight = maxHeaderImageHeight.HasValue
+          ? Math.Min(maxHeaderImageHeight.Value, defaultMax)
+          : defaultMax;
       var imageBlock = CreateFullWidthImageBlock(
           branding.HeaderImageData,
           doc,
-          maxHeight: imageOnlyHeader ? 235 : 175,
-          bleedTop: imageOnlyHeader);
+          maxHeight: maxHeight,
+          bleedTop: imageOnlyHeader && maxHeaderImageHeight is null);
       if (imageBlock is not null)
         blocks.Add(imageBlock);
     }
 
     if (branding.ShowHeaderText)
     {
+      var compact = maxHeaderImageHeight.HasValue;
       if (!string.IsNullOrWhiteSpace(branding.CompanyName))
       {
         blocks.Add(new Paragraph(new Run(branding.CompanyName))
         {
-          FontSize = 20,
+          FontSize = compact ? 14 : 20,
           FontWeight = FontWeights.Bold,
           Foreground = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)),
           TextAlignment = TextAlignment.Center,
-          Margin = new Thickness(0, 0, 0, 4)
+          Margin = new Thickness(0, 0, 0, compact ? 1 : 4)
         });
       }
 
@@ -174,10 +189,10 @@ public static class PrintBrandingFlowDocumentHelper
       {
         blocks.Add(new Paragraph(new Run(branding.Email))
         {
-          FontSize = 11,
+          FontSize = compact ? 9 : 11,
           TextAlignment = TextAlignment.Center,
           Foreground = Brushes.DimGray,
-          Margin = new Thickness(0, 0, 0, 2)
+          Margin = new Thickness(0, 0, 0, compact ? 1 : 2)
         });
       }
 
@@ -185,7 +200,7 @@ public static class PrintBrandingFlowDocumentHelper
       {
         blocks.Add(new Paragraph(new Run(branding.Details))
         {
-          FontSize = 10,
+          FontSize = compact ? 8.5 : 10,
           TextAlignment = TextAlignment.Center,
           Foreground = Brushes.Gray,
           Margin = new Thickness(0, 0, 0, 4)

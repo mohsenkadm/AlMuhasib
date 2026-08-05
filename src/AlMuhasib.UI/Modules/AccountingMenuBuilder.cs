@@ -80,6 +80,7 @@ public static class AccountingMenuBuilder
                     ("فاتورة أقساط", PackIconKind.CalendarClock, typeof(InstallmentInvoiceViewModel), "InstallmentInvoice"),
                     ("لوحة التحصيل", PackIconKind.CashMultiple, typeof(CollectionDashboardViewModel), "Installments"),
                     ("الأقساط", PackIconKind.CalendarMultipleCheck, typeof(InstallmentsViewModel), "Installments"),
+                    ("تسديد استقطاع المنصة", PackIconKind.FileExcel, typeof(PlatformDeductionSettlementViewModel), "Installments"),
                     ("أرصدة الأقساط الافتتاحية", PackIconKind.History, typeof(OpeningInstallmentBalanceViewModel), "OpeningInstallments"),
                 ]),
             FlyoutGroup(

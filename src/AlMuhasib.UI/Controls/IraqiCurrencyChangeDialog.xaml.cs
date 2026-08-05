@@ -64,12 +64,6 @@ public partial class IraqiCurrencyChangeDialog : Window
             DragMove();
     }
 
-    private void Backdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        // Click outside card closes without applying
-        _vm.CloseCommand.Execute(null);
-    }
-
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key is Key.Escape or Key.F7)

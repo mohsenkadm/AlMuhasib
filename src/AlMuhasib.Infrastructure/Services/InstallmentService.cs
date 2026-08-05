@@ -1,5 +1,6 @@
 ﻿using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -203,6 +204,57 @@ public class InstallmentService : IInstallmentService
         };
     }
 
+    public async Task<CustomerAmountPayResult> PayCustomerAmountOldestFirstAsync(
+        int customerId, decimal amount, int cashBoxId, string? notes = null)
+    {
+        if (amount <= 0)
+            throw new InvalidOperationException("مبلغ التسديد يجب أن يكون أكبر من صفر");
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var unpaid = await context.Installments
+            .Include(i => i.InstallmentPlan)
+            .Where(i => i.InstallmentPlan.CustomerId == customerId && i.RemainingAmount > 0)
+            .OrderBy(i => i.DueDate)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
+
+        if (unpaid.Count == 0)
+            throw new InvalidOperationException("لا توجد أقساط مستحقة لهذا العميل");
+
+        var remainingToApply = amount;
+        var applied = 0m;
+        var touched = 0;
+
+        foreach (var installment in unpaid)
+        {
+            if (remainingToApply <= 0)
+                break;
+
+            var pay = Math.Min(remainingToApply, installment.RemainingAmount);
+            if (pay <= 0)
+                continue;
+
+            await PayInstallmentAsync(installment.Id, pay, cashBoxId);
+            remainingToApply -= pay;
+            applied += pay;
+            touched++;
+        }
+
+        var message = notes;
+        if (remainingToApply > 0)
+            message = string.IsNullOrWhiteSpace(message)
+                ? $"تبقّى {remainingToApply:N2} بدون أقساط كافية"
+                : $"{message} | تبقّى {remainingToApply:N2} بدون أقساط كافية";
+
+        return new CustomerAmountPayResult
+        {
+            AmountApplied = applied,
+            AmountRemaining = remainingToApply,
+            InstallmentsTouched = touched,
+            Message = message
+        };
+    }
+
     public async Task CancelPaymentAsync(int installmentId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -275,19 +327,16 @@ public class InstallmentService : IInstallmentService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var today = DateTime.Today;
-        var pendingOverdue = await context.Installments
-            .Where(i => (i.Status == InstallmentStatus.Pending || i.Status == InstallmentStatus.PartiallyPaid) && i.DueDate < today)
-            .ToListAsync();
-        if (pendingOverdue.Count == 0) return;
-
         var username = _currentUserService.Username;
-        foreach (var inst in pendingOverdue)
-        {
-            inst.Status = InstallmentStatus.Overdue;
-            inst.UpdatedBy = username;
-            inst.UpdatedAt = DateTime.UtcNow;
-        }
-        await context.SaveChangesAsync();
+        var now = DateTime.UtcNow;
+
+        await context.Installments
+            .Where(i => (i.Status == InstallmentStatus.Pending || i.Status == InstallmentStatus.PartiallyPaid)
+                        && i.DueDate < today)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(i => i.Status, InstallmentStatus.Overdue)
+                .SetProperty(i => i.UpdatedBy, username)
+                .SetProperty(i => i.UpdatedAt, now));
     }
 
     public async Task<IEnumerable<Installment>> GetInstallmentsByStatusAsync(InstallmentStatus status)
@@ -332,16 +381,76 @@ public class InstallmentService : IInstallmentService
     }
 
     public async Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
-        int page, int pageSize, InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null)
+        int page, int pageSize, InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
+        IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = true)
     {
-        await UpdateOverdueStatusesAsync();
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Installments
-            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
-            .Include(i => i.CashBox).AsQueryable();
+        if (updateOverdueStatuses)
+            await UpdateOverdueStatusesAsync();
 
-        if (status.HasValue) query = query.Where(i => i.Status == status.Value);
-        if (customerId.HasValue) query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+
+        var totalCount = await query.CountAsync();
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 500);
+        var safePage = page <= 0 ? 1 : page;
+        var items = await query
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
+            .Include(i => i.CashBox)
+            .OrderBy(i => i.DueDate)
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
+            .ToListAsync();
+        return (items, totalCount);
+    }
+
+    public async Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)> GetInstallmentTotalsAsync(
+        InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
+        IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = false)
+    {
+        if (updateOverdueStatuses)
+            await UpdateOverdueStatusesAsync();
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+
+        var agg = await query
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Count = g.Count(),
+                TotalAmount = g.Sum(i => i.Amount),
+                PaidAmount = g.Sum(i => i.PaidAmount),
+                RemainingAmount = g.Sum(i => i.RemainingAmount)
+            })
+            .FirstOrDefaultAsync();
+
+        return agg is null
+            ? (0, 0m, 0m, 0m)
+            : (agg.Count, agg.TotalAmount, agg.PaidAmount, agg.RemainingAmount);
+    }
+
+    private static IQueryable<Installment> BuildInstallmentsQuery(
+        AppDbContext context,
+        InstallmentStatus? status,
+        int? customerId,
+        string? searchTerm,
+        IReadOnlyCollection<InstallmentStatus>? statuses)
+    {
+        var query = context.Installments.AsNoTracking().AsQueryable();
+
+        if (statuses is { Count: > 0 })
+        {
+            var statusList = statuses as InstallmentStatus[] ?? statuses.ToArray();
+            query = query.Where(i => statusList.Contains(i.Status));
+        }
+        else if (status.HasValue)
+        {
+            query = query.Where(i => i.Status == status.Value);
+        }
+
+        if (customerId.HasValue)
+            query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.Trim();
@@ -349,13 +458,57 @@ public class InstallmentService : IInstallmentService
                 (i.InstallmentPlan.FileNumber != null && i.InstallmentPlan.FileNumber.Contains(term)));
         }
 
-        var totalCount = await query.CountAsync();
-        var items = await query.OrderBy(i => i.DueDate)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        return (items, totalCount);
+        return query;
     }
 
-    public async Task<InstallmentPlan> CreateOpeningBalancePlanAsync(OpeningInstallmentBalanceRequest request)
+    public Task<InstallmentPlan> CreateOpeningBalancePlanAsync(OpeningInstallmentBalanceRequest request)
+        => CreateOpeningBalancePlanCoreAsync(request, nameCache: null);
+
+    public async Task<OpeningInstallmentBatchResult> CreateOpeningBalancePlansBatchAsync(
+        IReadOnlyList<OpeningInstallmentBalanceRequest> requests)
+    {
+        var result = new OpeningInstallmentBatchResult();
+        if (requests is null || requests.Count == 0)
+        {
+            result.Errors.Add("لا توجد بيانات للاستيراد");
+            return result;
+        }
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var customers = await context.Customers
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+        var nameCache = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var c in customers)
+        {
+            var key = ArabicNameNormalizer.Compact(c.Name);
+            if (key.Length > 0 && !nameCache.ContainsKey(key))
+                nameCache[key] = c.Id;
+        }
+
+        for (var index = 0; index < requests.Count; index++)
+        {
+            var request = requests[index];
+            try
+            {
+                ValidateOpeningBalanceRequest(request);
+                await CreateOpeningBalancePlanCoreAsync(request, nameCache);
+                result.SuccessCount++;
+            }
+            catch (Exception ex)
+            {
+                result.FailedCount++;
+                var label = request.CustomerName ?? request.CustomerId?.ToString() ?? $"سطر {index + 1}";
+                result.Errors.Add($"{label}: {ex.Message}");
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<InstallmentPlan> CreateOpeningBalancePlanCoreAsync(
+        OpeningInstallmentBalanceRequest request,
+        Dictionary<string, int>? nameCache)
     {
         ValidateOpeningBalanceRequest(request);
 
@@ -364,7 +517,7 @@ public class InstallmentService : IInstallmentService
         try
         {
             var username = _currentUserService.Username;
-            var customerId = await ResolveCustomerIdAsync(context, request, username);
+            var customerId = await ResolveCustomerIdAsync(context, request, username, nameCache);
             var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
                 ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
 
@@ -469,36 +622,6 @@ public class InstallmentService : IInstallmentService
         }
     }
 
-    public async Task<OpeningInstallmentBatchResult> CreateOpeningBalancePlansBatchAsync(
-        IReadOnlyList<OpeningInstallmentBalanceRequest> requests)
-    {
-        var result = new OpeningInstallmentBatchResult();
-        if (requests is null || requests.Count == 0)
-        {
-            result.Errors.Add("لا توجد بيانات للاستيراد");
-            return result;
-        }
-
-        for (var index = 0; index < requests.Count; index++)
-        {
-            var request = requests[index];
-            try
-            {
-                ValidateOpeningBalanceRequest(request);
-                await CreateOpeningBalancePlanAsync(request);
-                result.SuccessCount++;
-            }
-            catch (Exception ex)
-            {
-                result.FailedCount++;
-                var label = request.CustomerName ?? request.CustomerId?.ToString() ?? $"سطر {index + 1}";
-                result.Errors.Add($"{label}: {ex.Message}");
-            }
-        }
-
-        return result;
-    }
-
     private static void ValidateOpeningBalanceRequest(OpeningInstallmentBalanceRequest request)
     {
         if (request.TotalAmount <= 0)
@@ -514,7 +637,10 @@ public class InstallmentService : IInstallmentService
     }
 
     private static async Task<int> ResolveCustomerIdAsync(
-        AppDbContext context, OpeningInstallmentBalanceRequest request, string username)
+        AppDbContext context,
+        OpeningInstallmentBalanceRequest request,
+        string username,
+        Dictionary<string, int>? nameCache)
     {
         if (request.CustomerId is int existingId)
         {
@@ -525,10 +651,30 @@ public class InstallmentService : IInstallmentService
         }
 
         var name = request.CustomerName!.Trim();
-        var matched = await context.Customers
-            .FirstOrDefaultAsync(c => c.Name == name);
-        if (matched is not null)
-            return matched.Id;
+        var compact = ArabicNameNormalizer.Compact(name);
+
+        if (nameCache is not null && compact.Length > 0 && nameCache.TryGetValue(compact, out var cachedId))
+            return cachedId;
+
+        var exact = await context.Customers.FirstOrDefaultAsync(c => c.Name == name);
+        if (exact is not null)
+        {
+            if (nameCache is not null)
+            {
+                var exactKey = ArabicNameNormalizer.Compact(exact.Name);
+                if (exactKey.Length > 0)
+                    nameCache[exactKey] = exact.Id;
+            }
+            return exact.Id;
+        }
+
+        if (compact.Length > 0 && nameCache is null)
+        {
+            var candidates = await context.Customers.Select(c => new { c.Id, c.Name }).ToListAsync();
+            var match = candidates.FirstOrDefault(c => ArabicNameNormalizer.Compact(c.Name) == compact);
+            if (match is not null)
+                return match.Id;
+        }
 
         var newCustomer = new Customer
         {
@@ -539,6 +685,10 @@ public class InstallmentService : IInstallmentService
         };
         await context.Customers.AddAsync(newCustomer);
         await context.SaveChangesAsync();
+
+        if (nameCache is not null && compact.Length > 0)
+            nameCache[compact] = newCustomer.Id;
+
         return newCustomer.Id;
     }
 

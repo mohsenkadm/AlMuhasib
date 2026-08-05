@@ -319,7 +319,10 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
             var rows = _excelService.ParseImportFile(dialog.FileName);
             ImportRows.Clear();
             foreach (var row in rows)
+            {
+                EnsurePaidZeroIsAllowed(row);
                 ImportRows.Add(row);
+            }
 
             ImportStatusMessage = rows.Count == 0
                 ? "الملف لا يحتوي على بيانات"
@@ -346,16 +349,30 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
             return;
         }
 
-        if (ImportInvalidCount > 0)
+        var validRows = ImportRows.Where(r => r.IsValid).ToList();
+        if (validRows.Count == 0)
         {
-            ImportStatusMessage = $"يوجد {ImportInvalidCount} سطر يحتوي أخطاء — صحّح الملف أو احذف الأسطر الخاطئة";
+            ImportStatusMessage = "لا توجد أسطر صالحة للاستيراد — راجع عمود الأخطاء";
+            BeautifulMessageDialog.ShowWarning(ImportStatusMessage);
             return;
         }
 
+        if (ImportInvalidCount > 0)
+        {
+            var proceed = BeautifulMessageDialog.ShowConfirm(
+                $"يوجد {ImportInvalidCount} سطر يحتاج تصحيح.\nهل تريد استيراد الأسطر الصالحة فقط ({validRows.Count})؟");
+            if (!proceed)
+                return;
+        }
+
         IsBusy = true;
+        ImportStatusMessage = $"جاري الاستيراد... 0 / {validRows.Count}";
         try
         {
-            var requests = ImportRows.Select(r => new OpeningInstallmentBalanceRequest
+            // إتاحة تحديث الواجهة لعرض مؤشر التحميل
+            await Task.Yield();
+
+            var requests = validRows.Select(r => new OpeningInstallmentBalanceRequest
             {
                 CustomerName = r.CustomerName,
                 FileNumber = r.FileNumber,
@@ -366,12 +383,15 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
                 Notes = r.Notes
             }).ToList();
 
-            var result = await _installmentService.CreateOpeningBalancePlansBatchAsync(requests);
+            ImportStatusMessage = $"جاري استيراد {requests.Count} سطر إلى النظام...";
+            var result = await Task.Run(async () =>
+                await _installmentService.CreateOpeningBalancePlansBatchAsync(requests).ConfigureAwait(false)).ConfigureAwait(true);
+
             if (result.SuccessCount > 0 && result.FailedCount == 0)
             {
                 BeautifulMessageDialog.ShowSuccess($"تم استيراد {result.SuccessCount} رصيد افتتاحي بنجاح");
                 ImportRows.Clear();
-                ImportStatusMessage = string.Empty;
+                ImportStatusMessage = $"اكتمل الاستيراد بنجاح ({result.SuccessCount} سطر)";
             }
             else if (result.SuccessCount > 0)
             {
@@ -381,16 +401,40 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
             else
             {
                 ImportStatusMessage = string.Join("\n", result.Errors.Take(8));
-                BeautifulMessageDialog.ShowError("فشل الاستيراد");
+                BeautifulMessageDialog.ShowError(string.IsNullOrWhiteSpace(ImportStatusMessage)
+                    ? "فشل الاستيراد"
+                    : ImportStatusMessage);
             }
 
             OnPropertyChanged(nameof(ImportValidCount));
             OnPropertyChanged(nameof(ImportInvalidCount));
+            OnPropertyChanged(nameof(HasImportRows));
         }
         catch (Exception ex)
         {
             ImportStatusMessage = ex.Message;
+            BeautifulMessageDialog.ShowError($"فشل الاستيراد: {ex.Message}");
         }
         finally { IsBusy = false; }
+    }
+
+    /// <summary>
+    /// المسدد = 0 عقد جديد ويجب أن يُستورد — أزل أخطاء المسدد الزائفة إن وُجدت.
+    /// </summary>
+    private static void EnsurePaidZeroIsAllowed(OpeningInstallmentImportRow row)
+    {
+        if (row.PaidInstallmentsCount < 0)
+            row.PaidInstallmentsCount = 0;
+
+        row.Errors.RemoveAll(e =>
+            e.Contains("عدد_الاقساط_المسددة", StringComparison.Ordinal)
+            || e.Contains("عدد الأقساط المسددة غير صالح", StringComparison.Ordinal));
+
+        if (row.NumberOfInstallments > 0 && row.PaidInstallmentsCount > row.NumberOfInstallments)
+        {
+            var msg = "عدد الأقساط المسددة أكبر من إجمالي الأقساط";
+            if (!row.Errors.Contains(msg))
+                row.Errors.Add(msg);
+        }
     }
 }

@@ -34,11 +34,12 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = 12.5,
+            FontSize = 12,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(28, 10, 28, 40)
+            PagePadding = new Thickness(26, 10, 26, 22)
         };
 
+        // هيدر طبيعي بالحجم الكامل (بدون ضغط) لملء صفحة A4 بشكل متوازن
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
         doc.Blocks.Add(BuildTitleRow(contract));
@@ -64,15 +65,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(4, 2, 4, 2)
+            Padding = new Thickness(4, 4, 4, 4)
         };
 
         var titleCell = new TableCell(new Paragraph(new Run("عقد بيع وشراء"))
         {
-            FontSize = 19,
+            FontSize = 18,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 4)
+            Margin = new Thickness(0, 6, 0, 6)
         })
         {
             BorderBrush = BorderBrush,
@@ -87,7 +88,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(4, 2, 4, 2),
+            Padding = new Thickness(4, 4, 4, 4),
             TextAlignment = TextAlignment.Left
         };
 
@@ -96,7 +97,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         row.Cells.Add(dateCell);
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 6));
+        return WrapBlock(table, new Thickness(0, 4, 0, 8));
     }
 
     private static Block BuildPartiesRow(CarSaleContract contract)
@@ -124,7 +125,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         row.Cells.Add(WrapCell(buyerBox, padding: new Thickness(4, 0, 0, 0)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 6));
+        return WrapBlock(table, new Thickness(0, 0, 0, 8));
     }
 
     private static Block BuildDetailsRow(CarSaleContract contract)
@@ -151,17 +152,20 @@ public sealed class CarContractPrintService : ICarContractPrintService
         ]);
 
         var row = new TableRow();
-        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(8, 5, 12, 5)));
-        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(12, 5, 8, 5)));
+        row.Cells.Add(WrapCell(carBlock, bordered: true, padding: new Thickness(10, 6, 12, 6)));
+        row.Cells.Add(WrapCell(moneyBlock, bordered: true, padding: new Thickness(12, 6, 10, 6)));
         table.RowGroups[0].Rows.Add(row);
 
-        return WrapBlock(table, new Thickness(0, 0, 0, 6));
+        return WrapBlock(table, new Thickness(0, 0, 0, 8));
     }
 
     private static Block BuildNotesRow(CarSaleContract contract)
     {
         var notes = string.IsNullOrWhiteSpace(contract.Notes) ? Dots(48) : contract.Notes.Trim();
-        return FieldLine("الملاحظات", notes, fullWidth: true);
+        var paragraph = FieldLine("الملاحظات", notes, fullWidth: true);
+        paragraph.Margin = new Thickness(0, 2, 0, 6);
+        paragraph.FontSize = 12;
+        return paragraph;
     }
 
     private static Block BuildTermsBlock()
@@ -176,17 +180,17 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             var paragraph = new Paragraph
             {
-                FontSize = 12,
+                FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
                 TextAlignment = TextAlignment.Justify,
                 FlowDirection = FlowDirection.RightToLeft,
-                LineHeight = 19,
-                Margin = new Thickness(0, 0, 0, 6)
+                LineHeight = 18,
+                Margin = new Thickness(0, 0, 0, 5)
             };
             paragraph.Inlines.Add(new Run($"{i + 1}. ")
             {
                 FontWeight = FontWeights.ExtraBold,
-                FontSize = 12.5
+                FontSize = 12
             });
             paragraph.Inlines.Add(new Run(CarContractPrintTerms.Clauses[i])
             {
@@ -198,9 +202,9 @@ public sealed class CarContractPrintService : ICarContractPrintService
         var titleCell = new TableCell(new Paragraph(new Run(CarContractPrintTerms.Title))
         {
             FontWeight = FontWeights.ExtraBold,
-            FontSize = 14.5,
+            FontSize = 14,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 2)
+            Margin = new Thickness(0, 3, 0, 3)
         })
         {
             Background = TermsTitleBg,
@@ -225,7 +229,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
         table.RowGroups[0].Rows.Add(titleRow);
         table.RowGroups[0].Rows.Add(bodyRow);
 
-        return WrapBlock(table, new Thickness(0, 6, 0, 0));
+        return WrapBlock(table, new Thickness(0, 8, 0, 0));
     }
 
     private static Block BuildSignaturesRow(CarSaleContract contract)
@@ -253,14 +257,14 @@ public sealed class CarContractPrintService : ICarContractPrintService
             {
                 BorderBrush = BorderBrush,
                 BorderThickness = new Thickness(0.5),
-                Padding = new Thickness(4, 5, 4, 5),
+                Padding = new Thickness(4, 8, 4, 8),
                 TextAlignment = TextAlignment.Center
             });
         }
 
         table.RowGroups[0].Rows.Add(row);
-        // Gap between terms and signature boxes.
-        return WrapBlock(table, new Thickness(0, 36, 0, 0));
+        // مسافة كافية لدفع التوقيعات نحو أسفل صفحة A4
+        return WrapBlock(table, new Thickness(0, 28, 0, 0));
     }
 
     private static UIElement CreateSignatureBlock(string label, string? name)
@@ -275,21 +279,14 @@ public sealed class CarContractPrintService : ICarContractPrintService
             FontWeight = FontWeights.SemiBold,
             FontSize = 11.5,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 4)
+            Margin = new Thickness(0, 0, 0, 6)
         });
         panel.Children.Add(new System.Windows.Controls.TextBlock
         {
             Text = string.IsNullOrWhiteSpace(name) ? Dots(18) : name.Trim(),
             FontSize = 11.5,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 8)
-        });
-        panel.Children.Add(new System.Windows.Controls.TextBlock
-        {
-            Text = string.IsNullOrWhiteSpace(name) ? Dots(20) : name.Trim(),
-            FontSize = 11,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 16)
+            Margin = new Thickness(0, 0, 0, 22)
         });
         panel.Children.Add(new System.Windows.Controls.Border
         {
@@ -336,13 +333,13 @@ public sealed class CarContractPrintService : ICarContractPrintService
             FontWeight = FontWeights.Bold,
             FontSize = 13.5,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 1, 0, 1)
+            Margin = new Thickness(0, 2, 0, 2)
         })
         {
             Background = HeaderBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 1, 1, 0),
-            Padding = new Thickness(3, 5, 3, 5)
+            Padding = new Thickness(3, 6, 3, 6)
         });
         headerTable.RowGroups[0].Rows.Add(headerRow);
         section.Blocks.Add(headerTable);
@@ -358,7 +355,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
             Background = LightBg,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1, 0, 1, 1),
-            Padding = new Thickness(8, 5, 8, 6)
+            Padding = new Thickness(8, 6, 8, 8)
         });
         bodyTable.RowGroups[0].Rows.Add(bodyRow);
         section.Blocks.Add(bodyTable);
@@ -396,14 +393,15 @@ public sealed class CarContractPrintService : ICarContractPrintService
         {
             paragraph.Inlines.Add(new Run($"{label} : ")
             {
-                FontWeight = FontWeights.SemiBold
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 12
             });
         }
 
         paragraph.Inlines.Add(new Run(display)
         {
             FontWeight = boldValue ? FontWeights.Bold : FontWeights.Normal,
-            FontSize = boldValue ? 13.5 : 12.5
+            FontSize = boldValue ? 13.5 : 12
         });
 
         if (centerValue)

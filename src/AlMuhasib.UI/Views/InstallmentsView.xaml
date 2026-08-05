@@ -1313,6 +1313,10 @@
                                   CanUserAddRows="False"
                                   SelectionMode="Extended"
                                   SelectionChanged="PayableInstallmentsGrid_SelectionChanged"
+                                  EnableRowVirtualization="True"
+                                  EnableColumnVirtualization="True"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.VirtualizationMode="Recycling"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
                             <DataGrid.Columns>

@@ -114,10 +114,16 @@ public partial class ProductQuickSearchBox : UserControl
 
     private void SearchBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
-        // تأخير بسيط للسماح بالنقر على الاقتراح
+        // تأخير بسيط للسماح بالنقر على الاقتراح (الـ Popup خارج نطاق التركيز)
         Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
-            if (!IsKeyboardFocusWithin && SuggestionsPopup.IsOpen)
+            if (_isSelecting || !SuggestionsPopup.IsOpen)
+                return;
+
+            if (SuggestionsPopup.Child is FrameworkElement popupChild && popupChild.IsMouseOver)
+                return;
+
+            if (!IsKeyboardFocusWithin)
                 ClosePopup();
         });
     }
@@ -138,20 +144,29 @@ public partial class ProductQuickSearchBox : UserControl
         }
     }
 
-    private void Suggestion_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void Suggestion_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: ProductSearchSuggestion suggestion })
+        {
             SelectSuggestion(suggestion);
+            e.Handled = true;
+        }
     }
 
     private void SelectSuggestion(ProductSearchSuggestion suggestion)
     {
         _isSelecting = true;
-        SelectedProduct = suggestion.Product;
-        Text = suggestion.Product.Name;
-        _isSelecting = false;
-        ClosePopup();
-        SearchBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        try
+        {
+            SelectedProduct = suggestion.Product;
+            Text = suggestion.Product.Name;
+            ClosePopup();
+            SearchBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        }
+        finally
+        {
+            _isSelecting = false;
+        }
     }
 
     private void RefreshSuggestions(bool forceOpen = false)

@@ -291,17 +291,29 @@
                               RowHeight="44"
                               MinRowHeight="44">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="44" MinWidth="44" MaxWidth="44" IsReadOnly="True"
+                            <DataGridTemplateColumn Header="" Width="52" MinWidth="52" MaxWidth="52" IsReadOnly="True"
                                                     CanUserResize="False">
                                 <DataGridTemplateColumn.CellStyle>
-                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Focusable" Value="False"/>
+                                    </Style>
                                 </DataGridTemplateColumn.CellStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource TableDeleteIconButton}"
-                                                ToolTip="حذف البند"/>
+                                                Style="{StaticResource InvoiceDeleteRowButton}"
+                                                Width="34" Height="34"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                ToolTip="حذف البند">
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="17" Height="17"
+                                                                     Foreground="#C62828"/>
+                                        </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -423,7 +435,9 @@
                     </DataGrid>
 
                     <!-- Summary -->
-                    <Border Grid.Row="3" Background="#F5F9FC" CornerRadius="12" Padding="14,12" Margin="0,10,0,0">
+                    <Border Grid.Row="3" Background="#F5F9FC" CornerRadius="12" Padding="12,10" Margin="0,8,0,0"
+                            MaxHeight="220">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -435,32 +449,47 @@
                                            FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </Grid>
 
-                            <StackPanel Margin="0,10,0,0"
-                                        Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolVis}}">
-                                <TextBlock Text="خصم الفاتورة" FontSize="12" FontWeight="SemiBold" Foreground="#2E7D32" Margin="0,0,0,6"/>
-                                <ComboBox ItemsSource="{Binding InvoiceDiscountTypeOptions}"
+                            <Grid Margin="0,10,0,2"
+                                  MinHeight="44"
+                                  Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*" MinWidth="90"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="خصم" FontSize="13" FontWeight="SemiBold" Foreground="#2E7D32"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding InvoiceDiscountTypeOptions}"
                                           SelectedItem="{Binding SelectedInvoiceDiscountOption}"
                                           DisplayMemberPath="Label"
-                                          Margin="0,0,0,6"
-                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-                                <TextBox Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="قيمة الخصم الكلي"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         Margin="0,0,0,6"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="مبلغ الخصم" Foreground="#2E7D32" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
-                                               FontWeight="SemiBold" Foreground="#2E7D32"/>
-                                </Grid>
-                            </StackPanel>
+                                          Height="40"
+                                          MinHeight="40"
+                                          Margin="0,0,6,0"
+                                          VerticalContentAlignment="Center"
+                                          Style="{StaticResource MaterialDesignFilledComboBox}"
+                                          materialDesign:HintAssist.Hint="النوع"
+                                          materialDesign:TextFieldAssist.HasLeadingIcon="False"/>
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="قيمة"
+                                         Style="{StaticResource MaterialDesignFilledTextBox}"
+                                         Height="40"
+                                         MinHeight="40"
+                                         Margin="0,0,6,0"
+                                         VerticalContentAlignment="Center"
+                                         Padding="8,0"/>
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0}'}"
+                                           FontWeight="SemiBold" Foreground="#2E7D32" FontSize="13"
+                                           VerticalAlignment="Center"
+                                           ToolTip="مبلغ الخصم"/>
+                            </Grid>
 
-                            <loyalty:LoyaltyPanel Margin="0,10,0,0" DataContext="{Binding}"/>
+                            <loyalty:LoyaltyPanel Margin="0,8,0,0" IsCompact="True" DataContext="{Binding}"/>
 
-                            <Grid Margin="0,10,0,0">
+                            <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
@@ -468,9 +497,10 @@
                                 <TextBlock Text="الإجمالي" FontSize="15" FontWeight="Bold"
                                            Foreground="#0D47A1" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
-                                           FontSize="22" FontWeight="Bold" Foreground="#1565C0"/>
+                                           FontSize="20" FontWeight="Bold" Foreground="#1565C0"/>
                             </Grid>
                         </StackPanel>
+                        </ScrollViewer>
                     </Border>
 
                     <!-- Bottom actions -->

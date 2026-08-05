@@ -16,6 +16,7 @@ public partial class CustomersViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
+    private readonly IDataImportService _importService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
 
@@ -86,11 +87,13 @@ public partial class CustomersViewModel : ViewModelBase
     public CustomersViewModel(
         IUnitOfWork unitOfWork,
         IExportService exportService,
+        IDataImportService importService,
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
+        _importService = importService;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Customers);
@@ -346,6 +349,73 @@ public partial class CustomersViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء التصدير: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void DownloadImportTemplate()
+    {
+        try
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = "قالب_العملاء.xlsx",
+                DefaultExt = ".xlsx"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            _importService.SaveCustomerTemplate(dialog.FileName);
+            BeautifulMessageDialog.ShowSuccess("تم حفظ قالب الاستيراد بنجاح");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء حفظ القالب: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportFromExcelAsync()
+    {
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة عملاء");
+            return;
+        }
+
+        try
+        {
+            var open = new OpenFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                Title = "استيراد العملاء من Excel"
+            };
+            if (open.ShowDialog() != true)
+                return;
+
+            var preview = await _importService.PreviewCustomersAsync(open.FileName);
+            var confirm = BeautifulMessageDialog.ShowConfirm(
+                $"معاينة الملف: {preview.RowCount} صف.\nهل تريد استيراد العملاء الآن؟\n(الأسماء الموجودة مسبقاً سيتم تخطيها)");
+            if (!confirm)
+                return;
+
+            var result = await _importService.ImportCustomersAsync(open.FileName);
+            var msg = $"تم استيراد {result.ImportedCount} عميل، وتخطي {result.SkippedCount}.";
+            if (result.Errors.Count > 0)
+                msg += $"\nأخطاء: {result.Errors.Count}\n" + string.Join("\n", result.Errors.Take(8));
+
+            if (result.Errors.Count > 0 && result.ImportedCount == 0)
+                BeautifulMessageDialog.ShowError(msg);
+            else
+                BeautifulMessageDialog.ShowSuccess(msg);
+
+            CurrentPage = 1;
+            await LoadCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الاستيراد: {ex.Message}");
         }
     }
 

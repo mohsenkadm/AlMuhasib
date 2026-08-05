@@ -356,13 +356,17 @@ public static class DocumentPrintHelper
             if (printDialog.ShowDialog() != true)
                 return;
 
-            // Physical printers have a smaller printable area than full A4/PDF.
-            // Re-apply layout to that area so the bottom is not clipped.
-            var printableSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
-            ApplyPageLayout(_document, printableSize);
+            // Prefer printable width so sides are not clipped, but keep A4 height from preview
+            // so content that fit one page in preview does not reflow onto a second page.
+            var printableWidth = printDialog.PrintableAreaWidth > 0
+                ? printDialog.PrintableAreaWidth
+                : DefaultPageWidth;
+            var pageHeight = _document.PageHeight > 0 ? _document.PageHeight : DefaultPageHeight;
+            var printSize = new Size(printableWidth, pageHeight);
+            ApplyPageLayout(_document, printSize);
 
             var paginator = ((IDocumentPaginatorSource)_document).DocumentPaginator;
-            paginator.PageSize = printableSize;
+            paginator.PageSize = printSize;
 
             try
             {

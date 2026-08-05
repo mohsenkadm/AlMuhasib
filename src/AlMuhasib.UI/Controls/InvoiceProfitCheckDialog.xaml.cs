@@ -31,12 +31,6 @@ public partial class InvoiceProfitCheckDialog : Window
             DragMove();
     }
 
-    private void Scrim_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        DialogResult = false;
-        Close();
-    }
-
     private void Close_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;

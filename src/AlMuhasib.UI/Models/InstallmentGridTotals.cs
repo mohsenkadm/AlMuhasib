@@ -35,6 +35,16 @@ public partial class InstallmentGridTotals : ObservableObject
             ScopeNote = scopeNote;
     }
 
+    public void SetFromTotals(int count, decimal totalAmount, decimal paidAmount, decimal remainingAmount, string? scopeNote = null)
+    {
+        Count = count;
+        TotalAmount = totalAmount;
+        PaidAmount = paidAmount;
+        RemainingAmount = remainingAmount;
+        if (scopeNote is not null)
+            ScopeNote = scopeNote;
+    }
+
     public void SetFromPlans(IEnumerable<InstallmentPlan> plans, string? scopeNote = null)
     {
         var list = plans.ToList();

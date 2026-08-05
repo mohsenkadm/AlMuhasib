@@ -14,5 +14,4 @@ public class CustomerLoyaltyAccount : BaseEntity
     public DateTime? LastRedeemedAt { get; set; }
 
     public Customer Customer { get; set; } = null!;
-    public ICollection<LoyaltyPointTransaction> Transactions { get; set; } = [];
 }

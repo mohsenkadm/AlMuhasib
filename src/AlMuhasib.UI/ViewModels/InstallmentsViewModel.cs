@@ -133,8 +133,8 @@ public partial class InstallmentsViewModel : ViewModelBase
     private string _unpaidSearchText = string.Empty;
 
     public PagerState PlansPager { get; } = new() { PageSize = 20 };
-    public PagerState PaidPager { get; } = new() { PageSize = 20 };
-    public PagerState UnpaidPager { get; } = new() { PageSize = 20 };
+    public PagerState PaidPager { get; } = new() { PageSize = 50 };
+    public PagerState UnpaidPager { get; } = new() { PageSize = 50 };
 
     public InstallmentGridTotals PlansFooter { get; } = new();
     public InstallmentGridTotals OverdueFooter { get; } = new();
@@ -731,9 +731,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     [RelayCommand]
     private async Task LoadPaidAsync()
     {
+        var search = string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim();
         var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
-            PaidPager.CurrentPage, PaidPager.PageSize, InstallmentStatus.Paid, searchTerm:
-            string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim());
+            PaidPager.CurrentPage, PaidPager.PageSize, InstallmentStatus.Paid, searchTerm: search,
+            updateOverdueStatuses: false);
 
         PaidInstallments.Clear();
         foreach (var i in items)
@@ -741,10 +742,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         PaidPager.ApplyStats(totalCount);
 
-        var search = string.IsNullOrWhiteSpace(PaidSearchText) ? null : PaidSearchText.Trim();
-        var (allItems, allCount) = await _installmentService.GetPagedInstallmentsAsync(
-            1, int.MaxValue, InstallmentStatus.Paid, searchTerm: search);
-        PaidFooter.SetFromInstallments(allItems, $"إجمالي الأقساط المسددة ({allCount:N0})");
+        var totals = await _installmentService.GetInstallmentTotalsAsync(
+            InstallmentStatus.Paid, searchTerm: search, updateOverdueStatuses: false);
+        PaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
+            $"إجمالي الأقساط المسددة ({totals.Count:N0})");
     }
 
     [RelayCommand]
@@ -802,41 +803,38 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     // TAB 5: UNPAID
     // ══════════════════════════════════════════════════════
 
+    private static readonly InstallmentStatus[] UnpaidStatuses =
+    [
+        InstallmentStatus.Pending,
+        InstallmentStatus.Overdue,
+        InstallmentStatus.PartiallyPaid
+    ];
+
     [RelayCommand]
     private async Task LoadUnpaidAsync()
     {
+        var search = string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim();
+
+        // تحديث المتأخر مرة واحدة فقط عند أول تحميل للتاب، لا مع كل صفحة
         await _installmentService.UpdateOverdueStatusesAsync();
 
-        // Get pending + overdue + partially paid
-        var pendingResult = await _installmentService.GetPagedInstallmentsAsync(
-            UnpaidPager.CurrentPage, UnpaidPager.PageSize, InstallmentStatus.Pending, searchTerm:
-            string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim());
-
-        var overdueResult = await _installmentService.GetPagedInstallmentsAsync(
-            1, 1000, InstallmentStatus.Overdue, searchTerm:
-            string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim());
-
-        var partialResult = await _installmentService.GetPagedInstallmentsAsync(
-            1, 1000, InstallmentStatus.PartiallyPaid, searchTerm:
-            string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim());
+        var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
+            UnpaidPager.CurrentPage,
+            UnpaidPager.PageSize,
+            searchTerm: search,
+            statuses: UnpaidStatuses,
+            updateOverdueStatuses: false);
 
         UnpaidInstallments.Clear();
-        foreach (var i in overdueResult.Items)
-            UnpaidInstallments.Add(i);
-        foreach (var i in partialResult.Items)
-            UnpaidInstallments.Add(i);
-        foreach (var i in pendingResult.Items)
+        foreach (var i in items)
             UnpaidInstallments.Add(i);
 
-        var unpaidTotalCount = pendingResult.TotalCount + overdueResult.TotalCount + partialResult.TotalCount;
-        UnpaidPager.ApplyStats(unpaidTotalCount);
+        UnpaidPager.ApplyStats(totalCount);
 
-        var search = string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim();
-        var allOverdue = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Overdue, searchTerm: search);
-        var allPartial = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.PartiallyPaid, searchTerm: search);
-        var allPending = await _installmentService.GetPagedInstallmentsAsync(1, int.MaxValue, InstallmentStatus.Pending, searchTerm: search);
-        var allUnpaid = allOverdue.Items.Concat(allPartial.Items).Concat(allPending.Items).ToList();
-        UnpaidFooter.SetFromInstallments(allUnpaid, $"إجمالي الأقساط غير المسددة ({unpaidTotalCount:N0})");
+        var totals = await _installmentService.GetInstallmentTotalsAsync(
+            searchTerm: search, statuses: UnpaidStatuses, updateOverdueStatuses: false);
+        UnpaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
+            $"إجمالي الأقساط غير المسددة ({totals.Count:N0})");
     }
 
     [RelayCommand]

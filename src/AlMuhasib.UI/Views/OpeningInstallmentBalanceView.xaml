@@ -223,27 +223,31 @@
 
                     <!-- EXCEL TAB -->
                     <TabItem Header="استيراد Excel">
-                        <StackPanel Margin="0,12,0,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Padding="0,0,8,0">
+                        <StackPanel Margin="0,12,0,8">
                             <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="20" Margin="0,0,0,16">
                                 <StackPanel>
                                     <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
                                         <StackPanel>
                                             <TextBlock Text="خطوات الاستيراد" FontWeight="SemiBold" Foreground="#F57F17" Margin="0,0,0,6"/>
                                             <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#795548"
-                                                       Text="1) نزّل القالب  →  2) املأ ورقة «البيانات» (يوجد أمثلة وتعليمات)  →  3) ارفع الملف  →  4) راجع المعاينة  →  5) استورد"/>
+                                                       Text="1) نزّل القالب  →  2) املأ ورقة «البيانات» (يوجد أمثلة وتعليمات)  →  3) ارفع الملف  →  4) راجع المعاينة  →  5) استورد. عدد الأقساط المسددة يمكن أن يكون 0 للعقود الجديدة."/>
                                         </StackPanel>
                                     </Border>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Button Command="{Binding DownloadTemplateCommand}" Margin="0,0,12,0"
-                                                Style="{StaticResource OutlinedButton}" Height="40" Padding="16,0">
+                                                Style="{StaticResource OutlinedButton}" Height="40" Padding="16,0"
+                                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="Download" Width="18" Height="18" VerticalAlignment="Center"/>
                                                 <TextBlock Text="تنزيل قالب Excel" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
                                         <Button Command="{Binding PickImportFileCommand}"
-                                                Style="{StaticResource AccentButton}" Height="40" Padding="16,0">
+                                                Style="{StaticResource AccentButton}" Height="40" Padding="16,0"
+                                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="FileUpload" Width="18" Height="18" VerticalAlignment="Center"/>
                                                 <TextBlock Text="اختيار ملف Excel" Margin="8,0,0,0" VerticalAlignment="Center"/>
@@ -261,7 +265,7 @@
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <controls:ListTableHeaderBar Grid.Row="0"
                                                                  Title="معاينة الاستيراد"
@@ -281,31 +285,52 @@
                                               Style="{StaticResource ModernDataGrid}"
                                               AutoGenerateColumns="False" IsReadOnly="True"
                                               CanUserAddRows="False"
-                                              MinHeight="160">
+                                              Height="360"
+                                              MaxHeight="420"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Auto">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="سطر" Binding="{Binding RowNumber}" Width="50"/>
-                                            <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="140"/>
-                                            <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat={}{0:N0}}" Width="100"/>
-                                            <DataGridTextColumn Header="الأقساط" Binding="{Binding NumberOfInstallments}" Width="70"/>
-                                            <DataGridTextColumn Header="مسدد" Binding="{Binding PaidInstallmentsCount}" Width="60"/>
-                                            <DataGridTextColumn Header="أول قسط" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="100"/>
-                                            <DataGridTextColumn Header="أخطاء" Binding="{Binding ErrorsText}" Width="*"/>
+                                            <DataGridTextColumn Header="سطر" Binding="{Binding RowNumber}" Width="60" MinWidth="50"/>
+                                            <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="220" MinWidth="160"/>
+                                            <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat={}{0:N0}}" Width="120" MinWidth="100"/>
+                                            <DataGridTextColumn Header="الأقساط" Binding="{Binding NumberOfInstallments}" Width="90" MinWidth="80"/>
+                                            <DataGridTextColumn Header="مسدد" Binding="{Binding PaidInstallmentsCount}" Width="90" MinWidth="70"/>
+                                            <DataGridTextColumn Header="أول قسط" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="120" MinWidth="110"/>
+                                            <DataGridTextColumn Header="أخطاء" Binding="{Binding ErrorsText}" Width="*" MinWidth="180"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
                             </materialDesign:Card>
 
                             <Button Command="{Binding ImportCommand}" HorizontalAlignment="Left"
-                                    Style="{StaticResource AccentButton}" Height="44" Padding="24,0"
-                                    materialDesign:ButtonAssist.CornerRadius="10">
+                                    Style="{StaticResource AccentButton}" Height="48" Padding="28,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="DatabaseImport" Width="20" Height="20" VerticalAlignment="Center"/>
                                     <TextBlock Text="استيراد إلى النظام" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
+                        </ScrollViewer>
                     </TabItem>
         </TabControl>
+
+        <!-- Busy overlay أثناء الاستيراد -->
+        <Border Background="#99000000"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                Panel.ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="56" Height="56"
+                             Foreground="White"/>
+                <TextBlock Text="{Binding ImportStatusMessage}" Margin="0,16,0,0"
+                           FontSize="15" FontWeight="SemiBold" Foreground="White"
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="420"/>
+                <TextBlock Text="يرجى الانتظار..." Margin="0,6,0,0"
+                           FontSize="13" Foreground="#BBDEFB" TextAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
         <!-- Quick add customer overlay -->
         <Border Background="#80000000" Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}">
