@@ -583,6 +583,48 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             return;
         }
 
+        if (_userPreferences.Current.FeatureFlags.AddMissingProductsOnPurchase)
+        {
+            var missingNames = validItems
+                .Where(row =>
+                {
+                    if (row.ProductId is > 0) return false;
+                    var name = row.ItemName.Trim();
+                    return !Products.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                })
+                .Select(row => row.ItemName.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (missingNames.Count > 0)
+            {
+                var preview = string.Join("\n", missingNames.Take(12).Select(n => $"• {n}"));
+                if (missingNames.Count > 12)
+                    preview += $"\n… و{missingNames.Count - 12} أخرى";
+
+                var confirmed = BeautifulMessageDialog.ShowConfirm(
+                    $"الأسماء التالية غير موجودة في المنتجات:\n{preview}\n\nهل تريد إضافتها إلى المنتجات ثم حفظ الفاتورة؟",
+                    "منتجات ناقصة");
+                if (!confirmed)
+                {
+                    ErrorMessage = "تم إلغاء الحفظ — لم تُضف المنتجات الناقصة";
+                    return;
+                }
+
+                IsBusy = true;
+                try
+                {
+                    await EnsureMissingProductsCreatedAsync(missingNames, validItems);
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage = $"تعذّر إنشاء المنتجات الناقصة: {ex.Message}";
+                    IsBusy = false;
+                    return;
+                }
+            }
+        }
+
         IsBusy = true;
 
         try
@@ -629,6 +671,11 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     var matchedProduct = Products.FirstOrDefault(p =>
                         p.Name.Equals(row.ItemName.Trim(), StringComparison.OrdinalIgnoreCase));
                     productId = matchedProduct?.Id;
+                    if (productId is > 0)
+                    {
+                        row.ProductId = productId;
+                        row.SelectedProduct = matchedProduct;
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(row.SizeName))
@@ -703,6 +750,53 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task EnsureMissingProductsCreatedAsync(
+        IReadOnlyList<string> missingNames,
+        IReadOnlyList<InvoiceItemRow> validItems)
+    {
+        var categories = (await _unitOfWork.Categories.GetAllAsync()).ToList();
+        var defaultCategory = categories.FirstOrDefault(c =>
+                c.Name.Equals("عام", StringComparison.OrdinalIgnoreCase))
+            ?? categories.FirstOrDefault();
+
+        if (defaultCategory is null)
+        {
+            defaultCategory = new Category
+            {
+                Name = "عام",
+                CreatedBy = _currentUserService.Username,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.Categories.AddAsync(defaultCategory);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        foreach (var name in missingNames)
+        {
+            if (Products.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            var product = new Product
+            {
+                Name = name,
+                CategoryId = defaultCategory.Id,
+                CreatedBy = _currentUserService.Username,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.Products.AddAsync(product);
+            await _unitOfWork.SaveChangesAsync();
+            Products.Add(product);
+
+            foreach (var row in validItems.Where(r =>
+                         r.ProductId is null or 0
+                         && r.ItemName.Trim().Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                row.ProductId = product.Id;
+                row.SelectedProduct = product;
+            }
         }
     }
 

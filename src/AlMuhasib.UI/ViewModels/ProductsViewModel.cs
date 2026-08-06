@@ -24,6 +24,8 @@ public partial class ProductsViewModel : ViewModelBase
     private readonly IBarcodeLabelService _barcodeLabelService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly IProductPriceService _productPriceService;
+    private readonly IDataImportService _importService;
+    private readonly IServiceProvider _services;
     private readonly bool _pricingEnabled;
 
     // ── Collections ────────────────────────────────────────
@@ -165,6 +167,8 @@ public partial class ProductsViewModel : ViewModelBase
         IBarcodeLabelService barcodeLabelService,
         IUserPreferencesService userPreferences,
         IProductPriceService productPriceService,
+        IDataImportService importService,
+        IServiceProvider services,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IPackagingTypeService packagingTypeService,
@@ -182,6 +186,8 @@ public partial class ProductsViewModel : ViewModelBase
         _barcodeLabelService = barcodeLabelService;
         _userPreferences = userPreferences;
         _productPriceService = productPriceService;
+        _importService = importService;
+        _services = services;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         ShowPricingOnCards = _pricingEnabled;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);

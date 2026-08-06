@@ -15,6 +15,7 @@ public interface IFeatureFlagService
     bool SerialNumbers { get; }
     bool ProductPricingEnabled { get; }
     bool UpdateProductPriceOnPurchase { get; }
+    bool AddMissingProductsOnPurchase { get; }
     bool ProductDiscountEnabled { get; }
     bool LoyaltySystem { get; }
     bool TransportFees { get; }

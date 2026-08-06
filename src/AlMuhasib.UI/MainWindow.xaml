@@ -1366,6 +1366,9 @@
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:BulkProductsEntryViewModel}">
+                            <views:BulkProductsEntryView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CategoriesViewModel}">
                             <views:CategoriesView />
                         </DataTemplate>

@@ -200,6 +200,10 @@
                                                     Description="عند إنشاء فاتورة مشتريات فقط: حفظ آخر سعر شراء لنوع التسعير المختار"
                                                     Icon="PlaylistEdit" IconBackground="#FFF3E0" IconForeground="#E65100"
                                                     IsChecked="{Binding UpdateProductPriceOnPurchase}"/>
+                        <controls:FeatureToggleCard Title="إضافة المنتجات الناقصة من فاتورة مشتريات"
+                                                    Description="قبل حفظ فاتورة المشتريات: إن وُجد اسم غير موجود في المنتجات يُطلب تأكيد إضافته ثم يُنشأ ويُربط بالبند"
+                                                    Icon="PackageVariantClosedPlus" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    IsChecked="{Binding AddMissingProductsOnPurchase}"/>
                         <controls:FeatureToggleCard Title="تفعيل الخصم"
                                                     Description="خصم على المنتجات والفواتير (نسبة أو قيمة) في البيع والأقساط ونقطة البيع"
                                                     Icon="Percent" IconBackground="#E8F5E9" IconForeground="#2E7D32"
