@@ -24,6 +24,9 @@ public class Customer : BaseEntity
     /// <summary>هاتف الضامن.</summary>
     public string? GuarantorPhone { get; set; }
 
+    /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
+    public string? CustomFieldsJson { get; set; }
+
     // Navigation
     public ICollection<Invoice> Invoices { get; set; } = [];
     public ICollection<InstallmentPlan> InstallmentPlans { get; set; } = [];

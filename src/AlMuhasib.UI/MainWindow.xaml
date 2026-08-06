@@ -1657,6 +1657,9 @@
                         <DataTemplate DataType="{x:Type vm:BusinessFeaturesSettingsViewModel}">
                             <views:BusinessFeaturesSettingsView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CustomFieldSettingsViewModel}">
+                            <views:CustomFieldSettingsView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:LoyaltySettingsViewModel}">
                             <loyaltyViews:LoyaltySettingsView />
                         </DataTemplate>

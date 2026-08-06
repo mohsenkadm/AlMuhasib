@@ -32,6 +32,9 @@ public class Product : BaseEntity
     /// <summary>تاريخ انتهاء الخصم (UTC). null = بدون انتهاء.</summary>
     public DateTime? DiscountExpiresAt { get; set; }
 
+    /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
+    public string? CustomFieldsJson { get; set; }
+
     // Navigation
     public Category Category { get; set; } = null!;
     public ICollection<WarehouseStock> WarehouseStocks { get; set; } = [];

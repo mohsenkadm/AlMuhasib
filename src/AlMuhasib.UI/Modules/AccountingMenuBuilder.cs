@@ -128,6 +128,7 @@ public static class AccountingMenuBuilder
                 ("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), "Permissions"),
                 ("معالج النقل", PackIconKind.DatabaseImport, typeof(MigrationWizardViewModel), "DataImport"),
                 ("إعدادات الميزات", PackIconKind.TuneVariant, typeof(BusinessFeaturesSettingsViewModel), "BusinessFeatures"),
+                ("إعدادات الحقول", PackIconKind.FormSelect, typeof(CustomFieldSettingsViewModel), "CustomFieldSettings"),
                 ("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), "PrintSettings"),
                 ("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), "Backup"),
                 ("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),

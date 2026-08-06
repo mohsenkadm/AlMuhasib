@@ -8,6 +8,9 @@ public class Supplier : BaseEntity
     public string? Address { get; set; }
     public string? Notes { get; set; }
 
+    /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
+    public string? CustomFieldsJson { get; set; }
+
     // Navigation
     public ICollection<Invoice> Invoices { get; set; } = [];
 }

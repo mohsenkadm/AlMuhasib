@@ -26,6 +26,9 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(c => c.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(c => c.CustomFieldsJson)
+            .HasMaxLength(4000);
+
         builder.HasIndex(c => c.FileNumber)
             .IsUnique()
             .HasFilter("[FileNumber] IS NOT NULL AND [IsDeleted] = 0");
