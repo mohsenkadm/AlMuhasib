@@ -56,7 +56,7 @@ const VideosUI = {
     this.filtered = [...this.all];
     this.renderCategories();
     this.renderList();
-    if (this.all.length) this.select(this.all[0]);
+    if (this.all.length) this.select(this.all[0], { scroll: false });
 
     const search = document.getElementById('video-search');
     search?.addEventListener('input', () => this.applyFilter(search.value.trim()));
@@ -73,7 +73,7 @@ const VideosUI = {
       const card = e.target.closest('[data-video-idx]');
       if (!card) return;
       const idx = +card.dataset.videoIdx;
-      if (this.filtered[idx]) this.select(this.filtered[idx]);
+      if (this.filtered[idx]) this.select(this.filtered[idx], { scroll: true });
     });
   },
 
@@ -94,7 +94,7 @@ const VideosUI = {
     });
     this.renderList();
     if (this.selected && !this.filtered.includes(this.selected)) {
-      this.select(this.filtered[0] ?? null);
+      this.select(this.filtered[0] ?? null, { scroll: false });
     }
   },
 
@@ -145,7 +145,7 @@ const VideosUI = {
     });
   },
 
-  select(video) {
+  select(video, { scroll = false } = {}) {
     this.selected = video;
     const wrap = document.getElementById('video-embed-wrap');
     const title = document.getElementById('video-active-title');
@@ -184,7 +184,7 @@ const VideosUI = {
     const idx = this.filtered.indexOf(video);
     const card = document.querySelector(`[data-video-idx="${idx}"]`);
     card?.classList.add('active');
-    card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (scroll) card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 };
 
@@ -201,6 +201,6 @@ document.addEventListener('i18n-ready', () => {
   if (videosInited) {
     VideosUI.renderCategories();
     VideosUI.renderList();
-    if (VideosUI.selected) VideosUI.select(VideosUI.selected);
+    if (VideosUI.selected) VideosUI.select(VideosUI.selected, { scroll: false });
   }
 });
