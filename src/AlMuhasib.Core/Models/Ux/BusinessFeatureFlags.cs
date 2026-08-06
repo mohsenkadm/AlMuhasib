@@ -19,6 +19,9 @@ public class BusinessFeatureFlags
     /// <summary>تحديث سعر المنتج من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }
 
+    /// <summary>عند حفظ فاتورة مشتريات: اقتراح إضافة الأسماء غير الموجودة كمنتجات قبل الحفظ — معطّل افتراضياً.</summary>
+    public bool AddMissingProductsOnPurchase { get; set; }
+
     /// <summary>تفعيل الخصم على المنتجات والفواتير (بيع/أقساط/POS) — معطّل افتراضياً.</summary>
     public bool ProductDiscountEnabled { get; set; }
 

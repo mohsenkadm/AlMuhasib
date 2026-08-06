@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Models.Import;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IDataImportService
@@ -6,11 +8,11 @@ public interface IDataImportService
     Task<DataImportResult> ImportCustomersAsync(string filePath);
     Task<DataImportPreview> PreviewSuppliersAsync(string filePath);
     Task<DataImportResult> ImportSuppliersAsync(string filePath);
-    Task<DataImportPreview> PreviewProductsAsync(string filePath);
-    Task<DataImportResult> ImportProductsAsync(string filePath);
+    Task<DataImportPreview> PreviewProductsAsync(string filePath, ProductImportOptions? options = null);
+    Task<DataImportResult> ImportProductsAsync(string filePath, ProductImportOptions? options = null);
     void SaveCustomerTemplate(string filePath);
     void SaveSupplierTemplate(string filePath);
-    void SaveProductTemplate(string filePath);
+    void SaveProductTemplate(string filePath, ProductImportOptions? options = null);
 }
 
 public class DataImportPreview
