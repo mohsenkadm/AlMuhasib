@@ -382,7 +382,8 @@ public class InstallmentService : IInstallmentService
 
     public async Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
         int page, int pageSize, InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
-        IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = true)
+        IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = true,
+        bool includeCashBox = true)
     {
         if (updateOverdueStatuses)
             await UpdateOverdueStatusesAsync();
@@ -393,13 +394,33 @@ public class InstallmentService : IInstallmentService
         var totalCount = await query.CountAsync();
         var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 500);
         var safePage = page <= 0 ? 1 : page;
-        var items = await query
-            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
-            .Include(i => i.CashBox)
+
+        // جلب المعرفات أولاً ثم التحميل مع العلاقات — أسرع مع Include على جداول كبيرة
+        var pageIds = await query
             .OrderBy(i => i.DueDate)
+            .ThenBy(i => i.Id)
             .Skip((safePage - 1) * safePageSize)
             .Take(safePageSize)
+            .Select(i => i.Id)
             .ToListAsync();
+
+        if (pageIds.Count == 0)
+            return (Array.Empty<Installment>(), totalCount);
+
+        IQueryable<Installment> itemsQuery = context.Installments
+            .AsNoTracking()
+            .Where(i => pageIds.Contains(i.Id))
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer);
+
+        if (includeCashBox)
+            itemsQuery = itemsQuery.Include(i => i.CashBox);
+
+        var items = await itemsQuery
+            .AsSplitQuery()
+            .ToListAsync();
+
+        var order = pageIds.Select((id, index) => (id, index)).ToDictionary(x => x.id, x => x.index);
+        items.Sort((a, b) => order[a.Id].CompareTo(order[b.Id]));
         return (items, totalCount);
     }
 
@@ -414,13 +435,14 @@ public class InstallmentService : IInstallmentService
         var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
 
         var agg = await query
+            .Select(i => new { i.Amount, i.PaidAmount, i.RemainingAmount })
             .GroupBy(_ => 1)
             .Select(g => new
             {
                 Count = g.Count(),
-                TotalAmount = g.Sum(i => i.Amount),
-                PaidAmount = g.Sum(i => i.PaidAmount),
-                RemainingAmount = g.Sum(i => i.RemainingAmount)
+                TotalAmount = g.Sum(x => x.Amount),
+                PaidAmount = g.Sum(x => x.PaidAmount),
+                RemainingAmount = g.Sum(x => x.RemainingAmount)
             })
             .FirstOrDefaultAsync();
 

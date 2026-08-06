@@ -27,13 +27,19 @@ public class PlatformDeductionExcelService : IPlatformDeductionExcelService
     {
         using var workbook = new XLWorkbook(filePath);
         var sheet = workbook.Worksheet(1);
-        var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var lastCol = sheet.LastColumnUsed()?.ColumnNumber() ?? 1;
+        var used = sheet.RangeUsed();
+        if (used is null)
+            return [];
+
+        var lastRow = used.LastRow().RowNumber();
+        var lastCol = used.LastColumn().ColumnNumber();
+        if (lastRow < 2)
+            return [];
 
         var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var col = 1; col <= lastCol; col++)
         {
-            var header = sheet.Cell(1, col).GetString().Trim();
+            var header = SafeCellText(sheet.Cell(1, col));
             if (header.Length > 0 && !headerMap.ContainsKey(header))
                 headerMap[header] = col;
         }
@@ -50,42 +56,62 @@ public class PlatformDeductionExcelService : IPlatformDeductionExcelService
         var statusCol = FindColumn(headerMap, ["حالة الأستقطاع", "حالة الاستقطاع"]);
         var categoryCol = FindColumn(headerMap, ["صنف الزبون"]);
 
-        var rows = new List<PlatformDeductionImportRow>();
+        var rows = new List<PlatformDeductionImportRow>(Math.Max(0, lastRow - 1));
         for (var rowNum = 2; rowNum <= lastRow; rowNum++)
         {
-            var customerName = sheet.Cell(rowNum, nameCol).GetString().Trim();
-            if (string.IsNullOrWhiteSpace(customerName))
-                continue;
-
-            var importRow = new PlatformDeductionImportRow
+            try
             {
-                RowNumber = rowNum,
-                CustomerName = customerName,
-                PlatformInvoiceId = GetOptionalString(sheet, rowNum, invoiceCol),
-                DeductionId = GetOptionalString(sheet, rowNum, deductionIdCol),
-                MotherName = GetOptionalString(sheet, rowNum, motherCol),
-                GovernmentNumber = GetOptionalString(sheet, rowNum, govCol),
-                DeductionStatus = GetOptionalString(sheet, rowNum, statusCol),
-                CustomerCategory = GetOptionalString(sheet, rowNum, categoryCol)
-            };
+                var customerName = SafeCellText(sheet.Cell(rowNum, nameCol));
+                if (string.IsNullOrWhiteSpace(customerName))
+                    continue;
 
-            if (TryParseDecimal(sheet.Cell(rowNum, deductedCol), out var deducted) && deducted > 0)
-                importRow.DeductedAmount = deducted;
-            else
-                importRow.Errors.Add("المبلغ المستقطع غير صالح");
+                var importRow = new PlatformDeductionImportRow
+                {
+                    RowNumber = rowNum,
+                    CustomerName = customerName,
+                    PlatformInvoiceId = GetOptionalString(sheet, rowNum, invoiceCol),
+                    DeductionId = GetOptionalString(sheet, rowNum, deductionIdCol),
+                    MotherName = GetOptionalString(sheet, rowNum, motherCol),
+                    GovernmentNumber = GetOptionalString(sheet, rowNum, govCol),
+                    DeductionStatus = GetOptionalString(sheet, rowNum, statusCol),
+                    CustomerCategory = GetOptionalString(sheet, rowNum, categoryCol)
+                };
 
-            if (TryParseDecimal(sheet.Cell(rowNum, requestedCol), out var requested) && requested >= 0)
-                importRow.RequestedAmount = requested;
+                if (TryParseDecimal(sheet.Cell(rowNum, deductedCol), out var deducted) && deducted > 0)
+                    importRow.DeductedAmount = deducted;
+                else
+                    importRow.Errors.Add("المبلغ المستقطع غير صالح");
 
-            if (deductionDateCol is int dCol && TryParseDate(sheet.Cell(rowNum, dCol), out var dDate))
-                importRow.DeductionDate = dDate;
-            if (dueDateCol is int uCol && TryParseDate(sheet.Cell(rowNum, uCol), out var uDate))
-                importRow.DueDate = uDate;
+                if (TryParseDecimal(sheet.Cell(rowNum, requestedCol), out var requested) && requested >= 0)
+                    importRow.RequestedAmount = requested;
 
-            rows.Add(importRow);
+                if (deductionDateCol is int dCol && TryParseDate(sheet.Cell(rowNum, dCol), out var dDate))
+                    importRow.DeductionDate = dDate;
+                if (dueDateCol is int uCol && TryParseDate(sheet.Cell(rowNum, uCol), out var uDate))
+                    importRow.DueDate = uDate;
+
+                rows.Add(importRow);
+            }
+            catch
+            {
+                // تجاهل صف تالف واستمرار بقية الملف
+            }
         }
 
         return rows;
+    }
+
+    private static string SafeCellText(IXLCell cell)
+    {
+        try
+        {
+            return cell.GetFormattedString().Trim();
+        }
+        catch
+        {
+            try { return cell.GetString().Trim(); }
+            catch { return string.Empty; }
+        }
     }
 
     private static int? FindColumn(Dictionary<string, int> map, IEnumerable<string> candidates)
@@ -113,7 +139,7 @@ public class PlatformDeductionExcelService : IPlatformDeductionExcelService
     private static string? GetOptionalString(IXLWorksheet sheet, int row, int? col)
     {
         if (col is null) return null;
-        var text = sheet.Cell(row, col.Value).GetString().Trim();
+        var text = SafeCellText(sheet.Cell(row, col.Value));
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 

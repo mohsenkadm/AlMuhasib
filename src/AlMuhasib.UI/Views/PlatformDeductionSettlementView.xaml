@@ -74,7 +74,13 @@
         </UniformGrid>
 
         <md:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
-            <DataGrid ItemsSource="{Binding RowsView}"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+            <DataGrid Grid.Row="0"
+                      ItemsSource="{Binding PagedRows}"
                       AutoGenerateColumns="False"
                       IsReadOnly="False"
                       CanUserAddRows="False"
@@ -83,11 +89,9 @@
                       Style="{StaticResource ModernDataGrid}"
                       RowHeight="46"
                       EnableRowVirtualization="True"
-                      EnableColumnVirtualization="True"
+                      EnableColumnVirtualization="False"
                       VirtualizingPanel.IsVirtualizing="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling"
-                      VirtualizingPanel.ScrollUnit="Pixel"
-                      ScrollViewer.IsDeferredScrollingEnabled="True">
+                      VirtualizingPanel.VirtualizationMode="Recycling">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                         <Setter Property="Background" Value="#FAFAFA"/>
@@ -175,6 +179,8 @@
                     <DataGridTextColumn Header="نتيجة" Binding="{Binding ResultMessage}" Width="1.2*" IsReadOnly="True"/>
                 </DataGrid.Columns>
             </DataGrid>
+            <controls:PaginationBar Grid.Row="1" DataContext="{Binding RowsPager}" Margin="8,4"/>
+            </Grid>
         </md:Card>
 
         <md:Card x:Name="FooterBar" Grid.Row="3" Style="{StaticResource ElevatedCard}"
@@ -191,10 +197,10 @@
                 <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Command="{Binding SelectAllMatchedCommand}" Style="{StaticResource FlatButton}"
                             Margin="0,0,8,6" Padding="14,8" MinHeight="36"
-                            Content="تحديد الكل المطابق"/>
+                            Content="تحديد الكل المطابق (كل الصفحات)"/>
                     <Button Command="{Binding ClearSelectionCommand}" Style="{StaticResource FlatButton}"
                             Margin="0,0,16,6" Padding="14,8" MinHeight="36"
-                            Content="إلغاء التحديد"/>
+                            Content="إلغاء التحديد (كل الصفحات)"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
                         <TextBlock Text="القاصة:" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
                         <ComboBox ItemsSource="{Binding CashBoxes}"

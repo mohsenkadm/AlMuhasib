@@ -179,8 +179,6 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="" Width="Auto">
-                                    
                                 <DataGridTextColumn x:Name="ColCf1" Header="حقل 1" Width="100" Visibility="Collapsed"
                                                     Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=1}"/>
                                 <DataGridTextColumn x:Name="ColCf2" Header="حقل 2" Width="100" Visibility="Collapsed"
@@ -197,8 +195,8 @@
                                                     Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=7}"/>
                                 <DataGridTextColumn x:Name="ColCf8" Header="حقل 8" Width="100" Visibility="Collapsed"
                                                     Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=8}"/>
-
-<DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Style="{StaticResource FlatButton}"
                                                     Command="{Binding DataContext.EditInvestorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"

@@ -1,13 +1,12 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows;
-using System.Windows.Data;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -21,9 +20,13 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
-    public ObservableCollection<PlatformDeductionRowVm> Rows { get; } = [];
+    /// <summary>كل صفوف الاستيراد (كل الصفحات) — التحديد والتسديد يعتمدان عليها.</summary>
+    private List<PlatformDeductionRowVm> _allRows = [];
+
+    /// <summary>الصفحة الحالية المعروضة في الجدول فقط.</summary>
+    public ObservableCollection<PlatformDeductionRowVm> PagedRows { get; } = [];
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
-    public ICollectionView RowsView { get; }
+    public PagerState RowsPager { get; } = new() { PageSize = 50 };
 
     [ObservableProperty] private CashBox? _selectedCashBox;
     [ObservableProperty] private string _filePath = string.Empty;
@@ -38,6 +41,11 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
     [ObservableProperty] private int _selectedCount;
     [ObservableProperty] private decimal _selectedAmount;
 
+    private bool _suppressRowViewRefresh;
+    private CancellationTokenSource? _loadCts;
+    private List<(int Id, string Name, string Compact)>? _customerIndex;
+    private Dictionary<string, List<(int Id, string Name, string Compact)>>? _prefixIndex;
+
     public PlatformDeductionSettlementViewModel(
         IPlatformDeductionExcelService excelService,
         IInstallmentService installmentService,
@@ -49,8 +57,7 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         PageTitle = "تسديد استقطاع المنصة";
-        RowsView = CollectionViewSource.GetDefaultView(Rows);
-        RowsView.Filter = FilterRow;
+        RowsPager.Bind(ShowCurrentPageAsync);
     }
 
     public override async Task InitializeAsync()
@@ -73,21 +80,41 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
         }
     }
 
-    partial void OnFilterModeChanged(string value) => RowsView.Refresh();
-
-    private bool FilterRow(object obj)
+    partial void OnFilterModeChanged(string value)
     {
-        if (obj is not PlatformDeductionRowVm row)
-            return false;
+        RowsPager.ResetToFirstPage();
+        _ = ShowCurrentPageAsync();
+    }
 
-        return FilterMode switch
-        {
-            "Matched" => row.MatchStatus == PlatformDeductionMatchStatus.Matched,
-            "Suggested" => row.MatchStatus == PlatformDeductionMatchStatus.Suggested,
-            "NotFound" => row.MatchStatus is PlatformDeductionMatchStatus.NotFound or PlatformDeductionMatchStatus.Invalid,
-            "Selected" => row.IsSelected,
-            _ => true
-        };
+    private bool MatchesFilter(PlatformDeductionRowVm row) => FilterMode switch
+    {
+        "Matched" => row.MatchStatus == PlatformDeductionMatchStatus.Matched,
+        "Suggested" => row.MatchStatus == PlatformDeductionMatchStatus.Suggested,
+        "NotFound" => row.MatchStatus is PlatformDeductionMatchStatus.NotFound or PlatformDeductionMatchStatus.Invalid,
+        "Selected" => row.IsSelected,
+        _ => true
+    };
+
+    private List<PlatformDeductionRowVm> GetFilteredRows() =>
+        _allRows.Where(MatchesFilter).ToList();
+
+    private Task ShowCurrentPageAsync()
+    {
+        var filtered = GetFilteredRows();
+        RowsPager.ApplyStats(filtered.Count);
+
+        var page = Math.Max(1, Math.Min(RowsPager.CurrentPage, Math.Max(1, RowsPager.TotalPages)));
+        if (page != RowsPager.CurrentPage)
+            RowsPager.CurrentPage = page;
+
+        var skip = (page - 1) * RowsPager.PageSize;
+        var slice = filtered.Skip(skip).Take(RowsPager.PageSize).ToList();
+
+        PagedRows.Clear();
+        foreach (var row in slice)
+            PagedRows.Add(row);
+
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -121,131 +148,272 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
     {
         if (IsBusy) return;
         IsBusy = true;
+
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
         try
         {
-            StatusMessage = "جاري قراءة الملف...";
+            StatusMessage = "جاري قراءة الملف وتحميل العملاء...";
             var path = FilePath;
 
-            StatusMessage = "جاري تحميل العملاء...";
-            var (allCustomers, _) = await _unitOfWork.Customers.GetPagedAsync(1, int.MaxValue);
+            var allCustomers = await _unitOfWork.Customers.GetAllAsync();
             var customerNames = allCustomers
-                .Select(c => (c.Id, c.Name ?? string.Empty))
+                .Select(c => (Id: c.Id, Name: c.Name ?? string.Empty))
                 .ToList();
 
-            StatusMessage = "جاري المطابقة (قد تستغرق لحظات للملفات الكبيرة)...";
-            var builtRows = await Task.Run(() => BuildMatchedRows(path, customerNames));
+            StatusMessage = "جاري قراءة إكسل...";
+            var imported = await Task.Run(() => _excelService.ParseImportFile(path), ct);
+            ct.ThrowIfCancellationRequested();
 
-            foreach (var old in Rows)
-                old.PropertyChanged -= OnRowPropertyChanged;
+            StatusMessage = $"جاري المطابقة الدقيقة ({imported.Count:N0} صف)...";
+            var matchResults = await Task.Run(() => BuildExactMatchResults(imported, customerNames), ct);
+            ct.ThrowIfCancellationRequested();
 
-            using (RowsView.DeferRefresh())
-            {
-                Rows.Clear();
-                foreach (var row in builtRows)
-                {
-                    row.PropertyChanged += OnRowPropertyChanged;
-                    Rows.Add(row);
-                }
-            }
+            _customerIndex = customerNames
+                .Select(c => (c.Id, c.Name, Compact: ArabicNameNormalizer.Compact(c.Name)))
+                .Where(c => c.Compact.Length >= 2)
+                .ToList();
+            _prefixIndex = ArabicNameNormalizer.BuildPrefixIndex(_customerIndex);
 
+            StatusMessage = "جاري عرض النتائج...";
+            var builtRows = await Task.Run(() => CreateRowVms(matchResults), ct);
+            ct.ThrowIfCancellationRequested();
+
+            ReplaceAllRows(builtRows);
             RefreshStats();
-            StatusMessage = $"تم تحميل {Rows.Count:N0} صفاً — راجع المطابقة ثم حدّد الصفوف للتسديد";
+            StatusMessage = $"تم تحميل {_allRows.Count:N0} صفاً — جاري تحسين الاقتراحات التقريبية...";
+            IsBusy = false;
+
+            _ = ApplyFuzzySuggestionsAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "تم إلغاء التحميل";
+            IsBusy = false;
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError($"فشل قراءة الملف: {ex.Message}");
+            var detail = ex is AggregateException agg
+                ? string.Join(" | ", agg.Flatten().InnerExceptions.Select(e => e.Message).Distinct().Take(3))
+                : ex.GetBaseException().Message;
+            BeautifulMessageDialog.ShowError($"فشل قراءة الملف: {detail}");
             StatusMessage = "فشل تحميل الملف";
-        }
-        finally
-        {
             IsBusy = false;
         }
     }
 
-    private List<PlatformDeductionRowVm> BuildMatchedRows(
-        string path,
+    private void ReplaceAllRows(List<PlatformDeductionRowVm> builtRows)
+    {
+        foreach (var old in _allRows)
+            old.PropertyChanged -= OnRowPropertyChanged;
+
+        _allRows = builtRows;
+        foreach (var row in _allRows)
+            row.PropertyChanged += OnRowPropertyChanged;
+
+        RowsPager.ResetToFirstPage();
+        _ = ShowCurrentPageAsync();
+    }
+
+    private static List<PlatformDeductionRowVm> CreateRowVms(List<PlatformMatchResult> matchResults)
+    {
+        var builtRows = new List<PlatformDeductionRowVm>(matchResults.Count);
+        foreach (var result in matchResults)
+        {
+            var row = new PlatformDeductionRowVm(result.Source);
+            row.ApplyMatch(
+                result.Status,
+                result.MatchLabel,
+                result.CustomerId,
+                result.CustomerName,
+                result.IsSelected,
+                result.Suggestions);
+            builtRows.Add(row);
+        }
+        return builtRows;
+    }
+
+    private sealed class PlatformMatchResult
+    {
+        public required PlatformDeductionImportRow Source { get; init; }
+        public PlatformDeductionMatchStatus Status { get; init; }
+        public string MatchLabel { get; init; } = string.Empty;
+        public int? CustomerId { get; init; }
+        public string? CustomerName { get; init; }
+        public bool IsSelected { get; init; }
+        public List<(int Id, string Name, double Score)> Suggestions { get; init; } = [];
+    }
+
+    private static List<PlatformMatchResult> BuildExactMatchResults(
+        IReadOnlyList<PlatformDeductionImportRow> imported,
         List<(int Id, string Name)> customers)
     {
-        var imported = _excelService.ParseImportFile(path);
+        if (imported.Count == 0)
+            return [];
 
         var byCompact = new Dictionary<string, (int Id, string Name)>(customers.Count, StringComparer.Ordinal);
-        var indexed = new List<(int Id, string Name, string Compact)>(customers.Count);
         foreach (var c in customers)
         {
             var key = ArabicNameNormalizer.Compact(c.Name);
             if (key.Length == 0) continue;
             if (!byCompact.ContainsKey(key))
                 byCompact[key] = c;
-            indexed.Add((c.Id, c.Name, key));
         }
 
-        var rows = new PlatformDeductionRowVm[imported.Count];
+        var results = new PlatformMatchResult[imported.Count];
         Parallel.For(0, imported.Count, i =>
         {
             var item = imported[i];
-            var row = new PlatformDeductionRowVm(item);
-
             if (item.HasErrors || item.DeductedAmount <= 0)
             {
-                row.MatchStatus = PlatformDeductionMatchStatus.Invalid;
-                row.MatchLabel = "بيانات غير صالحة";
-                rows[i] = row;
+                results[i] = new PlatformMatchResult
+                {
+                    Source = item,
+                    Status = PlatformDeductionMatchStatus.Invalid,
+                    MatchLabel = "بيانات غير صالحة"
+                };
                 return;
             }
 
             var compact = ArabicNameNormalizer.Compact(item.CustomerName);
             if (compact.Length > 0 && byCompact.TryGetValue(compact, out var exact))
             {
-                row.MatchedCustomerId = exact.Id;
-                row.MatchedCustomerName = exact.Name;
-                row.MatchStatus = PlatformDeductionMatchStatus.Matched;
-                row.MatchLabel = "مطابق";
-                row.IsSelected = true;
-                rows[i] = row;
+                results[i] = new PlatformMatchResult
+                {
+                    Source = item,
+                    Status = PlatformDeductionMatchStatus.Matched,
+                    MatchLabel = "مطابق",
+                    CustomerId = exact.Id,
+                    CustomerName = exact.Name,
+                    IsSelected = true
+                };
                 return;
             }
 
-            var suggestions = ArabicNameNormalizer.FindSuggestionsFast(item.CustomerName, indexed);
-            if (suggestions.Count > 0)
+            results[i] = new PlatformMatchResult
             {
-                foreach (var s in suggestions)
-                    row.Suggestions.Add(new CustomerSuggestionVm(s.Id, s.Name, s.Score));
-                row.MatchStatus = PlatformDeductionMatchStatus.Suggested;
-                row.MatchLabel = "اقتراح تقريبي";
-                row.SelectedSuggestion = row.Suggestions[0];
-            }
-            else
-            {
-                row.MatchStatus = PlatformDeductionMatchStatus.NotFound;
-                row.MatchLabel = "غير موجود";
-            }
-
-            rows[i] = row;
+                Source = item,
+                Status = PlatformDeductionMatchStatus.NotFound,
+                MatchLabel = "غير موجود"
+            };
         });
 
-        return rows.ToList();
+        return results.Select((r, i) => r ?? new PlatformMatchResult
+        {
+            Source = imported[i],
+            Status = PlatformDeductionMatchStatus.NotFound,
+            MatchLabel = "غير موجود"
+        }).ToList();
+    }
+
+    private async Task ApplyFuzzySuggestionsAsync(CancellationToken ct)
+    {
+        try
+        {
+            if (_prefixIndex is null || _prefixIndex.Count == 0)
+            {
+                StatusMessage = $"تم تحميل {_allRows.Count:N0} صفاً — راجع المطابقة ثم حدّد الصفوف للتسديد";
+                return;
+            }
+
+            var targets = _allRows
+                .Where(r => r.MatchStatus == PlatformDeductionMatchStatus.NotFound)
+                .ToList();
+
+            if (targets.Count == 0)
+            {
+                StatusMessage = $"تم تحميل {_allRows.Count:N0} صفاً — راجع المطابقة ثم حدّد الصفوف للتسديد";
+                return;
+            }
+
+            const int batchSize = 80;
+            var suggested = 0;
+            for (var offset = 0; offset < targets.Count; offset += batchSize)
+            {
+                ct.ThrowIfCancellationRequested();
+                var batch = targets.Skip(offset).Take(batchSize).ToList();
+
+                var updates = await Task.Run(() =>
+                {
+                    var list = new List<(PlatformDeductionRowVm Row, List<(int Id, string Name, double Score)> Suggestions)>(batch.Count);
+                    foreach (var row in batch)
+                    {
+                        var suggestions = ArabicNameNormalizer.FindSuggestionsWithPrefixIndex(
+                            row.ExcelCustomerName, _prefixIndex!);
+                        if (suggestions.Count > 0)
+                            list.Add((row, suggestions.ToList()));
+                    }
+                    return list;
+                }, ct);
+
+                _suppressRowViewRefresh = true;
+                try
+                {
+                    foreach (var (row, suggestions) in updates)
+                    {
+                        row.Suggestions.Clear();
+                        foreach (var s in suggestions)
+                            row.Suggestions.Add(new CustomerSuggestionVm(s.Id, s.Name, s.Score));
+                        row.SelectedSuggestion = row.Suggestions[0];
+                        row.MatchStatus = PlatformDeductionMatchStatus.Suggested;
+                        row.MatchLabel = "اقتراح تقريبي";
+                        suggested++;
+                    }
+                }
+                finally
+                {
+                    _suppressRowViewRefresh = false;
+                }
+
+                StatusMessage =
+                    $"تحسين الاقتراحات... {Math.Min(offset + batchSize, targets.Count):N0}/{targets.Count:N0}";
+                await Task.Delay(1, ct);
+            }
+
+            RefreshStats();
+            await ShowCurrentPageAsync();
+
+            StatusMessage =
+                $"تم تحميل {_allRows.Count:N0} صفاً — اقتراحات تقريبية: {suggested:N0} — راجع ثم سدّد";
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"تم التحميل مع تحذير في الاقتراحات: {ex.Message}";
+            RefreshStats();
+        }
     }
 
     private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (_suppressRowViewRefresh)
+            return;
+
         if (e.PropertyName is nameof(PlatformDeductionRowVm.IsSelected)
             or nameof(PlatformDeductionRowVm.MatchStatus)
-            or nameof(PlatformDeductionRowVm.MatchedCustomerId))
+            or nameof(PlatformDeductionRowVm.MatchedCustomerId)
+            or nameof(PlatformDeductionRowVm.IsSettled))
         {
             RefreshStats();
-            if (FilterMode is "Selected" or "Matched" or "Suggested")
-                RowsView.Refresh();
+            if ((FilterMode is "Selected" or "Matched" or "Suggested" or "NotFound")
+                && e.PropertyName is not nameof(PlatformDeductionRowVm.IsSelected))
+                _ = ShowCurrentPageAsync();
         }
     }
 
     private void RefreshStats()
     {
-        TotalRows = Rows.Count;
-        MatchedCount = Rows.Count(r => r.MatchStatus == PlatformDeductionMatchStatus.Matched);
-        SuggestedCount = Rows.Count(r => r.MatchStatus == PlatformDeductionMatchStatus.Suggested);
-        NotFoundCount = Rows.Count(r => r.MatchStatus is PlatformDeductionMatchStatus.NotFound or PlatformDeductionMatchStatus.Invalid);
-        SelectedCount = Rows.Count(r => r.IsSelected && r.CanSettle);
-        SelectedAmount = Rows.Where(r => r.IsSelected && r.CanSettle).Sum(r => r.DeductedAmount);
+        TotalRows = _allRows.Count;
+        MatchedCount = _allRows.Count(r => r.MatchStatus == PlatformDeductionMatchStatus.Matched);
+        SuggestedCount = _allRows.Count(r => r.MatchStatus == PlatformDeductionMatchStatus.Suggested);
+        NotFoundCount = _allRows.Count(r => r.MatchStatus is PlatformDeductionMatchStatus.NotFound or PlatformDeductionMatchStatus.Invalid);
+        SelectedCount = _allRows.Count(r => r.IsSelected && r.CanSettle);
+        SelectedAmount = _allRows.Where(r => r.IsSelected && r.CanSettle).Sum(r => r.DeductedAmount);
     }
 
     [RelayCommand]
@@ -257,19 +425,42 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
     [RelayCommand]
     private void SelectAllMatched()
     {
-        foreach (var row in Rows.Where(r => r.CanSettle))
-            row.IsSelected = true;
+        _suppressRowViewRefresh = true;
+        try
+        {
+            // تحديد كل المطابق القابل للتسديد عبر كل الصفحات
+            foreach (var row in _allRows.Where(r => r.CanSettle))
+                row.IsSelected = true;
+        }
+        finally
+        {
+            _suppressRowViewRefresh = false;
+        }
+
         RefreshStats();
-        RowsView.Refresh();
+        if (FilterMode == "Selected")
+            _ = ShowCurrentPageAsync();
+        StatusMessage = $"تم تحديد {SelectedCount:N0} صفاً عبر كل الصفحات";
     }
 
     [RelayCommand]
     private void ClearSelection()
     {
-        foreach (var row in Rows)
-            row.IsSelected = false;
+        _suppressRowViewRefresh = true;
+        try
+        {
+            foreach (var row in _allRows)
+                row.IsSelected = false;
+        }
+        finally
+        {
+            _suppressRowViewRefresh = false;
+        }
+
         RefreshStats();
-        RowsView.Refresh();
+        if (FilterMode == "Selected")
+            _ = ShowCurrentPageAsync();
+        StatusMessage = "تم إلغاء التحديد من كل الصفحات";
     }
 
     [RelayCommand]
@@ -284,7 +475,7 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
         row.MatchLabel = "مطابق (يدوي)";
         row.IsSelected = true;
         RefreshStats();
-        RowsView.Refresh();
+        _ = ShowCurrentPageAsync();
     }
 
     [RelayCommand]
@@ -298,15 +489,17 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
             return;
         }
 
-        var toPay = Rows.Where(r => r.IsSelected && r.CanSettle).ToList();
+        // كل المحدد عبر كل الصفحات وليس الصفحة الحالية فقط
+        var toPay = _allRows.Where(r => r.IsSelected && r.CanSettle).ToList();
         if (toPay.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("لا توجد صفوف محددة قابلة للتسديد");
             return;
         }
 
+        var totalAmount = toPay.Sum(r => r.DeductedAmount);
         if (!BeautifulMessageDialog.ShowConfirm(
-                $"سيتم تسديد {toPay.Count:N0} صفاً بإجمالي {SelectedAmount:N2} د.ع عبر القاصة «{SelectedCashBox.Name}».\nهل تريد المتابعة؟"))
+                $"سيتم تسديد {toPay.Count:N0} صفاً (من كل الصفحات) بإجمالي {totalAmount:N2} د.ع عبر القاصة «{SelectedCashBox.Name}».\nهل تريد المتابعة؟"))
             return;
 
         IsSettling = true;
@@ -342,6 +535,7 @@ public partial class PlatformDeductionSettlementViewModel : ViewModelBase
             }
 
             RefreshStats();
+            await ShowCurrentPageAsync();
             var summary = $"نجاح {result.SuccessCount} | فشل {result.FailedCount} | المدفوع {result.TotalPaid:N2}";
             StatusMessage = summary;
             if (result.FailedCount > 0)
@@ -397,6 +591,25 @@ public partial class PlatformDeductionRowVm : ObservableObject
     [ObservableProperty] private string? _matchedCustomerName;
     [ObservableProperty] private CustomerSuggestionVm? _selectedSuggestion;
     [ObservableProperty] private string? _resultMessage;
+
+    public void ApplyMatch(
+        PlatformDeductionMatchStatus status,
+        string matchLabel,
+        int? customerId,
+        string? customerName,
+        bool isSelected,
+        IReadOnlyList<(int Id, string Name, double Score)> suggestions)
+    {
+        MatchStatus = status;
+        MatchLabel = matchLabel;
+        MatchedCustomerId = customerId;
+        MatchedCustomerName = customerName;
+        IsSelected = isSelected;
+        Suggestions.Clear();
+        foreach (var s in suggestions)
+            Suggestions.Add(new CustomerSuggestionVm(s.Id, s.Name, s.Score));
+        SelectedSuggestion = Suggestions.Count > 0 ? Suggestions[0] : null;
+    }
 
     public bool CanSettle =>
         !IsSettled

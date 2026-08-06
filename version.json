@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.14.5",
-    "releaseDate":  "2026-07-18",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.5/AlMuhasib-1.14.5.zip",
-    "sha256":  "E61634A1C8C5FE0000B11755132C58112CA21E26D5D09A63D6238524F37CA38E",
-    "sizeBytes":  94076990,
-    "releaseNotes":  "إصلاح عرض كروت المنتجات والأيقونات، إصلاح تجمّد شاشة المنتجات والأسعار، تجميع قائمة المحاسبة، وتحسينات العقود وبيع السيارات والمزامنة السحابية",
+    "version":  "1.14.6",
+    "releaseDate":  "2026-08-06",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.6/AlMuhasib-1.14.6.zip",
+    "sha256":  "46E2E4348826ACD7657CC4FDEA5DDF9A46EBABFE8D9B3C6E0CF4FFA4E0D8CE1E",
+    "sizeBytes":  103453857,
+    "releaseNotes":  "تحسين تسديد أقساط المنصة (تصفح صفحات، تحديد/تسديد عبر كل الصفحات، أداء الاستيراد)، وتسريع تاب الأقساط غير المسددة والمتأخرات، وإصلاح عرض المستثمرين",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

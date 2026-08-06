@@ -74,70 +74,135 @@ public static class ArabicNameNormalizer
     }
 
     /// <summary>
-    /// اقتراحات سريعة: يضيّق المرشحين بالبادئة وطول الاسم قبل حساب مسافة التحرير.
+    /// اقتراحات سريعة: فهرسة بالبادئة ثم مسافة تحرير محدودة.
     /// </summary>
     public static IReadOnlyList<(int Id, string Name, double Score)> FindSuggestionsFast(
         string excelName,
         IReadOnlyList<(int Id, string Name, string Compact)> customersIndexed,
-        double minScore = 0.78,
-        int maxResults = 5)
+        double minScore = 0.82,
+        int maxResults = 3)
+    {
+        var byPrefix = BuildPrefixIndex(customersIndexed);
+        return FindSuggestionsWithPrefixIndex(excelName, byPrefix, minScore, maxResults);
+    }
+
+    public static Dictionary<string, List<(int Id, string Name, string Compact)>> BuildPrefixIndex(
+        IReadOnlyList<(int Id, string Name, string Compact)> customersIndexed)
+    {
+        var map = new Dictionary<string, List<(int Id, string Name, string Compact)>>(StringComparer.Ordinal);
+        foreach (var c in customersIndexed)
+        {
+            if (c.Compact.Length < 2) continue;
+            var key = c.Compact[..2];
+            if (!map.TryGetValue(key, out var list))
+            {
+                list = new List<(int Id, string Name, string Compact)>(8);
+                map[key] = list;
+            }
+            list.Add(c);
+        }
+        return map;
+    }
+
+    public static IReadOnlyList<(int Id, string Name, double Score)> FindSuggestionsWithPrefixIndex(
+        string excelName,
+        IReadOnlyDictionary<string, List<(int Id, string Name, string Compact)>> byPrefix,
+        double minScore = 0.82,
+        int maxResults = 3)
     {
         var compact = Compact(excelName);
-        if (compact.Length == 0 || customersIndexed.Count == 0)
+        if (compact.Length < 2 || byPrefix.Count == 0)
             return [];
 
-        var prefixLen = Math.Min(2, compact.Length);
-        var prefix = compact[..prefixLen];
-        var minLen = Math.Max(1, (int)(compact.Length * 0.65));
-        var maxLen = compact.Length + Math.Max(3, compact.Length / 3);
+        var prefix = compact[..2];
+        if (!byPrefix.TryGetValue(prefix, out var candidates) || candidates.Count == 0)
+            return [];
 
-        var best = new List<(int Id, string Name, double Score)>(maxResults * 2);
-        foreach (var c in customersIndexed)
+        var minLen = Math.Max(2, (int)(compact.Length * 0.7));
+        var maxLen = compact.Length + Math.Max(2, compact.Length / 4);
+        var best = new List<(int Id, string Name, double Score)>(maxResults);
+
+        foreach (var c in candidates)
         {
             if (c.Compact == compact)
                 continue;
             if (c.Compact.Length < minLen || c.Compact.Length > maxLen)
                 continue;
 
-            var samePrefix = c.Compact.StartsWith(prefix, StringComparison.Ordinal);
-            var sameFirst = c.Compact.Length > 0 && c.Compact[0] == compact[0]
-                            && Math.Abs(c.Compact.Length - compact.Length) <= 4;
-            if (!samePrefix && !sameFirst)
+            // حد أعلى سريع قبل Levenshtein الكامل
+            var maxDist = (int)Math.Floor((1.0 - minScore) * Math.Max(compact.Length, c.Compact.Length));
+            var distance = LevenshteinDistanceBounded(compact, c.Compact, maxDist);
+            if (distance < 0)
                 continue;
 
-            var score = 1.0 - (double)LevenshteinDistance(compact, c.Compact) / Math.Max(compact.Length, c.Compact.Length);
+            var score = 1.0 - (double)distance / Math.Max(compact.Length, c.Compact.Length);
             if (score < minScore)
                 continue;
-            best.Add((c.Id, c.Name, score));
+
+            InsertTopScore(best, (c.Id, c.Name, score), maxResults);
         }
 
-        return best
-            .OrderByDescending(x => x.Score)
-            .ThenBy(x => x.Name)
-            .Take(maxResults)
-            .ToList();
+        return best;
+    }
+
+    private static void InsertTopScore(
+        List<(int Id, string Name, double Score)> best,
+        (int Id, string Name, double Score) item,
+        int maxResults)
+    {
+        var inserted = false;
+        for (var i = 0; i < best.Count; i++)
+        {
+            if (item.Score > best[i].Score)
+            {
+                best.Insert(i, item);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted && best.Count < maxResults)
+            best.Add(item);
+        while (best.Count > maxResults)
+            best.RemoveAt(best.Count - 1);
     }
 
     private static int LevenshteinDistance(string a, string b)
     {
+        var bound = Math.Max(a.Length, b.Length);
+        return LevenshteinDistanceBounded(a, b, bound);
+    }
+
+    /// <summary>يعيد -1 إذا تجاوزت المسافة الحد (إيقاف مبكر).</summary>
+    private static int LevenshteinDistanceBounded(string a, string b, int maxDistance)
+    {
         var n = a.Length;
         var m = b.Length;
-        var d = new int[n + 1, m + 1];
+        if (Math.Abs(n - m) > maxDistance)
+            return -1;
+        if (n == 0) return m <= maxDistance ? m : -1;
+        if (m == 0) return n <= maxDistance ? n : -1;
 
-        for (var i = 0; i <= n; i++) d[i, 0] = i;
-        for (var j = 0; j <= m; j++) d[0, j] = j;
+        var prev = new int[m + 1];
+        var curr = new int[m + 1];
+        for (var j = 0; j <= m; j++) prev[j] = j;
 
         for (var i = 1; i <= n; i++)
         {
+            curr[0] = i;
+            var rowMin = curr[0];
             for (var j = 1; j <= m; j++)
             {
                 var cost = a[i - 1] == b[j - 1] ? 0 : 1;
-                d[i, j] = Math.Min(
-                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                    d[i - 1, j - 1] + cost);
+                curr[j] = Math.Min(
+                    Math.Min(prev[j] + 1, curr[j - 1] + 1),
+                    prev[j - 1] + cost);
+                if (curr[j] < rowMin) rowMin = curr[j];
             }
+            if (rowMin > maxDistance)
+                return -1;
+            (prev, curr) = (curr, prev);
         }
 
-        return d[n, m];
+        return prev[m] <= maxDistance ? prev[m] : -1;
     }
 }

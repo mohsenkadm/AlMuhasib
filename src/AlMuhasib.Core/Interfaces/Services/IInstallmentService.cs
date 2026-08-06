@@ -28,7 +28,7 @@ public interface IInstallmentService
     Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
         int page, int pageSize, InstallmentStatus? status = null, int? customerId = null,
         string? searchTerm = null, IReadOnlyCollection<InstallmentStatus>? statuses = null,
-        bool updateOverdueStatuses = true);
+        bool updateOverdueStatuses = true, bool includeCashBox = true);
 
     Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)> GetInstallmentTotalsAsync(
         InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,

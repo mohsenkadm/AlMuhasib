@@ -133,6 +133,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     private string _unpaidSearchText = string.Empty;
 
     public PagerState PlansPager { get; } = new() { PageSize = 20 };
+    public PagerState OverduePager { get; } = new() { PageSize = 50 };
     public PagerState PaidPager { get; } = new() { PageSize = 50 };
     public PagerState UnpaidPager { get; } = new() { PageSize = 50 };
 
@@ -164,6 +165,7 @@ public partial class InstallmentsViewModel : ViewModelBase
 
         PageTitle = "الأقساط";
         PlansPager.Bind(LoadAllPlansAsync);
+        OverduePager.Bind(LoadOverdueAsync);
         PaidPager.Bind(LoadPaidAsync);
         UnpaidPager.Bind(LoadUnpaidAsync);
     }
@@ -195,9 +197,8 @@ public partial class InstallmentsViewModel : ViewModelBase
                 FilteredPaymentCustomers.Add(c);
             }
 
-            // Load initial data for active tab
+            // لا تحمّل كل المتأخرات هنا — تُحمَّل عند فتح التاب فقط
             await LoadAllPlansAsync();
-            await LoadOverdueAsync();
             await RefreshSummaryAsync();
         }
         finally
@@ -217,8 +218,13 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     public void SetBulkSelection(IEnumerable<Installment> installments)
     {
+        var next = installments.Where(CanBulkPay).ToList();
+        if (next.Count == BulkSelectedInstallments.Count
+            && next.Select(i => i.Id).SequenceEqual(BulkSelectedInstallments.Select(i => i.Id)))
+            return;
+
         BulkSelectedInstallments.Clear();
-        foreach (var inst in installments.Where(CanBulkPay))
+        foreach (var inst in next)
             BulkSelectedInstallments.Add(inst);
         OnPropertyChanged(nameof(BulkSelectedCount));
         OnPropertyChanged(nameof(BulkSelectedTotalRemaining));
@@ -323,6 +329,7 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     private async Task RefreshAfterBulkPayAsync()
     {
+        InvalidateUnpaidCache();
         await RefreshSummaryAsync();
         await LoadOverdueAsync();
 
@@ -476,12 +483,38 @@ public partial class InstallmentsViewModel : ViewModelBase
     [RelayCommand]
     private async Task LoadOverdueAsync()
     {
-        var overdue = await _installmentService.GetOverdueInstallmentsAsync();
-        OverdueInstallments.Clear();
-        foreach (var i in overdue)
-            OverdueInstallments.Add(i);
-        OverdueCount = OverdueInstallments.Count;
-        OverdueFooter.SetFromInstallments(OverdueInstallments, "إجمالي الأقساط المتأخرة");
+        try
+        {
+            ErrorMessage = string.Empty;
+            IsBusy = true;
+
+            var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
+                OverduePager.CurrentPage,
+                OverduePager.PageSize,
+                InstallmentStatus.Overdue,
+                updateOverdueStatuses: true,
+                includeCashBox: false);
+
+            OverdueInstallments.Clear();
+            foreach (var i in items)
+                OverdueInstallments.Add(i);
+
+            OverduePager.ApplyStats(totalCount);
+            OverdueCount = totalCount;
+
+            var totals = await _installmentService.GetInstallmentTotalsAsync(
+                InstallmentStatus.Overdue, updateOverdueStatuses: false);
+            OverdueFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
+                "إجمالي الأقساط المتأخرة");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"خطأ تحميل المتأخرات: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -810,38 +843,111 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         InstallmentStatus.PartiallyPaid
     ];
 
+    private bool _unpaidOverdueSynced;
+    private string? _unpaidTotalsCacheKey;
+    private (int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)? _unpaidTotalsCache;
+
     [RelayCommand]
     private async Task LoadUnpaidAsync()
     {
         var search = string.IsNullOrWhiteSpace(UnpaidSearchText) ? null : UnpaidSearchText.Trim();
 
-        // تحديث المتأخر مرة واحدة فقط عند أول تحميل للتاب، لا مع كل صفحة
-        await _installmentService.UpdateOverdueStatusesAsync();
+        try
+        {
+            ErrorMessage = string.Empty;
+            IsBusy = true;
 
-        var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
-            UnpaidPager.CurrentPage,
-            UnpaidPager.PageSize,
-            searchTerm: search,
-            statuses: UnpaidStatuses,
-            updateOverdueStatuses: false);
+            // عرض الصفحة أولاً دون انتظار تحديث المتأخر/الإجماليات الثقيلة
+            var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
+                UnpaidPager.CurrentPage,
+                UnpaidPager.PageSize,
+                searchTerm: search,
+                statuses: UnpaidStatuses,
+                updateOverdueStatuses: false,
+                includeCashBox: false);
 
-        UnpaidInstallments.Clear();
-        foreach (var i in items)
-            UnpaidInstallments.Add(i);
+            UnpaidInstallments.Clear();
+            foreach (var i in items)
+                UnpaidInstallments.Add(i);
 
-        UnpaidPager.ApplyStats(totalCount);
+            UnpaidPager.ApplyStats(totalCount);
+            IsBusy = false;
 
-        var totals = await _installmentService.GetInstallmentTotalsAsync(
-            searchTerm: search, statuses: UnpaidStatuses, updateOverdueStatuses: false);
-        UnpaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
-            $"إجمالي الأقساط غير المسددة ({totals.Count:N0})");
+            // تحديث حالة المتأخر في الخلفية مرة واحدة
+            if (!_unpaidOverdueSynced)
+            {
+                _ = SyncUnpaidOverdueInBackgroundAsync(search);
+            }
+            else
+            {
+                await EnsureUnpaidTotalsAsync(search);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"خطأ تحميل غير المسددات: {ex.Message}";
+            IsBusy = false;
+        }
+    }
+
+    private async Task SyncUnpaidOverdueInBackgroundAsync(string? search)
+    {
+        try
+        {
+            await _installmentService.UpdateOverdueStatusesAsync();
+            _unpaidOverdueSynced = true;
+            _unpaidTotalsCache = null;
+
+            // إعادة تحميل الصفحة الحالية بعد تحديث الحالات (بدون Busy كامل)
+            var (items, totalCount) = await _installmentService.GetPagedInstallmentsAsync(
+                UnpaidPager.CurrentPage,
+                UnpaidPager.PageSize,
+                searchTerm: search,
+                statuses: UnpaidStatuses,
+                updateOverdueStatuses: false,
+                includeCashBox: false);
+
+            UnpaidInstallments.Clear();
+            foreach (var i in items)
+                UnpaidInstallments.Add(i);
+            UnpaidPager.ApplyStats(totalCount);
+
+            await EnsureUnpaidTotalsAsync(search);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"تعذر تحديث حالات التأخير: {ex.Message}";
+        }
+    }
+
+    private async Task EnsureUnpaidTotalsAsync(string? search)
+    {
+        var totalsKey = search ?? string.Empty;
+        if (_unpaidTotalsCache is null || !string.Equals(_unpaidTotalsCacheKey, totalsKey, StringComparison.Ordinal))
+        {
+            var totals = await _installmentService.GetInstallmentTotalsAsync(
+                searchTerm: search, statuses: UnpaidStatuses, updateOverdueStatuses: false);
+            _unpaidTotalsCache = totals;
+            _unpaidTotalsCacheKey = totalsKey;
+        }
+
+        var cached = _unpaidTotalsCache.Value;
+        UnpaidFooter.SetFromTotals(cached.Count, cached.TotalAmount, cached.PaidAmount, cached.RemainingAmount,
+            $"إجمالي الأقساط غير المسددة ({cached.Count:N0})");
     }
 
     [RelayCommand]
     private async Task UnpaidSearchAsync()
     {
+        _unpaidTotalsCache = null;
         UnpaidPager.ResetToFirstPage();
         await LoadUnpaidAsync();
+    }
+
+    private void InvalidateUnpaidCache()
+    {
+        _unpaidOverdueSynced = false;
+        _unpaidTotalsCache = null;
     }
 
     [RelayCommand]
@@ -972,6 +1078,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             await _installmentService.PayInstallmentAsync(installment.Id, paid, cashBoxId);
             StageWhatsAppReceipt(BuildSinglePaymentReceipt(
                 installment, paid, 0, PaymentCashBox?.Name ?? cashBoxes.First(c => c.Id == cashBoxId).Name));
+            InvalidateUnpaidCache();
             await LoadUnpaidAsync();
             await RefreshSummaryAsync();
             BeautifulMessageDialog.ShowSuccess("تم التسديد بنجاح — يمكنك إرسال الإيصال عبر واتساب.");
@@ -1119,18 +1226,21 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     {
         try
         {
-            var (plans, totalPlans) = await _installmentService.GetPagedPlansAsync(1, int.MaxValue);
-            var allPlans = plans.ToList();
+            var (_, planCount) = await _installmentService.GetPagedPlansAsync(1, 1);
+            var paid = await _installmentService.GetInstallmentTotalsAsync(InstallmentStatus.Paid);
+            var overdue = await _installmentService.GetInstallmentTotalsAsync(InstallmentStatus.Overdue);
+            var unpaid = await _installmentService.GetInstallmentTotalsAsync(statuses: UnpaidStatuses);
+            var pendingPartial = await _installmentService.GetInstallmentTotalsAsync(
+                statuses: [InstallmentStatus.Pending, InstallmentStatus.PartiallyPaid]);
 
-            SummaryTotalPlans = totalPlans;
-            SummaryTotalAmount = allPlans.Sum(p => p.TotalAmount);
-
-            var allInstallments = allPlans.SelectMany(p => p.Installments).ToList();
-            SummaryPaidAmount = allInstallments.Sum(i => i.PaidAmount);
-            SummaryRemainingAmount = allInstallments.Sum(i => i.RemainingAmount);
-            SummaryPaidCount = allInstallments.Count(i => i.Status == InstallmentStatus.Paid);
-            SummaryUnpaidCount = allInstallments.Count(i => i.Status == InstallmentStatus.Pending || i.Status == InstallmentStatus.PartiallyPaid);
-            SummaryOverdueCount = allInstallments.Count(i => i.Status == InstallmentStatus.Overdue);
+            SummaryTotalPlans = planCount;
+            SummaryPaidCount = paid.Count;
+            SummaryUnpaidCount = pendingPartial.Count;
+            SummaryOverdueCount = overdue.Count;
+            OverdueCount = overdue.Count;
+            SummaryPaidAmount = paid.PaidAmount;
+            SummaryRemainingAmount = unpaid.RemainingAmount;
+            SummaryTotalAmount = paid.TotalAmount + unpaid.TotalAmount;
         }
         catch
         {
