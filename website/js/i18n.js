@@ -69,6 +69,21 @@ const I18N = {
         </article>`).join('');
     }
 
+    const whatsNew = document.getElementById('whats-new-grid');
+    if (whatsNew && this.strings.whatsNew?.items) {
+      const badge = this.strings.whatsNew.newLabel || 'New';
+      whatsNew.innerHTML = this.strings.whatsNew.items.map((f, i) => `
+        <article class="whats-new-card reveal" style="--delay:${i * 0.07}s" data-icon="${f.icon}">
+          <span class="whats-new-badge">${badge}</span>
+          <div class="feature-icon-wrap">
+            <div class="feature-icon-glow"></div>
+            <div class="feature-icon">${featureIconHtml(f.icon)}</div>
+          </div>
+          <h3>${f.title}</h3>
+          <p>${f.desc}</p>
+        </article>`).join('');
+    }
+
     const steps = document.getElementById('how-steps');
     if (steps && this.strings.how?.steps) {
       steps.innerHTML = this.strings.how.steps.map((s, i) => `
@@ -119,8 +134,8 @@ const I18N = {
     if (faq && this.strings.faq?.items) {
       faq.innerHTML = this.strings.faq.items.map((item, i) => `
         <details class="faq-item reveal" style="--delay:${i * 0.05}s">
-          <summary>${item.q}</summary>
-          <p>${item.a}</p>
+          <summary><span>${item.q}</span><span class="faq-toggle" aria-hidden="true"></span></summary>
+          <div class="faq-answer"><p>${item.a}</p></div>
         </details>`).join('');
     }
   }

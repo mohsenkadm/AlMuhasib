@@ -5,6 +5,7 @@ const SYSTEM_ACCENTS = {
   car: '#E65100',
   carTrade: '#558B2F',
   realEstate: '#6D4C41',
+  gold: '#C9A227',
   mobile: '#0277BD'
 };
 

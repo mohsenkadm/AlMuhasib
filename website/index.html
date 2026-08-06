@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، مساعد صوتي، ربط فروع، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
+  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
   <title>قيد — منصة أعمال متكاملة</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -20,9 +20,10 @@
         <span class="logo-mark">ق</span>
         <span class="logo-text" data-i18n="hero.title">قيد</span>
       </a>
-      <button class="nav-toggle" aria-label="Menu">☰</button>
+      <button class="nav-toggle" aria-label="Menu" aria-expanded="false">☰</button>
       <nav class="nav-links">
         <a href="#systems" data-i18n="nav.systems">الأنظمة</a>
+        <a href="#whats-new" data-i18n="nav.whatsNew">الجديد</a>
         <a href="#features" data-i18n="nav.features">المنصة</a>
         <a href="#how" data-i18n="nav.how">كيف يعمل</a>
         <a href="#videos" data-i18n="nav.videos">الفيديوهات</a>
@@ -46,7 +47,7 @@
       <div class="hero-backdrop" aria-hidden="true"></div>
       <div class="container hero-grid">
         <div class="hero-content reveal">
-          <p class="hero-eyebrow" data-i18n="hero.badge">جديد: المساعد الصوتي + عقود العقارات</p>
+          <p class="hero-eyebrow" data-i18n="hero.badge">جديد: نظام الذهب + الولاء + الحقول المخصصة</p>
           <h1 class="hero-brand"><span data-i18n="hero.title">قيد</span></h1>
           <p class="hero-sub">
             <span data-i18n="hero.subtitle">منصة أعمال متكاملة —</span>
@@ -58,7 +59,7 @@
             <a href="#systems" class="btn btn-ghost btn-lg" data-i18n="hero.cta_systems">استكشف الأنظمة</a>
           </div>
           <div class="hero-stats" aria-label="Highlights">
-            <div><strong data-count="5">0</strong><span data-i18n="hero.stat_systems">أنظمة</span></div>
+            <div><strong data-count="6">0</strong><span data-i18n="hero.stat_systems">أنظمة</span></div>
             <div><strong data-count="30">0</strong><span data-i18n="hero.stat_reports">تقرير+</span></div>
             <div><strong>100%</strong><span data-i18n="hero.stat_offline">أوفلاين</span></div>
           </div>
@@ -146,6 +147,17 @@
       </div>
     </section>
 
+    <section class="section whats-new-section" id="whats-new">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="whats-new-eyebrow" data-i18n="whatsNew.badge">أحدث الإضافات</span>
+          <h2 data-i18n="whatsNew.title">ميزات جديدة</h2>
+          <p data-i18n="whatsNew.subtitle">أحدث ما أُضيف لمنصة قيد — جاهز للاستخدام الآن</p>
+        </div>
+        <div class="whats-new-grid" id="whats-new-grid"></div>
+      </div>
+    </section>
+
     <section class="section section-alt" id="features">
       <div class="container">
         <div class="section-head reveal">
@@ -214,7 +226,7 @@
               <div class="sync-flow sync-flow-multi">
                 <div class="sync-node desktop">Desktop</div>
                 <div class="sync-systems" id="sync-systems">
-                  <span>Accounting</span><span>Hotel</span><span>Car</span><span>CarTrade</span><span>RealEstate</span>
+                  <span>Accounting</span><span>Gold</span><span>Hotel</span><span>Car</span><span>CarTrade</span><span>RealEstate</span>
                 </div>
                 <div class="sync-arrows">⇄</div>
                 <div class="sync-node api">Cloud API</div>
@@ -285,7 +297,7 @@
       <div class="container mobile-split reveal">
         <div class="mobile-text">
           <span class="coming-badge coming-badge-live" data-i18n="mobile.badge">متاح الآن</span>
-          <h2 data-i18n="mobile.title">تطبيق جوال — 5 أنظمة</h2>
+          <h2 data-i18n="mobile.title">تطبيق جوال — أنظمة متعددة</h2>
           <p data-i18n="mobile.desc">تطبيق Flutter متصل بالـ API السحابي حسب نوع نظامك.</p>
           <div class="mobile-profiles" id="mobile-profiles"></div>
           <ul class="mobile-points" id="mobile-points"></ul>

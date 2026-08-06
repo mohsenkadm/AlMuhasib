@@ -38,14 +38,33 @@ async function loadVersion() {
   }
 }
 
+function initScrollTop() {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (!location.hash) {
+    window.scrollTo(0, 0);
+  }
+}
+
 function initNav() {
   const header = document.querySelector('.site-header');
   const toggle = document.querySelector('.nav-toggle');
   const links = document.querySelector('.nav-links');
   window.addEventListener('scroll', () => header?.classList.toggle('scrolled', window.scrollY > 24));
-  toggle?.addEventListener('click', () => links?.classList.toggle('open'));
+  toggle?.addEventListener('click', () => {
+    const open = links?.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
   document.querySelectorAll('.nav-links a').forEach(a => {
-    a.addEventListener('click', () => links?.classList.remove('open'));
+    a.addEventListener('click', () => {
+      links?.classList.remove('open');
+      toggle?.setAttribute('aria-expanded', 'false');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!links?.classList.contains('open')) return;
+    if (links.contains(e.target) || toggle?.contains(e.target)) return;
+    links.classList.remove('open');
+    toggle?.setAttribute('aria-expanded', 'false');
   });
 }
 
@@ -88,6 +107,7 @@ function initLang() {
 
 async function boot() {
   document.documentElement.classList.add('js-ready');
+  initScrollTop();
   try {
     await I18N.load(I18N.lang);
   } catch (e) {
