@@ -89,7 +89,8 @@ public partial class CustomersViewModel : ViewModelBase
         IExportService exportService,
         IDataImportService importService,
         ICurrentUserService currentUserService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        ICustomFieldSettingsService customFieldSettings)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
@@ -98,6 +99,7 @@ public partial class CustomersViewModel : ViewModelBase
         _userPreferences = userPreferences;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Customers);
         PageTitle = "العملاء";
+        ConfigureCustomFields(customFieldSettings);
     }
 
     public override async Task InitializeAsync()
@@ -107,6 +109,7 @@ public partial class CustomersViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "Customers");
+            await LoadCustomFieldDefinitionsAsync();
             await LoadCustomersAsync();
         }
         finally
@@ -197,7 +200,7 @@ public partial class CustomersViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenAddDialog()
+    private async Task OpenAddDialog()
     {
         _editingCustomerId = null;
         IsEditMode = false;
@@ -208,11 +211,12 @@ public partial class CustomersViewModel : ViewModelBase
         EditFileNumber = string.Empty;
         EditNotes = string.Empty;
         DialogError = string.Empty;
+        await ResetCustomFieldEditorsAsync(null);
         IsDialogOpen = true;
     }
 
     [RelayCommand]
-    private void OpenEditDialog(Customer customer)
+    private async Task OpenEditDialog(Customer customer)
     {
         if (customer is null) return;
         _editingCustomerId = customer.Id;
@@ -224,6 +228,7 @@ public partial class CustomersViewModel : ViewModelBase
         EditFileNumber = customer.FileNumber ?? string.Empty;
         EditNotes = customer.Notes ?? string.Empty;
         DialogError = string.Empty;
+        await ResetCustomFieldEditorsAsync(customer.CustomFieldsJson);
         IsDialogOpen = true;
     }
 
@@ -250,6 +255,7 @@ public partial class CustomersViewModel : ViewModelBase
                 customer.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 customer.FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
                 customer.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                customer.CustomFieldsJson = SerializeCustomFieldsFromEditors();
                 customer.UpdatedAt = DateTime.UtcNow;
                 customer.UpdatedBy = _currentUserService.Username;
 
@@ -265,6 +271,7 @@ public partial class CustomersViewModel : ViewModelBase
                     Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
                     FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim(),
                     Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
+                    CustomFieldsJson = SerializeCustomFieldsFromEditors(),
                     CreatedBy = _currentUserService.Username
                 };
 

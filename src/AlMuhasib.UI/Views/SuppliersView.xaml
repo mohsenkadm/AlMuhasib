@@ -4,8 +4,14 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
+    </UserControl.Resources>
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -96,6 +102,32 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
                         <DataGridTextColumn Header="تاريخ الإنشاء" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreatedAt"/>
+
+                        <DataGridTextColumn x:Name="ColCf1" Header="حقل 1" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=1}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf2" Header="حقل 2" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=2}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf3" Header="حقل 3" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=3}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf4" Header="حقل 4" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=4}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf5" Header="حقل 5" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=5}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf6" Header="حقل 6" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=6}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf7" Header="حقل 7" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=7}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf8" Header="حقل 8" Width="100" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=8}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+
                         <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
@@ -157,6 +189,9 @@
                                  Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"/>
+
+                        <controls:CustomFieldsEditor Items="{Binding EditCustomFields}" Margin="0,0,0,12"
+                                                     Visibility="{Binding HasCustomFields, Converter={StaticResource BoolVis}}"/>
 
                         <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
                                    Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>

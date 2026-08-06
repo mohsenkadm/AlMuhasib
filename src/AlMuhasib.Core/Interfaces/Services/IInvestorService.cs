@@ -7,8 +7,8 @@ public interface IInvestorService
 {
     // ── Investor CRUD ──
     Task<IEnumerable<Investor>> GetAllInvestorsAsync();
-    Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage);
-    Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage);
+    Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage, string? customFieldsJson = null);
+    Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage, string? customFieldsJson = null);
 
     /// <summary>حفظ الأرصدة الافتتاحية للمستثمرين (لا تؤثر على القاصة)</summary>
     Task SaveOpeningBalancesAsync(IEnumerable<InvestorOpeningBalanceItem> items);

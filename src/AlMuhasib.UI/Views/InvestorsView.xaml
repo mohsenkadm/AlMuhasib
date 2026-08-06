@@ -3,8 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
+    </UserControl.Resources>
 
     <TabControl SelectedIndex="{Binding SelectedTabIndex}"
                 Style="{StaticResource ModernTabs}"
@@ -32,6 +38,7 @@
                 <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -71,7 +78,10 @@
                                      Style="{StaticResource FilledTextBox}"/>
                         </Grid>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                        <controls:CustomFieldsEditor Grid.Row="2" Items="{Binding EditCustomFields}" Margin="0,0,0,12"
+                                                     Visibility="{Binding HasCustomFields, Converter={StaticResource BoolVis}}"/>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal">
                             <Button Command="{Binding SaveInvestorCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
                                     md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0">
@@ -170,7 +180,25 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTemplateColumn Header="" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
+                                    
+                                <DataGridTextColumn x:Name="ColCf1" Header="حقل 1" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=1}"/>
+                                <DataGridTextColumn x:Name="ColCf2" Header="حقل 2" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=2}"/>
+                                <DataGridTextColumn x:Name="ColCf3" Header="حقل 3" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=3}"/>
+                                <DataGridTextColumn x:Name="ColCf4" Header="حقل 4" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=4}"/>
+                                <DataGridTextColumn x:Name="ColCf5" Header="حقل 5" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=5}"/>
+                                <DataGridTextColumn x:Name="ColCf6" Header="حقل 6" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=6}"/>
+                                <DataGridTextColumn x:Name="ColCf7" Header="حقل 7" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=7}"/>
+                                <DataGridTextColumn x:Name="ColCf8" Header="حقل 8" Width="100" Visibility="Collapsed"
+                                                    Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=8}"/>
+
+<DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Style="{StaticResource FlatButton}"
                                                     Command="{Binding DataContext.EditInvestorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"

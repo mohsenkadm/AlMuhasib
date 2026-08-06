@@ -10,6 +10,9 @@ public class Investor : BaseEntity
     public decimal OpeningBalance { get; set; }
     public decimal ProfitPercentage { get; set; }
 
+    /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
+    public string? CustomFieldsJson { get; set; }
+
     // Navigation
     public ICollection<InvestorTransaction> Transactions { get; set; } = [];
     public ICollection<Voucher> Vouchers { get; set; } = [];

@@ -1,0 +1,65 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.CustomFieldsEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             FlowDirection="RightToLeft">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+    </UserControl.Resources>
+
+    <Border Background="#F7FAFC"
+            BorderBrush="#E2E8F0"
+            BorderThickness="1"
+            CornerRadius="14"
+            Padding="14">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Border Background="#E3F2FD" CornerRadius="10" Padding="8" Margin="0,0,10,0">
+                    <md:PackIcon Kind="FormSelect" Width="18" Height="18" Foreground="#1565C0"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="حقول إضافية" FontWeight="SemiBold" FontSize="14" Foreground="#1A237E"/>
+                    <TextBlock Text="الحقول المخصصة المفعّلة من الإعدادات"
+                               FontSize="11" Foreground="#78909C"/>
+                </StackPanel>
+            </StackPanel>
+
+            <ItemsControl ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:CustomFieldEditItem}">
+                        <Border Margin="0,0,0,10" Padding="10,8" Background="White" CornerRadius="10"
+                                BorderBrush="#EEF2F7" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="#455A64" Margin="0,0,0,6"/>
+
+                                <TextBox Text="{Binding TextValue, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="{Binding Label}"
+                                         Style="{StaticResource FilledTextBox}"
+                                         Visibility="{Binding IsText, Converter={StaticResource BoolVis}}"/>
+
+                                <CheckBox Content="{Binding Label}"
+                                          IsChecked="{Binding BoolValue}"
+                                          Visibility="{Binding IsBoolean, Converter={StaticResource BoolVis}}"
+                                          Margin="0,4,0,0"/>
+
+                                <TextBox Text="{Binding NumberValue, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="{Binding Label}"
+                                         Style="{StaticResource FilledTextBox}"
+                                         Visibility="{Binding IsNumber, Converter={StaticResource BoolVis}}"/>
+
+                                <ComboBox ItemsSource="{Binding Choices}"
+                                          SelectedItem="{Binding SelectedChoice}"
+                                          md:HintAssist.Hint="{Binding Label}"
+                                          md:HintAssist.IsFloating="True"
+                                          Style="{StaticResource FilledComboBox}"
+                                          Visibility="{Binding IsChoice, Converter={StaticResource BoolVis}}"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

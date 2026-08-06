@@ -23,6 +23,9 @@ public class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(s => s.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(s => s.CustomFieldsJson)
+            .HasMaxLength(4000);
+
         builder.HasIndex(s => s.Name);
     }
 }

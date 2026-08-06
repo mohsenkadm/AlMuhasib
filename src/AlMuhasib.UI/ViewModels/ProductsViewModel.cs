@@ -171,7 +171,8 @@ public partial class ProductsViewModel : ViewModelBase
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
-        IProductColorService productColorService)
+        IProductColorService productColorService,
+        ICustomFieldSettingsService customFieldSettings)
     {
         _productService = productService;
         _unitOfWork = unitOfWork;
@@ -189,6 +190,7 @@ public partial class ProductsViewModel : ViewModelBase
         ConfigureFeatureServices(
             featureFlags, productUnitService, packagingTypeService, productBatchService,
             productSerialService, productSizeService, productColorService);
+        ConfigureCustomFields(customFieldSettings);
     }
 
     public override async Task InitializeAsync()
@@ -202,6 +204,7 @@ public partial class ProductsViewModel : ViewModelBase
             LoadPermissions(_currentUserService, "Products");
             await LoadCategoriesAsync();
             await RefreshFeatureFilterOptionsAsync();
+            await LoadCustomFieldDefinitionsAsync();
             await LoadProductsAsync();
         }
         finally
@@ -469,6 +472,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditDiscountExpiresAt = null;
         DialogError = string.Empty;
         ClearFeatureEditCollections();
+        await ResetCustomFieldEditorsAsync(null);
         await LoadMinQuantitiesForProductAsync(null);
         IsDialogOpen = true;
     }
@@ -497,6 +501,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditDiscountExpiresAt = product.DiscountExpiresAt?.ToLocalTime().Date;
         DialogError = string.Empty;
         await LoadFeatureDataForProductAsync(product.Id);
+        await ResetCustomFieldEditorsAsync(product.CustomFieldsJson);
         await LoadMinQuantitiesForProductAsync(product.Id);
         IsDialogOpen = true;
     }
@@ -552,6 +557,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.CategoryId = EditCategory.Id;
                 product.Weight = EditWeight < 0 ? 0m : EditWeight;
                 product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
+                product.CustomFieldsJson = SerializeCustomFieldsFromEditors();
                 ApplyEditDiscountToProduct(product);
 
                 await _productService.UpdateAsync(product);
@@ -568,7 +574,8 @@ public partial class ProductsViewModel : ViewModelBase
                     UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim(),
                     CategoryId = EditCategory.Id,
                     Weight = EditWeight < 0 ? 0m : EditWeight,
-                    WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim()
+                    WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim(),
+                    CustomFieldsJson = SerializeCustomFieldsFromEditors()
                 };
                 ApplyEditDiscountToProduct(product);
 

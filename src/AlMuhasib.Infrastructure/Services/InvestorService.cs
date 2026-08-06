@@ -25,20 +25,31 @@ public class InvestorService : IInvestorService
         return await context.Investors.OrderBy(i => i.Name).ToListAsync();
     }
 
-    public async Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage)
+    public async Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage, string? customFieldsJson = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var investor = new Investor { Name = name, Phone = phone, ProfitPercentage = profitPercentage, TotalDeposit = 0, OpeningBalance = 0 };
+        var investor = new Investor
+        {
+            Name = name,
+            Phone = phone,
+            ProfitPercentage = profitPercentage,
+            TotalDeposit = 0,
+            OpeningBalance = 0,
+            CustomFieldsJson = customFieldsJson
+        };
         await context.Investors.AddAsync(investor);
         await context.SaveChangesAsync();
         return investor;
     }
 
-    public async Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage)
+    public async Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage, string? customFieldsJson = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var investor = await context.Investors.FindAsync(id) ?? throw new InvalidOperationException("المستثمر غير موجود");
-        investor.Name = name; investor.Phone = phone; investor.ProfitPercentage = profitPercentage;
+        investor.Name = name;
+        investor.Phone = phone;
+        investor.ProfitPercentage = profitPercentage;
+        investor.CustomFieldsJson = customFieldsJson;
         await context.SaveChangesAsync();
     }
 

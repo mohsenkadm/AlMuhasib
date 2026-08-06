@@ -110,6 +110,7 @@ public class ProductService : IProductService
         existing.DiscountType = product.DiscountType;
         existing.DiscountValue = product.DiscountValue;
         existing.DiscountExpiresAt = product.DiscountExpiresAt;
+        existing.CustomFieldsJson = product.CustomFieldsJson;
         existing.UpdatedBy = _currentUserService.Username;
         existing.UpdatedAt = DateTime.UtcNow;
 

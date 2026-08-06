@@ -23,7 +23,8 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService,
         IWhatsAppShareService whatsAppShare,
         ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        ICustomFieldSettingsService customFieldSettings)
     {
         _investorService = investorService;
         _unitOfWork = unitOfWork;
@@ -34,6 +35,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         _userPreferences = userPreferences;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Investors);
         PageTitle = "المستثمرون";
+        ConfigureCustomFields(customFieldSettings);
     }
 
     [ObservableProperty]
@@ -87,16 +89,19 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
             if (IsEditing)
             {
                 await _investorService.UpdateInvestorAsync(_editingInvestorId, FormName.Trim(),
-                    string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage);
+                    string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage,
+                    SerializeCustomFieldsFromEditors());
                 focusId = _editingInvestorId;
             }
             else
             {
                 var created = await _investorService.AddInvestorAsync(FormName.Trim(),
-                    string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage);
+                    string.IsNullOrWhiteSpace(FormPhone) ? null : FormPhone.Trim(), FormProfitPercentage,
+                    SerializeCustomFieldsFromEditors());
                 focusId = created.Id;
             }
             ResetForm();
+            await ResetCustomFieldEditorsAsync(null);
             await RefreshInvestorsAsync();
             _investorRefresh.NotifyChanged();
             SelectInvestorInLists(focusId);
@@ -109,7 +114,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     }
 
     [RelayCommand]
-    private void EditInvestor(InvestorRow? row)
+    private async Task EditInvestor(InvestorRow? row)
     {
         if (row is not null)
             SelectedInvestor = row;
@@ -119,15 +124,17 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         FormProfitPercentage = SelectedInvestor.ProfitPercentage;
         _editingInvestorId = SelectedInvestor.Id;
         IsEditing = true;
+        await ResetCustomFieldEditorsAsync(SelectedInvestor.CustomFieldsJson);
     }
 
     partial void OnIsCardViewChanged(bool value) =>
         ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.Investors, value);
 
     [RelayCommand]
-    private void CancelEdit()
+    private async Task CancelEdit()
     {
         ResetForm();
+        await ResetCustomFieldEditorsAsync(null);
     }
 
     private void ResetForm()
@@ -537,6 +544,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         {
             LoadPermissions(_currentUserService, "Investors");
 
+            await LoadCustomFieldDefinitionsAsync();
+            await ResetCustomFieldEditorsAsync(null);
             await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
             await LoadRecentDepositsAsync();
@@ -577,7 +586,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
                 Phone = inv.Phone,
                 TotalDeposit = inv.TotalDeposit,
                 ProfitPercentage = inv.ProfitPercentage,
-                TotalProfitsEarned = totalProfits
+                TotalProfitsEarned = totalProfits,
+                CustomFieldsJson = inv.CustomFieldsJson
             });
         }
     }
@@ -624,4 +634,5 @@ public class InvestorRow
     public decimal TotalDeposit { get; set; }
     public decimal ProfitPercentage { get; set; }
     public decimal TotalProfitsEarned { get; set; }
+    public string? CustomFieldsJson { get; set; }
 }

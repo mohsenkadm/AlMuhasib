@@ -8,6 +8,7 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
              mc:Ignorable="d"
              x:Name="Root"
              d:DataContext="{d:DesignInstance Type=vm:ProductsViewModel}"
@@ -17,6 +18,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:ProductDiscountDisplayConverter x:Key="ProductDiscountDisplayConverter"/>
+        <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
     </UserControl.Resources>
 
     <Grid>
@@ -311,6 +313,32 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
+                        <!-- Custom fields (up to 8) -->
+                        <DataGridTextColumn x:Name="ColCf1" Header="حقل 1" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=1}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf2" Header="حقل 2" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=2}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf3" Header="حقل 3" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=3}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf4" Header="حقل 4" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=4}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf5" Header="حقل 5" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=5}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf6" Header="حقل 6" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=6}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf7" Header="حقل 7" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=7}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+                        <DataGridTextColumn x:Name="ColCf8" Header="حقل 8" Width="110" Visibility="Collapsed"
+                                            Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=8}"
+                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
+
                         <!-- Actions -->
                         <DataGridTemplateColumn Header="الإجراءات" Width="230" MinWidth="230" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
@@ -533,32 +561,50 @@
         <materialDesign:DialogHost IsOpen="{Binding IsDialogOpen}"
                                    CloseOnClickAway="False"
                                    DialogTheme="Inherit"
-                                   OverlayBackground="#80000000">
+                                   OverlayBackground="#99000000">
             <materialDesign:DialogHost.DialogContent>
-                <Border MinWidth="450"
-                        MaxWidth="560"
-                        MaxHeight="680"
-                        Padding="24"
-                        Background="White"
-                        CornerRadius="16">
+                <Border x:Name="ProductDialogRoot"
+                        MinWidth="520"
+                        MaxWidth="680"
+                        MaxHeight="760"
+                        Background="Transparent"
+                        Loaded="ProductDialogRoot_OnLoaded">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="8" Opacity="0.35" Color="#0D47A1"/>
+                    </Border.Effect>
+                    <Border CornerRadius="20" Background="White" ClipToBounds="True">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" /> <!-- Title -->
-                            <RowDefinition Height="*" /> <!-- Form -->
-                            <RowDefinition Height="Auto" /> <!-- Error -->
-                            <RowDefinition Height="Auto" /> <!-- Buttons -->
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- Dialog Title -->
-                        <TextBlock Grid.Row="0"
-                                   Text="{Binding DialogTitle}"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource SidebarBackground}"
-                                   Margin="0,0,0,20" />
+                        <!-- Gradient header -->
+                        <Border Grid.Row="0" Padding="22,18" CornerRadius="20,20,0,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1B5E20" Offset="0"/>
+                                    <GradientStop Color="#2E7D32" Offset="0.55"/>
+                                    <GradientStop Color="#43A047" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" Background="#33FFFFFF" CornerRadius="12" Padding="10" Margin="12,0,0,0"
+                                        VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="PackageVariant" Width="26" Height="26" Foreground="White"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DialogTitle}" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="أدخل بيانات المنتج والحقول الإضافية إن وُجدت"
+                                               FontSize="12" Foreground="#C8E6C9" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
 
                         <!-- Form -->
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,18,22,8">
                         <StackPanel>
 
                             <!-- Product Name -->
@@ -566,17 +612,17 @@
                                      materialDesign:HintAssist.Hint="اسم المنتج *"
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"
-                                     Margin="0,0,0,16" />
+                                     Margin="0,0,0,14" />
 
                             <!-- Scientific name (pharmacy template) -->
                             <TextBox Text="{Binding EditScientificName, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="الاسم العلمي"
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"
-                                     Margin="0,0,0,16"
+                                     Margin="0,0,0,14"
                                      Visibility="{Binding ShowScientificName, Converter={StaticResource BoolToVis}}" />
 
-                            <!-- Usage instructions (pharmacy template) — large notes field -->
+                            <!-- Usage instructions -->
                             <TextBox Text="{Binding EditUsageInstructions, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="طريقة استخدام الدواء"
                                      materialDesign:HintAssist.IsFloating="True"
@@ -586,44 +632,46 @@
                                      VerticalScrollBarVisibility="Auto"
                                      MinHeight="110"
                                      MaxHeight="200"
-                                     Margin="0,0,0,16"
+                                     Margin="0,0,0,14"
                                      Visibility="{Binding ShowUsageInstructions, Converter={StaticResource BoolToVis}}" />
 
-                            <!-- Category -->
-                            <ComboBox ItemsSource="{Binding Categories}"
-                                      SelectedItem="{Binding EditCategory}"
-                                      DisplayMemberPath="Name"
-                                      materialDesign:HintAssist.Hint="التصنيف *"
-                                      materialDesign:HintAssist.IsFloating="True"
-                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                      Style="{StaticResource FilledComboBox}"
-                                      Margin="0,0,0,16" />
-
-                            <!-- Barcode -->
-                            <Grid Margin="0,0,0,16">
+                            <!-- Category + Barcode -->
+                            <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding EditBarcode, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="الباركود"
-                                         materialDesign:HintAssist.IsFloating="True"
-                                         Style="{StaticResource FilledTextBox}"
-                                         FontFamily="Consolas"
-                                         Margin="0,0,8,0"/>
-                                <Button Grid.Column="1"
-                                        Command="{Binding GenerateBarcodeCommand}"
-                                        Style="{StaticResource OutlinedButton}"
-                                        Height="48"
-                                        Padding="14,0"
-                                        VerticalAlignment="Bottom"
-                                        ToolTip="إنشاء باركود فريد غير مكرر"
-                                        materialDesign:ButtonAssist.CornerRadius="10">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18" VerticalAlignment="Center"/>
-                                        <TextBlock Text="إنشاء" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </Button>
+                                <ComboBox Grid.Column="0"
+                                          ItemsSource="{Binding Categories}"
+                                          SelectedItem="{Binding EditCategory}"
+                                          DisplayMemberPath="Name"
+                                          materialDesign:HintAssist.Hint="التصنيف *"
+                                          materialDesign:HintAssist.IsFloating="True"
+                                          materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                          Style="{StaticResource FilledComboBox}"/>
+                                <Grid Grid.Column="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding EditBarcode, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="الباركود"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"
+                                             FontFamily="Consolas"
+                                             Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1"
+                                            Command="{Binding GenerateBarcodeCommand}"
+                                            Style="{StaticResource OutlinedButton}"
+                                            Height="48"
+                                            Padding="12,0"
+                                            VerticalAlignment="Bottom"
+                                            ToolTip="إنشاء باركود فريد غير مكرر"
+                                            materialDesign:ButtonAssist.CornerRadius="10">
+                                        <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
+                                    </Button>
+                                </Grid>
                             </Grid>
 
                             <!-- Description -->
@@ -633,12 +681,17 @@
                                      Style="{StaticResource FilledTextBox}"
                                      TextWrapping="Wrap"
                                      AcceptsReturn="True"
-                                     MinHeight="80"
-                                     MaxHeight="120"
-                                     VerticalScrollBarVisibility="Auto" />
+                                     MinHeight="72"
+                                     MaxHeight="110"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Margin="0,0,0,8" />
+
+                            <controls:CustomFieldsEditor Items="{Binding EditCustomFields}"
+                                                         Margin="0,8,0,8"
+                                                         Visibility="{Binding HasCustomFields, Converter={StaticResource BoolToVis}}"/>
 
                             <!-- Product weight (feature-gated: MenuWeight) -->
-                            <Border Margin="0,16,0,0" Padding="12" Background="#E0F7FA" CornerRadius="8"
+                            <Border Margin="0,8,0,0" Padding="12" Background="#E0F7FA" CornerRadius="12"
                                     Visibility="{Binding ShowWeightSection, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel>
                                     <TextBlock Text="وزن المادة" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -925,7 +978,7 @@
                                    Text="{Binding DialogError}"
                                    Foreground="#C62828"
                                    FontSize="12"
-                                   Margin="0,0,0,12"
+                                   Margin="22,0,22,8"
                                    TextWrapping="Wrap">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -947,19 +1000,20 @@
                         <StackPanel Grid.Row="3"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left"
-                                    Margin="0,8,0,0">
+                                    Margin="22,8,22,18">
                             <Button Command="{Binding SaveProductCommand}"
                                     Content="حفظ"
                                     Style="{StaticResource PrimaryButton}"
-                                    Padding="24,8"
+                                    Padding="28,10"
                                     Margin="0,0,8,0" />
 
                             <Button Command="{Binding CancelDialogCommand}"
                                     Content="إلغاء"
                                     Style="{StaticResource OutlinedButton}"
-                                    Padding="24,8" />
+                                    Padding="24,10" />
                         </StackPanel>
                     </Grid>
+                    </Border>
                 </Border>
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>

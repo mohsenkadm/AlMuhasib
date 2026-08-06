@@ -26,6 +26,9 @@ public class InvestorConfiguration : IEntityTypeConfiguration<Investor>
         builder.Property(i => i.ProfitPercentage)
             .HasPrecision(5, 2);
 
+        builder.Property(i => i.CustomFieldsJson)
+            .HasMaxLength(4000);
+
         builder.HasIndex(i => i.Name);
     }
 }

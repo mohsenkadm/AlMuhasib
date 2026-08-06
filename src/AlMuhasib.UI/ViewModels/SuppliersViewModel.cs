@@ -83,7 +83,8 @@ public partial class SuppliersViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        ICustomFieldSettingsService customFieldSettings)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
@@ -91,6 +92,7 @@ public partial class SuppliersViewModel : ViewModelBase
         _userPreferences = userPreferences;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Suppliers);
         PageTitle = "الموردون";
+        ConfigureCustomFields(customFieldSettings);
     }
 
     public override async Task InitializeAsync()
@@ -100,6 +102,7 @@ public partial class SuppliersViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "Suppliers");
+            await LoadCustomFieldDefinitionsAsync();
             await LoadSuppliersAsync();
         }
         finally
@@ -190,7 +193,7 @@ public partial class SuppliersViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenAddDialog()
+    private async Task OpenAddDialog()
     {
         _editingSupplierId = null;
         IsEditMode = false;
@@ -200,11 +203,12 @@ public partial class SuppliersViewModel : ViewModelBase
         EditAddress = string.Empty;
         EditNotes = string.Empty;
         DialogError = string.Empty;
+        await ResetCustomFieldEditorsAsync(null);
         IsDialogOpen = true;
     }
 
     [RelayCommand]
-    private void OpenEditDialog(Supplier supplier)
+    private async Task OpenEditDialog(Supplier supplier)
     {
         if (supplier is null) return;
         _editingSupplierId = supplier.Id;
@@ -215,6 +219,7 @@ public partial class SuppliersViewModel : ViewModelBase
         EditAddress = supplier.Address ?? string.Empty;
         EditNotes = supplier.Notes ?? string.Empty;
         DialogError = string.Empty;
+        await ResetCustomFieldEditorsAsync(supplier.CustomFieldsJson);
         IsDialogOpen = true;
     }
 
@@ -240,6 +245,7 @@ public partial class SuppliersViewModel : ViewModelBase
                 supplier.Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
                 supplier.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 supplier.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                supplier.CustomFieldsJson = SerializeCustomFieldsFromEditors();
                 supplier.UpdatedAt = DateTime.UtcNow;
                 supplier.UpdatedBy = _currentUserService.Username;
 
@@ -254,6 +260,7 @@ public partial class SuppliersViewModel : ViewModelBase
                     Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim(),
                     Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
                     Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
+                    CustomFieldsJson = SerializeCustomFieldsFromEditors(),
                     CreatedBy = _currentUserService.Username
                 };
 
