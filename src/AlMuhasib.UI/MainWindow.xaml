@@ -1576,6 +1576,9 @@
                         <DataTemplate DataType="{x:Type vm:DailySalesReportViewModel}">
                             <views:DailySalesReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:WorkSummaryReportViewModel}">
+                            <views:WorkSummaryReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SalesByWarehouseUserReportViewModel}">
                             <views:SalesByWarehouseUserReportView />
                         </DataTemplate>

@@ -125,6 +125,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <ComboBox Grid.Column="0"
                                       ItemsSource="{Binding FilteredCustomers}"
@@ -140,11 +141,21 @@
                                       Margin="0,0,0,12"
                                       FontSize="14" />
                             <Button Grid.Column="1"
+                                    Command="{Binding ShowSelectedPartyDetailsCommand}"
+                                    ToolTip="تفاصيل العميل"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36"
+                                    Margin="4,0,0,12"
+                                    VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20"
+                                                         Foreground="#00695C"/>
+                            </Button>
+                            <Button Grid.Column="2"
                                     Command="{Binding OpenQuickAddCustomerCommand}"
                                     ToolTip="إضافة عميل جديد"
                                     Style="{StaticResource MaterialDesignIconButton}"
                                     Width="36" Height="36"
-                                    Margin="4,0,0,12"
+                                    Margin="0,0,0,12"
                                     VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
                                                          Foreground="{DynamicResource PrimaryHueMidBrush}"/>
@@ -509,6 +520,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn Header="" Width="44" IsReadOnly="True"
+                                                        CellTemplate="{StaticResource InvoiceProductDetailsRowCellTemplate}"/>
                                 <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True"
                                                         CellTemplate="{StaticResource InvoiceDeleteRowCellTemplate}"/>
                             </DataGrid.Columns>

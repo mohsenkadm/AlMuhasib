@@ -120,6 +120,7 @@ public interface IReportService
     Task<FinancialPositionSummaryReportResult> GetFinancialPositionSummaryReportAsync(DateTime? asOfDate);
     Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(DateTime? from, DateTime? to);
     Task<StatementOfFinancialPositionReportResult> GetStatementOfFinancialPositionReportAsync(DateTime date);
+    Task<WorkSummaryReportResult> GetWorkSummaryAsync(DateTime? from, DateTime? to);
 
 }
 
@@ -1560,4 +1561,26 @@ public class StatementOfFinancialPositionLineRow
     public string LineName { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public bool IsTotal { get; set; }
+}
+
+public class WorkSummaryReportResult
+{
+    public int NewCustomersCount { get; set; }
+    public decimal TotalSalesAmount { get; set; }
+    public int DealCount { get; set; }
+    public int DistinctProductCount { get; set; }
+    public decimal TotalProductQuantity { get; set; }
+
+    public List<NameAmountPoint> SalesByYearChart { get; set; } = [];
+    public List<NameAmountPoint> TopCustomersChart { get; set; } = [];
+    public List<NameAmountPoint> BusiestHoursChart { get; set; } = [];
+    public List<WorkSummaryHourRow> HourRows { get; set; } = [];
+}
+
+public class WorkSummaryHourRow
+{
+    public int Hour { get; set; }
+    public string HourLabel { get; set; } = string.Empty;
+    public int ActivityCount { get; set; }
+    public decimal SalesAmount { get; set; }
 }

@@ -28,6 +28,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private readonly IFeatureFlagService _featureFlags;
     private readonly IProductPriceService _productPriceService;
     private readonly bool _productPricingEnabled;
+    private readonly IPartyQuickDetailService _partyQuickDetail;
+    private readonly IProductQuickDetailService _productQuickDetail;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -195,7 +197,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         IProductPriceService productPriceService,
         IUserPreferencesService userPreferences,
         IFeatureFlagService featureFlags,
-        IProductUnitService productUnitService)
+        IProductUnitService productUnitService,
+        IPartyQuickDetailService partyQuickDetail,
+        IProductQuickDetailService productQuickDetail)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -211,6 +215,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _productUnitService = productUnitService;
         _productPriceService = productPriceService;
         _productPricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        _partyQuickDetail = partyQuickDetail;
+        _productQuickDetail = productQuickDetail;
 
         PageTitle = "فاتورة أقساط";
 
@@ -932,6 +938,30 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         QuickCustomerAddress = string.Empty;
         QuickCustomerError = string.Empty;
         IsQuickAddCustomerOpen = true;
+    }
+
+    [RelayCommand]
+    private void ShowSelectedPartyDetails()
+    {
+        if (SelectedCustomer is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر زبوناً أولاً لعرض تفاصيله");
+            return;
+        }
+
+        PartyQuickDetailDialog.ShowCustomer(_partyQuickDetail, SelectedCustomer.Id);
+    }
+
+    [RelayCommand]
+    private void ShowProductDetails(InvoiceItemRow? row)
+    {
+        if (row?.ProductId is not > 0)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر منتجاً مسجلاً لعرض تفاصيله");
+            return;
+        }
+
+        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value);
     }
 
     [RelayCommand]

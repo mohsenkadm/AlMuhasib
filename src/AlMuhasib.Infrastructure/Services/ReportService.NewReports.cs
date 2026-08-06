@@ -1481,4 +1481,98 @@ public partial class ReportService
             ]
         };
     }
+
+    public async Task<WorkSummaryReportResult> GetWorkSummaryAsync(DateTime? from, DateTime? to)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var endExclusive = EndOfDay(to);
+
+        var customersQ = context.Customers.AsNoTracking().AsQueryable();
+        if (from.HasValue) customersQ = customersQ.Where(c => c.CreatedAt >= from.Value);
+        if (endExclusive.HasValue) customersQ = customersQ.Where(c => c.CreatedAt < endExclusive.Value);
+        var newCustomersCount = await customersQ.CountAsync();
+
+        var salesInvoicesQ = context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
+        if (from.HasValue) salesInvoicesQ = salesInvoicesQ.Where(i => i.Date >= from.Value);
+        if (endExclusive.HasValue) salesInvoicesQ = salesInvoicesQ.Where(i => i.Date < endExclusive.Value);
+
+        var salesInvoices = await salesInvoicesQ
+            .Select(i => new { i.Id, i.Date, i.NetAmount, i.CustomerId, CustomerName = i.Customer != null ? i.Customer.Name : "—" })
+            .ToListAsync();
+
+        var salesInvoiceIds = salesInvoices.Select(i => i.Id).ToList();
+        var salesItems = salesInvoiceIds.Count == 0
+            ? new List<(int? ProductId, decimal Quantity)>()
+            : (await context.InvoiceItems.AsNoTracking()
+                .Where(ii => salesInvoiceIds.Contains(ii.InvoiceId))
+                .Select(ii => new { ii.ProductId, ii.Quantity })
+                .ToListAsync())
+              .Select(ii => (ii.ProductId, ii.Quantity))
+              .ToList();
+
+        var allActivityQ = context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Sale
+                        || i.InvoiceType == InvoiceType.Installment
+                        || i.InvoiceType == InvoiceType.Purchase);
+        if (from.HasValue) allActivityQ = allActivityQ.Where(i => i.Date >= from.Value);
+        if (endExclusive.HasValue) allActivityQ = allActivityQ.Where(i => i.Date < endExclusive.Value);
+
+        var activityDates = await allActivityQ
+            .Select(i => new { i.Date, i.NetAmount, i.InvoiceType })
+            .ToListAsync();
+
+        var salesByYear = salesInvoices
+            .GroupBy(i => i.Date.Year)
+            .OrderBy(g => g.Key)
+            .Select(g => new NameAmountPoint { Name = g.Key.ToString(), Amount = g.Sum(x => x.NetAmount) })
+            .ToList();
+
+        var topCustomers = salesInvoices
+            .Where(i => i.CustomerId.HasValue)
+            .GroupBy(i => new { i.CustomerId, i.CustomerName })
+            .Select(g => new NameAmountPoint { Name = g.Key.CustomerName, Amount = g.Sum(x => x.NetAmount) })
+            .OrderByDescending(x => x.Amount)
+            .Take(10)
+            .ToList();
+
+        var hourGroups = activityDates
+            .GroupBy(i => i.Date.Hour)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var hourRows = Enumerable.Range(0, 24)
+            .Select(h =>
+            {
+                hourGroups.TryGetValue(h, out var list);
+                list ??= [];
+                var salesAmount = list
+                    .Where(x => x.InvoiceType is InvoiceType.Sale or InvoiceType.Installment)
+                    .Sum(x => x.NetAmount);
+                return new WorkSummaryHourRow
+                {
+                    Hour = h,
+                    HourLabel = $"{h:00}:00",
+                    ActivityCount = list.Count,
+                    SalesAmount = salesAmount
+                };
+            })
+            .ToList();
+
+        var busiestHours = hourRows
+            .Select(r => new NameAmountPoint { Name = r.HourLabel, Amount = r.ActivityCount })
+            .ToList();
+
+        return new WorkSummaryReportResult
+        {
+            NewCustomersCount = newCustomersCount,
+            TotalSalesAmount = salesInvoices.Sum(i => i.NetAmount),
+            DealCount = salesInvoices.Count,
+            DistinctProductCount = salesItems.Where(i => i.ProductId.HasValue).Select(i => i.ProductId!.Value).Distinct().Count(),
+            TotalProductQuantity = salesItems.Sum(i => i.Quantity),
+            SalesByYearChart = salesByYear,
+            TopCustomersChart = topCustomers,
+            BusiestHoursChart = busiestHours,
+            HourRows = hourRows
+        };
+    }
 }
