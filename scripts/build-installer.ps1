@@ -100,7 +100,7 @@ $distPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSP
 New-Item -ItemType Directory -Path $distPath -Force | Out-Null
 
 Write-Host "Compiling installer ..." -ForegroundColor Cyan
-& $iscc $installerScript "/DSourcePath=$publishPath"
+& $iscc $installerScript "/DSourcePath=$publishPath" "/DAppVersion=$Version"
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
 
 Write-Host "Installer build completed." -ForegroundColor Green

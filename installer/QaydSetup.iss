@@ -1,7 +1,10 @@
 ; Qayd (قيد) — single-file Windows installer
 ; Build with: scripts\build-installer.ps1
+; Pass /DSourcePath=... and optionally /DAppVersion=x.y.z
 
-#define AppVersion ExtractFileVersion(AddBackslash(SourcePath) + "AlMuhasib.exe")
+#ifndef AppVersion
+  #define AppVersion "1.14.6"
+#endif
 
 [Setup]
 AppId={{A7E4C9F2-8B3D-4E1A-9C5F-2D6E8A1B4C7F}
@@ -26,7 +29,6 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 WizardStyle=modern
-RightToLeft=yes
 ShowLanguageDialog=no
 
 [Languages]
@@ -189,7 +191,9 @@ end;
 
 procedure WriteAppSettings;
 var
-  TemplatePath, TargetPath, Content: AnsiString;
+  TemplatePath, TargetPath: string;
+  ContentA: AnsiString;
+  Content: string;
   DataDirJson: string;
 begin
   TargetPath := ExpandConstant('{app}\appsettings.json');
@@ -202,8 +206,9 @@ begin
   if not FileExists(TemplatePath) then
     ExtractTemporaryFile('appsettings.template.json');
 
-  if LoadStringFromFile(TemplatePath, Content) then
+  if LoadStringFromFile(TemplatePath, ContentA) then
   begin
+    Content := string(ContentA);
     StringChange(Content, '{DATA_DIRECTORY}', DataDirJson);
     SaveStringToFile(TargetPath, Content, False);
   end
