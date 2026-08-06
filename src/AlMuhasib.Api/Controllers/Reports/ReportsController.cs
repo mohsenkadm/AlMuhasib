@@ -521,4 +521,12 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetStatementOfFinancialPositionReportAsync(date));
     }
 
+    [HttpGet("work-summary")]
+    public async Task<IActionResult> WorkSummary([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetWorkSummaryAsync(f.From, f.To));
+    }
+
 }

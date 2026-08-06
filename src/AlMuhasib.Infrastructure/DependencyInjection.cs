@@ -102,6 +102,8 @@ public static class DependencyInjection
         services.AddScoped<ISmartAlertService, SmartAlertService>();
         services.AddScoped<ICollectionDashboardService, CollectionDashboardService>();
         services.AddScoped<ICustomerStatementQuickService, CustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, PartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, ProductQuickDetailService>();
         services.AddScoped<ICustomerCreditService, CustomerCreditService>();
         services.AddScoped<ILocalQueryService, LocalQueryService>();
         services.AddScoped<IWarehouseTransferService, WarehouseTransferService>();
@@ -144,6 +146,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarSyncService>();
@@ -193,6 +197,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
 
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<HotelDbContext>>();
         services.AddScoped<SyncApiClient>();
@@ -223,6 +229,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CarTradeDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, CarTradeSyncService>();
@@ -255,6 +263,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<RealEstateDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, RealEstateSyncService>();
@@ -303,6 +313,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<GoldDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, GoldSyncService>();

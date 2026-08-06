@@ -301,6 +301,7 @@ public static class ScreenPermissionRegistry
         [typeof(InstallmentScheduleReportViewModel)] = "Reports",
         [typeof(SalesByPaymentMethodReportViewModel)] = "Reports",
         [typeof(DailySalesReportViewModel)] = "Reports",
+        [typeof(WorkSummaryReportViewModel)] = "Reports",
         [typeof(SalesByWarehouseUserReportViewModel)] = "Reports",
         [typeof(GrossProfitMarginReportViewModel)] = "Reports",
         [typeof(OperatingProfitReportViewModel)] = "Reports",

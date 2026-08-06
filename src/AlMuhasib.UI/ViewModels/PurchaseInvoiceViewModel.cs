@@ -24,6 +24,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     private readonly IProductPriceService _productPriceService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly bool _updateProductPriceOnPurchase;
+    private readonly IPartyQuickDetailService _partyQuickDetail;
+    private readonly IProductQuickDetailService _productQuickDetail;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -126,7 +128,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
-        IProductColorService productColorService)
+        IProductColorService productColorService,
+        IPartyQuickDetailService partyQuickDetail,
+        IProductQuickDetailService productQuickDetail)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -140,6 +144,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         _userPreferences = userPreferences;
         _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
             && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        _partyQuickDetail = partyQuickDetail;
+        _productQuickDetail = productQuickDetail;
 
         PageTitle = "فاتورة مشتريات";
 
@@ -804,6 +810,30 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         QuickSupplierAddress = string.Empty;
         QuickSupplierError = string.Empty;
         IsQuickAddSupplierOpen = true;
+    }
+
+    [RelayCommand]
+    private void ShowSelectedPartyDetails()
+    {
+        if (SelectedSupplier is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر مورداً أولاً لعرض تفاصيله");
+            return;
+        }
+
+        PartyQuickDetailDialog.ShowSupplier(_partyQuickDetail, SelectedSupplier.Id);
+    }
+
+    [RelayCommand]
+    private void ShowProductDetails(InvoiceItemRow? row)
+    {
+        if (row?.ProductId is not > 0)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر منتجاً مسجلاً لعرض تفاصيله");
+            return;
+        }
+
+        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value);
     }
 
     [RelayCommand]

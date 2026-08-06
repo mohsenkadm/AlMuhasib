@@ -1578,6 +1578,18 @@
         </StackPanel>
     </DataTemplate>
 
+    <DataTemplate x:Key="InvoiceProductDetailsRowCellTemplate">
+        <Button Command="{Binding DataContext.ShowProductDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}"
+                Style="{StaticResource MaterialDesignIconButton}"
+                Width="34" Height="34"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                ToolTip="تفاصيل المنتج"
+                Foreground="#EF6C00">
+            <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+        </Button>
+    </DataTemplate>
+
     <DataTemplate x:Key="InvoiceDeleteRowCellTemplate">
         <Button Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 CommandParameter="{Binding}"

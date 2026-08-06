@@ -266,6 +266,7 @@ public partial class App : Application
         services.AddTransient<InstallmentScheduleReportViewModel>();
         services.AddTransient<SalesByPaymentMethodReportViewModel>();
         services.AddTransient<DailySalesReportViewModel>();
+        services.AddTransient<WorkSummaryReportViewModel>();
         services.AddTransient<SalesByWarehouseUserReportViewModel>();
         services.AddTransient<GrossProfitMarginReportViewModel>();
         services.AddTransient<OperatingProfitReportViewModel>();
