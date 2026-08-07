@@ -706,41 +706,60 @@
                             BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="12">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                        <GradientStop Color="#1565C0" Offset="0"/>
-                                        <GradientStop Color="#1976D2" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                                <materialDesign:PackIcon Kind="Account"
-                                                         Width="22" Height="22"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="White" />
-                            </Border>
+                            <Button Grid.Column="0"
+                                    Command="{Binding OpenUserActivityProfileCommand}"
+                                    ToolTip="عرض ملف المستخدم وسجل نشاطه"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    Cursor="Hand"
+                                    HorizontalContentAlignment="Stretch">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="12">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#1565C0" Offset="0"/>
+                                                <GradientStop Color="#1976D2" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <materialDesign:PackIcon Kind="Account"
+                                                                 Width="22" Height="22"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="White" />
+                                    </Border>
 
-                            <StackPanel Grid.Column="1"
-                                        Margin="10,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Text="{Binding LoggedInUsername}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"
-                                           TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="مسجّل الدخول"
-                                           FontSize="10"
-                                           Foreground="#78909C"
-                                           Margin="0,2,0,0"/>
-                            </StackPanel>
+                                    <StackPanel Grid.Column="1"
+                                                Margin="10,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock Text="{Binding LoggedInUsername}"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="اضغط لعرض الملف"
+                                                   FontSize="10"
+                                                   Foreground="#78909C"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
 
-                            <Button Grid.Column="2"
+                            <Button Grid.Column="1"
                                     Command="{Binding LogoutCommand}"
                                     ToolTip="تسجيل الخروج"
                                     Style="{StaticResource SidebarHeaderIconButton}"
@@ -1512,6 +1531,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PersonProfileViewModel}">
                             <views:PersonProfileView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:UserActivityProfileViewModel}">
+                            <views:UserActivityProfileView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SupplierStatementViewModel}">
                             <views:SupplierStatementView />

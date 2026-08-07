@@ -92,6 +92,7 @@ public static class DependencyInjection
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<ISupervisoryReportService, SupervisoryReportService>();
         services.AddScoped<IPersonProfileService, PersonProfileService>();
+        services.AddScoped<IUserActivityProfileService, UserActivityProfileService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAccountingValidationService, AccountingValidationService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();

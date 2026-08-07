@@ -1169,6 +1169,13 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task OpenUserActivityProfile()
+    {
+        UserNavigationBridge.PendingActivityUserId = _currentUserService.UserId;
+        await OpenTabAsync(typeof(UserActivityProfileViewModel), "ملف المستخدم", PackIconKind.AccountCircle, activateIfExists: false);
+    }
+
+    [RelayCommand]
     private async Task OpenSystemUpdate()
     {
         IsQuickAssistOpen = false;

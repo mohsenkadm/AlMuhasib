@@ -356,6 +356,10 @@ public partial class PersonProfileViewModel : ViewModelBase
                 display.Rows.Add(row);
             Sections.Add(display);
         }
+
+        ApplyCustomerInsights(profile.PartyType == PersonPartyType.Customer ? profile.CustomerInsights : null);
+        CustomerTabSearch = string.Empty;
+        CustomerSelectedTab = 0;
     }
 
     private void ClearProfile()
@@ -378,6 +382,8 @@ public partial class PersonProfileViewModel : ViewModelBase
         ShowInvestorExtras = false;
         TimelineItems.Clear();
         Sections.Clear();
+        ApplyCustomerInsights(null);
+        CustomerTabSearch = string.Empty;
     }
 
     private static PersonTimelineDisplayItem CreateTimelineDisplay(PersonTimelineItem item, int index)

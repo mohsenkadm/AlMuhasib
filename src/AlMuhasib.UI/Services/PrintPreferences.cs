@@ -17,6 +17,8 @@ public static class PrintPreferences
     public static string PosReceiptPaperSize { get; set; } = "80mm";
     /// <summary>Gold invoice paper: A4, 80mm, 58mm, or 50mm.</summary>
     public static string GoldReceiptPaperSize { get; set; } = "A4";
+    /// <summary>A4 invoice layout template: Classic, Compact, or Modern.</summary>
+    public static string A4InvoiceTemplate { get; set; } = A4InvoiceTemplates.Classic;
     public static bool ShowPrintPreview { get; set; } = true;
 
     public static void Load()
@@ -39,6 +41,7 @@ public static class PrintPreferences
             GoldReceiptPaperSize = string.IsNullOrWhiteSpace(data.GoldReceiptPaperSize)
                 ? "A4"
                 : data.GoldReceiptPaperSize;
+            A4InvoiceTemplate = A4InvoiceTemplates.Normalize(data.A4InvoiceTemplate);
             ShowPrintPreview = data.ShowPrintPreview;
         }
         catch
@@ -60,6 +63,7 @@ public static class PrintPreferences
                 PaperSize = PaperSize,
                 PosReceiptPaperSize = PosReceiptPaperSize,
                 GoldReceiptPaperSize = GoldReceiptPaperSize,
+                A4InvoiceTemplate = A4InvoiceTemplates.Normalize(A4InvoiceTemplate),
                 ShowPrintPreview = ShowPrintPreview
             };
 
@@ -78,6 +82,33 @@ public static class PrintPreferences
         public string PaperSize { get; set; } = "A4";
         public string PosReceiptPaperSize { get; set; } = "80mm";
         public string GoldReceiptPaperSize { get; set; } = "A4";
+        public string A4InvoiceTemplate { get; set; } = A4InvoiceTemplates.Classic;
         public bool ShowPrintPreview { get; set; } = true;
     }
+}
+
+/// <summary>Placeholder A4 invoice print templates — visual design to be finalized later.</summary>
+public static class A4InvoiceTemplates
+{
+    public const string Classic = "Classic";
+    public const string Compact = "Compact";
+    public const string Modern = "Modern";
+
+    public static readonly IReadOnlyList<(string Id, string ArabicName, string Description)> All =
+    [
+        (Classic, "كلاسيكي", "التخطيط الحالي — بانر أزرق وجدول واضح"),
+        (Compact, "مضغوط", "مسافات أصغر مناسب للفواتير الطويلة (تصميم لاحق)"),
+        (Modern, "عصري", "عنوان هادئ وخطوط أنظف (تصميم لاحق)")
+    ];
+
+    public static string Normalize(string? value) =>
+        value switch
+        {
+            Compact => Compact,
+            Modern => Modern,
+            _ => Classic
+        };
+
+    public static string GetArabicName(string? value) =>
+        All.FirstOrDefault(x => x.Id == Normalize(value)).ArabicName ?? "كلاسيكي";
 }

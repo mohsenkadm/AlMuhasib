@@ -208,6 +208,12 @@ public partial class PermissionsViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         await LoadUsersAsync();
+
+        if (UserNavigationBridge.PendingPermissionsUserId is int pendingId)
+        {
+            UserNavigationBridge.PendingPermissionsUserId = null;
+            SelectedUser = Users.FirstOrDefault(u => u.Id == pendingId);
+        }
     }
 }
 

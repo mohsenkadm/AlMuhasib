@@ -200,6 +200,7 @@ public partial class App : Application
         services.AddTransient<DriversViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PersonProfileViewModel>();
+        services.AddTransient<UserActivityProfileViewModel>();
         services.AddTransient<LoyaltySettingsViewModel>();
         services.AddTransient<LoyaltyAccountsViewModel>();
         services.AddTransient<LoyaltyLedgerViewModel>();

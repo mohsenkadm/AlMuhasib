@@ -94,6 +94,9 @@ public class InvoicePrintModel
     public decimal RemainingAmount { get; set; }
     public decimal TotalAmountIqd { get; set; }
     public decimal TotalAmountUsd { get; set; }
+
+    /// <summary>A4 layout template id: Classic, Compact, or Modern. Null = Classic.</summary>
+    public string? A4TemplateId { get; set; }
 }
 
 public class InvoicePrintItem
