@@ -15,11 +15,13 @@ public partial class UsersViewModel : ViewModelBase
 {
     private readonly IAuthService _authService;
     private readonly IExportService _exportService;
+    private readonly MainWindowViewModel _mainWindow;
 
-    public UsersViewModel(IAuthService authService, IExportService exportService)
+    public UsersViewModel(IAuthService authService, IExportService exportService, MainWindowViewModel mainWindow)
     {
         _authService = authService;
         _exportService = exportService;
+        _mainWindow = mainWindow;
         PageTitle = "المستخدمون";
     }
 
@@ -219,6 +221,44 @@ public partial class UsersViewModel : ViewModelBase
         FormFullName = string.Empty;
         FormPassword = string.Empty;
         FormRole = UserRole.User;
+    }
+
+    [RelayCommand]
+    private async Task OpenUserProfileAsync(UserRow? row)
+    {
+        var user = row ?? SelectedUser;
+        if (user is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار مستخدم");
+            return;
+        }
+
+        UserNavigationBridge.PendingActivityUserId = user.Id;
+        var title = string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName;
+        await _mainWindow.OpenTabAsync(
+            typeof(UserActivityProfileViewModel),
+            $"ملف — {title}",
+            MaterialDesignThemes.Wpf.PackIconKind.AccountCircle,
+            activateIfExists: false);
+    }
+
+    [RelayCommand]
+    private async Task OpenUserPermissionsAsync(UserRow? row)
+    {
+        var user = row ?? SelectedUser;
+        if (user is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار مستخدم");
+            return;
+        }
+
+        UserNavigationBridge.PendingPermissionsUserId = user.Id;
+        var title = string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName;
+        await _mainWindow.OpenTabAsync(
+            typeof(PermissionsViewModel),
+            $"صلاحيات — {title}",
+            MaterialDesignThemes.Wpf.PackIconKind.ShieldAccount,
+            activateIfExists: false);
     }
 
     [RelayCommand]

@@ -248,4 +248,111 @@ public class UserActivityProfileService : IUserActivityProfileService
             .AsNoTracking()
             .FirstOrDefaultAsync(i => i.Id == invoiceId);
     }
+
+    public async Task<UserPerformanceResult> GetPerformanceAsync(
+        int userId,
+        DateTime? from,
+        DateTime? to,
+        string? search,
+        string? entityName,
+        AuditAction? action,
+        int page,
+        int pageSize)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync();
+
+        var baseQuery = ctx.AuditLogs.AsNoTracking().Where(a => a.UserId == userId);
+        if (from.HasValue) baseQuery = baseQuery.Where(a => a.Timestamp >= from.Value);
+        if (to.HasValue) baseQuery = baseQuery.Where(a => a.Timestamp < to.Value.Date.AddDays(1));
+
+        var addCount = await baseQuery.CountAsync(a => a.Action == AuditAction.Add);
+        var editCount = await baseQuery.CountAsync(a => a.Action == AuditAction.Edit);
+        var deleteCount = await baseQuery.CountAsync(a => a.Action == AuditAction.Delete);
+        var totalOps = addCount + editCount + deleteCount;
+
+        var byEntity = await baseQuery
+            .GroupBy(a => a.EntityName)
+            .Select(g => new { EntityName = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(12)
+            .ToListAsync();
+
+        var query = ctx.AuditLogs
+            .Include(a => a.User)
+            .AsNoTracking()
+            .Where(a => a.UserId == userId);
+
+        if (from.HasValue) query = query.Where(a => a.Timestamp >= from.Value);
+        if (to.HasValue) query = query.Where(a => a.Timestamp < to.Value.Date.AddDays(1));
+        if (action.HasValue) query = query.Where(a => a.Action == action.Value);
+        if (!string.IsNullOrWhiteSpace(entityName) && entityName != "الكل")
+            query = query.Where(a => a.EntityName == entityName);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(a =>
+                a.EntityName.Contains(term) ||
+                (a.OldValues != null && a.OldValues.Contains(term)) ||
+                (a.NewValues != null && a.NewValues.Contains(term)));
+        }
+
+        var totalRows = await query.CountAsync();
+        var rows = await query
+            .OrderByDescending(a => a.Timestamp)
+            .ThenByDescending(a => a.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AuditLogRow
+            {
+                Id = a.Id,
+                Timestamp = a.Timestamp,
+                Username = a.User.FullName,
+                Action = a.Action,
+                ActionDisplay = a.Action == AuditAction.Add ? "إضافة"
+                    : a.Action == AuditAction.Edit ? "تعديل"
+                    : "حذف",
+                EntityName = a.EntityName,
+                EntityId = a.EntityId,
+                OldValues = a.OldValues,
+                NewValues = a.NewValues
+            })
+            .ToListAsync();
+
+        var loginQuery = ctx.UserLoginLogs.AsNoTracking().Where(l => l.UserId == userId);
+        if (from.HasValue) loginQuery = loginQuery.Where(l => l.LoginAt >= from.Value);
+        if (to.HasValue) loginQuery = loginQuery.Where(l => l.LoginAt < to.Value.Date.AddDays(1));
+        var loginCount = await loginQuery.CountAsync();
+
+        return new UserPerformanceResult
+        {
+            AddCount = addCount,
+            EditCount = editCount,
+            DeleteCount = deleteCount,
+            TotalOperations = totalOps,
+            LoginCount = loginCount,
+            TotalRows = totalRows,
+            ByEntity = byEntity.Select(x => new UserPerformanceEntityStat
+            {
+                EntityName = x.EntityName,
+                EntityDisplay = TranslateEntity(x.EntityName),
+                Count = x.Count
+            }).ToList(),
+            Rows = rows
+        };
+    }
+
+    private static string TranslateEntity(string name) => name switch
+    {
+        "Invoice" or "InvoiceRevision" => "فواتير",
+        "Voucher" => "سندات",
+        "Product" => "منتجات",
+        "Customer" => "عملاء",
+        "Supplier" => "موردون",
+        "Expense" => "مصروفات",
+        "Installment" or "InstallmentPlan" => "أقساط",
+        "Warehouse" => "مخازن",
+        "CashBox" or "BankAccount" => "صناديق/بنوك",
+        "User" => "مستخدمون",
+        _ => name
+    };
 }

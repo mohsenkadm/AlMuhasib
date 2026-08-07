@@ -51,10 +51,34 @@
 
                     <Button Command="{Binding OpenResetPasswordCommand}"
                             Style="{StaticResource PrimaryButton}"
-                            md:ButtonAssist.CornerRadius="8" >
+                            md:ButtonAssist.CornerRadius="8"
+                            Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="LockReset" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="إعادة كلمة المرور"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding OpenUserProfileCommand}"
+                            CommandParameter="{Binding SelectedUser}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding SelectedUser, Converter={StaticResource NotNullToBooleanConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="AccountDetails" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="الملف الشخصي"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding OpenUserPermissionsCommand}"
+                            CommandParameter="{Binding SelectedUser}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8"
+                            IsEnabled="{Binding SelectedUser, Converter={StaticResource NotNullToBooleanConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ShieldAccount" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="الصلاحيات"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -97,6 +121,31 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="130" MinWidth="130"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="الملف الشخصي وسجل النشاط"
+                                                Command="{Binding DataContext.OpenUserProfileCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="AccountDetails" Width="16" Height="16"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="صلاحيات المستخدم"
+                                                Margin="4,0,0,0"
+                                                Command="{Binding DataContext.OpenUserPermissionsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="ShieldAccount" Width="16" Height="16"/>
+                                        </Button>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

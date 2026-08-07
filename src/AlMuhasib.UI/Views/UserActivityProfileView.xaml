@@ -237,6 +237,110 @@
                         </Border>
                     </Grid>
                 </TabItem>
+
+                <!-- Performance -->
+                <TabItem Header="أداء الموظف">
+                    <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Columns="5" Margin="0,0,0,12">
+                            <controls:AnimatedStatCard Title="إضافات" Value="{Binding PerfAddCount}" Icon="PlusCircle"
+                                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                            <controls:AnimatedStatCard Title="تعديلات" Value="{Binding PerfEditCount}" Icon="Pencil"
+                                                       IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+                            <controls:AnimatedStatCard Title="حذف" Value="{Binding PerfDeleteCount}" Icon="Delete"
+                                                       IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
+                            <controls:AnimatedStatCard Title="إجمالي العمليات" Value="{Binding PerfTotalOps}" Icon="ChartBar"
+                                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                            <controls:AnimatedStatCard Title="مرات الدخول" Value="{Binding PerfLoginCount}" Icon="Login"
+                                                       IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                        </UniformGrid>
+
+                        <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+                            <ComboBox Width="160" Margin="0,0,8,0"
+                                      ItemsSource="{Binding PerformanceActionFilters}"
+                                      SelectedItem="{Binding SelectedPerformanceAction}"
+                                      md:HintAssist.Hint="نوع العملية"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <ComboBox Width="180" Margin="0,0,8,0"
+                                      ItemsSource="{Binding PerformanceEntityFilters}"
+                                      SelectedItem="{Binding SelectedPerformanceEntity}"
+                                      md:HintAssist.Hint="نوع الكيان"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <ItemsControl ItemsSource="{Binding PerformanceByEntity}" Margin="8,0,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#ECEFF1" CornerRadius="10" Padding="10,4" Margin="0,0,6,4">
+                                            <TextBlock FontSize="11" Foreground="#455A64">
+                                                <Run Text="{Binding EntityDisplay}" FontWeight="SemiBold"/>
+                                                <Run Text=" · "/>
+                                                <Run Text="{Binding Count}"/>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </WrapPanel>
+
+                        <DataGrid Grid.Row="2" ItemsSource="{Binding PerformanceRows}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                  Style="{StaticResource ModernDataGrid}"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="التاريخ" Width="140" Binding="{Binding Timestamp, StringFormat=yyyy/MM/dd HH:mm}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Timestamp"/>
+                                <DataGridTextColumn Header="العملية" Width="90" Binding="{Binding ActionDisplay}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ActionDisplay"/>
+                                <DataGridTextColumn Header="الكيان" Width="140" Binding="{Binding EntityName}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="EntityName"/>
+                                <DataGridTextColumn Header="المعرف" Width="80" Binding="{Binding EntityId}"/>
+                                <DataGridTemplateColumn Header="تفاصيل" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="عرض" Style="{StaticResource FlatButton}" Height="30" Padding="10,0"
+                                                    Command="{Binding DataContext.ShowPerformanceDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Grid.Row="3" Background="#FAFBFC" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                BorderThickness="0,1,0,0" Padding="12,8">
+                            <Grid>
+                                <TextBlock Text="{Binding PerfPaginationInfo}" VerticalAlignment="Center" Foreground="#607D8B" FontSize="12.5"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <Button Command="{Binding PerfFirstPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
+                                        <md:PackIcon Kind="PageFirst"/>
+                                    </Button>
+                                    <Button Command="{Binding PerfPreviousPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32" IsEnabled="{Binding PerfCanGoPrevious}">
+                                        <md:PackIcon Kind="ChevronRight"/>
+                                    </Button>
+                                    <TextBlock VerticalAlignment="Center" Margin="8,0" FontSize="12" Text="{Binding PerfCurrentPage}"/>
+                                    <TextBlock VerticalAlignment="Center" FontSize="12" Text="/" Margin="0,0,4,0"/>
+                                    <TextBlock VerticalAlignment="Center" FontSize="12" Text="{Binding PerfTotalPages}"/>
+                                    <Button Command="{Binding PerfNextPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32" IsEnabled="{Binding PerfCanGoNext}">
+                                        <md:PackIcon Kind="ChevronLeft"/>
+                                    </Button>
+                                    <Button Command="{Binding PerfLastPageCommand}" Style="{StaticResource IconButton}" Width="32" Height="32">
+                                        <md:PackIcon Kind="PageLast"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </TabItem>
             </TabControl>
         </md:Card>
 

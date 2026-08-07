@@ -3,10 +3,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             d:DataContext="{d:DesignInstance vm:PermissionsViewModel, IsDesignTimeCreatable=False}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
              Style="{StaticResource PageStyle}"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             Loaded="Root_Loaded"
+             x:Name="Root">
 
-    <Grid Margin="24">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+
+        <Style x:Key="PermChipButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="md:ButtonAssist.CornerRadius" Value="18"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -14,203 +34,241 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TOP: User Selection + Buttons -->
-        <!-- ═══════════════════════════════════════════ -->
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="12" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,16">
+        <!-- Hero -->
+        <Border x:Name="HeroHeader" Grid.Row="0" CornerRadius="16" Padding="22,18" Margin="0,0,0,14" Opacity="0">
+            <Border.RenderTransform>
+                <TranslateTransform Y="18"/>
+            </Border.RenderTransform>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1A237E" Offset="0"/>
+                    <GradientStop Color="#283593" Offset="0.45"/>
+                    <GradientStop Color="#3949AB" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="56" Height="56" CornerRadius="16" Background="#33FFFFFF" Margin="0,0,14,0">
+                    <md:PackIcon Kind="ShieldAccount" Width="30" Height="30" Foreground="White"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="إدارة الصلاحيات" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="تحكم دقيق بصلاحيات كل شاشة لكل مستخدم — عرض، إضافة، تعديل، حذف والمزيد"
+                               FontSize="12" Foreground="#C5CAE9" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Border Grid.Column="2" Background="#22FFFFFF" CornerRadius="12" Padding="14,10"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding SelectedUser, Converter={StaticResource NullToCollapsedConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Account" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding SelectedUser.DisplayName}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Toolbar -->
+        <md:Card x:Name="ToolbarCard" Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="14" Margin="0,0,0,14"
+                 md:ElevationAssist.Elevation="Dp2" Opacity="0">
+            <md:Card.RenderTransform>
+                <TranslateTransform Y="12"/>
+            </md:Card.RenderTransform>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ComboBox Grid.Column="0" Width="280"
-                          md:HintAssist.Hint="اختر المستخدم"
-                          Style="{StaticResource FilledComboBox}"
-                          ItemsSource="{Binding Users}"
+                <ComboBox ItemsSource="{Binding Users}"
                           SelectedItem="{Binding SelectedUser}"
                           DisplayMemberPath="DisplayName"
-                          IsEditable="False"/>
+                          md:HintAssist.Hint="اختر المستخدم"
+                          Style="{StaticResource FilledComboBox}"/>
 
-                <Button Grid.Column="2"
-                        Command="{Binding SelectAllCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="CheckAll" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="تحديد الكل"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Grid.Column="3"
-                        Command="{Binding DeselectAllCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="CloseCircleMultipleOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="إلغاء الكل"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Grid.Column="4"
-                        Command="{Binding VerifyCatalogCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="DatabaseSearch" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="التحقق من التسميات"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Grid.Column="5"
-                        Command="{Binding SavePermissionsCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        md:ButtonAssist.CornerRadius="8"
-                        Background="#388E3C">
-                    <StackPanel Orientation="Horizontal">
-                        <md:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
-                        <TextBlock Text="حفظ الصلاحيات" Foreground="White"/>
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Command="{Binding SelectAllCommand}" Style="{StaticResource PermChipButton}"
+                            Background="#E8F5E9" Foreground="#2E7D32">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CheckAll" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديد الكل" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding DeselectAllCommand}" Style="{StaticResource PermChipButton}"
+                            Background="#FFEBEE" Foreground="#C62828">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CloseCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إلغاء الكل" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding VerifyCatalogCommand}" Style="{StaticResource PermChipButton}"
+                            Background="#E3F2FD" Foreground="#1565C0">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="DatabaseSearch" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="التحقق" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SavePermissionsCommand}" Style="{StaticResource AccentButton}"
+                            Height="36" Padding="18,0" md:ButtonAssist.CornerRadius="18">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ContentSave" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ الصلاحيات" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </md:Card>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- PERMISSIONS TABLE -->
-        <!-- ═══════════════════════════════════════════ -->
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+        <!-- Grid card -->
+        <md:Card x:Name="GridCard" Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0"
+                 md:ElevationAssist.Elevation="Dp3" Opacity="0">
+            <md:Card.RenderTransform>
+                <TranslateTransform Y="16"/>
+            </md:Card.RenderTransform>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <controls:ListTableHeaderBar Grid.Row="0"
-                                             Title="صلاحيات الشاشات"
-                                             TargetDataGrid="{Binding ElementName=PermissionsGrid}"
-                                             ShowCardToggle="False"
-                                             ShowExport="False"
-                                             ShowPrint="False"
-                                             ShowFilter="False"/>
-            <DataGrid x:Name="PermissionsGrid" Grid.Row="1" ItemsSource="{Binding Screens}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      CanUserReorderColumns="False"
-                      HeadersVisibility="Column"
-                      Style="{StaticResource ModernDataGrid}"
-                      SelectionMode="Single"
-                      GridLinesVisibility="Horizontal"
-                      HorizontalGridLinesBrush="#E0E0E0">
-                <DataGrid.Columns>
-                    <!-- Screen Name -->
-                    <DataGridTextColumn Header="الشاشة"
-                                        Binding="{Binding ScreenLabel}"
-                                        Width="*"
-                                        IsReadOnly="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Padding" Value="12,0"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
+                <Border Background="#F5F7FA" Padding="16,12" BorderBrush="#E8EEF2" BorderThickness="0,0,0,1">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Border Width="34" Height="34" CornerRadius="10" Background="#E8EAF6" Margin="0,0,10,0">
+                                <md:PackIcon Kind="ViewDashboardOutline" Width="18" Height="18" Foreground="#3949AB"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="صلاحيات الشاشات" FontSize="15" FontWeight="Bold" Foreground="#1A237E"/>
+                                <TextBlock Text="فعّل العرض أولاً ثم حدّد العمليات المسموحة" FontSize="11" Foreground="#78909C"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" FontSize="12" Foreground="#607D8B"
+                                   Text="{Binding Screens.Count, StringFormat=عدد الشاشات: {0}}"/>
+                    </DockPanel>
+                </Border>
 
-                    <!-- CanView -->
-                    <DataGridTemplateColumn Header="عرض" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanView, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                <DataGrid x:Name="PermissionsGrid" Grid.Row="1" ItemsSource="{Binding Screens}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserReorderColumns="False"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          SelectionMode="Single"
+                          AlternatingRowBackground="#FAFBFC"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#ECEFF1"
+                          RowHeight="44">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الشاشة" Binding="{Binding ScreenLabel}" Width="*" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="14,0"/>
+                                    <Setter Property="Foreground" Value="#263238"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
 
-                    <!-- CanAdd -->
-                    <DataGridTemplateColumn Header="إضافة" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanAdd, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <!-- CanEdit -->
-                    <DataGridTemplateColumn Header="تعديل" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanEdit, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <!-- CanDelete -->
-                    <DataGridTemplateColumn Header="حذف" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanDelete, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <!-- CanPrint -->
-                    <DataGridTemplateColumn Header="طباعة" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanPrint, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <!-- CanExport -->
-                    <DataGridTemplateColumn Header="تصدير" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanExport, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <DataGridTemplateColumn Header="تعديل سعر" Width="80">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding CanEditPrice, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <DataGridTemplateColumn Header="عرض فقط" Width="80">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox IsChecked="{Binding IsViewOnly, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource MaterialDesignCheckBox}"
-                                          HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+                        <DataGridTemplateColumn Header="عرض" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanView, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="إضافة" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanAdd, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="تعديل" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanEdit, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="حذف" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanDelete, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="طباعة" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanPrint, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="تصدير" Width="72">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanExport, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="تعديل سعر" Width="88">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding CanEditPrice, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="عرض فقط" Width="88">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsViewOnly, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource MaterialDesignCheckBox}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsEnabled="{Binding CanView}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
         </md:Card>
+
+        <Border Grid.Row="3" Margin="0,12,0,0" Padding="14,10" Background="White" CornerRadius="12"
+                BorderBrush="#E8EEF2" BorderThickness="1">
+            <TextBlock FontSize="12" Foreground="#78909C" TextWrapping="Wrap"
+                       Text="نصيحة: صلاحية «عرض» هي المدخل لكل العمليات. لوحة التحكم تبقى متاحة دائماً. احفظ بعد كل تعديل مهم."/>
+        </Border>
+
+        <Border Style="{StaticResource PageLoading}" Grid.RowSpan="4"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="40" Height="40"/>
+        </Border>
     </Grid>
 </UserControl>

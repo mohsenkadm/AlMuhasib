@@ -12,6 +12,35 @@ public interface IUserActivityProfileService
     Task<(IReadOnlyList<UserDeletedActivityRow> Items, int TotalCount)> GetDeletedActivitiesAsync(
         string username, DateTime? from, DateTime? to, string? search, string? entityKind, int page, int pageSize);
     Task<Invoice?> GetInvoiceIncludingDeletedAsync(int invoiceId);
+
+    Task<UserPerformanceResult> GetPerformanceAsync(
+        int userId,
+        DateTime? from,
+        DateTime? to,
+        string? search,
+        string? entityName,
+        AuditAction? action,
+        int page,
+        int pageSize);
+}
+
+public class UserPerformanceResult
+{
+    public int AddCount { get; set; }
+    public int EditCount { get; set; }
+    public int DeleteCount { get; set; }
+    public int TotalOperations { get; set; }
+    public int LoginCount { get; set; }
+    public List<UserPerformanceEntityStat> ByEntity { get; set; } = [];
+    public int TotalRows { get; set; }
+    public List<AuditLogRow> Rows { get; set; } = [];
+}
+
+public class UserPerformanceEntityStat
+{
+    public string EntityName { get; set; } = string.Empty;
+    public string EntityDisplay { get; set; } = string.Empty;
+    public int Count { get; set; }
 }
 
 public class UserActivityProfileInfo

@@ -15,9 +15,12 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
     private readonly IUserActivityProfileService _profileService;
     private readonly IInvoiceService _invoiceService;
     private readonly ICurrentUserService _currentUserService;
+    private int _targetUserId;
 
     public ObservableCollection<EntityChangeRow> ModificationRows { get; } = [];
     public ObservableCollection<UserDeletedActivityRow> DeletedRows { get; } = [];
+    public ObservableCollection<AuditLogRow> PerformanceRows { get; } = [];
+    public ObservableCollection<UserPerformanceEntityStat> PerformanceByEntity { get; } = [];
 
     public ObservableCollection<DeletedKindDisplayItem> DeletedKindOptions { get; } =
     [
@@ -29,6 +32,16 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
         new("Supplier", "موردون"),
         new("Expense", "مصروفات")
     ];
+
+    public ObservableCollection<PerformanceActionFilterItem> PerformanceActionFilters { get; } =
+    [
+        new(null, "كل العمليات"),
+        new(AuditAction.Add, "إضافة"),
+        new(AuditAction.Edit, "تعديل"),
+        new(AuditAction.Delete, "حذف")
+    ];
+
+    public ObservableCollection<string> PerformanceEntityFilters { get; } = ["الكل"];
 
     [ObservableProperty] private string _fullName = string.Empty;
     [ObservableProperty] private string _username = string.Empty;
@@ -42,11 +55,19 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
     [ObservableProperty] private int _deletedInvoicesCount;
     [ObservableProperty] private int _totalActivityCount;
 
+    [ObservableProperty] private int _perfAddCount;
+    [ObservableProperty] private int _perfEditCount;
+    [ObservableProperty] private int _perfDeleteCount;
+    [ObservableProperty] private int _perfTotalOps;
+    [ObservableProperty] private int _perfLoginCount;
+
     [ObservableProperty] private int _selectedTabIndex;
     [ObservableProperty] private DateTime? _dateFrom = DateTime.Today.AddMonths(-3);
     [ObservableProperty] private DateTime? _dateTo = DateTime.Today;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private DeletedKindDisplayItem? _selectedDeletedKind;
+    [ObservableProperty] private PerformanceActionFilterItem? _selectedPerformanceAction;
+    [ObservableProperty] private string _selectedPerformanceEntity = "الكل";
 
     [ObservableProperty] private bool _isDetailsOpen;
     [ObservableProperty] private string _detailsTitle = string.Empty;
@@ -66,6 +87,13 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
     [ObservableProperty] private bool _delCanGoPrevious;
     [ObservableProperty] private bool _delCanGoNext;
 
+    [ObservableProperty] private int _perfCurrentPage = 1;
+    [ObservableProperty] private int _perfTotalPages = 1;
+    [ObservableProperty] private int _perfTotalCount;
+    [ObservableProperty] private string _perfPaginationInfo = string.Empty;
+    [ObservableProperty] private bool _perfCanGoPrevious;
+    [ObservableProperty] private bool _perfCanGoNext;
+
     private const int TabPageSize = 25;
 
     public UserActivityProfileViewModel(
@@ -78,26 +106,37 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
         _currentUserService = currentUserService;
         PageTitle = "ملف المستخدم";
         SelectedDeletedKind = DeletedKindOptions[0];
+        SelectedPerformanceAction = PerformanceActionFilters[0];
     }
 
     public override async Task InitializeAsync()
     {
+        if (UserNavigationBridge.PendingActivityUserId is int pendingId)
+        {
+            _targetUserId = pendingId;
+            UserNavigationBridge.PendingActivityUserId = null;
+        }
+        else
+        {
+            _targetUserId = _currentUserService.UserId ?? 0;
+        }
+
         await RefreshAllAsync();
     }
 
     [RelayCommand]
     private async Task RefreshAllAsync()
     {
-        if (_currentUserService.UserId is not int userId)
+        if (_targetUserId <= 0)
         {
-            BeautifulMessageDialog.ShowWarning("لا يوجد مستخدم مسجّل حالياً.");
+            BeautifulMessageDialog.ShowWarning("لا يوجد مستخدم محدد.");
             return;
         }
 
         try
         {
             IsBusy = true;
-            var info = await _profileService.GetUserInfoAsync(userId);
+            var info = await _profileService.GetUserInfoAsync(_targetUserId);
             if (info is null)
             {
                 BeautifulMessageDialog.ShowWarning("تعذّر تحميل بيانات المستخدم.");
@@ -110,6 +149,7 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
             StatusDisplay = info.IsActive ? "نشط" : "موقوف";
             LastLoginDisplay = info.LastLoginAt?.ToString("yyyy/MM/dd HH:mm") ?? "—";
             LastMachineDisplay = string.IsNullOrWhiteSpace(info.LastLoginMachine) ? "—" : info.LastLoginMachine!;
+            PageTitle = $"ملف المستخدم — {FullName}";
 
             var stats = await _profileService.GetStatsAsync(info.Username, DateFrom, DateTo);
             ModificationsCount = stats.InvoiceModificationsCount;
@@ -119,8 +159,10 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
 
             ModCurrentPage = 1;
             DelCurrentPage = 1;
+            PerfCurrentPage = 1;
             await LoadModificationsAsync();
             await LoadDeletedAsync();
+            await LoadPerformanceAsync();
         }
         catch (Exception ex)
         {
@@ -137,6 +179,7 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
     {
         ModCurrentPage = 1;
         DelCurrentPage = 1;
+        PerfCurrentPage = 1;
         try
         {
             IsBusy = true;
@@ -147,6 +190,7 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
             TotalActivityCount = stats.TotalActivityCount;
             await LoadModificationsAsync();
             await LoadDeletedAsync();
+            await LoadPerformanceAsync();
         }
         catch (Exception ex)
         {
@@ -354,6 +398,106 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
     [RelayCommand]
     private void CloseDetails() => IsDetailsOpen = false;
 
+    private async Task LoadPerformanceAsync()
+    {
+        var entity = string.IsNullOrWhiteSpace(SelectedPerformanceEntity) || SelectedPerformanceEntity == "الكل"
+            ? null
+            : SelectedPerformanceEntity;
+        var action = SelectedPerformanceAction?.Value;
+
+        var result = await _profileService.GetPerformanceAsync(
+            _targetUserId, DateFrom, DateTo, SearchText, entity, action, PerfCurrentPage, TabPageSize);
+
+        PerfAddCount = result.AddCount;
+        PerfEditCount = result.EditCount;
+        PerfDeleteCount = result.DeleteCount;
+        PerfTotalOps = result.TotalOperations;
+        PerfLoginCount = result.LoginCount;
+
+        PerformanceByEntity.Clear();
+        foreach (var e in result.ByEntity)
+            PerformanceByEntity.Add(e);
+
+        // Keep entity filter list enriched
+        foreach (var e in result.ByEntity)
+        {
+            if (!PerformanceEntityFilters.Contains(e.EntityName))
+                PerformanceEntityFilters.Add(e.EntityName);
+        }
+
+        PerformanceRows.Clear();
+        foreach (var row in result.Rows)
+            PerformanceRows.Add(row);
+
+        PerfTotalCount = result.TotalRows;
+        PerfTotalPages = Math.Max(1, (int)Math.Ceiling(result.TotalRows / (double)TabPageSize));
+        if (PerfCurrentPage > PerfTotalPages) PerfCurrentPage = PerfTotalPages;
+        PerfCanGoPrevious = PerfCurrentPage > 1;
+        PerfCanGoNext = PerfCurrentPage < PerfTotalPages;
+        PerfPaginationInfo = result.TotalRows == 0
+            ? "لا توجد عمليات"
+            : $"عرض {(PerfCurrentPage - 1) * TabPageSize + 1}-{Math.Min(PerfCurrentPage * TabPageSize, result.TotalRows)} من {result.TotalRows}";
+    }
+
+    [RelayCommand]
+    private async Task PerfFirstPageAsync()
+    {
+        if (PerfCurrentPage <= 1) return;
+        PerfCurrentPage = 1;
+        await WithBusy(LoadPerformanceAsync);
+    }
+
+    [RelayCommand]
+    private async Task PerfPreviousPageAsync()
+    {
+        if (!PerfCanGoPrevious) return;
+        PerfCurrentPage--;
+        await WithBusy(LoadPerformanceAsync);
+    }
+
+    [RelayCommand]
+    private async Task PerfNextPageAsync()
+    {
+        if (!PerfCanGoNext) return;
+        PerfCurrentPage++;
+        await WithBusy(LoadPerformanceAsync);
+    }
+
+    [RelayCommand]
+    private async Task PerfLastPageAsync()
+    {
+        if (PerfCurrentPage >= PerfTotalPages) return;
+        PerfCurrentPage = PerfTotalPages;
+        await WithBusy(LoadPerformanceAsync);
+    }
+
+    [RelayCommand]
+    private void ShowPerformanceDetails(AuditLogRow? row)
+    {
+        if (row is null) return;
+        var sb = new StringBuilder();
+        sb.AppendLine($"الكيان: {row.EntityName} #{row.EntityId}");
+        sb.AppendLine($"العملية: {row.ActionDisplay}");
+        sb.AppendLine($"التاريخ: {row.Timestamp:yyyy/MM/dd HH:mm}");
+        sb.AppendLine($"المستخدم: {row.Username}");
+        if (!string.IsNullOrWhiteSpace(row.OldValues))
+        {
+            sb.AppendLine();
+            sb.AppendLine("القيم السابقة:");
+            sb.AppendLine(row.OldValues);
+        }
+        if (!string.IsNullOrWhiteSpace(row.NewValues))
+        {
+            sb.AppendLine();
+            sb.AppendLine("القيم الجديدة:");
+            sb.AppendLine(row.NewValues);
+        }
+
+        DetailsTitle = $"{row.ActionDisplay} — {row.EntityName}";
+        DetailsBody = sb.ToString();
+        IsDetailsOpen = true;
+    }
+
     private async Task WithBusy(Func<Task> action)
     {
         try
@@ -375,6 +519,11 @@ public partial class UserActivityProfileViewModel : PagedViewModelBase
 }
 
 public record DeletedKindDisplayItem(string Id, string Name)
+{
+    public override string ToString() => Name;
+}
+
+public record PerformanceActionFilterItem(AuditAction? Value, string Name)
 {
     public override string ToString() => Name;
 }
