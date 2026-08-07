@@ -65,6 +65,82 @@ public class PersonProfileResult
 
     public List<PersonTimelineItem> Timeline { get; set; } = [];
     public List<PersonProfileSection> Sections { get; set; } = [];
+
+    /// <summary>Filled only for customers — powers profile analytics tabs.</summary>
+    public CustomerProfileInsights? CustomerInsights { get; set; }
+}
+
+public class CustomerProfileInsights
+{
+    public decimal SalesAmount { get; set; }
+    public decimal CostAmount { get; set; }
+    public decimal NetProfit { get; set; }
+    public decimal MarginPercent { get; set; }
+    public int InvoiceCount { get; set; }
+    public decimal OutstandingBalance { get; set; }
+
+    public List<CustomerProfitMonthPoint> ProfitByMonth { get; set; } = [];
+    public List<CustomerProductPurchaseRow> Products { get; set; } = [];
+    public List<CustomerAgingBucketRow> AgingBuckets { get; set; } = [];
+    public List<CustomerAgingDetailRow> AgingDetails { get; set; } = [];
+    public List<CustomerFinancialTxnRow> FinancialTransactions { get; set; } = [];
+    public List<CustomerDueItemRow> DueItems { get; set; } = [];
+}
+
+public class CustomerProfitMonthPoint
+{
+    public string Label { get; set; } = string.Empty;
+    public decimal Sales { get; set; }
+    public decimal Cost { get; set; }
+    public decimal Profit { get; set; }
+}
+
+public class CustomerProductPurchaseRow
+{
+    public int? ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal TotalQuantity { get; set; }
+    public int DealCount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime? LastDate { get; set; }
+    public decimal LastUnitPrice { get; set; }
+}
+
+public class CustomerAgingBucketRow
+{
+    public string BucketName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public int Count { get; set; }
+}
+
+public class CustomerAgingDetailRow
+{
+    public string SourceType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public DateTime DueDate { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public int DaysOverdue { get; set; }
+    public string AgingBucket { get; set; } = string.Empty;
+}
+
+public class CustomerFinancialTxnRow
+{
+    public DateTime Date { get; set; }
+    public string VoucherNumber { get; set; } = string.Empty;
+    public string VoucherType { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CustomerDueItemRow
+{
+    public string Kind { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public DateTime? DueDate { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public int? InvoiceId { get; set; }
 }
 
 public class PersonTimelineItem

@@ -226,7 +226,8 @@ public class ExcelExportService : IExportService
         // ── A4 page dimensions (96 DPI) ──
         const double A4Width = 793.7;   // 210mm
         const double A4Height = 1122.5; // 297mm
-        var compactScheduleMode = m.Schedule is { Count: >= 14 };
+        var theme = InvoiceA4TemplateTheme.Resolve(m.A4TemplateId);
+        var compactScheduleMode = theme.ForceCompactMetrics || m.Schedule is { Count: >= 14 };
 
         var doc = new FlowDocument
         {
@@ -235,35 +236,35 @@ public class ExcelExportService : IExportService
             FlowDirection = FlowDirection.RightToLeft,
             PageWidth = A4Width,
             PageHeight = A4Height,
-            PagePadding = compactScheduleMode
-                ? new Thickness(22, 14, 22, 14)
-                : new Thickness(32, 24, 32, 24),
+            PagePadding = compactScheduleMode ? theme.CompactPagePadding : theme.PagePadding,
             ColumnWidth = A4Width // single column
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
-        var primaryColor = Color.FromRgb(0x15, 0x65, 0xC0);
+        var primaryColor = theme.Primary;
         var primaryBrush = new SolidColorBrush(primaryColor);
-        var darkColor = Color.FromRgb(0x0D, 0x47, 0xA1);
+        var darkColor = theme.Dark;
         var darkBrush = new SolidColorBrush(darkColor);
-        var lightBg = Color.FromRgb(0xF5, 0xF7, 0xFA);
-        var borderColor = Color.FromRgb(0xE0, 0xE0, 0xE0);
+        var lightBg = theme.LightBg;
+        var borderColor = theme.Border;
         var borderBrush = new SolidColorBrush(borderColor);
-        var accentColor = Color.FromRgb(0xE6, 0x51, 0x00);
+        var accentColor = theme.Accent;
 
         // ═══════════════════════════════════════════════
-        // HEADER SECTION with colored banner
+        // HEADER SECTION — Classic/Compact: solid banner; Modern: title + accent underline
         // ═══════════════════════════════════════════════
         var headerTable = new Table { CellSpacing = 0 };
         headerTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         var headerGroup = new TableRowGroup();
-        var headerRow = new TableRow { Background = primaryBrush };
+        var headerRow = new TableRow();
+        if (theme.UseSolidBanner)
+            headerRow.Background = primaryBrush;
         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(m.Title))
         {
-            FontSize = compactScheduleMode ? 19 : 24,
+            FontSize = compactScheduleMode ? theme.CompactTitleFontSize : theme.TitleFontSize,
             FontWeight = FontWeights.Bold,
-            Foreground = Brushes.White,
+            Foreground = theme.UseSolidBanner ? Brushes.White : darkBrush,
             TextAlignment = TextAlignment.Center
         })
         { Padding = compactScheduleMode ? new Thickness(0, 8, 0, 8) : new Thickness(0, 14, 0, 14) });
@@ -271,15 +272,21 @@ public class ExcelExportService : IExportService
         headerTable.RowGroups.Add(headerGroup);
         doc.Blocks.Add(headerTable);
 
-        // Thin accent line under header
-        var accentLine = new Table { CellSpacing = 0 };
-        accentLine.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        var accentGroup = new TableRowGroup();
-        var accentRow = new TableRow { Background = new SolidColorBrush(accentColor) };
-        accentRow.Cells.Add(new TableCell(new Paragraph(new Run(" ")) { FontSize = 1 }) { Padding = new Thickness(0, 2, 0, 2) });
-        accentGroup.Rows.Add(accentRow);
-        accentLine.RowGroups.Add(accentGroup);
-        doc.Blocks.Add(accentLine);
+        if (theme.ShowAccentLine)
+        {
+            // Thin accent line under header
+            var accentLine = new Table { CellSpacing = 0 };
+            accentLine.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            var accentGroup = new TableRowGroup();
+            var accentRow = new TableRow { Background = new SolidColorBrush(accentColor) };
+            accentRow.Cells.Add(new TableCell(new Paragraph(new Run(" ")) { FontSize = 1 })
+            {
+                Padding = new Thickness(0, theme.UseSolidBanner ? 2 : 3, 0, theme.UseSolidBanner ? 2 : 3)
+            });
+            accentGroup.Rows.Add(accentRow);
+            accentLine.RowGroups.Add(accentGroup);
+            doc.Blocks.Add(accentLine);
+        }
 
         // ═══════════════════════════════════════════════
         // INVOICE INFO — Two columns side by side

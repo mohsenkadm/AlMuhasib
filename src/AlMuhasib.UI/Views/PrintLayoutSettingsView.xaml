@@ -149,6 +149,23 @@
                             </ComboBox>
                             <CheckBox Content="معاينة قبل الطباعة" IsChecked="{Binding ShowPrintPreview}" Margin="0,0,0,14"/>
 
+                            <TextBlock Text="نماذج طباعة الفواتير A4" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
+                            <TextBlock Text="اختر أحد النماذج الثلاثة لطباعة فواتير المبيعات والمشتريات والأقساط بحجم A4. التصميم التفصيلي للنموذجين المضغوط والعصري سيُحدَّد لاحقاً."
+                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            <ComboBox ItemsSource="{Binding A4InvoiceTemplateOptions}"
+                                      SelectedItem="{Binding SelectedA4InvoiceTemplate}"
+                                      DisplayMemberPath="ArabicName"
+                                      materialDesign:HintAssist.Hint="نموذج طباعة الفاتورة A4"
+                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,8"/>
+                            <Border Background="#E8F5E9" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Foreground="#2E7D32"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding A4TemplateHint}" FontSize="12" Foreground="#1B5E20"
+                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
                             <TextBlock Text="نوع ورق الكاشير" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
                             <TextBlock Text="يُستخدم عند طباعة إيصال البيع السريع (POS)"
                                        FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>

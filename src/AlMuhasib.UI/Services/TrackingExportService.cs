@@ -37,9 +37,9 @@ public sealed class TrackingExportService : IExportService
 
     public void PrintInvoice(InvoicePrintModel model)
     {
+        PrintPreferences.Load();
         if (model.IsGoldInvoice)
         {
-            PrintPreferences.Load();
             if (PosReceiptPaperSizes.IsThermal(PrintPreferences.GoldReceiptPaperSize))
             {
                 _inner.PrintThermalReceipt(
@@ -50,6 +50,9 @@ public sealed class TrackingExportService : IExportService
                 return;
             }
         }
+
+        if (string.IsNullOrWhiteSpace(model.A4TemplateId))
+            model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
 
         _inner.PrintInvoice(model);
     }

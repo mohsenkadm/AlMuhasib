@@ -232,7 +232,155 @@ public class PersonProfileService : IPersonProfileService
             }).ToList()
         });
 
+        result.CustomerInsights = await BuildCustomerInsightsAsync(context, id, from, to, invoices, vouchers, installmentDetail);
         return result;
+    }
+
+    private async Task<CustomerProfileInsights> BuildCustomerInsightsAsync(
+        AppDbContext context,
+        int customerId,
+        DateTime? from,
+        DateTime? to,
+        List<Invoice> invoices,
+        List<Voucher> vouchers,
+        InstallmentDetailResult installmentDetail)
+    {
+        var insights = new CustomerProfileInsights
+        {
+            InvoiceCount = invoices.Count,
+            OutstandingBalance = invoices.Sum(i => i.RemainingAmount),
+            FinancialTransactions = vouchers.Select(v => new CustomerFinancialTxnRow
+            {
+                Date = v.Date,
+                VoucherNumber = v.VoucherNumber,
+                VoucherType = VoucherTypeLabel(v.VoucherType),
+                Amount = v.Amount,
+                Notes = v.Notes
+            }).ToList()
+        };
+
+        var invoiceIds = invoices.Select(i => i.Id).ToList();
+        List<InvoiceItem> items;
+        if (invoiceIds.Count == 0)
+            items = [];
+        else
+            items = await context.InvoiceItems.AsNoTracking()
+                .Include(ii => ii.Invoice)
+                .Where(ii => invoiceIds.Contains(ii.InvoiceId))
+                .ToListAsync();
+
+        var productIds = items.Where(i => i.ProductId != null).Select(i => i.ProductId!.Value).Distinct().ToList();
+        var stocks = productIds.Count > 0
+            ? await context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId)).ToListAsync()
+            : [];
+        var purchasesByProduct = productIds.Count > 0
+            ? await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds)
+            : new Dictionary<int, List<InvoiceItem>>();
+        var avgCostByProduct = productIds.ToDictionary(
+            pid => pid,
+            pid => ProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(pid) ?? [], stocks, pid));
+
+        decimal sales = 0, cost = 0;
+        var monthly = new Dictionary<(int Y, int M), (decimal Sales, decimal Cost)>();
+        foreach (var item in items)
+        {
+            var lineSales = item.TotalPrice;
+            var unitCost = item.ProductId is int pid && avgCostByProduct.TryGetValue(pid, out var c) ? c : 0m;
+            var lineCost = unitCost * item.Quantity;
+            sales += lineSales;
+            cost += lineCost;
+            var d = item.Invoice?.Date ?? DateTime.Today;
+            var key = (d.Year, d.Month);
+            if (!monthly.TryGetValue(key, out var cur)) cur = (0, 0);
+            monthly[key] = (cur.Sales + lineSales, cur.Cost + lineCost);
+        }
+
+        insights.SalesAmount = sales;
+        insights.CostAmount = cost;
+        insights.NetProfit = sales - cost;
+        insights.MarginPercent = sales > 0 ? Math.Round((sales - cost) / sales * 100m, 2) : 0;
+        insights.ProfitByMonth = monthly
+            .OrderBy(kv => kv.Key.Y).ThenBy(kv => kv.Key.M)
+            .Select(kv => new CustomerProfitMonthPoint
+            {
+                Label = $"{kv.Key.Y}/{kv.Key.M:00}",
+                Sales = kv.Value.Sales,
+                Cost = kv.Value.Cost,
+                Profit = kv.Value.Sales - kv.Value.Cost
+            })
+            .ToList();
+
+        insights.Products = items
+            .GroupBy(i => new { i.ProductId, Name = string.IsNullOrWhiteSpace(i.ItemName) ? "—" : i.ItemName })
+            .Select(g =>
+            {
+                var last = g.OrderByDescending(x => x.Invoice?.Date ?? DateTime.MinValue).First();
+                return new CustomerProductPurchaseRow
+                {
+                    ProductId = g.Key.ProductId,
+                    ProductName = g.Key.Name,
+                    TotalQuantity = g.Sum(x => x.Quantity),
+                    DealCount = g.Count(),
+                    TotalAmount = g.Sum(x => x.TotalPrice),
+                    LastDate = last.Invoice?.Date,
+                    LastUnitPrice = last.UnitPrice
+                };
+            })
+            .OrderByDescending(p => p.TotalQuantity)
+            .ThenBy(p => p.ProductName)
+            .ToList();
+
+        var asOf = to?.Date ?? DateTime.Today;
+        var aging = await _reportService.GetReceivablesAgingReportAsync(asOf, customerId);
+        insights.AgingBuckets = aging.Buckets.Select(b => new CustomerAgingBucketRow
+        {
+            BucketName = b.BucketName,
+            Amount = b.Amount,
+            Count = b.Count
+        }).ToList();
+        insights.AgingDetails = aging.Rows.Select(r => new CustomerAgingDetailRow
+        {
+            SourceType = r.SourceType,
+            Reference = $"#{r.ReferenceId}",
+            DueDate = r.DueDate,
+            RemainingAmount = r.RemainingAmount,
+            DaysOverdue = r.DaysOverdue,
+            AgingBucket = r.AgingBucket
+        }).ToList();
+
+        foreach (var inv in invoices.Where(i => i.RemainingAmount > 0))
+        {
+            insights.DueItems.Add(new CustomerDueItemRow
+            {
+                Kind = "فاتورة",
+                Title = inv.InvoiceNumber,
+                Subtitle = InvoiceTypeLabel(inv.InvoiceType),
+                DueDate = inv.CreditDueDate ?? inv.Date,
+                RemainingAmount = inv.RemainingAmount,
+                Status = inv.IsCreditPaid ? "مسدد" : "مستحق",
+                InvoiceId = inv.Id
+            });
+        }
+
+        foreach (var r in installmentDetail.Rows.Where(x => x.RemainingAmount > 0))
+        {
+            insights.DueItems.Add(new CustomerDueItemRow
+            {
+                Kind = "قسط",
+                Title = $"خطة {r.PlanNumber}",
+                Subtitle = r.Status,
+                DueDate = r.DueDate,
+                RemainingAmount = r.RemainingAmount,
+                Status = r.Status
+            });
+        }
+
+        insights.DueItems = insights.DueItems
+            .OrderBy(d => d.DueDate ?? DateTime.MaxValue)
+            .ToList();
+
+        return insights;
     }
 
     private async Task<PersonProfileResult?> BuildSupplierProfileAsync(int id, DateTime? from, DateTime? to)

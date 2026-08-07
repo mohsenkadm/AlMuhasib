@@ -35,6 +35,7 @@ public class CurrentUserService : ICurrentUserService
         || screenName == HotelPermissionRegistry.Dashboard
         || screenName == ScreenPermissionRegistry.DeveloperSystem
         || screenName == ScreenPermissionRegistry.SystemUpdate
+        || screenName == "UserActivityProfile"
         || (Get(screenName)?.CanView ?? false);
 
     public bool CanAdd(string screenName) => Get(screenName)?.CanAdd ?? false;

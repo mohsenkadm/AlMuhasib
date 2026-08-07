@@ -8,6 +8,7 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:PersonProfileViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
@@ -437,9 +438,166 @@
                         </UniformGrid>
                     </materialDesign:Card>
 
-                    <!-- Timeline -->
+                    <!-- Customer analytics tabs -->
+                    <materialDesign:Card UniformCornerRadius="22" Padding="16,14" Margin="0,0,0,16"
+                                         materialDesign:ElevationAssist.Elevation="Dp2"
+                                         Visibility="{Binding ShowCustomerExtras, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,12">
+                                <TextBox DockPanel.Dock="Left" Width="240" Margin="0,0,0,0"
+                                         Text="{Binding CustomerTabSearch, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="بحث داخل الجداول..."
+                                         Style="{StaticResource FilledTextBox}"/>
+                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                    <materialDesign:PackIcon Kind="ChartBoxOutline" Width="20" Height="20"
+                                                             Foreground="#1565C0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="تحليلات العميل" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
+
+                            <TabControl SelectedIndex="{Binding CustomerSelectedTab}"
+                                        Style="{StaticResource MaterialDesignTabControl}">
+                                <TabItem Header="نظرة عامة">
+                                    <StackPanel Margin="0,12,0,0">
+                                        <TextBlock Text="الخط الزمني للمعاملات" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                        <ItemsControl ItemsSource="{Binding TimelineItems}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:PersonTimelineDisplayItem}">
+                                                    <Border Style="{StaticResource TimelineCard}">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Description}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding CategoryLabel}" FontSize="11" Margin="0,2,0,0"
+                                                                           Foreground="{DynamicResource HintForegroundBrush}"/>
+                                                                <TextBlock Text="{Binding Date, StringFormat=yyyy/MM/dd}" FontSize="11" Margin="0,4,0,0"/>
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                                                <TextBlock Text="{Binding DebitLabel, StringFormat=مدين: {0}}" FontSize="12"/>
+                                                                <TextBlock Text="{Binding CreditLabel, StringFormat=دائن: {0}}" FontSize="12"/>
+                                                                <TextBlock Text="{Binding BalanceLabel, StringFormat=رصيد: {0}}" FontWeight="Bold" FontSize="12"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </TabItem>
+
+                                <TabItem Header="الأرباح">
+                                    <StackPanel Margin="0,12,0,0">
+                                        <UniformGrid Columns="4" Margin="0,0,0,12">
+                                            <controls:AnimatedStatCard Title="المبيعات" TextValue="{Binding ProfitSales}" Icon="CashRegister"
+                                                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="التكلفة" TextValue="{Binding ProfitCost}" Icon="PackageVariant"
+                                                                       IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding ProfitNet}" Icon="ChartLine"
+                                                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="هامش الربح" TextValue="{Binding ProfitMargin}" Icon="Percent"
+                                                                       IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                        </UniformGrid>
+                                        <Border Background="#F8FAFC" CornerRadius="12" Padding="8" MinHeight="220">
+                                            <lvc:CartesianChart Series="{Binding ProfitChartSeries}"
+                                                                XAxes="{Binding ProfitChartXAxes}"
+                                                                YAxes="{Binding ProfitChartYAxes}"
+                                                                LegendPosition="Top" Height="220"/>
+                                        </Border>
+                                    </StackPanel>
+                                </TabItem>
+
+                                <TabItem Header="المنتجات">
+                                    <DataGrid ItemsSource="{Binding FilteredProductRows}" Margin="0,12,0,0"
+                                              Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True"
+                                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True" MaxHeight="420">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="المنتج" Width="*" Binding="{Binding ProductName}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName" SortMemberPath="ProductName"/>
+                                            <DataGridTextColumn Header="الكمية" Width="100" Binding="{Binding TotalQuantity, StringFormat=N0}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalQuantity" SortMemberPath="TotalQuantity"/>
+                                            <DataGridTextColumn Header="مرات الشراء" Width="100" Binding="{Binding DealCount}"
+                                                                SortMemberPath="DealCount"/>
+                                            <DataGridTextColumn Header="الإجمالي" Width="120" Binding="{Binding TotalAmount, StringFormat=N0}"
+                                                                SortMemberPath="TotalAmount"/>
+                                            <DataGridTextColumn Header="آخر شراء" Width="110" Binding="{Binding LastDate, StringFormat=yyyy/MM/dd}"
+                                                                SortMemberPath="LastDate"/>
+                                            <DataGridTextColumn Header="آخر سعر" Width="100" Binding="{Binding LastUnitPrice, StringFormat=N0}"
+                                                                SortMemberPath="LastUnitPrice"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </TabItem>
+
+                                <TabItem Header="عمر الديون">
+                                    <StackPanel Margin="0,12,0,0">
+                                        <Border Background="#F8FAFC" CornerRadius="12" Padding="8" MinHeight="200" Margin="0,0,0,12">
+                                            <lvc:CartesianChart Series="{Binding AgingChartSeries}"
+                                                                XAxes="{Binding AgingChartXAxes}"
+                                                                YAxes="{Binding AgingChartYAxes}"
+                                                                LegendPosition="Hidden" Height="200"/>
+                                        </Border>
+                                        <DataGrid ItemsSource="{Binding FilteredAgingDetailRows}"
+                                                  Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
+                                                  IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True"
+                                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True" MaxHeight="320">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="المصدر" Width="100" Binding="{Binding SourceType}" SortMemberPath="SourceType"/>
+                                                <DataGridTextColumn Header="المرجع" Width="100" Binding="{Binding Reference}" SortMemberPath="Reference"/>
+                                                <DataGridTextColumn Header="الاستحقاق" Width="110" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" SortMemberPath="DueDate"/>
+                                                <DataGridTextColumn Header="المتبقي" Width="110" Binding="{Binding RemainingAmount, StringFormat=N0}" SortMemberPath="RemainingAmount"/>
+                                                <DataGridTextColumn Header="أيام التأخير" Width="90" Binding="{Binding DaysOverdue}" SortMemberPath="DaysOverdue"/>
+                                                <DataGridTextColumn Header="الشريحة" Width="*" Binding="{Binding AgingBucket}" SortMemberPath="AgingBucket"
+                                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AgingBucket"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </TabItem>
+
+                                <TabItem Header="المعاملات المالية">
+                                    <DataGrid ItemsSource="{Binding FilteredFinancialRows}" Margin="0,12,0,0"
+                                              Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True"
+                                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True" MaxHeight="420">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="التاريخ" Width="110" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" SortMemberPath="Date"/>
+                                            <DataGridTextColumn Header="رقم السند" Width="120" Binding="{Binding VoucherNumber}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VoucherNumber" SortMemberPath="VoucherNumber"/>
+                                            <DataGridTextColumn Header="النوع" Width="120" Binding="{Binding VoucherType}" SortMemberPath="VoucherType"/>
+                                            <DataGridTextColumn Header="المبلغ" Width="120" Binding="{Binding Amount, StringFormat=N0}" SortMemberPath="Amount"/>
+                                            <DataGridTextColumn Header="ملاحظات" Width="*" Binding="{Binding Notes}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </TabItem>
+
+                                <TabItem Header="المستحقات">
+                                    <DataGrid ItemsSource="{Binding FilteredDueRows}" Margin="0,12,0,0"
+                                              Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True"
+                                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True" MaxHeight="420">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="النوع" Width="80" Binding="{Binding Kind}" SortMemberPath="Kind"/>
+                                            <DataGridTextColumn Header="العنوان" Width="140" Binding="{Binding Title}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Title" SortMemberPath="Title"/>
+                                            <DataGridTextColumn Header="التفاصيل" Width="*" Binding="{Binding Subtitle}" SortMemberPath="Subtitle"/>
+                                            <DataGridTextColumn Header="الاستحقاق" Width="110" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" SortMemberPath="DueDate"/>
+                                            <DataGridTextColumn Header="المتبقي" Width="120" Binding="{Binding RemainingAmount, StringFormat=N0}" SortMemberPath="RemainingAmount"/>
+                                            <DataGridTextColumn Header="الحالة" Width="100" Binding="{Binding Status}"
+                                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status" SortMemberPath="Status"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </TabItem>
+                            </TabControl>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Timeline (non-customer parties) -->
                     <materialDesign:Card UniformCornerRadius="22" Padding="22,20" Margin="0,0,0,16"
-                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                                         materialDesign:ElevationAssist.Elevation="Dp2"
+                                         Visibility="{Binding ShowCustomerExtras, Converter={StaticResource InvBoolToVis}}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,16">
                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
@@ -560,8 +718,9 @@
                         </StackPanel>
                     </materialDesign:Card>
 
-                    <!-- Detail sections -->
-                    <ItemsControl ItemsSource="{Binding Sections}">
+                    <!-- Detail sections (non-customer) -->
+                    <ItemsControl ItemsSource="{Binding Sections}"
+                                  Visibility="{Binding ShowCustomerExtras, Converter={StaticResource InvBoolToVis}}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:PersonSectionDisplayItem}">
                                 <materialDesign:Card UniformCornerRadius="20" Padding="18,14" Margin="0,0,0,12"

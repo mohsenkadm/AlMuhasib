@@ -48,9 +48,16 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     [ObservableProperty] private string _paperSize = "A4";
     [ObservableProperty] private string _posReceiptPaperSize = "80mm";
     [ObservableProperty] private string _goldReceiptPaperSize = "A4";
+    [ObservableProperty] private string _a4InvoiceTemplate = A4InvoiceTemplates.Classic;
     [ObservableProperty] private bool _showPrintPreview = true;
     [ObservableProperty] private string _posReceiptPreviewHint = string.Empty;
     [ObservableProperty] private string _goldReceiptPreviewHint = string.Empty;
+    [ObservableProperty] private string _a4TemplateHint = string.Empty;
+
+    public IReadOnlyList<A4InvoiceTemplateOption> A4InvoiceTemplateOptions { get; } =
+        A4InvoiceTemplates.All.Select(x => new A4InvoiceTemplateOption(x.Id, x.ArabicName, x.Description)).ToList();
+
+    [ObservableProperty] private A4InvoiceTemplateOption? _selectedA4InvoiceTemplate;
 
     [ObservableProperty] private FlowDocument? _previewDocument;
 
@@ -241,9 +248,13 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         PaperSize = PrintPreferences.PaperSize;
         PosReceiptPaperSize = PrintPreferences.PosReceiptPaperSize;
         GoldReceiptPaperSize = PrintPreferences.GoldReceiptPaperSize;
+        A4InvoiceTemplate = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
+        SelectedA4InvoiceTemplate = A4InvoiceTemplateOptions.FirstOrDefault(x => x.Id == A4InvoiceTemplate)
+            ?? A4InvoiceTemplateOptions[0];
         ShowPrintPreview = PrintPreferences.ShowPrintPreview;
         UpdatePosReceiptPreviewHint();
         UpdateGoldReceiptPreviewHint();
+        UpdateA4TemplateHint();
     }
 
     private void SavePrinterPreferences()
@@ -252,12 +263,20 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         PrintPreferences.PaperSize = PaperSize;
         PrintPreferences.PosReceiptPaperSize = PosReceiptPaperSize;
         PrintPreferences.GoldReceiptPaperSize = GoldReceiptPaperSize;
+        PrintPreferences.A4InvoiceTemplate = A4InvoiceTemplates.Normalize(
+            SelectedA4InvoiceTemplate?.Id ?? A4InvoiceTemplate);
         PrintPreferences.ShowPrintPreview = ShowPrintPreview;
         PrintPreferences.Save();
     }
 
     partial void OnPosReceiptPaperSizeChanged(string value) => UpdatePosReceiptPreviewHint();
     partial void OnGoldReceiptPaperSizeChanged(string value) => UpdateGoldReceiptPreviewHint();
+    partial void OnSelectedA4InvoiceTemplateChanged(A4InvoiceTemplateOption? value)
+    {
+        if (value is null) return;
+        A4InvoiceTemplate = value.Id;
+        UpdateA4TemplateHint();
+    }
 
     private void UpdatePosReceiptPreviewHint()
     {
@@ -271,6 +290,12 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         var size = PosReceiptPaperSizes.GetPageSize(GoldReceiptPaperSize);
         GoldReceiptPreviewHint =
             $"{PosReceiptPaperSizes.GetDisplayLabel(GoldReceiptPaperSize)} — عرض تقريبي {size.Width:0}px";
+    }
+
+    private void UpdateA4TemplateHint()
+    {
+        var name = A4InvoiceTemplates.GetArabicName(SelectedA4InvoiceTemplate?.Id ?? A4InvoiceTemplate);
+        A4TemplateHint = $"النموذج المحدد: {name} — يُطبَّق عند طباعة فواتير A4 (التصميم التفصيلي لاحقاً)";
     }
 
     private static byte[]? PickImageBytes()
@@ -315,4 +340,9 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
             return null;
         }
     }
+}
+
+public sealed record A4InvoiceTemplateOption(string Id, string ArabicName, string Description)
+{
+    public override string ToString() => ArabicName;
 }

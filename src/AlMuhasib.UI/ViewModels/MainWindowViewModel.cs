@@ -1169,6 +1169,12 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task OpenUserActivityProfile()
+    {
+        await OpenTabAsync(typeof(UserActivityProfileViewModel), "ملف المستخدم", PackIconKind.AccountCircle);
+    }
+
+    [RelayCommand]
     private async Task OpenSystemUpdate()
     {
         IsQuickAssistOpen = false;
