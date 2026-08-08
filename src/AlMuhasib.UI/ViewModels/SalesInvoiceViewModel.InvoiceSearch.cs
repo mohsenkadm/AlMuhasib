@@ -173,6 +173,11 @@ public partial class SalesInvoiceViewModel
         else
             SelectedDriver = null;
 
+        if (ShowSalesRepSelection && invoice.SalesRepresentativeId.HasValue)
+            SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == invoice.SalesRepresentativeId);
+        else
+            SelectedSalesRepresentative = null;
+
         SelectedWarehouse = invoice.WarehouseId > 0
             ? Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId)
             : null;

@@ -61,6 +61,21 @@ public static class AccountingMenuBuilder
                     ("أكثر الزبائن ولاءً", PackIconKind.Trophy, typeof(LoyaltyTopCustomersReportViewModel), "LoyaltyReports"),
                 ]),
             FlyoutGroup(
+                key: "sales-reps",
+                title: "المندوبين",
+                icon: PackIconKind.AccountTie,
+                accent: "#1565C0",
+                accentLight: "#E3F2FD",
+                [
+                    ("ملفات المندوبين", PackIconKind.AccountTie, typeof(SalesRepresentativesViewModel), "SalesRepresentatives"),
+                    ("قواعد العمولة", PackIconKind.Percent, typeof(SalesRepCommissionRulesViewModel), "SalesRepCommissionRules"),
+                    ("أهداف المندوبين", PackIconKind.Target, typeof(SalesRepTargetsViewModel), "SalesRepTargets"),
+                    ("تحصيلات المندوبين", PackIconKind.CashMultiple, typeof(SalesRepCollectionsViewModel), "SalesRepCollections"),
+                    ("كشف حساب المندوب", PackIconKind.FileDocumentOutline, typeof(SalesRepStatementViewModel), "SalesRepStatement"),
+                    ("أداء المندوبين", PackIconKind.ChartBar, typeof(SalesRepPerformanceReportViewModel), "SalesRepPerformance"),
+                    ("عملاء المندوب", PackIconKind.AccountGroup, typeof(SalesRepCustomersReportViewModel), "SalesRepCustomers"),
+                ]),
+            FlyoutGroup(
                 key: "purchases",
                 title: "المشتريات",
                 icon: PackIconKind.CartArrowDown,

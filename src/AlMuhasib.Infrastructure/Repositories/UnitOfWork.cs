@@ -25,6 +25,11 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Product>? _products;
     private IRepository<Customer>? _customers;
     private IRepository<Driver>? _drivers;
+    private IRepository<SalesRepresentative>? _salesRepresentatives;
+    private IRepository<SalesRepCommissionRule>? _salesRepCommissionRules;
+    private IRepository<SalesRepCommissionEntry>? _salesRepCommissionEntries;
+    private IRepository<SalesRepTarget>? _salesRepTargets;
+    private IRepository<SalesRepCollection>? _salesRepCollections;
     private IRepository<Supplier>? _suppliers;
     private IRepository<Warehouse>? _warehouses;
     private IRepository<WarehouseStock>? _warehouseStocks;
@@ -58,6 +63,16 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Product> Products => _products ??= new Repository<Product>(_contextFactory, GetActiveContext);
     public IRepository<Customer> Customers => _customers ??= new Repository<Customer>(_contextFactory, GetActiveContext);
     public IRepository<Driver> Drivers => _drivers ??= new Repository<Driver>(_contextFactory, GetActiveContext);
+    public IRepository<SalesRepresentative> SalesRepresentatives =>
+        _salesRepresentatives ??= new Repository<SalesRepresentative>(_contextFactory, GetActiveContext);
+    public IRepository<SalesRepCommissionRule> SalesRepCommissionRules =>
+        _salesRepCommissionRules ??= new Repository<SalesRepCommissionRule>(_contextFactory, GetActiveContext);
+    public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries =>
+        _salesRepCommissionEntries ??= new Repository<SalesRepCommissionEntry>(_contextFactory, GetActiveContext);
+    public IRepository<SalesRepTarget> SalesRepTargets =>
+        _salesRepTargets ??= new Repository<SalesRepTarget>(_contextFactory, GetActiveContext);
+    public IRepository<SalesRepCollection> SalesRepCollections =>
+        _salesRepCollections ??= new Repository<SalesRepCollection>(_contextFactory, GetActiveContext);
     public IRepository<Supplier> Suppliers => _suppliers ??= new Repository<Supplier>(_contextFactory, GetActiveContext);
     public IRepository<Warehouse> Warehouses => _warehouses ??= new Repository<Warehouse>(_contextFactory, GetActiveContext);
     public IRepository<WarehouseStock> WarehouseStocks => _warehouseStocks ??= new Repository<WarehouseStock>(_contextFactory, GetActiveContext);

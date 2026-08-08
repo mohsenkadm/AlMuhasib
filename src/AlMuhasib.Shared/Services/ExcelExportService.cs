@@ -343,6 +343,8 @@ public class ExcelExportService : IExportService
                 "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
         if (!string.IsNullOrWhiteSpace(m.DriverName))
             AddInfoRow("السائق", m.DriverName);
+        if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
+            AddInfoRow("المندوب", m.SalesRepresentativeName);
         if (!string.IsNullOrWhiteSpace(m.FileNumber))
             AddInfoRow("رقم الملف", m.FileNumber);
         if (!string.IsNullOrWhiteSpace(m.Notes))

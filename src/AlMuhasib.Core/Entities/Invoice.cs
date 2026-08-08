@@ -11,6 +11,9 @@ public class Invoice : BaseEntity
     public int? SupplierId { get; set; }
     /// <summary>سائق التوصيل — يُستخدم عند تفعيل ميزة نسخة المخزن والسائق</summary>
     public int? DriverId { get; set; }
+
+    /// <summary>مندوب المبيعات — عند تفعيل ميزة المندوبين</summary>
+    public int? SalesRepresentativeId { get; set; }
     public int WarehouseId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public decimal TotalAmount { get; set; }
@@ -58,6 +61,7 @@ public class Invoice : BaseEntity
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
     public Driver? Driver { get; set; }
+    public SalesRepresentative? SalesRepresentative { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
     public CashBox? CashBox { get; set; }
     public ICollection<InvoiceItem> Items { get; set; } = [];

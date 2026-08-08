@@ -219,6 +219,64 @@
         </Border>
     </DataTemplate>
 
+    <!-- ═══ Sales Representative Card ═══ -->
+    <DataTemplate x:Key="SalesRepCardTemplate" DataType="{x:Type entities:SalesRepresentative}">
+        <Border Style="{StaticResource MasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#E3F2FD" Margin="0,0,0,8">
+                    <md:PackIcon Kind="AccountTie" Width="20" Height="20" Foreground="#1565C0"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}"
+                           ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهاتف: "/>
+                        <Run Text="{Binding Phone, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="المنطقة: "/>
+                        <Run Text="{Binding Region, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MasterDataCardMeta}">
+                                <Setter Property="Text" Value="الحالة: غير فعال"/>
+                                <Setter Property="Foreground" Value="#C62828"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Text" Value="الحالة: فعال"/>
+                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
     <!-- ═══ Supplier Card ═══ -->
     <DataTemplate x:Key="SupplierCardTemplate" DataType="{x:Type entities:Supplier}">
         <Border Style="{StaticResource MasterDataEntityCardBorder}">

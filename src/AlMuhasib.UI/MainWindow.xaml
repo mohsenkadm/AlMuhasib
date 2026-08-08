@@ -1406,6 +1406,27 @@
                         <DataTemplate DataType="{x:Type vm:DriversViewModel}">
                             <views:DriversView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepresentativesViewModel}">
+                            <views:SalesRepresentativesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepCommissionRulesViewModel}">
+                            <views:SalesRepCommissionRulesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepTargetsViewModel}">
+                            <views:SalesRepTargetsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepCollectionsViewModel}">
+                            <views:SalesRepCollectionsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepStatementViewModel}">
+                            <views:SalesRepStatementView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepPerformanceReportViewModel}">
+                            <views:SalesRepPerformanceReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SalesRepCustomersReportViewModel}">
+                            <views:SalesRepCustomersReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SuppliersViewModel}">
                             <views:SuppliersView />
                         </DataTemplate>

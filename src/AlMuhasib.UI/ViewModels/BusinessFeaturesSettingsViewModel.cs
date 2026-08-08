@@ -41,6 +41,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _addMissingProductsOnPurchase;
     [ObservableProperty] private bool _productDiscountEnabled;
     [ObservableProperty] private bool _loyaltySystem;
+    [ObservableProperty] private bool _salesRepresentatives;
 
     [ObservableProperty] private bool _templateMobileShop;
     [ObservableProperty] private bool _templateClothing;
@@ -58,7 +59,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
             WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
-            AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, TemplateMobileShop, TemplateClothing,
+            AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, SalesRepresentatives,
+            TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
 
     public BusinessFeaturesSettingsViewModel(
@@ -130,6 +132,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         AddMissingProductsOnPurchase = p.FeatureFlags.AddMissingProductsOnPurchase;
         ProductDiscountEnabled = p.FeatureFlags.ProductDiscountEnabled;
         LoyaltySystem = p.FeatureFlags.LoyaltySystem;
+        SalesRepresentatives = p.FeatureFlags.SalesRepresentatives;
 
         TemplateMobileShop = p.FeatureFlags.TemplateMobileShop;
         TemplateClothing = p.FeatureFlags.TemplateClothing;
@@ -162,6 +165,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnAddMissingProductsOnPurchaseChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductDiscountEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnLoyaltySystemChanged(bool value) => NotifyFeaturesCount();
+    partial void OnSalesRepresentativesChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateMobileShopChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
@@ -206,6 +210,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.AddMissingProductsOnPurchase = AddMissingProductsOnPurchase;
             p.FeatureFlags.ProductDiscountEnabled = ProductDiscountEnabled;
             p.FeatureFlags.LoyaltySystem = LoyaltySystem;
+            p.FeatureFlags.SalesRepresentatives = SalesRepresentatives;
 
             p.FeatureFlags.TemplateMobileShop = TemplateMobileShop;
             p.FeatureFlags.TemplateClothing = TemplateClothing;

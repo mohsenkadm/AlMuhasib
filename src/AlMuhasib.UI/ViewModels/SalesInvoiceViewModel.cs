@@ -187,6 +187,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         IProductSizeService productSizeService,
         IProductColorService productColorService,
         ILoyaltyService loyaltyService,
+        ISalesRepService salesRepService,
         IPartyQuickDetailService partyQuickDetail,
         IProductQuickDetailService productQuickDetail)
     {
@@ -217,7 +218,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         Items.CollectionChanged += OnItemsCollectionChanged;
         ConfigureFeatureServices(
             featureFlags, productUnitService, productBatchService, productSerialService,
-            productSizeService, productColorService);
+            productSizeService, productColorService, salesRepService);
         ConfigureLoyaltyService(loyaltyService);
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
     }
@@ -245,6 +246,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         InvoiceDate = InvoiceDate,
         CustomerId = SelectedCustomer?.Id,
         DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
+        SalesRepresentativeId = ShowSalesRepSelection ? SelectedSalesRepresentative?.Id : null,
         WarehouseId = SelectedWarehouse?.Id,
         PaymentMethod = SelectedPaymentMethod,
         CreditDueDate = CreditDueDate,
@@ -269,6 +271,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == draft.CustomerId);
         if (draft.DriverId.HasValue && ShowDriverSelection)
             SelectedDriver = Drivers.FirstOrDefault(d => d.Id == draft.DriverId);
+        if (draft.SalesRepresentativeId.HasValue && ShowSalesRepSelection)
+            SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == draft.SalesRepresentativeId);
         if (draft.WarehouseId.HasValue)
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == draft.WarehouseId);
         if (draft.CashBoxId.HasValue)
@@ -341,6 +345,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             Drivers.Clear();
             foreach (var d in drivers.OrderBy(x => x.Name))
                 Drivers.Add(d);
+
+            var reps = await _unitOfWork.SalesRepresentatives.GetAllAsync();
+            SalesRepresentatives.Clear();
+            foreach (var r in reps.Where(x => x.IsActive).OrderBy(x => x.Name))
+                SalesRepresentatives.Add(r);
 
             var products = await _unitOfWork.Products.GetAllAsync();
             Products.Clear();
@@ -417,6 +426,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         else
             SelectedDriver = null;
 
+        if (ShowSalesRepSelection && invoice.SalesRepresentativeId.HasValue)
+            SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == invoice.SalesRepresentativeId);
+        else
+            SelectedSalesRepresentative = null;
+
         if (invoice.WarehouseId > 0)
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId);
 
@@ -477,6 +491,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         // When user picks from dropdown, update search text to show selected name
         if (value is not null)
             CustomerSearchText = value.Name;
+        ApplyCustomerDefaultSalesRep(value);
         _ = RefreshLoyaltyQuoteAsync();
     }
 
@@ -898,6 +913,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 InvoiceType = invoiceType,
                 CustomerId = customerId,
                 DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
+                SalesRepresentativeId = ShowSalesRepSelection ? SelectedSalesRepresentative?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = SelectedPaymentMethod,
                 CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
@@ -992,6 +1008,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 BeautifulMessageDialog.ShowWarning($"حُفظت الفاتورة مع تحذير الميزات: {sideEx.Message}");
             }
 
+            await TrySaveSalesRepCommissionAsync(saved.Id);
+
             _savedInvoice = saved;
             _savedItems = invoiceItems;
             IsSaved = true;
@@ -1056,6 +1074,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PartyPhone = SelectedCustomer?.Phone,
             PartyAddress = SelectedCustomer?.Address,
             DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
+            SalesRepresentativeName = ShowSalesRepSelection ? SelectedSalesRepresentative?.Name : null,
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             PaymentMethod = _savedInvoice.PaymentMethod switch
             {
@@ -1105,6 +1124,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PartyPhone = source.PartyPhone,
             PartyAddress = source.PartyAddress,
             DriverName = source.DriverName,
+            SalesRepresentativeName = source.SalesRepresentativeName,
             WarehouseName = source.WarehouseName,
             PaymentMethod = source.PaymentMethod,
             Notes = source.Notes,
@@ -1139,6 +1159,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         CustomerSearchText = string.Empty;
         SelectedCustomer = null;
         SelectedDriver = null;
+        SelectedSalesRepresentative = null;
         SelectedPaymentMethod = PaymentMethod.Cash;
         CreditDueDate = null;
         InvoiceDate = DateTime.Now;

@@ -19,8 +19,10 @@ public partial class CustomersViewModel : ViewModelBase
     private readonly IDataImportService _importService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IFeatureFlagService _featureFlags;
 
     public ObservableCollection<Customer> Customers { get; } = [];
+    public ObservableCollection<SalesRepresentative> SalesRepresentatives { get; } = [];
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -72,6 +74,12 @@ public partial class CustomersViewModel : ViewModelBase
     private string _editNotes = string.Empty;
 
     [ObservableProperty]
+    private SalesRepresentative? _editSalesRepresentative;
+
+    [ObservableProperty]
+    private bool _showSalesRepSelection;
+
+    [ObservableProperty]
     private string _dialogError = string.Empty;
 
     // Delete confirmation
@@ -90,13 +98,18 @@ public partial class CustomersViewModel : ViewModelBase
         IDataImportService importService,
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
-        ICustomFieldSettingsService customFieldSettings)
+        ICustomFieldSettingsService customFieldSettings,
+        IFeatureFlagService featureFlags)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _importService = importService;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
+        _featureFlags = featureFlags;
+        ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
+        _featureFlags.FlagsChanged += (_, _) =>
+            ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Customers);
         PageTitle = "العملاء";
         ConfigureCustomFields(customFieldSettings);
@@ -110,12 +123,22 @@ public partial class CustomersViewModel : ViewModelBase
         {
             LoadPermissions(_currentUserService, "Customers");
             await LoadCustomFieldDefinitionsAsync();
+            await LoadSalesRepresentativesAsync();
             await LoadCustomersAsync();
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task LoadSalesRepresentativesAsync()
+    {
+        SalesRepresentatives.Clear();
+        if (!_featureFlags.SalesRepresentatives) return;
+        var reps = await _unitOfWork.SalesRepresentatives.GetAllAsync();
+        foreach (var r in reps.Where(x => x.IsActive).OrderBy(x => x.Name))
+            SalesRepresentatives.Add(r);
     }
 
     private async Task LoadCustomersAsync()
@@ -210,6 +233,7 @@ public partial class CustomersViewModel : ViewModelBase
         EditAddress = string.Empty;
         EditFileNumber = string.Empty;
         EditNotes = string.Empty;
+        EditSalesRepresentative = null;
         DialogError = string.Empty;
         await ResetCustomFieldEditorsAsync(null);
         IsDialogOpen = true;
@@ -227,6 +251,9 @@ public partial class CustomersViewModel : ViewModelBase
         EditAddress = customer.Address ?? string.Empty;
         EditFileNumber = customer.FileNumber ?? string.Empty;
         EditNotes = customer.Notes ?? string.Empty;
+        EditSalesRepresentative = customer.SalesRepresentativeId is int rid
+            ? SalesRepresentatives.FirstOrDefault(r => r.Id == rid)
+            : null;
         DialogError = string.Empty;
         await ResetCustomFieldEditorsAsync(customer.CustomFieldsJson);
         IsDialogOpen = true;
@@ -255,6 +282,7 @@ public partial class CustomersViewModel : ViewModelBase
                 customer.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 customer.FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
                 customer.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                customer.SalesRepresentativeId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null;
                 customer.CustomFieldsJson = SerializeCustomFieldsFromEditors();
                 customer.UpdatedAt = DateTime.UtcNow;
                 customer.UpdatedBy = _currentUserService.Username;
@@ -271,6 +299,7 @@ public partial class CustomersViewModel : ViewModelBase
                     Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
                     FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim(),
                     Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
+                    SalesRepresentativeId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null,
                     CustomFieldsJson = SerializeCustomFieldsFromEditors(),
                     CreatedBy = _currentUserService.Username
                 };

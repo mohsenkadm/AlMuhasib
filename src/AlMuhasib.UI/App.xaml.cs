@@ -198,6 +198,13 @@ public partial class App : Application
         services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<DriversViewModel>();
+        services.AddTransient<SalesRepresentativesViewModel>();
+        services.AddTransient<SalesRepCommissionRulesViewModel>();
+        services.AddTransient<SalesRepTargetsViewModel>();
+        services.AddTransient<SalesRepCollectionsViewModel>();
+        services.AddTransient<SalesRepStatementViewModel>();
+        services.AddTransient<SalesRepPerformanceReportViewModel>();
+        services.AddTransient<SalesRepCustomersReportViewModel>();
         services.AddTransient<SuppliersViewModel>();
         services.AddTransient<PersonProfileViewModel>();
         services.AddTransient<UserActivityProfileViewModel>();

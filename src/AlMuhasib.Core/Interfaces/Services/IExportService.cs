@@ -66,6 +66,7 @@ public class InvoicePrintModel
     public string? PartyPhone { get; set; }
     public string? PartyAddress { get; set; }
     public string? DriverName { get; set; }
+    public string? SalesRepresentativeName { get; set; }
     /// <summary>نسخة مخزن — بدون أسعار أو مجاميع</summary>
     public bool HideAmounts { get; set; }
     public List<InvoicePrintItem> Items { get; set; } = [];

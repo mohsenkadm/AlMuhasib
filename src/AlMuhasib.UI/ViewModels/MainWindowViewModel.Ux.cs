@@ -64,6 +64,13 @@ public partial class MainWindowViewModel
             var t when t == typeof(LoyaltyLedgerViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltySummaryReportViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltyTopCustomersReportViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(SalesRepresentativesViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepCommissionRulesViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepTargetsViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepCollectionsViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepStatementViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepPerformanceReportViewModel) => flags.SalesRepresentatives,
+            var t when t == typeof(SalesRepCustomersReportViewModel) => flags.SalesRepresentatives,
             _ => true
         };
     }

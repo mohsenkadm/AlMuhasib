@@ -34,5 +34,13 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .HasFilter("[FileNumber] IS NOT NULL AND [IsDeleted] = 0");
 
         builder.HasIndex(c => c.Name);
+
+        builder.HasOne(c => c.SalesRepresentative)
+            .WithMany(r => r.Customers)
+            .HasForeignKey(c => c.SalesRepresentativeId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(c => c.SalesRepresentativeId);
     }
 }

@@ -1,0 +1,239 @@
+<UserControl x:Class="AlMuhasib.UI.Views.SalesRepresentativesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <UniformGrid Grid.Row="0" Columns="3" Margin="0,0,0,16">
+            <controls:AnimatedStatCard Title="فعالون" Value="{Binding ActiveCount}"
+                                       Icon="AccountCheck" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+            <controls:AnimatedStatCard Title="غير فعالين" Value="{Binding InactiveCount}"
+                                       Icon="AccountOff" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+            <controls:AnimatedStatCard Title="عملاء مرتبطون" Value="{Binding CustomersLinkedCount}"
+                                       Icon="AccountMultiple" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+        </UniformGrid>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="إدارة المندوبين" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddDialogCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="AccountTie" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إضافة مندوب"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+
+                    <ComboBox ItemsSource="{Binding StatusFilters}"
+                              SelectedItem="{Binding StatusFilter}"
+                              Style="{StaticResource FilledComboBox}"
+                              md:HintAssist.Hint="الحالة"
+                              Width="140" Margin="16,0,0,0"/>
+
+                    <TextBox md:HintAssist.Hint="بحث..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="220" Margin="16,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة المندوبين"
+                                             TargetDataGrid="{Binding ElementName=RepsGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="True"/>
+
+                <Grid Grid.Row="1">
+                    <DataGrid x:Name="RepsGrid"
+                              ItemsSource="{Binding Representatives}"
+                              SelectedItem="{Binding SelectedRepresentative}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              Style="{StaticResource ModernDataGrid}"
+                              Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                            <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                            <DataGridTextColumn Header="المنطقة" Binding="{Binding Region}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Region"/>
+                            <DataGridTextColumn Header="تاريخ المباشرة" Binding="{Binding StartDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StartDate"/>
+                            <DataGridCheckBoxColumn Header="فعال" Binding="{Binding IsActive}" Width="70"
+                                                   behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IsActive"/>
+                            <DataGridTextColumn Header="الراتب" Binding="{Binding MonthlySalary, StringFormat=N0}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="MonthlySalary"/>
+                            <DataGridTextColumn Header="ملاحظات التعويض" Binding="{Binding CompensationNotes}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CompensationNotes"/>
+                            <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
+                            <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110"
+                                                    behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                                                    IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                                <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                                                    IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding Representatives}"
+                                      ItemTemplate="{StaticResource SalesRepCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="460" MaxWidth="540">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="560">
+                        <StackPanel>
+                            <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+
+                            <TextBox md:HintAssist.Hint="اسم المندوب *"
+                                     Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                            <TextBox md:HintAssist.Hint="رقم الهاتف"
+                                     Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                            <TextBox md:HintAssist.Hint="المنطقة"
+                                     Text="{Binding EditRegion, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                            <DatePicker md:HintAssist.Hint="تاريخ المباشرة"
+                                        SelectedDate="{Binding EditStartDate}"
+                                        Style="{StaticResource FilledDatePicker}" Margin="0,0,0,12"/>
+
+                            <CheckBox Content="فعال" IsChecked="{Binding EditIsActive}" Margin="0,0,0,12"/>
+
+                            <TextBox md:HintAssist.Hint="الراتب الشهري"
+                                     Text="{Binding EditMonthlySalary, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                            <TextBox md:HintAssist.Hint="ملاحظات التعويض"
+                                     Text="{Binding EditCompensationNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="48"/>
+
+                            <TextBox md:HintAssist.Hint="ملاحظات"
+                                     Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                     TextWrapping="Wrap" AcceptsReturn="True" MinHeight="48"/>
+
+                            <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                                       Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                                <Button Content="حفظ" Command="{Binding SaveRepresentativeCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                                <Button Content="إلغاء" Command="{Binding CancelDialogCommand}"
+                                        Style="{StaticResource FlatButton}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="360">
+                    <StackPanel>
+                        <TextBlock Text="تأكيد الحذف" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16">
+                            <Run Text="هل أنت متأكد من حذف المندوب "/>
+                            <Run Text="{Binding RepresentativeToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}"
+                                    Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

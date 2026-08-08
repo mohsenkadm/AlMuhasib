@@ -44,6 +44,8 @@ internal static class InvoicePdfGenerator
                         col.Item().Text($"عنوان العميل: {m.PartyAddress}");
                     if (!string.IsNullOrWhiteSpace(m.DriverName))
                         col.Item().Text($"السائق: {m.DriverName}");
+                    if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
+                        col.Item().Text($"المندوب: {m.SalesRepresentativeName}");
                     if (!string.IsNullOrWhiteSpace(m.WarehouseName))
                         col.Item().Text($"المخزن: {m.WarehouseName}");
                     col.Item().Text($"طريقة الدفع: {m.PaymentMethod}");

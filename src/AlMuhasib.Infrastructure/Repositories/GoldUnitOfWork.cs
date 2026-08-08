@@ -35,6 +35,11 @@ public sealed class GoldUnitOfWork : IUnitOfWork
     public IRepository<Product> Products => new UnsupportedCarRepository<Product>();
     public IRepository<Customer> Customers => new UnsupportedCarRepository<Customer>();
     public IRepository<Driver> Drivers => new UnsupportedCarRepository<Driver>();
+    public IRepository<SalesRepresentative> SalesRepresentatives => new UnsupportedCarRepository<SalesRepresentative>();
+    public IRepository<SalesRepCommissionRule> SalesRepCommissionRules => new UnsupportedCarRepository<SalesRepCommissionRule>();
+    public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries => new UnsupportedCarRepository<SalesRepCommissionEntry>();
+    public IRepository<SalesRepTarget> SalesRepTargets => new UnsupportedCarRepository<SalesRepTarget>();
+    public IRepository<SalesRepCollection> SalesRepCollections => new UnsupportedCarRepository<SalesRepCollection>();
     public IRepository<Supplier> Suppliers => new UnsupportedCarRepository<Supplier>();
     public IRepository<Warehouse> Warehouses => new UnsupportedCarRepository<Warehouse>();
     public IRepository<WarehouseStock> WarehouseStocks => new UnsupportedCarRepository<WarehouseStock>();
