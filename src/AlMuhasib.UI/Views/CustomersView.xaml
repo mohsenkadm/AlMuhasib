@@ -215,6 +215,14 @@
                                  Text="{Binding EditFileNumber, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
+                        <ComboBox ItemsSource="{Binding SalesRepresentatives}"
+                                  SelectedItem="{Binding EditSalesRepresentative}"
+                                  DisplayMemberPath="Name"
+                                  md:HintAssist.Hint="المندوب المسؤول"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,12"
+                                  Visibility="{Binding ShowSalesRepSelection, Converter={StaticResource BoolVis}}"/>
+
                         <TextBox md:HintAssist.Hint="ملاحظات"
                                  Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"

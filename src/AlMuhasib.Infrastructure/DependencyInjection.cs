@@ -84,6 +84,8 @@ public static class DependencyInjection
         services.AddScoped<ICustomFieldSettingsService, CustomFieldSettingsService>();
         services.AddScoped<LoyaltyService>();
         services.AddScoped<ILoyaltyService>(sp => sp.GetRequiredService<LoyaltyService>());
+        services.AddScoped<SalesRepService>();
+        services.AddScoped<ISalesRepService>(sp => sp.GetRequiredService<SalesRepService>());
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<ICashBankService, CashBankService>();

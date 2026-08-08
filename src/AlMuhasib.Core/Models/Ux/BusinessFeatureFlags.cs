@@ -34,6 +34,9 @@ public class BusinessFeatureFlags
     /// <summary>نسخة فاتورة للمخزن بدون مبالغ + اختيار سائق للتوصيل — معطّل افتراضياً.</summary>
     public bool WarehouseInvoiceAndDriver { get; set; }
 
+    /// <summary>نظام المندوبين (ملفات، عمولات، أهداف، تحصيلات، تقارير) — معطّل افتراضياً.</summary>
+    public bool SalesRepresentatives { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }

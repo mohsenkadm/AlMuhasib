@@ -11,6 +11,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class SalesInvoiceViewModel
 {
     private IFeatureFlagService? _featureFlags;
+    private ISalesRepService? _salesRepService;
     private IProductUnitService? _productUnitService;
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
@@ -45,12 +46,15 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showTransportFee;
     [ObservableProperty] private bool _showDriverSelection;
+    [ObservableProperty] private bool _showSalesRepSelection;
     [ObservableProperty] private bool _showPharmacyUsage;
     [ObservableProperty] private decimal _transportFeeAmount;
 
     public ObservableCollection<Driver> Drivers { get; } = [];
+    public ObservableCollection<SalesRepresentative> SalesRepresentatives { get; } = [];
 
     [ObservableProperty] private Driver? _selectedDriver;
+    [ObservableProperty] private SalesRepresentative? _selectedSalesRepresentative;
 
     public bool ShowCustomField1 =>
         (MarketTemplateFieldsEnabled && !string.IsNullOrWhiteSpace(CustomField1Header))
@@ -68,7 +72,8 @@ public partial class SalesInvoiceViewModel
         IProductBatchService productBatchService,
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
-        IProductColorService productColorService)
+        IProductColorService productColorService,
+        ISalesRepService? salesRepService = null)
     {
         if (_featureFlags is not null)
             _featureFlags.FlagsChanged -= OnFeatureFlagsChanged;
@@ -79,8 +84,31 @@ public partial class SalesInvoiceViewModel
         _productSerialService = productSerialService;
         _productSizeService = productSizeService;
         _productColorService = productColorService;
+        _salesRepService = salesRepService;
         RefreshFeatureVisibility();
         featureFlags.FlagsChanged += OnFeatureFlagsChanged;
+    }
+
+    private void ApplyCustomerDefaultSalesRep(Customer? customer)
+    {
+        if (!ShowSalesRepSelection || customer?.SalesRepresentativeId is not int repId)
+            return;
+        SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == repId)
+                                      ?? SelectedSalesRepresentative;
+    }
+
+    private async Task TrySaveSalesRepCommissionAsync(int invoiceId)
+    {
+        if (!ShowSalesRepSelection || _salesRepService is null)
+            return;
+        try
+        {
+            await _salesRepService.CalculateAndSaveCommissionAsync(invoiceId);
+        }
+        catch
+        {
+            // لا نفشل حفظ الفاتورة بسبب العمولة
+        }
     }
 
     private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
@@ -99,6 +127,7 @@ public partial class SalesInvoiceViewModel
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowTransportFee = _featureFlags.TransportFees;
         ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
+        ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
         ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
         RefreshLoyaltyFeatureVisibility();
 
@@ -120,6 +149,9 @@ public partial class SalesInvoiceViewModel
 
         if (!ShowDriverSelection)
             SelectedDriver = null;
+
+        if (!ShowSalesRepSelection)
+            SelectedSalesRepresentative = null;
 
         RecalculateTotals();
         _ = RefreshLoyaltyQuoteAsync();

@@ -34,6 +34,11 @@ public sealed class RealEstateUnitOfWork : IUnitOfWork
     public IRepository<Product> Products => new UnsupportedRealEstateRepository<Product>();
     public IRepository<Customer> Customers => new UnsupportedRealEstateRepository<Customer>();
     public IRepository<Driver> Drivers => new UnsupportedRealEstateRepository<Driver>();
+    public IRepository<SalesRepresentative> SalesRepresentatives => new UnsupportedRealEstateRepository<SalesRepresentative>();
+    public IRepository<SalesRepCommissionRule> SalesRepCommissionRules => new UnsupportedRealEstateRepository<SalesRepCommissionRule>();
+    public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries => new UnsupportedRealEstateRepository<SalesRepCommissionEntry>();
+    public IRepository<SalesRepTarget> SalesRepTargets => new UnsupportedRealEstateRepository<SalesRepTarget>();
+    public IRepository<SalesRepCollection> SalesRepCollections => new UnsupportedRealEstateRepository<SalesRepCollection>();
     public IRepository<Supplier> Suppliers => new UnsupportedRealEstateRepository<Supplier>();
     public IRepository<Warehouse> Warehouses => new UnsupportedRealEstateRepository<Warehouse>();
     public IRepository<WarehouseStock> WarehouseStocks => new UnsupportedRealEstateRepository<WarehouseStock>();

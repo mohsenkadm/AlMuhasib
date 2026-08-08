@@ -27,7 +27,11 @@ public class Customer : BaseEntity
     /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
     public string? CustomFieldsJson { get; set; }
 
+    /// <summary>المندوب المسؤول عن العميل — عند تفعيل ميزة المندوبين</summary>
+    public int? SalesRepresentativeId { get; set; }
+
     // Navigation
+    public SalesRepresentative? SalesRepresentative { get; set; }
     public ICollection<Invoice> Invoices { get; set; } = [];
     public ICollection<InstallmentPlan> InstallmentPlans { get; set; } = [];
     public ICollection<Voucher> Vouchers { get; set; } = [];

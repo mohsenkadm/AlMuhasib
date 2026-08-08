@@ -212,6 +212,10 @@
                                                     Description="نقاط للزبائن تُكسب من فواتير البيع وتُستبدل خصماً — مع تقارير وحسابات في قائمة الولاء"
                                                     Icon="GiftOutline" IconBackground="#FFEBEE" IconForeground="#C62828"
                                                     IsChecked="{Binding LoyaltySystem}"/>
+                        <controls:FeatureToggleCard Title="المندوبين"
+                                                    Description="إدارة مندوبي المبيعات وعمولاتهم وأهدافهم وتحصيلاتهم وربطهم بالعملاء والفواتير مع تقارير الأداء"
+                                                    Icon="AccountTie" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    IsChecked="{Binding SalesRepresentatives}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

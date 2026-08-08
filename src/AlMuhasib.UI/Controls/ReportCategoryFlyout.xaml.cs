@@ -10,10 +10,44 @@ namespace AlMuhasib.UI.Controls;
 
 public partial class ReportCategoryFlyout : UserControl
 {
+    private Window? _hostWindow;
+
     public ReportCategoryFlyout()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => HookViewModel();
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _hostWindow = Window.GetWindow(this);
+        if (_hostWindow != null)
+            _hostWindow.SizeChanged += OnHostWindowSizeChanged;
+        UpdateScrollerMaxHeight();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_hostWindow != null)
+            _hostWindow.SizeChanged -= OnHostWindowSizeChanged;
+        _hostWindow = null;
+    }
+
+    private void OnHostWindowSizeChanged(object sender, SizeChangedEventArgs e) =>
+        UpdateScrollerMaxHeight();
+
+    /// <summary>
+    /// يوسّع مساحة الكروت لملء ارتفاع النافذة المتاح مع الإبقاء على السكرول للشاشات الصغيرة.
+    /// </summary>
+    private void UpdateScrollerMaxHeight()
+    {
+        var windowHeight = _hostWindow?.ActualHeight ?? SystemParameters.WorkArea.Height;
+        // هامش للهيدر والشريط العلوي وحافة النافذة
+        var max = Math.Max(280, windowHeight - 120);
+        CardsScroller.MaxHeight = max;
+        RootFlyout.MaxHeight = max + 72;
     }
 
     private void HookViewModel()
@@ -25,6 +59,7 @@ public partial class ReportCategoryFlyout : UserControl
         {
             newVm.PropertyChanged += OnViewModelPropertyChanged;
             ApplyHeaderAccent();
+            UpdateScrollerMaxHeight();
         }
     }
 
@@ -32,7 +67,11 @@ public partial class ReportCategoryFlyout : UserControl
     {
         if (e.PropertyName is nameof(MainWindowViewModel.ActiveReportCategoryAccent)
             or nameof(MainWindowViewModel.IsReportFlyoutOpen))
+        {
             ApplyHeaderAccent();
+            if (e.PropertyName == nameof(MainWindowViewModel.IsReportFlyoutOpen))
+                UpdateScrollerMaxHeight();
+        }
     }
 
     private void ApplyHeaderAccent()

@@ -238,6 +238,19 @@
                                   Margin="0,12,12,0"
                                   FontSize="14"
                                   Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- Sales representative (feature-gated) -->
+                        <ComboBox Grid.Row="2" Grid.Column="1"
+                                  ItemsSource="{Binding SalesRepresentatives}"
+                                  SelectedItem="{Binding SelectedSalesRepresentative}"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="المندوب"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,12,12,0"
+                                  FontSize="14"
+                                  Visibility="{Binding ShowSalesRepSelection, Converter={StaticResource BoolToVis}}" />
                     </Grid>
                 </materialDesign:Card>
 

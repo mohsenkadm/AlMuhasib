@@ -9,6 +9,7 @@ public static class ListViewModeKeys
     public const string Categories = "Categories";
     public const string Customers = "Customers";
     public const string Drivers = "Drivers";
+    public const string SalesRepresentatives = "SalesRepresentatives";
     public const string Suppliers = "Suppliers";
     public const string Investors = "Investors";
     public const string HotelFloors = "HotelFloors";
