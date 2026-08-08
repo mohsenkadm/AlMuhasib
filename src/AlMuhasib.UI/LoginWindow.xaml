@@ -11,8 +11,8 @@
         d:DataContext="{d:DesignInstance vm:LoginViewModel, IsDesignTimeCreatable=False}"
         Title="تسجيل الدخول - قيد"
         Icon="pack://application:,,,/Assets/Brand/qayd-icon.ico"
-        Height="640" Width="920"
-        MinHeight="580" MinWidth="780"
+        Height="720" Width="920"
+        MinHeight="640" MinWidth="780"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -52,25 +52,29 @@
             </Setter>
         </Style>
 
-        <Style x:Key="OskButton" TargetType="Button">
+        <Style x:Key="NumericPadToggleButton" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Width" Value="36"/>
             <Setter Property="Height" Value="36"/>
-            <Setter Property="ToolTip" Value="لوحة المفاتيح على الشاشة"/>
+            <Setter Property="ToolTip" Value="لوحة الأرقام"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="18">
-                            <materialDesign:PackIcon Kind="KeyboardOutline" Width="20" Height="20"
+                            <materialDesign:PackIcon x:Name="Icon" Kind="Dialpad" Width="20" Height="20"
                                                      Foreground="#90A4AE"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                                <Setter Property="Foreground" Value="#1565C0"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
@@ -79,6 +83,91 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="NumPadKeyButton" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E3EDF7"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#1A237E"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="KeyBd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="14"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06" Color="#1565C0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="KeyBd" Property="Background" Value="#F5FAFF"/>
+                                <Setter TargetName="KeyBd" Property="BorderBrush" Value="#90CAF9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="KeyBd" Property="Background" Value="#E3F2FD"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="KeyBd"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="0.94" Duration="0:0:0.08"/>
+                                            <DoubleAnimation Storyboard.TargetName="KeyBd"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="0.94" Duration="0:0:0.08"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="KeyBd"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1" Duration="0:0:0.12">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="KeyBd"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1" Duration="0:0:0.12">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NumPadActionButton" TargetType="Button" BasedOn="{StaticResource NumPadKeyButton}">
+            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="Foreground" Value="#1565C0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
         <Style x:Key="LoginPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
@@ -396,7 +485,7 @@
                                 <StackPanel VerticalAlignment="Center" MaxWidth="420">
                                     <Button Command="{Binding BackToAdminSelectionCommand}"
                                             Style="{StaticResource FlatButton}" HorizontalAlignment="Right"
-                                            Margin="0,0,0,16" Padding="8,4">
+                                            Margin="0,0,0,10" Padding="8,4">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"
                                                                      VerticalAlignment="Center"/>
@@ -404,10 +493,10 @@
                                         </StackPanel>
                                     </Button>
 
-                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
-                                        <Grid Width="96" Height="96" Margin="0,0,0,14">
-                                            <Ellipse Width="96" Height="96" Stroke="#BBDEFB" StrokeThickness="2"/>
-                                            <Ellipse Width="84" Height="84" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,14">
+                                        <Grid Width="80" Height="80" Margin="0,0,0,10">
+                                            <Ellipse Width="80" Height="80" Stroke="#BBDEFB" StrokeThickness="2"/>
+                                            <Ellipse Width="70" Height="70" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Ellipse.Fill>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                         <GradientStop Color="{Binding SelectedAdmin.AvatarColorStart}" Offset="0"/>
@@ -415,18 +504,18 @@
                                                     </LinearGradientBrush>
                                                 </Ellipse.Fill>
                                             </Ellipse>
-                                            <TextBlock Text="{Binding SelectedAdmin.Initials}" FontSize="28" FontWeight="Bold"
+                                            <TextBlock Text="{Binding SelectedAdmin.Initials}" FontSize="24" FontWeight="Bold"
                                                        Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                         <TextBlock Text="{Binding SelectedAdmin.FullName}"
-                                                   FontSize="20" FontWeight="Bold" Foreground="#1A237E"
+                                                   FontSize="18" FontWeight="Bold" Foreground="#1A237E"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="أدخل كلمة المرور للمتابعة"
                                                    FontSize="13" Foreground="#78909C"
-                                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                     </StackPanel>
 
-                                    <Grid Margin="0,0,0,10">
+                                    <Grid Margin="0,0,0,8">
                                         <PasswordBox x:Name="PasswordBoxHidden"
                                                      materialDesign:HintAssist.Hint="كلمة المرور"
                                                      materialDesign:HintAssist.FloatingScale="0.85"
@@ -456,15 +545,59 @@
                                                       Checked="PasswordToggle_Changed"
                                                       Unchecked="PasswordToggle_Changed"/>
 
-                                        <Button Style="{StaticResource OskButton}"
-                                                HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                Margin="0,0,10,0" Panel.ZIndex="2"
-                                                Click="OpenOskButton_Click"
-                                                ToolTip="فتح لوحة المفاتيح (للأجهزة بدون كيبورد)"/>
+                                        <ToggleButton x:Name="NumericPadToggle"
+                                                      Style="{StaticResource NumericPadToggleButton}"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                      Margin="0,0,10,0" Panel.ZIndex="2"
+                                                      Checked="NumericPadToggle_Changed"
+                                                      Unchecked="NumericPadToggle_Changed"
+                                                      ToolTip="لوحة الأرقام (للأجهزة بدون كيبورد)"/>
                                     </Grid>
 
+                                    <Border x:Name="NumericPadPanel"
+                                            Visibility="Collapsed" Opacity="0"
+                                            Background="#F0F7FF" CornerRadius="16"
+                                            BorderBrush="#D6E9FB" BorderThickness="1"
+                                            Padding="10,12" Margin="0,0,0,8"
+                                            FlowDirection="LeftToRight">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform Y="16"/>
+                                        </Border.RenderTransform>
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.1" Color="#1565C0"/>
+                                        </Border.Effect>
+                                        <UniformGrid Columns="3" Rows="4">
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="1" Tag="1" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="2" Tag="2" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="3" Tag="3" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="4" Tag="4" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="5" Tag="5" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="6" Tag="6" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="7" Tag="7" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="8" Tag="8" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="9" Tag="9" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadActionButton}" Click="NumPadBackspace_Click" ToolTip="حذف"
+                                                    FlowDirection="RightToLeft">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="BackspaceOutline" Width="20" Height="20"
+                                                                             VerticalAlignment="Center"/>
+                                                    <TextBlock Text="حذف" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource NumPadKeyButton}" Content="0" Tag="0" Click="NumPadDigit_Click"/>
+                                            <Button Style="{StaticResource NumPadActionButton}" Click="NumPadClose_Click" ToolTip="إغلاق اللوحة"
+                                                    FlowDirection="RightToLeft">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="KeyboardOffOutline" Width="20" Height="20"
+                                                                             VerticalAlignment="Center"/>
+                                                    <TextBlock Text="إغلاق" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </UniformGrid>
+                                    </Border>
+
                                     <CheckBox Content="تذكرني" IsChecked="{Binding RememberMe}"
-                                              FontSize="13" Margin="0,6,0,22" Foreground="#546E7A"/>
+                                              FontSize="13" Margin="0,4,0,16" Foreground="#546E7A"/>
 
                                     <Button Command="{Binding LoginCommand}"
                                             Style="{StaticResource LoginPrimaryButton}" IsDefault="True">
