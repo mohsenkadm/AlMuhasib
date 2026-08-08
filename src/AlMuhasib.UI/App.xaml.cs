@@ -793,7 +793,18 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _serviceProvider?.Dispose();
+        // Prefer DisposeAsync: MainServerHostingService (and similar) only implement IAsyncDisposable.
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+        {
+            asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            _serviceProvider = null;
+        }
+        else
+        {
+            _serviceProvider?.Dispose();
+            _serviceProvider = null;
+        }
+
         base.OnExit(e);
     }
 }

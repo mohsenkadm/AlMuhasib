@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace AlMuhasib.Infrastructure.Services;
 
-public sealed class MainServerHostingService : IMainServerHostingService, IAsyncDisposable
+public sealed class MainServerHostingService : IMainServerHostingService, IAsyncDisposable, IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
@@ -237,4 +237,7 @@ END";
     }
 
     public async ValueTask DisposeAsync() => await _discoveryResponder.DisposeAsync();
+
+    public void Dispose() =>
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
 }
