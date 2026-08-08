@@ -239,18 +239,28 @@
                                   FontSize="14"
                                   Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolToVis}}" />
 
-                        <!-- Sales representative (feature-gated) -->
-                        <ComboBox Grid.Row="2" Grid.Column="1"
+                        <!-- Sales representative (feature-gated): column 0 under المخزن when driver is hidden -->
+                        <ComboBox Grid.Row="2"
                                   ItemsSource="{Binding SalesRepresentatives}"
                                   SelectedItem="{Binding SelectedSalesRepresentative}"
                                   DisplayMemberPath="Name"
                                   materialDesign:HintAssist.Hint="المندوب"
                                   materialDesign:HintAssist.IsFloating="True"
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  Style="{StaticResource FilledComboBox}"
                                   Margin="0,12,12,0"
                                   FontSize="14"
-                                  Visibility="{Binding ShowSalesRepSelection, Converter={StaticResource BoolToVis}}" />
+                                  Visibility="{Binding ShowSalesRepSelection, Converter={StaticResource BoolToVis}}">
+                            <ComboBox.Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource FilledComboBox}">
+                                    <Setter Property="Grid.Column" Value="0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ShowDriverSelection}" Value="True">
+                                            <Setter Property="Grid.Column" Value="1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.Style>
+                        </ComboBox>
                     </Grid>
                 </materialDesign:Card>
 
