@@ -4,7 +4,7 @@
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Inno Setup 6](https://jrsoftware.org/isinfo.php)
-- اتصال إنترنت (لتنزيل .NET Desktop Runtime و SQL LocalDB عند البناء لأول مرة)
+- اتصال إنترنت (لتنزيل VC++ Redistributable و SQL LocalDB عند البناء لأول مرة)
 
 ## بناء المثبت
 
@@ -18,9 +18,9 @@
 
 | الخيار | الوصف |
 |--------|--------|
-| `-Version 1.13.0` | تحديد رقم الإصدار |
+| `-Version 1.14.6` | تحديد رقم الإصدار |
 | `-SkipLogo` | تخطي تجهيز الشعار |
-| `-SkipPrerequisites` | عدم تنزيل متطلبات .NET/LocalDB |
+| `-SkipPrerequisites` | عدم تنزيل المتطلبات (يجب أن تكون موجودة مسبقاً في `installer\prerequisites`) |
 | `-SkipCompile` | نشر التطبيق فقط دون تجميع المثبت |
 
 المخرج: `dist\Qayd-Setup-{version}.exe`
@@ -29,15 +29,31 @@
 
 1. يعرض معالج تثبيت باسم **قيد** مع شعار النظام
 2. يطلب اختيار مجلد التثبيت ومجلد **البيانات** (قاعدة البيانات)
-3. يتحقق من **.NET 10 Desktop Runtime** ويثبته إن لزم
-4. يتحقق من **SQL Server LocalDB** ويثبته إن لزم
-5. ينسخ ملفات التطبيق (`AlMuhasib.exe` داخلياً)
+3. يثبّت **Visual C++ Redistributable** إن لزم (متطلب LocalDB)
+4. يثبّت **SQL Server LocalDB** بصمت مع سجل أخطاء إن لزم
+5. ينسخ التطبيق **مع .NET مضمّن (self-contained)** — لا يحتاج العميل تنصيب .NET يدوياً
 6. يكتب `appsettings.json` مع:
    - `Installation:DataDirectory` = المجلد الذي اخترته
    - `ConnectionStrings:DefaultConnection` = LocalDB (قيمة أولية)
-7. عند أول تشغيل ومعالج الإعداد: إن اخترت **حاسبة مستقلة** تظهر قائمة منسدلة بأسماء سيرفرات SQL المتوفرة على الجهاز، وبعد الاختبار تُحفظ في `appsettings.json` ويُستخدم السيرفر دائماً للترحيل والاتصال
+7. عند أول تشغيل ومعالج الإعداد: إن اخترت **حاسبة مستقلة** تظهر قائمة منسدلة بأسماء سيرفرات SQL المتوفرة على الجهاز
 8. ينشئ اختصار **قيد** على سطح المكتب
 9. يشغّل التطبيق (اختياري)
+
+## لماذا كان التنصيب يفشل سابقاً؟
+
+1. المثبت كان يبحث عن متطلبات .NET/LocalDB **قبل** استخراجها من ملف التنصيب
+2. التطبيق كان يعتمد على .NET المنفصل (framework-dependent) فيفشل إن لم يكتمل تنصيب الـ Runtime
+3. LocalDB يحتاج غالباً Visual C++ Redistributable ولم يكن يُثبَّت تلقائياً
+
+## رفع المثبت للعملاء
+
+ارفع الملف إلى GitHub Releases (وليس داخل git):
+
+```powershell
+gh release upload v1.14.6 dist\Qayd-Setup-1.14.6.exe --clobber
+```
+
+حد المستودع 100MB؛ Releases تقبل حتى 2GB.
 
 ## تجهيز الشعار فقط
 
@@ -45,10 +61,9 @@
 .\scripts\prepare-logo.ps1
 ```
 
-ينشئ الملفات في `src\AlMuhasib.UI\Assets\Brand\` و `installer\assets\`.
-
 ## ملاحظات
 
 - اسم الملف التنفيذي يبقى `AlMuhasib.exe` داخلياً؛ الاسم الظاهر للمستخدم هو **قيد**
-- التحديثات عبر الإنترنت تبقى عبر `AlMuhasib.Updater` و GitHub Releases
+- التحديثات عبر الإنترنت تُبنى أيضاً self-contained عبر `scripts\publish-update.ps1`
 - عند إعادة التثبيت، يُحافظ على `appsettings.json` الموجود
+- سجل فشل LocalDB: `%TEMP%\Qayd-SqlLocalDB-Install.log`

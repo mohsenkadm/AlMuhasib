@@ -1,9 +1,24 @@
 ; Qayd (قيد) — single-file Windows installer
 ; Build with: scripts\build-installer.ps1
 ; Pass /DSourcePath=... and optionally /DAppVersion=x.y.z
+;
+; App is published self-contained (no separate .NET install).
+; LocalDB + VC++ redist are extracted via dontcopy before install starts.
 
 #ifndef AppVersion
   #define AppVersion "1.14.6"
+#endif
+
+#ifndef DotNetRuntimeFile
+  #define DotNetRuntimeFile "windowsdesktop-runtime-10.0.0-win-x64.exe"
+#endif
+
+#ifndef LocalDbMsiFile
+  #define LocalDbMsiFile "SqlLocalDB.msi"
+#endif
+
+#ifndef VcRedistFile
+  #define VcRedistFile "vc_redist.x64.exe"
 #endif
 
 [Setup]
@@ -39,10 +54,17 @@ Name: "desktopicon"; Description: "إنشاء اختصار على سطح الم�
 Name: "launchapp"; Description: "تشغيل قيد بعد اكتمال التثبيت"; GroupDescription: "بعد التثبيت:"; Flags: checkedonce
 
 [Files]
+; Application (self-contained — includes .NET runtime)
 Source: "{#SourcePath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
 Source: "assets\qayd-icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "appsettings.template.json"; DestDir: "{tmp}"; DestName: "appsettings.template.json"; Flags: dontcopy
-Source: "prerequisites\*"; DestDir: "{tmp}\qayd-prereqs"; Flags: deleteafterinstall; Check: PrereqPayloadExists
+; Prerequisites must use dontcopy so PrepareToInstall can ExtractTemporaryFile before [Files] copy
+Source: "prerequisites\{#VcRedistFile}"; DestDir: "{tmp}"; Flags: dontcopy
+Source: "prerequisites\{#LocalDbMsiFile}"; DestDir: "{tmp}"; Flags: dontcopy
+#ifexist "prerequisites\windowsdesktop-runtime-10.0.0-win-x64.exe"
+Source: "prerequisites\{#DotNetRuntimeFile}"; DestDir: "{tmp}"; Flags: dontcopy
+#define HasDotNetFallback
+#endif
 
 [Icons]
 Name: "{group}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qayd-icon.ico"
@@ -56,137 +78,227 @@ var
   DataDirPage: TInputDirWizardPage;
   SelectedDataDir: string;
 
-function PrereqPayloadExists: Boolean;
-begin
-  Result := DirExists(ExpandConstant('{src}\prerequisites'));
-end;
-
 function JsonEscapePath(const S: string): string;
 begin
   Result := S;
   StringChange(Result, '\', '\\');
 end;
 
+function IsRebootExitCode(const Code: Integer): Boolean;
+begin
+  Result := (Code = 3010) or (Code = 1641);
+end;
+
+function IsSuccessExitCode(const Code: Integer): Boolean;
+begin
+  Result := (Code = 0) or IsRebootExitCode(Code);
+end;
+
+function EnsureTempPrereq(const FileName: string): Boolean;
+begin
+  if FileExists(ExpandConstant('{tmp}\' + FileName)) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  ExtractTemporaryFile(FileName);
+  Result := FileExists(ExpandConstant('{tmp}\' + FileName));
+end;
+
 function DotNetDesktop10Installed: Boolean;
 var
   ResultCode: Integer;
 begin
-  if RegKeyExists(HKLM, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App\10.0') then
+  if RegKeyExists(HKLM64, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App') then
+  begin
+    Result := True;
+    Exit;
+  end;
+  if RegKeyExists(HKLM, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App') then
   begin
     Result := True;
     Exit;
   end;
 
-  if Exec(ExpandConstant('{cmd}'), '/c dotnet --list-runtimes | findstr /C:"Microsoft.WindowsDesktop.App 10." >nul', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  if Exec(ExpandConstant('{cmd}'), '/c dotnet --list-runtimes 2>nul | findstr /C:"Microsoft.WindowsDesktop.App 10." >nul', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     Result := (ResultCode = 0)
   else
     Result := False;
 end;
 
 function LocalDbInstalled: Boolean;
-var
-  ResultCode: Integer;
 begin
-  if Exec(ExpandConstant('{cmd}'), '/c sqllocaldb info MSSQLLocalDB >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    Result := (ResultCode = 0)
-  else
-    Result := False;
-end;
-
-function FindPrereqFile(const Pattern: string): string;
-var
-  FindRec: TFindRec;
-  SearchPath: string;
-begin
-  Result := '';
-  SearchPath := ExpandConstant('{tmp}\qayd-prereqs\' + Pattern);
-  if FindFirst(SearchPath, FindRec) then
+  if RegKeyExists(HKLM64, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\16.0') or
+     RegKeyExists(HKLM64, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\15.0') or
+     RegKeyExists(HKLM64, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\13.0') then
   begin
-  try
-    repeat
-      if (FindRec.Name <> '.') and (FindRec.Name <> '..') then
-      begin
-        Result := ExpandConstant('{tmp}\qayd-prereqs\' + FindRec.Name);
-        Exit;
-      end;
-    until not FindNext(FindRec);
-  finally
-    FindClose(FindRec);
+    Result := True;
+    Exit;
   end;
+  if RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\16.0') or
+     RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\15.0') or
+     RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\13.0') then
+  begin
+    Result := True;
+    Exit;
   end;
+  Result := FileExists(ExpandConstant('{pf}\Microsoft SQL Server\160\Tools\Binn\SqlLocalDB.exe')) or
+            FileExists(ExpandConstant('{pf}\Microsoft SQL Server\150\Tools\Binn\SqlLocalDB.exe')) or
+            FileExists(ExpandConstant('{pf}\Microsoft SQL Server\130\Tools\Binn\SqlLocalDB.exe'));
 end;
 
-function InstallDotNetDesktop: Boolean;
+function FindSqlLocalDbExe: string;
+begin
+  if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\160\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\160\Tools\Binn\SqlLocalDB.exe')
+  else if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\150\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\150\Tools\Binn\SqlLocalDB.exe')
+  else if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\130\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\130\Tools\Binn\SqlLocalDB.exe')
+  else
+    Result := 'sqllocaldb';
+end;
+
+function StartLocalDbInstance: Boolean;
 var
-  InstallerPath: string;
+  ExePath: string;
   ResultCode: Integer;
 begin
-  if DotNetDesktop10Installed then
+  ExePath := FindSqlLocalDbExe;
+  Exec(ExePath, 'create MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := Exec(ExePath, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+function VcRedistInstalled: Boolean;
+var
+  Version: string;
+begin
+  Result := False;
+  if RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64', 'Version', Version) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64', 'Version', Version) then
+    Result := True;
+end;
+
+function InstallVcRedist: Boolean;
+var
+  ResultCode: Integer;
+  InstallerPath: string;
+begin
+  if VcRedistInstalled then
   begin
     Result := True;
     Exit;
   end;
 
-  InstallerPath := FindPrereqFile('windowsdesktop-runtime*.exe');
-  if InstallerPath = '' then
+  if not EnsureTempPrereq('{#VcRedistFile}') then
   begin
-    MsgBox('لم يتم العثور على مثبت .NET 10 Desktop Runtime.' + #13#10 +
-           'يرجى تثبيته يدوياً من https://dotnet.microsoft.com/download ثم إعادة تشغيل المثبت.',
-           mbError, MB_OK);
+    Log('VC++ redistributable payload missing; continuing (may already be present).');
+    Result := True;
+    Exit;
+  end;
+
+  InstallerPath := ExpandConstant('{tmp}\{#VcRedistFile}');
+  WizardForm.StatusLabel.Caption := 'جاري تثبيت Microsoft Visual C++ Redistributable...';
+  if not Exec(InstallerPath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    MsgBox('فشل تشغيل مثبت Visual C++ Redistributable.', mbError, MB_OK);
     Result := False;
     Exit;
   end;
 
-  WizardForm.StatusLabel.Caption := 'جاري تثبيت .NET 10 Desktop Runtime...';
-  if not Exec(InstallerPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+  if not IsSuccessExitCode(ResultCode) then
   begin
-    MsgBox('فشل تشغيل مثبت .NET.', mbError, MB_OK);
+    MsgBox('فشل تثبيت Visual C++ Redistributable (رمز الخطأ: ' + IntToStr(ResultCode) + ').', mbError, MB_OK);
     Result := False;
     Exit;
   end;
 
-  Result := DotNetDesktop10Installed;
-  if not Result then
-    MsgBox('لم يتم التحقق من تثبيت .NET 10 بنجاح. قد تحتاج لإعادة تشغيل الجهاز ثم إعادة المحاولة.', mbInformation, MB_OK);
+  Result := True;
+end;
+
+function InstallDotNetDesktopFallback: Boolean;
+var
+  InstallerPath: string;
+  ResultCode: Integer;
+begin
+  { Self-contained builds do not need this. Optional payload only. }
+  Result := True;
+#ifndef HasDotNetFallback
+  Exit;
+#endif
+  if DotNetDesktop10Installed then
+    Exit;
+
+  EnsureTempPrereq('{#DotNetRuntimeFile}');
+  InstallerPath := ExpandConstant('{tmp}\{#DotNetRuntimeFile}');
+  if not FileExists(InstallerPath) then
+    Exit;
+
+  WizardForm.StatusLabel.Caption := 'جاري تثبيت .NET Desktop Runtime (احتياطي)...';
+  if Exec(InstallerPath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    Result := IsSuccessExitCode(ResultCode) or DotNetDesktop10Installed;
 end;
 
 function InstallLocalDb: Boolean;
 var
   InstallerPath: string;
+  LogPath: string;
   ResultCode: Integer;
 begin
   if LocalDbInstalled then
   begin
-  Exec(ExpandConstant('{cmd}'), '/c sqllocaldb start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    StartLocalDbInstance;
     Result := True;
     Exit;
   end;
 
-  InstallerPath := FindPrereqFile('SqlLocalDB*.msi');
-  if InstallerPath = '' then
-    InstallerPath := FindPrereqFile('*.msi');
-
-  if InstallerPath = '' then
+  if not InstallVcRedist then
   begin
-    MsgBox('لم يتم العثور على مثبت SQL Server LocalDB.' + #13#10 +
-           'يرجى تثبيت SQL Server Express LocalDB ثم إعادة المحاولة.',
+    Result := False;
+    Exit;
+  end;
+
+  if not EnsureTempPrereq('{#LocalDbMsiFile}') then
+  begin
+    MsgBox('لم يتم تضمين مثبت SQL Server LocalDB داخل ملف التنصيب.' + #13#10 +
+           'أعد بناء المثبت عبر scripts\build-installer.ps1 بعد توفر SqlLocalDB.msi.',
            mbError, MB_OK);
     Result := False;
     Exit;
   end;
 
+  InstallerPath := ExpandConstant('{tmp}\{#LocalDbMsiFile}');
+  LogPath := ExpandConstant('{tmp}\Qayd-SqlLocalDB-Install.log');
   WizardForm.StatusLabel.Caption := 'جاري تثبيت SQL Server LocalDB...';
-  if not Exec('msiexec.exe', '/i "' + InstallerPath + '" /qn /norestart IACCEPTSQLLOCALDBLICENSETERMS=YES', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+
+  if not Exec('msiexec.exe',
+      '/i "' + InstallerPath + '" /qn /norestart IACCEPTSQLLOCALDBLICENSETERMS=YES /L*v "' + LogPath + '"',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     MsgBox('فشل تشغيل مثبت SQL LocalDB.', mbError, MB_OK);
     Result := False;
     Exit;
   end;
 
-  Exec(ExpandConstant('{cmd}'), '/c sqllocaldb start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if not IsSuccessExitCode(ResultCode) then
+  begin
+    MsgBox('فشل تثبيت SQL Server LocalDB (رمز الخطأ: ' + IntToStr(ResultCode) + ').' + #13#10 +
+           'راجع سجل التثبيت:' + #13#10 + LogPath,
+           mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+
+  StartLocalDbInstance;
   Result := LocalDbInstalled;
   if not Result then
-    MsgBox('لم يتم التحقق من تثبيت SQL LocalDB بنجاح.', mbInformation, MB_OK);
+    MsgBox('اكتمل مثبت LocalDB لكن تعذر التحقق من المثيل.' + #13#10 +
+           'جرّب إعادة تشغيل الجهاز ثم افتح التطبيق.' + #13#10 +
+           'السجل: ' + LogPath, mbInformation, MB_OK);
 end;
 
 procedure WriteAppSettings;
@@ -249,16 +361,14 @@ begin
   Result := '';
   NeedsRestart := False;
 
-  WizardForm.StatusLabel.Caption := 'جاري التحقق من المتطلبات...';
-  if not InstallDotNetDesktop then
-  begin
-    Result := 'تعذر تثبيت .NET 10 Desktop Runtime.';
-    Exit;
-  end;
+  WizardForm.StatusLabel.Caption := 'جاري تجهيز المتطلبات...';
+
+  { App is self-contained; .NET install is optional fallback only. }
+  InstallDotNetDesktopFallback;
 
   if not InstallLocalDb then
   begin
-    Result := 'تعذر تثبيت SQL Server LocalDB.';
+    Result := 'تعذر تثبيت SQL Server LocalDB. ثبّت Visual C++ Redistributable ثم أعد المحاولة، أو راجع السجل في مجلد Temp.';
     Exit;
   end;
 end;

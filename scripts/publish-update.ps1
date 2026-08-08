@@ -25,13 +25,15 @@ $tag = "v$Version"
 $downloadUrl = "https://github.com/$GitHubRepo/releases/download/$tag/$zipName"
 $manifestUrl = "https://raw.githubusercontent.com/$GitHubRepo/$GitBranch/version.json"
 
-Write-Host "Publishing AlMuhasib $Version ..." -ForegroundColor Cyan
+Write-Host "Publishing AlMuhasib $Version (self-contained win-x64) ..." -ForegroundColor Cyan
 
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
 New-Item -ItemType Directory -Path $publishDir | Out-Null
 
-dotnet publish $uiProject -c Release -o $publishDir `
-    /p:Version=$Version /p:AssemblyVersion=$Version.0 /p:FileVersion=$Version.0
+# Must match installer packaging so online updates keep working without a machine-wide .NET install.
+dotnet publish $uiProject -c Release -r win-x64 --self-contained true -o $publishDir `
+    /p:Version=$Version /p:AssemblyVersion=$Version.0 /p:FileVersion=$Version.0 `
+    /p:PublishReadyToRun=true
 
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 

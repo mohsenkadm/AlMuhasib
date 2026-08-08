@@ -1,4 +1,5 @@
 # Builds Qayd single-file installer (Inno Setup).
+# Publishes a self-contained win-x64 app so customers do not need a separate .NET install.
 param(
     [string] $Version = "",
     [string] $PublishDir = ".\publish\installer-staging",
@@ -20,16 +21,17 @@ if (-not $SkipLogo) {
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
     $Version = ([xml](Get-Content $uiProject)).Project.PropertyGroup.Version | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($Version)) { $Version = "1.14.4" }
+    if ([string]::IsNullOrWhiteSpace($Version)) { $Version = "1.14.6" }
 }
 
 $publishPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($PublishDir)
 if (Test-Path $publishPath) { Remove-Item $publishPath -Recurse -Force }
 New-Item -ItemType Directory -Path $publishPath -Force | Out-Null
 
-Write-Host "Publishing Qayd $Version (framework-dependent) ..." -ForegroundColor Cyan
-dotnet publish $uiProject -c Release -o $publishPath `
-    /p:Version=$Version /p:AssemblyVersion=$Version.0 /p:FileVersion=$Version.0
+Write-Host "Publishing Qayd $Version (self-contained win-x64) ..." -ForegroundColor Cyan
+dotnet publish $uiProject -c Release -r win-x64 --self-contained true -o $publishPath `
+    /p:Version=$Version /p:AssemblyVersion=$Version.0 /p:FileVersion=$Version.0 `
+    /p:PublishReadyToRun=true
 
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
@@ -44,36 +46,54 @@ foreach ($file in $requiredUpdaterFiles) {
     }
 }
 
+function Get-RemoteFile {
+    param(
+        [Parameter(Mandatory = $true)][string] $Url,
+        [Parameter(Mandatory = $true)][string] $Destination,
+        [Parameter(Mandatory = $true)][string] $Label
+    )
+    Write-Host "Downloading $Label ..." -ForegroundColor Yellow
+    try {
+        Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing
+        if (-not (Test-Path $Destination) -or ((Get-Item $Destination).Length -lt 1MB)) {
+            throw "Downloaded file is missing or too small: $Destination"
+        }
+    }
+    catch {
+        Write-Warning "Could not download $Label from $Url. $($_.Exception.Message)"
+        if (Test-Path $Destination) { Remove-Item $Destination -Force -ErrorAction SilentlyContinue }
+        return $false
+    }
+    return $true
+}
+
 if (-not $SkipPrerequisites) {
     New-Item -ItemType Directory -Path $prereqDir -Force | Out-Null
 
-    $dotnetInstaller = Get-ChildItem -Path $prereqDir -Filter "windowsdesktop-runtime*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if (-not $dotnetInstaller) {
-        Write-Host "Downloading .NET 10 Desktop Runtime ..." -ForegroundColor Yellow
-        $dotnetUrl = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.0/windowsdesktop-runtime-10.0.0-win-x64.exe"
-        $dotnetDest = Join-Path $prereqDir "windowsdesktop-runtime-10.0.0-win-x64.exe"
-        try {
-            Invoke-WebRequest -Uri $dotnetUrl -OutFile $dotnetDest -UseBasicParsing
-        }
-        catch {
-            Write-Warning "Could not download .NET runtime from $dotnetUrl. Place windowsdesktop-runtime-*.exe in installer\prerequisites manually."
-        }
+    $vcRedist = Join-Path $prereqDir "vc_redist.x64.exe"
+    if (-not (Test-Path $vcRedist)) {
+        # VS 2015-2022 x64 redistributable — required by SQL LocalDB
+        [void](Get-RemoteFile -Url "https://aka.ms/vs/17/release/vc_redist.x64.exe" -Destination $vcRedist -Label "VC++ Redistributable x64")
     }
 
-    $localDbInstaller = Get-ChildItem -Path $prereqDir -Filter "SqlLocalDB*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if (-not $localDbInstaller) {
-        $localDbInstaller = Get-ChildItem -Path $prereqDir -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+    $localDbDest = Join-Path $prereqDir "SqlLocalDB.msi"
+    if (-not (Test-Path $localDbDest)) {
+        # SQL Server 2022 LocalDB standalone MSI (Microsoft short link)
+        [void](Get-RemoteFile -Url "https://go.microsoft.com/fwlink/?linkid=2215160" -Destination $localDbDest -Label "SQL Server 2022 LocalDB")
     }
-    if (-not $localDbInstaller) {
-        Write-Host "Downloading SQL Server 2022 LocalDB ..." -ForegroundColor Yellow
-        $localDbUrl = "https://go.microsoft.com/fwlink/?linkid=2215160"
-        $localDbDest = Join-Path $prereqDir "SqlLocalDB.msi"
-        try {
-            Invoke-WebRequest -Uri $localDbUrl -OutFile $localDbDest -UseBasicParsing
-        }
-        catch {
-            Write-Warning "Could not download SqlLocalDB.msi. Place SqlLocalDB.msi in installer\prerequisites manually."
-        }
+
+    # Optional .NET Desktop Runtime — only used as fallback; app is self-contained
+    $dotnetInstaller = Get-ChildItem -Path $prereqDir -Filter "windowsdesktop-runtime*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $dotnetInstaller) {
+        $dotnetDest = Join-Path $prereqDir "windowsdesktop-runtime-10.0.0-win-x64.exe"
+        [void](Get-RemoteFile -Url "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.0/windowsdesktop-runtime-10.0.0-win-x64.exe" -Destination $dotnetDest -Label ".NET 10 Desktop Runtime (optional fallback)")
+    }
+
+    if (-not (Test-Path $localDbDest)) {
+        throw "SqlLocalDB.msi is required in installer\prerequisites before compiling the setup."
+    }
+    if (-not (Test-Path $vcRedist)) {
+        throw "vc_redist.x64.exe is required in installer\prerequisites before compiling the setup."
     }
 }
 
