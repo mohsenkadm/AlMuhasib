@@ -119,14 +119,14 @@ public partial class PersonProfileViewModel
             {
                 Labels = points.Select(p => p.Label).ToArray(),
                 LabelsRotation = 15,
-                TextPaint = new SolidColorPaint(ChartThemeConfig.LabelColor)
+                LabelsPaint = new SolidColorPaint(ChartThemeConfig.LabelColor)
             }
         ];
         ProfitChartYAxes =
         [
             new Axis
             {
-                TextPaint = new SolidColorPaint(ChartThemeConfig.LabelColor),
+                LabelsPaint = new SolidColorPaint(ChartThemeConfig.LabelColor),
                 SeparatorsPaint = new SolidColorPaint(ChartThemeConfig.GridLineColor) { StrokeThickness = 1 }
             }
         ];
@@ -152,14 +152,14 @@ public partial class PersonProfileViewModel
             {
                 Labels = buckets.Select(b => b.BucketName).ToArray(),
                 LabelsRotation = 10,
-                TextPaint = new SolidColorPaint(ChartThemeConfig.LabelColor)
+                LabelsPaint = new SolidColorPaint(ChartThemeConfig.LabelColor)
             }
         ];
         AgingChartYAxes =
         [
             new Axis
             {
-                TextPaint = new SolidColorPaint(ChartThemeConfig.LabelColor),
+                LabelsPaint = new SolidColorPaint(ChartThemeConfig.LabelColor),
                 SeparatorsPaint = new SolidColorPaint(ChartThemeConfig.GridLineColor) { StrokeThickness = 1 }
             }
         ];

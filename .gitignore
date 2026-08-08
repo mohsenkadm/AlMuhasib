@@ -176,6 +176,11 @@ DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
 
+# Installer / release artifacts (too large for GitHub; publish via Releases)
+dist/
+installer/prerequisites/*.exe
+installer/prerequisites/*.msi
+
 # Click-Once directory
 publish/
 

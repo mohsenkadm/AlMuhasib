@@ -8,7 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Car/RealEstate (and others) define same simple type names in different namespaces.
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+});
 builder.Services.AddCloudApplicationServices();
 builder.Services.AddCloudInfrastructure(builder.Configuration);
 

@@ -184,7 +184,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         }).ToList());
     }
 
-    [HttpGet("invoices")]
+    // Keep under /mobile/* only — GoldShopInvoicesController owns GET api/gold-shop/invoices.
     [HttpGet("mobile/invoices")]
     public async Task<ActionResult<List<GoldInvoiceListDto>>> GetInvoices(
         [FromQuery] int page = 1,
@@ -207,7 +207,6 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         return Ok(items.Select(GoldShopInvoiceMapper.ToListItem).ToList());
     }
 
-    [HttpGet("invoices/{id:int}")]
     [HttpGet("mobile/invoices/{id:int}")]
     public async Task<ActionResult<GoldInvoiceDetailDto>> GetInvoiceById(int id, CancellationToken ct)
     {
@@ -225,7 +224,6 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         return Ok(GoldShopInvoiceMapper.ToDetail(invoice));
     }
 
-    [HttpPost("invoices/sale")]
     [HttpPost("mobile/invoices/sale")]
     public async Task<ActionResult<GoldInvoiceDetailDto>> CreateSale(
         [FromBody] GoldCreateSaleRequestDto request,
