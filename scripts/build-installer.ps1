@@ -67,6 +67,26 @@ function Get-RemoteFile {
     return $true
 }
 
+function Test-IsWindowsInstallerPackage {
+    param([Parameter(Mandatory = $true)][string] $Path)
+    if (-not (Test-Path $Path)) { return $false }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -lt 8) { return $false }
+    # Real MSI = OLE compound document (D0 CF 11 E0). MZ (4D 5A) means an EXE was saved as .msi.
+    if ($bytes[0] -ne 0xD0 -or $bytes[1] -ne 0xCF -or $bytes[2] -ne 0x11 -or $bytes[3] -ne 0xE0) {
+        return $false
+    }
+    try {
+        $wi = New-Object -ComObject WindowsInstaller.Installer
+        $db = $wi.OpenDatabase((Resolve-Path $Path).Path, 0)
+        $null = $db
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 if (-not $SkipPrerequisites) {
     New-Item -ItemType Directory -Path $prereqDir -Force | Out-Null
 
@@ -81,8 +101,20 @@ if (-not $SkipPrerequisites) {
     }
 
     $localDbDest = Join-Path $prereqDir "SqlLocalDB.msi"
-    if (-not (Test-Path $localDbDest)) {
-        [void](Get-RemoteFile -Url "https://go.microsoft.com/fwlink/?linkid=2215160" -Destination $localDbDest -Label "SQL Server 2022 LocalDB")
+    # fwlink/?linkid=2215160 downloads the Express bootstrapper EXE — NOT SqlLocalDB.msi.
+    # Use the direct CDN MSI (must start with D0 CF 11 E0).
+    $localDbUrl = "https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi"
+    if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
+        if (Test-Path $localDbDest) {
+            Write-Warning "Existing SqlLocalDB.msi is not a valid MSI (likely the Express bootstrapper). Re-downloading..."
+            Remove-Item $localDbDest -Force
+        }
+        if (-not (Get-RemoteFile -Url $localDbUrl -Destination $localDbDest -Label "SQL Server 2022 LocalDB MSI")) {
+            throw "Failed to download real SqlLocalDB.msi from $localDbUrl"
+        }
+        if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
+            throw "Downloaded SqlLocalDB.msi is still invalid. Refusing to build installer."
+        }
     }
 
     # Optional .NET Desktop Runtime — unused for self-contained app; kept for legacy fallback packaging
@@ -100,9 +132,12 @@ if (-not $SkipPrerequisites) {
             throw "Prerequisite looks corrupt (too small): $required"
         }
     }
+    if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
+        throw "SqlLocalDB.msi failed MSI validation (OpenDatabase)."
+    }
 
     Write-Host "Prerequisites OK:" -ForegroundColor Green
-    Get-ChildItem $prereqDir -Include "vc_redist*.exe","SqlLocalDB.msi" -File | ForEach-Object {
+    Get-ChildItem $prereqDir -File | Where-Object { $_.Name -match '^(vc_redist|SqlLocalDB)' } | ForEach-Object {
         Write-Host ("  {0} ({1:N1} MB)" -f $_.Name, ($_.Length / 1MB))
     }
 }

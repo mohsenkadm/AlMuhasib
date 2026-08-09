@@ -1,10 +1,10 @@
-﻿{
-  "version": "1.14.7",
+{
+  "version": "1.14.8",
   "releaseDate": "2026-08-09",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.7/AlMuhasib-1.14.7.zip",
-  "sha256": "3B842ABA63BFAD4E87C27356FB80FAEDDA6913354848A1386C2B20BC09ADE5FB",
-  "sizeBytes": 147230778,
-  "releaseNotes": "نظام المندوبين الكامل (ملفات المندوبين، قواعد العمولة، الأهداف، التحصيلات، كشف الحساب، تقارير الأداء وعملاء المندوب، وربط المندوب بفاتورة البيع)، وتحسينات المثبت والتنصيب",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.8/AlMuhasib-1.14.8.zip",
+  "sha256": "75D325E8FE2EEBF91E91A1027B387286EF7D01AF8B9B160C6481C7B587993F79",
+  "sizeBytes": 147230823,
+  "releaseNotes": "إصلاح حاسم للتنصيب: تضمين SqlLocalDB.msi الحقيقي (كان الملف السابق EXE مزيف يسبب خطأ 1620)، وتحسين تثبيت Visual C++ وLocalDB على Windows 10.",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

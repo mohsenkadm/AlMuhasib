@@ -4,7 +4,7 @@
 ; with ExtractTemporaryFile BEFORE file copy (PrepareToInstall).
 
 #ifndef AppVersion
-  #define AppVersion "1.14.7"
+  #define AppVersion "1.14.8"
 #endif
 
 #ifndef LocalDbMsiFile
@@ -55,9 +55,10 @@ Name: "launchapp"; Description: "تشغيل قيد بعد اكتمال التث�
 Source: "{#SourcePath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
 Source: "assets\qayd-icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "appsettings.template.json"; DestDir: "{tmp}"; DestName: "appsettings.template.json"; Flags: dontcopy
-Source: "prerequisites\{#VcRedistX64File}"; DestDir: "{tmp}"; Flags: dontcopy
-Source: "prerequisites\{#VcRedistX86File}"; DestDir: "{tmp}"; Flags: dontcopy
-Source: "prerequisites\{#LocalDbMsiFile}"; DestDir: "{tmp}"; Flags: dontcopy
+; nocompression: avoids ExtractTemporaryFile corruption with SolidCompression for MSI/EXE payloads
+Source: "prerequisites\{#VcRedistX64File}"; DestDir: "{tmp}"; Flags: dontcopy nocompression
+Source: "prerequisites\{#VcRedistX86File}"; DestDir: "{tmp}"; Flags: dontcopy nocompression
+Source: "prerequisites\{#LocalDbMsiFile}"; DestDir: "{tmp}"; Flags: dontcopy nocompression
 
 [Icons]
 Name: "{group}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qayd-icon.ico"
