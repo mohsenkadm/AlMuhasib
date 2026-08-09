@@ -1,10 +1,10 @@
 ﻿{
-    "version":  "1.14.6",
-    "releaseDate":  "2026-08-06",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.6/AlMuhasib-1.14.6.zip",
-    "sha256":  "46E2E4348826ACD7657CC4FDEA5DDF9A46EBABFE8D9B3C6E0CF4FFA4E0D8CE1E",
-    "sizeBytes":  103453857,
-    "releaseNotes":  "تحسين تسديد أقساط المنصة (تصفح صفحات، تحديد/تسديد عبر كل الصفحات، أداء الاستيراد)، وتسريع تاب الأقساط غير المسددة والمتأخرات، وإصلاح عرض المستثمرين",
-    "isMandatory":  false,
-    "minSupportedVersion":  "1.0.0"
+  "version": "1.14.7",
+  "releaseDate": "2026-08-09",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.7/AlMuhasib-1.14.7.zip",
+  "sha256": "3B842ABA63BFAD4E87C27356FB80FAEDDA6913354848A1386C2B20BC09ADE5FB",
+  "sizeBytes": 147230778,
+  "releaseNotes": "نظام المندوبين الكامل (ملفات المندوبين، قواعد العمولة، الأهداف، التحصيلات، كشف الحساب، تقارير الأداء وعملاء المندوب، وربط المندوب بفاتورة البيع)، وتحسينات المثبت والتنصيب",
+  "isMandatory": false,
+  "minSupportedVersion": "1.0.0"
 }

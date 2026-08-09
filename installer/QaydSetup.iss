@@ -6,7 +6,7 @@
 ; LocalDB + VC++ redist are extracted via dontcopy before install starts.
 
 #ifndef AppVersion
-  #define AppVersion "1.14.6"
+  #define AppVersion "1.14.7"
 #endif
 
 #ifndef DotNetRuntimeFile
