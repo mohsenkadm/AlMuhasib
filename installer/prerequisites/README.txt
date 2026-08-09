@@ -1,11 +1,9 @@
-# Prerequisite installers (downloaded automatically by scripts\build-installer.ps1)
+# Prerequisite installers (downloaded by scripts\build-installer.ps1)
 
-Required for customer-friendly setup:
-- vc_redist.x64.exe          (Visual C++ 2015-2022 x64 — required by SQL LocalDB)
-- SqlLocalDB.msi            (SQL Server 2022 LocalDB)
+Required (embedded into Qayd-Setup via dontcopy + ExtractTemporaryFile):
+- vc_redist.x64.exe   Visual C++ 2015-2022 x64 (LocalDB dependency)
+- vc_redist.x86.exe   Visual C++ 2015-2022 x86 (LocalDB / SqlWriter helpers)
+- SqlLocalDB.msi      SQL Server 2022 LocalDB
 
-Optional fallback (app is published self-contained, so usually unused):
-- windowsdesktop-runtime-10.x.x-win-x64.exe
-
-Do NOT rely on a prerequisites folder next to Qayd-Setup.exe at the customer PC.
-These files are embedded into the setup and extracted with ExtractTemporaryFile.
+Do NOT ship a separate prerequisites folder next to the setup EXE.
+The build script verifies these names are embedded in the compiled installer.

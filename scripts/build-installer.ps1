@@ -70,30 +70,40 @@ function Get-RemoteFile {
 if (-not $SkipPrerequisites) {
     New-Item -ItemType Directory -Path $prereqDir -Force | Out-Null
 
-    $vcRedist = Join-Path $prereqDir "vc_redist.x64.exe"
-    if (-not (Test-Path $vcRedist)) {
-        # VS 2015-2022 x64 redistributable — required by SQL LocalDB
-        [void](Get-RemoteFile -Url "https://aka.ms/vs/17/release/vc_redist.x64.exe" -Destination $vcRedist -Label "VC++ Redistributable x64")
+    $vcRedistX64 = Join-Path $prereqDir "vc_redist.x64.exe"
+    if (-not (Test-Path $vcRedistX64)) {
+        [void](Get-RemoteFile -Url "https://aka.ms/vs/17/release/vc_redist.x64.exe" -Destination $vcRedistX64 -Label "VC++ Redistributable x64")
+    }
+
+    $vcRedistX86 = Join-Path $prereqDir "vc_redist.x86.exe"
+    if (-not (Test-Path $vcRedistX86)) {
+        [void](Get-RemoteFile -Url "https://aka.ms/vs/17/release/vc_redist.x86.exe" -Destination $vcRedistX86 -Label "VC++ Redistributable x86")
     }
 
     $localDbDest = Join-Path $prereqDir "SqlLocalDB.msi"
     if (-not (Test-Path $localDbDest)) {
-        # SQL Server 2022 LocalDB standalone MSI (Microsoft short link)
         [void](Get-RemoteFile -Url "https://go.microsoft.com/fwlink/?linkid=2215160" -Destination $localDbDest -Label "SQL Server 2022 LocalDB")
     }
 
-    # Optional .NET Desktop Runtime — only used as fallback; app is self-contained
+    # Optional .NET Desktop Runtime — unused for self-contained app; kept for legacy fallback packaging
     $dotnetInstaller = Get-ChildItem -Path $prereqDir -Filter "windowsdesktop-runtime*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $dotnetInstaller) {
         $dotnetDest = Join-Path $prereqDir "windowsdesktop-runtime-10.0.0-win-x64.exe"
-        [void](Get-RemoteFile -Url "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.0/windowsdesktop-runtime-10.0.0-win-x64.exe" -Destination $dotnetDest -Label ".NET 10 Desktop Runtime (optional fallback)")
+        [void](Get-RemoteFile -Url "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.0/windowsdesktop-runtime-10.0.0-win-x64.exe" -Destination $dotnetDest -Label ".NET 10 Desktop Runtime (optional)")
     }
 
-    if (-not (Test-Path $localDbDest)) {
-        throw "SqlLocalDB.msi is required in installer\prerequisites before compiling the setup."
+    foreach ($required in @($localDbDest, $vcRedistX64, $vcRedistX86)) {
+        if (-not (Test-Path $required)) {
+            throw "Required prerequisite missing: $required"
+        }
+        if ((Get-Item $required).Length -lt 1MB) {
+            throw "Prerequisite looks corrupt (too small): $required"
+        }
     }
-    if (-not (Test-Path $vcRedist)) {
-        throw "vc_redist.x64.exe is required in installer\prerequisites before compiling the setup."
+
+    Write-Host "Prerequisites OK:" -ForegroundColor Green
+    Get-ChildItem $prereqDir -Include "vc_redist*.exe","SqlLocalDB.msi" -File | ForEach-Object {
+        Write-Host ("  {0} ({1:N1} MB)" -f $_.Name, ($_.Length / 1MB))
     }
 }
 
@@ -123,5 +133,12 @@ Write-Host "Compiling installer ..." -ForegroundColor Cyan
 & $iscc $installerScript "/DSourcePath=$publishPath" "/DAppVersion=$Version"
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
 
+$setupPath = Join-Path $distPath "Qayd-Setup-$Version.exe"
+if (-not (Test-Path $setupPath)) {
+    throw "Expected installer not found: $setupPath"
+}
+
 Write-Host "Installer build completed." -ForegroundColor Green
-Get-ChildItem -Path $distPath -Filter "Qayd-Setup-*.exe" | ForEach-Object { Write-Host "  $($_.FullName)" -ForegroundColor Green }
+Get-ChildItem -Path $distPath -Filter "Qayd-Setup-*.exe" | ForEach-Object {
+    Write-Host ("  {0} ({1:N1} MB)" -f $_.FullName, ($_.Length / 1MB)) -ForegroundColor Green
+}
