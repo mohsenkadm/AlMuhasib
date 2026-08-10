@@ -29,10 +29,12 @@ public partial class ReceivablesAgingReportViewModel : ReportViewModelBase
     public ObservableCollection<ReceivablesAgingRow> Rows { get; } = [];
 
     public ReceivablesAgingReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IInvoiceService invoiceService)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         PageTitle = "أعمار الذمم المدينة";
+        InitReportActionServices(invoiceService);
         RegisterThemeChartReload(LoadDataAsync);
     }
 

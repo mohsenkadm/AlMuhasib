@@ -72,11 +72,18 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(i => i.RelatedInvoice)
+            .WithMany()
+            .HasForeignKey(i => i.RelatedInvoiceId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(i => i.InvoiceNumber)
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(i => i.Date);
         builder.HasIndex(i => i.InvoiceType);
         builder.HasIndex(i => i.DriverId);
+        builder.HasIndex(i => i.RelatedInvoiceId);
     }
 }

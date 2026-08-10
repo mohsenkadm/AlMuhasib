@@ -2381,6 +2381,121 @@
             </Border>
         </Grid>
 
+        <!-- اختصارات لوحة المفاتيح (F1) -->
+        <Grid Visibility="{Binding ShowKeyboardShortcutsHelp, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Grid.RowSpan="3" Panel.ZIndex="2200"
+              MouseLeftButtonDown="KeyboardShortcutsBackdrop_Click">
+            <Border Background="#99000000"/>
+            <materialDesign:Card HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 MinWidth="420" MaxWidth="520" Padding="28,24"
+                                 UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp12"
+                                 MouseLeftButtonDown="KeyboardShortcutsCard_Click">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Left"
+                                Command="{Binding ToggleKeyboardShortcutsHelpCommand}"
+                                Style="{StaticResource FlatButton}"
+                                ToolTip="إغلاق"
+                                Padding="4">
+                            <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="KeyboardOutline" Width="28" Height="28"
+                                                     Foreground="#1565C0" VerticalAlignment="Center"/>
+                            <TextBlock Text="اختصارات لوحة المفاتيح" FontSize="18" FontWeight="Bold"
+                                       Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <ItemsControl FontSize="13">
+                        <ItemsControl.Items>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="F1" FontWeight="Bold" Foreground="#1565C0"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="عرض / إخفاء هذه القائمة" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="F2" FontWeight="Bold" Foreground="#1565C0"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="فاتورة مبيعات جديدة" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="F3" FontWeight="Bold" Foreground="#1565C0"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="بحث شامل" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#E8F5E9" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="F4" FontWeight="Bold" Foreground="#2E7D32"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="إضافة منتج (فاتورة البيع)" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#E8F5E9" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="F5" FontWeight="Bold" Foreground="#2E7D32"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="فحص الربح (فاتورة البيع)" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="Ctrl+S" FontWeight="Bold" Foreground="#EF6C00"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="حفظ الفاتورة / النموذج الحالي" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="Ctrl+K" FontWeight="Bold" Foreground="#EF6C00"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="بحث شامل" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#F3E5F5" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock Text="Ctrl+Space" FontWeight="Bold" Foreground="#6A1B9A"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="المساعد الصوتي" VerticalAlignment="Center"/>
+                            </Grid>
+                        </ItemsControl.Items>
+                    </ItemsControl>
+                    <TextBlock Text="اضغط Esc أو F1 للإغلاق" FontSize="11" Margin="0,16,0,0"
+                               Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
         <!-- بحث شامل Ctrl+K -->
         <controls:GlobalSearchOverlay x:Name="GlobalSearchOverlay"
                                       Grid.RowSpan="3"

@@ -36,6 +36,8 @@ public class BusinessSettingsService : IBusinessSettingsService
             {
                 ProductPricingEnabled = false,
                 UpdateProductPriceOnPurchase = false,
+                PeriodLockEnabled = false,
+                LockedThroughDate = null,
                 SyncId = AlMuhasib.Sync.ProductPricingSyncIds.BusinessSettings,
                 CreatedBy = "System",
                 CreatedAt = DateTime.UtcNow
@@ -50,7 +52,21 @@ public class BusinessSettingsService : IBusinessSettingsService
     public Task SyncFromFeatureFlagsAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase) =>
         SaveAsync(productPricingEnabled, updateProductPriceOnPurchase);
 
-    public async Task SaveAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase)
+    public Task SaveAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase) =>
+        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, periodLockEnabled: null, lockedThroughDate: null);
+
+    public Task SaveAsync(
+        bool productPricingEnabled,
+        bool updateProductPriceOnPurchase,
+        bool periodLockEnabled,
+        DateTime? lockedThroughDate) =>
+        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, (bool?)periodLockEnabled, lockedThroughDate);
+
+    private async Task SaveAsync(
+        bool productPricingEnabled,
+        bool updateProductPriceOnPurchase,
+        bool? periodLockEnabled,
+        DateTime? lockedThroughDate)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var existing = await context.BusinessSettings
@@ -64,6 +80,8 @@ public class BusinessSettingsService : IBusinessSettingsService
             {
                 ProductPricingEnabled = productPricingEnabled,
                 UpdateProductPriceOnPurchase = updateProductPriceOnPurchase,
+                PeriodLockEnabled = periodLockEnabled ?? false,
+                LockedThroughDate = lockedThroughDate?.Date,
                 SyncId = AlMuhasib.Sync.ProductPricingSyncIds.BusinessSettings,
                 CreatedBy = _currentUserService.Username,
                 CreatedAt = DateTime.UtcNow
@@ -73,6 +91,11 @@ public class BusinessSettingsService : IBusinessSettingsService
         {
             existing.ProductPricingEnabled = productPricingEnabled;
             existing.UpdateProductPriceOnPurchase = updateProductPriceOnPurchase;
+            if (periodLockEnabled.HasValue)
+            {
+                existing.PeriodLockEnabled = periodLockEnabled.Value;
+                existing.LockedThroughDate = existing.PeriodLockEnabled ? lockedThroughDate?.Date : null;
+            }
             existing.UpdatedAt = DateTime.UtcNow;
             existing.UpdatedBy = _currentUserService.Username;
             existing.IsDeleted = false;

@@ -711,7 +711,9 @@ public partial class ReportService : IReportService
             Description = r.Description,
             Debit = r.Debit,
             Credit = r.Credit,
-            RunningBalance = r.RunningBalance
+            RunningBalance = r.RunningBalance,
+            SourceKind = r.SourceKind,
+            DocumentId = r.DocumentId
         }).ToList();
 
         var balance = currentBalance;

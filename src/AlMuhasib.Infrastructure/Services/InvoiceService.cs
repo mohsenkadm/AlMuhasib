@@ -13,15 +13,18 @@ public class InvoiceService : IInvoiceService
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
     private readonly LoyaltyService _loyaltyService;
+    private readonly IAccountingPeriodLockService _periodLockService;
 
     public InvoiceService(
         IDbContextFactory<AppDbContext> contextFactory,
         ICurrentUserService currentUserService,
-        LoyaltyService loyaltyService)
+        LoyaltyService loyaltyService,
+        IAccountingPeriodLockService periodLockService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
         _loyaltyService = loyaltyService;
+        _periodLockService = periodLockService;
     }
 
     public async Task<Invoice> CreateInvoiceAsync(
@@ -36,6 +39,8 @@ public class InvoiceService : IInvoiceService
 
         try
         {
+            await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
+
             var username = _currentUserService.Username;
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
@@ -120,7 +125,7 @@ public class InvoiceService : IInvoiceService
             await context.SaveChangesAsync();
 
             if (!skipStockUpdate && invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
-                or InvoiceType.Sale or InvoiceType.Installment)
+                or InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Installment)
             {
                 foreach (var item in itemsList.Where(i => i.ProductId.HasValue))
                 {
@@ -129,7 +134,7 @@ public class InvoiceService : IInvoiceService
                             s.WarehouseId == invoice.WarehouseId &&
                             s.ProductId == item.ProductId!.Value);
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase)
+                    if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
                     {
                         if (stock is not null)
                         {
@@ -179,8 +184,8 @@ public class InvoiceService : IInvoiceService
                         ? invoice.PaidAmount
                         : invoice.NetAmount;
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase)
-                        cashBox.Balance -= cashAmount;
+                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
+                        cashBox.Balance -= cashAmount; // شراء أو استرداد نقد للعميل
                     else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
                         cashBox.Balance += cashAmount; // استرداد نقد من المورد
                     else
@@ -523,6 +528,7 @@ public class InvoiceService : IInvoiceService
     private static string InvoiceTypeArabic(InvoiceType type) => type switch
     {
         InvoiceType.Sale => "مبيعات",
+        InvoiceType.SaleReturn => "مرتجع مبيعات",
         InvoiceType.Purchase => "مشتريات",
         InvoiceType.Installment => "أقساط",
         InvoiceType.PurchaseReturn => "مرتجع مشتريات",
@@ -538,6 +544,8 @@ public class InvoiceService : IInvoiceService
                 .ThenInclude(p => p.Installments)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (invoice is null) return;
+
+        await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
 
         var username = _currentUserService.Username;
         var originalInvoiceNumber = invoice.InvoiceNumber;
@@ -556,7 +564,7 @@ public class InvoiceService : IInvoiceService
                         ? invoice.PaidAmount
                         : invoice.NetAmount;
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase)
+                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
                         cashBox.Balance += cashAmount;
                     else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
                         cashBox.Balance -= cashAmount;
@@ -577,7 +585,7 @@ public class InvoiceService : IInvoiceService
 
                 if (stock is not null)
                 {
-                    if (invoice.InvoiceType == InvoiceType.Purchase)
+                    if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
                         stock.Quantity -= item.Quantity;
                     else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
                         stock.Quantity += item.Quantity;

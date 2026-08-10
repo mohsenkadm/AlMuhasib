@@ -343,6 +343,10 @@ public class PersonProfileService : IPersonProfileService
         {
             SourceType = r.SourceType,
             Reference = $"#{r.ReferenceId}",
+            ReferenceId = r.ReferenceId,
+            InvoiceId = string.Equals(r.SourceType, "آجل", StringComparison.Ordinal)
+                ? r.ReferenceId
+                : null,
             DueDate = r.DueDate,
             RemainingAmount = r.RemainingAmount,
             DaysOverdue = r.DaysOverdue,

@@ -12,6 +12,7 @@ public static class InvoiceNumberHelper
         InvoiceType.Purchase => "PUR",
         InvoiceType.PurchaseReturn => "PRT",
         InvoiceType.Sale => "SAL",
+        InvoiceType.SaleReturn => "SRT",
         InvoiceType.Installment => "INS",
         _ => "INV"
     };

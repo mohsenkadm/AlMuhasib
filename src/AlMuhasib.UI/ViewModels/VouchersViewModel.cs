@@ -91,6 +91,21 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [ObservableProperty]
     private bool _showBankFeesField;
 
+    [ObservableProperty]
+    private bool _showDocumentLinkFields;
+
+    // ── Optional document links (Receipt / DebtReceipt) ──
+    public ObservableCollection<Invoice> OpenCreditInvoices { get; } = [];
+    public ObservableCollection<Installment> OpenInstallments { get; } = [];
+
+    [ObservableProperty]
+    private Invoice? _selectedLinkedInvoice;
+
+    [ObservableProperty]
+    private Installment? _selectedLinkedInstallment;
+
+    private bool _suppressDocumentLinkMutualClear;
+
     // ── Voucher list (all types) ───────────────────────────
     public ObservableCollection<Voucher> Vouchers { get; } = [];
 
@@ -189,14 +204,81 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;
         ShowBankFeesField = type is VoucherType.BankReceipt;
+        RefreshDocumentLinkVisibility();
 
         // Clear unrelated selections
         if (!ShowCustomerField) SelectedCustomer = null;
         if (!ShowInvestorField) SelectedInvestor = null;
         if (!ShowBankField) SelectedBankAccount = null;
         if (!ShowBankFeesField) BankFees = 0;
+        if (!ShowDocumentLinkFields)
+            ClearDocumentLinks();
+        else
+            _ = LoadDocumentLinksAsync();
 
         UpdateNetAmountText();
+    }
+
+    private void RefreshDocumentLinkVisibility()
+    {
+        ShowDocumentLinkFields = ShowCustomerField &&
+            SelectedCustomer is not null &&
+            SelectedVoucherType is VoucherType.Receipt or VoucherType.DebtReceipt;
+    }
+
+    partial void OnSelectedCustomerChanged(Customer? value)
+    {
+        RefreshDocumentLinkVisibility();
+        _ = LoadDocumentLinksAsync();
+    }
+
+    private async Task LoadDocumentLinksAsync()
+    {
+        OpenCreditInvoices.Clear();
+        OpenInstallments.Clear();
+        ClearDocumentLinks();
+
+        if (!ShowDocumentLinkFields || SelectedCustomer is null)
+            return;
+
+        try
+        {
+            var invoices = await _cashBankService.GetOpenCreditInvoicesForCustomerAsync(SelectedCustomer.Id);
+            foreach (var inv in invoices)
+                OpenCreditInvoices.Add(inv);
+
+            var installments = await _cashBankService.GetOpenInstallmentsForCustomerAsync(SelectedCustomer.Id);
+            foreach (var inst in installments)
+                OpenInstallments.Add(inst);
+        }
+        catch
+        {
+            // optional pickers — ignore load failures
+        }
+    }
+
+    private void ClearDocumentLinks()
+    {
+        _suppressDocumentLinkMutualClear = true;
+        SelectedLinkedInvoice = null;
+        SelectedLinkedInstallment = null;
+        _suppressDocumentLinkMutualClear = false;
+    }
+
+    partial void OnSelectedLinkedInvoiceChanged(Invoice? value)
+    {
+        if (_suppressDocumentLinkMutualClear || value is null) return;
+        _suppressDocumentLinkMutualClear = true;
+        SelectedLinkedInstallment = null;
+        _suppressDocumentLinkMutualClear = false;
+    }
+
+    partial void OnSelectedLinkedInstallmentChanged(Installment? value)
+    {
+        if (_suppressDocumentLinkMutualClear || value is null) return;
+        _suppressDocumentLinkMutualClear = true;
+        SelectedLinkedInvoice = null;
+        _suppressDocumentLinkMutualClear = false;
     }
 
     partial void OnAmountChanged(decimal value) => UpdateNetAmountText();
@@ -273,6 +355,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 BankAccountId = SelectedBankAccount?.Id,
                 CustomerId = SelectedCustomer?.Id,
                 InvestorId = SelectedInvestor?.Id,
+                InvoiceId = ShowDocumentLinkFields ? SelectedLinkedInvoice?.Id : null,
+                InstallmentId = ShowDocumentLinkFields ? SelectedLinkedInstallment?.Id : null,
                 Date = VoucherDate,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -288,6 +372,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             SelectedCustomer = null;
             SelectedInvestor = null;
             SelectedBankAccount = null;
+            ClearDocumentLinks();
             VoucherDate = DateTime.Now;
             await GenerateVoucherNumberAsync();
             await LoadVouchersAsync();

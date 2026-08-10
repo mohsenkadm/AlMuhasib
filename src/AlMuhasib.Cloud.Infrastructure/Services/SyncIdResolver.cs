@@ -56,6 +56,9 @@ public sealed class SyncIdResolver
     public async Task<int?> ResolveInstallmentPlanAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.InstallmentPlans, syncId, ct);
 
+    public async Task<int?> ResolveInstallmentAsync(Guid? syncId, CancellationToken ct) =>
+        await ResolveAsync(_db.Installments, syncId, ct);
+
     public async Task<int?> ResolveProfitDistributionAsync(Guid? syncId, CancellationToken ct) =>
         await ResolveAsync(_db.ProfitDistributions, syncId, ct);
 

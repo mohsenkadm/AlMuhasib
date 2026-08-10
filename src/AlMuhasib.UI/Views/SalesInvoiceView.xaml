@@ -51,10 +51,11 @@
                             <materialDesign:PackIcon Kind="ReceiptTextOutline" Width="28" Height="28" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="فاتورة مبيعات" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="Bold" Foreground="White"/>
                             <TextBlock Foreground="#CCFFFFFF" FontSize="13">
                                 <Run Text="رقم الفاتورة:"/>
                                 <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="SemiBold" FontFamily="Consolas"/>
+                                <Run Text="  ·  F4 منتج · F5 ربح · Ctrl+S حفظ"/>
                             </TextBlock>
                         </StackPanel>
                         <Border Grid.Column="2" CornerRadius="10" Background="#26FFFFFF" Padding="12,8">
@@ -76,6 +77,17 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                </Border>
+
+                <Border Margin="0,0,0,12" Padding="14,10" CornerRadius="10" Background="#FFF8E1"
+                        BorderBrush="#FFB300" BorderThickness="1"
+                        Visibility="{Binding HasInvoiceWarnings, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <materialDesign:PackIcon Kind="AlertOutline" Width="20" Height="20"
+                                                 Foreground="#F57C00" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding InvoiceWarningsBanner}" TextWrapping="Wrap"
+                                   Foreground="#E65100" FontSize="12.5" VerticalAlignment="Center"/>
+                    </DockPanel>
                 </Border>
 
                 <!-- ═══════════════════════════════════════════ -->

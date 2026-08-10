@@ -96,6 +96,8 @@ public sealed class UpdateBusinessSettingsRequest
 {
     public bool ProductPricingEnabled { get; set; }
     public bool UpdateProductPriceOnPurchase { get; set; }
+    public bool? PeriodLockEnabled { get; set; }
+    public DateTime? LockedThroughDate { get; set; }
 }
 
 public sealed class UpsertCashBoxRequest

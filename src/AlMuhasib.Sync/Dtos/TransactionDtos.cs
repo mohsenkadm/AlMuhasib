@@ -24,6 +24,7 @@ public sealed class InvoiceSyncDto : SyncDtoBase
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public Guid? RelatedInvoiceSyncId { get; set; }
 }
 
 public sealed class InvoiceItemSyncDto : SyncDtoBase
@@ -74,6 +75,11 @@ public sealed class VoucherSyncDto : SyncDtoBase
     public Guid? InvestorSyncId { get; set; }
     public Guid CashBoxSyncId { get; set; }
     public Guid? BankAccountSyncId { get; set; }
+    public Guid? InvoiceSyncId { get; set; }
+    public Guid? InstallmentSyncId { get; set; }
+    public bool IsReconciled { get; set; }
+    public DateTime? ReconciledAt { get; set; }
+    public string? ReconciledBy { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }
 }

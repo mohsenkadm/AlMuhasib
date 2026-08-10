@@ -533,6 +533,16 @@
 
                                 <TabItem Header="عمر الديون">
                                     <StackPanel Margin="0,12,0,0">
+                                        <Button Command="{Binding SendDebtReminderWhatsAppCommand}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,0,0,12"
+                                                Padding="14,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18" Foreground="#25D366" VerticalAlignment="Center"/>
+                                                <TextBlock Text="تذكير دين عبر واتساب" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
                                         <Border Background="#F8FAFC" CornerRadius="12" Padding="8" MinHeight="200" Margin="0,0,0,12">
                                             <lvc:CartesianChart Series="{Binding AgingChartSeries}"
                                                                 XAxes="{Binding AgingChartXAxes}"

@@ -52,6 +52,9 @@ public partial class MainWindowViewModel
         if (string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
             return flags.PurchaseReturns;
 
+        if (string.Equals(item.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
+            return flags.SalesReturns;
+
         return item.ViewModelType switch
         {
             var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,

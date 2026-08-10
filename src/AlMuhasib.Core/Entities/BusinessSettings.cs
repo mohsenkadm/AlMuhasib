@@ -10,4 +10,10 @@ public class BusinessSettings : BaseEntity
 
     /// <summary>تحديث سعر الشراء من فاتورة مشتريات عند الإنشاء فقط.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }
+
+    /// <summary>تفعيل قفل الفترة المحاسبية.</summary>
+    public bool PeriodLockEnabled { get; set; }
+
+    /// <summary>آخر يوم مقفل شاملاً — لا يُسمح بمستندات بتاريخه أو قبله عند التفعيل.</summary>
+    public DateTime? LockedThroughDate { get; set; }
 }

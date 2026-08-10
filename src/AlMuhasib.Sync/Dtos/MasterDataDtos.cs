@@ -41,6 +41,8 @@ public sealed class BusinessSettingsSyncDto : SyncDtoBase
 {
     public bool ProductPricingEnabled { get; set; }
     public bool UpdateProductPriceOnPurchase { get; set; }
+    public bool PeriodLockEnabled { get; set; }
+    public DateTime? LockedThroughDate { get; set; }
 }
 
 public sealed class WarehouseSyncDto : SyncDtoBase

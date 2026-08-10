@@ -47,6 +47,7 @@ internal static class InvoiceDetailMapper
                 InvoiceType.Sale => "فاتورة مبيعات",
                 InvoiceType.Purchase => "فاتورة مشتريات",
                 InvoiceType.PurchaseReturn => "مرتجع مشتريات",
+                InvoiceType.SaleReturn => "مرتجع مبيعات",
                 InvoiceType.Installment => "فاتورة أقساط",
                 _ => "تفاصيل الفاتورة"
             },

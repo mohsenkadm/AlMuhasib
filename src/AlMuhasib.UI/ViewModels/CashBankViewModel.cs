@@ -8,7 +8,6 @@ using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
-using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -118,6 +117,9 @@ public partial class CashBankViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _bankFilteredNet;
+
+    [ObservableProperty]
+    private bool _showUnreconciledOnly;
 
     private readonly List<AccountTransactionRow> _allBankTransactions = [];
     private bool _isClearingBankFilters;
@@ -448,6 +450,7 @@ public partial class CashBankViewModel : ViewModelBase
         BankSearchText = string.Empty;
         BankFromDate = null;
         BankToDate = null;
+        ShowUnreconciledOnly = false;
         _isClearingBankFilters = false;
         ApplyBankFilters();
     }
@@ -475,7 +478,10 @@ public partial class CashBankViewModel : ViewModelBase
                     Description = v.Notes ?? string.Empty,
                     Credit = 0,
                     Debit = v.Amount,
-                    Reference = v.VoucherNumber
+                    Reference = v.VoucherNumber,
+                    VoucherId = v.Id,
+                    IsReconciled = v.IsReconciled,
+                    IsVoucher = true
                 });
             }
 
@@ -490,7 +496,10 @@ public partial class CashBankViewModel : ViewModelBase
                     Description = t.Notes ?? string.Empty,
                     Credit = isIncoming ? t.Amount : 0,
                     Debit = !isIncoming ? t.Amount : 0,
-                    Reference = $"TRF-{t.Id:D4}"
+                    Reference = $"TRF-{t.Id:D4}",
+                    VoucherId = null,
+                    IsReconciled = false,
+                    IsVoucher = false
                 });
             }
 
@@ -522,6 +531,9 @@ public partial class CashBankViewModel : ViewModelBase
                 (t.Description ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
+        if (ShowUnreconciledOnly)
+            query = query.Where(t => t.IsVoucher && !t.IsReconciled);
+
         var list = query.ToList();
         BankTransactions.Clear();
         foreach (var item in list)
@@ -531,6 +543,27 @@ public partial class CashBankViewModel : ViewModelBase
         BankFilteredCredit = list.Sum(t => t.Credit);
         BankFilteredDebit = list.Sum(t => t.Debit);
         BankFilteredNet = BankFilteredCredit - BankFilteredDebit;
+    }
+
+    partial void OnShowUnreconciledOnlyChanged(bool value) => ApplyBankFilters();
+
+    [RelayCommand]
+    private async Task ToggleReconcileAsync(AccountTransactionRow? row)
+    {
+        if (row is null || !row.IsVoucher || row.VoucherId is not int voucherId)
+            return;
+
+        try
+        {
+            var newValue = !row.IsReconciled;
+            await _cashBankService.SetVoucherReconciledAsync(voucherId, newValue);
+            row.IsReconciled = newValue;
+            ApplyBankFilters();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     private void ResetBankStats()

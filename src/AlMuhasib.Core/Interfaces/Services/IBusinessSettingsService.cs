@@ -6,5 +6,10 @@ public interface IBusinessSettingsService
 {
     Task<BusinessSettings> GetOrCreateAsync();
     Task SaveAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase);
+    Task SaveAsync(
+        bool productPricingEnabled,
+        bool updateProductPriceOnPurchase,
+        bool periodLockEnabled,
+        DateTime? lockedThroughDate);
     Task SyncFromFeatureFlagsAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase);
 }

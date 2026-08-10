@@ -170,7 +170,9 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         {
             SyncId = settings.SyncId,
             ProductPricingEnabled = settings.ProductPricingEnabled,
-            UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase
+            UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase,
+            PeriodLockEnabled = settings.PeriodLockEnabled,
+            LockedThroughDate = settings.LockedThroughDate
         };
     }
 

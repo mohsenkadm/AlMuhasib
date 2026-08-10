@@ -156,6 +156,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key == Key.Escape && _viewModel.ShowKeyboardShortcutsHelp)
+        {
+            _viewModel.ShowKeyboardShortcutsHelp = false;
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.F1)
         {
             _viewModel.ToggleKeyboardShortcutsHelpCommand.Execute(null);
@@ -276,6 +283,12 @@ public partial class MainWindow : Window
 
     private void OpenRecentExcelBackdrop_Click(object sender, MouseButtonEventArgs e) =>
         _viewModel.CloseOpenRecentExcelPanelCommand.Execute(null);
+
+    private void KeyboardShortcutsBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.ShowKeyboardShortcutsHelp = false;
+
+    private void KeyboardShortcutsCard_Click(object sender, MouseButtonEventArgs e) =>
+        e.Handled = true;
 
     private void ChromeTabClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

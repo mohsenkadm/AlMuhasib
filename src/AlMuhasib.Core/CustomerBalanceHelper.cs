@@ -87,7 +87,9 @@ public static class CustomerBalanceHelper
             {
                 Date = inv.Date,
                 Description = $"فاتورة مبيعات {inv.InvoiceNumber}",
-                Debit = inv.NetAmount
+                Debit = inv.NetAmount,
+                SourceKind = "Invoice",
+                DocumentId = inv.Id
             });
 
             if (inv.PaymentMethod == PaymentMethod.Credit && inv.PaidAmount > 0)
@@ -96,7 +98,9 @@ public static class CustomerBalanceHelper
                 {
                     Date = inv.Date,
                     Description = $"تسديد فاتورة آجلة {inv.InvoiceNumber}",
-                    Credit = inv.PaidAmount
+                    Credit = inv.PaidAmount,
+                    SourceKind = "Invoice",
+                    DocumentId = inv.Id
                 });
             }
         }
@@ -110,7 +114,9 @@ public static class CustomerBalanceHelper
             {
                 Date = v.Date,
                 Description = $"سند قبض {v.VoucherNumber}",
-                Credit = v.Amount
+                Credit = v.Amount,
+                SourceKind = "Voucher",
+                DocumentId = v.Id
             });
         }
 
@@ -123,7 +129,9 @@ public static class CustomerBalanceHelper
             {
                 Date = v.Date,
                 Description = $"سند تسديد دين {v.VoucherNumber}",
-                Credit = v.Amount
+                Credit = v.Amount,
+                SourceKind = "Voucher",
+                DocumentId = v.Id
             });
         }
 
@@ -133,7 +141,9 @@ public static class CustomerBalanceHelper
             {
                 Date = p.Date,
                 Description = "دفعة قسط",
-                Credit = p.PaidAmount
+                Credit = p.PaidAmount,
+                SourceKind = "Installment",
+                DocumentId = p.Id
             });
         }
 
@@ -203,4 +213,6 @@ public sealed class CustomerBalanceLedgerRow
     public decimal Debit { get; init; }
     public decimal Credit { get; init; }
     public decimal RunningBalance { get; set; }
+    public string SourceKind { get; init; } = string.Empty;
+    public int DocumentId { get; init; }
 }

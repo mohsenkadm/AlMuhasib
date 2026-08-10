@@ -14,6 +14,7 @@ public static class AccountingMenuBuilder
             // شاشات مباشرة (ليست داخل كروب)
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
+            Item("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), "SalesReturn"),
             Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
             Item("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
 
