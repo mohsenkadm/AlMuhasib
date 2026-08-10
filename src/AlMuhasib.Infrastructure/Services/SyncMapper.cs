@@ -168,9 +168,10 @@ internal static class SyncMapper
 
         var investorMap = investors.ToDictionary(i => i.Id, i => i.SyncId);
         var bankMap = bankAccounts.ToDictionary(b => b.Id, b => b.SyncId);
+        var installmentSyncMap = installments.ToDictionary(i => i.Id, i => i.SyncId);
         bundle.Vouchers = changedVouchers
             .Where(v => cbMap.ContainsKey(v.CashBoxId))
-            .Select(v => MapVoucherSafe(v, custMap, investorMap, cbMap, bankMap))
+            .Select(v => MapVoucherSafe(v, custMap, investorMap, cbMap, bankMap, invMap, installmentSyncMap))
             .Where(v => v is not null).Cast<VoucherSyncDto>().ToList();
 
         var etMap = expenseTypes.ToDictionary(e => e.Id, e => e.SyncId);
@@ -335,6 +336,8 @@ internal static class SyncMapper
         CopyBase(s, d);
         d.ProductPricingEnabled = s.ProductPricingEnabled;
         d.UpdateProductPriceOnPurchase = s.UpdateProductPriceOnPurchase;
+        d.PeriodLockEnabled = s.PeriodLockEnabled;
+        d.LockedThroughDate = s.LockedThroughDate;
         return d;
     }
     private static WarehouseSyncDto MapWarehouse(Warehouse w) { var d = new WarehouseSyncDto(); CopyBase(w, d); d.Name = w.Name; d.Location = w.Location; return d; }
@@ -392,8 +395,28 @@ internal static class SyncMapper
     }
     private static InstallmentPlanSyncDto MapInstallmentPlan(InstallmentPlan p, Dictionary<int, Guid> inv, Dictionary<int, Guid> cust) { var d = new InstallmentPlanSyncDto(); CopyBase(p, d); d.InvoiceSyncId = inv[p.InvoiceId]; d.CustomerSyncId = cust[p.CustomerId]; d.FileNumber = p.FileNumber; d.TotalAmount = p.TotalAmount; d.NumberOfInstallments = p.NumberOfInstallments; d.InstallmentAmount = p.InstallmentAmount; d.StartDate = p.StartDate; d.InstallmentType = p.InstallmentType; d.CompanyFeePercentage = p.CompanyFeePercentage; d.CompanyFeeAmount = p.CompanyFeeAmount; return d; }
     private static InstallmentSyncDto MapInstallment(Installment i, Dictionary<int, Guid> plans, Dictionary<int, Guid> cb) { var d = new InstallmentSyncDto(); CopyBase(i, d); d.InstallmentPlanSyncId = plans[i.InstallmentPlanId]; d.DueDate = i.DueDate; d.Amount = i.Amount; d.PaidAmount = i.PaidAmount; d.RemainingAmount = i.RemainingAmount; d.Status = i.Status; d.PaymentDate = i.PaymentDate; d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null; return d; }
-    private static VoucherSyncDto MapVoucher(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank) { var d = new VoucherSyncDto(); CopyBase(v, d); d.VoucherNumber = v.VoucherNumber; d.VoucherType = v.VoucherType; d.Amount = v.Amount; d.BankFees = v.BankFees; d.CustomerSyncId = v.CustomerId.HasValue ? cust.GetValueOrDefault(v.CustomerId.Value) : null; d.InvestorSyncId = v.InvestorId.HasValue ? inv.GetValueOrDefault(v.InvestorId.Value) : null; d.CashBoxSyncId = cb[v.CashBoxId]; d.BankAccountSyncId = v.BankAccountId.HasValue ? bank.GetValueOrDefault(v.BankAccountId.Value) : null; d.Date = v.Date; d.Notes = v.Notes; return d; }
-    private static VoucherSyncDto? MapVoucherSafe(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank)
+    private static VoucherSyncDto MapVoucher(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
+    {
+        var d = new VoucherSyncDto();
+        CopyBase(v, d);
+        d.VoucherNumber = v.VoucherNumber;
+        d.VoucherType = v.VoucherType;
+        d.Amount = v.Amount;
+        d.BankFees = v.BankFees;
+        d.CustomerSyncId = v.CustomerId.HasValue ? cust.GetValueOrDefault(v.CustomerId.Value) : null;
+        d.InvestorSyncId = v.InvestorId.HasValue ? inv.GetValueOrDefault(v.InvestorId.Value) : null;
+        d.CashBoxSyncId = cb[v.CashBoxId];
+        d.BankAccountSyncId = v.BankAccountId.HasValue ? bank.GetValueOrDefault(v.BankAccountId.Value) : null;
+        d.InvoiceSyncId = v.InvoiceId.HasValue && invoices is not null ? invoices.GetValueOrDefault(v.InvoiceId.Value) : null;
+        d.InstallmentSyncId = v.InstallmentId.HasValue && installments is not null ? installments.GetValueOrDefault(v.InstallmentId.Value) : null;
+        d.IsReconciled = v.IsReconciled;
+        d.ReconciledAt = v.ReconciledAt;
+        d.ReconciledBy = v.ReconciledBy;
+        d.Date = v.Date;
+        d.Notes = v.Notes;
+        return d;
+    }
+    private static VoucherSyncDto? MapVoucherSafe(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
     {
         if (!cb.TryGetValue(v.CashBoxId, out var cashBoxSyncId)) return null;
         var d = new VoucherSyncDto(); CopyBase(v, d); d.VoucherNumber = v.VoucherNumber; d.VoucherType = v.VoucherType; d.Amount = v.Amount; d.BankFees = v.BankFees;
@@ -401,6 +424,13 @@ internal static class SyncMapper
         d.InvestorSyncId = v.InvestorId.HasValue ? inv.GetValueOrDefault(v.InvestorId.Value) : null;
         d.CashBoxSyncId = cashBoxSyncId;
         d.BankAccountSyncId = v.BankAccountId.HasValue ? bank.GetValueOrDefault(v.BankAccountId.Value) : null;
+        d.InvoiceSyncId = v.InvoiceId.HasValue && invoices is not null ? invoices.GetValueOrDefault(v.InvoiceId.Value) : null;
+        if (d.InvoiceSyncId == Guid.Empty) d.InvoiceSyncId = null;
+        d.InstallmentSyncId = v.InstallmentId.HasValue && installments is not null ? installments.GetValueOrDefault(v.InstallmentId.Value) : null;
+        if (d.InstallmentSyncId == Guid.Empty) d.InstallmentSyncId = null;
+        d.IsReconciled = v.IsReconciled;
+        d.ReconciledAt = v.ReconciledAt;
+        d.ReconciledBy = v.ReconciledBy;
         d.Date = v.Date; d.Notes = v.Notes;
         return d;
     }
@@ -534,6 +564,8 @@ internal static class SyncMapper
             ApplyBase(entity, dto);
             entity.ProductPricingEnabled = dto.ProductPricingEnabled;
             entity.UpdateProductPriceOnPurchase = dto.UpdateProductPriceOnPurchase;
+            entity.PeriodLockEnabled = dto.PeriodLockEnabled;
+            entity.LockedThroughDate = dto.LockedThroughDate?.Date;
         }
         await db.SaveChangesAsync(ct);
     }
@@ -725,6 +757,8 @@ internal static class SyncMapper
 
     private static async Task UpsertVouchersAsync(AppDbContext db, List<VoucherSyncDto> items, Dictionary<Guid, int> cust, Dictionary<Guid, int> inv, Dictionary<Guid, int> cb, Dictionary<Guid, int> bank, CancellationToken ct)
     {
+        var invoiceMap = await db.Invoices.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
+        var installmentMap = await db.Installments.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
         foreach (var dto in items)
         {
             if (!cb.TryGetValue(dto.CashBoxSyncId, out var cbId)) continue;
@@ -737,6 +771,11 @@ internal static class SyncMapper
             entity.InvestorId = dto.InvestorSyncId.HasValue && inv.TryGetValue(dto.InvestorSyncId.Value, out var iId) ? iId : null;
             entity.CashBoxId = cbId;
             entity.BankAccountId = dto.BankAccountSyncId.HasValue && bank.TryGetValue(dto.BankAccountSyncId.Value, out var bId) ? bId : null;
+            entity.InvoiceId = dto.InvoiceSyncId.HasValue && invoiceMap.TryGetValue(dto.InvoiceSyncId.Value, out var invId) ? invId : null;
+            entity.InstallmentId = dto.InstallmentSyncId.HasValue && installmentMap.TryGetValue(dto.InstallmentSyncId.Value, out var instId) ? instId : null;
+            entity.IsReconciled = dto.IsReconciled;
+            entity.ReconciledAt = dto.ReconciledAt;
+            entity.ReconciledBy = dto.ReconciledBy;
             entity.Date = dto.Date; entity.Notes = dto.Notes;
         }
         await db.SaveChangesAsync(ct);

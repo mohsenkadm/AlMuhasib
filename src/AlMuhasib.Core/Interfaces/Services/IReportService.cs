@@ -430,6 +430,9 @@ public class CustomerStatementRow
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    /// <summary>Invoice | Voucher | Installment</summary>
+    public string SourceKind { get; set; } = string.Empty;
+    public int DocumentId { get; set; }
 }
 
 public class SupplierStatementResult

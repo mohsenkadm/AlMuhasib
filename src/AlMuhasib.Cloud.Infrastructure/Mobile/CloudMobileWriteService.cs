@@ -213,6 +213,10 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             ProductPricingEnabled = request.ProductPricingEnabled,
             UpdateProductPriceOnPurchase = request.UpdateProductPriceOnPurchase,
+            PeriodLockEnabled = request.PeriodLockEnabled ?? existing?.PeriodLockEnabled ?? false,
+            LockedThroughDate = request.PeriodLockEnabled == false
+                ? null
+                : request.LockedThroughDate ?? existing?.LockedThroughDate,
             CreatedAt = existing?.CreatedAt ?? now,
             CreatedBy = existing?.CreatedBy ?? username,
             UpdatedAt = now,
@@ -236,7 +240,9 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         {
             SyncId = saved.SyncId,
             ProductPricingEnabled = saved.ProductPricingEnabled,
-            UpdateProductPriceOnPurchase = saved.UpdateProductPriceOnPurchase
+            UpdateProductPriceOnPurchase = saved.UpdateProductPriceOnPurchase,
+            PeriodLockEnabled = saved.PeriodLockEnabled,
+            LockedThroughDate = saved.LockedThroughDate
         };
     }
 

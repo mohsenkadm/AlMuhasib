@@ -43,6 +43,8 @@ public sealed class BusinessSettingsDto
     public Guid SyncId { get; set; }
     public bool ProductPricingEnabled { get; set; }
     public bool UpdateProductPriceOnPurchase { get; set; }
+    public bool PeriodLockEnabled { get; set; }
+    public DateTime? LockedThroughDate { get; set; }
 }
 
 public sealed class MasterDataBundle

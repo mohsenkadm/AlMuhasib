@@ -15,6 +15,7 @@ public partial class PersonProfileViewModel : ViewModelBase
     private readonly IPersonProfileService _personProfileService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IWhatsAppShareService _whatsAppShare;
 
     private List<PersonLookupItem> _allPeople = [];
     private PersonProfileResult? _currentProfile;
@@ -64,11 +65,13 @@ public partial class PersonProfileViewModel : ViewModelBase
     public PersonProfileViewModel(
         IPersonProfileService personProfileService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IWhatsAppShareService whatsAppShare)
     {
         _personProfileService = personProfileService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _whatsAppShare = whatsAppShare;
         PageTitle = "ملف الشخص";
 
         TypeFilters.Add(new PersonTypeFilterItem(null, "الكل", PackIconKind.AccountMultiple) { IsSelected = true });

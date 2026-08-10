@@ -40,6 +40,8 @@ public class CloudBusinessSettings : CloudBaseEntity
 {
     public bool ProductPricingEnabled { get; set; }
     public bool UpdateProductPriceOnPurchase { get; set; }
+    public bool PeriodLockEnabled { get; set; }
+    public DateTime? LockedThroughDate { get; set; }
 }
 public class CloudWarehouse : CloudBaseEntity { public string Name { get; set; } = string.Empty; public string? Location { get; set; } }
 public class CloudCustomer : CloudBaseEntity
@@ -145,10 +147,12 @@ public class CloudInvoice : CloudBaseEntity
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public int? RelatedInvoiceId { get; set; }
     public CloudCustomer? Customer { get; set; }
     public CloudSupplier? Supplier { get; set; }
     public CloudWarehouse Warehouse { get; set; } = null!;
     public CloudCashBox? CashBox { get; set; }
+    public CloudInvoice? RelatedInvoice { get; set; }
     public ICollection<CloudInvoiceItem> Items { get; set; } = [];
     public ICollection<CloudInstallmentPlan> InstallmentPlans { get; set; } = [];
 }
@@ -205,12 +209,19 @@ public class CloudVoucher : CloudBaseEntity
     public int? InvestorId { get; set; }
     public int CashBoxId { get; set; }
     public int? BankAccountId { get; set; }
+    public int? InvoiceId { get; set; }
+    public int? InstallmentId { get; set; }
+    public bool IsReconciled { get; set; }
+    public DateTime? ReconciledAt { get; set; }
+    public string? ReconciledBy { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }
     public CloudCustomer? Customer { get; set; }
     public CloudInvestor? Investor { get; set; }
     public CloudCashBox CashBox { get; set; } = null!;
     public CloudBankAccount? BankAccount { get; set; }
+    public CloudInvoice? Invoice { get; set; }
+    public CloudInstallment? Installment { get; set; }
 }
 public class CloudExpense : CloudBaseEntity
 {

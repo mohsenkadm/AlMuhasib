@@ -42,8 +42,23 @@ public class VoucherConfiguration : IEntityTypeConfiguration<Voucher>
             .HasForeignKey(v => v.BankAccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(v => v.Invoice)
+            .WithMany()
+            .HasForeignKey(v => v.InvoiceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(v => v.Installment)
+            .WithMany()
+            .HasForeignKey(v => v.InstallmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(v => v.ReconciledBy).HasMaxLength(100);
+
         builder.HasIndex(v => v.VoucherNumber).IsUnique();
         builder.HasIndex(v => v.Date);
         builder.HasIndex(v => v.VoucherType);
+        builder.HasIndex(v => v.InvoiceId);
+        builder.HasIndex(v => v.InstallmentId);
+        builder.HasIndex(v => v.IsReconciled);
     }
 }

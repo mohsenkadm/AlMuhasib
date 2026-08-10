@@ -369,6 +369,8 @@
                                         <ColumnDefinition Width="140"/>
                                         <ColumnDefinition Width="12"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0"
                                              materialDesign:HintAssist.Hint="بحث (النوع، المرجع، الوصف)"
@@ -383,7 +385,12 @@
                                                 materialDesign:HintAssist.Hint="إلى تاريخ"
                                                 SelectedDate="{Binding BankToDate}"
                                                 Style="{StaticResource FilledDatePicker}"/>
-                                    <Button Grid.Column="6"
+                                    <CheckBox Grid.Column="6"
+                                              Content="غير المسوّاة فقط"
+                                              IsChecked="{Binding ShowUnreconciledOnly}"
+                                              VerticalAlignment="Center"
+                                              FontSize="12"/>
+                                    <Button Grid.Column="8"
                                             Command="{Binding ClearBankFiltersCommand}"
                                             ToolTip="مسح الفلاتر"
                                             Style="{StaticResource FlatButton}">
@@ -429,6 +436,46 @@
                                     </DataGridTextColumn>
                                     <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description" />
+                                    <DataGridTemplateColumn Header="التسوية" Width="140"
+                                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="—"/>
+                                                                <Setter Property="Foreground" Value="#9E9E9E"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsVoucher}" Value="True">
+                                                                        <Setter Property="Text" Value="غير مسوّى"/>
+                                                                        <Setter Property="Foreground" Value="#EF6C00"/>
+                                                                    </DataTrigger>
+                                                                    <MultiDataTrigger>
+                                                                        <MultiDataTrigger.Conditions>
+                                                                            <Condition Binding="{Binding IsVoucher}" Value="True"/>
+                                                                            <Condition Binding="{Binding IsReconciled}" Value="True"/>
+                                                                        </MultiDataTrigger.Conditions>
+                                                                        <Setter Property="Text" Value="مسوّى"/>
+                                                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                    </MultiDataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <Button Command="{Binding DataContext.ToggleReconcileCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource FlatButton}"
+                                                            Padding="6,2"
+                                                            FontSize="11"
+                                                            Visibility="{Binding IsVoucher, Converter={StaticResource BoolToVis}}"
+                                                            ToolTip="تبديل حالة التسوية البنكية">
+                                                        <materialDesign:PackIcon Kind="CheckCircleOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
 

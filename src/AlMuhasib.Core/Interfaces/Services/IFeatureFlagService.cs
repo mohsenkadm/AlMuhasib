@@ -8,6 +8,7 @@ public interface IFeatureFlagService
     BusinessFeatureFlags Current { get; }
 
     bool PurchaseReturns { get; }
+    bool SalesReturns { get; }
     bool WarehouseTransfers { get; }
     bool UnitsOfMeasure { get; }
     bool MenuWeight { get; }

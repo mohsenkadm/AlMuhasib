@@ -179,7 +179,11 @@ public sealed partial class SyncEngine : ISyncEngine
                 var customerId = await resolver.ResolveCustomerAsync(dto.CustomerSyncId, ct);
                 var investorId = await resolver.ResolveInvestorAsync(dto.InvestorSyncId, ct);
                 var bankId = await resolver.ResolveBankAccountAsync(dto.BankAccountSyncId, ct);
-                accepted += await UpsertVoucherAsync(tenantId, dto, cashBoxId.Value, customerId, investorId, bankId, response, ct);
+                var linkedInvoiceId = await resolver.ResolveInvoiceAsync(dto.InvoiceSyncId, ct);
+                var linkedInstallmentId = await resolver.ResolveInstallmentAsync(dto.InstallmentSyncId, ct);
+                accepted += await UpsertVoucherAsync(
+                    tenantId, dto, cashBoxId.Value, customerId, investorId, bankId,
+                    linkedInvoiceId, linkedInstallmentId, response, ct);
             }
 
             foreach (var dto in request.Data.Expenses)
@@ -454,6 +458,8 @@ public sealed partial class SyncEngine : ISyncEngine
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.ProductPricingEnabled = dto.ProductPricingEnabled;
         existing.UpdateProductPriceOnPurchase = dto.UpdateProductPriceOnPurchase;
+        existing.PeriodLockEnabled = dto.PeriodLockEnabled;
+        existing.LockedThroughDate = dto.LockedThroughDate?.Date;
         return 1;
     }
 
@@ -689,7 +695,17 @@ public sealed partial class SyncEngine : ISyncEngine
         return 1;
     }
 
-    private async Task<int> UpsertVoucherAsync(int tenantId, VoucherSyncDto dto, int cashBoxId, int? customerId, int? investorId, int? bankId, SyncPushResponse response, CancellationToken ct)
+    private async Task<int> UpsertVoucherAsync(
+        int tenantId,
+        VoucherSyncDto dto,
+        int cashBoxId,
+        int? customerId,
+        int? investorId,
+        int? bankId,
+        int? invoiceId,
+        int? installmentId,
+        SyncPushResponse response,
+        CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.Vouchers, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "Voucher", dto.SyncId, "Server version is newer"); return 0; }
@@ -703,6 +719,11 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.InvestorId = investorId;
         existing.CashBoxId = cashBoxId;
         existing.BankAccountId = bankId;
+        existing.InvoiceId = invoiceId;
+        existing.InstallmentId = installmentId;
+        existing.IsReconciled = dto.IsReconciled;
+        existing.ReconciledAt = dto.ReconciledAt;
+        existing.ReconciledBy = dto.ReconciledBy;
         existing.Date = dto.Date;
         existing.Notes = dto.Notes;
         return 1;
@@ -985,6 +1006,8 @@ public sealed partial class SyncEngine : ISyncEngine
         var investors = await _db.Investors.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var banks = await _db.BankAccounts.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var invoices = await _db.Invoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var installments = await _db.Installments.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var vouchers = await _db.Vouchers.IgnoreQueryFilters()
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return vouchers.Select(v => new VoucherSyncDto
@@ -996,6 +1019,11 @@ public sealed partial class SyncEngine : ISyncEngine
             InvestorSyncId = v.InvestorId.HasValue ? investors.GetValueOrDefault(v.InvestorId.Value) : null,
             CashBoxSyncId = cashBoxes.GetValueOrDefault(v.CashBoxId),
             BankAccountSyncId = v.BankAccountId.HasValue ? banks.GetValueOrDefault(v.BankAccountId.Value) : null,
+            InvoiceSyncId = v.InvoiceId.HasValue && invoices.TryGetValue(v.InvoiceId.Value, out var invSync) ? invSync : null,
+            InstallmentSyncId = v.InstallmentId.HasValue && installments.TryGetValue(v.InstallmentId.Value, out var instSync) ? instSync : null,
+            IsReconciled = v.IsReconciled,
+            ReconciledAt = v.ReconciledAt,
+            ReconciledBy = v.ReconciledBy,
             Date = v.Date, Notes = v.Notes
         }).ToList();
     }
@@ -1100,7 +1128,9 @@ public sealed partial class SyncEngine : ISyncEngine
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         ProductPricingEnabled = e.ProductPricingEnabled,
-        UpdateProductPriceOnPurchase = e.UpdateProductPriceOnPurchase
+        UpdateProductPriceOnPurchase = e.UpdateProductPriceOnPurchase,
+        PeriodLockEnabled = e.PeriodLockEnabled,
+        LockedThroughDate = e.LockedThroughDate
     };
 
     private static WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()

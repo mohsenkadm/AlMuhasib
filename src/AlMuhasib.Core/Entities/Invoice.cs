@@ -57,7 +57,11 @@ public class Invoice : BaseEntity
     /// <summary>جزء خصم الفاتورة الناتج عن استبدال نقاط الولاء.</summary>
     public decimal LoyaltyRedeemDiscountAmount { get; set; }
 
+    /// <summary>فاتورة المرجع عند المرتجع (بيع أو شراء).</summary>
+    public int? RelatedInvoiceId { get; set; }
+
     // Navigation
+    public Invoice? RelatedInvoice { get; set; }
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
     public Driver? Driver { get; set; }

@@ -117,6 +117,8 @@ public class CustomerAgingDetailRow
 {
     public string SourceType { get; set; } = string.Empty;
     public string Reference { get; set; } = string.Empty;
+    public int ReferenceId { get; set; }
+    public int? InvoiceId { get; set; }
     public DateTime DueDate { get; set; }
     public decimal RemainingAmount { get; set; }
     public int DaysOverdue { get; set; }

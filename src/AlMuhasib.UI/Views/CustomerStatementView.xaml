@@ -118,6 +118,7 @@
                         <DataGrid x:Name="CustomerStatementGrid"
                                   ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
                                   CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" MinHeight="300"
+                                  behaviors:DataGridReportRowBehavior.DoubleClickCommand="{Binding OpenStatementDocumentFromRowCommand}"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                   behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"

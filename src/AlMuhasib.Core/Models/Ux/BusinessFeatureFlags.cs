@@ -4,6 +4,10 @@ namespace AlMuhasib.Core.Models.Ux;
 public class BusinessFeatureFlags
 {
     public bool PurchaseReturns { get; set; }
+
+    /// <summary>مرتجع مبيعات — معطّل افتراضياً.</summary>
+    public bool SalesReturns { get; set; }
+
     public bool WarehouseTransfers { get; set; }
     public bool UnitsOfMeasure { get; set; }
 

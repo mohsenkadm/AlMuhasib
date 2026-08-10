@@ -169,6 +169,13 @@ public partial class ReportViewModelBase
             return;
 
         var (invoiceId, paymentLabel, companyFee) = ResolveInvoiceFromRow(row);
+        if (invoiceId <= 0 && row is ReceivablesAgingRow aging &&
+            string.Equals(aging.SourceType, "أقساط", StringComparison.Ordinal))
+        {
+            invoiceId = await ResolveInvoiceIdFromInstallmentAsync(aging.ReferenceId);
+            paymentLabel = "أقساط";
+        }
+
         if (invoiceId <= 0)
         {
             BeautifulMessageDialog.ShowWarning("لا توجد فاتورة مرتبطة بهذا السجل");
@@ -197,6 +204,15 @@ public partial class ReportViewModelBase
         }
     }
 
+    private async Task<int> ResolveInvoiceIdFromInstallmentAsync(int installmentId)
+    {
+        if (installmentId <= 0) return 0;
+        var installment = await _unitOfWork.Installments.GetByIdAsync(installmentId);
+        if (installment is null) return 0;
+        var plan = await _unitOfWork.InstallmentPlans.GetByIdAsync(installment.InstallmentPlanId);
+        return plan?.InvoiceId ?? 0;
+    }
+
     private static (int invoiceId, string? paymentLabel, decimal? companyFee) ResolveInvoiceFromRow(object row) =>
         row switch
         {
@@ -205,6 +221,9 @@ public partial class ReportViewModelBase
             UnpaidInstallmentRow u => (u.InvoiceId, "أقساط", null),
             OverdueRow o => (o.InvoiceId, o.InstallmentId > 0 ? "أقساط" : "آجل", null),
             InstallmentAgingRow a => (a.InvoiceId, "أقساط", null),
+            ReceivablesAgingRow r when r.SourceType == "آجل" => (r.ReferenceId, "آجل", null),
+            ReceivablesAgingRow => (0, null, null),
+            PayablesAgingRow pay => (pay.InvoiceId, "آجل", null),
             _ => (0, null, null)
         };
 

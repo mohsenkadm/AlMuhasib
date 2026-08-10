@@ -29,6 +29,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private int _backupRetainCount = 7;
 
     [ObservableProperty] private bool _purchaseReturns;
+    [ObservableProperty] private bool _salesReturns;
     [ObservableProperty] private bool _warehouseTransfers;
     [ObservableProperty] private bool _unitsOfMeasure;
     [ObservableProperty] private bool _transportFees;
@@ -51,12 +52,15 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private int _idleLockMinutes;
     [ObservableProperty] private decimal _posMinInstallmentAmount = 50_000m;
 
+    [ObservableProperty] private bool _periodLockEnabled;
+    [ObservableProperty] private DateTime? _lockedThroughDate;
+
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _saveSuccessPulse;
 
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
-            AutoBackupEnabled, PurchaseReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
+            AutoBackupEnabled, PurchaseReturns, SalesReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
             WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, SalesRepresentatives,
@@ -99,6 +103,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             var settings = await _businessSettingsService.GetOrCreateAsync();
             ProductPricingEnabled = settings.ProductPricingEnabled || ProductPricingEnabled;
             UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase || UpdateProductPriceOnPurchase;
+            PeriodLockEnabled = settings.PeriodLockEnabled;
+            LockedThroughDate = settings.LockedThroughDate;
             NotifyFeaturesCount();
         }
         catch
@@ -120,6 +126,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         BackupRetainCount = p.Backup.RetainCount;
 
         PurchaseReturns = p.FeatureFlags.PurchaseReturns;
+        SalesReturns = p.FeatureFlags.SalesReturns;
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
         TransportFees = p.FeatureFlags.TransportFees;
@@ -153,6 +160,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnReminderShowBannerChanged(bool value) => NotifyFeaturesCount();
     partial void OnAutoBackupEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnPurchaseReturnsChanged(bool value) => NotifyFeaturesCount();
+    partial void OnSalesReturnsChanged(bool value) => NotifyFeaturesCount();
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
     partial void OnTransportFeesChanged(bool value) => NotifyFeaturesCount();
@@ -198,6 +206,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.Backup.RetainCount = Math.Max(1, BackupRetainCount);
 
             p.FeatureFlags.PurchaseReturns = PurchaseReturns;
+            p.FeatureFlags.SalesReturns = SalesReturns;
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
             p.FeatureFlags.TransportFees = TransportFees;
@@ -223,7 +232,11 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
         try
         {
-            await _businessSettingsService.SaveAsync(ProductPricingEnabled, UpdateProductPriceOnPurchase);
+            await _businessSettingsService.SaveAsync(
+                ProductPricingEnabled,
+                UpdateProductPriceOnPurchase,
+                PeriodLockEnabled,
+                LockedThroughDate);
             if (ProductPricingEnabled)
                 await _pricingTypeService.EnsureDefaultExistsAsync();
             if (UnitsOfMeasure)

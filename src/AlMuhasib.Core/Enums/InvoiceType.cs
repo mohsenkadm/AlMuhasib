@@ -5,7 +5,8 @@ public enum InvoiceType
     Purchase,
     Sale,
     Installment,
-    PurchaseReturn
+    PurchaseReturn,
+    SaleReturn
 }
 
 public enum InvoiceHoldStatus

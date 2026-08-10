@@ -28,12 +28,14 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private readonly IRecentActivityService _recentActivity;
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
+    private readonly ICustomerCreditService _customerCreditService;
     private DispatcherTimer? _draftSaveTimer;
     private const string DraftKey = "sales-invoice";
 
     // saved invoice reference for printing
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
+    private int? _relatedInvoiceId;
 
     // ── Header ─────────────────────────────────────────────
     [ObservableProperty]
@@ -144,12 +146,19 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private string _errorMessage = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     private bool _isReturnMode;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
     [NotifyPropertyChangedFor(nameof(CanPrintSavedInvoice))]
     private bool _isSaved;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasInvoiceWarnings))]
+    private string _invoiceWarningsBanner = string.Empty;
+
+    public bool HasInvoiceWarnings => !string.IsNullOrWhiteSpace(InvoiceWarningsBanner);
 
     public bool CanSave => !IsSaved;
 
@@ -189,7 +198,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         ILoyaltyService loyaltyService,
         ISalesRepService salesRepService,
         IPartyQuickDetailService partyQuickDetail,
-        IProductQuickDetailService productQuickDetail)
+        IProductQuickDetailService productQuickDetail,
+        ICustomerCreditService customerCreditService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -201,6 +211,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _recentActivity = recentActivity;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
+        _customerCreditService = customerCreditService;
         _templateService = templateService;
         _queueService = queueService;
         _productPriceService = productPriceService;
@@ -366,7 +377,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             if (InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId is int pendingReturnId)
             {
                 InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = null;
+                InvoiceNavigationBridge.PendingSalesReturnMode = false;
                 await LoadAsReturnFromInvoiceAsync(pendingReturnId);
+            }
+            else if (InvoiceNavigationBridge.PendingSalesReturnMode)
+            {
+                InvoiceNavigationBridge.PendingSalesReturnMode = false;
+                await EnterReturnModeAsync();
             }
             else if (InvoiceNavigationBridge.PendingSalesCopyInvoiceId is int pendingCopyId)
             {
@@ -469,20 +486,58 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         BeautifulMessageDialog.ShowSuccess($"تم نسخ {invoice.Items.Count} بند من الفاتورة {invoice.InvoiceNumber}");
     }
 
+    public async Task EnterReturnModeAsync(string? reference = null)
+    {
+        if (_featureFlags is not null && !_featureFlags.SalesReturns)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        IsReturnMode = true;
+        PageTitle = "مرتجع مبيعات";
+        SelectedPaymentMethod = PaymentMethod.Cash;
+        if (!string.IsNullOrWhiteSpace(reference) && string.IsNullOrWhiteSpace(Notes))
+            Notes = $"مرتجع مبيعات — مرجع {reference}";
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.SaleReturn);
+        RefreshInvoiceWarnings();
+    }
+
     public async Task LoadAsReturnFromInvoiceAsync(int invoiceId)
     {
+        if (_featureFlags is not null && !_featureFlags.SalesReturns)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
+            return;
+        }
+
         var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
         var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
         await CopyFromInvoiceAsync(invoiceId);
-        IsReturnMode = true;
-        SelectedPaymentMethod = PaymentMethod.Cash;
-        Notes = $"مرتجع مبيعات — مرجع {refNumber}";
+        _relatedInvoiceId = invoiceId;
+        await EnterReturnModeAsync(refNumber);
 
         foreach (var row in Items.Where(i => i.Quantity != 0).ToList())
-            row.Quantity = -Math.Abs(row.Quantity);
+            row.Quantity = Math.Abs(row.Quantity);
 
         RecalculateTotals();
-        BeautifulMessageDialog.ShowInfo("وضع المرتجع: الكميات سالبة لإرجاع البضاعة للمخزن. راجع ثم احفظ.");
+        RefreshInvoiceWarnings();
+        BeautifulMessageDialog.ShowInfo("وضع المرتجع: راجع الكميات ثم احفظ لإرجاع البضاعة للمخزن واسترداد النقد.");
+    }
+
+    partial void OnSelectedPaymentMethodChanged(PaymentMethod value) => RefreshInvoiceWarnings();
+    partial void OnGrandTotalChanged(decimal value) => RefreshInvoiceWarnings();
+
+    private void RefreshInvoiceWarnings()
+    {
+        var warnings = new List<string>();
+        if (IsReturnMode)
+            warnings.Add("وضع مرتجع مبيعات — سيتم زيادة المخزون وخصم المبلغ من القاصة عند الحفظ النقدي.");
+        if (IsCreditPayment && SelectedCustomer?.MaxCreditLimit is > 0)
+            warnings.Add($"حد ائتمان العميل: {SelectedCustomer.MaxCreditLimit:N0} د.ع — سيُفحص عند الحفظ.");
+        if (!IsReturnMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
+            warnings.Add("F4 إضافة منتج · F5 فحص الربح · Ctrl+S حفظ · F7 حاسبة العملة · Esc إلغاء المسودة.");
+        InvoiceWarningsBanner = string.Join("  |  ", warnings);
     }
 
     // ── Customer search ────────────────────────────────────
@@ -493,6 +548,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             CustomerSearchText = value.Name;
         ApplyCustomerDefaultSalesRep(value);
         _ = RefreshLoyaltyQuoteAsync();
+        RefreshInvoiceWarnings();
     }
 
     partial void OnCustomerSearchTextChanged(string value)
@@ -835,29 +891,28 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
-        // Stock validation for items with known products
-        if (SelectedWarehouse is not null)
+        if (IsReturnMode && _featureFlags is not null && !_featureFlags.SalesReturns)
+        {
+            ErrorMessage = "فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً";
+            return;
+        }
+
+        // Stock validation for sales (not returns — returns increase stock)
+        if (SelectedWarehouse is not null && !IsReturnMode)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
             {
                 var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                     s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
                 var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-                var qty = Math.Abs(item.Quantity);
-                if (!IsReturnMode && item.Quantity > available)
+                if (item.Quantity > available)
                 {
                     ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
                     return;
                 }
-
-                if (IsReturnMode && qty > available)
-                {
-                    ErrorMessage = $"كمية المرتجع من '{item.ItemName}' ({qty:N0}) تتجاوز ما يمكن إرجاعه للمخزن ({available:N0})";
-                    return;
-                }
             }
 
-            if (!IsReturnMode && _featureFlags?.ExpiryTracking == true && _productBatchService is not null)
+            if (_featureFlags?.ExpiryTracking == true && _productBatchService is not null)
             {
                 foreach (var item in validItems.Where(i => i.ProductId.HasValue))
                 {
@@ -885,6 +940,18 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
+        if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode)
+        {
+            var creditCheck = await _customerCreditService.CheckCreditAsync(
+                SelectedCustomer.Id, GrandTotal, isInstallment: false);
+            if (!creditCheck.IsAllowed)
+            {
+                if (!BeautifulMessageDialog.ShowConfirm(
+                        $"{creditCheck.Message}\n\nهل تريد المتابعة رغم تجاوز حد الائتمان؟"))
+                    return;
+            }
+        }
+
         IsBusy = true;
 
         try
@@ -905,7 +972,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 customerId = newCustomer.Id;
             }
 
-            var invoiceType = IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
+            var invoiceType = IsReturnMode
+                ? InvoiceType.SaleReturn
+                : IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
 
             var invoice = new Invoice
             {
@@ -924,6 +993,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 LoyaltyRedeemDiscountAmount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
                 LoyaltyPointsRedeemed = ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                RelatedInvoiceId = IsReturnMode ? _relatedInvoiceId : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -945,8 +1015,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                         row.CustomField1Label = ClothingSizeInvoiceHelper.SizeLabel;
                 }
 
-                var displayQty = row.Quantity;
-                var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
+                var displayQty = IsReturnMode ? Math.Abs(row.Quantity) : row.Quantity;
+                var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
+                if (IsReturnMode)
+                    stockQty = Math.Abs(stockQty);
                 var lineGross = displayQty * row.UnitPrice;
                 var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
                 if (lineDiscount > Math.Abs(lineGross))
@@ -1017,13 +1089,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
             _draftService.ClearDraft(DraftKey);
             _recentActivity.Record(
-                "فاتورة مبيعات",
+                IsReturnMode ? "مرتجع مبيعات" : "فاتورة مبيعات",
                 $"{saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع",
-                "SaleInvoice",
+                IsReturnMode ? "SalesReturn" : "SaleInvoice",
                 typeof(SalesInvoiceViewModel));
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الفاتورة بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
+                $"تم حفظ {(IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
             PrintInvoice();
         }

@@ -22,10 +22,13 @@ public interface ICashBankService
     // ── Vouchers ─────────────────────────────────────────
     Task<Voucher> CreateVoucherAsync(Voucher voucher);
     Task DeleteVoucherAsync(int id);
+    Task SetVoucherReconciledAsync(int voucherId, bool isReconciled);
     Task<string> GetNextVoucherNumberAsync(VoucherType type);
     Task<(IEnumerable<Voucher> Items, int TotalCount)> GetPagedVouchersAsync(
         int page, int pageSize, VoucherType? type = null, DateTime? fromDate = null,
         DateTime? toDate = null, string? searchTerm = null);
+    Task<IReadOnlyList<Invoice>> GetOpenCreditInvoicesForCustomerAsync(int customerId);
+    Task<IReadOnlyList<Installment>> GetOpenInstallmentsForCustomerAsync(int customerId);
 
     // ── Transaction history ──────────────────────────────
     Task<IEnumerable<Voucher>> GetVouchersByCashBoxAsync(int cashBoxId);

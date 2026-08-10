@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
+using AlMuhasib.UI.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -34,6 +36,51 @@ public partial class PersonProfileViewModel
     public ObservableCollection<CustomerDueItemRow> DueRows { get; } = [];
     public ObservableCollection<CustomerDueItemRow> FilteredDueRows { get; } = [];
     public ObservableCollection<CustomerAgingBucketRow> AgingBuckets { get; } = [];
+
+    [RelayCommand]
+    private void SendDebtReminderWhatsApp()
+    {
+        if (SelectedPerson is null || !ShowCustomerExtras)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر عميلاً أولاً");
+            return;
+        }
+
+        var overdueAging = AgingDetailRows.Where(a => a.DaysOverdue > 0 && a.RemainingAmount > 0).ToList();
+        var overdueDues = DueRows.Where(d =>
+            d.RemainingAmount > 0 &&
+            (d.Status.Contains("متأخر", StringComparison.OrdinalIgnoreCase) ||
+             (d.DueDate.HasValue && d.DueDate.Value.Date < DateTime.Today))).ToList();
+
+        decimal sum;
+        int count;
+        if (overdueAging.Count > 0)
+        {
+            sum = overdueAging.Sum(a => a.RemainingAmount);
+            count = overdueAging.Count;
+        }
+        else if (overdueDues.Count > 0)
+        {
+            sum = overdueDues.Sum(d => d.RemainingAmount);
+            count = overdueDues.Count;
+        }
+        else
+        {
+            BeautifulMessageDialog.ShowWarning("لا توجد مستحقات متأخرة لإرسال تذكير");
+            return;
+        }
+
+        var name = PersonName;
+        var message = string.Join("\n",
+            "السلام عليكم،",
+            $"السيد/ة {name}،",
+            $"نود تذكيركم بوجود {count} مستحق/مستحقات متأخرة بإجمالي {sum:N0} د.ع.",
+            "يرجى التسديد في أقرب وقت ممكن.",
+            "",
+            "مع التحية — المحاسب");
+
+        _whatsAppShare.ShareTextMessage(Phone == "—" ? null : Phone, name, message);
+    }
 
     private void ApplyCustomerInsights(CustomerProfileInsights? insights)
     {

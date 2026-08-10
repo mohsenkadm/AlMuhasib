@@ -164,6 +164,10 @@
                                                     Description="إرجاع فواتير المشتريات للموردين"
                                                     Icon="KeyboardReturn" IconBackground="#FFEBEE" IconForeground="#C62828"
                                                     IsChecked="{Binding PurchaseReturns}"/>
+                        <controls:FeatureToggleCard Title="مرتجع مبيعات"
+                                                    Description="إرجاع فواتير المبيعات للعملاء واستعادة المخزون"
+                                                    Icon="BackupRestore" IconBackground="#FFF3E0" IconForeground="#EF6C00"
+                                                    IsChecked="{Binding SalesReturns}"/>
                         <controls:FeatureToggleCard Title="نقل بين مخازن"
                                                     Description="تحويل المخزون بين المخازن"
                                                     Icon="TruckDelivery" IconBackground="#E3F2FD" IconForeground="#1565C0"
@@ -277,6 +281,23 @@
                             <TextBox Text="{Binding PosMinInstallmentAmount, StringFormat=N0}" Style="{StaticResource NumericTextBox}" Width="160" HorizontalAlignment="Right"/>
                         </StackPanel>
                     </Grid>
+                    <Separator Margin="0,18,0,14" Background="{DynamicResource SubtleBorderBrush}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <materialDesign:PackIcon Kind="CalendarLock" Width="20" Height="20" Foreground="#C62828" VerticalAlignment="Center"/>
+                        <TextBlock Text="قفل الفترة المحاسبية" FontSize="14" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <controls:FeatureToggleCard Title="تفعيل قفل الفترة"
+                                                Description="منع حفظ مستندات بتاريخ ضمن الفترة المقفلة أو قبلها"
+                                                Icon="Lock" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                IsChecked="{Binding PeriodLockEnabled}"/>
+                    <StackPanel Margin="0,10,0,0"
+                                Visibility="{Binding PeriodLockEnabled, Converter={StaticResource BoolVis}}">
+                        <TextBlock Text="مقفل حتى تاريخ (شامل)" FontSize="13" Margin="0,0,0,8"/>
+                        <DatePicker SelectedDate="{Binding LockedThroughDate}"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    Width="200" HorizontalAlignment="Right"
+                                    materialDesign:HintAssist.Hint="آخر يوم مقفل"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

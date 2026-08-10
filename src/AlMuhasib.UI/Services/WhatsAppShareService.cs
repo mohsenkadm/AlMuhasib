@@ -25,6 +25,14 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
         OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, title);
     }
 
+    public void ShareTextMessage(string? phone, string partyName, string message)
+    {
+        if (!TryResolvePhone(phone, partyName, out var waDigits, out _))
+            return;
+
+        TryOpenWhatsAppChat(waDigits, message);
+    }
+
     public void ShareInvoice(InvoicePrintModel model, string? customerPhone, string customerName)
     {
         var phone = !string.IsNullOrWhiteSpace(customerPhone) ? customerPhone : model.PartyPhone;

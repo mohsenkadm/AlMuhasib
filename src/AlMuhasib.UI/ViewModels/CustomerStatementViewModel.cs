@@ -32,10 +32,11 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
 
     public CustomerStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IWhatsAppShareService whatsAppShare)
+        IWhatsAppShareService whatsAppShare, IInvoiceService invoiceService)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _whatsAppShare = whatsAppShare;
+        InitReportActionServices(invoiceService);
         PageTitle = "كشف حساب عميل";
         DateFrom = null;
         DateTo = null;
@@ -175,6 +176,65 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
         };
 
         _whatsAppShare.ShareStatement(model, SelectedCustomer.Phone, CustomerName);
+    }
+
+    [RelayCommand]
+    private async Task OpenStatementDocumentFromRowAsync(object? row)
+    {
+        if (row is not CustomerStatementRow statementRow || statementRow.DocumentId <= 0)
+            return;
+
+        if (string.Equals(statementRow.SourceKind, "Invoice", StringComparison.OrdinalIgnoreCase))
+        {
+            if (InvoiceService is null)
+                return;
+
+            try
+            {
+                IsBusy = true;
+                var invoice = await InvoiceService.GetByIdWithDetailsAsync(statementRow.DocumentId);
+                if (invoice is null)
+                {
+                    BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة");
+                    return;
+                }
+
+                InvoiceDetailDialog.Show(invoice);
+            }
+            catch (Exception ex)
+            {
+                BeautifulMessageDialog.ShowError(ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+            return;
+        }
+
+        if (string.Equals(statementRow.SourceKind, "Voucher", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var voucher = await _unitOfWork.Vouchers.GetByIdAsync(statementRow.DocumentId);
+                if (voucher is null)
+                {
+                    BeautifulMessageDialog.ShowWarning("السند غير موجود");
+                    return;
+                }
+
+                BeautifulMessageDialog.ShowInfo(
+                    $"سند: {voucher.VoucherNumber}\n" +
+                    $"المبلغ: {voucher.Amount:N0} د.ع\n" +
+                    $"التاريخ: {voucher.Date:yyyy/MM/dd}\n" +
+                    (string.IsNullOrWhiteSpace(voucher.Notes) ? "" : $"ملاحظات: {voucher.Notes}"));
+            }
+            catch (Exception ex)
+            {
+                BeautifulMessageDialog.ShowError(ex.Message);
+            }
+        }
     }
 
     private string BuildPeriodLabel()

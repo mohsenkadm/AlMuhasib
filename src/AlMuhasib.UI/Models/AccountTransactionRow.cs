@@ -24,4 +24,13 @@ public partial class AccountTransactionRow : ObservableObject
 
     [ObservableProperty]
     private string _reference = string.Empty;
+
+    [ObservableProperty]
+    private int? _voucherId;
+
+    [ObservableProperty]
+    private bool _isReconciled;
+
+    [ObservableProperty]
+    private bool _isVoucher;
 }

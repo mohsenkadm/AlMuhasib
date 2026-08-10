@@ -13,6 +13,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public BusinessFeatureFlags Current => _preferences.Current.FeatureFlags;
 
     public bool PurchaseReturns => Current.PurchaseReturns;
+    public bool SalesReturns => Current.SalesReturns;
     public bool WarehouseTransfers => Current.WarehouseTransfers;
     public bool UnitsOfMeasure => Current.UnitsOfMeasure;
     public bool MenuWeight => Current.MenuWeight;

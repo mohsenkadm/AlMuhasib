@@ -12,11 +12,16 @@ public class CashBankService : ICashBankService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAccountingPeriodLockService _periodLockService;
 
-    public CashBankService(IDbContextFactory<AppDbContext> contextFactory, ICurrentUserService currentUserService)
+    public CashBankService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        ICurrentUserService currentUserService,
+        IAccountingPeriodLockService periodLockService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _periodLockService = periodLockService;
     }
 
     // ══════════════════════════════════════════════════════
@@ -218,6 +223,8 @@ public class CashBankService : ICashBankService
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
+            await _periodLockService.EnsureDateAllowedAsync(voucher.Date);
+
             var username = _currentUserService.Username;
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
@@ -225,15 +232,26 @@ public class CashBankService : ICashBankService
             if (string.IsNullOrEmpty(voucher.VoucherNumber))
                 voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);
 
+            if (voucher.InvoiceId.HasValue && voucher.InstallmentId.HasValue)
+                throw new InvalidOperationException("لا يمكن ربط السند بفاتورة وقسط في نفس الوقت");
+
             switch (voucher.VoucherType)
             {
                 case VoucherType.Receipt:
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
+                    if (voucher.InstallmentId.HasValue)
+                        await ApplyAmountToInstallmentAsync(context, voucher, username, adjustCash: false);
+                    else if (voucher.InvoiceId.HasValue)
+                        await ApplyAmountToCreditInvoiceAsync(context, voucher, username);
                     break;
 
                 case VoucherType.DebtReceipt:
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
-                    if (voucher.CustomerId.HasValue)
+                    if (voucher.InstallmentId.HasValue)
+                        await ApplyAmountToInstallmentAsync(context, voucher, username, adjustCash: false);
+                    else if (voucher.InvoiceId.HasValue)
+                        await ApplyAmountToCreditInvoiceAsync(context, voucher, username);
+                    else if (voucher.CustomerId.HasValue)
                         await ApplyDebtReceiptToCreditInvoicesAsync(context, voucher, username);
                     break;
 
@@ -308,7 +326,17 @@ public class CashBankService : ICashBankService
             if (voucher.IsDeleted)
                 return;
 
+            await _periodLockService.EnsureDateAllowedAsync(voucher.Date);
+
             var username = _currentUserService.Username;
+
+            if (voucher.VoucherType is VoucherType.Receipt or VoucherType.DebtReceipt)
+            {
+                if (voucher.InstallmentId.HasValue)
+                    await ReverseInstallmentApplicationAsync(context, voucher, username);
+                else if (voucher.InvoiceId.HasValue)
+                    await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
+            }
 
             switch (voucher.VoucherType)
             {
@@ -423,6 +451,7 @@ public class CashBankService : ICashBankService
             .Include(v => v.Investor)
             .Include(v => v.CashBox)
             .Include(v => v.BankAccount)
+            .Include(v => v.Invoice)
             .AsQueryable();
 
         if (type.HasValue) query = query.Where(v => v.VoucherType == type.Value);
@@ -579,6 +608,138 @@ public class CashBankService : ICashBankService
         }
 
         voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    private static async Task ApplyAmountToCreditInvoiceAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == voucher.InvoiceId)
+            ?? throw new InvalidOperationException("الفاتورة المرتبطة غير موجودة");
+
+        if (invoice.PaymentMethod != PaymentMethod.Credit)
+            throw new InvalidOperationException("يمكن ربط سند القبض بفاتورة آجلة فقط");
+
+        if (voucher.CustomerId.HasValue && invoice.CustomerId != voucher.CustomerId)
+            throw new InvalidOperationException("الفاتورة لا تخص العميل المحدد");
+
+        if (invoice.RemainingAmount <= 0)
+            throw new InvalidOperationException("الفاتورة مسددة بالكامل");
+
+        var apply = Math.Min(voucher.Amount, invoice.RemainingAmount);
+        invoice.PaidAmount += apply;
+        invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
+        invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
+        invoice.UpdatedAt = DateTime.UtcNow;
+        invoice.UpdatedBy = username;
+
+        voucher.CustomerId ??= invoice.CustomerId;
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    private static async Task ApplyAmountToInstallmentAsync(
+        AppDbContext context, Voucher voucher, string username, bool adjustCash)
+    {
+        var installment = await context.Installments
+            .Include(i => i.InstallmentPlan)
+            .FirstOrDefaultAsync(i => i.Id == voucher.InstallmentId)
+            ?? throw new InvalidOperationException("القسط المرتبط غير موجود");
+
+        if (voucher.CustomerId.HasValue &&
+            installment.InstallmentPlan?.CustomerId != voucher.CustomerId)
+            throw new InvalidOperationException("القسط لا يخص العميل المحدد");
+
+        if (installment.RemainingAmount <= 0)
+            throw new InvalidOperationException("القسط مسدد بالكامل");
+
+        var apply = Math.Min(voucher.Amount, installment.RemainingAmount);
+        installment.PaidAmount += apply;
+        installment.RemainingAmount = installment.Amount - installment.PaidAmount;
+        installment.CashBoxId = voucher.CashBoxId;
+        installment.PaymentDate = voucher.Date;
+        installment.UpdatedBy = username;
+        installment.UpdatedAt = DateTime.UtcNow;
+        installment.Status = installment.RemainingAmount <= 0
+            ? InstallmentStatus.Paid
+            : InstallmentStatus.PartiallyPaid;
+
+        voucher.CustomerId ??= installment.InstallmentPlan?.CustomerId;
+        voucher.InvoiceId ??= installment.InstallmentPlan?.InvoiceId;
+
+        if (adjustCash)
+            await AdjustCashBoxBalance(context, voucher.CashBoxId, apply, username);
+    }
+
+    private static async Task ReverseCreditInvoiceApplicationAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == voucher.InvoiceId);
+        if (invoice is null) return;
+
+        var reverse = Math.Min(voucher.Amount, invoice.PaidAmount);
+        invoice.PaidAmount = Math.Max(0, invoice.PaidAmount - reverse);
+        invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
+        invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
+        invoice.UpdatedAt = DateTime.UtcNow;
+        invoice.UpdatedBy = username;
+    }
+
+    private static async Task ReverseInstallmentApplicationAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        var installment = await context.Installments.FirstOrDefaultAsync(i => i.Id == voucher.InstallmentId);
+        if (installment is null) return;
+
+        var reverse = Math.Min(voucher.Amount, installment.PaidAmount);
+        installment.PaidAmount = Math.Max(0, installment.PaidAmount - reverse);
+        installment.RemainingAmount = installment.Amount - installment.PaidAmount;
+        installment.UpdatedBy = username;
+        installment.UpdatedAt = DateTime.UtcNow;
+        installment.Status = installment.PaidAmount <= 0
+            ? (installment.DueDate.Date < DateTime.Today ? InstallmentStatus.Overdue : InstallmentStatus.Pending)
+            : InstallmentStatus.PartiallyPaid;
+        if (installment.PaidAmount <= 0)
+            installment.PaymentDate = null;
+    }
+
+    public async Task SetVoucherReconciledAsync(int voucherId, bool isReconciled)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var voucher = await context.Vouchers.FirstOrDefaultAsync(v => v.Id == voucherId)
+            ?? throw new InvalidOperationException("السند غير موجود");
+
+        if (!voucher.BankAccountId.HasValue)
+            throw new InvalidOperationException("التسوية البنكية متاحة للسندات المصرفية فقط");
+
+        var username = _currentUserService.Username;
+        voucher.IsReconciled = isReconciled;
+        voucher.ReconciledAt = isReconciled ? DateTime.UtcNow : null;
+        voucher.ReconciledBy = isReconciled ? username : null;
+        voucher.UpdatedAt = DateTime.UtcNow;
+        voucher.UpdatedBy = username;
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<IReadOnlyList<Invoice>> GetOpenCreditInvoicesForCustomerAsync(int customerId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Invoices.AsNoTracking()
+            .Where(i => i.CustomerId == customerId &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<Installment>> GetOpenInstallmentsForCustomerAsync(int customerId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan)
+            .Where(i => i.InstallmentPlan!.CustomerId == customerId && i.RemainingAmount > 0)
+            .OrderBy(i => i.DueDate)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch

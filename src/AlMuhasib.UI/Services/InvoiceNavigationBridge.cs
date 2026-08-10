@@ -11,6 +11,8 @@ public static class InvoiceNavigationBridge
     public static int? PendingPurchaseReturnFromInvoiceId { get; set; }
     /// <summary>فتح شاشة المشتريات مباشرة في وضع المرتجع (بدون فاتورة مصدر بعد).</summary>
     public static bool PendingPurchaseReturnMode { get; set; }
+    /// <summary>فتح شاشة المبيعات مباشرة في وضع المرتجع.</summary>
+    public static bool PendingSalesReturnMode { get; set; }
     public static int? PendingSalesEditInvoiceId { get; set; }
     public static int? PendingPurchaseEditInvoiceId { get; set; }
     public static int? PendingInstallmentEditInvoiceId { get; set; }

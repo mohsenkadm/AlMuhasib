@@ -267,6 +267,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task ReturnSalesInvoiceAsync(int invoiceId)
     {
+        if (!_userPreferences.Current.FeatureFlags.SalesReturns)
+        {
+            _toast.ShowWarning("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
+            return;
+        }
+
         var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
         if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
         {
@@ -504,6 +510,8 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
                 InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
+            if (string.Equals(item.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
+                InvoiceNavigationBridge.PendingSalesReturnMode = true;
             _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon, activateIfExists: false);
         }
     }
@@ -570,6 +578,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (string.Equals(entry.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
             InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
+        if (string.Equals(entry.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
+            InvoiceNavigationBridge.PendingSalesReturnMode = true;
 
         CloseReportFlyout();
         PageTitle = entry.Title;
