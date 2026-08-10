@@ -150,9 +150,25 @@ public partial class ProductsViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showPricingOnCards;
 
+    // ── Per-product pricing dialog (table) ─────────────────
+    [ObservableProperty]
+    private bool _isProductPricingDialogOpen;
+
+    [ObservableProperty]
+    private string _pricingDialogProductName = string.Empty;
+
+    [ObservableProperty]
+    private bool _isPricingDialogEditMode;
+
+    [ObservableProperty]
+    private string _pricingDialogEditTitle = "إضافة سعر";
+
+    public ObservableCollection<ProductPriceCardLine> PricingDialogPrices { get; } = [];
+
     private int? _editingProductId;
     private int? _editingPriceProductId;
     private int? _editingProductPriceId;
+    private int? _pricingDialogProductId;
     private System.Timers.Timer? _debounceTimer;
     private bool _isInitializing;
     private int _loadRequestId;
@@ -945,6 +961,85 @@ public partial class ProductsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenProductPricingDialog(Product? product)
+    {
+        if (product is null || !_pricingEnabled) return;
+
+        await EnsurePricingTypesLoadedAsync();
+        _pricingDialogProductId = product.Id;
+        PricingDialogProductName = product.Name;
+        await RefreshPricingDialogPricesAsync();
+        CancelPricingDialogEdit();
+        IsProductPricingDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseProductPricingDialog()
+    {
+        IsProductPricingDialogOpen = false;
+        CancelPricingDialogEdit();
+        _pricingDialogProductId = null;
+        PricingDialogPrices.Clear();
+    }
+
+    [RelayCommand]
+    private void BeginAddPriceInPricingDialog()
+    {
+        if (_pricingDialogProductId is null || !_pricingEnabled) return;
+        _editingPriceProductId = _pricingDialogProductId;
+        _editingProductPriceId = null;
+        EditPricingType = PricingTypes.FirstOrDefault(t => t.IsDefault) ?? PricingTypes.FirstOrDefault();
+        EditSalePrice = 0;
+        EditPurchasePrice = 0;
+        PriceEditError = string.Empty;
+        PricingDialogEditTitle = "إضافة سعر";
+        IsPricingDialogEditMode = true;
+    }
+
+    [RelayCommand]
+    private void BeginEditPriceInPricingDialog(ProductPriceCardLine? line)
+    {
+        if (line is null || !_pricingEnabled) return;
+        _editingPriceProductId = line.ProductId;
+        _editingProductPriceId = line.ProductPriceId;
+        EditPricingType = PricingTypes.FirstOrDefault(t => t.Id == line.PricingTypeId);
+        EditSalePrice = line.SalePrice;
+        EditPurchasePrice = line.PurchasePrice;
+        PriceEditError = string.Empty;
+        PricingDialogEditTitle = "تعديل السعر";
+        IsPricingDialogEditMode = true;
+    }
+
+    [RelayCommand]
+    private void CancelPricingDialogEdit()
+    {
+        IsPricingDialogEditMode = false;
+        PriceEditError = string.Empty;
+        _editingProductPriceId = null;
+    }
+
+    [RelayCommand]
+    private async Task DeletePriceInPricingDialog(ProductPriceCardLine? line)
+    {
+        if (line is null || !_pricingEnabled) return;
+        if (!BeautifulMessageDialog.ShowConfirm($"هل تريد حذف سعر «{line.PricingTypeName}»؟", "حذف السعر"))
+            return;
+
+        try
+        {
+            await _productPriceService.DeleteAsync(line.ProductPriceId);
+            await RefreshPricingDialogPricesAsync();
+            if (IsCardView)
+                await LoadProductsAsync();
+            BeautifulMessageDialog.ShowSuccess("تم حذف السعر");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
     private void OpenEditPriceDialog(ProductPriceCardLine? line)
     {
         if (line is null || !_pricingEnabled) return;
@@ -993,7 +1088,17 @@ public partial class ProductsViewModel : ViewModelBase
                 SalePrice = EditSalePrice,
                 PurchasePrice = EditPurchasePrice
             });
-            IsPriceEditDialogOpen = false;
+
+            if (IsProductPricingDialogOpen)
+            {
+                CancelPricingDialogEdit();
+                await RefreshPricingDialogPricesAsync();
+            }
+            else
+            {
+                IsPriceEditDialogOpen = false;
+            }
+
             await LoadProductsAsync();
             BeautifulMessageDialog.ShowSuccess("تم حفظ السعر");
         }
@@ -1005,6 +1110,36 @@ public partial class ProductsViewModel : ViewModelBase
 
     [RelayCommand]
     private void CancelPriceEdit() => IsPriceEditDialogOpen = false;
+
+    private async Task EnsurePricingTypesLoadedAsync()
+    {
+        if (PricingTypes.Count > 0) return;
+        foreach (var t in await _unitOfWork.PricingTypes.GetAllAsync())
+            PricingTypes.Add(t);
+    }
+
+    private async Task RefreshPricingDialogPricesAsync()
+    {
+        PricingDialogPrices.Clear();
+        if (_pricingDialogProductId is null) return;
+
+        await EnsurePricingTypesLoadedAsync();
+        var prices = await _productPriceService.GetByProductIdAsync(_pricingDialogProductId.Value);
+        foreach (var price in prices.OrderBy(p => p.PricingTypeId))
+        {
+            PricingDialogPrices.Add(new ProductPriceCardLine
+            {
+                ProductPriceId = price.Id,
+                ProductId = price.ProductId,
+                PricingTypeId = price.PricingTypeId,
+                PricingTypeName = PricingTypes.FirstOrDefault(t => t.Id == price.PricingTypeId)?.Name
+                                  ?? price.PricingType?.Name
+                                  ?? $"#{price.PricingTypeId}",
+                SalePrice = price.SalePrice,
+                PurchasePrice = price.PurchasePrice
+            });
+        }
+    }
 
     [RelayCommand]
     private async Task OpenEditProductFromCard(ProductCardDisplay? card)

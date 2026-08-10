@@ -4,7 +4,7 @@
 ; with ExtractTemporaryFile BEFORE file copy (PrepareToInstall).
 
 #ifndef AppVersion
-  #define AppVersion "1.14.8"
+  #define AppVersion "1.14.10"
 #endif
 
 #ifndef LocalDbMsiFile
@@ -154,11 +154,26 @@ end;
 procedure StartLocalDbInstance;
 var
   ExePath: string;
+  Exe2017: string;
   ResultCode: Integer;
 begin
-  ExePath := FindSqlLocalDbExe;
-  Exec(ExePath, 'create MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  Exec(ExePath, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  { Prefer SQL 2017 (14.0) when present — what Qayd ships for new PCs.
+    If only a newer LocalDB exists (recent customers on 2022), use that tools path
+    and do not force a version change. }
+  Exe2017 := ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe');
+  if FileExists(Exe2017) then
+  begin
+    Exec(Exe2017, 'create MSSQLLocalDB 14.0', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(Exe2017, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end
+  else
+  begin
+    ExePath := FindSqlLocalDbExe;
+    Exec(ExePath, 'create MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(ExePath, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+  { Give the automatic instance a moment before the app's first connection. }
+  Sleep(1500);
 end;
 
 function RunVcRedist(const FileName: string; const LabelText: string): Boolean;
@@ -238,8 +253,11 @@ var
 begin
   LocalDbWarning := '';
 
+  { Any existing LocalDB (2017/2019/2022/...) → do not replace.
+    Protects recent customers who already installed successfully with LocalDB 2022. }
   if LocalDbInstalled then
   begin
+    Log('LocalDB already present — skipping MSI (keep existing version).');
     StartLocalDbInstance;
     Result := True;
     Exit;
@@ -256,8 +274,8 @@ begin
 
   LogPath := ExpandConstant('{tmp}\Qayd-SqlLocalDB-Install.log');
 
-  { 1) Quiet first }
-  WizardForm.StatusLabel.Caption := 'جاري تثبيت SQL Server LocalDB (صامت)...';
+  { 1) Quiet first — embedded package is SQL Server 2017 LocalDB (14.x) }
+  WizardForm.StatusLabel.Caption := 'جاري تثبيت SQL Server 2017 LocalDB (صامت)...';
   if not TryInstallLocalDbMsi('/qn', LogPath, ResultCode) then
   begin
     LocalDbWarning := 'تعذر تشغيل msiexec لتثبيت LocalDB.';
@@ -269,7 +287,7 @@ begin
   { 2) Retry with basic UI — more reliable on some Windows 10 machines }
   if not IsSuccessExitCode(ResultCode) then
   begin
-    WizardForm.StatusLabel.Caption := 'إعادة محاولة تثبيت LocalDB...';
+    WizardForm.StatusLabel.Caption := 'إعادة محاولة تثبيت SQL Server 2017 LocalDB...';
     if not TryInstallLocalDbMsi('/qb!', LogPath, ResultCode) then
     begin
       LocalDbWarning := 'تعذر تشغيل msiexec (المحاولة الثانية).';

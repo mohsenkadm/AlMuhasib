@@ -1,10 +1,10 @@
 {
-  "version": "1.14.8",
-  "releaseDate": "2026-08-09",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.8/AlMuhasib-1.14.8.zip",
-  "sha256": "75D325E8FE2EEBF91E91A1027B387286EF7D01AF8B9B160C6481C7B587993F79",
-  "sizeBytes": 147230823,
-  "releaseNotes": "إصلاح حاسم للتنصيب: تضمين SqlLocalDB.msi الحقيقي (كان الملف السابق EXE مزيف يسبب خطأ 1620)، وتحسين تثبيت Visual C++ وLocalDB على Windows 10.",
+  "version": "1.14.10",
+  "releaseDate": "2026-08-10",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.10/AlMuhasib-1.14.10.zip",
+  "sha256": "D3DF14C5E11BD16EE700A0CA49551027E1A914CEAEFD2C23B05A83EEAC634376",
+  "sizeBytes": 147245293,
+  "releaseNotes": "التثبيت الجديد يستخدم SQL Server 2017 LocalDB (أكثر استقراراً). العملاء الذين لديهم LocalDB مسبقاً لا يتأثرون.",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

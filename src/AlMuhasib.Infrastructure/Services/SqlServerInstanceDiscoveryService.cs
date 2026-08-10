@@ -82,9 +82,20 @@ public sealed class SqlServerInstanceDiscoveryService : ISqlServerInstanceDiscov
         if (string.IsNullOrWhiteSpace(dataSource))
             return NetworkConnectionTestResult.Fail("يرجى اختيار أو إدخال اسم السيرفر.");
 
+        var trimmed = dataSource.Trim();
+        if (LocalDbInstanceBootstrapper.UsesLocalDb(trimmed))
+        {
+            var bootstrap = LocalDbInstanceBootstrapper.EnsureRunning(trimmed);
+            if (!bootstrap.Success && !bootstrap.WasSkipped)
+            {
+                return NetworkConnectionTestResult.Fail(
+                    $"تعذر تجهيز LocalDB قبل الاختبار: {bootstrap.Message}");
+            }
+        }
+
         var builder = new SqlConnectionStringBuilder
         {
-            DataSource = dataSource.Trim(),
+            DataSource = trimmed,
             InitialCatalog = "master",
             IntegratedSecurity = true,
             TrustServerCertificate = true,
@@ -101,14 +112,35 @@ public sealed class SqlServerInstanceDiscoveryService : ISqlServerInstanceDiscov
 
             var version = connection.ServerVersion;
             return NetworkConnectionTestResult.Ok(
-                $"تم الاتصال بنجاح بـ {dataSource.Trim()} (إصدار {version}).",
+                $"تم الاتصال بنجاح بـ {trimmed} (إصدار {version}).",
                 (int)sw.ElapsedMilliseconds,
                 version);
         }
         catch (Exception ex)
         {
+            // One retry after forcing LocalDB start — common right after fresh install.
+            if (LocalDbInstanceBootstrapper.UsesLocalDb(trimmed))
+            {
+                LocalDbInstanceBootstrapper.EnsureRunning(trimmed);
+                try
+                {
+                    await using var retry = new SqlConnection(builder.ConnectionString);
+                    await retry.OpenAsync(cancellationToken);
+                    sw.Stop();
+                    return NetworkConnectionTestResult.Ok(
+                        $"تم الاتصال بنجاح بـ {trimmed} (إصدار {retry.ServerVersion}).",
+                        (int)sw.ElapsedMilliseconds,
+                        retry.ServerVersion);
+                }
+                catch (Exception retryEx)
+                {
+                    return NetworkConnectionTestResult.Fail(
+                        $"تعذر الاتصال بـ {trimmed}: {retryEx.Message}");
+                }
+            }
+
             return NetworkConnectionTestResult.Fail(
-                $"تعذر الاتصال بـ {dataSource.Trim()}: {ex.Message}");
+                $"تعذر الاتصال بـ {trimmed}: {ex.Message}");
         }
     }
 
@@ -117,9 +149,13 @@ public sealed class SqlServerInstanceDiscoveryService : ISqlServerInstanceDiscov
         var instances = new List<SqlServerInstanceInfo>();
         try
         {
+            // Prefer full path — PATH may not include SqlLocalDB.exe until reboot after install.
+            LocalDbInstanceBootstrapper.EnsureRunning($@"(localdb)\{LocalDbInstanceBootstrapper.DefaultInstanceName}");
+            var localDbExe = LocalDbInstanceBootstrapper.FindSqlLocalDbExe() ?? "sqllocaldb";
+
             var psi = new ProcessStartInfo
             {
-                FileName = "sqllocaldb",
+                FileName = localDbExe,
                 Arguments = "info",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

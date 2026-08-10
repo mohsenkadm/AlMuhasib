@@ -529,6 +529,8 @@ public partial class App : Application
             splash.SetProgress(0.45);
 
             var isBranchClient = _systemProfile.IsBranchClient;
+            var configuration = _serviceProvider!.GetRequiredService<IConfiguration>();
+            var defaultConnection = configuration.GetConnectionString("DefaultConnection");
 
             await Task.Run(async () =>
             {
@@ -539,15 +541,34 @@ public partial class App : Application
                     if (!test.Success)
                         throw new InvalidOperationException(test.Message);
                 }
+                else if (LocalDbInstanceBootstrapper.UsesLocalDb(defaultConnection))
+                {
+                    // Fresh LocalDB installs often need an explicit create/start before first connect.
+                    // Skipped entirely for Express / full SQL customers.
+                    splash.SetStatus("جاري تجهيز SQL LocalDB...");
+                    var bootstrap = LocalDbInstanceBootstrapper.EnsureRunning(defaultConnection);
+                    if (!bootstrap.Success && !bootstrap.WasSkipped)
+                    {
+                        throw new InvalidOperationException(
+                            bootstrap.Message
+                            ?? "تعذر تجهيز SQL LocalDB. أعد تشغيل الجهاز ثم حاول مرة أخرى.");
+                    }
+
+                    // Ensure data folder exists before AttachDbFilename connections.
+                    LocalDatabasePathResolver.EnsureDataDirectory();
+                }
 
                 using var scope = _serviceProvider.CreateScope();
                 var migrationService = scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
 
                 if (!isBranchClient)
                 {
-                    var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
-                    if (pendingMigrations.Count > 0)
+                    async Task ApplyMigrationsWithStatusAsync()
                     {
+                        var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
+                        if (pendingMigrations.Count == 0)
+                            return;
+
                         splash.SetStatus(
                             pendingMigrations.Count == 1
                                 ? "جاري تطبيق تحديث قاعدة البيانات..."
@@ -557,6 +578,28 @@ public partial class App : Application
                         var applied = await migrationService.ApplyPendingMigrationsAsync();
                         System.Diagnostics.Debug.WriteLine(
                             $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                    }
+
+                    try
+                    {
+                        await ApplyMigrationsWithStatusAsync();
+                    }
+                    catch (Exception ex) when (LocalDbInstanceBootstrapper.UsesLocalDb(defaultConnection))
+                    {
+                        // One recovery pass for brand-new LocalDB after installer (instance race).
+                        LocalDbInstanceBootstrapper.EnsureRunning(defaultConnection);
+                        await Task.Delay(1200);
+                        try
+                        {
+                            await ApplyMigrationsWithStatusAsync();
+                        }
+                        catch (Exception retryEx)
+                        {
+                            throw new InvalidOperationException(
+                                $"تعذر الاتصال بقاعدة البيانات عبر LocalDB.\n{retryEx.Message}\n\n" +
+                                "تأكد من اختيار (localdb)\\MSSQLLocalDB في معالج الإعداد أو أعد تشغيل الجهاز.",
+                                retryEx);
+                        }
                     }
 
                     splash.SetStatus("جاري تهيئة الحسابات والإعدادات...");

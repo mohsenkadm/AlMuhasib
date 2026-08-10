@@ -381,7 +381,7 @@
                                             behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="230" MinWidth="230" IsReadOnly="True"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="270" MinWidth="270" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -391,6 +391,13 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenProductPricingDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="تسعير المنتج"
+                                                Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
+                                            <materialDesign:PackIcon Kind="TagMultiple" Width="18" Height="18"/>
+                                        </Button>
                                         <Button Command="{Binding DataContext.OpenProductPackagingDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource TableEditIconButton}"
@@ -1149,6 +1156,163 @@
                                     Style="{StaticResource OutlinedButton}" Padding="24,8"/>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- PRODUCT PRICING DIALOG (table row)          -->
+        <!-- ═══════════════════════════════════════════ -->
+        <materialDesign:DialogHost IsOpen="{Binding IsProductPricingDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="520" MaxWidth="620" MaxHeight="640" Padding="28,24" Background="White" CornerRadius="18">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" Color="#2E7D32"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,18">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="#E8F5E9" Margin="0,0,12,0">
+                                <materialDesign:PackIcon Kind="TagMultiple" Width="24" Height="24"
+                                                         Foreground="#2E7D32"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="تسعير المنتج" FontSize="20" FontWeight="Bold" Foreground="#1B5E20"/>
+                                <TextBlock Text="{Binding PricingDialogProductName}" FontSize="13" Foreground="#607D8B"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="280" Margin="0,0,0,12">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding PricingDialogPrices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#F7FAFC" CornerRadius="12" Padding="14,12" Margin="0,0,0,8"
+                                                    BorderBrush="#E3EAF0" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding PricingTypeName}" FontWeight="SemiBold"
+                                                                   FontSize="14" Foreground="#263238"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                            <TextBlock Text="بيع:" Foreground="#78909C" FontSize="12" Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding SalePriceText}" Foreground="#1565C0"
+                                                                       FontWeight="SemiBold" FontSize="13" Margin="0,0,14,0"/>
+                                                            <TextBlock Text="شراء:" Foreground="#78909C" FontSize="12" Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding PurchasePriceText}" Foreground="#2E7D32"
+                                                                       FontWeight="SemiBold" FontSize="13"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Command="{Binding DataContext.BeginEditPriceInPricingDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource TableEditIconButton}"
+                                                                ToolTip="تعديل">
+                                                            <materialDesign:PackIcon Kind="PencilOutline" Width="16" Height="16"/>
+                                                        </Button>
+                                                        <Button Command="{Binding DataContext.DeletePriceInPricingDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource TableDeleteIconButton}"
+                                                                ToolTip="حذف">
+                                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="لا توجد أسعار مسجّلة لهذا المنتج بعد."
+                                           Foreground="#90A4AE" FontSize="13" HorizontalAlignment="Center"
+                                           Margin="0,16,0,8">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PricingDialogPrices.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Border Grid.Row="2" Background="#F1F8E9" CornerRadius="14" Padding="16,14" Margin="0,0,0,14"
+                                BorderBrush="#C5E1A5" BorderThickness="1"
+                                Visibility="{Binding IsPricingDialogEditMode, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding PricingDialogEditTitle}" FontWeight="Bold"
+                                           FontSize="14" Foreground="#33691E" Margin="0,0,0,10"/>
+                                <ComboBox materialDesign:HintAssist.Hint="نوع التسعير"
+                                          ItemsSource="{Binding PricingTypes}"
+                                          SelectedItem="{Binding EditPricingType}"
+                                          DisplayMemberPath="Name"
+                                          Style="{StaticResource MaterialDesignFilledComboBox}"
+                                          Margin="0,0,0,10"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             materialDesign:HintAssist.Hint="سعر البيع"
+                                             Text="{Binding EditSalePrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"/>
+                                    <TextBox Grid.Column="2"
+                                             materialDesign:HintAssist.Hint="سعر الشراء"
+                                             Text="{Binding EditPurchasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"/>
+                                </Grid>
+                                <TextBlock Text="{Binding PriceEditError}" Foreground="#C62828"
+                                           Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="حفظ السعر" Command="{Binding SaveProductPriceCommand}"
+                                            Style="{StaticResource PrimaryButton}" Height="40"
+                                            Padding="20,0" Margin="0,0,8,0"
+                                            materialDesign:ButtonAssist.CornerRadius="10"/>
+                                    <Button Content="إلغاء" Command="{Binding CancelPricingDialogEditCommand}"
+                                            Style="{StaticResource OutlinedButton}" Height="40"
+                                            Padding="18,0"
+                                            materialDesign:ButtonAssist.CornerRadius="10"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Command="{Binding BeginAddPriceInPricingDialogCommand}"
+                                    Style="{StaticResource SuccessButton}"
+                                    Height="44" Padding="22,0" Margin="0,0,8,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    Visibility="{Binding IsPricingDialogEditMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" VerticalAlignment="Center"/>
+                                    <TextBlock Text="إضافة سعر" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding CloseProductPricingDialogCommand}"
+                                    Content="إغلاق"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Height="44" Padding="22,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>

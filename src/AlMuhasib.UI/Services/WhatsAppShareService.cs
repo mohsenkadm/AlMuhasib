@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Helpers;
@@ -107,8 +108,48 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
 
     private void OpenWhatsAppWithPdf(string waDigits, string displayPhone, string pdfPath, string message, string shareTitle)
     {
+        if (string.IsNullOrWhiteSpace(pdfPath) || !File.Exists(pdfPath))
+        {
+            BeautifulMessageDialog.ShowError("تعذّر إنشاء ملف PDF للإرسال.");
+            return;
+        }
+
+        // 1) Open the chat with text first (URL schemes cannot carry file attachments).
         TryOpenWhatsAppChat(waDigits, message);
 
+        // 2) Attach PDF by focusing WhatsApp Desktop and pasting the file from clipboard.
+        _ = Task.Run(() =>
+        {
+            var attached = WhatsAppDesktopAttachmentHelper.TryAttachPdf(pdfPath);
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null)
+                return;
+
+            dispatcher.Invoke(() =>
+            {
+                if (!attached)
+                {
+                    TryRevealPdfInExplorer(pdfPath);
+                    WhatsAppDesktopAttachmentHelper.SetPdfOnClipboard(pdfPath);
+                }
+
+                BeautifulMessageDialog.ShowInfo(
+                    attached
+                        ? $"تم فتح واتساب وإرفاق ملف PDF للمحادثة مع {displayPhone}.\n\n" +
+                          "راجع المرفق في مربع الكتابة ثم اضغط «إرسال».\n\n" +
+                          $"الملف: {pdfPath}"
+                        : $"تم فتح واتساب مع نص الرسالة لـ {displayPhone}.\n\n" +
+                          "تعذّر لصق المرفق تلقائياً (قد يكون واتساب ويب أو لم يكتمل التحميل).\n" +
+                          "• الملف منسوخ للحافظة: اضغط Ctrl+V داخل المحادثة\n" +
+                          "• أو أرفقه من نافذة المستكشف التي فُتحت (زر 📎)\n\n" +
+                          $"الملف: {pdfPath}",
+                    shareTitle);
+            });
+        });
+    }
+
+    private static void TryRevealPdfInExplorer(string pdfPath)
+    {
         try
         {
             Process.Start(new ProcessStartInfo
@@ -121,29 +162,6 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
         catch
         {
             // ignore
-        }
-
-        CopyPdfToClipboard(pdfPath);
-
-        BeautifulMessageDialog.ShowInfo(
-            $"تم تجهيز الإرسال إلى {displayPhone}.\n\n" +
-            $"• فُتح واتساب مع نص الرسالة جاهزاً.\n" +
-            $"• ملف PDF: {pdfPath}\n" +
-            "• أرفق الملف من نافذة المستكشف (زر 📎 ثم اختر الملف، أو اسحبه إلى المحادثة).\n\n" +
-            "بعد الإرفاق اضغط «إرسال» فقط.",
-            shareTitle);
-    }
-
-    private static void CopyPdfToClipboard(string pdfPath)
-    {
-        try
-        {
-            var files = new System.Collections.Specialized.StringCollection { pdfPath };
-            Clipboard.SetFileDropList(files);
-        }
-        catch
-        {
-            // ignore clipboard failures
         }
     }
 
@@ -168,6 +186,8 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
                 // try next
             }
         }
+
+        BeautifulMessageDialog.ShowError("تعذّر فتح واتساب. تأكد من تثبيت تطبيق واتساب على الجهاز.");
     }
 
     private static string BuildInvoiceMessage(InvoicePrintModel m, string customerName)

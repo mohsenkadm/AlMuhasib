@@ -87,6 +87,32 @@ function Test-IsWindowsInstallerPackage {
     }
 }
 
+function Get-MsiProductVersion {
+    param([Parameter(Mandatory = $true)][string] $Path)
+    if (-not (Test-Path $Path)) { return $null }
+    try {
+        $wi = New-Object -ComObject WindowsInstaller.Installer
+        $db = $wi.OpenDatabase((Resolve-Path $Path).Path, 0)
+        $view = $db.OpenView("SELECT Value FROM Property WHERE Property='ProductVersion'")
+        $view.Execute()
+        $record = $view.Fetch()
+        if ($null -eq $record) { return $null }
+        return [string]$record.StringData(1)
+    }
+    catch {
+        return $null
+    }
+}
+
+function Test-IsSqlLocalDb2017Package {
+    param([Parameter(Mandatory = $true)][string] $Path)
+    if (-not (Test-IsWindowsInstallerPackage -Path $Path)) { return $false }
+    $productVersion = Get-MsiProductVersion -Path $Path
+    if ([string]::IsNullOrWhiteSpace($productVersion)) { return $false }
+    # SQL Server 2017 LocalDB ProductVersion is 14.x
+    return $productVersion.StartsWith("14.")
+}
+
 if (-not $SkipPrerequisites) {
     New-Item -ItemType Directory -Path $prereqDir -Force | Out-Null
 
@@ -101,19 +127,21 @@ if (-not $SkipPrerequisites) {
     }
 
     $localDbDest = Join-Path $prereqDir "SqlLocalDB.msi"
-    # fwlink/?linkid=2215160 downloads the Express bootstrapper EXE — NOT SqlLocalDB.msi.
-    # Use the direct CDN MSI (must start with D0 CF 11 E0).
-    $localDbUrl = "https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi"
-    if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
+    # Prefer SQL Server 2017 LocalDB (14.x) — more reliable on many customer Windows 10 PCs than 2022.
+    # Do NOT use fwlink/?linkid=2215160 (that is an Express bootstrapper EXE, msiexec 1620).
+    $localDbUrl = "https://download.microsoft.com/download/E/F/2/EF23C21D-7860-4F05-88CE-39AA114B014B/SqlLocalDB.msi"
+    if (-not (Test-IsSqlLocalDb2017Package -Path $localDbDest)) {
         if (Test-Path $localDbDest) {
-            Write-Warning "Existing SqlLocalDB.msi is not a valid MSI (likely the Express bootstrapper). Re-downloading..."
+            $existingVer = Get-MsiProductVersion -Path $localDbDest
+            Write-Warning "Replacing SqlLocalDB.msi (found '$existingVer'; need SQL Server 2017 / 14.x)..."
             Remove-Item $localDbDest -Force
         }
-        if (-not (Get-RemoteFile -Url $localDbUrl -Destination $localDbDest -Label "SQL Server 2022 LocalDB MSI")) {
-            throw "Failed to download real SqlLocalDB.msi from $localDbUrl"
+        if (-not (Get-RemoteFile -Url $localDbUrl -Destination $localDbDest -Label "SQL Server 2017 LocalDB MSI")) {
+            throw "Failed to download SQL Server 2017 SqlLocalDB.msi from $localDbUrl"
         }
-        if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
-            throw "Downloaded SqlLocalDB.msi is still invalid. Refusing to build installer."
+        if (-not (Test-IsSqlLocalDb2017Package -Path $localDbDest)) {
+            $got = Get-MsiProductVersion -Path $localDbDest
+            throw "Downloaded SqlLocalDB.msi is not SQL Server 2017 (got '$got'). Refusing to build installer."
         }
     }
 
@@ -132,13 +160,17 @@ if (-not $SkipPrerequisites) {
             throw "Prerequisite looks corrupt (too small): $required"
         }
     }
-    if (-not (Test-IsWindowsInstallerPackage -Path $localDbDest)) {
-        throw "SqlLocalDB.msi failed MSI validation (OpenDatabase)."
+    if (-not (Test-IsSqlLocalDb2017Package -Path $localDbDest)) {
+        throw "SqlLocalDB.msi failed SQL Server 2017 validation."
     }
 
     Write-Host "Prerequisites OK:" -ForegroundColor Green
     Get-ChildItem $prereqDir -File | Where-Object { $_.Name -match '^(vc_redist|SqlLocalDB)' } | ForEach-Object {
-        Write-Host ("  {0} ({1:N1} MB)" -f $_.Name, ($_.Length / 1MB))
+        $extra = ""
+        if ($_.Name -eq "SqlLocalDB.msi") {
+            $extra = " [ProductVersion=$(Get-MsiProductVersion -Path $_.FullName)]"
+        }
+        Write-Host ("  {0} ({1:N1} MB){2}" -f $_.Name, ($_.Length / 1MB), $extra)
     }
 }
 
