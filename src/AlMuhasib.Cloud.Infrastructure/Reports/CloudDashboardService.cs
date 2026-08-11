@@ -20,18 +20,17 @@ public sealed class CloudDashboardService : ICloudDashboardService
         var thirtyDaysAgo = today.AddDays(-30);
         var data = new DashboardData();
 
-        data.TodaySales = await _db.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= today && i.Date < tomorrow)
+        data.TodaySales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices, _db.InstallmentPlans)
+            .Where(i => i.Date >= today && i.Date < tomorrow)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
 
-        data.TodayPurchases = await _db.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date >= today && i.Date < tomorrow)
+        data.TodayPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices)
+            .Where(i => i.Date >= today && i.Date < tomorrow)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
 
         var totalSales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices, _db.InstallmentPlans)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
-        var totalPurchases = await _db.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase)
+        var totalPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
         var totalExpenses = await _db.Expenses.SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
         var distributedProfits = await _db.ProfitDistributions

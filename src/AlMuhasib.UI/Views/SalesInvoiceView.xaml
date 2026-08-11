@@ -782,7 +782,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding ErrorMessage}" Foreground="#C62828"
-                                   FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap">
+                                   FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -794,13 +794,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <ScrollViewer Grid.Column="1"
-                                      HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Disabled"
-                                      CanContentScroll="False"
-                                      HorizontalAlignment="Stretch"
-                                      Padding="0,0,0,2">
-                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                                 <Button Command="{Binding OpenCurrencyChangeCommand}" Style="{StaticResource OutlinedButton}"
                                         Height="40" Padding="14,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10"
@@ -899,8 +893,7 @@
                                         <TextBlock Text="حفظ الفاتورة" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-                            </WrapPanel>
-                        </ScrollViewer>
+                        </WrapPanel>
                     </Grid>
                 </materialDesign:Card>
 

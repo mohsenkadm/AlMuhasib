@@ -609,11 +609,11 @@
                                      materialDesign:ElevationAssist.Elevation="Dp2">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MaxWidth="280"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding ErrorMessage}" Foreground="#C62828"
-                                   FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap">
+                                   FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -627,7 +627,7 @@
                         </TextBlock>
                         <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                                 <Button Command="{Binding OpenInvoiceSearchCommand}" Style="{StaticResource AccentButton}"
-                                        Height="42" Padding="18,0" Margin="0,0,10,0"
+                                        Height="42" Padding="18,0" Margin="0,0,10,4"
                                         materialDesign:ButtonAssist.CornerRadius="10"
                                         FontWeight="SemiBold"
                                         ToolTip="بحث سريع عن فاتورة للتعديل">
@@ -637,7 +637,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding OpenTemplatePickerCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        Height="40" Padding="14,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10"
                                         ToolTip="قوالب جاهزة ومحفوظة">
                                     <StackPanel Orientation="Horizontal">
@@ -646,7 +646,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding OpenSaveTemplateDialogCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        Height="40" Padding="14,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="ContentSaveSettings" Width="18" Height="18" VerticalAlignment="Center"/>
@@ -654,7 +654,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding AddToQueueCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        Height="40" Padding="14,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="PlaylistPlus" Width="18" Height="18" VerticalAlignment="Center"/>
@@ -662,7 +662,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding OpenQueuePickerCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="14,0" Margin="0,0,8,0"
+                                        Height="40" Padding="14,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="PlaylistPlay" Width="18" Height="18" VerticalAlignment="Center"/>
@@ -670,7 +670,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding SetDefaultCustomerFromInvoiceCommand}" Style="{StaticResource FlatButton}"
-                                        Height="40" Padding="12,0" Margin="0,0,8,0"
+                                        Height="40" Padding="12,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="AccountStar" Width="18" Height="18" VerticalAlignment="Center"/>
@@ -678,21 +678,21 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding NewInvoiceCommand}" Style="{StaticResource FlatButton}"
-                                        Height="40" Padding="16,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                        Height="40" Padding="16,0" Margin="0,0,8,4" materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="18" Height="18" VerticalAlignment="Center"/>
                                         <TextBlock Text="جديد" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding PrintInvoiceCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="16,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                        Height="40" Padding="16,0" Margin="0,0,8,4" materialDesign:ButtonAssist.CornerRadius="10">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" VerticalAlignment="Center"/>
                                         <TextBlock Text="طباعة" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding SendInvoiceWhatsAppCommand}" Style="{StaticResource OutlinedButton}"
-                                        Height="40" Padding="16,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="10"
+                                        Height="40" Padding="16,0" Margin="0,0,8,4" materialDesign:ButtonAssist.CornerRadius="10"
                                         ToolTip="إرسال نسخة PDF عبر واتساب">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18" VerticalAlignment="Center" Foreground="#25D366"/>
@@ -700,7 +700,7 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding SaveInvoiceCommand}" Style="{StaticResource PrimaryButton}"
-                                        Background="{DynamicResource HighlightBrush}" Height="40" Padding="22,0"
+                                        Background="{DynamicResource HighlightBrush}" Height="40" Padding="22,0" Margin="0,0,0,4"
                                         materialDesign:ButtonAssist.CornerRadius="10" FontWeight="SemiBold" IsEnabled="{Binding CanSave}">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="ContentSaveOutline" Width="20" Height="20" VerticalAlignment="Center"/>

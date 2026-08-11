@@ -46,6 +46,8 @@ public static class AccountingMenuBuilder
                     ("العملاء", PackIconKind.AccountGroup, typeof(CustomersViewModel), "Customers"),
                     ("السواقين", PackIconKind.AccountHardHat, typeof(DriversViewModel), "Drivers"),
                     ("الموردون", PackIconKind.Factory, typeof(SuppliersViewModel), "Suppliers"),
+                    ("أرصدة العملاء الافتتاحية", PackIconKind.AccountCash, typeof(OpeningCustomerBalanceViewModel), "OpeningCustomerBalances"),
+                    ("أرصدة الموردين الافتتاحية", PackIconKind.CashRefund, typeof(OpeningSupplierBalanceViewModel), "OpeningSupplierBalances"),
                     ("ملف الشخص", PackIconKind.AccountDetails, typeof(PersonProfileViewModel), "PersonProfile"),
                 ]),
             FlyoutGroup(

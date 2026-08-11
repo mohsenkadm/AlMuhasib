@@ -1451,6 +1451,12 @@
                         <DataTemplate DataType="{x:Type vm:OpeningInstallmentBalanceViewModel}">
                             <views:OpeningInstallmentBalanceView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningCustomerBalanceViewModel}">
+                            <views:OpeningCustomerBalanceView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OpeningSupplierBalanceViewModel}">
+                            <views:OpeningSupplierBalanceView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PlatformDeductionSettlementViewModel}">
                             <views:PlatformDeductionSettlementView />
                         </DataTemplate>
