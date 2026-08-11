@@ -316,6 +316,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         else
             CreditDueDate = DateTime.Today.AddMonths(1);
         _ = RefreshLoyaltyQuoteAsync();
+        RefreshInvoiceWarnings();
     }
 
     public override async Task InitializeAsync()
@@ -525,7 +526,6 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         BeautifulMessageDialog.ShowInfo("وضع المرتجع: راجع الكميات ثم احفظ لإرجاع البضاعة للمخزن واسترداد النقد.");
     }
 
-    partial void OnSelectedPaymentMethodChanged(PaymentMethod value) => RefreshInvoiceWarnings();
     partial void OnGrandTotalChanged(decimal value) => RefreshInvoiceWarnings();
 
     private void RefreshInvoiceWarnings()

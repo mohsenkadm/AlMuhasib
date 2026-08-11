@@ -384,7 +384,7 @@ window.LOCALES = {
     download: {
       title: "حمّل قيد الآن",
       desc: "آخر إصدار من GitHub — تحديثات تلقائية من داخل التطبيق",
-      btn: "تنزيل ZIP", version: "الإصدار", size: "الحجم", date: "تاريخ الإصدار",
+      btn: "تنزيل المثبت EXE", version: "الإصدار", size: "الحجم", date: "تاريخ الإصدار",
       req: "متطلبات: Windows 10/11 — .NET 10"
     },
     faq: {
@@ -781,7 +781,7 @@ window.LOCALES = {
     },
     download: {
       title: "Download Qayd", desc: "Latest from GitHub — in-app auto-update",
-      btn: "Download ZIP", version: "Version", size: "Size", date: "Release date",
+      btn: "Download Setup EXE", version: "Version", size: "Size", date: "Release date",
       req: "Requirements: Windows 10/11 — .NET 10"
     },
     faq: {

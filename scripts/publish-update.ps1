@@ -23,6 +23,8 @@ $zipName = "AlMuhasib-$Version.zip"
 $zipPath = Join-Path $outputRoot $zipName
 $tag = "v$Version"
 $downloadUrl = "https://github.com/$GitHubRepo/releases/download/$tag/$zipName"
+$installerName = "Qayd-Setup-$Version.exe"
+$installerUrl = "https://github.com/$GitHubRepo/releases/download/$tag/$installerName"
 $manifestUrl = "https://raw.githubusercontent.com/$GitHubRepo/$GitBranch/version.json"
 
 Write-Host "Publishing AlMuhasib $Version (self-contained win-x64) ..." -ForegroundColor Cyan
@@ -59,6 +61,7 @@ $manifest = [ordered]@{
     version             = $Version
     releaseDate         = (Get-Date -Format "yyyy-MM-dd")
     downloadUrl         = $downloadUrl
+    installerUrl        = $installerUrl
     sha256              = $hash
     sizeBytes           = $size
     releaseNotes        = $ReleaseNotes

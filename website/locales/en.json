@@ -141,7 +141,7 @@
   "download": {
     "title": "Download AlMuhasib",
     "desc": "Latest build from GitHub Releases — in-app auto-update",
-    "btn": "Download ZIP",
+    "btn": "Download Setup EXE",
     "version": "Version",
     "size": "Size",
     "date": "Release date",
