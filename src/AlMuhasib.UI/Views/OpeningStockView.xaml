@@ -60,7 +60,7 @@
                     </Grid>
                 </Border>
 
-                <!-- WAREHOUSE SELECTOR -->
+                <!-- WAREHOUSE SELECTOR + EXCEL -->
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
                                      Padding="20,16" Margin="0,0,0,16"
                                      materialDesign:ElevationAssist.Elevation="Dp1">
@@ -78,6 +78,29 @@
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                   Style="{StaticResource FilledComboBox}"
                                   FontSize="14" />
+                        <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left"
+                                   VerticalAlignment="Center" Margin="16,0,0,0">
+                            <Button Command="{Binding DownloadTemplateCommand}"
+                                    Style="{StaticResource OutlinedButton}"
+                                    Height="40" Padding="14,0" Margin="0,0,8,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    ToolTip="تنزيل قالب Excel للأرصدة الافتتاحية">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileExcel" Width="18" Height="18" VerticalAlignment="Center" Foreground="#2E7D32"/>
+                                    <TextBlock Text="تنزيل قالب Excel" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ImportFromExcelCommand}"
+                                    Style="{StaticResource AccentButton}"
+                                    Height="40" Padding="14,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    ToolTip="استيراد أرصدة من ملف Excel">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="DatabaseImport" Width="18" Height="18" VerticalAlignment="Center"/>
+                                    <TextBlock Text="استيراد Excel" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
                     </Grid>
                 </materialDesign:Card>
 

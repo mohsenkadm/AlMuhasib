@@ -184,6 +184,9 @@ public partial class App : Application
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
+        services.AddSingleton<IOpeningStockExcelService, AlMuhasib.Shared.Services.OpeningStockExcelService>();
+        services.AddSingleton<IOpeningCustomerBalanceExcelService, AlMuhasib.Shared.Services.OpeningCustomerBalanceExcelService>();
+        services.AddSingleton<IOpeningSupplierBalanceExcelService, AlMuhasib.Shared.Services.OpeningSupplierBalanceExcelService>();
         services.AddSingleton<IPlatformDeductionExcelService, AlMuhasib.Shared.Services.PlatformDeductionExcelService>();
         services.AddSingleton<IBarcodeLabelService, AlMuhasib.Shared.Services.BarcodeLabelService>();
 
@@ -220,6 +223,8 @@ public partial class App : Application
         services.AddTransient<InstallmentInvoiceViewModel>();
         services.AddTransient<InstallmentsViewModel>();
         services.AddTransient<OpeningInstallmentBalanceViewModel>();
+        services.AddTransient<OpeningCustomerBalanceViewModel>();
+        services.AddTransient<OpeningSupplierBalanceViewModel>();
         services.AddTransient<PlatformDeductionSettlementViewModel>();
         services.AddTransient<CashBankViewModel>();
         services.AddTransient<WarehousesViewModel>();

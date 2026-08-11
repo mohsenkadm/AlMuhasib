@@ -101,10 +101,10 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
     public async Task<PurchasesReportResult> GetPurchasesReportAsync(DateTime? from, DateTime? to, int? supplierId, int? warehouseId, PaymentMethod? method = null)
     {
         var context = _db;
-        var query = context.Invoices
-            .Include(i => i.Supplier)
-            .Include(i => i.Warehouse)
-            .Where(i => i.InvoiceType == InvoiceType.Purchase);
+        var query = CloudInvoiceFilters.ForPurchasesTotals(
+                context.Invoices
+                    .Include(i => i.Supplier)
+                    .Include(i => i.Warehouse));
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
         if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));

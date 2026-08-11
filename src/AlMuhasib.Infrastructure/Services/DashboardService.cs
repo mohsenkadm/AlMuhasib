@@ -32,8 +32,8 @@ public class DashboardService : IDashboardService
         // ── Summary cards ──────────────────────────────────────
         try
         {
-            data.TodaySales = await context.Invoices
-                .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= today && i.Date < tomorrow)
+            data.TodaySales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date >= today && i.Date < tomorrow)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
         }
         catch (Exception ex)
@@ -43,8 +43,8 @@ public class DashboardService : IDashboardService
 
         try
         {
-            data.TodayPurchases = await context.Invoices
-                .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date >= today && i.Date < tomorrow)
+            data.TodayPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
+                .Where(i => i.Date >= today && i.Date < tomorrow)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
         }
         catch (Exception ex)
@@ -57,8 +57,7 @@ public class DashboardService : IDashboardService
         {
             var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-            var totalPurchases = await context.Invoices
-                .Where(i => i.InvoiceType == InvoiceType.Purchase)
+            var totalPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
             var totalExpenses = await context.Expenses
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;

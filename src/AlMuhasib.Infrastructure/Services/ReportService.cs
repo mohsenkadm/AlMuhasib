@@ -99,10 +99,10 @@ public partial class ReportService : IReportService
     public async Task<PurchasesReportResult> GetPurchasesReportAsync(DateTime? from, DateTime? to, int? supplierId, int? warehouseId, PaymentMethod? method = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Invoices
-            .Include(i => i.Supplier)
-            .Include(i => i.Warehouse)
-            .Where(i => i.InvoiceType == InvoiceType.Purchase);
+        var query = InvoiceFilters.ForPurchasesTotals(
+                context.Invoices
+                    .Include(i => i.Supplier)
+                    .Include(i => i.Warehouse));
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
         if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
