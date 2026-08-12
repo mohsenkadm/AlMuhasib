@@ -221,7 +221,14 @@ public partial class CategoriesViewModel : ViewModelBase
                 var category = await _unitOfWork.Categories.GetByIdAsync(_editingCategoryId.Value);
                 if (category is null) return;
 
-                category.Name = EditName.Trim();
+                var name = EditName.Trim();
+                if (await _unitOfWork.Categories.AnyAsync(c => c.Name == name && c.Id != category.Id))
+                {
+                    DialogError = "اسم التصنيف موجود مسبقاً";
+                    return;
+                }
+
+                category.Name = name;
                 category.UpdatedAt = DateTime.UtcNow;
                 category.UpdatedBy = _currentUserService.Username;
 
@@ -230,14 +237,32 @@ public partial class CategoriesViewModel : ViewModelBase
             }
             else
             {
-                var category = new Category
+                var name = EditName.Trim();
+                if (await _unitOfWork.Categories.AnyAsync(c => c.Name == name))
                 {
-                    Name = EditName.Trim(),
-                    CreatedBy = _currentUserService.Username
-                };
+                    DialogError = "اسم التصنيف موجود مسبقاً";
+                    return;
+                }
 
-                await _unitOfWork.Categories.AddAsync(category);
-                await _unitOfWork.SaveChangesAsync();
+                var softDeleted = await _unitOfWork.Categories.FindSoftDeletedFirstAsync(c => c.Name == name);
+                if (softDeleted is not null)
+                {
+                    softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+                    softDeleted.Name = name;
+                    _unitOfWork.Categories.Update(softDeleted);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                else
+                {
+                    var category = new Category
+                    {
+                        Name = name,
+                        CreatedBy = _currentUserService.Username
+                    };
+
+                    await _unitOfWork.Categories.AddAsync(category);
+                    await _unitOfWork.SaveChangesAsync();
+                }
             }
 
             IsDialogOpen = false;

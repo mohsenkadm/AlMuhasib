@@ -27,7 +27,30 @@ public class ExpenseService : IExpenseService
     public async Task<ExpenseType> AddExpenseTypeAsync(string name)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var expenseType = new ExpenseType { Name = name };
+        var trimmed = name.Trim();
+
+        if (await context.ExpenseTypes.AnyAsync(et => et.Name == trimmed))
+            throw new InvalidOperationException("اسم نوع المصروف موجود مسبقاً");
+
+        var softDeleted = await context.ExpenseTypes
+            .IgnoreQueryFilters()
+            .Where(et => et.IsDeleted && et.Name == trimmed)
+            .OrderByDescending(et => et.DeletedAt)
+            .FirstOrDefaultAsync();
+
+        if (softDeleted is not null)
+        {
+            softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+            softDeleted.Name = trimmed;
+            await context.SaveChangesAsync();
+            return softDeleted;
+        }
+
+        var expenseType = new ExpenseType
+        {
+            Name = trimmed,
+            CreatedBy = _currentUserService.Username
+        };
         await context.ExpenseTypes.AddAsync(expenseType);
         await context.SaveChangesAsync();
         return expenseType;

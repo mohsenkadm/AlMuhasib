@@ -19,5 +19,7 @@ public interface IRepository<T> where T : BaseEntity
     Task AddRangeAsync(IEnumerable<T> entities);
     void Update(T entity);
     void SoftDelete(T entity, string deletedBy);
+    /// <summary>أحدث سجل محذوف ناعماً يطابق الشرط (يتجاهل فلتر IsDeleted).</summary>
+    Task<T?> FindSoftDeletedFirstAsync(Expression<Func<T, bool>> predicate);
     IQueryable<T> Query();
 }

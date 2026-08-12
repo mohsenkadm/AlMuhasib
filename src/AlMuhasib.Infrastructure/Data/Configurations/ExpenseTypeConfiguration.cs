@@ -15,6 +15,7 @@ public class ExpenseTypeConfiguration : IEntityTypeConfiguration<ExpenseType>
             .HasMaxLength(200);
 
         builder.HasIndex(e => e.Name)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
     }
 }

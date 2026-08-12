@@ -254,18 +254,44 @@ public partial class SuppliersViewModel : ViewModelBase
             }
             else
             {
-                var supplier = new Supplier
-                {
-                    Name = EditName.Trim(),
-                    Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim(),
-                    Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
-                    Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
-                    CustomFieldsJson = SerializeCustomFieldsFromEditors(),
-                    CreatedBy = _currentUserService.Username
-                };
+                var name = EditName.Trim();
+                var phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
+                var address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
+                var notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                var customFields = SerializeCustomFieldsFromEditors();
 
-                await _unitOfWork.Suppliers.AddAsync(supplier);
-                await _unitOfWork.SaveChangesAsync();
+                Supplier? softDeleted = null;
+                if (!await _unitOfWork.Suppliers.AnyAsync(s => s.Name == name))
+                {
+                    softDeleted = await _unitOfWork.Suppliers.FindSoftDeletedFirstAsync(s => s.Name == name);
+                }
+
+                if (softDeleted is not null)
+                {
+                    softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+                    softDeleted.Name = name;
+                    softDeleted.Phone = phone;
+                    softDeleted.Address = address;
+                    softDeleted.Notes = notes;
+                    softDeleted.CustomFieldsJson = customFields;
+                    _unitOfWork.Suppliers.Update(softDeleted);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                else
+                {
+                    var supplier = new Supplier
+                    {
+                        Name = name,
+                        Phone = phone,
+                        Address = address,
+                        Notes = notes,
+                        CustomFieldsJson = customFields,
+                        CreatedBy = _currentUserService.Username
+                    };
+
+                    await _unitOfWork.Suppliers.AddAsync(supplier);
+                    await _unitOfWork.SaveChangesAsync();
+                }
             }
 
             IsDialogOpen = false;

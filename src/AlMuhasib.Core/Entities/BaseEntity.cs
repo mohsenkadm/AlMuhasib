@@ -29,4 +29,14 @@ public abstract class BaseEntity
         UpdatedAt = now;
         UpdatedBy = deletedBy;
     }
+
+    public void RestoreFromSoftDelete(string restoredBy)
+    {
+        var now = DateTime.UtcNow;
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
+        UpdatedAt = now;
+        UpdatedBy = restoredBy;
+    }
 }

@@ -21,7 +21,52 @@ public class ProductService : IProductService
     public async Task<Product> CreateAsync(Product product)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        product.CreatedBy = _currentUserService.Username;
+        var username = _currentUserService.Username;
+        var name = product.Name.Trim();
+        var barcode = string.IsNullOrWhiteSpace(product.Barcode) ? null : product.Barcode.Trim();
+
+        Product? softDeleted = null;
+        if (barcode is not null)
+        {
+            softDeleted = await context.Products
+                .IgnoreQueryFilters()
+                .Where(p => p.IsDeleted && p.Barcode == barcode)
+                .OrderByDescending(p => p.DeletedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        if (softDeleted is null
+            && !await context.Products.AnyAsync(p => p.Name == name))
+        {
+            softDeleted = await context.Products
+                .IgnoreQueryFilters()
+                .Where(p => p.IsDeleted && p.Name == name)
+                .OrderByDescending(p => p.DeletedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        if (softDeleted is not null)
+        {
+            softDeleted.RestoreFromSoftDelete(username);
+            softDeleted.Name = name;
+            softDeleted.Description = product.Description;
+            softDeleted.Barcode = barcode;
+            softDeleted.ScientificName = product.ScientificName;
+            softDeleted.UsageInstructions = product.UsageInstructions;
+            softDeleted.CategoryId = product.CategoryId;
+            softDeleted.Weight = product.Weight;
+            softDeleted.WeightUnit = product.WeightUnit;
+            softDeleted.DiscountType = product.DiscountType;
+            softDeleted.DiscountValue = product.DiscountValue;
+            softDeleted.DiscountExpiresAt = product.DiscountExpiresAt;
+            softDeleted.CustomFieldsJson = product.CustomFieldsJson;
+            await context.SaveChangesAsync();
+            return softDeleted;
+        }
+
+        product.Name = name;
+        product.Barcode = barcode;
+        product.CreatedBy = username;
         product.CreatedAt = DateTime.UtcNow;
         await context.Products.AddAsync(product);
         await context.SaveChangesAsync();

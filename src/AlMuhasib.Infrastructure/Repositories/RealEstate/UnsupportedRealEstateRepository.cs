@@ -19,5 +19,6 @@ internal sealed class UnsupportedRealEstateRepository<T> : IRepository<T> where 
     public Task AddRangeAsync(IEnumerable<T> entities) => throw Error;
     public void Update(T entity) => throw Error;
     public void SoftDelete(T entity, string deletedBy) => throw Error;
+    public Task<T?> FindSoftDeletedFirstAsync(Expression<Func<T, bool>> predicate) => throw Error;
     public IQueryable<T> Query() => throw Error;
 }

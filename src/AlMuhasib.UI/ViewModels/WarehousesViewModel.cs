@@ -200,15 +200,36 @@ public partial class WarehousesViewModel : ViewModelBase
             }
             else
             {
-                var warehouse = new Warehouse
-                {
-                    Name = EditName.Trim(),
-                    Location = string.IsNullOrWhiteSpace(EditLocation) ? null : EditLocation.Trim(),
-                    CreatedBy = _currentUserService.Username
-                };
+                var name = EditName.Trim();
+                var location = string.IsNullOrWhiteSpace(EditLocation) ? null : EditLocation.Trim();
 
-                await _unitOfWork.Warehouses.AddAsync(warehouse);
-                await _unitOfWork.SaveChangesAsync();
+                if (await _unitOfWork.Warehouses.AnyAsync(w => w.Name == name))
+                {
+                    DialogError = "اسم المخزن موجود مسبقاً";
+                    return;
+                }
+
+                var softDeleted = await _unitOfWork.Warehouses.FindSoftDeletedFirstAsync(w => w.Name == name);
+                if (softDeleted is not null)
+                {
+                    softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+                    softDeleted.Name = name;
+                    softDeleted.Location = location;
+                    _unitOfWork.Warehouses.Update(softDeleted);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                else
+                {
+                    var warehouse = new Warehouse
+                    {
+                        Name = name,
+                        Location = location,
+                        CreatedBy = _currentUserService.Username
+                    };
+
+                    await _unitOfWork.Warehouses.AddAsync(warehouse);
+                    await _unitOfWork.SaveChangesAsync();
+                }
             }
 
             IsDialogOpen = false;

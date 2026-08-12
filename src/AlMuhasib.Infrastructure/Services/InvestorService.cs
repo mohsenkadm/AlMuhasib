@@ -28,14 +28,39 @@ public class InvestorService : IInvestorService
     public async Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage, string? customFieldsJson = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var trimmedName = name.Trim();
+        var trimmedPhone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+
+        Investor? softDeleted = null;
+        if (!await context.Investors.AnyAsync(i => i.Name == trimmedName))
+        {
+            softDeleted = await context.Investors
+                .IgnoreQueryFilters()
+                .Where(i => i.IsDeleted && i.Name == trimmedName)
+                .OrderByDescending(i => i.DeletedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        if (softDeleted is not null)
+        {
+            softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+            softDeleted.Name = trimmedName;
+            softDeleted.Phone = trimmedPhone;
+            softDeleted.ProfitPercentage = profitPercentage;
+            softDeleted.CustomFieldsJson = customFieldsJson;
+            await context.SaveChangesAsync();
+            return softDeleted;
+        }
+
         var investor = new Investor
         {
-            Name = name,
-            Phone = phone,
+            Name = trimmedName,
+            Phone = trimmedPhone,
             ProfitPercentage = profitPercentage,
             TotalDeposit = 0,
             OpeningBalance = 0,
-            CustomFieldsJson = customFieldsJson
+            CustomFieldsJson = customFieldsJson,
+            CreatedBy = _currentUserService.Username
         };
         await context.Investors.AddAsync(investor);
         await context.SaveChangesAsync();

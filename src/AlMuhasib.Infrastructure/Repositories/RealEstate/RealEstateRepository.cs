@@ -160,6 +160,28 @@ public class RealEstateRepository<T> : IRepository<T> where T : BaseEntity
         context.SaveChanges();
     }
 
+    public async Task<T?> FindSoftDeletedFirstAsync(Expression<Func<T, bool>> predicate)
+    {
+        var active = _getActiveContext();
+        if (active is not null)
+        {
+            return await active.Set<T>()
+                .IgnoreQueryFilters()
+                .Where(e => e.IsDeleted)
+                .Where(predicate)
+                .OrderByDescending(e => e.DeletedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Set<T>()
+            .IgnoreQueryFilters()
+            .Where(e => e.IsDeleted)
+            .Where(predicate)
+            .OrderByDescending(e => e.DeletedAt)
+            .FirstOrDefaultAsync();
+    }
+
     public IQueryable<T> Query()
     {
         var active = _getActiveContext();

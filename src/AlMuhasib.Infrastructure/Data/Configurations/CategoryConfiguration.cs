@@ -15,6 +15,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .HasMaxLength(200);
 
         builder.HasIndex(c => c.Name)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
     }
 }

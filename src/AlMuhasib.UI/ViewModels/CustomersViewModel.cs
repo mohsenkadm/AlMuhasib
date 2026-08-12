@@ -292,20 +292,56 @@ public partial class CustomersViewModel : ViewModelBase
             }
             else
             {
-                var customer = new Customer
-                {
-                    Name = EditName.Trim(),
-                    Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim(),
-                    Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim(),
-                    FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim(),
-                    Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim(),
-                    SalesRepresentativeId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null,
-                    CustomFieldsJson = SerializeCustomFieldsFromEditors(),
-                    CreatedBy = _currentUserService.Username
-                };
+                var name = EditName.Trim();
+                var phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
+                var address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
+                var fileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
+                var notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                var salesRepId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null;
+                var customFields = SerializeCustomFieldsFromEditors();
 
-                await _unitOfWork.Customers.AddAsync(customer);
-                await _unitOfWork.SaveChangesAsync();
+                Customer? softDeleted = null;
+                if (!string.IsNullOrWhiteSpace(fileNumber))
+                {
+                    softDeleted = await _unitOfWork.Customers.FindSoftDeletedFirstAsync(
+                        c => c.FileNumber == fileNumber);
+                }
+
+                if (softDeleted is null && !await _unitOfWork.Customers.AnyAsync(c => c.Name == name))
+                {
+                    softDeleted = await _unitOfWork.Customers.FindSoftDeletedFirstAsync(c => c.Name == name);
+                }
+
+                if (softDeleted is not null)
+                {
+                    softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+                    softDeleted.Name = name;
+                    softDeleted.Phone = phone;
+                    softDeleted.Address = address;
+                    softDeleted.FileNumber = fileNumber;
+                    softDeleted.Notes = notes;
+                    softDeleted.SalesRepresentativeId = salesRepId;
+                    softDeleted.CustomFieldsJson = customFields;
+                    _unitOfWork.Customers.Update(softDeleted);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                else
+                {
+                    var customer = new Customer
+                    {
+                        Name = name,
+                        Phone = phone,
+                        Address = address,
+                        FileNumber = fileNumber,
+                        Notes = notes,
+                        SalesRepresentativeId = salesRepId,
+                        CustomFieldsJson = customFields,
+                        CreatedBy = _currentUserService.Username
+                    };
+
+                    await _unitOfWork.Customers.AddAsync(customer);
+                    await _unitOfWork.SaveChangesAsync();
+                }
             }
 
             IsDialogOpen = false;
