@@ -130,7 +130,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
         FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
         FontSize = 12,
         FlowDirection = FlowDirection.RightToLeft,
-        PagePadding = new Thickness(36, 20, 36, 28)
+        PagePadding = new Thickness(36, 10, 36, 28)
     };
 
     private static Block BuildTitleBlock(string title, DateTime date, string number, Brush accent, Brush headerBg)

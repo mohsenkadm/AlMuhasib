@@ -122,6 +122,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
+        IPricingTypeService pricingTypeService,
         IUserPreferencesService userPreferences,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
@@ -141,6 +142,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         _draftService = draftService;
         _queueService = queueService;
         _productPriceService = productPriceService;
+        _pricingTypeService = pricingTypeService;
         _userPreferences = userPreferences;
         _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
             && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
@@ -210,7 +212,10 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             await QuickSearchCatalog.LoadAsync(
                 Products,
                 InvoicePickerMode.Purchase,
-                _userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+                ShowProductPricing);
+
+            if (ShowProductPricing)
+                await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
 
             // Start with one empty row
             AddRow();
@@ -395,6 +400,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 WireItemRow,
                 UnwireItemRow);
         }
+
+        foreach (var row in Items.Where(i => i.ProductId is > 0).ToList())
+            await LoadPurchaseRowFeatureDataAsync(row);
 
         RecalculateTotals();
     }

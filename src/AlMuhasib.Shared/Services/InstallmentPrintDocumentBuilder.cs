@@ -133,7 +133,7 @@ public static class InstallmentPrintDocumentBuilder
             FlowDirection = FlowDirection.RightToLeft,
             PageWidth = A4Width,
             PageHeight = A4Height,
-            PagePadding = new Thickness(36, 28, 36, 28),
+            PagePadding = new Thickness(36, 10, 36, 28),
             ColumnWidth = A4Width
         };
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
