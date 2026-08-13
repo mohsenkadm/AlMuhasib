@@ -23,6 +23,6 @@ public partial class InstallmentInvoiceView : UserControl
             batch: null,
             expiry: null,
             serial: null,
-            pricing: null);
+            pricing: ColPricingType);
     }
 }

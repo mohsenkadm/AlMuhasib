@@ -361,6 +361,14 @@
                                             <TextBlock Text="فحص الربح" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="#2E7D32"/>
                                         </StackPanel>
                                     </Button>
+                                    <ComboBox Width="150" Height="32" Margin="0,0,8,0"
+                                              ItemsSource="{Binding BulkPricingTypes}"
+                                              SelectedItem="{Binding SelectedBulkPricingType, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"
+                                              materialDesign:HintAssist.Hint="نوع التسعير"
+                                              materialDesign:HintAssist.IsFloating="False"
+                                              Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolToVis}}"
+                                              ToolTip="تطبيق نوع تسعير على كل بنود الفاتورة"/>
                                     <Button Command="{Binding AddRowCommand}"
                                             Style="{StaticResource FlatButton}"
                                             Height="32" Padding="14,0"

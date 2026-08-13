@@ -84,7 +84,7 @@
                             <TextBlock Text="صورة الهيدر" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,10"/>
                             <Border Background="#F5F7FA" CornerRadius="10" MinHeight="100" Margin="0,0,0,10" ClipToBounds="True">
                                 <Image Source="{Binding HeaderImagePreview}" Stretch="UniformToFill"
-                                       Height="120" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                       Height="175" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Orientation="Horizontal">
                                 <Button Command="{Binding PickHeaderImageCommand}" Style="{StaticResource OutlinedButton}"

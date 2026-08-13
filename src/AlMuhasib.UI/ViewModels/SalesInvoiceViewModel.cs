@@ -188,6 +188,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         IInvoiceTemplateService templateService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
+        IPricingTypeService pricingTypeService,
         IUserPreferencesService userPreferences,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
@@ -215,6 +216,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _templateService = templateService;
         _queueService = queueService;
         _productPriceService = productPriceService;
+        _pricingTypeService = pricingTypeService;
 
         PageTitle = "فاتورة مبيعات";
 
@@ -372,6 +374,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 Products,
                 InvoicePickerMode.Sale,
                 ShowProductPricing);
+
+            if (ShowProductPricing)
+                await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
 
             AddRow();
 

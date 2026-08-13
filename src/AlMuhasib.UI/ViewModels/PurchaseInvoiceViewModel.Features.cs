@@ -3,6 +3,7 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -14,16 +15,22 @@ public partial class PurchaseInvoiceViewModel
     private IProductSerialService? _productSerialService;
     private IProductSizeService? _productSizeService;
     private IProductColorService? _productColorService;
+    private IPricingTypeService? _pricingTypeService;
+    private bool _suppressBulkPricingApply;
 
     [ObservableProperty] private bool _isReturnMode;
     [ObservableProperty] private bool _showUnitsOfMeasure;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showClothingSizes;
+    [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showTransportFee;
     [ObservableProperty] private decimal _transportFeeAmount;
     [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
     [ObservableProperty] private string _clothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
+    [ObservableProperty] private PricingType? _selectedBulkPricingType;
+
+    public ObservableCollection<PricingType> BulkPricingTypes { get; } = [];
 
     public bool ShowCustomField1 => ShowClothingSizes;
     public bool ShowCustomField2 => ShowClothingSizes;
@@ -60,6 +67,7 @@ public partial class PurchaseInvoiceViewModel
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowClothingSizes = _featureFlags.TemplateClothing;
+        ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowTransportFee = _featureFlags.TransportFees;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
         ClothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
@@ -96,6 +104,19 @@ public partial class PurchaseInvoiceViewModel
         {
             foreach (var row in Items)
                 row.SerialNumber = string.Empty;
+        }
+
+        if (!ShowProductPricing)
+        {
+            ClearRowPricing();
+            _suppressBulkPricingApply = true;
+            SelectedBulkPricingType = null;
+            _suppressBulkPricingApply = false;
+            BulkPricingTypes.Clear();
+        }
+        else
+        {
+            _ = EnsureBulkPricingTypesLoadedAsync();
         }
 
         if (!ShowClothingSizes)
@@ -136,6 +157,34 @@ public partial class PurchaseInvoiceViewModel
         RecalculateTotals();
     }
 
+    private void ClearRowPricing()
+    {
+        foreach (var row in Items)
+        {
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            row.PricingTypeId = null;
+            row.PricingTypeName = string.Empty;
+        }
+    }
+
+    partial void OnSelectedBulkPricingTypeChanged(PricingType? value)
+    {
+        if (_suppressBulkPricingApply || value is null || !ShowProductPricing)
+            return;
+
+        InvoiceBulkPricingHelper.ApplyPricingTypeToRows(Items, value.Id);
+        RecalculateTotals();
+    }
+
+    private async Task EnsureBulkPricingTypesLoadedAsync()
+    {
+        if (!ShowProductPricing || BulkPricingTypes.Count > 0)
+            return;
+
+        await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
+    }
+
     public void EnterReturnMode(string? reference = null)
     {
         IsReturnMode = true;
@@ -165,6 +214,46 @@ public partial class PurchaseInvoiceViewModel
         }
 
         await LoadPurchaseRowColorsAsync(row, productId);
+        await LoadRowPricingOptionsAsync(row, productId);
+    }
+
+    private async Task LoadRowPricingOptionsAsync(InvoiceItemRow row, int productId)
+    {
+        if (!ShowProductPricing)
+        {
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            return;
+        }
+
+        var prices = await _productPriceService.GetByProductIdAsync(productId);
+        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: true);
+
+        row.AvailablePricingOptions.Clear();
+        foreach (var option in options)
+            row.AvailablePricingOptions.Add(option);
+
+        if (options.Count == 0)
+        {
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            row.PricingTypeId = null;
+            row.PricingTypeName = string.Empty;
+            return;
+        }
+
+        var preferred = InvoiceBulkPricingHelper.ResolvePreferredOption(
+            options,
+            row.PricingTypeId,
+            SelectedBulkPricingType?.Id);
+
+        if (preferred is null)
+            return;
+
+        var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
+        if (keepExistingPrice)
+            row.SetSelectedPricingOptionWithoutPrice(preferred);
+        else
+            row.SelectedPricingOption = preferred;
     }
 
     private async Task LoadPurchaseRowColorsAsync(InvoiceItemRow row, int productId)

@@ -112,7 +112,7 @@ public class ExcelExportService : IExportService
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
             FontSize = 12,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(40)
+            PagePadding = new Thickness(40, 10, 40, 40)
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
