@@ -20,13 +20,20 @@ public partial class OpeningStockViewModel : ViewModelBase
     private readonly IProductPriceService _productPriceService;
     private readonly IPricingTypeService _pricingTypeService;
     private bool _initialized;
+    private bool _suppressPricingTypeReload;
+    private Dictionary<int, decimal> _warehouseUnitCosts = new();
+    private Dictionary<(int ProductId, int PricingTypeId), ProductPrice> _pricesByProductAndType = new();
 
     public ObservableCollection<OpeningStockRow> Rows { get; } = [];
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
+    public ObservableCollection<PricingType> PricingTypes { get; } = [];
 
     [ObservableProperty]
     private Warehouse? _selectedWarehouse;
+
+    [ObservableProperty]
+    private PricingType? _selectedPricingType;
 
     [ObservableProperty]
     private string _errorMessage = string.Empty;
@@ -74,6 +81,8 @@ public partial class OpeningStockViewModel : ViewModelBase
             foreach (var p in products)
                 Products.Add(p);
 
+            await EnsurePricingTypesLoadedAsync();
+
             _initialized = true;
 
             if (Warehouses.Count > 0)
@@ -82,10 +91,54 @@ public partial class OpeningStockViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
+    private async Task EnsurePricingTypesLoadedAsync()
+    {
+        PricingTypes.Clear();
+        if (!ProductPricingEnabled)
+        {
+            _suppressPricingTypeReload = true;
+            SelectedPricingType = null;
+            _suppressPricingTypeReload = false;
+            return;
+        }
+
+        await _pricingTypeService.EnsureDefaultExistsAsync();
+        var types = await _pricingTypeService.GetActiveAsync();
+        foreach (var type in types)
+            PricingTypes.Add(type);
+
+        _suppressPricingTypeReload = true;
+        SelectedPricingType = types.FirstOrDefault(t => t.IsDefault)
+            ?? types.FirstOrDefault(t => t.Name == "سعر مفرد")
+            ?? types.FirstOrDefault();
+        _suppressPricingTypeReload = false;
+
+        await ReloadProductPricesCacheAsync();
+    }
+
+    private async Task ReloadProductPricesCacheAsync()
+    {
+        _pricesByProductAndType.Clear();
+        if (!ProductPricingEnabled || Products.Count == 0)
+            return;
+
+        var prices = await _productPriceService.GetByProductIdsAsync(Products.Select(p => p.Id));
+        foreach (var price in prices)
+            _pricesByProductAndType[(price.ProductId, price.PricingTypeId)] = price;
+    }
+
     partial void OnSelectedWarehouseChanged(Warehouse? value)
     {
         if (value is not null && _initialized)
             _ = LoadExistingStockAsync();
+    }
+
+    partial void OnSelectedPricingTypeChanged(PricingType? value)
+    {
+        if (_suppressPricingTypeReload || !_initialized || !ProductPricingEnabled)
+            return;
+
+        ApplyUnitCostsForSelectedPricingType();
     }
 
     private async Task LoadExistingStockAsync()
@@ -97,9 +150,13 @@ public partial class OpeningStockViewModel : ViewModelBase
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == SelectedWarehouse.Id);
 
-            Rows.Clear();
+            _warehouseUnitCosts = stocks.ToDictionary(s => s.ProductId, s => s.UnitCost);
             var stockDetails = stocks.ToDictionary(s => s.ProductId);
 
+            if (ProductPricingEnabled)
+                await ReloadProductPricesCacheAsync();
+
+            Rows.Clear();
             foreach (var product in Products)
             {
                 stockDetails.TryGetValue(product.Id, out var stock);
@@ -109,13 +166,37 @@ public partial class OpeningStockViewModel : ViewModelBase
                     ProductId = product.Id,
                     ProductName = product.Name,
                     Quantity = stock?.Quantity ?? 0,
-                    UnitCost = stock?.UnitCost ?? 0
+                    UnitCost = ResolveDisplayUnitCost(product.Id, stock?.UnitCost ?? 0)
                 });
             }
 
             IsSaved = false;
         }
         finally { IsBusy = false; }
+    }
+
+    private decimal ResolveDisplayUnitCost(int productId, decimal warehouseUnitCost)
+    {
+        if (ProductPricingEnabled
+            && SelectedPricingType is not null
+            && _pricesByProductAndType.TryGetValue((productId, SelectedPricingType.Id), out var price)
+            && price.PurchasePrice > 0)
+        {
+            return price.PurchasePrice;
+        }
+
+        return warehouseUnitCost;
+    }
+
+    private void ApplyUnitCostsForSelectedPricingType()
+    {
+        foreach (var row in Rows.Where(r => r.ProductId > 0))
+        {
+            _warehouseUnitCosts.TryGetValue(row.ProductId, out var warehouseCost);
+            row.UnitCost = ResolveDisplayUnitCost(row.ProductId, warehouseCost);
+        }
+
+        IsSaved = false;
     }
 
     [RelayCommand]
@@ -209,18 +290,22 @@ public partial class OpeningStockViewModel : ViewModelBase
             var applied = 0;
             var unmatched = 0;
             var pricesToSave = new List<ProductPrice>();
-            int? defaultPricingTypeId = null;
+            int? pricingTypeId = null;
 
-            if (includePricing && validRows.Any(r => r.ProductSalePrice.HasValue))
+            if (includePricing)
             {
                 await _pricingTypeService.EnsureDefaultExistsAsync();
-                var types = await _pricingTypeService.GetActiveAsync();
-                defaultPricingTypeId = types.FirstOrDefault(t => t.IsDefault)?.Id
-                    ?? types.FirstOrDefault(t => t.Name == "سعر مفرد")?.Id;
+                if (SelectedPricingType is null && PricingTypes.Count == 0)
+                    await EnsurePricingTypesLoadedAsync();
+
+                pricingTypeId = SelectedPricingType?.Id
+                    ?? PricingTypes.FirstOrDefault(t => t.IsDefault)?.Id
+                    ?? PricingTypes.FirstOrDefault(t => t.Name == "سعر مفرد")?.Id
+                    ?? (await _pricingTypeService.GetActiveAsync()).FirstOrDefault()?.Id;
             }
 
             var existingPricesByProduct = new Dictionary<int, ProductPrice>();
-            if (defaultPricingTypeId is int pricingTypeIdForLookup)
+            if (pricingTypeId is int pricingTypeIdForLookup)
             {
                 var existingPrices = await _productPriceService.GetByProductIdsAsync(Products.Select(p => p.Id));
                 foreach (var price in existingPrices.Where(p => p.PricingTypeId == pricingTypeIdForLookup))
@@ -264,13 +349,29 @@ public partial class OpeningStockViewModel : ViewModelBase
                     rowByProductId[product.Id] = newRow;
                 }
 
-                if (includePricing && importRow.ProductSalePrice.HasValue && defaultPricingTypeId is int pricingTypeId)
+                if (includePricing && pricingTypeId is int typeId && importRow.UnitCost > 0)
+                {
+                    existingPricesByProduct.TryGetValue(product.Id, out var existingPrice);
+                    var salePrice = importRow.ProductSalePrice
+                        ?? existingPrice?.SalePrice
+                        ?? 0m;
+                    pricesToSave.Add(new ProductPrice
+                    {
+                        ProductId = product.Id,
+                        PricingTypeId = typeId,
+                        SalePrice = salePrice,
+                        PurchasePrice = importRow.UnitCost
+                    });
+                }
+                else if (includePricing
+                         && importRow.ProductSalePrice.HasValue
+                         && pricingTypeId is int saleTypeId)
                 {
                     existingPricesByProduct.TryGetValue(product.Id, out var existingPrice);
                     pricesToSave.Add(new ProductPrice
                     {
                         ProductId = product.Id,
-                        PricingTypeId = pricingTypeId,
+                        PricingTypeId = saleTypeId,
                         SalePrice = importRow.ProductSalePrice.Value,
                         PurchasePrice = existingPrice?.PurchasePrice ?? 0
                     });
@@ -283,6 +384,9 @@ public partial class OpeningStockViewModel : ViewModelBase
                 await _productPriceService.UpsertManyAsync(pricesToSave);
 
             await SaveImportedRowsAsync();
+
+            if (includePricing)
+                await ReloadProductPricesCacheAsync();
 
             ImportStatusMessage = unmatched > 0
                 ? $"تم استيراد {applied} منتج — لم يُطابق {unmatched}"
@@ -331,6 +435,8 @@ public partial class OpeningStockViewModel : ViewModelBase
                     CreatedAt = DateTime.UtcNow
                 });
             }
+
+            _warehouseUnitCosts[row.ProductId] = row.UnitCost;
         }
 
         await _unitOfWork.SaveChangesAsync();
@@ -345,6 +451,12 @@ public partial class OpeningStockViewModel : ViewModelBase
         if (SelectedWarehouse is null)
         {
             ErrorMessage = "يرجى اختيار المخزن";
+            return;
+        }
+
+        if (ProductPricingEnabled && SelectedPricingType is null)
+        {
+            ErrorMessage = "يرجى اختيار نوع التسعير";
             return;
         }
 
@@ -409,9 +521,15 @@ public partial class OpeningStockViewModel : ViewModelBase
                         CreatedAt = DateTime.UtcNow
                     });
                 }
+
+                _warehouseUnitCosts[row.ProductId] = row.UnitCost;
             }
 
             await _unitOfWork.SaveChangesAsync();
+
+            if (ProductPricingEnabled && SelectedPricingType is not null)
+                await SavePurchasePricesForSelectedTypeAsync(validRows);
+
             IsSaved = true;
             BeautifulMessageDialog.ShowSuccess("تم حفظ الأرصدة الافتتاحية بنجاح");
         }
@@ -420,6 +538,32 @@ public partial class OpeningStockViewModel : ViewModelBase
             ErrorMessage = $"حدث خطأ: {ex.Message}";
         }
         finally { IsBusy = false; }
+    }
+
+    private async Task SavePurchasePricesForSelectedTypeAsync(IReadOnlyList<OpeningStockRow> validRows)
+    {
+        if (SelectedPricingType is null) return;
+
+        await ReloadProductPricesCacheAsync();
+
+        var pricesToSave = new List<ProductPrice>();
+        foreach (var row in validRows)
+        {
+            _pricesByProductAndType.TryGetValue((row.ProductId, SelectedPricingType.Id), out var existing);
+            pricesToSave.Add(new ProductPrice
+            {
+                ProductId = row.ProductId,
+                PricingTypeId = SelectedPricingType.Id,
+                PurchasePrice = row.UnitCost,
+                SalePrice = existing?.SalePrice ?? 0m
+            });
+        }
+
+        if (pricesToSave.Count == 0)
+            return;
+
+        await _productPriceService.UpsertManyAsync(pricesToSave);
+        await ReloadProductPricesCacheAsync();
     }
 }
 

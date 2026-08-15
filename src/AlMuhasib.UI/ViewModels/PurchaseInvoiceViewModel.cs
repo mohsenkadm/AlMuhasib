@@ -431,11 +431,15 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 && _productSizeService is not null
                 && await _productSizeService.HasSizesAsync(product.Id))
             {
-                await TryPromptClothingSizesAsync(product, row.UnitPrice, replaceRow: row);
+                var promptPrice = row.UnitPrice;
+                if (promptPrice <= 0 && QuickSearchCatalog.TryGetSuggestedPrice(product.Id, out var suggested))
+                    promptPrice = suggested;
+                await TryPromptClothingSizesAsync(product, promptPrice, replaceRow: row);
                 return;
             }
 
             await LoadPurchaseRowFeatureDataAsync(row);
+            RecalculateTotals();
         }
         catch { /* ignore lookup failures */ }
     }
@@ -461,9 +465,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         if (updatedRow?.SelectedProduct is Product product)
         {
+            var promptPrice = updatedRow.UnitPrice;
+            if (promptPrice <= 0 && QuickSearchCatalog.TryGetSuggestedPrice(product.Id, out var suggested))
+                promptPrice = suggested;
+
             var handled = await TryPromptClothingSizesAsync(
                 product,
-                updatedRow.UnitPrice,
+                promptPrice,
                 replaceRow: updatedRow.ProductSizeId is null ? updatedRow : null);
             if (handled)
             {

@@ -60,24 +60,37 @@
                     </Grid>
                 </Border>
 
-                <!-- WAREHOUSE SELECTOR + EXCEL -->
+                <!-- WAREHOUSE SELECTOR + PRICING TYPE + EXCEL -->
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
                                      Padding="20,16" Margin="0,0,0,16"
                                      materialDesign:ElevationAssist.Elevation="Dp1">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ComboBox Grid.Column="0"
-                                  ItemsSource="{Binding Warehouses}"
-                                  SelectedItem="{Binding SelectedWarehouse}"
-                                  DisplayMemberPath="Name"
-                                  materialDesign:HintAssist.Hint="اختر المخزن"
-                                  materialDesign:HintAssist.IsFloating="True"
-                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  Style="{StaticResource FilledComboBox}"
-                                  FontSize="14" />
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <ComboBox Width="280"
+                                      ItemsSource="{Binding Warehouses}"
+                                      SelectedItem="{Binding SelectedWarehouse}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="اختر المخزن"
+                                      materialDesign:HintAssist.IsFloating="True"
+                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      Style="{StaticResource FilledComboBox}"
+                                      FontSize="14" />
+                            <ComboBox Width="220" Margin="12,0,0,0"
+                                      ItemsSource="{Binding PricingTypes}"
+                                      SelectedItem="{Binding SelectedPricingType}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="نوع التسعير"
+                                      materialDesign:HintAssist.IsFloating="True"
+                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      Style="{StaticResource FilledComboBox}"
+                                      FontSize="14"
+                                      Visibility="{Binding ProductPricingEnabled, Converter={StaticResource BoolToVis}}"
+                                      ToolTip="أسعار الشراء المدخلة تُحفظ حسب نوع التسعير المختار"/>
+                        </StackPanel>
                         <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left"
                                    VerticalAlignment="Center" Margin="16,0,0,0">
                             <Button Command="{Binding DownloadTemplateCommand}"
