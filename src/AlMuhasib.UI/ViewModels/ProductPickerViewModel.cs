@@ -277,18 +277,19 @@ public partial class ProductPickerViewModel : ObservableObject
         var stocks = await _unitOfWork.WarehouseStocks.FindAsync(_ => true);
         foreach (var group in stocks.GroupBy(s => s.ProductId))
         {
-            _stockByProduct[group.Key] = _warehouseId is int wid
-                ? group.Where(s => s.WarehouseId == wid).Sum(s => s.Quantity)
-                : group.Sum(s => s.Quantity);
-
             _stocksByProduct[group.Key] = group
-                .OrderBy(s => warehouses.GetValueOrDefault(s.WarehouseId, string.Empty))
+                .Where(s => warehouses.ContainsKey(s.WarehouseId))
+                .OrderBy(s => warehouses[s.WarehouseId])
                 .Select(s => new WarehouseStockChip
                 {
-                    WarehouseName = warehouses.GetValueOrDefault(s.WarehouseId, $"مخزن {s.WarehouseId}"),
+                    WarehouseName = warehouses[s.WarehouseId],
                     Quantity = s.Quantity
                 })
                 .ToList();
+
+            _stockByProduct[group.Key] = _warehouseId is int wid
+                ? group.Where(s => s.WarehouseId == wid && warehouses.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity)
+                : group.Where(s => warehouses.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity);
         }
     }
 

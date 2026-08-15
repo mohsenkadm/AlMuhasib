@@ -220,6 +220,10 @@
                                                     Description="إدارة مندوبي المبيعات وعمولاتهم وأهدافهم وتحصيلاتهم وربطهم بالعملاء والفواتير مع تقارير الأداء"
                                                     Icon="AccountTie" IconBackground="#E3F2FD" IconForeground="#1565C0"
                                                     IsChecked="{Binding SalesRepresentatives}"/>
+                        <controls:FeatureToggleCard Title="فاتورة التلف"
+                                                    Description="تسجيل المواد التالفة وإنقاصها من المخزن مع تقرير التلف"
+                                                    Icon="DeleteAlert" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    IsChecked="{Binding DamageInvoices}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

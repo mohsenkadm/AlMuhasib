@@ -55,11 +55,16 @@ public partial class MainWindowViewModel
         if (string.Equals(item.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
             return flags.SalesReturns;
 
+        if (string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
+            return flags.DamageInvoices;
+
         return item.ViewModelType switch
         {
             var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
             var t when t == typeof(DriversViewModel) => flags.WarehouseInvoiceAndDriver,
             var t when t == typeof(PackagingTypesViewModel) => flags.UnitsOfMeasure,
+            var t when t == typeof(PackagingStockReportViewModel) => flags.UnitsOfMeasure,
+            var t when t == typeof(DamageInvoicesReportViewModel) => flags.DamageInvoices,
             var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(LoyaltySettingsViewModel) => flags.LoyaltySystem,
@@ -159,8 +164,10 @@ public partial class MainWindowViewModel
         && item.ScreenName != "Dashboard";
 
     private static string GetMenuPreferenceKey(NavigationMenuItem item) =>
-        // مرتجع المشتريات يشارك ViewModel مع فاتورة المشتريات — نميّزه بـ ScreenName
+        // مرتجع المشتريات / المبيعات / التلف تشارك ViewModel — نميّزها بـ ScreenName
         string.Equals(item.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(item.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase)
             ? item.ScreenName
             : item.ViewModelType?.Name ?? item.ScreenName;
 

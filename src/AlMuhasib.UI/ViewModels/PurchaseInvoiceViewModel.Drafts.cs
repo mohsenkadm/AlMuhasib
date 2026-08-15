@@ -1,5 +1,6 @@
 using System.Windows.Threading;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 
@@ -36,13 +37,9 @@ public partial class PurchaseInvoiceViewModel
         IsCashPayment = IsCashPayment,
         CashBoxId = SelectedCashBox?.Id,
         Notes = Notes,
-        Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName)).Select(i => new SalesInvoiceDraftLine
-        {
-            ProductId = i.ProductId ?? 0,
-            ProductName = i.ItemName,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice
-        }).ToList()
+        Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName))
+            .Select(InvoiceDraftLineMapper.ToDraftLine)
+            .ToList()
     };
 
     private void ApplyDraft(PurchaseInvoiceDraft draft)
@@ -67,15 +64,10 @@ public partial class PurchaseInvoiceViewModel
 
         foreach (var line in draft.Lines)
         {
-            var row = new InvoiceItemRow
-            {
-                ProductId = line.ProductId > 0 ? line.ProductId : null,
-                ItemName = line.ProductName,
-                Quantity = line.Quantity,
-                UnitPrice = line.UnitPrice
-            };
+            var row = InvoiceDraftLineMapper.ToRow(line, Products);
             WireItemRow(row);
             Items.Add(row);
+            _ = LoadPurchaseRowFeatureDataAsync(row);
         }
 
         if (!Items.Any())

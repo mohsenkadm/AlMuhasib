@@ -41,6 +41,8 @@ public class BusinessFeatureFlags
     /// <summary>نظام المندوبين (ملفات، عمولات، أهداف، تحصيلات، تقارير) — معطّل افتراضياً.</summary>
     public bool SalesRepresentatives { get; set; }
 
+    public bool DamageInvoices { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }

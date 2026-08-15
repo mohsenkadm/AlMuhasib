@@ -84,6 +84,12 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StockQuantity"/>
                         <DataGridTextColumn Header="قيمة المخزن" Binding="{Binding StockValue, StringFormat=N0}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StockValue"/>
+                        <DataGridTextColumn Header="إجمالي الوارد" Binding="{Binding TotalImportedQuantity, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalImportedQuantity"/>
+                        <DataGridTextColumn Header="كمية التلف" Binding="{Binding DamagedQuantity, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DamagedQuantity"/>
+                        <DataGridTextColumn Header="تكلفة التلف" Binding="{Binding DamagedCost, StringFormat=N0}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DamagedCost"/>
                         <DataGridTextColumn Header="الكمية المباعة" Binding="{Binding QuantitySold, StringFormat=N0}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="QuantitySold"/>
                         <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="110"

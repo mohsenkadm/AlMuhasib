@@ -73,6 +73,8 @@ public static class ReportMenuCatalog
             ("تقييم المخزون بالتكلفة", PackIconKind.CashPlus, typeof(InventoryValuationReportViewModel), ScreenPermissionRegistry.Reports),
             ("جرد المخزون", PackIconKind.PackageVariant, typeof(StockTakingReportViewModel), ScreenPermissionRegistry.Reports),
             ("تكلفة البضاعة المباعة", PackIconKind.CartArrowDown, typeof(CogsReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقرير فواتير التلف", PackIconKind.DeleteAlert, typeof(DamageInvoicesReportViewModel), ScreenPermissionRegistry.Reports),
+            ("كميات حسب التعبئة", PackIconKind.PackageVariant, typeof(PackagingStockReportViewModel), ScreenPermissionRegistry.Reports),
         ]),
         ("financial", "التقارير المالية", PackIconKind.Bank, "#00695C", "#E0F2F1", ScreenPermissionRegistry.Reports,
         [

@@ -28,6 +28,7 @@ public partial class DeletedInvoicesReportViewModel : SupervisoryReportViewModel
         new("أقساط", InvoiceType.Installment),
         new("مرتجع مشتريات", InvoiceType.PurchaseReturn),
         new("مرتجع مبيعات", InvoiceType.SaleReturn),
+        new("تلف", InvoiceType.Damage),
     ];
 
     [ObservableProperty] private InvoiceTypeFilterItem? _selectedInvoiceType;

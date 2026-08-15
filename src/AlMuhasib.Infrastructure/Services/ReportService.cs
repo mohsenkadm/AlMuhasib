@@ -998,20 +998,158 @@ public partial class ReportService : IReportService
         if (!includeZero) query = query.Where(ws => ws.Quantity > 0);
 
         var stocks = await query.OrderBy(ws => ws.Warehouse!.Name).ThenBy(ws => ws.Product!.Name).ToListAsync();
+        var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
+        var damageItems = await context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Product != null
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Damage
+                         && productIds.Contains(ii.ProductId!.Value))
+            .ToListAsync();
+
         var result = new List<WarehouseStockRow>();
         foreach (var s in stocks)
         {
+            if (s.Product is null) continue;
             var pi = await context.InvoiceItems.Include(ii => ii.Invoice)
                 .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase).ToListAsync();
             var avgCost = ProductCostHelper.ComputeAverageUnitCost(pi, s.OpeningQuantity, s.UnitCost);
+            var damagedQty = damageItems
+                .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.WarehouseId == s.WarehouseId)
+                .Sum(ii => ii.Quantity);
 
             result.Add(new WarehouseStockRow
             {
-                ProductName = s.Product?.Name ?? "\u2014", WarehouseName = s.Warehouse?.Name ?? "\u2014",
-                Quantity = s.Quantity, AverageCost = Math.Round(avgCost, 0), TotalValue = Math.Round(s.Quantity * avgCost, 0)
+                ProductName = s.Product.Name,
+                WarehouseName = s.Warehouse?.Name ?? "—",
+                Quantity = s.Quantity,
+                AverageCost = Math.Round(avgCost, 0),
+                TotalValue = Math.Round(s.Quantity * avgCost, 0),
+                DamagedQuantity = damagedQty,
+                DamagedCost = Math.Round(damagedQty * avgCost, 0)
             });
         }
         return result;
+    }
+
+    public async Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.InvoiceItems
+            .AsNoTracking()
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice!).ThenInclude(i => i.Warehouse)
+            .Where(ii => ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Damage
+                         && ii.ProductId != null
+                         && ii.Product != null);
+
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var items = await query.OrderByDescending(ii => ii.Invoice!.Date).ToListAsync();
+        var productIds = items.Select(i => i.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+
+        var rows = new List<DamageInvoiceReportRow>();
+        foreach (var item in items)
+        {
+            var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(item.ProductId!.Value) ?? [], stocks, item.ProductId.Value);
+            rows.Add(new DamageInvoiceReportRow
+            {
+                InvoiceNumber = item.Invoice!.InvoiceNumber,
+                Date = item.Invoice.Date,
+                WarehouseName = item.Invoice.Warehouse?.Name ?? "—",
+                ProductName = item.Product!.Name,
+                Quantity = item.Quantity,
+                UnitCost = Math.Round(avgCost, 0),
+                TotalCost = Math.Round(item.Quantity * avgCost, 0),
+                Notes = item.Invoice.Notes
+            });
+        }
+
+        return new DamageInvoicesReportResult
+        {
+            TotalDamagedQuantity = rows.Sum(r => r.Quantity),
+            TotalDamagedCost = rows.Sum(r => r.TotalCost),
+            InvoiceCount = rows.Select(r => r.InvoiceNumber).Distinct().Count(),
+            LineCount = rows.Count,
+            Rows = rows
+        };
+    }
+
+    public async Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var stockQ = context.WarehouseStocks.AsNoTracking()
+            .Include(ws => ws.Product)
+            .Include(ws => ws.Warehouse)
+            .Where(ws => ws.Product != null && ws.Warehouse != null);
+        if (warehouseId.HasValue)
+            stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
+        if (productId.HasValue)
+            stockQ = stockQ.Where(ws => ws.ProductId == productId.Value);
+
+        var stocks = await stockQ.ToListAsync();
+        var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
+        var units = await context.ProductUnits.AsNoTracking()
+            .Include(u => u.PackagingType)
+            .Where(u => productIds.Contains(u.ProductId))
+            .ToListAsync();
+
+        var rows = new List<PackagingStockReportRow>();
+        foreach (var stock in stocks)
+        {
+            var productUnits = units.Where(u => u.ProductId == stock.ProductId).ToList();
+            if (productUnits.Count == 0)
+            {
+                rows.Add(new PackagingStockReportRow
+                {
+                    ProductName = stock.Product!.Name,
+                    WarehouseName = stock.Warehouse!.Name,
+                    BaseQuantity = stock.Quantity,
+                    PackagingTypeName = "وحدة أساسية",
+                    ConversionFactor = 1m,
+                    EquivalentPackQuantity = stock.Quantity
+                });
+                continue;
+            }
+
+            foreach (var unit in productUnits.OrderBy(u => u.ConversionFactor))
+            {
+                var factor = unit.ConversionFactor <= 0 ? 1m : unit.ConversionFactor;
+                rows.Add(new PackagingStockReportRow
+                {
+                    ProductName = stock.Product!.Name,
+                    WarehouseName = stock.Warehouse!.Name,
+                    BaseQuantity = stock.Quantity,
+                    PackagingTypeName = unit.PackagingType?.Name ?? unit.UnitName,
+                    ConversionFactor = factor,
+                    EquivalentPackQuantity = Math.Round(stock.Quantity / factor, 3)
+                });
+            }
+        }
+
+        rows = rows
+            .OrderBy(r => r.ProductName)
+            .ThenBy(r => r.WarehouseName)
+            .ThenBy(r => r.ConversionFactor)
+            .ToList();
+
+        return new PackagingStockReportResult
+        {
+            TotalBaseQuantity = stocks.Sum(s => s.Quantity),
+            ProductCount = stocks.Select(s => s.ProductId).Distinct().Count(),
+            RowCount = rows.Count,
+            Rows = rows
+        };
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -1275,6 +1413,7 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Product)
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
+                         && ii.Product != null
                          && ii.Invoice != null
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
 
@@ -1288,7 +1427,7 @@ public partial class ReportService : IReportService
             .Select(g => new TopProductRow
             {
                 ProductId = g.Key,
-                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                ProductName = g.First().Product!.Name,
                 QuantitySold = g.Sum(x => x.Quantity),
                 Revenue = g.Sum(x => x.TotalPrice)
             })
@@ -1325,6 +1464,7 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Product)
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
+                         && ii.Product != null
                          && ii.Invoice != null
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
 
@@ -1356,7 +1496,7 @@ public partial class ReportService : IReportService
             rows.Add(new ProductProfitMarginRow
             {
                 ProductId = g.Key,
-                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                ProductName = g.First().Product!.Name,
                 QuantitySold = qty,
                 Revenue = revenue,
                 Cost = cost,
@@ -1388,6 +1528,7 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Product)
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
+                         && ii.Product != null
                          && ii.Invoice != null
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
 
@@ -1410,6 +1551,36 @@ public partial class ReportService : IReportService
             .ToListAsync();
         var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
 
+        var purchaseQtyQuery = context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Product != null
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
+                         && productIds.Contains(ii.ProductId!.Value));
+        if (from.HasValue) purchaseQtyQuery = purchaseQtyQuery.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) purchaseQtyQuery = purchaseQtyQuery.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) purchaseQtyQuery = purchaseQtyQuery.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+        var purchaseItems = await purchaseQtyQuery.ToListAsync();
+        var purchaseQtyByProduct = purchaseItems
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+
+        var damageQtyQuery = context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Product != null
+                         && ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Damage
+                         && productIds.Contains(ii.ProductId!.Value));
+        if (from.HasValue) damageQtyQuery = damageQtyQuery.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) damageQtyQuery = damageQtyQuery.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) damageQtyQuery = damageQtyQuery.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+        var damageItems = await damageQtyQuery.ToListAsync();
+        var damageQtyByProduct = damageItems
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+
         var rows = new List<MaterialNetProfitRow>();
         foreach (var g in soldItems.GroupBy(ii => ii.ProductId!.Value))
         {
@@ -1419,15 +1590,23 @@ public partial class ReportService : IReportService
                 purchasesByProduct.GetValueOrDefault(g.Key) ?? [], allStocksForCost, g.Key);
             var cost = Math.Round(qty * avgCost, 0);
             var profit = revenue - cost;
-            var stockQty = stocks.Where(s => s.ProductId == g.Key).Sum(s => s.Quantity);
+            var productStocks = stocks.Where(s => s.ProductId == g.Key).ToList();
+            var stockQty = productStocks.Sum(s => s.Quantity);
             var stockValue = Math.Round(stockQty * avgCost, 0);
+            var openingQty = productStocks.Sum(s => s.OpeningQuantity);
+            var purchasedQty = purchaseQtyByProduct.GetValueOrDefault(g.Key);
+            var totalImported = openingQty + purchasedQty;
+            var damagedQty = damageQtyByProduct.GetValueOrDefault(g.Key);
 
             rows.Add(new MaterialNetProfitRow
             {
                 ProductId = g.Key,
-                ProductName = g.First().Product?.Name ?? g.First().ItemName,
+                ProductName = g.First().Product!.Name,
                 StockQuantity = stockQty,
                 StockValue = stockValue,
+                TotalImportedQuantity = totalImported,
+                DamagedQuantity = damagedQty,
+                DamagedCost = Math.Round(damagedQty * avgCost, 0),
                 QuantitySold = qty,
                 Revenue = revenue,
                 Cost = cost,
@@ -1794,7 +1973,8 @@ public partial class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
 
         var itemsQ = context.InvoiceItems.AsNoTracking()
-            .Where(ii => ii.ProductId != null);
+            .Include(ii => ii.Product)
+            .Where(ii => ii.ProductId != null && ii.Product != null);
 
         if (productId.HasValue)
             itemsQ = itemsQ.Where(ii => ii.ProductId == productId);
@@ -1805,6 +1985,7 @@ public partial class ReportService : IReportService
             where inv.InvoiceType == InvoiceType.Purchase
                   || inv.InvoiceType == InvoiceType.Sale
                   || inv.InvoiceType == InvoiceType.Installment
+                  || inv.InvoiceType == InvoiceType.Damage
             select new { ii, inv };
 
         if (from.HasValue)
@@ -1816,17 +1997,41 @@ public partial class ReportService : IReportService
 
         var raw = await query.ToListAsync();
 
-        var grouped = raw
-            .GroupBy(x => x.ii.ProductId!.Value)
-            .Select(g =>
+        var stockQ = context.WarehouseStocks.AsNoTracking()
+            .Where(ws => ws.Product != null);
+        if (productId.HasValue)
+            stockQ = stockQ.Where(ws => ws.ProductId == productId.Value);
+        if (warehouseId.HasValue)
+            stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
+        var openingByProduct = await stockQ
+            .GroupBy(ws => ws.ProductId)
+            .Select(g => new { ProductId = g.Key, Opening = g.Sum(x => x.OpeningQuantity) })
+            .ToListAsync();
+        var openingMap = openingByProduct.ToDictionary(x => x.ProductId, x => x.Opening);
+
+        var productIds = raw.Select(x => x.ii.ProductId!.Value)
+            .Concat(openingMap.Keys)
+            .Distinct()
+            .ToList();
+
+        var productNames = await context.Products.AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var grouped = productIds
+            .Select(pid =>
             {
-                var name = g.Select(x => x.ii.ItemName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)) ?? $"#{g.Key}";
-                decimal qtyIn = g.Where(x => x.inv.InvoiceType == InvoiceType.Purchase).Sum(x => x.ii.Quantity);
-                decimal qtyOut = g.Where(x => x.inv.InvoiceType != InvoiceType.Purchase).Sum(x => x.ii.Quantity);
+                var items = raw.Where(x => x.ii.ProductId == pid).ToList();
+                decimal qtyIn = items.Where(x => x.inv.InvoiceType == InvoiceType.Purchase).Sum(x => x.ii.Quantity);
+                decimal qtyOut = items.Where(x =>
+                        x.inv.InvoiceType is InvoiceType.Sale or InvoiceType.Installment or InvoiceType.Damage)
+                    .Sum(x => x.ii.Quantity);
+                var opening = openingMap.GetValueOrDefault(pid);
+                qtyIn += opening;
                 return new ProductMovementRow
                 {
-                    ProductId = g.Key,
-                    ProductName = name,
+                    ProductId = pid,
+                    ProductName = productNames.GetValueOrDefault(pid) ?? $"#{pid}",
                     QuantityIn = qtyIn,
                     QuantityOut = qtyOut
                 };

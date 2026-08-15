@@ -77,14 +77,16 @@ public partial class WarehouseReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المخازن.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية" };
+        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
         var rows = _allRows.Select(r => new object[]
         {
             r.ProductName,
             r.WarehouseName,
             r.Quantity.ToString("N0"),
             r.AverageCost.ToString("N0"),
-            r.TotalValue.ToString("N0")
+            r.TotalValue.ToString("N0"),
+            r.DamagedQuantity.ToString("N0"),
+            r.DamagedCost.ToString("N0")
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "المخازن", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
@@ -93,14 +95,16 @@ public partial class WarehouseReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية" };
+        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
         var rows = _allRows.Select(r => new object[]
         {
             r.ProductName,
             r.WarehouseName,
             r.Quantity.ToString("N0"),
             r.AverageCost.ToString("N0"),
-            r.TotalValue.ToString("N0")
+            r.TotalValue.ToString("N0"),
+            r.DamagedQuantity.ToString("N0"),
+            r.DamagedCost.ToString("N0")
         }).ToList();
         _exportService.PrintTable("تقرير المخازن", cols, rows);
     }

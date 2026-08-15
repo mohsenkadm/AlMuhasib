@@ -196,11 +196,7 @@ public partial class InstallmentInvoiceViewModel
                 UnitPrice = item.UnitPrice
             };
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
-            if (row.UnitConversionFactor > 0 && row.UnitConversionFactor != 1m)
-            {
-                row.Quantity = item.Quantity / row.UnitConversionFactor;
-                row.UnitPrice = item.UnitPrice * row.UnitConversionFactor;
-            }
+            InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);
             WireItemRow(row);
             Items.Add(row);
             _ = LoadRowUnitsAsync(row);
