@@ -1,8 +1,8 @@
+import 'package:almuhasib_mobile/core/getx/app_services.dart';
+import 'package:almuhasib_mobile/features/real_estate/models/real_estate_models.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-
-import '../../../core/getx/app_services.dart';
-import '../models/real_estate_models.dart';
+import 'package:get/get.dart' hide Trans;
 
 class RealEstateExpensesController extends GetxController {
   final from = DateTime.now().subtract(const Duration(days: 30)).obs;

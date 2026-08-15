@@ -1,14 +1,14 @@
+import 'package:almuhasib_mobile/core/router/app_routes.dart';
+import 'package:almuhasib_mobile/core/theme/system_themes.dart';
+import 'package:almuhasib_mobile/features/gold_shop/controllers/gold_sales_controller.dart';
+import 'package:almuhasib_mobile/features/gold_shop/models/gold_shop_models.dart';
+import 'package:almuhasib_mobile/features/gold_shop/widgets/gold_labels.dart';
+import 'package:almuhasib_mobile/shared/utils/formatters.dart';
+import 'package:almuhasib_mobile/shared/widgets/design_system/design_system.dart';
+import 'package:almuhasib_mobile/shared/widgets/search_filter_bar.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
-
-import '../../../core/router/app_routes.dart';
-import '../../../core/theme/system_themes.dart';
-import '../../../shared/utils/formatters.dart';
-import '../../../shared/widgets/design_system/design_system.dart';
-import '../controllers/gold_sales_controller.dart';
-import '../models/gold_shop_models.dart';
-import '../widgets/gold_labels.dart';
 
 class GoldSalesScreen extends GetView<GoldSalesController> {
   const GoldSalesScreen({super.key});

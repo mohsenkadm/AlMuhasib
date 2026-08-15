@@ -1,4 +1,5 @@
 export 'app_filter_bar.dart';
+export '../search_filter_bar.dart' show FilterChipOption;
 export 'app_async_body.dart';
 export 'app_balance_hero_card.dart';
 export 'app_charts.dart';

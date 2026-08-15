@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart';  
 import 'app.dart';
 import 'core/config/env_config.dart';
 import 'core/getx/app_services.dart';

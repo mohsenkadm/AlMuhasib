@@ -1,11 +1,11 @@
+import 'package:almuhasib_mobile/core/theme/system_themes.dart';
+import 'package:almuhasib_mobile/features/gold_shop/controllers/gold_notifications_controller.dart';
+import 'package:almuhasib_mobile/shared/utils/formatters.dart';
+import 'package:almuhasib_mobile/shared/widgets/common_widgets.dart';
+import 'package:almuhasib_mobile/shared/widgets/design_system/design_system.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
-
-import '../../../core/theme/system_themes.dart';
-import '../../../shared/utils/formatters.dart';
-import '../../../shared/widgets/common_widgets.dart';
-import '../controllers/gold_notifications_controller.dart';
 
 class GoldNotificationsScreen extends GetView<GoldNotificationsController> {
   const GoldNotificationsScreen({super.key});

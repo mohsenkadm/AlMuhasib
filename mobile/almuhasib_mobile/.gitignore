@@ -46,7 +46,10 @@ app.*.map.json
 
 # Android
 android/local.properties
+android/key.properties
 android/.gradle/
+*.keystore
+*.jks
 
 # iOS
 ios/Pods/
