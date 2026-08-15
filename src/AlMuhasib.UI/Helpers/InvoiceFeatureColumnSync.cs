@@ -42,7 +42,7 @@ public static class InvoiceFeatureColumnSync
                     Set(batch, purchase.ShowExpiryTracking);
                     Set(expiry, purchase.ShowExpiryTracking);
                     Set(serial, purchase.ShowSerialNumbers);
-                    Set(pricing, false);
+                    Set(pricing, purchase.ShowProductPricing);
                     Set(usageInstructions, false);
                     break;
                 case InstallmentInvoiceViewModel installment:
@@ -52,7 +52,7 @@ public static class InvoiceFeatureColumnSync
                     Set(batch, false);
                     Set(expiry, false);
                     Set(serial, false);
-                    Set(pricing, false);
+                    Set(pricing, installment.ShowProductPricing);
                     Set(usageInstructions, false);
                     break;
                 default:

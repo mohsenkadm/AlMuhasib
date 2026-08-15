@@ -43,6 +43,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _productDiscountEnabled;
     [ObservableProperty] private bool _loyaltySystem;
     [ObservableProperty] private bool _salesRepresentatives;
+    [ObservableProperty] private bool _damageInvoices;
 
     [ObservableProperty] private bool _templateMobileShop;
     [ObservableProperty] private bool _templateClothing;
@@ -64,6 +65,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, SalesRepresentatives,
+            DamageInvoices,
             TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy);
 
@@ -140,6 +142,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         ProductDiscountEnabled = p.FeatureFlags.ProductDiscountEnabled;
         LoyaltySystem = p.FeatureFlags.LoyaltySystem;
         SalesRepresentatives = p.FeatureFlags.SalesRepresentatives;
+        DamageInvoices = p.FeatureFlags.DamageInvoices;
 
         TemplateMobileShop = p.FeatureFlags.TemplateMobileShop;
         TemplateClothing = p.FeatureFlags.TemplateClothing;
@@ -174,6 +177,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnProductDiscountEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnLoyaltySystemChanged(bool value) => NotifyFeaturesCount();
     partial void OnSalesRepresentativesChanged(bool value) => NotifyFeaturesCount();
+    partial void OnDamageInvoicesChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateMobileShopChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
@@ -220,6 +224,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.ProductDiscountEnabled = ProductDiscountEnabled;
             p.FeatureFlags.LoyaltySystem = LoyaltySystem;
             p.FeatureFlags.SalesRepresentatives = SalesRepresentatives;
+            p.FeatureFlags.DamageInvoices = DamageInvoices;
 
             p.FeatureFlags.TemplateMobileShop = TemplateMobileShop;
             p.FeatureFlags.TemplateClothing = TemplateClothing;

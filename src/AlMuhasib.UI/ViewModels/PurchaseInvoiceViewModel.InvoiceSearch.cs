@@ -182,6 +182,7 @@ public partial class PurchaseInvoiceViewModel
                 UnitPrice = item.UnitPrice
             };
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
+            InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);
             WireItemRow(row);
             Items.Add(row);
             _ = LoadPurchaseRowFeatureDataAsync(row);

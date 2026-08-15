@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AlMuhasib.Core;
 using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.Helpers;
@@ -218,7 +219,25 @@ public static class InvoiceCustomFieldsHelper
     }
 
     public static decimal ToStockQuantity(InvoiceItemRow row) =>
-        row.Quantity * (row.UnitConversionFactor <= 0 ? 1m : row.UnitConversionFactor);
+        ProductDiscountHelper.ToBaseQuantity(row.Quantity, row.UnitConversionFactor);
+
+    /// <summary>
+    /// بعد تحميل بند محفوظ بالكميات الأساسية: يعرض الكمية بالتعبئة ويُبقي السعر للوحدة الأساسية.
+    /// </summary>
+    public static void ApplyPackDisplayFromStored(InvoiceItemRow row, decimal storedQuantity, decimal storedUnitPrice)
+    {
+        var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+        if (factor != 1m)
+        {
+            row.Quantity = storedQuantity / factor;
+            row.UnitPrice = storedUnitPrice;
+        }
+        else
+        {
+            row.Quantity = storedQuantity;
+            row.UnitPrice = storedUnitPrice;
+        }
+    }
 
     /// <summary>يعيد تسميات الحقول العامة (غير المفاتيح الداخلية __*) من JSON محفوظ.</summary>
     public static IReadOnlyList<string> ExtractPublicLabels(string? json)

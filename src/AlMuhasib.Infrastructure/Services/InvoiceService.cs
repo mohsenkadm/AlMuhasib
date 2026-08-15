@@ -125,7 +125,8 @@ public class InvoiceService : IInvoiceService
             await context.SaveChangesAsync();
 
             if (!skipStockUpdate && invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
-                or InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Installment)
+                or InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Installment
+                or InvoiceType.Damage)
             {
                 foreach (var item in itemsList.Where(i => i.ProductId.HasValue))
                 {
@@ -532,6 +533,7 @@ public class InvoiceService : IInvoiceService
         InvoiceType.Purchase => "مشتريات",
         InvoiceType.Installment => "أقساط",
         InvoiceType.PurchaseReturn => "مرتجع مشتريات",
+        InvoiceType.Damage => "تلف",
         _ => type.ToString()
     };
 

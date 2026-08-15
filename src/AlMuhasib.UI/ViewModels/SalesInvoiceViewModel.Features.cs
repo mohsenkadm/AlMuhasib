@@ -16,8 +16,10 @@ public partial class SalesInvoiceViewModel
     private IProductBatchService? _productBatchService;
     private IProductSerialService? _productSerialService;
     private IProductPriceService? _productPriceService;
+    private IPricingTypeService? _pricingTypeService;
     private IProductSizeService? _productSizeService;
     private IProductColorService? _productColorService;
+    private bool _suppressBulkPricingApply;
 
     private readonly List<string> _activeCustomFieldLabels = [];
     private string? _appliedIndustryTag;
@@ -49,9 +51,11 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showSalesRepSelection;
     [ObservableProperty] private bool _showPharmacyUsage;
     [ObservableProperty] private decimal _transportFeeAmount;
+    [ObservableProperty] private PricingType? _selectedBulkPricingType;
 
     public ObservableCollection<Driver> Drivers { get; } = [];
     public ObservableCollection<SalesRepresentative> SalesRepresentatives { get; } = [];
+    public ObservableCollection<PricingType> BulkPricingTypes { get; } = [];
 
     [ObservableProperty] private Driver? _selectedDriver;
     [ObservableProperty] private SalesRepresentative? _selectedSalesRepresentative;
@@ -176,7 +180,18 @@ public partial class SalesInvoiceViewModel
         if (!ShowSerialNumbers)
             ClearRowSerials();
         if (!ShowProductPricing)
+        {
             ClearRowPricing();
+            _suppressBulkPricingApply = true;
+            SelectedBulkPricingType = null;
+            _suppressBulkPricingApply = false;
+            BulkPricingTypes.Clear();
+        }
+        else
+        {
+            _ = EnsureBulkPricingTypesLoadedAsync();
+        }
+
         if (!ShowClothingSizes)
             ClearRowSizes();
 
@@ -192,6 +207,23 @@ public partial class SalesInvoiceViewModel
             row.PricingTypeId = null;
             row.PricingTypeName = string.Empty;
         }
+    }
+
+    partial void OnSelectedBulkPricingTypeChanged(PricingType? value)
+    {
+        if (_suppressBulkPricingApply || value is null || !ShowProductPricing)
+            return;
+
+        InvoiceBulkPricingHelper.ApplyPricingTypeToRows(Items, value.Id);
+        RecalculateTotals();
+    }
+
+    private async Task EnsureBulkPricingTypesLoadedAsync()
+    {
+        if (!ShowProductPricing || BulkPricingTypes.Count > 0)
+            return;
+
+        await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
     }
 
     private void ClearRowSizes()
@@ -315,7 +347,24 @@ public partial class SalesInvoiceViewModel
             row.AvailableUnits.Clear();
             foreach (var u in units)
                 row.AvailableUnits.Add(u);
-            row.SelectedUnit ??= units.FirstOrDefault(u => u.IsDefault) ?? units.FirstOrDefault();
+
+            ProductUnit? matchedUnit = null;
+            if (!string.IsNullOrWhiteSpace(row.SelectedUnitName))
+            {
+                matchedUnit = units.FirstOrDefault(u =>
+                    string.Equals(u.UnitName, row.SelectedUnitName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (matchedUnit is null && row.UnitConversionFactor > 0 && row.UnitConversionFactor != 1m)
+            {
+                matchedUnit = units.FirstOrDefault(u =>
+                    u.ConversionFactor == row.UnitConversionFactor);
+            }
+
+            row.SelectedUnit = matchedUnit
+                ?? row.SelectedUnit
+                ?? units.FirstOrDefault(u => u.IsDefault)
+                ?? units.FirstOrDefault();
         }
         else
         {
@@ -397,15 +446,7 @@ public partial class SalesInvoiceViewModel
         }
 
         var prices = await _productPriceService.GetByProductIdAsync(productId);
-        var options = prices
-            .Select(p => new ProductPricingOption
-            {
-                PricingTypeId = p.PricingTypeId,
-                Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
-                Price = p.SalePrice,
-                IsDefault = p.PricingType?.IsDefault == true
-            })
-            .ToList();
+        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false);
 
         row.AvailablePricingOptions.Clear();
         foreach (var option in options)
@@ -419,9 +460,13 @@ public partial class SalesInvoiceViewModel
             return;
         }
 
-        var preferred = options.FirstOrDefault(o => o.PricingTypeId == row.PricingTypeId)
-                        ?? options.FirstOrDefault(o => o.IsDefault)
-                        ?? options[0];
+        var preferred = InvoiceBulkPricingHelper.ResolvePreferredOption(
+            options,
+            row.PricingTypeId,
+            SelectedBulkPricingType?.Id);
+
+        if (preferred is null)
+            return;
 
         var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
         if (keepExistingPrice)

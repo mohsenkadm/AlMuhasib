@@ -14,6 +14,7 @@ public static class InvoiceNumberHelper
         InvoiceType.Sale => "SAL",
         InvoiceType.SaleReturn => "SRT",
         InvoiceType.Installment => "INS",
+        InvoiceType.Damage => "DMG",
         _ => "INV"
     };
 

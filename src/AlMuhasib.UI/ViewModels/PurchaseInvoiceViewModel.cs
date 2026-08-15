@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -122,6 +123,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
+        IPricingTypeService pricingTypeService,
         IUserPreferencesService userPreferences,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
@@ -141,6 +143,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         _draftService = draftService;
         _queueService = queueService;
         _productPriceService = productPriceService;
+        _pricingTypeService = pricingTypeService;
         _userPreferences = userPreferences;
         _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
             && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
@@ -210,7 +213,10 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             await QuickSearchCatalog.LoadAsync(
                 Products,
                 InvoicePickerMode.Purchase,
-                _userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+                ShowProductPricing);
+
+            if (ShowProductPricing)
+                await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
 
             // Start with one empty row
             AddRow();
@@ -396,6 +402,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 UnwireItemRow);
         }
 
+        foreach (var row in Items.Where(i => i.ProductId is > 0).ToList())
+            await LoadPurchaseRowFeatureDataAsync(row);
+
         RecalculateTotals();
     }
 
@@ -422,11 +431,15 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 && _productSizeService is not null
                 && await _productSizeService.HasSizesAsync(product.Id))
             {
-                await TryPromptClothingSizesAsync(product, row.UnitPrice, replaceRow: row);
+                var promptPrice = row.UnitPrice;
+                if (promptPrice <= 0 && QuickSearchCatalog.TryGetSuggestedPrice(product.Id, out var suggested))
+                    promptPrice = suggested;
+                await TryPromptClothingSizesAsync(product, promptPrice, replaceRow: row);
                 return;
             }
 
             await LoadPurchaseRowFeatureDataAsync(row);
+            RecalculateTotals();
         }
         catch { /* ignore lookup failures */ }
     }
@@ -452,9 +465,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         if (updatedRow?.SelectedProduct is Product product)
         {
+            var promptPrice = updatedRow.UnitPrice;
+            if (promptPrice <= 0 && QuickSearchCatalog.TryGetSuggestedPrice(product.Id, out var suggested))
+                promptPrice = suggested;
+
             var handled = await TryPromptClothingSizesAsync(
                 product,
-                updatedRow.UnitPrice,
+                promptPrice,
                 replaceRow: updatedRow.ProductSizeId is null ? updatedRow : null);
             if (handled)
             {
@@ -686,8 +703,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 }
 
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
-                var lineTotal = Math.Abs(row.Quantity) * row.UnitPrice;
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
+                var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+                var lineTotal = Math.Abs(row.Quantity) * factor * row.UnitPrice;
 
                 invoiceItems.Add(new InvoiceItem
                 {
@@ -695,7 +712,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = unitPriceForStorage,
+                    UnitPrice = row.UnitPrice,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, [ClothingSizeInvoiceHelper.SizeLabel])
                 });

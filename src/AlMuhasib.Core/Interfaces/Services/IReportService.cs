@@ -33,6 +33,8 @@ public interface IReportService
 
     // Warehouse
     Task<List<WarehouseStockRow>> GetWarehouseReportAsync(int? warehouseId, bool includeZero = false);
+    Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId);
 
     // Investors
     Task<InvestorsReportResult> GetInvestorsReportAsync(int? investorId, DateTime? from, DateTime? to);
@@ -538,6 +540,8 @@ public class WarehouseStockRow
     public decimal Quantity { get; set; }
     public decimal AverageCost { get; set; }
     public decimal TotalValue { get; set; }
+    public decimal DamagedQuantity { get; set; }
+    public decimal DamagedCost { get; set; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -704,6 +708,10 @@ public class MaterialNetProfitRow
     public string ProductName { get; set; } = string.Empty;
     public decimal StockQuantity { get; set; }
     public decimal StockValue { get; set; }
+    /// <summary>إجمالي الوارد = الرصيد الافتتاحي + كميات المشتريات.</summary>
+    public decimal TotalImportedQuantity { get; set; }
+    public decimal DamagedQuantity { get; set; }
+    public decimal DamagedCost { get; set; }
     public decimal QuantitySold { get; set; }
     public decimal Revenue { get; set; }
     public decimal Cost { get; set; }
@@ -1586,4 +1594,43 @@ public class WorkSummaryHourRow
     public string HourLabel { get; set; } = string.Empty;
     public int ActivityCount { get; set; }
     public decimal SalesAmount { get; set; }
+}
+
+public class DamageInvoicesReportResult
+{
+    public decimal TotalDamagedQuantity { get; set; }
+    public decimal TotalDamagedCost { get; set; }
+    public int InvoiceCount { get; set; }
+    public int LineCount { get; set; }
+    public List<DamageInvoiceReportRow> Rows { get; set; } = [];
+}
+
+public class DamageInvoiceReportRow
+{
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal TotalCost { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class PackagingStockReportResult
+{
+    public decimal TotalBaseQuantity { get; set; }
+    public int ProductCount { get; set; }
+    public int RowCount { get; set; }
+    public List<PackagingStockReportRow> Rows { get; set; } = [];
+}
+
+public class PackagingStockReportRow
+{
+    public string ProductName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public decimal BaseQuantity { get; set; }
+    public string PackagingTypeName { get; set; } = string.Empty;
+    public decimal ConversionFactor { get; set; }
+    public decimal EquivalentPackQuantity { get; set; }
 }

@@ -78,6 +78,18 @@ public sealed class TrackingExportService : IExportService
         var paperSize = model.IsGoldInvoice
             ? PrintPreferences.GoldReceiptPaperSize
             : PrintPreferences.PosReceiptPaperSize;
+
+        // POS/Gold A4: use the same themed invoice layout as sales invoices
+        if (!PosReceiptPaperSizes.IsThermal(paperSize))
+        {
+            if (string.IsNullOrWhiteSpace(model.Title))
+                model.Title = model.IsGoldInvoice ? "فاتورة ذهب" : "فاتورة بيع سريع";
+            if (string.IsNullOrWhiteSpace(model.A4TemplateId))
+                model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
+            _inner.PrintInvoice(model);
+            return;
+        }
+
         _inner.PrintThermalReceipt(
             model,
             paperSize,

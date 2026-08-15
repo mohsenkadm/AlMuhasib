@@ -215,6 +215,7 @@ public partial class SalesInvoiceViewModel
             };
             ApplyActiveLabelsToRow(row);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson, ActiveCustomFieldLabels);
+            InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);
             WireItemRow(row);
             Items.Add(row);
             _ = LoadRowFeatureDataAsync(row);

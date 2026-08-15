@@ -512,6 +512,8 @@ public partial class MainWindowViewModel : ObservableObject
                 InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
             if (string.Equals(item.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
                 InvoiceNavigationBridge.PendingSalesReturnMode = true;
+            if (string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
+                InvoiceNavigationBridge.PendingDamageMode = true;
             _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon, activateIfExists: false);
         }
     }
@@ -580,6 +582,8 @@ public partial class MainWindowViewModel : ObservableObject
             InvoiceNavigationBridge.PendingPurchaseReturnMode = true;
         if (string.Equals(entry.ScreenName, "SalesReturn", StringComparison.OrdinalIgnoreCase))
             InvoiceNavigationBridge.PendingSalesReturnMode = true;
+        if (string.Equals(entry.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
+            InvoiceNavigationBridge.PendingDamageMode = true;
 
         CloseReportFlyout();
         PageTitle = entry.Title;

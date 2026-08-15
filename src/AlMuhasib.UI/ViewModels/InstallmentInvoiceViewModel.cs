@@ -27,7 +27,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IFeatureFlagService _featureFlags;
     private readonly IProductPriceService _productPriceService;
-    private readonly bool _productPricingEnabled;
+    private readonly IPricingTypeService _pricingTypeService;
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
 
@@ -195,6 +195,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         IInvoiceDraftService draftService,
         IInvoiceQueueService queueService,
         IProductPriceService productPriceService,
+        IPricingTypeService pricingTypeService,
         IUserPreferencesService userPreferences,
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
@@ -214,7 +215,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _featureFlags = featureFlags;
         _productUnitService = productUnitService;
         _productPriceService = productPriceService;
-        _productPricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        _pricingTypeService = pricingTypeService;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
 
@@ -223,7 +224,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         ProductPicker = new ProductPickerViewModel(
             _unitOfWork,
             productPriceService,
-            _productPricingEnabled);
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
@@ -284,7 +285,10 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             await QuickSearchCatalog.LoadAsync(
                 Products,
                 InvoicePickerMode.Installment,
-                _productPricingEnabled);
+                ShowProductPricing);
+
+            if (ShowProductPricing)
+                await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
 
             AddRow();
             GenerateSchedulePreview();
@@ -392,7 +396,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             var vm = new InvoiceProfitCheckViewModel(
                 _unitOfWork,
                 _productPriceService,
-                _productPricingEnabled,
+                ShowProductPricing,
                 ShowProductDiscount);
             await vm.LoadAsync(productRows, InvoiceDiscountType, InvoiceDiscountValue);
 
@@ -420,7 +424,11 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             UnwireItemRow);
 
         foreach (var row in Items.Where(i => i.ProductId is not null))
+        {
             _ = LoadRowUnitsAsync(row);
+            if (row.ProductId is int productId)
+                _ = LoadRowPricingOptionsAsync(row, productId);
+        }
 
         RecalculateTotals();
         IsProductPickerOpen = false;
@@ -498,6 +506,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         try
         {
             await LoadRowUnitsAsync(row);
+            if (row.ProductId is int productId)
+                await LoadRowPricingOptionsAsync(row, productId);
 
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
             var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
@@ -699,15 +709,13 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
 
                 var displayQty = row.Quantity;
                 var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
-                var lineGross = displayQty * row.UnitPrice;
+                var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+                var lineGross = displayQty * factor * row.UnitPrice;
                 var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
                 if (lineDiscount > Math.Abs(lineGross))
                     lineDiscount = Math.Abs(lineGross);
-                var lineTotal = ProductDiscountHelper.CalculateLineTotal(displayQty, row.UnitPrice, lineDiscount);
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineGross / stockQty;
-                var discountForStorage = stockQty == 0 || displayQty == 0
-                    ? lineDiscount
-                    : lineDiscount * (stockQty / displayQty);
+                var lineTotal = ProductDiscountHelper.CalculateLineTotal(
+                    displayQty, row.UnitPrice, lineDiscount, factor);
 
                 invoiceItems.Add(new InvoiceItem
                 {
@@ -715,8 +723,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = unitPriceForStorage,
-                    DiscountAmount = discountForStorage,
+                    UnitPrice = row.UnitPrice,
+                    DiscountAmount = lineDiscount,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });

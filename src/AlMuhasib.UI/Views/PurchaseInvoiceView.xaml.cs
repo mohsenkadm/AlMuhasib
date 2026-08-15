@@ -22,6 +22,7 @@ public partial class PurchaseInvoiceView : UserControl
             ColUnit,
             ColBatch,
             ColExpiry,
-            ColSerial);
+            ColSerial,
+            pricing: ColPricingType);
     }
 }

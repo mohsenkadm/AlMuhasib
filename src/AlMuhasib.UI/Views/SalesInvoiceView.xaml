@@ -133,7 +133,8 @@
                                     FontSize="14" />
 
                         <!-- Customer (searchable ComboBox) -->
-                        <Grid Grid.Row="0" Grid.Column="2">
+                        <Grid Grid.Row="0" Grid.Column="2"
+                              Visibility="{Binding ShowCustomerAndPayment, Converter={StaticResource BoolToVis}}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -191,7 +192,8 @@
                         <StackPanel Grid.Row="1" Grid.Column="1"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,12,0">
+                                    Margin="0,0,12,0"
+                                    Visibility="{Binding ShowCustomerAndPayment, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="طريقة الدفع:"
                                        FontSize="13"
                                        Foreground="#616161"
@@ -226,7 +228,7 @@
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                   Style="{StaticResource FilledComboBox}"
                                   FontSize="14"
-                                  Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}" />
+                                  Visibility="{Binding ShowCashBox, Converter={StaticResource BoolToVis}}" />
 
                         <!-- CreditDueDate (visible only for Credit) -->
                         <DatePicker Grid.Row="1" Grid.Column="2"
@@ -283,19 +285,42 @@
                                      Background="#FFEBEE"
                                      materialDesign:ElevationAssist.Elevation="Dp0"
                                      Visibility="{Binding IsCreditPayment, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CalendarAlert"
-                                                 Width="20" Height="20"
-                                                 Foreground="#C62828"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,10,0" />
-                        <TextBlock FontSize="13" Foreground="#B71C1C" VerticalAlignment="Center">
-                            <Run Text="فاتورة آجلة — موعد الاستحقاق:"/>
-                            <Run Text="{Binding CreditDueDate, StringFormat='{}{0:yyyy/MM/dd}', FallbackValue='غير محدد'}"
-                                 FontWeight="Bold"/>
-                            <Run Text="— سيُدرج في تقرير المتأخرات عند التأخر"/>
-                        </TextBlock>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CalendarAlert"
+                                                     Width="20" Height="20"
+                                                     Foreground="#C62828"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,10,0" />
+                            <TextBlock FontSize="13" Foreground="#B71C1C" VerticalAlignment="Center">
+                                <Run Text="فاتورة آجلة — موعد الاستحقاق:"/>
+                                <Run Text="{Binding CreditDueDate, StringFormat='{}{0:yyyy/MM/dd}', FallbackValue='غير محدد'}"
+                                     FontWeight="Bold"/>
+                                <Run Text="— سيُدرج في تقرير المتأخرات عند التأخر"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <TextBox Grid.Column="1" Width="150" Margin="12,0,8,0"
+                                 Text="{Binding CreditPaidAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                 materialDesign:HintAssist.Hint="المبلغ المدفوع"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 FontSize="13"
+                                 Background="White"/>
+                        <TextBox Grid.Column="2" Width="150"
+                                 Text="{Binding CreditRemainingAmount, StringFormat=N0, Mode=OneWay}"
+                                 materialDesign:HintAssist.Hint="المتبقي"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 FontSize="13"
+                                 IsReadOnly="True"
+                                 Background="White"
+                                 Foreground="#E65100"/>
+                    </Grid>
                 </materialDesign:Card>
 
                 <!-- ═══════════════════════════════════════════ -->
@@ -361,6 +386,14 @@
                                             <TextBlock Text="فحص الربح" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="#2E7D32"/>
                                         </StackPanel>
                                     </Button>
+                                    <ComboBox Width="150" Height="32" Margin="0,0,8,0"
+                                              ItemsSource="{Binding BulkPricingTypes}"
+                                              SelectedItem="{Binding SelectedBulkPricingType, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"
+                                              materialDesign:HintAssist.Hint="نوع التسعير"
+                                              materialDesign:HintAssist.IsFloating="False"
+                                              Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolToVis}}"
+                                              ToolTip="تطبيق نوع تسعير على كل بنود الفاتورة"/>
                                     <Button Command="{Binding AddRowCommand}"
                                             Style="{StaticResource FlatButton}"
                                             Height="32" Padding="14,0"

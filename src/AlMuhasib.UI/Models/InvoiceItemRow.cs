@@ -153,6 +153,9 @@ public partial class InvoiceItemRow : ObservableObject
     partial void OnUnitConversionFactorChanged(decimal value)
     {
         OnPropertyChanged(nameof(LineWeight));
+        _isManualTotal = false;
+        RefreshProductDiscount();
+        RecalcTotal();
         TotalChanged?.Invoke();
     }
 
@@ -235,6 +238,23 @@ public partial class InvoiceItemRow : ObservableObject
 
     private bool _isManualTotal;
 
+    /// <summary>تعيين المنتج دون إطلاق ProductChanged (لاستعادة المسودة/الانتظار).</summary>
+    public void AttachProductSilent(Product? product)
+    {
+        var handlers = ProductChanged;
+        ProductChanged = null;
+        try
+        {
+            SelectedProduct = product;
+            if (product is not null)
+                ProductId = product.Id;
+        }
+        finally
+        {
+            ProductChanged = handlers;
+        }
+    }
+
     partial void OnSelectedProductChanged(Product? value)
     {
         if (value is not null)
@@ -283,10 +303,11 @@ public partial class InvoiceItemRow : ObservableObject
     {
         if (!_isRecalculating)
         {
-            if (Quantity != 0)
+            var baseQty = ProductDiscountHelper.ToBaseQuantity(Quantity, UnitConversionFactor);
+            if (baseQty != 0)
             {
                 _isRecalculating = true;
-                UnitPrice = (newValue + DiscountAmount) / Quantity;
+                UnitPrice = (newValue + DiscountAmount) / baseQty;
                 _isRecalculating = false;
                 _isManualTotal = false;
             }
@@ -311,7 +332,7 @@ public partial class InvoiceItemRow : ObservableObject
         }
 
         var discount = ProductDiscountHelper.CalculateLineDiscount(
-            SelectedProduct, Quantity, UnitPrice);
+            SelectedProduct, Quantity, UnitPrice, conversionFactor: UnitConversionFactor);
         if (DiscountAmount != discount)
             DiscountAmount = discount;
     }
@@ -320,7 +341,8 @@ public partial class InvoiceItemRow : ObservableObject
     {
         if (_isManualTotal) return;
         _isRecalculating = true;
-        TotalPrice = ProductDiscountHelper.CalculateLineTotal(Quantity, UnitPrice, DiscountAmount);
+        TotalPrice = ProductDiscountHelper.CalculateLineTotal(
+            Quantity, UnitPrice, DiscountAmount, UnitConversionFactor);
         _isRecalculating = false;
     }
 

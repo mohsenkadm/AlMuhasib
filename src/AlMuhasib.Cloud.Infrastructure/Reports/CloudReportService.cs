@@ -1011,6 +1011,13 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         return result;
     }
 
+    public Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId) =>
+        Task.FromResult(new DamageInvoicesReportResult());
+
+    public Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId) =>
+        Task.FromResult(new PackagingStockReportResult());
+
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // INVESTORS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
