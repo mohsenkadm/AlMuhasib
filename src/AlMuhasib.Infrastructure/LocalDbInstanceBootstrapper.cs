@@ -81,33 +81,37 @@ public static class LocalDbInstanceBootstrapper
         if (exe is null)
         {
             return LocalDbBootstrapResult.Failed(
-                "لم يتم العثور على SqlLocalDB.exe. تأكد من تثبيت SQL Server LocalDB ثم أعد تشغيل الجهاز.");
+                "لم يتم العثور على SqlLocalDB.exe. ثبّت SQL Server 2017 LocalDB من مثبت قيد، ثم أعد تشغيل الجهاز.");
         }
 
         // Prefer SQL 2017 (14.0) for brand-new data folders when 2017 tools exist.
         // Existing customers with LocalDB 2022 + database files keep their instance as-is.
-        var createArgs = exe2017 is not null
-                         && string.Equals(instance, DefaultInstanceName, StringComparison.OrdinalIgnoreCase)
-                         && !HasExistingAppDatabaseFiles()
+        // Never force 14.0 when only newer tools exist.
+        var prefer2017Create = exe2017 is not null
+                               && string.Equals(instance, DefaultInstanceName, StringComparison.OrdinalIgnoreCase)
+                               && !HasExistingAppDatabaseFiles();
+        var activeExe = prefer2017Create ? exe2017! : (exe2017 ?? exe);
+        var createArgs = prefer2017Create
             ? $"create \"{instance}\" 14.0"
             : $"create \"{instance}\"";
 
         // create is idempotent when instance already exists (non-zero exit is OK).
-        RunSqlLocalDb(exe2017 ?? exe, createArgs, out var createOutput, out var createCode);
-        RunSqlLocalDb(exe2017 ?? exe, $"start \"{instance}\"", out var startOutput, out var startCode);
+        RunSqlLocalDb(activeExe, createArgs, out var createOutput, out var createCode);
+        RunSqlLocalDb(activeExe, $"start \"{instance}\"", out var startOutput, out var startCode);
 
         if (startCode == 0 || IsAlreadyRunning(startOutput))
         {
-            return LocalDbBootstrapResult.Ok(exe, instance, createCode, startCode);
+            return LocalDbBootstrapResult.Ok(activeExe, instance, createCode, startCode);
         }
 
         // Soft recovery for brand-new machines only: recreate automatic instance when start fails
         // and no application database files exist yet. Prefer SQL 2017 (14.0) when available.
+        // Never delete customer .mdf files — only recreate the empty automatic instance.
         if (string.Equals(instance, DefaultInstanceName, StringComparison.OrdinalIgnoreCase)
             && !HasExistingAppDatabaseFiles())
         {
-            var recoveryExe = exe2017 ?? exe;
-            var recoveryCreate = exe2017 is not null
+            var recoveryExe = prefer2017Create ? exe2017! : (exe2017 ?? exe);
+            var recoveryCreate = prefer2017Create
                 ? $"create \"{instance}\" 14.0"
                 : $"create \"{instance}\"";
             RunSqlLocalDb(recoveryExe, $"stop \"{instance}\" -k", out _, out _);
@@ -118,10 +122,13 @@ public static class LocalDbInstanceBootstrapper
                 return LocalDbBootstrapResult.Ok(recoveryExe, instance, createCode, startCode);
         }
 
+        var detail = string.IsNullOrWhiteSpace(startOutput) ? createOutput : startOutput;
         return LocalDbBootstrapResult.Failed(
-            $"تعذر تشغيل مثيل LocalDB '{instance}'. {startOutput}".Trim(),
-            exe,
-            instance);
+            $"تعذر تشغيل مثيل LocalDB '{instance}' (create={createCode}, start={startCode}). {detail}".Trim(),
+            activeExe,
+            instance,
+            createCode,
+            startCode);
     }
 
     public static async Task<bool> TryOpenAsync(string connectionString, CancellationToken cancellationToken = default)
@@ -270,6 +277,11 @@ public sealed record LocalDbBootstrapResult(
     public static LocalDbBootstrapResult Skip(string reason) =>
         new(true, true, reason, null, null, 0, 0);
 
-    public static LocalDbBootstrapResult Failed(string message, string? exe = null, string? instance = null) =>
-        new(false, false, message, exe, instance, -1, -1);
+    public static LocalDbBootstrapResult Failed(
+        string message,
+        string? exe = null,
+        string? instance = null,
+        int createCode = -1,
+        int startCode = -1) =>
+        new(false, false, message, exe, instance, createCode, startCode);
 }

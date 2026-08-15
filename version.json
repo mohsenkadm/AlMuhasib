@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "1.14.13",
-    "releaseDate":  "2026-08-12",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.13/AlMuhasib-1.14.13.zip",
-    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.13/Qayd-Setup-1.14.13.exe",
-    "sha256":  "CA88498E647429BA3C010F71A583CF8C391658E3CA685CD81896753061A21230",
-    "sizeBytes":  149141213,
-    "releaseNotes":  "إصلاح الحذف الناعم وإعادة استخدام الأسماء، وتحسينات المنتجات والعملاء والموردين والمخازن",
+    "version":  "1.14.14",
+    "releaseDate":  "2026-08-15",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.14/AlMuhasib-1.14.14.zip",
+    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.14/Qayd-Setup-1.14.14.exe",
+    "sha256":  "84A5A105BD8E35942586FAC352B87CF6CD4AE59DFD30CA5E5A729E0287E6BE59",
+    "sizeBytes":  149233026,
+    "releaseNotes":  "إصلاح تثبيت وتشغيل SQL Server 2017 LocalDB على الأجهزة التي تفشل فيها التهيئة، مع فحص صحة المثيل وإصلاح التثبيت التالف، ومنع التشغيل قبل إعادة التشغيل عند الحاجة",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

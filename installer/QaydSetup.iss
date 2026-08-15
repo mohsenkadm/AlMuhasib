@@ -2,9 +2,15 @@
 ; Build: scripts\build-installer.ps1
 ; App is self-contained (no separate .NET). LocalDB/VC++ are embedded and extracted
 ; with ExtractTemporaryFile BEFORE file copy (PrepareToInstall).
+;
+; LocalDB policy (1.14.14+):
+; - Skip MSI only when an existing LocalDB is HEALTHY (exe + start MSSQLLocalDB).
+; - Broken leftovers → repair/reinstall SQL Server 2017 LocalDB MSI.
+; - Exit 3010/1641 → NeedsRestart; do not launch the app until reboot.
+; - Never delete customer .mdf files during repair.
 
 #ifndef AppVersion
-  #define AppVersion "1.14.10"
+  #define AppVersion "1.14.14"
 #endif
 
 #ifndef LocalDbMsiFile
@@ -65,13 +71,15 @@ Name: "{group}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qa
 Name: "{autodesktop}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qayd-icon.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\AlMuhasib.exe"; Description: "تشغيل قيد"; Flags: nowait postinstall skipifsilent; Tasks: launchapp
+Filename: "{app}\AlMuhasib.exe"; Description: "تشغيل قيد"; Flags: nowait postinstall skipifsilent skipifdoesntexist; Tasks: launchapp; Check: CanLaunchAfterInstall
 
 [Code]
 var
   DataDirPage: TInputDirWizardPage;
   SelectedDataDir: string;
   LocalDbWarning: string;
+  LocalDbNeedsRestart: Boolean;
+  LastLocalDbMsiExitCode: Integer;
 
 function JsonEscapePath(const S: string): string;
 begin
@@ -83,6 +91,11 @@ function IsSuccessExitCode(const Code: Integer): Boolean;
 begin
   { 0=ok, 3010/1641=reboot required, 1638=newer/same product already installed }
   Result := (Code = 0) or (Code = 3010) or (Code = 1641) or (Code = 1638);
+end;
+
+function IsRebootExitCode(const Code: Integer): Boolean;
+begin
+  Result := (Code = 3010) or (Code = 1641);
 end;
 
 function EnsureTempPrereq(const FileName: string): Boolean;
@@ -103,9 +116,7 @@ begin
     RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions\' + Ver);
 end;
 
-function LocalDbInstalled: Boolean;
-var
-  ResultCode: Integer;
+function LocalDbPresentInRegistryOrPath: Boolean;
 begin
   { Cover common LocalDB major versions including SQL 2025 (17.0) and older. }
   if RegLocalDbVersionExists('17.0') or RegLocalDbVersionExists('16.0') or
@@ -129,10 +140,7 @@ begin
     Exit;
   end;
 
-  if Exec(ExpandConstant('{cmd}'), '/c sqllocaldb info >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    Result := (ResultCode = 0)
-  else
-    Result := False;
+  Result := False;
 end;
 
 function FindSqlLocalDbExe: string;
@@ -147,32 +155,93 @@ begin
     Result := ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe')
   else if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\130\Tools\Binn\SqlLocalDB.exe')) then
     Result := ExpandConstant('{pf}\Microsoft SQL Server\130\Tools\Binn\SqlLocalDB.exe')
+  else if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\120\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\120\Tools\Binn\SqlLocalDB.exe')
+  else if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\110\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\110\Tools\Binn\SqlLocalDB.exe')
   else
-    Result := 'sqllocaldb';
+    Result := '';
+end;
+
+function FindSqlLocalDbExe2017: string;
+begin
+  if FileExists(ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe')) then
+    Result := ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe')
+  else
+    Result := '';
+end;
+
+function LocalDbStartSucceeded(const ExitCode: Integer): Boolean;
+begin
+  { sqllocaldb start returns 0 on success; some builds also succeed with already-running. }
+  Result := (ExitCode = 0);
+end;
+
+function TryStartLocalDbInstance(const ExePath: string; const Prefer2017Create: Boolean): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := False;
+  if ExePath = '' then
+    Exit;
+
+  if Prefer2017Create then
+    Exec(ExePath, 'create MSSQLLocalDB 14.0', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
+  else
+    Exec(ExePath, 'create MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  if not Exec(ExePath, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Log('Failed to launch SqlLocalDB start via: ' + ExePath);
+    Exit;
+  end;
+
+  Log('sqllocaldb start exit code=' + IntToStr(ResultCode) + ' via ' + ExePath);
+  Result := LocalDbStartSucceeded(ResultCode);
+end;
+
+function LocalDbIsHealthy: Boolean;
+var
+  Exe2017: string;
+  ExePath: string;
+begin
+  Result := False;
+
+  Exe2017 := FindSqlLocalDbExe2017;
+  if Exe2017 <> '' then
+  begin
+    { Prefer SQL 2017 tools when present (what Qayd ships). Do not force version on newer-only boxes. }
+    if TryStartLocalDbInstance(Exe2017, True) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+
+  ExePath := FindSqlLocalDbExe;
+  if ExePath = '' then
+  begin
+    Log('LocalDB health check: SqlLocalDB.exe not found.');
+    Exit;
+  end;
+
+  { Newer LocalDB only — never force create ... 14.0 }
+  if TryStartLocalDbInstance(ExePath, False) then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  Log('LocalDB health check failed for: ' + ExePath);
 end;
 
 procedure StartLocalDbInstance;
-var
-  ExePath: string;
-  Exe2017: string;
-  ResultCode: Integer;
 begin
-  { Prefer SQL 2017 (14.0) when present — what Qayd ships for new PCs.
-    If only a newer LocalDB exists (recent customers on 2022), use that tools path
-    and do not force a version change. }
-  Exe2017 := ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe');
-  if FileExists(Exe2017) then
-  begin
-    Exec(Exe2017, 'create MSSQLLocalDB 14.0', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Exec(Exe2017, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  end
-  else
-  begin
-    ExePath := FindSqlLocalDbExe;
-    Exec(ExePath, 'create MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Exec(ExePath, 'start MSSQLLocalDB', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  end;
-  { Give the automatic instance a moment before the app's first connection. }
+  { Best-effort start after MSI; health is verified separately. }
+  if FindSqlLocalDbExe2017 <> '' then
+    TryStartLocalDbInstance(FindSqlLocalDbExe2017, True)
+  else if FindSqlLocalDbExe <> '' then
+    TryStartLocalDbInstance(FindSqlLocalDbExe, False);
   Sleep(1500);
 end;
 
@@ -225,76 +294,74 @@ begin
   DestDir := ExpandConstant('{userdocs}\قيد');
   ForceDirectories(DestDir);
   DestFile := DestDir + '\Qayd-SqlLocalDB-Install.log';
-    if FileExists(SourceLog) then
-    begin
-      if CopyFile(SourceLog, DestFile, False) then
-        Result := DestFile;
-    end;
+  if FileExists(SourceLog) then
+  begin
+    if CopyFile(SourceLog, DestFile, False) then
+      Result := DestFile;
+  end;
 end;
 
-function TryInstallLocalDbMsi(const UiSwitch: string; const LogPath: string; var ResultCode: Integer): Boolean;
+function TryInstallLocalDbMsi(const UiSwitch: string; const LogPath: string; const RepairMode: Boolean; var ResultCode: Integer): Boolean;
 var
   InstallerPath: string;
   Params: string;
 begin
   InstallerPath := ExpandConstant('{tmp}\{#LocalDbMsiFile}');
   { Include both common license property spellings used across LocalDB MSI versions. }
-  Params := '/i "' + InstallerPath + '" ' + UiSwitch + ' /norestart ' +
-            'IACCEPTSQLLOCALDBLICENSETERMS=YES IAcceptSqlLocalDBLicenseTerms=YES ' +
-            '/L*v "' + LogPath + '"';
+  if RepairMode then
+    Params := '/faveums "' + InstallerPath + '" ' + UiSwitch + ' /norestart ' +
+              'IACCEPTSQLLOCALDBLICENSETERMS=YES IAcceptSqlLocalDBLicenseTerms=YES ' +
+              '/L*v "' + LogPath + '"'
+  else
+    Params := '/i "' + InstallerPath + '" ' + UiSwitch + ' /norestart ' +
+              'IACCEPTSQLLOCALDBLICENSETERMS=YES IAcceptSqlLocalDBLicenseTerms=YES ' +
+              '/L*v "' + LogPath + '"';
   Result := Exec(ExpandConstant('{sys}\msiexec.exe'), Params, '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
 end;
 
-function InstallLocalDb: Boolean;
+function RunLocalDbMsiInstall(const RepairMode: Boolean): Boolean;
 var
   LogPath: string;
   SavedLog: string;
   ResultCode: Integer;
+  StatusPrefix: string;
 begin
-  LocalDbWarning := '';
-
-  { Any existing LocalDB (2017/2019/2022/...) → do not replace.
-    Protects recent customers who already installed successfully with LocalDB 2022. }
-  if LocalDbInstalled then
-  begin
-    Log('LocalDB already present — skipping MSI (keep existing version).');
-    StartLocalDbInstance;
-    Result := True;
-    Exit;
-  end;
-
-  InstallVcRedists;
+  Result := False;
+  LastLocalDbMsiExitCode := -1;
 
   if not EnsureTempPrereq('{#LocalDbMsiFile}') then
   begin
     LocalDbWarning := 'ملف SqlLocalDB.msi غير مضمّن في المثبت.';
-    Result := False;
     Exit;
   end;
 
   LogPath := ExpandConstant('{tmp}\Qayd-SqlLocalDB-Install.log');
+  if RepairMode then
+    StatusPrefix := 'إصلاح'
+  else
+    StatusPrefix := 'تثبيت';
 
   { 1) Quiet first — embedded package is SQL Server 2017 LocalDB (14.x) }
-  WizardForm.StatusLabel.Caption := 'جاري تثبيت SQL Server 2017 LocalDB (صامت)...';
-  if not TryInstallLocalDbMsi('/qn', LogPath, ResultCode) then
+  WizardForm.StatusLabel.Caption := 'جاري ' + StatusPrefix + ' SQL Server 2017 LocalDB (صامت)...';
+  if not TryInstallLocalDbMsi('/qn', LogPath, RepairMode, ResultCode) then
   begin
-    LocalDbWarning := 'تعذر تشغيل msiexec لتثبيت LocalDB.';
-    Result := False;
+    LocalDbWarning := 'تعذر تشغيل msiexec لـ LocalDB.';
     Exit;
   end;
-  Log('LocalDB /qn exit code=' + IntToStr(ResultCode));
+  LastLocalDbMsiExitCode := ResultCode;
+  Log('LocalDB /qn exit code=' + IntToStr(ResultCode) + ' repair=' + IntToStr(Ord(RepairMode)));
 
   { 2) Retry with basic UI — more reliable on some Windows 10 machines }
   if not IsSuccessExitCode(ResultCode) then
   begin
-    WizardForm.StatusLabel.Caption := 'إعادة محاولة تثبيت SQL Server 2017 LocalDB...';
-    if not TryInstallLocalDbMsi('/qb!', LogPath, ResultCode) then
+    WizardForm.StatusLabel.Caption := 'إعادة محاولة ' + StatusPrefix + ' SQL Server 2017 LocalDB...';
+    if not TryInstallLocalDbMsi('/qb!', LogPath, RepairMode, ResultCode) then
     begin
       LocalDbWarning := 'تعذر تشغيل msiexec (المحاولة الثانية).';
-      Result := False;
       Exit;
     end;
-    Log('LocalDB /qb! exit code=' + IntToStr(ResultCode));
+    LastLocalDbMsiExitCode := ResultCode;
+    Log('LocalDB /qb! exit code=' + IntToStr(ResultCode) + ' repair=' + IntToStr(Ord(RepairMode)));
   end;
 
   SavedLog := CopyLogToDocs(LogPath);
@@ -302,27 +369,88 @@ begin
   if not IsSuccessExitCode(ResultCode) then
   begin
     LocalDbWarning :=
-      'فشل تثبيت SQL Server LocalDB (رمز ' + IntToStr(ResultCode) + ').' + #13#10 +
+      'فشل ' + StatusPrefix + ' SQL Server LocalDB (رمز ' + IntToStr(ResultCode) + ').' + #13#10 +
       'السجل: ' + SavedLog + #13#10 +
       'يمكنك إكمال تثبيت قيد واختيار سيرفر SQL من معالج الإعداد عند أول تشغيل.';
-    Result := False;
     Exit;
+  end;
+
+  if IsRebootExitCode(ResultCode) then
+  begin
+    LocalDbNeedsRestart := True;
+    LocalDbWarning :=
+      'تم ' + StatusPrefix + ' SQL Server LocalDB بنجاح، لكن الجهاز يحتاج إعادة تشغيل' + #13#10 +
+      'قبل تشغيل قيد لأول مرة.' + #13#10 +
+      'السجل: ' + SavedLog;
   end;
 
   Sleep(1500);
   StartLocalDbInstance;
 
-  { MSI succeeded — do not fail the whole product install if detection lags. }
-  if LocalDbInstalled then
-    Result := True
-  else
+  if LocalDbIsHealthy then
   begin
-    LocalDbWarning :=
-      'مثبت LocalDB اكتمل، لكن التحقق تأخر.' + #13#10 +
-      'قد تحتاج إعادة تشغيل الجهاز ثم فتح قيد.' + #13#10 +
-      'السجل: ' + SavedLog;
     Result := True;
+    Exit;
   end;
+
+  if LocalDbNeedsRestart then
+  begin
+    { Reboot pending — treat install as OK but block launch. }
+    Result := True;
+    Exit;
+  end;
+
+  LocalDbWarning :=
+    'اكتمل ' + StatusPrefix + ' LocalDB، لكن التحقق من التشغيل فشل.' + #13#10 +
+    'يُفضّل إعادة تشغيل الجهاز ثم فتح قيد.' + #13#10 +
+    'السجل: ' + SavedLog;
+  Result := True;
+end;
+
+function InstallLocalDb: Boolean;
+var
+  HadBrokenLocalDb: Boolean;
+begin
+  LocalDbWarning := '';
+  LocalDbNeedsRestart := False;
+  LastLocalDbMsiExitCode := 0;
+  HadBrokenLocalDb := False;
+
+  { Skip MSI only when LocalDB is healthy. Broken leftovers → repair/reinstall. }
+  if LocalDbIsHealthy then
+  begin
+    Log('LocalDB healthy — skipping MSI (keep existing version).');
+    Result := True;
+    Exit;
+  end;
+
+  if LocalDbPresentInRegistryOrPath or (FindSqlLocalDbExe <> '') then
+  begin
+    HadBrokenLocalDb := True;
+    Log('LocalDB present but unhealthy — will repair/reinstall SQL Server 2017 MSI.');
+  end
+  else
+    Log('LocalDB not found — installing SQL Server 2017 LocalDB.');
+
+  InstallVcRedists;
+
+  if HadBrokenLocalDb then
+  begin
+    { Try repair first (does not wipe customer databases). Fall back to install. }
+    if RunLocalDbMsiInstall(True) then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Log('LocalDB repair failed — attempting fresh MSI install.');
+  end;
+
+  Result := RunLocalDbMsiInstall(False);
+end;
+
+function CanLaunchAfterInstall: Boolean;
+begin
+  Result := not LocalDbNeedsRestart;
 end;
 
 procedure WriteAppSettings;
@@ -365,6 +493,8 @@ end;
 procedure InitializeWizard;
 begin
   LocalDbWarning := '';
+  LocalDbNeedsRestart := False;
+  LastLocalDbMsiExitCode := 0;
   DataDirPage := CreateInputDirPage(wpSelectDir,
     'مجلد البيانات',
     'اختر مكان تخزين قاعدة البيانات',
@@ -400,6 +530,9 @@ begin
   end
   else if LocalDbWarning <> '' then
     MsgBox(LocalDbWarning, mbInformation, MB_OK);
+
+  if LocalDbNeedsRestart then
+    NeedsRestart := True;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

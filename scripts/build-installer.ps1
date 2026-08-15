@@ -21,7 +21,7 @@ if (-not $SkipLogo) {
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
     $Version = ([xml](Get-Content $uiProject)).Project.PropertyGroup.Version | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($Version)) { $Version = "1.14.6" }
+    if ([string]::IsNullOrWhiteSpace($Version)) { $Version = "1.14.14" }
 }
 
 $publishPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($PublishDir)

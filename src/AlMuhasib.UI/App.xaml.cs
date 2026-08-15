@@ -591,10 +591,10 @@ public partial class App : Application
                     {
                         await ApplyMigrationsWithStatusAsync();
                     }
-                    catch (Exception ex) when (LocalDbInstanceBootstrapper.UsesLocalDb(defaultConnection))
+                    catch (Exception) when (LocalDbInstanceBootstrapper.UsesLocalDb(defaultConnection))
                     {
                         // One recovery pass for brand-new LocalDB after installer (instance race).
-                        LocalDbInstanceBootstrapper.EnsureRunning(defaultConnection);
+                        var retryBootstrap = LocalDbInstanceBootstrapper.EnsureRunning(defaultConnection);
                         await Task.Delay(1200);
                         try
                         {
@@ -602,9 +602,12 @@ public partial class App : Application
                         }
                         catch (Exception retryEx)
                         {
+                            var bootstrapHint = retryBootstrap.Success
+                                ? string.Empty
+                                : $"\nتفاصيل LocalDB: {retryBootstrap.Message}";
                             throw new InvalidOperationException(
-                                $"تعذر الاتصال بقاعدة البيانات عبر LocalDB.\n{retryEx.Message}\n\n" +
-                                "تأكد من اختيار (localdb)\\MSSQLLocalDB في معالج الإعداد أو أعد تشغيل الجهاز.",
+                                $"تعذر الاتصال بقاعدة البيانات عبر LocalDB.\n{retryEx.Message}{bootstrapHint}\n\n" +
+                                "أعد تشغيل الجهاز، أو أعد تثبيت قيد (سيصلح LocalDB التالف)، أو اختر سيرفر SQL من معالج الإعداد.",
                                 retryEx);
                         }
                     }
