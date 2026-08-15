@@ -232,6 +232,16 @@ public partial class PurchaseInvoiceViewModel
 
         await LoadPurchaseRowColorsAsync(row, productId);
         await LoadRowPricingOptionsAsync(row, productId);
+        ApplySuggestedPurchasePriceIfNeeded(row, productId);
+    }
+
+    private void ApplySuggestedPurchasePriceIfNeeded(InvoiceItemRow row, int productId)
+    {
+        if (row.UnitPrice > 0)
+            return;
+
+        if (QuickSearchCatalog.TryGetSuggestedPrice(productId, out var suggested))
+            row.UnitPrice = suggested;
     }
 
     private async Task LoadRowPricingOptionsAsync(InvoiceItemRow row, int productId)

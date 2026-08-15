@@ -79,6 +79,13 @@ public sealed class ProductQuickSearchCatalog
         return results;
     }
 
+    /// <summary>سعر مقترح للتعبئة التلقائية عند اختيار المنتج (كتالوج تسعير أو آخر شراء/متوسط كلفة).</summary>
+    public bool TryGetSuggestedPrice(int productId, out decimal price)
+    {
+        price = ResolvePrice(productId);
+        return price > 0;
+    }
+
     private decimal ResolvePrice(int productId)
     {
         if (_pricingEnabled && _catalogPrices.TryGetValue(productId, out var catalog) && catalog > 0)
