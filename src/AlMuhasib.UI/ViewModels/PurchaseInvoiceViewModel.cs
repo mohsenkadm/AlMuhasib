@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -694,8 +695,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 }
 
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
-                var lineTotal = Math.Abs(row.Quantity) * row.UnitPrice;
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineTotal / stockQty;
+                var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+                var lineTotal = Math.Abs(row.Quantity) * factor * row.UnitPrice;
 
                 invoiceItems.Add(new InvoiceItem
                 {
@@ -703,7 +704,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = unitPriceForStorage,
+                    UnitPrice = row.UnitPrice,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, [ClothingSizeInvoiceHelper.SizeLabel])
                 });

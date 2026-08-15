@@ -18,21 +18,35 @@ public static class ProductDiscountHelper
         return true;
     }
 
+    /// <summary>معامل التعبئة الفعّال (1 إن كان غير صالح).</summary>
+    public static decimal NormalizeConversionFactor(decimal conversionFactor) =>
+        conversionFactor <= 0m ? 1m : conversionFactor;
+
+    /// <summary>الكمية بالوحدة الأساسية = الكمية المدخلة × معامل التعبئة.</summary>
+    public static decimal ToBaseQuantity(decimal quantity, decimal conversionFactor) =>
+        quantity * NormalizeConversionFactor(conversionFactor);
+
     /// <summary>مبلغ خصم السطر من إعدادات المنتج (0 إن لم يكن فعّالاً).</summary>
-    public static decimal CalculateLineDiscount(Product? product, decimal quantity, decimal unitPrice, DateTime? asOfUtc = null)
+    /// <param name="conversionFactor">كمية التعبئة؛ عند &gt; 1 يُحسب الخصم على الكمية الأساسية.</param>
+    public static decimal CalculateLineDiscount(
+        Product? product,
+        decimal quantity,
+        decimal unitPrice,
+        DateTime? asOfUtc = null,
+        decimal conversionFactor = 1m)
     {
         if (!IsDiscountActive(product, asOfUtc) || product is null)
             return 0m;
 
-        var qty = Math.Abs(quantity);
-        var gross = qty * unitPrice;
+        var baseQty = Math.Abs(ToBaseQuantity(quantity, conversionFactor));
+        var gross = baseQty * unitPrice;
         if (gross <= 0)
             return 0m;
 
         decimal discount = product.DiscountType switch
         {
             DiscountType.Percentage => gross * product.DiscountValue / 100m,
-            DiscountType.FixedAmount => product.DiscountValue * qty,
+            DiscountType.FixedAmount => product.DiscountValue * baseQty,
             _ => 0m
         };
 
@@ -41,9 +55,14 @@ public static class ProductDiscountHelper
         return Math.Round(discount, 2, MidpointRounding.AwayFromZero);
     }
 
-    public static decimal CalculateLineTotal(decimal quantity, decimal unitPrice, decimal discountAmount)
+    /// <summary>إجمالي السطر = الكمية × معامل التعبئة × السعر − الخصم.</summary>
+    public static decimal CalculateLineTotal(
+        decimal quantity,
+        decimal unitPrice,
+        decimal discountAmount,
+        decimal conversionFactor = 1m)
     {
-        var gross = quantity * unitPrice;
+        var gross = ToBaseQuantity(quantity, conversionFactor) * unitPrice;
         var total = gross - Math.Abs(discountAmount);
         // Preserve sign of quantity for returns-style negative lines
         if (gross >= 0)

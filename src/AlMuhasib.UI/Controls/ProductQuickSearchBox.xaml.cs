@@ -201,8 +201,11 @@ public partial class ProductQuickSearchBox : UserControl
             ? "لا توجد مواد مطابقة"
             : $"{Suggestions.Count} مادة — انقر للاختيار";
 
-        if (forceOpen || !string.IsNullOrWhiteSpace(term) || IsKeyboardFocusWithin)
+        // لا تفتح الاقتراحات عند التعبئة البرمجية للنص (مثل استعادة قائمة الانتظار)
+        if (forceOpen || IsKeyboardFocusWithin)
             OpenPopup();
+        else
+            ClosePopup();
     }
 
     private void OpenPopup()

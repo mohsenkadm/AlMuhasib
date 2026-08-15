@@ -204,7 +204,24 @@ public partial class PurchaseInvoiceViewModel
             row.AvailableUnits.Clear();
             foreach (var u in units)
                 row.AvailableUnits.Add(u);
-            row.SelectedUnit ??= units.FirstOrDefault(u => u.IsDefault) ?? units.FirstOrDefault();
+
+            ProductUnit? matchedUnit = null;
+            if (!string.IsNullOrWhiteSpace(row.SelectedUnitName))
+            {
+                matchedUnit = units.FirstOrDefault(u =>
+                    string.Equals(u.UnitName, row.SelectedUnitName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (matchedUnit is null && row.UnitConversionFactor > 0 && row.UnitConversionFactor != 1m)
+            {
+                matchedUnit = units.FirstOrDefault(u =>
+                    u.ConversionFactor == row.UnitConversionFactor);
+            }
+
+            row.SelectedUnit = matchedUnit
+                ?? row.SelectedUnit
+                ?? units.FirstOrDefault(u => u.IsDefault)
+                ?? units.FirstOrDefault();
         }
         else
         {

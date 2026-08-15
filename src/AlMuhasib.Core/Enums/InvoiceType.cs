@@ -6,7 +6,9 @@ public enum InvoiceType
     Sale,
     Installment,
     PurchaseReturn,
-    SaleReturn
+    SaleReturn,
+    /// <summary>فاتورة تلف — تنقص كمية المخزن دون عميل.</summary>
+    Damage
 }
 
 public enum InvoiceHoldStatus

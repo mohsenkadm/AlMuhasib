@@ -709,15 +709,13 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
 
                 var displayQty = row.Quantity;
                 var stockQty = InvoiceCustomFieldsHelper.ToStockQuantity(row);
-                var lineGross = displayQty * row.UnitPrice;
+                var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+                var lineGross = displayQty * factor * row.UnitPrice;
                 var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
                 if (lineDiscount > Math.Abs(lineGross))
                     lineDiscount = Math.Abs(lineGross);
-                var lineTotal = ProductDiscountHelper.CalculateLineTotal(displayQty, row.UnitPrice, lineDiscount);
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineGross / stockQty;
-                var discountForStorage = stockQty == 0 || displayQty == 0
-                    ? lineDiscount
-                    : lineDiscount * (stockQty / displayQty);
+                var lineTotal = ProductDiscountHelper.CalculateLineTotal(
+                    displayQty, row.UnitPrice, lineDiscount, factor);
 
                 invoiceItems.Add(new InvoiceItem
                 {
@@ -725,8 +723,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = unitPriceForStorage,
-                    DiscountAmount = discountForStorage,
+                    UnitPrice = row.UnitPrice,
+                    DiscountAmount = lineDiscount,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });

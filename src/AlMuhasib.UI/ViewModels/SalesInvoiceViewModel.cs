@@ -147,7 +147,19 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
     private bool _isReturnMode;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowCashBox))]
+    private bool _isDamageMode;
+
+    /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
+    public bool ShowCustomerAndPayment => !IsDamageMode;
+
+    public bool ShowCashBox => IsCashPayment && !IsDamageMode;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
@@ -175,6 +187,22 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     public bool IsCashPayment => SelectedPaymentMethod == PaymentMethod.Cash;
     public bool IsCreditPayment => SelectedPaymentMethod == PaymentMethod.Credit;
     public bool IsInstallmentPayment => SelectedPaymentMethod == PaymentMethod.Installment;
+
+    [ObservableProperty] private decimal _creditPaidAmount;
+    [ObservableProperty] private decimal _creditRemainingAmount;
+
+    partial void OnCreditPaidAmountChanged(decimal value)
+    {
+        if (!IsCreditPayment) return;
+        var paid = Math.Clamp(value, 0m, GrandTotal);
+        if (paid != value)
+        {
+            CreditPaidAmount = paid;
+            return;
+        }
+
+        CreditRemainingAmount = Math.Max(0m, GrandTotal - paid);
+    }
 
     public SalesInvoiceViewModel(
         IInvoiceService invoiceService,
@@ -265,13 +293,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         CreditDueDate = CreditDueDate,
         CashBoxId = SelectedCashBox?.Id,
         Notes = Notes,
-        Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName)).Select(i => new SalesInvoiceDraftLine
-        {
-            ProductId = i.ProductId ?? 0,
-            ProductName = i.ItemName,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice
-        }).ToList()
+        PaidAmount = CreditPaidAmount,
+        Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName))
+            .Select(InvoiceDraftLineMapper.ToDraftLine)
+            .ToList()
     };
 
     private void ApplyDraft(SalesInvoiceDraft draft)
@@ -280,6 +305,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         SelectedPaymentMethod = draft.PaymentMethod;
         CreditDueDate = draft.CreditDueDate;
         Notes = draft.Notes ?? string.Empty;
+        CreditPaidAmount = draft.PaidAmount;
         if (draft.CustomerId.HasValue)
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == draft.CustomerId);
         if (draft.DriverId.HasValue && ShowDriverSelection)
@@ -290,17 +316,23 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == draft.WarehouseId);
         if (draft.CashBoxId.HasValue)
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == draft.CashBoxId);
+
+        foreach (var existing in Items.ToList())
+            UnwireItemRow(existing);
         Items.Clear();
+
         foreach (var line in draft.Lines)
         {
-            Items.Add(new InvoiceItemRow
-            {
-                ProductId = line.ProductId > 0 ? line.ProductId : null,
-                ItemName = line.ProductName,
-                Quantity = line.Quantity,
-                UnitPrice = line.UnitPrice
-            });
+            var row = InvoiceDraftLineMapper.ToRow(line, Products);
+            ApplyActiveLabelsToRow(row);
+            WireItemRow(row);
+            Items.Add(row);
+            _ = LoadRowFeatureDataAsync(row);
         }
+
+        if (Items.Count == 0)
+            AddRow();
+
         RecalculateTotals();
     }
 
@@ -312,11 +344,20 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         OnPropertyChanged(nameof(IsCashPayment));
         OnPropertyChanged(nameof(IsCreditPayment));
         OnPropertyChanged(nameof(IsInstallmentPayment));
+        OnPropertyChanged(nameof(ShowCashBox));
         // Reset CreditDueDate when switching away from Credit
         if (value != PaymentMethod.Credit)
+        {
             CreditDueDate = null;
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = 0m;
+        }
         else
+        {
             CreditDueDate = DateTime.Today.AddMonths(1);
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = GrandTotal;
+        }
         _ = RefreshLoyaltyQuoteAsync();
         RefreshInvoiceWarnings();
     }
@@ -390,6 +431,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             {
                 InvoiceNavigationBridge.PendingSalesReturnMode = false;
                 await EnterReturnModeAsync();
+            }
+            else if (InvoiceNavigationBridge.PendingDamageMode)
+            {
+                InvoiceNavigationBridge.PendingDamageMode = false;
+                await EnterDamageModeAsync();
             }
             else if (InvoiceNavigationBridge.PendingSalesCopyInvoiceId is int pendingCopyId)
             {
@@ -509,6 +555,29 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         RefreshInvoiceWarnings();
     }
 
+    public async Task EnterDamageModeAsync()
+    {
+        if (_featureFlags is not null && !_featureFlags.DamageInvoices)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «فاتورة التلف» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        IsDamageMode = true;
+        IsReturnMode = false;
+        PageTitle = "فاتورة تلف";
+        SelectedPaymentMethod = PaymentMethod.Cash;
+        SelectedCustomer = null;
+        CustomerSearchText = string.Empty;
+        SelectedCashBox = null;
+        CreditDueDate = null;
+        CreditPaidAmount = 0m;
+        CreditRemainingAmount = 0m;
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Damage);
+        OnPropertyChanged(nameof(ShowCustomerAndPayment));
+        RefreshInvoiceWarnings();
+    }
+
     public async Task LoadAsReturnFromInvoiceAsync(int invoiceId)
     {
         if (_featureFlags is not null && !_featureFlags.SalesReturns)
@@ -538,9 +607,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         var warnings = new List<string>();
         if (IsReturnMode)
             warnings.Add("وضع مرتجع مبيعات — سيتم زيادة المخزون وخصم المبلغ من القاصة عند الحفظ النقدي.");
+        if (IsDamageMode)
+            warnings.Add("فاتورة تلف — سيتم إنقاص الكمية من المخزن عند الحفظ دون التأثير على الصندوق.");
         if (IsCreditPayment && SelectedCustomer?.MaxCreditLimit is > 0)
             warnings.Add($"حد ائتمان العميل: {SelectedCustomer.MaxCreditLimit:N0} د.ع — سيُفحص عند الحفظ.");
-        if (!IsReturnMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
+        if (!IsReturnMode && !IsDamageMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
             warnings.Add("F4 إضافة منتج · F5 فحص الربح · Ctrl+S حفظ · F7 حاسبة العملة · Esc إلغاء المسودة.");
         InvoiceWarningsBanner = string.Join("  |  ", warnings);
     }
@@ -771,8 +842,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
 
             var lines = stocks
-                .Where(s => s.Quantity != 0)
-                .Select(s => $"{warehouseDict.GetValueOrDefault(s.WarehouseId, "مخزن")}: {s.Quantity:N0}")
+                .Where(s => s.Quantity != 0 && warehouseDict.ContainsKey(s.WarehouseId))
+                .Select(s => $"{warehouseDict[s.WarehouseId]}: {s.Quantity:N0}")
                 .ToList();
 
             row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
@@ -780,7 +851,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             if (SelectedWarehouse is not null)
                 row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == SelectedWarehouse.Id)?.Quantity ?? 0;
             else
-                row.AvailableStock = stocks.Sum(s => s.Quantity);
+                row.AvailableStock = stocks.Where(s => warehouseDict.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity);
 
             await LoadRowFeatureDataAsync(row);
         }
@@ -832,6 +903,20 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         RoundingAmount = rounding;
         GrandTotal = grand;
+
+        if (IsCreditPayment)
+        {
+            if (CreditPaidAmount < 0m)
+                CreditPaidAmount = 0m;
+            if (CreditPaidAmount > grand)
+                CreditPaidAmount = grand;
+            CreditRemainingAmount = Math.Max(0m, grand - CreditPaidAmount);
+        }
+        else
+        {
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = 0m;
+        }
     }
 
     partial void OnInvoiceDiscountValueChanged(decimal value) => RecalculateTotals();
@@ -850,9 +935,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        if (IsCashPayment && SelectedCashBox is null)
+        if (IsCashPayment && SelectedCashBox is null && !IsDamageMode)
         {
             ErrorMessage = "يرجى اختيار القاصة";
+            return;
+        }
+
+        if (IsDamageMode && _featureFlags is not null && !_featureFlags.DamageInvoices)
+        {
+            ErrorMessage = "فعّل «فاتورة التلف» من إعدادات الميزات أولاً";
             return;
         }
 
@@ -865,6 +956,18 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (IsCreditPayment && CreditDueDate.HasValue && CreditDueDate.Value.Date <= InvoiceDate.Date)
         {
             ErrorMessage = "تاريخ الاستحقاق يجب أن يكون بعد تاريخ الفاتورة";
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount < 0m)
+        {
+            ErrorMessage = "المبلغ المدفوع لا يمكن أن يكون سالباً";
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount > GrandTotal)
+        {
+            ErrorMessage = "المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة";
             return;
         }
 
@@ -902,7 +1005,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        // Stock validation for sales (not returns — returns increase stock)
+        // Stock validation for sales/damage (not returns — returns increase stock)
         if (SelectedWarehouse is not null && !IsReturnMode)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
@@ -910,9 +1013,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                     s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
                 var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-                if (item.Quantity > available)
+                var requiredQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(item));
+                if (requiredQty > available)
                 {
-                    ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
+                    ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({requiredQty:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
                     return;
                 }
             }
@@ -945,7 +1049,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
-        if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode)
+        if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode && !IsDamageMode)
         {
             var creditCheck = await _customerCreditService.CheckCreditAsync(
                 SelectedCustomer.Id, GrandTotal, isInstallment: false);
@@ -962,42 +1066,51 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         try
         {
             // Determine customer
-            int? customerId = SelectedCustomer?.Id;
-
-            if (customerId is null && !string.IsNullOrWhiteSpace(CustomerSearchText))
+            int? customerId = null;
+            if (!IsDamageMode)
             {
-                var newCustomer = new Customer
+                customerId = SelectedCustomer?.Id;
+
+                if (customerId is null && !string.IsNullOrWhiteSpace(CustomerSearchText))
                 {
-                    Name = CustomerSearchText.Trim(),
-                    CreatedBy = _currentUserService.Username,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.Customers.AddAsync(newCustomer);
-                await _unitOfWork.SaveChangesAsync();
-                customerId = newCustomer.Id;
+                    var newCustomer = new Customer
+                    {
+                        Name = CustomerSearchText.Trim(),
+                        CreatedBy = _currentUserService.Username,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Customers.AddAsync(newCustomer);
+                    await _unitOfWork.SaveChangesAsync();
+                    customerId = newCustomer.Id;
+                }
             }
 
-            var invoiceType = IsReturnMode
-                ? InvoiceType.SaleReturn
-                : IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
+            var invoiceType = IsDamageMode
+                ? InvoiceType.Damage
+                : IsReturnMode
+                    ? InvoiceType.SaleReturn
+                    : IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
 
             var invoice = new Invoice
             {
                 InvoiceNumber = InvoiceNumber,
                 InvoiceType = invoiceType,
                 CustomerId = customerId,
-                DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
-                SalesRepresentativeId = ShowSalesRepSelection ? SelectedSalesRepresentative?.Id : null,
+                DriverId = ShowDriverSelection && !IsDamageMode ? SelectedDriver?.Id : null,
+                SalesRepresentativeId = ShowSalesRepSelection && !IsDamageMode ? SelectedSalesRepresentative?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
-                PaymentMethod = SelectedPaymentMethod,
-                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
+                PaymentMethod = IsDamageMode ? PaymentMethod.Cash : SelectedPaymentMethod,
+                CashBoxId = !IsDamageMode && IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
                 Date = InvoiceDate,
-                CreditDueDate = IsCreditPayment ? CreditDueDate : null,
-                DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
-                    + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
-                LoyaltyRedeemDiscountAmount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
-                LoyaltyPointsRedeemed = ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
-                TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                CreditDueDate = !IsDamageMode && IsCreditPayment ? CreditDueDate : null,
+                PaidAmount = !IsDamageMode && IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
+                DiscountAmount = IsDamageMode
+                    ? 0m
+                    : (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
+                        + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
+                LoyaltyRedeemDiscountAmount = !IsDamageMode && ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
+                LoyaltyPointsRedeemed = !IsDamageMode && ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
+                TransportFeeAmount = !IsDamageMode && ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 RelatedInvoiceId = IsReturnMode ? _relatedInvoiceId : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -1024,23 +1137,21 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
                 if (IsReturnMode)
                     stockQty = Math.Abs(stockQty);
-                var lineGross = displayQty * row.UnitPrice;
+                var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
+                var lineGross = displayQty * factor * row.UnitPrice;
                 var lineDiscount = ShowProductDiscount ? row.DiscountAmount : 0m;
                 if (lineDiscount > Math.Abs(lineGross))
                     lineDiscount = Math.Abs(lineGross);
-                var lineTotal = ProductDiscountHelper.CalculateLineTotal(displayQty, row.UnitPrice, lineDiscount);
-                var unitPriceForStorage = stockQty == 0 ? row.UnitPrice : lineGross / stockQty;
-                var discountForStorage = stockQty == 0 || displayQty == 0
-                    ? lineDiscount
-                    : lineDiscount * (stockQty / displayQty);
+                var lineTotal = ProductDiscountHelper.CalculateLineTotal(
+                    displayQty, row.UnitPrice, lineDiscount, factor);
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = unitPriceForStorage,
-                    DiscountAmount = discountForStorage,
+                    UnitPrice = row.UnitPrice,
+                    DiscountAmount = lineDiscount,
                     TotalPrice = lineTotal,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
                 });
@@ -1067,7 +1178,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
             else
             {
-                var applyLoyalty = ShowLoyaltyPanel && customerId is not null;
+                var applyLoyalty = !IsDamageMode && ShowLoyaltyPanel && customerId is not null;
                 saved = await _invoiceService.CreateInvoiceAsync(
                     invoice,
                     invoiceItems,
@@ -1094,13 +1205,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
             _draftService.ClearDraft(DraftKey);
             _recentActivity.Record(
-                IsReturnMode ? "مرتجع مبيعات" : "فاتورة مبيعات",
+                IsDamageMode ? "فاتورة تلف" : IsReturnMode ? "مرتجع مبيعات" : "فاتورة مبيعات",
                 $"{saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع",
-                IsReturnMode ? "SalesReturn" : "SaleInvoice",
+                IsDamageMode ? "DamageInvoice" : IsReturnMode ? "SalesReturn" : "SaleInvoice",
                 typeof(SalesInvoiceViewModel));
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ {(IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
+                $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
             PrintInvoice();
         }
@@ -1246,8 +1357,23 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         AddRow();
 
         RecalculateTotals();
-        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
-        ApplyDefaultCustomerIfAny();
+        if (IsDamageMode)
+        {
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Damage);
+            PageTitle = "فاتورة تلف";
+            OnPropertyChanged(nameof(ShowCustomerAndPayment));
+            OnPropertyChanged(nameof(ShowCashBox));
+        }
+        else if (IsReturnMode)
+        {
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.SaleReturn);
+        }
+        else
+        {
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
+            ApplyDefaultCustomerIfAny();
+        }
+        RefreshInvoiceWarnings();
     }
 
     // ══════════════════════════════════════════════════════

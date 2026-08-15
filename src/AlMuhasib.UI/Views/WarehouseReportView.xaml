@@ -122,6 +122,10 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AverageCost"/>
                                 <DataGridTextColumn Header="القيمة الإجمالية" Binding="{Binding TotalValue, StringFormat=N0}" Width="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalValue"/>
+                                <DataGridTextColumn Header="كمية التلف" Binding="{Binding DamagedQuantity, StringFormat=N0}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DamagedQuantity"/>
+                                <DataGridTextColumn Header="تكلفة التلف" Binding="{Binding DamagedCost, StringFormat=N0}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DamagedCost"/>
                             </DataGrid.Columns>
                         </DataGrid>
 

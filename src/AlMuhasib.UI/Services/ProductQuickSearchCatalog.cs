@@ -96,10 +96,11 @@ public sealed class ProductQuickSearchCatalog
         foreach (var group in stocks.GroupBy(s => s.ProductId))
         {
             var chips = group
-                .OrderBy(s => warehouses.GetValueOrDefault(s.WarehouseId, string.Empty))
+                .Where(s => warehouses.ContainsKey(s.WarehouseId))
+                .OrderBy(s => warehouses[s.WarehouseId])
                 .Select(s => new WarehouseStockChip
                 {
-                    WarehouseName = warehouses.GetValueOrDefault(s.WarehouseId, $"مخزن {s.WarehouseId}"),
+                    WarehouseName = warehouses[s.WarehouseId],
                     Quantity = s.Quantity
                 })
                 .ToList();

@@ -1673,6 +1673,12 @@
                         <DataTemplate DataType="{x:Type vm:StockTakingReportViewModel}">
                             <views:StockTakingReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DamageInvoicesReportViewModel}">
+                            <views:DamageInvoicesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PackagingStockReportViewModel}">
+                            <views:PackagingStockReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CogsReportViewModel}">
                             <views:CogsReportView />
                         </DataTemplate>
