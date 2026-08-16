@@ -4036,9 +4036,15 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsOfferGift")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OfferId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("PricingTypeId")
                         .HasColumnType("int");

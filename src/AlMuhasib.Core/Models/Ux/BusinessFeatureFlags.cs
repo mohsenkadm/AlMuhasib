@@ -32,6 +32,9 @@ public class BusinessFeatureFlags
     /// <summary>نظام الولاء (نقاط زبائن + استبدال كخصم) — معطّل افتراضياً.</summary>
     public bool LoyaltySystem { get; set; }
 
+    /// <summary>عروض المنتجات (اشترِ X واحصل على Y مجاناً) — معطّل افتراضياً.</summary>
+    public bool ProductOffers { get; set; }
+
     /// <summary>أجور النقل في فواتير البيع والشراء والأقساط — معطّل افتراضياً.</summary>
     public bool TransportFees { get; set; }
 

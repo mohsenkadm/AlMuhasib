@@ -216,6 +216,10 @@
                                                     Description="نقاط للزبائن تُكسب من فواتير البيع وتُستبدل خصماً — مع تقارير وحسابات في قائمة الولاء"
                                                     Icon="GiftOutline" IconBackground="#FFEBEE" IconForeground="#C62828"
                                                     IsChecked="{Binding LoyaltySystem}"/>
+                        <controls:FeatureToggleCard Title="عروض المنتجات"
+                                                    Description="اشترِ كمية معيّنة من منتج واحصل على منتج آخر مجاناً — تُطبَّق تلقائياً في فاتورة البيع"
+                                                    Icon="Sale" IconBackground="#FFF8E1" IconForeground="#F9A825"
+                                                    IsChecked="{Binding ProductOffers}"/>
                         <controls:FeatureToggleCard Title="المندوبين"
                                                     Description="إدارة مندوبي المبيعات وعمولاتهم وأهدافهم وتحصيلاتهم وربطهم بالعملاء والفواتير مع تقارير الأداء"
                                                     Icon="AccountTie" IconBackground="#E3F2FD" IconForeground="#1565C0"

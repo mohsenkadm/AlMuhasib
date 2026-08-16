@@ -134,6 +134,7 @@ public partial class SalesInvoiceViewModel
         ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
         ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
         RefreshLoyaltyFeatureVisibility();
+        RefreshProductOffersFeatureVisibility();
 
         foreach (var row in Items)
         {

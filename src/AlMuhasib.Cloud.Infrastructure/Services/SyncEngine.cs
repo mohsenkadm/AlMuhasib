@@ -656,6 +656,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.UnitPrice = dto.UnitPrice;
         existing.DiscountAmount = dto.DiscountAmount;
         existing.TotalPrice = dto.TotalPrice;
+        existing.IsOfferGift = dto.IsOfferGift;
+        existing.OfferId = dto.OfferId;
         return 1;
     }
 
@@ -962,7 +964,8 @@ public sealed partial class SyncEngine : ISyncEngine
             ProductSyncId = i.ProductId.HasValue ? products.GetValueOrDefault(i.ProductId.Value) : null,
             PricingTypeSyncId = i.PricingTypeId.HasValue ? pricingTypes.GetValueOrDefault(i.PricingTypeId.Value) : null,
             ItemName = i.ItemName, Quantity = i.Quantity, UnitPrice = i.UnitPrice,
-            DiscountAmount = i.DiscountAmount, TotalPrice = i.TotalPrice
+            DiscountAmount = i.DiscountAmount, TotalPrice = i.TotalPrice,
+            IsOfferGift = i.IsOfferGift, OfferId = i.OfferId
         }).ToList();
     }
 

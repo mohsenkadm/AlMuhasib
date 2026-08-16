@@ -27,6 +27,10 @@ public partial class PosCartLine : ObservableObject
 
     public bool ProductDiscountFeatureEnabled { get; set; }
 
+    /// <summary>سطر هدية من عرض منتجات.</summary>
+    public bool IsOfferGift { get; set; }
+    public int? OfferId { get; set; }
+
     // Clothing
     public int? ProductSizeId { get; set; }
     [ObservableProperty] private string _sizeName = string.Empty;
@@ -63,7 +67,7 @@ public partial class PosCartLine : ObservableObject
     {
         get
         {
-            var name = ProductName;
+            var name = IsOfferGift ? $"هدية — {ProductName}" : ProductName;
             var attrs = new List<string>(2);
             if (!string.IsNullOrWhiteSpace(SizeName)) attrs.Add(SizeName);
             if (!string.IsNullOrWhiteSpace(ColorName)) attrs.Add(ColorName);
@@ -85,12 +89,28 @@ public partial class PosCartLine : ObservableObject
 
     partial void OnQuantityChanged(decimal value)
     {
+        if (IsOfferGift)
+        {
+            DiscountAmount = 0m;
+            LineTotal = 0m;
+            return;
+        }
+
         RefreshProductDiscount();
         Recalc();
     }
 
     partial void OnUnitPriceChanged(decimal value)
     {
+        if (IsOfferGift)
+        {
+            if (value != 0m)
+                UnitPrice = 0m;
+            DiscountAmount = 0m;
+            LineTotal = 0m;
+            return;
+        }
+
         RefreshProductDiscount();
         Recalc();
     }

@@ -225,6 +225,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         IProductSizeService productSizeService,
         IProductColorService productColorService,
         ILoyaltyService loyaltyService,
+        IProductOfferService productOfferService,
         ISalesRepService salesRepService,
         IPartyQuickDetailService partyQuickDetail,
         IProductQuickDetailService productQuickDetail,
@@ -261,6 +262,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             featureFlags, productUnitService, productBatchService, productSerialService,
             productSizeService, productColorService, salesRepService);
         ConfigureLoyaltyService(loyaltyService);
+        ConfigureProductOfferService(productOfferService);
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
     }
 
@@ -730,14 +732,22 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         row.ProductDiscountFeatureEnabled = ShowProductDiscount;
         row.RefreshProductDiscount();
-        row.TotalChanged += RecalculateTotals;
+        row.TotalChanged += OnItemRowTotalChanged;
         row.ProductChanged += OnProductChanged;
     }
 
     private void UnwireItemRow(InvoiceItemRow row)
     {
-        row.TotalChanged -= RecalculateTotals;
+        row.TotalChanged -= OnItemRowTotalChanged;
         row.ProductChanged -= OnProductChanged;
+    }
+
+    private void OnItemRowTotalChanged()
+    {
+        RecalculateTotals();
+        if (_isApplyingOffers) return;
+        _ = RefreshOfferGiftsAsync().ContinueWith(_ =>
+            System.Windows.Application.Current.Dispatcher.Invoke(RecalculateTotals));
     }
 
     [RelayCommand]
@@ -783,30 +793,42 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [RelayCommand]
     private void IncreaseRowQuantity(InvoiceItemRow? row)
     {
-        if (row is null) return;
+        if (row is null || row.IsOfferGift) return;
         row.Quantity += 1;
         RecalculateTotals();
+        _ = RefreshOfferGiftsAsync().ContinueWith(_ =>
+            System.Windows.Application.Current.Dispatcher.Invoke(RecalculateTotals));
     }
 
     [RelayCommand]
     private void DecreaseRowQuantity(InvoiceItemRow? row)
     {
-        if (row is null || row.Quantity <= 1) return;
+        if (row is null || row.IsOfferGift || row.Quantity <= 1) return;
         row.Quantity -= 1;
         RecalculateTotals();
+        _ = RefreshOfferGiftsAsync().ContinueWith(_ =>
+            System.Windows.Application.Current.Dispatcher.Invoke(RecalculateTotals));
     }
 
     [RelayCommand]
     private void RemoveRow(InvoiceItemRow? row)
     {
         if (row is null) return;
+        if (row.IsOfferGift) return; // تُدار تلقائياً مع العروض
         UnwireItemRow(row);
         Items.Remove(row);
         RecalculateTotals();
+        _ = RefreshOfferGiftsAsync().ContinueWith(_ =>
+            System.Windows.Application.Current.Dispatcher.Invoke(RecalculateTotals));
     }
 
-    private async void OnProductChanged(InvoiceItemRow row) =>
+    private async void OnProductChanged(InvoiceItemRow row)
+    {
+        if (row.IsOfferGift) return;
         await RefreshProductRowAsync(row);
+        await RefreshOfferGiftsAsync();
+        RecalculateTotals();
+    }
 
     private async Task RefreshProductRowAsync(InvoiceItemRow row)
     {
@@ -979,7 +1001,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         var validItems = Items
             .Where(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0
-                        && (i.UnitPrice > 0 || i.TotalPrice != 0))
+                        && (i.IsOfferGift || i.UnitPrice > 0 || i.TotalPrice != 0))
             .ToList();
 
         if (validItems.Count == 0)
@@ -1150,9 +1172,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = row.UnitPrice,
-                    DiscountAmount = lineDiscount,
-                    TotalPrice = lineTotal,
+                    UnitPrice = row.IsOfferGift ? 0m : row.UnitPrice,
+                    DiscountAmount = row.IsOfferGift ? 0m : lineDiscount,
+                    TotalPrice = row.IsOfferGift ? 0m : lineTotal,
+                    IsOfferGift = row.IsOfferGift,
+                    OfferId = row.OfferId,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
                 });
             }

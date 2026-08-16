@@ -117,6 +117,7 @@ public interface IReportService
     Task<CashBalancesSummaryReportResult> GetCashBalancesSummaryReportAsync();
     Task<TransfersReportResult> GetTransfersReportAsync(DateTime? from, DateTime? to);
     Task<InventoryValuationReportResult> GetInventoryValuationReportAsync(int? warehouseId, bool includeZero = false);
+    Task<WarehouseProductProfitReportResult> GetWarehouseProductProfitReportAsync(int? warehouseId, bool includeZero = false);
     Task<StockTakingReportResult> GetStockTakingReportAsync(int? warehouseId, bool includeZero = true);
     Task<CogsReportResult> GetCogsReportAsync(DateTime? from, DateTime? to, int? warehouseId);
     Task<FinancialPositionSummaryReportResult> GetFinancialPositionSummaryReportAsync(DateTime? asOfDate);
@@ -1456,6 +1457,32 @@ public class InventoryValuationRow
     public decimal Quantity { get; set; }
     public decimal AverageCost { get; set; }
     public decimal TotalValue { get; set; }
+}
+
+/// <summary>ربح المنتجات الكامنة في المخزن (كمية × فرق سعر البيع والتكلفة).</summary>
+public class WarehouseProductProfitReportResult
+{
+    public decimal TotalPotentialProfit { get; set; }
+    public decimal TotalSaleValue { get; set; }
+    public decimal TotalCostValue { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public int ProductCount { get; set; }
+    public int WarehouseCount { get; set; }
+    public List<WarehouseProductProfitRow> Rows { get; set; } = [];
+    public List<NameAmountPoint> WarehouseChart { get; set; } = [];
+    public List<NameAmountPoint> TopProductsChart { get; set; } = [];
+}
+
+public class WarehouseProductProfitRow
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal AverageCost { get; set; }
+    public decimal SalePrice { get; set; }
+    public decimal PotentialProfit { get; set; }
 }
 
 public class StockTakingReportResult

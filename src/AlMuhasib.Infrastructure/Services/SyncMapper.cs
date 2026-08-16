@@ -391,6 +391,8 @@ internal static class SyncMapper
         d.UnitPrice = i.UnitPrice;
         d.DiscountAmount = i.DiscountAmount;
         d.TotalPrice = i.TotalPrice;
+        d.IsOfferGift = i.IsOfferGift;
+        d.OfferId = i.OfferId;
         return d;
     }
     private static InstallmentPlanSyncDto MapInstallmentPlan(InstallmentPlan p, Dictionary<int, Guid> inv, Dictionary<int, Guid> cust) { var d = new InstallmentPlanSyncDto(); CopyBase(p, d); d.InvoiceSyncId = inv[p.InvoiceId]; d.CustomerSyncId = cust[p.CustomerId]; d.FileNumber = p.FileNumber; d.TotalAmount = p.TotalAmount; d.NumberOfInstallments = p.NumberOfInstallments; d.InstallmentAmount = p.InstallmentAmount; d.StartDate = p.StartDate; d.InstallmentType = p.InstallmentType; d.CompanyFeePercentage = p.CompanyFeePercentage; d.CompanyFeeAmount = p.CompanyFeeAmount; return d; }
@@ -716,6 +718,7 @@ internal static class SyncMapper
             entity.PricingTypeId = dto.PricingTypeSyncId.HasValue && pricingTypes.TryGetValue(dto.PricingTypeSyncId.Value, out var ptId) ? ptId : null;
             entity.ItemName = dto.ItemName; entity.Quantity = dto.Quantity; entity.UnitPrice = dto.UnitPrice;
             entity.DiscountAmount = dto.DiscountAmount; entity.TotalPrice = dto.TotalPrice;
+            entity.IsOfferGift = dto.IsOfferGift; entity.OfferId = dto.OfferId;
         }
         await db.SaveChangesAsync(ct);
     }

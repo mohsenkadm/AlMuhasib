@@ -1670,6 +1670,9 @@
                         <DataTemplate DataType="{x:Type vm:InventoryValuationReportViewModel}">
                             <views:InventoryValuationReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:WarehouseProductProfitReportViewModel}">
+                            <views:WarehouseProductProfitReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:StockTakingReportViewModel}">
                             <views:StockTakingReportView />
                         </DataTemplate>
@@ -1732,6 +1735,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:LoyaltyTopCustomersReportViewModel}">
                             <loyaltyViews:LoyaltyTopCustomersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductOffersViewModel}">
+                            <views:ProductOffersView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:MigrationWizardViewModel}">
                             <views:MigrationWizardView />

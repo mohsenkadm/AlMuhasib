@@ -24,6 +24,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool AddMissingProductsOnPurchase => Current.AddMissingProductsOnPurchase;
     public bool ProductDiscountEnabled => Current.ProductDiscountEnabled;
     public bool LoyaltySystem => Current.LoyaltySystem;
+    public bool ProductOffers => Current.ProductOffers;
     public bool TransportFees => Current.TransportFees;
     public bool WarehouseInvoiceAndDriver => Current.WarehouseInvoiceAndDriver;
     public bool SalesRepresentatives => Current.SalesRepresentatives;
