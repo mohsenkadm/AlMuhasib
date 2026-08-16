@@ -371,7 +371,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         try
         {
-            LoadPermissions(_currentUserService, "SaleInvoice");
+            var permissionScreen = InvoiceNavigationBridge.PendingDamageMode
+                ? ScreenPermissionRegistry.DamageInvoice
+                : InvoiceNavigationBridge.PendingSalesReturnMode
+                  || InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId.HasValue
+                    ? ScreenPermissionRegistry.SalesReturn
+                    : "SaleInvoice";
+            LoadPermissions(_currentUserService, permissionScreen);
 
             InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
 
@@ -408,15 +414,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             foreach (var r in reps.Where(x => x.IsActive).OrderBy(x => x.Name))
                 SalesRepresentatives.Add(r);
 
-            var products = await _unitOfWork.Products.GetAllAsync();
-            Products.Clear();
-            foreach (var p in products)
-                Products.Add(p);
-
-            await QuickSearchCatalog.LoadAsync(
-                Products,
-                InvoicePickerMode.Sale,
-                ShowProductPricing);
+            await ReloadProductSearchCatalogAsync();
 
             if (ShowProductPricing)
                 await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
@@ -498,7 +496,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             SelectedDriver = null;
 
         if (ShowSalesRepSelection && invoice.SalesRepresentativeId.HasValue)
-            SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == invoice.SalesRepresentativeId);
+        {
+            SelectedSalesRepresentative = SalesRepresentatives.FirstOrDefault(r => r.Id == invoice.SalesRepresentativeId)
+                ?? invoice.SalesRepresentative;
+            if (SelectedSalesRepresentative is not null
+                && SalesRepresentatives.All(r => r.Id != SelectedSalesRepresentative.Id))
+                SalesRepresentatives.Add(SelectedSalesRepresentative);
+        }
         else
             SelectedSalesRepresentative = null;
 
@@ -1279,10 +1283,20 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             ? GrandTotal
             : Math.Clamp(_savedInvoice.PaidAmount, 0m, GrandTotal);
         var remainingAmount = Math.Max(0m, GrandTotal - paidAmount);
+        var salesRepresentative = ShowSalesRepSelection
+            ? (_savedInvoice.SalesRepresentative
+                ?? SalesRepresentatives.FirstOrDefault(r => r.Id == _savedInvoice.SalesRepresentativeId)
+                ?? SelectedSalesRepresentative)
+            : null;
 
         return new InvoicePrintModel
         {
-            Title = "فاتورة مبيعات",
+            Title = _savedInvoice.InvoiceType switch
+            {
+                InvoiceType.Damage => "فاتورة تلف",
+                InvoiceType.SaleReturn => "مرتجع مبيعات",
+                _ => "فاتورة مبيعات"
+            },
             InvoiceNumber = _savedInvoice.InvoiceNumber,
             Date = _savedInvoice.Date,
             CreditDueDate = _savedInvoice.CreditDueDate,
@@ -1291,7 +1305,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PartyPhone = SelectedCustomer?.Phone,
             PartyAddress = SelectedCustomer?.Address,
             DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
-            SalesRepresentativeName = ShowSalesRepSelection ? SelectedSalesRepresentative?.Name : null,
+            SalesRepresentativeName = salesRepresentative?.Name,
+            SalesRepresentativePhone = salesRepresentative?.Phone,
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             PaymentMethod = _savedInvoice.PaymentMethod switch
             {
@@ -1343,8 +1358,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PartyName = source.PartyName,
             PartyPhone = source.PartyPhone,
             PartyAddress = source.PartyAddress,
+            PartyEmail = source.PartyEmail,
             DriverName = source.DriverName,
             SalesRepresentativeName = source.SalesRepresentativeName,
+            SalesRepresentativePhone = source.SalesRepresentativePhone,
+            SalesRepresentativeEmail = source.SalesRepresentativeEmail,
             WarehouseName = source.WarehouseName,
             PaymentMethod = source.PaymentMethod,
             Notes = source.Notes,
@@ -1388,6 +1406,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         Items.Clear();
         AddRow();
 
+        await ReloadProductSearchCatalogAsync();
         RecalculateTotals();
         if (IsDamageMode)
         {
@@ -1406,6 +1425,19 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             ApplyDefaultCustomerIfAny();
         }
         RefreshInvoiceWarnings();
+    }
+
+    private async Task ReloadProductSearchCatalogAsync()
+    {
+        var products = await _unitOfWork.Products.GetAllAsync();
+        Products.Clear();
+        foreach (var product in products.OrderBy(p => p.Name))
+            Products.Add(product);
+
+        await QuickSearchCatalog.LoadAsync(
+            Products,
+            InvoicePickerMode.Sale,
+            ShowProductPricing);
     }
 
     // ══════════════════════════════════════════════════════

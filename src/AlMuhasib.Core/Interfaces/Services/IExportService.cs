@@ -65,8 +65,11 @@ public class InvoicePrintModel
     public string? Notes { get; set; }
     public string? PartyPhone { get; set; }
     public string? PartyAddress { get; set; }
+    public string? PartyEmail { get; set; }
     public string? DriverName { get; set; }
     public string? SalesRepresentativeName { get; set; }
+    public string? SalesRepresentativePhone { get; set; }
+    public string? SalesRepresentativeEmail { get; set; }
     /// <summary>نسخة مخزن — بدون أسعار أو مجاميع</summary>
     public bool HideAmounts { get; set; }
     public List<InvoicePrintItem> Items { get; set; } = [];
@@ -91,6 +94,9 @@ public class InvoicePrintModel
     public decimal TotalGoldValue { get; set; }
     public decimal TotalMakingCharge { get; set; }
     public decimal DiscountAmount { get; set; }
+    public decimal TaxRate { get; set; }
+    public decimal TaxAmount { get; set; }
+    public string CurrencyLabel { get; set; } = "د.ع";
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public decimal TotalAmountIqd { get; set; }

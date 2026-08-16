@@ -219,6 +219,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
             PartyAddress = invoice.Customer?.Address,
             DriverName = invoice.Driver?.Name,
             SalesRepresentativeName = invoice.SalesRepresentative?.Name,
+            SalesRepresentativePhone = invoice.SalesRepresentative?.Phone,
             WarehouseName = invoice.Warehouse?.Name ?? "—",
             PaymentMethod = row.PaymentMethod,
             Notes = invoice.Notes,

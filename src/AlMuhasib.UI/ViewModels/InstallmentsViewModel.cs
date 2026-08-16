@@ -66,6 +66,9 @@ public partial class InstallmentsViewModel : ViewModelBase
     [ObservableProperty]
     private Customer? _paymentSelectedCustomer;
 
+    [ObservableProperty]
+    private bool _isPaymentCustomerDropDownOpen;
+
     public ObservableCollection<InstallmentPlan> CustomerPlans { get; } = [];
 
     [ObservableProperty]
@@ -124,6 +127,14 @@ public partial class InstallmentsViewModel : ViewModelBase
     [ObservableProperty]
     private string _paidSearchText = string.Empty;
 
+    public ObservableCollection<Customer> FilteredPaidCustomers { get; } = [];
+
+    [ObservableProperty]
+    private Customer? _paidSelectedCustomer;
+
+    [ObservableProperty]
+    private bool _isPaidCustomerDropDownOpen;
+
     // ══════════════════════════════════════════════════════
     // TAB 5: UNPAID (كشف غير مسددة)
     // ══════════════════════════════════════════════════════
@@ -131,6 +142,14 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _unpaidSearchText = string.Empty;
+
+    public ObservableCollection<Customer> FilteredUnpaidCustomers { get; } = [];
+
+    [ObservableProperty]
+    private Customer? _unpaidSelectedCustomer;
+
+    [ObservableProperty]
+    private bool _isUnpaidCustomerDropDownOpen;
 
     public PagerState PlansPager { get; } = new() { PageSize = 20 };
     public PagerState OverduePager { get; } = new() { PageSize = 50 };
@@ -191,10 +210,14 @@ public partial class InstallmentsViewModel : ViewModelBase
             var customers = await _unitOfWork.Customers.GetAllAsync();
             PaymentCustomers.Clear();
             FilteredPaymentCustomers.Clear();
+            FilteredPaidCustomers.Clear();
+            FilteredUnpaidCustomers.Clear();
             foreach (var c in customers.OrderBy(c => c.Name))
             {
                 PaymentCustomers.Add(c);
                 FilteredPaymentCustomers.Add(c);
+                FilteredPaidCustomers.Add(c);
+                FilteredUnpaidCustomers.Add(c);
             }
 
             // لا تحمّل كل المتأخرات هنا — تُحمَّل عند فتح التاب فقط
@@ -589,12 +612,16 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         PaymentSelectedCustomer = null;
         CustomerComboBoxFilter.Apply(PaymentCustomers, FilteredPaymentCustomers, value);
+        IsPaymentCustomerDropDownOpen = true;
     }
 
     partial void OnPaymentSelectedCustomerChanged(Customer? value)
     {
         if (value is not null)
+        {
             PaymentCustomerSearch = value.Name;
+            IsPaymentCustomerDropDownOpen = false;
+        }
     }
 
     [RelayCommand]
@@ -607,9 +634,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         PaymentSelectedPlan = null;
         PaymentSelectedInstallment = null;
 
+        PaymentSelectedCustomer ??= ResolveCustomer(PaymentCustomerSearch, FilteredPaymentCustomers);
         if (PaymentSelectedCustomer is null)
         {
-            PaymentMessage = "يرجى اختيار العميل";
+            PaymentMessage = "اكتب اسم العميل أو هاتفه ثم اختره من القائمة";
             return;
         }
 
@@ -761,6 +789,25 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     // TAB 4: PAID
     // ══════════════════════════════════════════════════════
 
+    partial void OnPaidSearchTextChanged(string value)
+    {
+        if (PaidSelectedCustomer is not null && PaidSelectedCustomer.Name == value)
+            return;
+
+        PaidSelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(PaymentCustomers, FilteredPaidCustomers, value);
+        IsPaidCustomerDropDownOpen = true;
+    }
+
+    partial void OnPaidSelectedCustomerChanged(Customer? value)
+    {
+        if (value is null)
+            return;
+
+        PaidSearchText = value.Name;
+        IsPaidCustomerDropDownOpen = false;
+    }
+
     [RelayCommand]
     private async Task LoadPaidAsync()
     {
@@ -784,6 +831,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     [RelayCommand]
     private async Task PaidSearchAsync()
     {
+        PaidSelectedCustomer ??= ResolveCustomer(PaidSearchText, FilteredPaidCustomers);
         PaidPager.ResetToFirstPage();
         await LoadPaidAsync();
     }
@@ -835,6 +883,25 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     // ══════════════════════════════════════════════════════
     // TAB 5: UNPAID
     // ══════════════════════════════════════════════════════
+
+    partial void OnUnpaidSearchTextChanged(string value)
+    {
+        if (UnpaidSelectedCustomer is not null && UnpaidSelectedCustomer.Name == value)
+            return;
+
+        UnpaidSelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(PaymentCustomers, FilteredUnpaidCustomers, value);
+        IsUnpaidCustomerDropDownOpen = true;
+    }
+
+    partial void OnUnpaidSelectedCustomerChanged(Customer? value)
+    {
+        if (value is null)
+            return;
+
+        UnpaidSearchText = value.Name;
+        IsUnpaidCustomerDropDownOpen = false;
+    }
 
     private static readonly InstallmentStatus[] UnpaidStatuses =
     [
@@ -890,6 +957,22 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         }
     }
 
+    private static Customer? ResolveCustomer(
+        string? searchText,
+        IReadOnlyCollection<Customer> filteredCustomers)
+    {
+        var term = searchText?.Trim();
+        if (string.IsNullOrWhiteSpace(term))
+            return null;
+
+        var exact = filteredCustomers.FirstOrDefault(customer =>
+            string.Equals(customer.Name, term, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(customer.Phone, term, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(customer.FileNumber, term, StringComparison.OrdinalIgnoreCase));
+
+        return exact ?? (filteredCustomers.Count == 1 ? filteredCustomers.First() : null);
+    }
+
     private async Task SyncUnpaidOverdueInBackgroundAsync(string? search)
     {
         try
@@ -939,6 +1022,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     [RelayCommand]
     private async Task UnpaidSearchAsync()
     {
+        UnpaidSelectedCustomer ??= ResolveCustomer(UnpaidSearchText, FilteredUnpaidCustomers);
         _unpaidTotalsCache = null;
         UnpaidPager.ResetToFirstPage();
         await LoadUnpaidAsync();

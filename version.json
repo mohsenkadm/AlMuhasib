@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "1.14.14",
-    "releaseDate":  "2026-08-15",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.14/AlMuhasib-1.14.14.zip",
-    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.14/Qayd-Setup-1.14.14.exe",
-    "sha256":  "84A5A105BD8E35942586FAC352B87CF6CD4AE59DFD30CA5E5A729E0287E6BE59",
-    "sizeBytes":  149233026,
-    "releaseNotes":  "إصلاح تثبيت وتشغيل SQL Server 2017 LocalDB على الأجهزة التي تفشل فيها التهيئة، مع فحص صحة المثيل وإصلاح التثبيت التالف، ومنع التشغيل قبل إعادة التشغيل عند الحاجة",
+    "version":  "1.14.15",
+    "releaseDate":  "2026-08-17",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.15/AlMuhasib-1.14.15.zip",
+    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.15/Qayd-Setup-1.14.15.exe",
+    "sha256":  "3791FC75995F847F93725804E7B282446AB32F2FDB8258A9257E8FD8FDEC7270",
+    "sizeBytes":  149385772,
+    "releaseNotes":  "تحسين طباعة الفواتير والتصدير إلى Excel، وتطوير شاشة الأقساط وفواتير البيع والشراء",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

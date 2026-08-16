@@ -176,7 +176,11 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         try
         {
-            LoadPermissions(_currentUserService, "PurchaseInvoice");
+            var permissionScreen = InvoiceNavigationBridge.PendingPurchaseReturnMode
+                || InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId.HasValue
+                    ? ScreenPermissionRegistry.PurchaseReturn
+                    : "PurchaseInvoice";
+            LoadPermissions(_currentUserService, permissionScreen);
 
             // Generate invoice number
             InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
@@ -205,15 +209,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             if (CashBoxes.Count > 0)
                 SelectedCashBox = CashBoxes[0];
 
-            var products = await _unitOfWork.Products.GetAllAsync();
-            Products.Clear();
-            foreach (var p in products)
-                Products.Add(p);
-
-            await QuickSearchCatalog.LoadAsync(
-                Products,
-                InvoicePickerMode.Purchase,
-                ShowProductPricing);
+            await ReloadProductSearchCatalogAsync();
 
             if (ShowProductPricing)
                 await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
@@ -890,9 +886,23 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         Items.Clear();
         AddRow();
 
+        await ReloadProductSearchCatalogAsync();
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
         ApplyDefaultSupplierIfAny();
+    }
+
+    private async Task ReloadProductSearchCatalogAsync()
+    {
+        var products = await _unitOfWork.Products.GetAllAsync();
+        Products.Clear();
+        foreach (var product in products.OrderBy(p => p.Name))
+            Products.Add(product);
+
+        await QuickSearchCatalog.LoadAsync(
+            Products,
+            InvoicePickerMode.Purchase,
+            ShowProductPricing);
     }
 
     // ══════════════════════════════════════════════════════

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -223,6 +223,12 @@ public class ExcelExportService : IExportService
             return;
         }
 
+        if (!m.IsGoldInvoice && m.Schedule is not { Count: > 0 })
+        {
+            PrintModernInvoice(m);
+            return;
+        }
+
         // ── A4 page dimensions (96 DPI) ──
         const double A4Width = 793.7;   // 210mm
         const double A4Height = 1122.5; // 297mm
@@ -244,8 +250,9 @@ public class ExcelExportService : IExportService
 
         var hideAmounts = m.HideAmounts;
         var isGold = m.IsGoldInvoice && !hideAmounts;
-        // Clear B&W print for standard invoices; gold keeps its themed colors.
-        var useClearPrint = !m.IsGoldInvoice;
+        // Use the selected branded template for every invoice type so standard
+        // sales invoices have the same polished visual hierarchy as premium layouts.
+        var useClearPrint = false;
 
         var primaryColor = useClearPrint ? Colors.Black : theme.Primary;
         var primaryBrush = new SolidColorBrush(primaryColor);
@@ -256,6 +263,7 @@ public class ExcelExportService : IExportService
         var borderBrush = new SolidColorBrush(borderColor);
         var accentColor = theme.Accent;
         var infoPadding = compactScheduleMode ? new Thickness(5, 2, 5, 2) : new Thickness(8, 5, 8, 5);
+        var currencySuffix = $" {(string.IsNullOrWhiteSpace(m.CurrencyLabel) ? "د.ع" : m.CurrencyLabel)}";
 
         // ═══════════════════════════════════════════════
         // TITLE — clear print: bordered B&W; gold: themed banner
@@ -416,22 +424,54 @@ public class ExcelExportService : IExportService
                 infoGroup.Rows.Add(r);
             }
 
+            void AddSectionTitle(string title)
+            {
+                var row = new TableRow { Background = new SolidColorBrush(lightBg) };
+                row.Cells.Add(new TableCell(new Paragraph(new Run(title))
+                {
+                    FontWeight = FontWeights.Bold,
+                    Foreground = darkBrush,
+                    Margin = new Thickness(0)
+                })
+                {
+                    ColumnSpan = 2,
+                    Padding = new Thickness(8, 5, 8, 5),
+                    BorderBrush = borderBrush,
+                    BorderThickness = new Thickness(0, 0, 0, 1)
+                });
+                infoGroup.Rows.Add(row);
+            }
+
+            AddSectionTitle("بيانات الفاتورة");
             AddInfoRow("رقم الفاتورة", m.InvoiceNumber, "التاريخ", m.Date.ToString("yyyy/MM/dd"));
-            AddInfoRow(m.PartyLabel, string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName, "المخزن", m.WarehouseName);
             AddInfoRow("طريقة الدفع", m.PaymentMethod,
-                m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : null,
-                m.CreditDueDate?.ToString("yyyy/MM/dd"));
-            AddInfoRow("عملة التسعير", string.IsNullOrWhiteSpace(m.PricingCurrencyLabel) ? "—" : m.PricingCurrencyLabel,
-                "عملة الدفع", string.IsNullOrWhiteSpace(m.PaymentCurrencyLabel) ? "—" : m.PaymentCurrencyLabel);
-            if (m.FxRate > 0)
-                AddInfoRow("سعر الصرف", m.FxRate.ToString("N2"));
-            if (!string.IsNullOrWhiteSpace(m.PartyPhone) || !string.IsNullOrWhiteSpace(m.PartyAddress))
-                AddInfoRow("هاتف العميل", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone,
-                    "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
+                "تاريخ الاستحقاق",
+                m.CreditDueDate?.ToString("yyyy/MM/dd") ?? string.Empty);
+            AddInfoRow("المخزن", m.WarehouseName);
+
+            AddSectionTitle($"بيانات {m.PartyLabel}");
+            AddInfoRow("الاسم", m.PartyName, "الهاتف", m.PartyPhone ?? string.Empty);
+            AddInfoRow("العنوان", m.PartyAddress ?? string.Empty, "البريد الإلكتروني", m.PartyEmail ?? string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName)
+                || !string.IsNullOrWhiteSpace(m.SalesRepresentativePhone)
+                || !string.IsNullOrWhiteSpace(m.SalesRepresentativeEmail))
+            {
+                AddSectionTitle("مندوب المبيعات");
+                AddInfoRow("الاسم", m.SalesRepresentativeName ?? string.Empty,
+                    "الهاتف", m.SalesRepresentativePhone ?? string.Empty);
+                AddInfoRow("البريد الإلكتروني", m.SalesRepresentativeEmail ?? string.Empty);
+            }
+
+            if (isGold)
+            {
+                AddInfoRow("عملة التسعير", string.IsNullOrWhiteSpace(m.PricingCurrencyLabel) ? "—" : m.PricingCurrencyLabel,
+                    "عملة الدفع", string.IsNullOrWhiteSpace(m.PaymentCurrencyLabel) ? "—" : m.PaymentCurrencyLabel);
+                if (m.FxRate > 0)
+                    AddInfoRow("سعر الصرف", m.FxRate.ToString("N2"));
+            }
             if (!string.IsNullOrWhiteSpace(m.DriverName))
                 AddInfoRow("السائق", m.DriverName);
-            if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
-                AddInfoRow("المندوب", m.SalesRepresentativeName);
             if (!string.IsNullOrWhiteSpace(m.FileNumber))
                 AddInfoRow("رقم الملف", m.FileNumber);
             if (!string.IsNullOrWhiteSpace(m.Notes))
@@ -447,17 +487,26 @@ public class ExcelExportService : IExportService
         // ITEMS TABLE
         // ═══════════════════════════════════════════════
         var itemsTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
-        double[] colWidths;
         if (hideAmounts)
-            colWidths = compactScheduleMode ? new[] { 40.0, 380.0, 80.0 } : new[] { 50.0, 420.0, 90.0 };
+        {
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(50) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(90) });
+        }
         else if (isGold)
-            colWidths = new[] { 28.0, 130.0, 42.0, 58.0, 70.0, 70.0, 78.0, 70.0, 84.0 };
+        {
+            foreach (var w in new[] { 28.0, 130.0, 42.0, 58.0, 70.0, 70.0, 78.0, 70.0, 84.0 })
+                itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
+        }
         else
-            colWidths = compactScheduleMode
-                ? new[] { 32.0, 205.0, 62.0, 90.0, 105.0 }
-                : new[] { 40.0, 220.0, 70.0, 95.0, 110.0 };
-        foreach (var w in colWidths)
-            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
+        {
+            // Full-width professional layout: # | item* | qty | unit | total
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(compactScheduleMode ? 36 : 44) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(compactScheduleMode ? 70 : 80) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(compactScheduleMode ? 95 : 110) });
+            itemsTable.Columns.Add(new TableColumn { Width = new GridLength(compactScheduleMode ? 105 : 120) });
+        }
 
         var itemHeaderGroup = new TableRowGroup();
         var itemHeaderRow = new TableRow();
@@ -533,8 +582,8 @@ public class ExcelExportService : IExportService
                 AddItemCell(item.Quantity.ToString("N0"));
                 if (!hideAmounts)
                 {
-                    AddItemCell(item.UnitPrice.ToString("N0") + " د.ع");
-                    AddItemCell(item.TotalPrice.ToString("N0") + " د.ع", bold: true);
+                    AddItemCell(item.UnitPrice.ToString("N0") + currencySuffix);
+                    AddItemCell(item.TotalPrice.ToString("N0") + currencySuffix, bold: true);
                 }
             }
             dataGroup.Rows.Add(itemRow);
@@ -580,7 +629,7 @@ public class ExcelExportService : IExportService
                 BorderThickness = new Thickness(0, 0, 0, 1)
             });
 
-            var amountText = amount.ToString("N0") + (suffix ?? " د.ع");
+            var amountText = amount.ToString("N0") + (suffix ?? currencySuffix);
             r.Cells.Add(new TableCell(new Paragraph(new Run(amountText))
             {
                 FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
@@ -621,7 +670,12 @@ public class ExcelExportService : IExportService
             if (m.TransportFeeAmount > 0)
                 AddTotalRow("أجور النقل", m.TransportFeeAmount);
             if (m.DiscountAmount != 0)
+            {
                 AddTotalRow("الخصم", m.DiscountAmount);
+                AddTotalRow("المبلغ بعد الخصم", m.Subtotal - m.DiscountAmount, isBold: true);
+            }
+            if (m.TaxRate > 0 || m.TaxAmount != 0)
+                AddTotalRow($"الضريبة ({m.TaxRate:N2}%)", m.TaxAmount);
             AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
             if (m.PaidAmount != 0 || m.RemainingAmount != 0)
             {
@@ -736,6 +790,18 @@ public class ExcelExportService : IExportService
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
 
         DocumentPrintHelper.PrintWithPreview(doc, m.Title, new Size(A4Width, A4Height));
+    }
+
+    /// <summary>
+    /// طباعة فاتورة بيع/شراء/مرتجع بقالب A4 الاحترافي (نفس تنسيق ملف PDF).
+    /// </summary>
+    private void PrintModernInvoice(InvoicePrintModel m)
+    {
+        var doc = ModernInvoiceDocumentBuilder.Build(m);
+        DocumentPrintHelper.PrintWithPreview(
+            doc,
+            m.Title,
+            new Size(ModernInvoiceDocumentBuilder.PageWidth, ModernInvoiceDocumentBuilder.PageHeight));
     }
 
     private void PrintInstallmentInvoiceLikeReference(InvoicePrintModel m)

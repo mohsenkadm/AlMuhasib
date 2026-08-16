@@ -14,8 +14,8 @@ public static class AccountingMenuBuilder
             // شاشات مباشرة (ليست داخل كروب)
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
-            Item("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), "SalesReturn"),
-            Item("فاتورة تلف", PackIconKind.DeleteAlert, typeof(SalesInvoiceViewModel), "DamageInvoice"),
+            Item("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.SalesReturn),
+            Item("فاتورة تلف", PackIconKind.DeleteAlert, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.DamageInvoice),
             Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
             Item("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
 
@@ -96,7 +96,7 @@ public static class AccountingMenuBuilder
                 accentLight: "#FFF3E0",
                 [
                     ("فاتورة مشتريات", PackIconKind.CartArrowDown, typeof(PurchaseInvoiceViewModel), "PurchaseInvoice"),
-                    ("مرتجع مشتريات", PackIconKind.KeyboardReturn, typeof(PurchaseInvoiceViewModel), "PurchaseReturn"),
+                    ("مرتجع مشتريات", PackIconKind.KeyboardReturn, typeof(PurchaseInvoiceViewModel), ScreenPermissionRegistry.PurchaseReturn),
                 ]),
             FlyoutGroup(
                 key: "installments",

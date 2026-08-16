@@ -17,6 +17,12 @@ public static class ScreenPermissionRegistry
     public const string BalanceSheet = "BalanceSheet";
     public const string NetworkConnection = "NetworkConnection";
     public const string BarcodePriceCheck = "BarcodePriceCheck";
+    public const string SalesReturn = "SalesReturn";
+    public const string PurchaseReturn = "PurchaseReturn";
+    public const string DamageInvoice = "DamageInvoice";
+    public const string DamageInvoicesReport = "DamageInvoicesReport";
+    public const string PackagingStockReport = "PackagingStockReport";
+    public const string MinimumQuantityReport = "MinimumQuantityReport";
 
     private static SystemModuleRegistry? _registry;
 
@@ -154,7 +160,10 @@ public static class ScreenPermissionRegistry
         ("LoyaltyReports", "تقارير الولاء"),
         ("ProductOffers", "إدارة العروض"),
         ("PurchaseInvoice", "فاتورة مشتريات"),
+        (PurchaseReturn, "مرتجع مشتريات"),
         ("SaleInvoice", "فاتورة مبيعات"),
+        (SalesReturn, "مرتجع مبيعات"),
+        (DamageInvoice, "فاتورة تلف"),
         ("InstallmentInvoice", "فاتورة أقساط"),
         ("Installments", "الأقساط ولوحة التحصيل"),
         ("OpeningInstallments", "أرصدة الأقساط الافتتاحية"),
@@ -169,6 +178,9 @@ public static class ScreenPermissionRegistry
         ("OpeningStock", "الأرصدة الافتتاحية"),
         ("StockAdjustment", "تسوية مخزنية"),
         ("Reports", "التقارير"),
+        (DamageInvoicesReport, "تقرير فواتير التلف"),
+        (PackagingStockReport, "كميات المخزون حسب التعبئة"),
+        (MinimumQuantityReport, "تقرير كميات الحد الأدنى"),
         ("SupervisoryReports", "التقارير الرقابية"),
         ("BalanceSheet", "موازنة يومية"),
         ("Capital", "رأس المال"),
@@ -280,6 +292,9 @@ public static class ScreenPermissionRegistry
         [typeof(WarehouseTransferViewModel)] = "Warehouses",
         [typeof(OpeningStockViewModel)] = "OpeningStock",
         [typeof(StockAdjustmentViewModel)] = "StockAdjustment",
+        [typeof(MinimumQuantityReportViewModel)] = MinimumQuantityReport,
+        [typeof(DamageInvoicesReportViewModel)] = DamageInvoicesReport,
+        [typeof(PackagingStockReportViewModel)] = PackagingStockReport,
         [typeof(SalesReportViewModel)] = "Reports",
         [typeof(PurchasesReportViewModel)] = "Reports",
         [typeof(ProfitReportViewModel)] = "Reports",
@@ -385,7 +400,10 @@ public static class ScreenPermissionRegistry
         ["LoyaltyReports"] = typeof(LoyaltySummaryReportViewModel),
         ["ProductOffers"] = typeof(ProductOffersViewModel),
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
+        [PurchaseReturn] = typeof(PurchaseInvoiceViewModel),
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
+        [SalesReturn] = typeof(SalesInvoiceViewModel),
+        [DamageInvoice] = typeof(SalesInvoiceViewModel),
         [BarcodePriceCheck] = typeof(BarcodePriceCheckViewModel),
         ["InstallmentInvoice"] = typeof(InstallmentInvoiceViewModel),
         ["Installments"] = typeof(InstallmentsViewModel),
@@ -401,6 +419,9 @@ public static class ScreenPermissionRegistry
         ["OpeningStock"] = typeof(OpeningStockViewModel),
         ["StockAdjustment"] = typeof(StockAdjustmentViewModel),
         ["Reports"] = typeof(SalesReportViewModel),
+        [DamageInvoicesReport] = typeof(DamageInvoicesReportViewModel),
+        [PackagingStockReport] = typeof(PackagingStockReportViewModel),
+        [MinimumQuantityReport] = typeof(MinimumQuantityReportViewModel),
         [SupervisoryReports] = typeof(DeletedInvoicesReportViewModel),
         ["BalanceSheet"] = typeof(BalanceSheetViewModel),
         ["Capital"] = typeof(CapitalAdjustmentViewModel),

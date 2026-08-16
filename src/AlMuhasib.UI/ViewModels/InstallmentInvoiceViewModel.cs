@@ -277,15 +277,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             foreach (var d in drivers.OrderBy(x => x.Name))
                 Drivers.Add(d);
 
-            var products = await _unitOfWork.Products.GetAllAsync();
-            Products.Clear();
-            foreach (var p in products)
-                Products.Add(p);
-
-            await QuickSearchCatalog.LoadAsync(
-                Products,
-                InvoicePickerMode.Installment,
-                ShowProductPricing);
+            await ReloadProductSearchCatalogAsync();
 
             if (ShowProductPricing)
                 await InvoiceBulkPricingHelper.LoadBulkPricingTypesAsync(_pricingTypeService, BulkPricingTypes);
@@ -914,10 +906,24 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         Items.Clear();
         AddRow();
 
+        await ReloadProductSearchCatalogAsync();
         RecalculateTotals();
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Installment);
         ApplyDefaultInstallmentCustomerIfAny();
         GenerateSchedulePreview();
+    }
+
+    private async Task ReloadProductSearchCatalogAsync()
+    {
+        var products = await _unitOfWork.Products.GetAllAsync();
+        Products.Clear();
+        foreach (var product in products.OrderBy(p => p.Name))
+            Products.Add(product);
+
+        await QuickSearchCatalog.LoadAsync(
+            Products,
+            InvoicePickerMode.Installment,
+            ShowProductPricing);
     }
 
     // ══════════════════════════════════════════════════════

@@ -169,6 +169,10 @@ public static class PosReceiptDocumentBuilder
         doc.Blocks.Add(MetaParagraph($"#{model.InvoiceNumber}", fontSize, FontWeights.SemiBold));
         doc.Blocks.Add(MetaParagraph($"{model.Date:yyyy/MM/dd HH:mm}", fontSize - 0.5));
         doc.Blocks.Add(MetaParagraph($"{model.PartyLabel}: {model.PartyName}", fontSize - 0.5));
+        if (!string.IsNullOrWhiteSpace(model.SalesRepresentativeName))
+            doc.Blocks.Add(MetaParagraph($"المندوب: {model.SalesRepresentativeName}", fontSize - 0.5));
+        if (!string.IsNullOrWhiteSpace(model.SalesRepresentativePhone))
+            doc.Blocks.Add(MetaParagraph($"هاتف المندوب: {model.SalesRepresentativePhone}", fontSize - 0.5));
         if (model.IsGoldInvoice && !string.IsNullOrWhiteSpace(model.PaymentMethod))
             doc.Blocks.Add(MetaParagraph($"الدفع: {model.PaymentMethod}", fontSize - 0.5));
         if (model.IsGoldInvoice && model.FxRate > 0)

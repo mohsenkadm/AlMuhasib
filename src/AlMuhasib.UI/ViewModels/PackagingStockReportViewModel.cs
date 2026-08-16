@@ -3,6 +3,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -34,7 +35,7 @@ public partial class PackagingStockReportViewModel : ReportViewModelBase
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, "Reports");
+        LoadPermissions(_currentUserService, ScreenPermissionRegistry.PackagingStockReport);
         foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
             Warehouses.Add(w);
         foreach (var p in (await _unitOfWork.Products.GetAllAsync()).OrderBy(x => x.Name))

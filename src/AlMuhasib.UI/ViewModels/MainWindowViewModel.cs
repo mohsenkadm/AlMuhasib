@@ -288,7 +288,12 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId = invoiceId;
-        await OpenTabAsync(typeof(SalesInvoiceViewModel), "مرتجع مبيعات", PackIconKind.KeyboardReturn, activateIfExists: false);
+        await OpenTabAsync(
+            typeof(SalesInvoiceViewModel),
+            "مرتجع مبيعات",
+            PackIconKind.KeyboardReturn,
+            activateIfExists: false,
+            permissionScreenName: ScreenPermissionRegistry.SalesReturn);
     }
 
     private async Task ReturnPurchaseInvoiceAsync(int invoiceId)
@@ -314,7 +319,12 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         InvoiceNavigationBridge.PendingPurchaseReturnFromInvoiceId = invoiceId;
-        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "مرتجع مشتريات", PackIconKind.KeyboardReturn, activateIfExists: false);
+        await OpenTabAsync(
+            typeof(PurchaseInvoiceViewModel),
+            "مرتجع مشتريات",
+            PackIconKind.KeyboardReturn,
+            activateIfExists: false,
+            permissionScreenName: ScreenPermissionRegistry.PurchaseReturn);
     }
 
     private async Task EditInstallmentInvoiceAsync(int invoiceId)
@@ -493,7 +503,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         CloseReportFlyout();
 
-        if (item.ViewModelType is not null && !TryAuthorizeScreen(item.ViewModelType, out _))
+        if (item.ViewModelType is not null && !TryAuthorizeScreen(item.ScreenName, out _))
             return;
 
         // Clear selection across all items including children
@@ -514,7 +524,12 @@ public partial class MainWindowViewModel : ObservableObject
                 InvoiceNavigationBridge.PendingSalesReturnMode = true;
             if (string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
                 InvoiceNavigationBridge.PendingDamageMode = true;
-            _ = OpenTabAsync(item.ViewModelType, item.Title, item.Icon, activateIfExists: false);
+            _ = OpenTabAsync(
+                item.ViewModelType,
+                item.Title,
+                item.Icon,
+                activateIfExists: false,
+                permissionScreenName: item.ScreenName);
         }
     }
 
@@ -575,7 +590,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (entry?.ViewModelType is null)
             return;
 
-        if (!TryAuthorizeScreen(entry.ViewModelType, out _))
+        if (!TryAuthorizeScreen(entry.ScreenName, out _))
             return;
 
         if (string.Equals(entry.ScreenName, "PurchaseReturn", StringComparison.OrdinalIgnoreCase))
@@ -587,7 +602,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         CloseReportFlyout();
         PageTitle = entry.Title;
-        await OpenTabAsync(entry.ViewModelType, entry.Title, entry.Icon, activateIfExists: false);
+        await OpenTabAsync(
+            entry.ViewModelType,
+            entry.Title,
+            entry.Icon,
+            activateIfExists: false,
+            permissionScreenName: entry.ScreenName);
     }
 
     public bool TryAuthorizeScreen(Type viewModelType, out string? deniedMessage)
@@ -611,6 +631,19 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         var screenName = ScreenPermissionRegistry.GetScreenName(viewModelType);
+        if (_currentUserService.CanView(screenName))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
+        deniedMessage = $"ليس لديك صلاحية للوصول إلى: {ScreenPermissionRegistry.GetLabel(screenName)}";
+        _toast.ShowWarning(deniedMessage);
+        return false;
+    }
+
+    private bool TryAuthorizeScreen(string screenName, out string? deniedMessage)
+    {
         if (_currentUserService.CanView(screenName))
         {
             deniedMessage = null;
@@ -720,9 +753,17 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>Opens a tab for startup, wizard, or external callers.</summary>
-    public async Task OpenTabAsync(Type viewModelType, string title, PackIconKind icon, bool activateIfExists = true)
+    public async Task OpenTabAsync(
+        Type viewModelType,
+        string title,
+        PackIconKind icon,
+        bool activateIfExists = true,
+        string? permissionScreenName = null)
     {
-        if (!TryAuthorizeScreen(viewModelType, out _))
+        var authorized = string.IsNullOrWhiteSpace(permissionScreenName)
+            ? TryAuthorizeScreen(viewModelType, out _)
+            : TryAuthorizeScreen(permissionScreenName, out _);
+        if (!authorized)
             return;
 
         if (activateIfExists)
@@ -764,7 +805,9 @@ public partial class MainWindowViewModel : ObservableObject
             UpdateTabCloseStates();
             UpdateTabPinStates();
 
-            var screenName = ScreenPermissionRegistry.GetScreenName(viewModelType);
+            var screenName = string.IsNullOrWhiteSpace(permissionScreenName)
+                ? ScreenPermissionRegistry.GetScreenName(viewModelType)
+                : permissionScreenName;
             _recentActivity.Record($"فتح: {title}", screenName, screenName, viewModelType);
 
             await SafeInitializeTabAsync(viewModel);
@@ -905,7 +948,12 @@ public partial class MainWindowViewModel : ObservableObject
             if (!menu.IsVisible || !CanMenuBeShownByPermissions(menu))
                 continue;
 
-            await OpenTabAsync(menu.ViewModelType, menu.Title, menu.Icon, activateIfExists: false);
+            await OpenTabAsync(
+                menu.ViewModelType,
+                menu.Title,
+                menu.Icon,
+                activateIfExists: false,
+                permissionScreenName: menu.ScreenName);
         }
 
         UpdateTabPinStates();
