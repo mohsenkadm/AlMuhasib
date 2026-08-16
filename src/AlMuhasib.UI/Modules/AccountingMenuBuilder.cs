@@ -52,6 +52,15 @@ public static class AccountingMenuBuilder
                     ("ملف الشخص", PackIconKind.AccountDetails, typeof(PersonProfileViewModel), "PersonProfile"),
                 ]),
             FlyoutGroup(
+                key: "product-offers",
+                title: "عروض المنتجات",
+                icon: PackIconKind.Sale,
+                accent: "#E65100",
+                accentLight: "#FFF8E1",
+                [
+                    ("إدارة العروض", PackIconKind.TagMultiple, typeof(ProductOffersViewModel), "ProductOffers"),
+                ]),
+            FlyoutGroup(
                 key: "loyalty",
                 title: "نظام الولاء",
                 icon: PackIconKind.GiftOutline,

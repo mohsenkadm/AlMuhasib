@@ -71,6 +71,7 @@ public static class ReportMenuCatalog
             ("ملخص أرصدة نقدية", PackIconKind.CashMultiple, typeof(CashBalancesSummaryReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير التحويلات", PackIconKind.SwapHorizontal, typeof(TransfersReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقييم المخزون بالتكلفة", PackIconKind.CashPlus, typeof(InventoryValuationReportViewModel), ScreenPermissionRegistry.Reports),
+            ("ربح المنتجات في المخزن", PackIconKind.ChartLineVariant, typeof(WarehouseProductProfitReportViewModel), ScreenPermissionRegistry.Reports),
             ("جرد المخزون", PackIconKind.PackageVariant, typeof(StockTakingReportViewModel), ScreenPermissionRegistry.Reports),
             ("تكلفة البضاعة المباعة", PackIconKind.CartArrowDown, typeof(CogsReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير فواتير التلف", PackIconKind.DeleteAlert, typeof(DamageInvoicesReportViewModel), ScreenPermissionRegistry.Reports),

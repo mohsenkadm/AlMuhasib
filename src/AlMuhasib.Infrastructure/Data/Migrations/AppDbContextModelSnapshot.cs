@@ -1559,10 +1559,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsOfferGift")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("OfferId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("PricingTypeId")
                         .HasColumnType("int");
@@ -1779,6 +1785,89 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("SyncId");
 
                     b.ToTable("LoyaltySettings", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("GiftProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("GiftQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TriggerProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TriggerQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GiftProductId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
+
+                    b.HasIndex("TriggerProductId");
+
+                    b.ToTable("ProductOffers", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.PackagingType", b =>
@@ -4345,6 +4434,25 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("PricingType");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Product", "GiftProduct")
+                        .WithMany()
+                        .HasForeignKey("GiftProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.Product", "TriggerProduct")
+                        .WithMany()
+                        .HasForeignKey("TriggerProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GiftProduct");
+
+                    b.Navigation("TriggerProduct");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.LoyaltyPointTransaction", b =>

@@ -72,6 +72,7 @@ public partial class MainWindowViewModel
             var t when t == typeof(LoyaltyLedgerViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltySummaryReportViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltyTopCustomersReportViewModel) => flags.LoyaltySystem,
+            var t when t == typeof(ProductOffersViewModel) => flags.ProductOffers,
             var t when t == typeof(SalesRepresentativesViewModel) => flags.SalesRepresentatives,
             var t when t == typeof(SalesRepCommissionRulesViewModel) => flags.SalesRepresentatives,
             var t when t == typeof(SalesRepTargetsViewModel) => flags.SalesRepresentatives,

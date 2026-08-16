@@ -1154,6 +1154,73 @@ public sealed partial class CloudReportService
         };
     }
 
+    public async Task<WarehouseProductProfitReportResult> GetWarehouseProductProfitReportAsync(
+        int? warehouseId, bool includeZero = false)
+    {
+        var context = _db;
+        var stockQ = context.WarehouseStocks
+            .Include(ws => ws.Product).ThenInclude(p => p!.Category)
+            .Include(ws => ws.Warehouse)
+            .AsQueryable();
+        if (warehouseId.HasValue) stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
+        if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity > 0);
+
+        var stocks = await stockQ.ToListAsync();
+        if (stocks.Count == 0)
+            return new WarehouseProductProfitReportResult();
+
+        var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
+        var purchasesByProduct = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+        var prices = await context.ProductPrices.AsNoTracking()
+            .Where(pp => productIds.Contains(pp.ProductId))
+            .ToListAsync();
+        var salePriceByProduct = prices
+            .GroupBy(pp => pp.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Where(p => p.SalePrice > 0).Select(p => (decimal?)p.SalePrice).FirstOrDefault()
+                     ?? g.Select(p => (decimal?)p.SalePrice).FirstOrDefault()
+                     ?? 0m);
+
+        var rows = new List<WarehouseProductProfitRow>();
+        foreach (var s in stocks)
+        {
+            var purchaseItems = purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [];
+            var avg = CloudProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
+            var salePrice = salePriceByProduct.GetValueOrDefault(s.ProductId);
+            var profit = Math.Round(s.Quantity * (salePrice - avg), 0);
+            rows.Add(new WarehouseProductProfitRow
+            {
+                ProductId = s.ProductId,
+                ProductName = s.Product?.Name ?? "—",
+                WarehouseName = s.Warehouse?.Name ?? "—",
+                CategoryName = s.Product?.Category?.Name ?? "—",
+                Quantity = s.Quantity,
+                AverageCost = avg,
+                SalePrice = salePrice,
+                PotentialProfit = profit
+            });
+        }
+
+        rows = rows.OrderByDescending(r => r.PotentialProfit).ToList();
+        var totalCost = rows.Sum(r => Math.Round(r.Quantity * r.AverageCost, 0));
+        var totalSale = rows.Sum(r => Math.Round(r.Quantity * r.SalePrice, 0));
+        return new WarehouseProductProfitReportResult
+        {
+            TotalPotentialProfit = rows.Sum(r => r.PotentialProfit),
+            TotalSaleValue = totalSale,
+            TotalCostValue = totalCost,
+            TotalQuantity = rows.Sum(r => r.Quantity),
+            ProductCount = rows.Select(r => r.ProductId).Distinct().Count(),
+            WarehouseCount = rows.Select(r => r.WarehouseName).Distinct().Count(),
+            Rows = rows,
+            WarehouseChart = rows.GroupBy(r => r.WarehouseName)
+                .Select(g => new NameAmountPoint { Name = g.Key, Amount = g.Sum(x => x.PotentialProfit) }).ToList(),
+            TopProductsChart = rows.Take(10)
+                .Select(r => new NameAmountPoint { Name = r.ProductName, Amount = r.PotentialProfit }).ToList()
+        };
+    }
+
     public async Task<StockTakingReportResult> GetStockTakingReportAsync(int? warehouseId, bool includeZero = true)
     {
         var context = _db;

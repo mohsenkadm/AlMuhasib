@@ -39,6 +39,7 @@ public class CloudDbContext : DbContext
     public DbSet<CloudWarehouseTransferItem> WarehouseTransferItems => Set<CloudWarehouseTransferItem>();
     public DbSet<CloudInvoice> Invoices => Set<CloudInvoice>();
     public DbSet<CloudInvoiceItem> InvoiceItems => Set<CloudInvoiceItem>();
+    public DbSet<CloudProductOffer> ProductOffers => Set<CloudProductOffer>();
     public DbSet<CloudInstallmentPlan> InstallmentPlans => Set<CloudInstallmentPlan>();
     public DbSet<CloudInstallment> Installments => Set<CloudInstallment>();
     public DbSet<CloudVoucher> Vouchers => Set<CloudVoucher>();

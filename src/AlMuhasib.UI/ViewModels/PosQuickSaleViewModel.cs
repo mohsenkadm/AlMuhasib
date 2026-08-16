@@ -85,7 +85,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IProductSerialService productSerialService,
         IProductSizeService productSizeService,
         IProductColorService productColorService,
-        ILoyaltyService loyaltyService)
+        ILoyaltyService loyaltyService,
+        IProductOfferService productOfferService)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -102,6 +103,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         ConfigurePosFeatureServices(productSerialService, productSizeService, productColorService);
         ConfigureLoyaltyService(loyaltyService);
+        ConfigureProductOfferService(productOfferService);
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -229,25 +231,28 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [RelayCommand]
     private void RemoveLine(PosCartLine? line)
     {
-        if (line is null) return;
+        if (line is null || line.IsOfferGift) return;
         CartLines.Remove(line);
+        _ = RefreshOfferGiftsAsync();
     }
 
     [RelayCommand]
     private void IncreaseLine(PosCartLine? line)
     {
-        if (line is null) return;
+        if (line is null || line.IsOfferGift) return;
         line.Quantity += 1;
+        _ = RefreshOfferGiftsAsync();
     }
 
     [RelayCommand]
     private void DecreaseLine(PosCartLine? line)
     {
-        if (line is null) return;
+        if (line is null || line.IsOfferGift) return;
         if (line.Quantity <= 1)
             CartLines.Remove(line);
         else
             line.Quantity -= 1;
+        _ = RefreshOfferGiftsAsync();
     }
 
     [RelayCommand]
@@ -376,7 +381,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return false;
         }
 
-        var invalid = CartLines.Where(l => l.UnitPrice <= 0).ToList();
+        var invalid = CartLines.Where(l => !l.IsOfferGift && l.UnitPrice <= 0).ToList();
         if (invalid.Count > 0)
         {
             BeautifulMessageDialog.ShowWarning("أدخل سعراً لكل البنود");
@@ -435,7 +440,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return;
         }
 
-        var invalid = CartLines.Where(l => l.UnitPrice <= 0).ToList();
+        var invalid = CartLines.Where(l => !l.IsOfferGift && l.UnitPrice <= 0).ToList();
         if (invalid.Count > 0)
         {
             BeautifulMessageDialog.ShowWarning("أدخل سعراً لكل البنود");
@@ -539,9 +544,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 PricingTypeId = line.PricingTypeId,
                 ItemName = line.ProductName,
                 Quantity = line.Quantity,
-                UnitPrice = line.UnitPrice,
-                DiscountAmount = ShowProductDiscount ? line.DiscountAmount : 0m,
-                TotalPrice = line.LineTotal,
+                UnitPrice = line.IsOfferGift ? 0m : line.UnitPrice,
+                DiscountAmount = line.IsOfferGift ? 0m : (ShowProductDiscount ? line.DiscountAmount : 0m),
+                TotalPrice = line.IsOfferGift ? 0m : line.LineTotal,
+                IsOfferGift = line.IsOfferGift,
+                OfferId = line.OfferId,
                 CustomFieldsJson = line.ToCustomFieldsJson()
             }).ToList();
 
@@ -677,12 +684,16 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 {
                     RecalcCartTotals();
                     _ = RefreshLoyaltyQuoteAsync();
+                    if (!line.IsOfferGift && !_isApplyingOffers)
+                        _ = RefreshOfferGiftsAsync();
                 };
             }
         }
 
         RecalcCartTotals();
         _ = RefreshLoyaltyQuoteAsync();
+        if (!_isApplyingOffers)
+            _ = RefreshOfferGiftsAsync();
     }
 
     private void RecalcCartTotals()

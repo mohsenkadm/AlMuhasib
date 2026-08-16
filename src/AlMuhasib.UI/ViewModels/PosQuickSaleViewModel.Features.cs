@@ -63,8 +63,10 @@ public partial class PosQuickSaleViewModel
         }
 
         RefreshLoyaltyFeatureVisibility();
+        RefreshProductOffersFeatureVisibility();
         RecalcCartTotals();
         _ = RefreshLoyaltyQuoteAsync();
+        _ = RefreshOfferGiftsAsync();
     }
 
     private void ApplyMarketTemplateHeaders()

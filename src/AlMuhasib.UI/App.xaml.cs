@@ -213,6 +213,7 @@ public partial class App : Application
         services.AddTransient<UserActivityProfileViewModel>();
         services.AddTransient<LoyaltySettingsViewModel>();
         services.AddTransient<LoyaltyAccountsViewModel>();
+        services.AddTransient<ProductOffersViewModel>();
         services.AddTransient<LoyaltyLedgerViewModel>();
         services.AddTransient<LoyaltySummaryReportViewModel>();
         services.AddTransient<LoyaltyTopCustomersReportViewModel>();
@@ -294,6 +295,7 @@ public partial class App : Application
         services.AddTransient<CashBalancesSummaryReportViewModel>();
         services.AddTransient<TransfersReportViewModel>();
         services.AddTransient<InventoryValuationReportViewModel>();
+        services.AddTransient<WarehouseProductProfitReportViewModel>();
         services.AddTransient<StockTakingReportViewModel>();
         services.AddTransient<DamageInvoicesReportViewModel>();
         services.AddTransient<PackagingStockReportViewModel>();

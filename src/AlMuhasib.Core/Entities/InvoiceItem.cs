@@ -13,6 +13,12 @@ public class InvoiceItem : BaseEntity
     public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
 
+    /// <summary>سطر هدية من عرض منتجات (سعر صفر).</summary>
+    public bool IsOfferGift { get; set; }
+
+    /// <summary>معرّف العرض الذي أنتج سطر الهدية.</summary>
+    public int? OfferId { get; set; }
+
     /// <summary>حقول مخصصة (IMEI، مقاس، لون...) JSON.</summary>
     public string? CustomFieldsJson { get; set; }
 

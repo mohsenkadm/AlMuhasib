@@ -70,9 +70,11 @@ public partial class PosQuickSaleViewModel
                 PricingTypeId = l.PricingTypeId,
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
-                UnitPrice = l.UnitPrice,
-                DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
-                TotalPrice = l.LineTotal,
+                UnitPrice = l.IsOfferGift ? 0m : l.UnitPrice,
+                DiscountAmount = l.IsOfferGift ? 0m : (ShowProductDiscount ? l.DiscountAmount : 0m),
+                TotalPrice = l.IsOfferGift ? 0m : l.LineTotal,
+                IsOfferGift = l.IsOfferGift,
+                OfferId = l.OfferId,
                 CustomFieldsJson = l.ToCustomFieldsJson()
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items, skipStockUpdate: true);
@@ -159,9 +161,11 @@ public partial class PosQuickSaleViewModel
                 PricingTypeId = l.PricingTypeId,
                 ItemName = l.ProductName,
                 Quantity = l.Quantity,
-                UnitPrice = l.UnitPrice,
-                DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
-                TotalPrice = l.LineTotal,
+                UnitPrice = l.IsOfferGift ? 0m : l.UnitPrice,
+                DiscountAmount = l.IsOfferGift ? 0m : (ShowProductDiscount ? l.DiscountAmount : 0m),
+                TotalPrice = l.IsOfferGift ? 0m : l.LineTotal,
+                IsOfferGift = l.IsOfferGift,
+                OfferId = l.OfferId,
                 CustomFieldsJson = l.ToCustomFieldsJson()
             }).ToList();
             var saved = await _invoiceService.CreateInvoiceAsync(invoice, items);

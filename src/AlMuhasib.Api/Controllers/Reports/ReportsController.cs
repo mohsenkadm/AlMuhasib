@@ -480,6 +480,14 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetInventoryValuationReportAsync(f.WarehouseId, includeZero));
     }
 
+    [HttpGet("warehouse-product-profit")]
+    public async Task<IActionResult> WarehouseProductProfit([FromQuery] ReportFilterRequest filter, [FromQuery] bool includeZero = false, CancellationToken ct = default)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetWarehouseProductProfitReportAsync(f.WarehouseId, includeZero));
+    }
+
     [HttpGet("stock-taking")]
     public async Task<IActionResult> StockTaking([FromQuery] ReportFilterRequest filter, [FromQuery] bool includeZero = true, CancellationToken ct = default)
     {

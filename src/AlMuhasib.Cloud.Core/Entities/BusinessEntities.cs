@@ -166,10 +166,24 @@ public class CloudInvoiceItem : CloudBaseEntity
     public decimal UnitPrice { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
+    public bool IsOfferGift { get; set; }
+    public int? OfferId { get; set; }
     public CloudInvoice Invoice { get; set; } = null!;
     public CloudProduct? Product { get; set; }
     public CloudPricingType? PricingType { get; set; }
 }
+
+public class CloudProductOffer : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public int TriggerProductId { get; set; }
+    public decimal TriggerQuantity { get; set; }
+    public int GiftProductId { get; set; }
+    public decimal GiftQuantity { get; set; }
+    public string? Notes { get; set; }
+}
+
 public class CloudInstallmentPlan : CloudBaseEntity
 {
     public int InvoiceId { get; set; }

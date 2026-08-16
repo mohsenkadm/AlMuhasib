@@ -236,6 +236,18 @@ public partial class InvoiceItemRow : ObservableObject
     /// <summary>يُفعَّل من شاشة الفاتورة عند تفعيل ميزة الخصم.</summary>
     public bool ProductDiscountFeatureEnabled { get; set; }
 
+    /// <summary>سطر هدية من عرض منتجات — سعر صفر ولا يفتح بحث منتج.</summary>
+    [ObservableProperty]
+    private bool _isOfferGift;
+
+    [ObservableProperty]
+    private int? _offerId;
+
+    /// <summary>منع تعديل السعر على سطور الهدايا.</summary>
+    public bool IsPriceEditable => !IsOfferGift;
+
+    partial void OnIsOfferGiftChanged(bool value) => OnPropertyChanged(nameof(IsPriceEditable));
+
     private bool _isManualTotal;
 
     /// <summary>تعيين المنتج دون إطلاق ProductChanged (لاستعادة المسودة/الانتظار).</summary>
@@ -279,6 +291,14 @@ public partial class InvoiceItemRow : ObservableObject
 
     partial void OnQuantityChanged(decimal value)
     {
+        if (IsOfferGift)
+        {
+            _isManualTotal = false;
+            OnPropertyChanged(nameof(LineWeight));
+            RecalcTotal();
+            return;
+        }
+
         _isManualTotal = false;
         OnPropertyChanged(nameof(LineWeight));
         RefreshProductDiscount();
@@ -287,6 +307,18 @@ public partial class InvoiceItemRow : ObservableObject
 
     partial void OnUnitPriceChanged(decimal value)
     {
+        if (IsOfferGift)
+        {
+            if (value != 0m)
+            {
+                _isRecalculating = true;
+                UnitPrice = 0m;
+                _isRecalculating = false;
+            }
+            TotalPrice = 0m;
+            return;
+        }
+
         _isManualTotal = false;
         RefreshProductDiscount();
         RecalcTotal();
@@ -339,6 +371,16 @@ public partial class InvoiceItemRow : ObservableObject
 
     private void RecalcTotal()
     {
+        if (IsOfferGift)
+        {
+            _isRecalculating = true;
+            UnitPrice = 0m;
+            DiscountAmount = 0m;
+            TotalPrice = 0m;
+            _isRecalculating = false;
+            return;
+        }
+
         if (_isManualTotal) return;
         _isRecalculating = true;
         TotalPrice = ProductDiscountHelper.CalculateLineTotal(
