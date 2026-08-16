@@ -1275,6 +1275,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (_savedInvoice is null)
             throw new InvalidOperationException("لا توجد فاتورة محفوظة");
 
+        var paidAmount = _savedInvoice.PaymentMethod == PaymentMethod.Cash
+            ? GrandTotal
+            : Math.Clamp(_savedInvoice.PaidAmount, 0m, GrandTotal);
+        var remainingAmount = Math.Max(0m, GrandTotal - paidAmount);
+
         return new InvoicePrintModel
         {
             Title = "فاتورة مبيعات",
@@ -1299,6 +1304,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
+            DiscountAmount = _savedInvoice.DiscountAmount,
+            PaidAmount = paidAmount,
+            RemainingAmount = remainingAmount,
             GrandTotal = GrandTotal,
             Items = _savedItems.Select((item, i) =>
             {

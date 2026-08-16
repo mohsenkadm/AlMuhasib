@@ -30,27 +30,44 @@ internal static class InvoicePdfGenerator
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Background(Colors.Blue.Darken2).Padding(10)
-                        .Text(m.Title).FontSize(18).Bold().FontColor(Colors.White).AlignCenter();
+                    col.Item().Border(1).BorderColor(Colors.Black).Padding(10)
+                        .Text(m.Title).FontSize(18).Bold().FontColor(Colors.Black).AlignCenter();
+
                     col.Item().PaddingTop(8).Row(row =>
+                    {
+                        // RTL: first RelativeItem appears on the right (customer)
+                        row.RelativeItem().Column(party =>
+                        {
+                            party.Item().Text($"{m.PartyLabel}: {(string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName)}");
+                            party.Item().Text($"الهاتف: {(string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone)}");
+                            party.Item().Text($"العنوان: {(string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress)}");
+                        });
+
+                        if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
+                        {
+                            row.RelativeItem().Column(rep =>
+                            {
+                                rep.Item().Text($"المندوب: {m.SalesRepresentativeName}");
+                            });
+                        }
+                        else
+                        {
+                            row.RelativeItem();
+                        }
+                    });
+
+                    col.Item().PaddingTop(6).Row(row =>
                     {
                         row.RelativeItem().Text($"رقم الفاتورة: {m.InvoiceNumber}");
                         row.RelativeItem().AlignRight().Text($"التاريخ: {m.Date:yyyy/MM/dd}");
                     });
-                    col.Item().PaddingTop(4).Text($"{m.PartyLabel}: {m.PartyName}");
-                    if (!string.IsNullOrWhiteSpace(m.PartyPhone))
-                        col.Item().Text($"هاتف العميل: {m.PartyPhone}");
-                    if (!string.IsNullOrWhiteSpace(m.PartyAddress))
-                        col.Item().Text($"عنوان العميل: {m.PartyAddress}");
-                    if (!string.IsNullOrWhiteSpace(m.DriverName))
-                        col.Item().Text($"السائق: {m.DriverName}");
-                    if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
-                        col.Item().Text($"المندوب: {m.SalesRepresentativeName}");
-                    if (!string.IsNullOrWhiteSpace(m.WarehouseName))
-                        col.Item().Text($"المخزن: {m.WarehouseName}");
                     col.Item().Text($"طريقة الدفع: {m.PaymentMethod}");
                     if (m.CreditDueDate.HasValue)
                         col.Item().Text($"تاريخ الاستحقاق: {m.CreditDueDate:yyyy/MM/dd}");
+                    if (!string.IsNullOrWhiteSpace(m.WarehouseName))
+                        col.Item().Text($"المخزن: {m.WarehouseName}");
+                    if (!string.IsNullOrWhiteSpace(m.DriverName))
+                        col.Item().Text($"السائق: {m.DriverName}");
                     if (!string.IsNullOrWhiteSpace(m.FileNumber))
                         col.Item().Text($"رقم الملف: {m.FileNumber}");
                     if (!string.IsNullOrWhiteSpace(m.Notes))
@@ -153,12 +170,19 @@ internal static class InvoicePdfGenerator
                     {
                         col.Item().PaddingTop(12).AlignLeft().Column(totals =>
                         {
-                            totals.Item().Text($"المجموع: {m.Subtotal:N0} د.ع");
+                            totals.Item().Text($"المجموع الفرعي: {m.Subtotal:N0} د.ع");
                             if (m.RoundingAmount != 0)
                                 totals.Item().Text($"التقريب: {m.RoundingAmount:N0} د.ع");
                             if (m.TransportFeeAmount > 0)
                                 totals.Item().Text($"أجور النقل: {m.TransportFeeAmount:N0} د.ع");
+                            if (m.DiscountAmount != 0)
+                                totals.Item().Text($"الخصم: {m.DiscountAmount:N0} د.ع");
                             totals.Item().Text($"الإجمالي الكلي: {m.GrandTotal:N0} د.ع").Bold().FontSize(12);
+                            if (m.PaidAmount != 0 || m.RemainingAmount != 0)
+                            {
+                                totals.Item().Text($"المدفوع: {m.PaidAmount:N0} د.ع");
+                                totals.Item().Text($"المتبقي: {m.RemainingAmount:N0} د.ع");
+                            }
                         });
                     }
                 });
@@ -243,8 +267,11 @@ internal static class InvoicePdfGenerator
     }
 
     private static IContainer HeaderCell(IContainer c) =>
-        c.DefaultTextStyle(x => x.SemiBold()).Padding(4).Background(Colors.Grey.Lighten3).Border(0.5f).BorderColor(Colors.Grey.Medium);
+        c.DefaultTextStyle(x => x.SemiBold().FontColor(Colors.Black))
+            .Padding(4)
+            .Border(0.5f)
+            .BorderColor(Colors.Black);
 
     private static IContainer BodyCell(IContainer c) =>
-        c.Padding(4).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2);
+        c.Padding(4).BorderBottom(0.5f).BorderColor(Colors.Grey.Medium);
 }

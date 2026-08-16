@@ -200,6 +200,13 @@ public partial class SalesReportViewModel : ReportViewModelBase
 
     private static InvoicePrintModel BuildSalesInvoicePrintModel(Invoice invoice, SalesReportRow row)
     {
+        var paidAmount = invoice.PaymentMethod == PaymentMethod.Cash
+            ? invoice.NetAmount
+            : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+        var remainingAmount = invoice.PaymentMethod == PaymentMethod.Cash
+            ? 0m
+            : Math.Max(0m, invoice.RemainingAmount != 0 ? invoice.RemainingAmount : invoice.NetAmount - paidAmount);
+
         var model = new InvoicePrintModel
         {
             Title = invoice.InvoiceType == InvoiceType.Installment ? "فاتورة أقساط" : "فاتورة مبيعات",
@@ -210,11 +217,17 @@ public partial class SalesReportViewModel : ReportViewModelBase
             PartyName = invoice.Customer?.Name ?? "—",
             PartyPhone = invoice.Customer?.Phone,
             PartyAddress = invoice.Customer?.Address,
+            DriverName = invoice.Driver?.Name,
+            SalesRepresentativeName = invoice.SalesRepresentative?.Name,
             WarehouseName = invoice.Warehouse?.Name ?? "—",
             PaymentMethod = row.PaymentMethod,
             Notes = invoice.Notes,
             Subtotal = invoice.TotalAmount,
             RoundingAmount = invoice.RoundingAmount,
+            TransportFeeAmount = invoice.TransportFeeAmount,
+            DiscountAmount = invoice.DiscountAmount,
+            PaidAmount = paidAmount,
+            RemainingAmount = remainingAmount,
             GrandTotal = invoice.NetAmount,
             CompanyFeeAmount = row.CompanyFeeAmount > 0 ? row.CompanyFeeAmount : null,
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem

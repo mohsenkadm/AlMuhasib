@@ -242,39 +242,52 @@ public class ExcelExportService : IExportService
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
-        var primaryColor = theme.Primary;
+        var hideAmounts = m.HideAmounts;
+        var isGold = m.IsGoldInvoice && !hideAmounts;
+        // Clear B&W print for standard invoices; gold keeps its themed colors.
+        var useClearPrint = !m.IsGoldInvoice;
+
+        var primaryColor = useClearPrint ? Colors.Black : theme.Primary;
         var primaryBrush = new SolidColorBrush(primaryColor);
-        var darkColor = theme.Dark;
+        var darkColor = useClearPrint ? Colors.Black : theme.Dark;
         var darkBrush = new SolidColorBrush(darkColor);
-        var lightBg = theme.LightBg;
-        var borderColor = theme.Border;
+        var lightBg = useClearPrint ? Color.FromRgb(0xF5, 0xF5, 0xF5) : theme.LightBg;
+        var borderColor = useClearPrint ? Color.FromRgb(0x42, 0x42, 0x42) : theme.Border;
         var borderBrush = new SolidColorBrush(borderColor);
         var accentColor = theme.Accent;
+        var infoPadding = compactScheduleMode ? new Thickness(5, 2, 5, 2) : new Thickness(8, 5, 8, 5);
 
         // ═══════════════════════════════════════════════
-        // HEADER SECTION — Classic/Compact: solid banner; Modern: title + accent underline
+        // TITLE — clear print: bordered B&W; gold: themed banner
         // ═══════════════════════════════════════════════
         var headerTable = new Table { CellSpacing = 0 };
         headerTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         var headerGroup = new TableRowGroup();
         var headerRow = new TableRow();
-        if (theme.UseSolidBanner)
+        if (!useClearPrint && theme.UseSolidBanner)
             headerRow.Background = primaryBrush;
-        headerRow.Cells.Add(new TableCell(new Paragraph(new Run(m.Title))
+        var titleCell = new TableCell(new Paragraph(new Run(m.Title))
         {
             FontSize = compactScheduleMode ? theme.CompactTitleFontSize : theme.TitleFontSize,
             FontWeight = FontWeights.Bold,
-            Foreground = theme.UseSolidBanner ? Brushes.White : darkBrush,
+            Foreground = useClearPrint || !theme.UseSolidBanner ? darkBrush : Brushes.White,
             TextAlignment = TextAlignment.Center
         })
-        { Padding = compactScheduleMode ? new Thickness(0, 8, 0, 8) : new Thickness(0, 14, 0, 14) });
+        {
+            Padding = compactScheduleMode ? new Thickness(0, 8, 0, 8) : new Thickness(0, 14, 0, 14)
+        };
+        if (useClearPrint)
+        {
+            titleCell.BorderBrush = borderBrush;
+            titleCell.BorderThickness = new Thickness(1);
+        }
+        headerRow.Cells.Add(titleCell);
         headerGroup.Rows.Add(headerRow);
         headerTable.RowGroups.Add(headerGroup);
         doc.Blocks.Add(headerTable);
 
-        if (theme.ShowAccentLine)
+        if (!useClearPrint && theme.ShowAccentLine)
         {
-            // Thin accent line under header
             var accentLine = new Table { CellSpacing = 0 };
             accentLine.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
             var accentGroup = new TableRowGroup();
@@ -289,80 +302,150 @@ public class ExcelExportService : IExportService
         }
 
         // ═══════════════════════════════════════════════
-        // INVOICE INFO — Two columns side by side
+        // PARTIES + INVOICE META
+        // Clear print: customer (right) / representative (left) then invoice fields
         // ═══════════════════════════════════════════════
-        var infoTable = new Table
+        Paragraph LabeledLine(string label, string value)
         {
-            CellSpacing = 0,
-            Margin = compactScheduleMode ? new Thickness(0, 6, 0, 6) : new Thickness(0, 10, 0, 10)
-        };
-        infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            var p = new Paragraph { Margin = new Thickness(0, 1, 0, 1) };
+            p.Inlines.Add(new Run(label + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
+            p.Inlines.Add(new Run(string.IsNullOrWhiteSpace(value) ? "—" : value));
+            return p;
+        }
 
-        var infoGroup = new TableRowGroup();
-
-        void AddInfoRow(string leftLabel, string leftVal, string? rightLabel = null, string? rightVal = null)
+        if (useClearPrint)
         {
-            var r = new TableRow();
-            // Left cell
-            var leftPara = new Paragraph();
-            leftPara.Inlines.Add(new Run(leftLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
-            leftPara.Inlines.Add(new Run(leftVal));
-            var infoPadding = compactScheduleMode ? new Thickness(5, 2, 5, 2) : new Thickness(8, 5, 8, 5);
-            r.Cells.Add(new TableCell(leftPara) { Padding = infoPadding });
-
-            // Right cell
-            if (rightLabel != null && rightVal != null)
+            var partiesTable = new Table
             {
-                var rightPara = new Paragraph();
-                rightPara.Inlines.Add(new Run(rightLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
-                rightPara.Inlines.Add(new Run(rightVal));
-                r.Cells.Add(new TableCell(rightPara) { Padding = infoPadding });
+                CellSpacing = 0,
+                Margin = compactScheduleMode ? new Thickness(0, 6, 0, 4) : new Thickness(0, 10, 0, 6)
+            };
+            partiesTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            partiesTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            var partiesGroup = new TableRowGroup();
+            var partiesRow = new TableRow();
+
+            // RTL: first cell = right side (customer), second = left (representative)
+            var customerCell = new TableCell { Padding = infoPadding };
+            customerCell.Blocks.Add(LabeledLine(m.PartyLabel, string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName));
+            customerCell.Blocks.Add(LabeledLine("الهاتف", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone));
+            customerCell.Blocks.Add(LabeledLine("العنوان", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress));
+            partiesRow.Cells.Add(customerCell);
+
+            if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
+            {
+                var repCell = new TableCell { Padding = infoPadding };
+                repCell.Blocks.Add(LabeledLine("المندوب", m.SalesRepresentativeName));
+                partiesRow.Cells.Add(repCell);
             }
             else
             {
-                r.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = infoPadding });
+                partiesRow.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = infoPadding });
             }
-            infoGroup.Rows.Add(r);
-        }
 
-        AddInfoRow("رقم الفاتورة", m.InvoiceNumber, "التاريخ", m.Date.ToString("yyyy/MM/dd"));
-        AddInfoRow(m.PartyLabel, string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName, "المخزن", m.WarehouseName);
-        AddInfoRow("طريقة الدفع", m.PaymentMethod,
-            m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : null,
-            m.CreditDueDate?.ToString("yyyy/MM/dd"));
-        if (m.IsGoldInvoice)
+            partiesGroup.Rows.Add(partiesRow);
+            partiesTable.RowGroups.Add(partiesGroup);
+            doc.Blocks.Add(partiesTable);
+
+            var metaTable = new Table
+            {
+                CellSpacing = 0,
+                Margin = compactScheduleMode ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 0, 10)
+            };
+            metaTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            metaTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            var metaGroup = new TableRowGroup();
+
+            void AddMetaRow(string rightLabel, string rightVal, string? leftLabel = null, string? leftVal = null)
+            {
+                var r = new TableRow();
+                r.Cells.Add(new TableCell(LabeledLine(rightLabel, rightVal)) { Padding = infoPadding });
+                if (leftLabel != null)
+                    r.Cells.Add(new TableCell(LabeledLine(leftLabel, leftVal ?? "—")) { Padding = infoPadding });
+                else
+                    r.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = infoPadding });
+                metaGroup.Rows.Add(r);
+            }
+
+            AddMetaRow("رقم الفاتورة", m.InvoiceNumber, "التاريخ", m.Date.ToString("yyyy/MM/dd"));
+            AddMetaRow("طريقة الدفع", m.PaymentMethod,
+                m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : "المخزن",
+                m.CreditDueDate.HasValue ? m.CreditDueDate.Value.ToString("yyyy/MM/dd") : m.WarehouseName);
+            if (m.CreditDueDate.HasValue)
+                AddMetaRow("المخزن", string.IsNullOrWhiteSpace(m.WarehouseName) ? "—" : m.WarehouseName);
+            if (!string.IsNullOrWhiteSpace(m.DriverName))
+                AddMetaRow("السائق", m.DriverName);
+            if (!string.IsNullOrWhiteSpace(m.FileNumber))
+                AddMetaRow("رقم الملف", m.FileNumber);
+            if (!string.IsNullOrWhiteSpace(m.Notes))
+                AddMetaRow("ملاحظات", m.Notes);
+
+            metaTable.RowGroups.Add(metaGroup);
+            doc.Blocks.Add(metaTable);
+        }
+        else
         {
+            var infoTable = new Table
+            {
+                CellSpacing = 0,
+                Margin = compactScheduleMode ? new Thickness(0, 6, 0, 6) : new Thickness(0, 10, 0, 10)
+            };
+            infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            infoTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            var infoGroup = new TableRowGroup();
+
+            void AddInfoRow(string leftLabel, string leftVal, string? rightLabel = null, string? rightVal = null)
+            {
+                var r = new TableRow();
+                var leftPara = new Paragraph();
+                leftPara.Inlines.Add(new Run(leftLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
+                leftPara.Inlines.Add(new Run(leftVal));
+                r.Cells.Add(new TableCell(leftPara) { Padding = infoPadding });
+
+                if (rightLabel != null && rightVal != null)
+                {
+                    var rightPara = new Paragraph();
+                    rightPara.Inlines.Add(new Run(rightLabel + ": ") { FontWeight = FontWeights.Bold, Foreground = darkBrush });
+                    rightPara.Inlines.Add(new Run(rightVal));
+                    r.Cells.Add(new TableCell(rightPara) { Padding = infoPadding });
+                }
+                else
+                {
+                    r.Cells.Add(new TableCell(new Paragraph(new Run(""))) { Padding = infoPadding });
+                }
+                infoGroup.Rows.Add(r);
+            }
+
+            AddInfoRow("رقم الفاتورة", m.InvoiceNumber, "التاريخ", m.Date.ToString("yyyy/MM/dd"));
+            AddInfoRow(m.PartyLabel, string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName, "المخزن", m.WarehouseName);
+            AddInfoRow("طريقة الدفع", m.PaymentMethod,
+                m.CreditDueDate.HasValue ? "تاريخ الاستحقاق" : null,
+                m.CreditDueDate?.ToString("yyyy/MM/dd"));
             AddInfoRow("عملة التسعير", string.IsNullOrWhiteSpace(m.PricingCurrencyLabel) ? "—" : m.PricingCurrencyLabel,
                 "عملة الدفع", string.IsNullOrWhiteSpace(m.PaymentCurrencyLabel) ? "—" : m.PaymentCurrencyLabel);
             if (m.FxRate > 0)
                 AddInfoRow("سعر الصرف", m.FxRate.ToString("N2"));
+            if (!string.IsNullOrWhiteSpace(m.PartyPhone) || !string.IsNullOrWhiteSpace(m.PartyAddress))
+                AddInfoRow("هاتف العميل", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone,
+                    "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
+            if (!string.IsNullOrWhiteSpace(m.DriverName))
+                AddInfoRow("السائق", m.DriverName);
+            if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
+                AddInfoRow("المندوب", m.SalesRepresentativeName);
+            if (!string.IsNullOrWhiteSpace(m.FileNumber))
+                AddInfoRow("رقم الملف", m.FileNumber);
+            if (!string.IsNullOrWhiteSpace(m.Notes))
+                AddInfoRow("ملاحظات", m.Notes);
+
+            infoTable.RowGroups.Add(infoGroup);
+            doc.Blocks.Add(infoTable);
         }
-        if (!string.IsNullOrWhiteSpace(m.PartyPhone) || !string.IsNullOrWhiteSpace(m.PartyAddress))
-            AddInfoRow("هاتف العميل", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone,
-                "عنوان العميل", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress);
-        if (!string.IsNullOrWhiteSpace(m.DriverName))
-            AddInfoRow("السائق", m.DriverName);
-        if (!string.IsNullOrWhiteSpace(m.SalesRepresentativeName))
-            AddInfoRow("المندوب", m.SalesRepresentativeName);
-        if (!string.IsNullOrWhiteSpace(m.FileNumber))
-            AddInfoRow("رقم الملف", m.FileNumber);
-        if (!string.IsNullOrWhiteSpace(m.Notes))
-            AddInfoRow("ملاحظات", m.Notes);
 
-        infoTable.RowGroups.Add(infoGroup);
-
-        // Wrap info in a bordered section
-        doc.Blocks.Add(infoTable);
-
-        // Separator
         doc.Blocks.Add(new Paragraph(new Run(" ")) { FontSize = 4, Margin = new Thickness(0) });
 
         // ═══════════════════════════════════════════════
         // ITEMS TABLE
         // ═══════════════════════════════════════════════
-        var hideAmounts = m.HideAmounts;
-        var isGold = m.IsGoldInvoice && !hideAmounts;
         var itemsTable = new Table { CellSpacing = 0, BorderBrush = borderBrush, BorderThickness = new Thickness(1) };
         double[] colWidths;
         if (hideAmounts)
@@ -376,9 +459,10 @@ public class ExcelExportService : IExportService
         foreach (var w in colWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(w) });
 
-        // Header
         var itemHeaderGroup = new TableRowGroup();
-        var itemHeaderRow = new TableRow { Background = primaryBrush };
+        var itemHeaderRow = new TableRow();
+        if (!useClearPrint)
+            itemHeaderRow.Background = primaryBrush;
         string[] headerCols;
         if (hideAmounts)
             headerCols = ["#", "المادة", "الكمية"];
@@ -390,21 +474,20 @@ public class ExcelExportService : IExportService
         {
             itemHeaderRow.Cells.Add(new TableCell(new Paragraph(new Run(col))
             {
-                Foreground = Brushes.White,
+                Foreground = useClearPrint ? Brushes.Black : Brushes.White,
                 FontWeight = FontWeights.Bold,
                 TextAlignment = TextAlignment.Center,
                 FontSize = isGold ? 10 : 12
             })
             {
                 Padding = compactScheduleMode || isGold ? new Thickness(3, 4, 3, 4) : new Thickness(5, 6, 5, 6),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)),
-                BorderThickness = new Thickness(0, 0, 1, 0)
+                BorderBrush = useClearPrint ? borderBrush : new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)),
+                BorderThickness = useClearPrint ? new Thickness(0, 0, 1, 1) : new Thickness(0, 0, 1, 0)
             });
         }
         itemHeaderGroup.Rows.Add(itemHeaderRow);
         itemsTable.RowGroups.Add(itemHeaderGroup);
 
-        // Data rows
         var dataGroup = new TableRowGroup();
         bool alt = false;
         foreach (var item in m.Items)
@@ -478,32 +561,38 @@ public class ExcelExportService : IExportService
         void AddTotalRow(string label, decimal amount, bool isBold = false, bool isHighlighted = false, string? suffix = null)
         {
             var r = new TableRow();
-            if (isHighlighted)
+            var highlightWithColor = isHighlighted && !useClearPrint;
+            if (highlightWithColor)
                 r.Background = primaryBrush;
 
-            // Spacer column
             r.Cells.Add(new TableCell(new Paragraph(new Run(""))));
 
-            // Label
             r.Cells.Add(new TableCell(new Paragraph(new Run(label))
             {
                 FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
                 FontSize = isBold ? 14 : 12,
                 TextAlignment = TextAlignment.Right,
-                Foreground = isHighlighted ? Brushes.White : Brushes.Black
+                Foreground = highlightWithColor ? Brushes.White : Brushes.Black
             })
-            { Padding = new Thickness(8, 6, 8, 6), BorderBrush = borderBrush, BorderThickness = new Thickness(0, 0, 0, isHighlighted ? 0 : 1) });
+            {
+                Padding = new Thickness(8, 6, 8, 6),
+                BorderBrush = borderBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1)
+            });
 
             var amountText = amount.ToString("N0") + (suffix ?? " د.ع");
-            // Amount
             r.Cells.Add(new TableCell(new Paragraph(new Run(amountText))
             {
                 FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
                 FontSize = isBold ? 14 : 12,
                 TextAlignment = TextAlignment.Center,
-                Foreground = isHighlighted ? Brushes.White : darkBrush
+                Foreground = highlightWithColor ? Brushes.White : darkBrush
             })
-            { Padding = new Thickness(8, 6, 8, 6), BorderBrush = borderBrush, BorderThickness = new Thickness(0, 0, 0, isHighlighted ? 0 : 1) });
+            {
+                Padding = new Thickness(8, 6, 8, 6),
+                BorderBrush = borderBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1)
+            });
 
             totalsGroup.Rows.Add(r);
         }
@@ -531,7 +620,14 @@ public class ExcelExportService : IExportService
                 AddTotalRow("التقريب", m.RoundingAmount);
             if (m.TransportFeeAmount > 0)
                 AddTotalRow("أجور النقل", m.TransportFeeAmount);
+            if (m.DiscountAmount != 0)
+                AddTotalRow("الخصم", m.DiscountAmount);
             AddTotalRow("الإجمالي الكلي", m.GrandTotal, isBold: true, isHighlighted: true);
+            if (m.PaidAmount != 0 || m.RemainingAmount != 0)
+            {
+                AddTotalRow("المدفوع", m.PaidAmount);
+                AddTotalRow("المتبقي", m.RemainingAmount);
+            }
             if (m.CompanyFeeAmount is > 0)
                 AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);
         }
