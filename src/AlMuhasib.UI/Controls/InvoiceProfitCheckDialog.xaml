@@ -74,7 +74,11 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                         <Border Width="44" Height="44" CornerRadius="12" Background="#33FFFFFF" Margin="0,0,12,0">
                             <materialDesign:PackIcon Kind="ChartLine" Width="24" Height="24" Foreground="White"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -84,8 +88,13 @@
                             <TextBlock Text="{Binding SummaryLabel}" FontSize="11" Foreground="#C8E6C9"/>
                         </StackPanel>
                     </StackPanel>
-                    <Button HorizontalAlignment="Left" VerticalAlignment="Center"
-                            Width="34" Height="34" Cursor="Hand" Background="#33FFFFFF" BorderThickness="0"
+                    <Button Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Width="34" Height="34"
+                            Cursor="Hand"
+                            Background="#33FFFFFF"
+                            BorderThickness="0"
+                            ToolTip="إغلاق"
                             Click="Close_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">

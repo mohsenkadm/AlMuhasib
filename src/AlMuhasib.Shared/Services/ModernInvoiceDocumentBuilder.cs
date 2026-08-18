@@ -7,8 +7,8 @@ using AlMuhasib.Core.Interfaces.Services;
 namespace AlMuhasib.Shared.Services;
 
 /// <summary>
-/// قالب A4 لفواتير البيع/الشراء/المرتجع: عنوان مركزي، جدول بيانات الفاتورة،
-/// بيانات الجهة والمندوب، ثم جدول البنود مع صفوف المجاميع داخل نفس الجدول.
+/// قالب A4 لفواتير البيع/الشراء/المرتجع: عنوان، تاريخ الفاتورة، بيانات الجهة ورقم الفاتورة/المندوب،
+/// ثم جدول البنود مع صفوف المجاميع وطريقة الدفع أسفل الجدول.
 /// العملة تُكتب في رأس الأعمدة وليس بجانب كل رقم لتفادي تشابك الأرقام مع النص العربي.
 /// </summary>
 public static class ModernInvoiceDocumentBuilder
@@ -16,7 +16,7 @@ public static class ModernInvoiceDocumentBuilder
     public const double PageWidth = 793.7;   // A4 @ 96 DPI
     public const double PageHeight = 1122.5;
 
-    private const double LineWidth = 0.8;
+    private const double LineWidth = 1.0;
 
     private static readonly SolidColorBrush Ink = Freeze(Color.FromRgb(0x1F, 0x24, 0x28));
     private static readonly SolidColorBrush Muted = Freeze(Color.FromRgb(0x6B, 0x72, 0x80));
@@ -82,98 +82,65 @@ public static class ModernInvoiceDocumentBuilder
                 FontSize = baseFont,
                 FontWeight = FontWeights.Bold,
                 TextAlignment = TextAlignment.Center,
-                Margin = new Thickness(0, 0, 0, compact ? 10 : 16)
+                Margin = new Thickness(0, 0, 0, compact ? 8 : 12)
             });
         }
 
-        // ── جدول بيانات الفاتورة ──
-        var metaRows = new List<(string Label, string Value)>
+        var dateLine = new Paragraph
         {
-            ("رقم الفاتورة", m.InvoiceNumber),
-            ("تاريخ الفاتورة", m.Date.ToString("yyyy/MM/dd"))
+            FontSize = baseFont + 0.5,
+            Margin = new Thickness(0, compact ? 2 : 4, 0, compact ? 8 : 12)
         };
+        dateLine.Inlines.Add(new Run("تاريخ الفاتورة  ") { FontWeight = FontWeights.Bold, Foreground = HeaderInk });
+        dateLine.Inlines.Add(new Run(m.Date.ToString("yyyy/MM/dd")) { FontWeight = FontWeights.SemiBold });
         if (m.CreditDueDate.HasValue)
-            metaRows.Add(("تاريخ الاستحقاق", m.CreditDueDate.Value.ToString("yyyy/MM/dd")));
-        if (!hideAmounts && !string.IsNullOrWhiteSpace(m.PaymentMethod))
-            metaRows.Add(("طريقة الدفع", m.PaymentMethod));
-        if (!string.IsNullOrWhiteSpace(m.WarehouseName))
-            metaRows.Add(("المخزن", m.WarehouseName));
-        if (!string.IsNullOrWhiteSpace(m.FileNumber))
-            metaRows.Add(("رقم الملف", m.FileNumber!));
-        if (!string.IsNullOrWhiteSpace(m.DriverName))
-            metaRows.Add(("السائق", m.DriverName!));
-
-        // صندوق بيانات مضغوط بعرض جزء من الصفحة (كما في القوالب العالمية) لا يمتد بالكامل.
-        var metaLabelWidth = compact ? 150.0 : 170.0;
-        var metaValueWidth = Math.Min(contentWidth - metaLabelWidth, compact ? 230.0 : 265.0);
-        var metaTable = NewGridTable(new Thickness(0));
-        metaTable.Columns.Add(new TableColumn { Width = new GridLength(metaLabelWidth) });
-        metaTable.Columns.Add(new TableColumn { Width = new GridLength(metaValueWidth) });
-        var metaGroup = new TableRowGroup();
-        foreach (var (label, value) in metaRows)
         {
-            var row = new TableRow();
-            row.Cells.Add(GridCell($"{label}:", cellPadding, baseFont, bold: true, background: HeadBg));
-            row.Cells.Add(GridCell(string.IsNullOrWhiteSpace(value) ? "—" : value, cellPadding, baseFont, isLastColumn: true));
-            metaGroup.Rows.Add(row);
+            dateLine.Inlines.Add(new Run("    تاريخ الاستحقاق  ") { FontWeight = FontWeights.Bold, Foreground = HeaderInk });
+            dateLine.Inlines.Add(new Run(m.CreditDueDate.Value.ToString("yyyy/MM/dd")) { FontWeight = FontWeights.SemiBold });
         }
-        metaTable.RowGroups.Add(metaGroup);
-        doc.Blocks.Add(metaTable);
+        doc.Blocks.Add(dateLine);
 
-        // ── بطاقة العميل يميناً، وبطاقة المندوب يساراً فقط عند وجود مندوب فعلي ──
-        var hasSalesRepresentative =
-            !string.IsNullOrWhiteSpace(m.SalesRepresentativeName)
-            || !string.IsNullOrWhiteSpace(m.SalesRepresentativePhone)
-            || !string.IsNullOrWhiteSpace(m.SalesRepresentativeEmail);
-
+        // ── بطاقة العميل يميناً، ورقم الفاتورة مع المندوب يساراً ──
         var detailsGap = compact ? 8.0 : 12.0;
-        var detailsWidth = hasSalesRepresentative
-            ? (contentWidth - detailsGap) / 2
-            : Math.Min(contentWidth, compact ? 340.0 : 390.0);
+        var detailsWidth = (contentWidth - detailsGap) / 2;
         var detailsLayout = new Table
         {
             CellSpacing = 0,
-            Margin = new Thickness(0, compact ? 8 : 14, 0, 0)
+            Margin = new Thickness(0)
         };
         detailsLayout.Columns.Add(new TableColumn { Width = new GridLength(detailsWidth) });
-        if (hasSalesRepresentative)
-            detailsLayout.Columns.Add(new TableColumn { Width = new GridLength(detailsWidth) });
+        detailsLayout.Columns.Add(new TableColumn { Width = new GridLength(detailsWidth) });
 
-        var customerRows = new List<(string Label, string Value)>
-        {
-            ("الاسم", string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName),
-            ("الهاتف", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone!),
-            ("العنوان", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress!),
-            ("البريد الإلكتروني", string.IsNullOrWhiteSpace(m.PartyEmail) ? "—" : m.PartyEmail!)
-        };
+        var customerRows = new List<(string Label, string Value)>();
+        AddInfoRow(customerRows, "الاسم", m.PartyName);
+        AddInfoRow(customerRows, "الهاتف", m.PartyPhone);
+        AddInfoRow(customerRows, "العنوان", m.PartyAddress);
+        AddInfoRow(customerRows, "رقم الملف", m.FileNumber);
+        if (customerRows.Count == 0)
+            customerRows.Add(("الاسم", "—"));
+
+        var invoiceRows = new List<(string Label, string Value)>();
+        AddInfoRow(invoiceRows, "رقم الفاتورة", m.InvoiceNumber);
+        AddInfoRow(invoiceRows, "الاسم", m.SalesRepresentativeName);
+        AddInfoRow(invoiceRows, "الهاتف", m.SalesRepresentativePhone);
+        AddInfoRow(invoiceRows, "السائق", m.DriverName);
+        if (invoiceRows.Count == 0)
+            invoiceRows.Add(("رقم الفاتورة", string.IsNullOrWhiteSpace(m.InvoiceNumber) ? "—" : m.InvoiceNumber));
 
         var detailsGroup = new TableRowGroup();
         var detailsRow = new TableRow();
         detailsRow.Cells.Add(DetailsCard(
-            $"بيانات {m.PartyLabel}",
             customerRows,
             cellPadding,
             baseFont,
-            hasSalesRepresentative ? detailsWidth - (detailsGap / 2) : detailsWidth,
-            hasSalesRepresentative ? new Thickness(0, 0, detailsGap / 2, 0) : new Thickness(0)));
-
-        if (hasSalesRepresentative)
-        {
-            var representativeRows = new List<(string Label, string Value)>
-            {
-                ("الاسم", string.IsNullOrWhiteSpace(m.SalesRepresentativeName) ? "—" : m.SalesRepresentativeName!),
-                ("الهاتف", string.IsNullOrWhiteSpace(m.SalesRepresentativePhone) ? "—" : m.SalesRepresentativePhone!),
-                ("البريد الإلكتروني", string.IsNullOrWhiteSpace(m.SalesRepresentativeEmail) ? "—" : m.SalesRepresentativeEmail!),
-                ("", "")
-            };
-            detailsRow.Cells.Add(DetailsCard(
-                "مندوب المبيعات",
-                representativeRows,
-                cellPadding,
-                baseFont,
-                detailsWidth - (detailsGap / 2),
-                new Thickness(detailsGap / 2, 0, 0, 0)));
-        }
+            detailsWidth - (detailsGap / 2),
+            new Thickness(detailsGap / 2, 0, 0, 0)));
+        detailsRow.Cells.Add(DetailsCard(
+            invoiceRows,
+            cellPadding,
+            baseFont,
+            detailsWidth - (detailsGap / 2),
+            new Thickness(0, 0, detailsGap / 2, 0)));
 
         detailsGroup.Rows.Add(detailsRow);
         detailsLayout.RowGroups.Add(detailsGroup);
@@ -259,55 +226,31 @@ public static class ModernInvoiceDocumentBuilder
 
         if (!hideAmounts)
         {
-            // جدول مستقل بعمودين بنفس عرض عمود "الإجمالي" ليبقى الخط الرأسي متصلاً مع جدول البنود.
-            var valueWidth = numericWidths[^1];
-            var totalsTable = NewGridTable(new Thickness(0));
-            totalsTable.Columns.Add(new TableColumn { Width = new GridLength(contentWidth - valueWidth) });
-            totalsTable.Columns.Add(new TableColumn { Width = new GridLength(valueWidth) });
-            var totalsGroup = new TableRowGroup();
-
-            void AddTotalRow(string label, decimal value, bool emphasize = false)
-            {
-                var background = emphasize ? HeadBg : TotalBg;
-                var fontSize = emphasize ? baseFont + 1 : baseFont;
-                var row = new TableRow();
-                row.Cells.Add(GridCell(label, cellPadding, fontSize, bold: true, background: background));
-                row.Cells.Add(GridCell(
-                    FormatNumber(value),
-                    cellPadding,
-                    fontSize,
-                    bold: true,
-                    align: TextAlignment.Center,
-                    background: background,
-                    isLastColumn: true));
-                totalsGroup.Rows.Add(row);
-            }
-
-            AddTotalRow("المجموع الفرعي", m.Subtotal);
+            var amountEntries = new List<(string Label, string Value, bool Emphasize)>();
+            if (!string.IsNullOrWhiteSpace(m.PaymentMethod))
+                amountEntries.Add(("طريقة الدفع", m.PaymentMethod, false));
+            amountEntries.Add(("المجموع الفرعي", FormatNumber(m.Subtotal), false));
             if (m.DiscountAmount != 0)
             {
-                AddTotalRow("الخصم", m.DiscountAmount);
-                AddTotalRow("المبلغ بعد الخصم", m.Subtotal - m.DiscountAmount);
+                amountEntries.Add(("الخصم", FormatNumber(m.DiscountAmount), false));
+                amountEntries.Add(("المبلغ بعد الخصم", FormatNumber(m.Subtotal - m.DiscountAmount), false));
             }
             if (m.TransportFeeAmount != 0)
-                AddTotalRow("أجور النقل", m.TransportFeeAmount);
+                amountEntries.Add(("أجور النقل", FormatNumber(m.TransportFeeAmount), false));
             if (m.TaxRate != 0 || m.TaxAmount != 0)
-                AddTotalRow(m.TaxRate != 0 ? $"الضريبة {m.TaxRate:0.##}%" : "الضريبة", m.TaxAmount);
+                amountEntries.Add((m.TaxRate != 0 ? $"الضريبة {m.TaxRate:0.##}%" : "الضريبة", FormatNumber(m.TaxAmount), false));
             if (m.CompanyFeeAmount is { } fee && fee != 0)
-                AddTotalRow("نسبة الشركة", fee);
+                amountEntries.Add(("نسبة الشركة", FormatNumber(fee), false));
             if (m.RoundingAmount != 0)
-                AddTotalRow("التقريب", m.RoundingAmount);
-
-            AddTotalRow("الإجمالي المستحق", m.GrandTotal, emphasize: true);
-
+                amountEntries.Add(("التقريب", FormatNumber(m.RoundingAmount), false));
+            amountEntries.Add(("الإجمالي المستحق", FormatNumber(m.GrandTotal), true));
             if (m.PaidAmount != 0 || m.RemainingAmount != 0)
             {
-                AddTotalRow("المدفوع", m.PaidAmount);
-                AddTotalRow("المتبقي", m.RemainingAmount);
+                amountEntries.Add(("المدفوع", FormatNumber(m.PaidAmount), false));
+                amountEntries.Add(("المتبقي", FormatNumber(m.RemainingAmount), false));
             }
 
-            totalsTable.RowGroups.Add(totalsGroup);
-            doc.Blocks.Add(totalsTable);
+            AddCompactTotals(doc, amountEntries, contentWidth, compact, baseFont);
         }
 
         if (!string.IsNullOrWhiteSpace(m.Notes))
@@ -359,7 +302,6 @@ public static class ModernInvoiceDocumentBuilder
     };
 
     private static TableCell DetailsCard(
-        string title,
         IReadOnlyList<(string Label, string Value)> rows,
         Thickness padding,
         double fontSize,
@@ -369,22 +311,9 @@ public static class ModernInvoiceDocumentBuilder
         const double labelWidth = 105;
         var card = NewGridTable(new Thickness(0));
         card.Columns.Add(new TableColumn { Width = new GridLength(labelWidth) });
-        card.Columns.Add(new TableColumn { Width = new GridLength(cardWidth - labelWidth) });
+        card.Columns.Add(new TableColumn { Width = new GridLength(Math.Max(40, cardWidth - labelWidth)) });
 
         var group = new TableRowGroup();
-        var titleRow = new TableRow();
-        titleRow.Cells.Add(GridCell(
-            title,
-            new Thickness(8, 6, 8, 6),
-            fontSize + 1,
-            bold: true,
-            align: TextAlignment.Center,
-            background: HeadBg,
-            foreground: HeaderInk,
-            columnSpan: 2,
-            isLastColumn: true));
-        group.Rows.Add(titleRow);
-
         foreach (var (label, value) in rows)
         {
             var row = new TableRow();
@@ -408,12 +337,97 @@ public static class ModernInvoiceDocumentBuilder
         return cell;
     }
 
+    private static void AddInfoRow(List<(string Label, string Value)> rows, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            rows.Add((label, value));
+    }
+
+    private static void AddCompactTotals(
+        FlowDocument doc,
+        IReadOnlyList<(string Label, string Value, bool Emphasize)> entries,
+        double contentWidth,
+        bool compact,
+        double baseFont)
+    {
+        var fontSize = Math.Max(8.5, baseFont - 1.5);
+        var padding = compact ? new Thickness(4, 2, 4, 2) : new Thickness(5, 3, 5, 3);
+        var totalsWidth = Math.Min(contentWidth * 0.58, compact ? 360.0 : 400.0);
+        var labelWidth = totalsWidth * 0.28;
+        var valueWidth = totalsWidth * 0.22;
+
+        var totalsTable = NewGridTable(new Thickness(0));
+        totalsTable.Columns.Add(new TableColumn { Width = new GridLength(labelWidth) });
+        totalsTable.Columns.Add(new TableColumn { Width = new GridLength(valueWidth) });
+        totalsTable.Columns.Add(new TableColumn { Width = new GridLength(labelWidth) });
+        totalsTable.Columns.Add(new TableColumn { Width = new GridLength(valueWidth) });
+
+        var group = new TableRowGroup();
+        for (var i = 0; i < entries.Count; i += 2)
+        {
+            var row = new TableRow();
+            AddAmountPair(row, entries[i], padding, fontSize, isLastColumn: false);
+            if (i + 1 < entries.Count)
+            {
+                AddAmountPair(row, entries[i + 1], padding, fontSize, isLastColumn: true);
+            }
+            else
+            {
+                row.Cells.Add(GridCell(" ", padding, fontSize, background: TotalBg));
+                row.Cells.Add(GridCell(" ", padding, fontSize, background: TotalBg, isLastColumn: true));
+            }
+
+            group.Rows.Add(row);
+        }
+
+        totalsTable.RowGroups.Add(group);
+
+        var wrapper = new Table
+        {
+            CellSpacing = 0,
+            Margin = new Thickness(0, compact ? 6 : 8, 0, 0)
+        };
+        wrapper.Columns.Add(new TableColumn { Width = new GridLength(contentWidth - totalsWidth) });
+        wrapper.Columns.Add(new TableColumn { Width = new GridLength(totalsWidth) });
+        var wrapGroup = new TableRowGroup();
+        var wrapRow = new TableRow();
+        wrapRow.Cells.Add(new TableCell { Padding = new Thickness(0) });
+        var totalsCell = new TableCell { Padding = new Thickness(0) };
+        totalsCell.Blocks.Add(totalsTable);
+        wrapRow.Cells.Add(totalsCell);
+        wrapGroup.Rows.Add(wrapRow);
+        wrapper.RowGroups.Add(wrapGroup);
+        doc.Blocks.Add(wrapper);
+    }
+
+    private static void AddAmountPair(
+        TableRow row,
+        (string Label, string Value, bool Emphasize) entry,
+        Thickness padding,
+        double fontSize,
+        bool isLastColumn)
+    {
+        var background = entry.Emphasize ? HeadBg : TotalBg;
+        var size = entry.Emphasize ? fontSize + 0.5 : fontSize;
+        row.Cells.Add(GridCell(entry.Label, padding, size, bold: true, background: background));
+        row.Cells.Add(GridCell(
+            entry.Value,
+            padding,
+            size,
+            bold: true,
+            align: TextAlignment.Center,
+            background: background,
+            isLastColumn: isLastColumn));
+    }
+
     /// <summary>
-    /// خط فاصل واحد بين الخلايا: أسفل دائماً، وجانب واحد لكل خلية عدا الأخيرة،
-    /// حتى لا تتضاعف خطوط الشبكة (سبب عدم وضوح الجدول).
+    /// في الاتجاه من اليمين لليسار العمود الأخير يقع على يسار الصفحة،
+    /// لذلك يحتاج حدّاً أيسر وإلا يختفي الإطار الأيسر للجدول.
     /// </summary>
     private static Thickness InnerBorder(bool isLastColumn) =>
-        isLastColumn ? new Thickness(0, 0, 0, LineWidth) : new Thickness(0, 0, LineWidth, LineWidth);
+        isLastColumn
+            ? new Thickness(LineWidth, 0, 0, LineWidth)
+            : new Thickness(0, 0, LineWidth, LineWidth);
 
     /// <param name="align">null = بداية السطر حسب اتجاه المستند (يمين في العربية).</param>
     private static TableCell GridCell(

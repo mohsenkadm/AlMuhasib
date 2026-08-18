@@ -23,7 +23,6 @@ internal static class InvoicePdfGenerator
         var branding = PrintBrandingProvider.Current;
         var currency = string.IsNullOrWhiteSpace(m.CurrencyLabel) ? "د.ع" : m.CurrencyLabel;
         var hideAmounts = m.HideAmounts;
-        var columnCount = hideAmounts ? 2 : 4;
         var brandedHeader = branding.HasHeaderContent;
 
         return Document.Create(container =>
@@ -59,74 +58,38 @@ internal static class InvoicePdfGenerator
                             .Text(string.Join("  |  ", companyParts)).FontSize(10).SemiBold();
                     }
 
-                    // ── جدول بيانات الفاتورة ──
-                    col.Item().PaddingTop(14).Table(meta =>
+                    col.Item().PaddingTop(10).Text(t =>
                     {
-                        meta.ColumnsDefinition(c =>
-                        {
-                            c.ConstantColumn(160);
-                            c.RelativeColumn();
-                        });
-
-                        void MetaRow(string label, string value)
-                        {
-                            meta.Cell().Element(GridCell).Text($"{label}:").SemiBold();
-                            meta.Cell().Element(GridCell).Text(value);
-                        }
-
-                        MetaRow("رقم الفاتورة", m.InvoiceNumber);
-                        MetaRow("تاريخ الفاتورة", m.Date.ToString("yyyy/MM/dd"));
+                        t.Span("تاريخ الفاتورة  ").SemiBold().FontColor(MutedColor);
+                        t.Span(m.Date.ToString("yyyy/MM/dd")).SemiBold();
                         if (m.CreditDueDate.HasValue)
-                            MetaRow("تاريخ الاستحقاق", m.CreditDueDate.Value.ToString("yyyy/MM/dd"));
-                        if (!hideAmounts && !string.IsNullOrWhiteSpace(m.PaymentMethod))
-                            MetaRow("طريقة الدفع", m.PaymentMethod);
-                        if (!string.IsNullOrWhiteSpace(m.WarehouseName))
-                            MetaRow("المخزن", m.WarehouseName);
-                        if (!string.IsNullOrWhiteSpace(m.FileNumber))
-                            MetaRow("رقم الملف", m.FileNumber!);
-                        if (!string.IsNullOrWhiteSpace(m.DriverName))
-                            MetaRow("السائق", m.DriverName!);
+                        {
+                            t.Span("    تاريخ الاستحقاق  ").SemiBold().FontColor(MutedColor);
+                            t.Span(m.CreditDueDate.Value.ToString("yyyy/MM/dd")).SemiBold();
+                        }
                     });
 
-                    // ── بطاقة العميل يميناً، وبطاقة المندوب يساراً فقط عند وجود مندوب ──
-                    var hasSalesRepresentative =
-                        !string.IsNullOrWhiteSpace(m.SalesRepresentativeName)
-                        || !string.IsNullOrWhiteSpace(m.SalesRepresentativePhone)
-                        || !string.IsNullOrWhiteSpace(m.SalesRepresentativeEmail);
-
-                    col.Item().PaddingTop(14).Row(row =>
+                    col.Item().PaddingTop(10).Row(row =>
                     {
-                        var customerCard = row.RelativeItem();
-                        if (!hasSalesRepresentative)
-                            customerCard = row.ConstantItem(240);
+                        var customerRows = new List<(string Label, string Value)>();
+                        AddInfoRow(customerRows, "الاسم", m.PartyName);
+                        AddInfoRow(customerRows, "الهاتف", m.PartyPhone);
+                        AddInfoRow(customerRows, "العنوان", m.PartyAddress);
+                        AddInfoRow(customerRows, "رقم الملف", m.FileNumber);
+                        if (customerRows.Count == 0)
+                            customerRows.Add(("الاسم", "—"));
 
-                        customerCard.Element(card => DetailsCard(
-                            card,
-                            $"بيانات {m.PartyLabel}",
-                            [
-                                ("الاسم", string.IsNullOrWhiteSpace(m.PartyName) ? "—" : m.PartyName),
-                                ("الهاتف", string.IsNullOrWhiteSpace(m.PartyPhone) ? "—" : m.PartyPhone!),
-                                ("العنوان", string.IsNullOrWhiteSpace(m.PartyAddress) ? "—" : m.PartyAddress!),
-                                ("البريد الإلكتروني", string.IsNullOrWhiteSpace(m.PartyEmail) ? "—" : m.PartyEmail!)
-                            ]));
+                        var invoiceRows = new List<(string Label, string Value)>();
+                        AddInfoRow(invoiceRows, "رقم الفاتورة", m.InvoiceNumber);
+                        AddInfoRow(invoiceRows, "الاسم", m.SalesRepresentativeName);
+                        AddInfoRow(invoiceRows, "الهاتف", m.SalesRepresentativePhone);
+                        AddInfoRow(invoiceRows, "السائق", m.DriverName);
+                        if (invoiceRows.Count == 0)
+                            invoiceRows.Add(("رقم الفاتورة", string.IsNullOrWhiteSpace(m.InvoiceNumber) ? "—" : m.InvoiceNumber));
 
-                        if (hasSalesRepresentative)
-                        {
-                            row.ConstantItem(10);
-                            row.RelativeItem().Element(card => DetailsCard(
-                                card,
-                                "مندوب المبيعات",
-                                [
-                                    ("الاسم", string.IsNullOrWhiteSpace(m.SalesRepresentativeName) ? "—" : m.SalesRepresentativeName!),
-                                    ("الهاتف", string.IsNullOrWhiteSpace(m.SalesRepresentativePhone) ? "—" : m.SalesRepresentativePhone!),
-                                    ("البريد الإلكتروني", string.IsNullOrWhiteSpace(m.SalesRepresentativeEmail) ? "—" : m.SalesRepresentativeEmail!),
-                                    ("", "")
-                                ]));
-                        }
-                        else
-                        {
-                            row.RelativeItem();
-                        }
+                        row.RelativeItem().Element(card => DetailsCard(card, customerRows));
+                        row.ConstantItem(10);
+                        row.RelativeItem().Element(card => DetailsCard(card, invoiceRows));
                     });
 
                     // ── جدول البنود والمجاميع ──
@@ -179,42 +142,61 @@ internal static class InvoicePdfGenerator
                                 table.Cell().Element(GridCell).AlignCenter().Text(FormatNumber(item.TotalPrice));
                             }
                         }
-
-                        if (!hideAmounts)
-                        {
-                            void TotalRow(string label, decimal value, bool emphasize = false)
-                            {
-                                var style = emphasize ? TotalStrongCell : (Func<IContainer, IContainer>)TotalCell;
-                                table.Cell().ColumnSpan((uint)(columnCount - 1)).Element(style)
-                                    .Text(label).Bold().FontSize(emphasize ? 11 : 10);
-                                table.Cell().Element(style).AlignCenter()
-                                    .Text(FormatNumber(value)).Bold().FontSize(emphasize ? 11 : 10);
-                            }
-
-                            TotalRow("المجموع الفرعي", m.Subtotal);
-                            if (m.DiscountAmount != 0)
-                            {
-                                TotalRow("الخصم", m.DiscountAmount);
-                                TotalRow("المبلغ بعد الخصم", m.Subtotal - m.DiscountAmount);
-                            }
-                            if (m.TransportFeeAmount != 0)
-                                TotalRow("أجور النقل", m.TransportFeeAmount);
-                            if (m.TaxRate != 0 || m.TaxAmount != 0)
-                                TotalRow(m.TaxRate != 0 ? $"الضريبة {m.TaxRate:0.##}%" : "الضريبة", m.TaxAmount);
-                            if (m.CompanyFeeAmount is { } fee && fee != 0)
-                                TotalRow("نسبة الشركة", fee);
-                            if (m.RoundingAmount != 0)
-                                TotalRow("التقريب", m.RoundingAmount);
-
-                            TotalRow("الإجمالي المستحق", m.GrandTotal, emphasize: true);
-
-                            if (m.PaidAmount != 0 || m.RemainingAmount != 0)
-                            {
-                                TotalRow("المدفوع", m.PaidAmount);
-                                TotalRow("المتبقي", m.RemainingAmount);
-                            }
-                        }
                     });
+
+                    if (!hideAmounts)
+                    {
+                        var amountEntries = new List<(string Label, string Value, bool Emphasize)>();
+                        if (!string.IsNullOrWhiteSpace(m.PaymentMethod))
+                            amountEntries.Add(("طريقة الدفع", m.PaymentMethod, false));
+                        amountEntries.Add(("المجموع الفرعي", FormatNumber(m.Subtotal), false));
+                        if (m.DiscountAmount != 0)
+                        {
+                            amountEntries.Add(("الخصم", FormatNumber(m.DiscountAmount), false));
+                            amountEntries.Add(("المبلغ بعد الخصم", FormatNumber(m.Subtotal - m.DiscountAmount), false));
+                        }
+                        if (m.TransportFeeAmount != 0)
+                            amountEntries.Add(("أجور النقل", FormatNumber(m.TransportFeeAmount), false));
+                        if (m.TaxRate != 0 || m.TaxAmount != 0)
+                            amountEntries.Add((m.TaxRate != 0 ? $"الضريبة {m.TaxRate:0.##}%" : "الضريبة", FormatNumber(m.TaxAmount), false));
+                        if (m.CompanyFeeAmount is { } fee && fee != 0)
+                            amountEntries.Add(("نسبة الشركة", FormatNumber(fee), false));
+                        if (m.RoundingAmount != 0)
+                            amountEntries.Add(("التقريب", FormatNumber(m.RoundingAmount), false));
+                        amountEntries.Add(("الإجمالي المستحق", FormatNumber(m.GrandTotal), true));
+                        if (m.PaidAmount != 0 || m.RemainingAmount != 0)
+                        {
+                            amountEntries.Add(("المدفوع", FormatNumber(m.PaidAmount), false));
+                            amountEntries.Add(("المتبقي", FormatNumber(m.RemainingAmount), false));
+                        }
+
+                        col.Item().PaddingTop(8).Row(totalsRow =>
+                        {
+                            totalsRow.RelativeItem();
+                            totalsRow.ConstantItem(320).Table(totals =>
+                            {
+                                totals.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn(1.3f);
+                                    c.RelativeColumn(1);
+                                    c.RelativeColumn(1.3f);
+                                    c.RelativeColumn(1);
+                                });
+
+                                for (var i = 0; i < amountEntries.Count; i += 2)
+                                {
+                                    PdfAmountPair(totals, amountEntries[i]);
+                                    if (i + 1 < amountEntries.Count)
+                                        PdfAmountPair(totals, amountEntries[i + 1]);
+                                    else
+                                    {
+                                        totals.Cell().Element(TotalCell).Text(" ");
+                                        totals.Cell().Element(TotalCell).Text(" ");
+                                    }
+                                }
+                            });
+                        });
+                    }
 
                     if (!hideAmounts && m.NumberOfInstallments.HasValue)
                     {
@@ -350,7 +332,6 @@ internal static class InvoicePdfGenerator
 
     private static void DetailsCard(
         IContainer container,
-        string title,
         IReadOnlyList<(string Label, string Value)> rows)
     {
         container.Border(0.7f).BorderColor(GridColor).Table(table =>
@@ -361,27 +342,33 @@ internal static class InvoicePdfGenerator
                 columns.RelativeColumn();
             });
 
-            table.Cell().ColumnSpan(2)
-                .Background(GridHeaderColor)
-                .BorderBottom(0.7f).BorderColor(GridColor)
-                .PaddingVertical(6).PaddingHorizontal(7)
-                .AlignCenter()
-                .Text(title).FontSize(11).SemiBold().FontColor(MutedColor);
-
             foreach (var (label, value) in rows)
             {
                 table.Cell()
                     .Background(GridHeaderColor)
-                    .BorderLeft(0.7f).BorderBottom(0.7f).BorderColor(GridColor)
+                    .Border(0.7f).BorderColor(GridColor)
                     .PaddingVertical(5).PaddingHorizontal(7)
                     .Text(string.IsNullOrWhiteSpace(label) ? " " : $"{label}:")
                     .SemiBold();
                 table.Cell()
-                    .BorderBottom(0.7f).BorderColor(GridColor)
+                    .Border(0.7f).BorderColor(GridColor)
                     .PaddingVertical(5).PaddingHorizontal(7)
                     .Text(string.IsNullOrWhiteSpace(value) ? " " : value);
             }
         });
+    }
+
+    private static void AddInfoRow(List<(string Label, string Value)> rows, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            rows.Add((label, value));
+    }
+
+    private static void PdfAmountPair(TableDescriptor table, (string Label, string Value, bool Emphasize) entry)
+    {
+        var style = entry.Emphasize ? TotalStrongCell : (Func<IContainer, IContainer>)TotalCell;
+        table.Cell().Element(style).Text(entry.Label).Bold().FontSize(entry.Emphasize ? 9.5f : 8.5f);
+        table.Cell().Element(style).AlignCenter().Text(entry.Value).Bold().FontSize(entry.Emphasize ? 9.5f : 8.5f);
     }
 
     private static string FormatNumber(decimal value) =>

@@ -74,6 +74,7 @@ public partial class ProductPickerOverlay : UserControl
 
         FullScreenHost.Width = window.ActualWidth;
         FullScreenHost.Height = window.ActualHeight;
+        FullScreenHost.FlowDirection = FlowDirection.RightToLeft;
         FullScreenHost.Opacity = 0;
 
         var maxHeight = Math.Max(560, window.ActualHeight * 0.78);

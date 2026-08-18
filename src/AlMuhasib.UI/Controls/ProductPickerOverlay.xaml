@@ -6,7 +6,8 @@
              xmlns:models="clr-namespace:AlMuhasib.UI.Models"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core"
-             x:Name="Root">
+             x:Name="Root"
+             FlowDirection="RightToLeft">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
@@ -69,7 +70,7 @@
            StaysOpen="True"
            PopupAnimation="Fade"
            Opened="WindowPopup_Opened">
-        <Grid x:Name="FullScreenHost" Background="#77000000">
+        <Grid x:Name="FullScreenHost" Background="#77000000" FlowDirection="RightToLeft">
             <materialDesign:Card x:Name="DialogCard"
                                MaxWidth="920" Width="920"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -96,7 +97,11 @@
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                                 <Border Width="42" Height="42" CornerRadius="12" Background="#33FFFFFF" Margin="0,0,10,0">
                                     <materialDesign:PackIcon Kind="CartPlus" Width="22" Height="22" Foreground="White"
                                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -106,9 +111,16 @@
                                     <TextBlock Text="اضغط على المنتج أو استخدم + / −" FontSize="11" Foreground="#E3F2FD"/>
                                 </StackPanel>
                             </StackPanel>
-                            <Button Command="{Binding CancelCommand}"
-                                    HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Width="34" Height="34" Cursor="Hand" Background="#33FFFFFF" BorderThickness="0">
+                            <Button Grid.Column="1"
+                                    Command="{Binding CancelCommand}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Width="34" Height="34"
+                                    Cursor="Hand"
+                                    Background="#33FFFFFF"
+                                    BorderThickness="0"
+                                    ToolTip="إغلاق"
+                                    Panel.ZIndex="2">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="17">
