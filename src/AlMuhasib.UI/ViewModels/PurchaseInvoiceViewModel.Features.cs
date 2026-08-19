@@ -232,6 +232,7 @@ public partial class PurchaseInvoiceViewModel
 
         await LoadPurchaseRowColorsAsync(row, productId);
         await LoadRowPricingOptionsAsync(row, productId);
+        await QuickSearchCatalog.EnsurePriceLoadedAsync(productId);
         ApplySuggestedPurchasePriceIfNeeded(row, productId);
     }
 

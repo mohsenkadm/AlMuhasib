@@ -5,6 +5,9 @@ namespace AlMuhasib.UI.Helpers;
 /// <summary>مطابقة بحث المنتجات بالاسم أو الباركود أو الاسم العلمي.</summary>
 public static class ProductSearchHelper
 {
+    public static IEnumerable<Product> ActiveOnly(IEnumerable<Product> products) =>
+        products.Where(p => !p.IsDeleted);
+
     public static bool Matches(Product product, string? searchText)
     {
         if (string.IsNullOrWhiteSpace(searchText))

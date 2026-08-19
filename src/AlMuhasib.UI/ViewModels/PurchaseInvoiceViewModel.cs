@@ -894,13 +894,15 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
     private async Task ReloadProductSearchCatalogAsync()
     {
-        var products = await _unitOfWork.Products.GetAllAsync();
+        var products = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+            .OrderBy(p => p.Name)
+            .ToList();
         Products.Clear();
-        foreach (var product in products.OrderBy(p => p.Name))
+        foreach (var product in products)
             Products.Add(product);
 
         await QuickSearchCatalog.LoadAsync(
-            Products,
+            products,
             InvoicePickerMode.Purchase,
             ShowProductPricing);
     }

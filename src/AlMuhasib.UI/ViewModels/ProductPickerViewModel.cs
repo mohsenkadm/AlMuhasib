@@ -71,6 +71,9 @@ public partial class ProductPickerDisplayItem : ObservableObject
 
 public partial class ProductPickerViewModel : ObservableObject
 {
+    private const int MaxBrowseProducts = 120;
+    private const int MaxSearchProducts = 150;
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProductPriceService? _productPriceService;
     private readonly bool _pricingEnabled;
@@ -102,7 +105,12 @@ public partial class ProductPickerViewModel : ObservableObject
     private decimal _selectedTotalQuantity;
 
     [ObservableProperty]
-    private bool _isAllCategoriesSelected = true;
+    private bool _isAllCategoriesSelected;
+
+    [ObservableProperty]
+    private string _browseHint = string.Empty;
+
+    public bool HasBrowseHint => !string.IsNullOrWhiteSpace(BrowseHint);
 
     [ObservableProperty]
     private bool _isPricingMode;
@@ -128,8 +136,8 @@ public partial class ProductPickerViewModel : ObservableObject
         _quantities.Clear();
         _selectedPricingTypeIds.Clear();
         SearchText = string.Empty;
-        SelectedCategory = null;
-        IsAllCategoriesSelected = true;
+        BrowseHint = string.Empty;
+        IsAllCategoriesSelected = false;
 
         _categories = (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name).ToList();
         _categoryNames = _categories.ToDictionary(c => c.Id, c => c.Name);
@@ -137,14 +145,19 @@ public partial class ProductPickerViewModel : ObservableObject
         foreach (var c in _categories)
             Categories.Add(c);
 
-        _allProducts = (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name).ToList();
+        _allProducts = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+            .OrderBy(p => p.Name)
+            .ToList();
+
+        SelectedCategory = _categories.FirstOrDefault();
+
         await LoadStockAsync();
-        await LoadSuggestedPricesAsync(mode);
-        if (_pricingEnabled && _productPriceService is not null)
-            await LoadProductPricesAsync(mode);
+        _suggestedPrices.Clear();
+        _pricesByProduct.Clear();
 
         RefreshDisplayProducts();
         UpdateSummary();
+        _ = LoadPricesForDisplayedProductsAsync();
     }
 
     /// <summary>يملأ كميات المنتقي من بنود الفاتورة الحالية.</summary>
@@ -163,11 +176,17 @@ public partial class ProductPickerViewModel : ObservableObject
         UpdateSummary();
     }
 
-    partial void OnSearchTextChanged(string value) => RefreshDisplayProducts();
+    partial void OnSearchTextChanged(string value)
+    {
+        RefreshDisplayProducts();
+        _ = LoadPricesForDisplayedProductsAsync();
+    }
+
     partial void OnSelectedCategoryChanged(Category? value)
     {
         IsAllCategoriesSelected = value is null;
         RefreshDisplayProducts();
+        _ = LoadPricesForDisplayedProductsAsync();
     }
 
     [RelayCommand]
@@ -214,7 +233,11 @@ public partial class ProductPickerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Confirm() => Confirmed?.Invoke();
+    private async Task ConfirmAsync()
+    {
+        await EnsureSuggestedPricesForSelectionAsync();
+        Confirmed?.Invoke();
+    }
 
     [RelayCommand]
     private void Cancel() => Cancelled?.Invoke();
@@ -305,64 +328,114 @@ public partial class ProductPickerViewModel : ObservableObject
                 .ToHashSet();
             var purchaseItems = purchases.Where(i => i.ProductId is not null && purchaseInvoices.Contains(i.InvoiceId)).ToList();
 
-            foreach (var product in _allProducts)
+            foreach (var productId in _quantities.Keys)
             {
-                _suggestedPrices[product.Id] = Math.Round(
-                    ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, product.Id), 0);
+                _suggestedPrices[productId] = Math.Round(
+                    ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, productId), 0);
             }
 
             return;
         }
 
         var saleItems = (await _unitOfWork.InvoiceItems.FindAsync(i => i.ProductId != null)).ToList();
-        foreach (var product in _allProducts)
+        foreach (var productId in _quantities.Keys)
         {
             var lastSale = saleItems
-                .Where(i => i.ProductId == product.Id && i.UnitPrice > 0)
+                .Where(i => i.ProductId == productId && i.UnitPrice > 0)
                 .OrderByDescending(i => i.Id)
                 .FirstOrDefault();
-            _suggestedPrices[product.Id] = lastSale?.UnitPrice ?? 0;
+            _suggestedPrices[productId] = lastSale?.UnitPrice ?? 0;
         }
     }
 
-    private async Task LoadProductPricesAsync(InvoicePickerMode mode)
+    private async Task LoadProductPricesAsync(IReadOnlyCollection<int> productIds)
     {
-        _pricesByProduct.Clear();
-        if (_productPriceService is null)
+        if (!_pricingEnabled || _productPriceService is null || productIds.Count == 0)
             return;
 
-        var productIds = _allProducts.Select(p => p.Id);
-        var prices = await _productPriceService.GetByProductIdsAsync(productIds);
+        var missing = productIds.Where(id => !_pricesByProduct.ContainsKey(id)).ToList();
+        if (missing.Count == 0)
+            return;
+
+        var prices = await _productPriceService.GetByProductIdsAsync(missing);
         foreach (var group in prices.GroupBy(p => p.ProductId))
         {
             var options = group.Select(p => new ProductPricingOption
             {
                 PricingTypeId = p.PricingTypeId,
                 Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
-                Price = mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice,
+                Price = _mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice,
                 IsDefault = p.PricingType?.IsDefault == true
             }).ToList();
             _pricesByProduct[group.Key] = options;
         }
     }
 
+    private async Task LoadPricesForDisplayedProductsAsync()
+    {
+        if (!_pricingEnabled)
+            return;
+
+        var ids = DisplayProducts.Select(p => p.ProductId).Distinct().ToList();
+        if (ids.Count == 0)
+            return;
+
+        await LoadProductPricesAsync(ids);
+
+        foreach (var item in DisplayProducts)
+        {
+            if (!_pricesByProduct.TryGetValue(item.ProductId, out var options))
+                continue;
+
+            item.PricingOptions.Clear();
+            foreach (var option in options)
+                item.PricingOptions.Add(option);
+
+            var selectedId = _selectedPricingTypeIds.GetValueOrDefault(item.ProductId);
+            item.SelectedPricingOption = options.FirstOrDefault(o => o.PricingTypeId == selectedId)
+                                        ?? options.FirstOrDefault();
+        }
+    }
+
+    private async Task EnsureSuggestedPricesForSelectionAsync()
+    {
+        var missing = _quantities.Keys.Where(id => !_suggestedPrices.ContainsKey(id)).ToList();
+        if (missing.Count == 0)
+            return;
+
+        await LoadSuggestedPricesAsync(_mode);
+    }
+
     private void RefreshDisplayProducts()
     {
         var term = SearchText?.Trim() ?? string.Empty;
         IEnumerable<Product> query = _allProducts;
+        var isSearching = !string.IsNullOrWhiteSpace(term);
 
-        if (SelectedCategory is not null)
-            query = query.Where(p => p.CategoryId == SelectedCategory.Id);
-
-        if (!string.IsNullOrWhiteSpace(term))
+        if (isSearching)
         {
             query = query.Where(p => ProductSearchHelper.Matches(p, term));
         }
+        else if (SelectedCategory is not null)
+        {
+            query = query.Where(p => p.CategoryId == SelectedCategory.Id);
+        }
 
         var ordered = query.OrderBy(p => p.Name).ToList();
+        var totalMatches = ordered.Count;
+        var take = isSearching ? MaxSearchProducts : MaxBrowseProducts;
+        var visible = ordered.Take(take).ToList();
+
+        BrowseHint = totalMatches > visible.Count
+            ? $"يعرض {visible.Count} من {totalMatches} — {(isSearching ? "ضيّق البحث" : "اختر صنفاً أو ابحث")}"
+            : isSearching && totalMatches == 0
+                ? "لا توجد مواد مطابقة"
+                : string.Empty;
+        OnPropertyChanged(nameof(HasBrowseHint));
+
         DisplayProducts.Clear();
 
-        foreach (var product in ordered)
+        foreach (var product in visible)
         {
             var catName = _categoryNames.GetValueOrDefault(product.CategoryId, "—");
             var item = new ProductPickerDisplayItem(product, catName)

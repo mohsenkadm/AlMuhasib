@@ -49,7 +49,7 @@ public partial class ProductQuickSearchBox : UserControl
         _filterTimer.Tick += (_, _) =>
         {
             _filterTimer.Stop();
-            RefreshSuggestions();
+            RunRefreshAsync();
         };
         Loaded += OnLoaded;
     }
@@ -106,10 +106,15 @@ public partial class ProductQuickSearchBox : UserControl
         _filterTimer.Start();
     }
 
+    private async void RunRefreshAsync(bool forceOpen = false)
+    {
+        await RefreshSuggestionsAsync(forceOpen);
+    }
+
     private void SearchBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         ResolveHost();
-        RefreshSuggestions(forceOpen: true);
+        RunRefreshAsync(forceOpen: true);
     }
 
     private void SearchBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
@@ -169,7 +174,7 @@ public partial class ProductQuickSearchBox : UserControl
         }
     }
 
-    private void RefreshSuggestions(bool forceOpen = false)
+    private async Task RefreshSuggestionsAsync(bool forceOpen = false)
     {
         ResolveHost();
         var catalog = _host?.QuickSearchCatalog;
@@ -184,7 +189,6 @@ public partial class ProductQuickSearchBox : UserControl
             return;
         }
 
-        // لا تفتح القائمة إن كان النص يطابق المنتج المحدد بالكامل دون تغيير
         if (!forceOpen
             && SelectedProduct is not null
             && string.Equals(SelectedProduct.Name, term, StringComparison.OrdinalIgnoreCase))
@@ -193,15 +197,23 @@ public partial class ProductQuickSearchBox : UserControl
             return;
         }
 
-        var results = catalog.Search(term);
+        var results = await catalog.SearchAsync(
+            term,
+            string.IsNullOrWhiteSpace(term)
+                ? ProductQuickSearchCatalog.DefaultPreviewCount
+                : ProductQuickSearchCatalog.DefaultSearchCount);
+
         foreach (var item in results)
             Suggestions.Add(item);
 
         EmptyHint.Text = Suggestions.Count == 0
-            ? "لا توجد مواد مطابقة"
-            : $"{Suggestions.Count} مادة — انقر للاختيار";
+            ? (string.IsNullOrWhiteSpace(term)
+                ? "اكتب للبحث في جميع المنتجات"
+                : "لا توجد مواد مطابقة")
+            : string.IsNullOrWhiteSpace(term)
+                ? $"أول {Suggestions.Count} مادة — اكتب للبحث في الكل"
+                : $"{Suggestions.Count} مادة — انقر للاختيار";
 
-        // لا تفتح الاقتراحات عند التعبئة البرمجية للنص (مثل استعادة قائمة الانتظار)
         if (forceOpen || IsKeyboardFocusWithin)
             OpenPopup();
         else

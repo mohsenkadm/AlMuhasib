@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -10,9 +9,15 @@ using AlMuhasib.UI.ViewModels;
 
 namespace AlMuhasib.UI.Services;
 
-/// <summary>كتالوج بحث سريع للمنتجات داخل خلايا الفاتورة: أرصدة المخازن + الأسعار.</summary>
+/// <summary>
+/// كتالوج بحث سريع للمنتجات داخل خلايا الفاتورة.
+/// يحمّل قائمة المنتجات فقط عند البدء، ويجلب الأرصدة والأسعار للنتائج المعروضة فقط.
+/// </summary>
 public sealed class ProductQuickSearchCatalog
 {
+    public const int DefaultPreviewCount = 25;
+    public const int DefaultSearchCount = 40;
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProductPriceService? _productPriceService;
     private readonly Dictionary<int, List<WarehouseStockChip>> _stocksByProduct = new();
@@ -21,6 +26,8 @@ public sealed class ProductQuickSearchCatalog
     private List<Product> _products = [];
     private bool _pricingEnabled;
     private InvoicePickerMode _mode;
+    private bool _stockLoaded;
+    private readonly SemaphoreSlim _stockLock = new(1, 1);
 
     public ProductQuickSearchCatalog(IUnitOfWork unitOfWork, IProductPriceService? productPriceService = null)
     {
@@ -28,31 +35,42 @@ public sealed class ProductQuickSearchCatalog
         _productPriceService = productPriceService;
     }
 
-    public async Task LoadAsync(
+    public Task LoadAsync(
         IEnumerable<Product> products,
         InvoicePickerMode mode,
         bool pricingEnabled)
     {
-        _products = products.ToList();
+        _products = ProductSearchHelper.ActiveOnly(products).OrderBy(p => p.Name).ToList();
         _mode = mode;
         _pricingEnabled = pricingEnabled;
-        await LoadStockAsync();
-        await LoadSuggestedPricesAsync();
-        if (_pricingEnabled && _productPriceService is not null)
-            await LoadCatalogPricesAsync();
-        else
-            _catalogPrices.Clear();
+        _stocksByProduct.Clear();
+        _suggestedPrices.Clear();
+        _catalogPrices.Clear();
+        _stockLoaded = false;
+        return Task.CompletedTask;
     }
 
-    public IReadOnlyList<ProductSearchSuggestion> Search(string? searchText, int maxResults = 40)
+    public async Task<IReadOnlyList<ProductSearchSuggestion>> SearchAsync(
+        string? searchText,
+        int maxResults = DefaultSearchCount)
     {
         var term = searchText?.Trim() ?? string.Empty;
         IEnumerable<Product> query = _products;
-        if (!string.IsNullOrWhiteSpace(term))
-            query = query.Where(p => ProductSearchHelper.Matches(p, term));
 
-        var results = new List<ProductSearchSuggestion>();
-        foreach (var product in query.OrderBy(p => p.Name).Take(maxResults))
+        if (string.IsNullOrWhiteSpace(term))
+            query = query.Take(Math.Min(maxResults, DefaultPreviewCount));
+        else
+            query = query.Where(p => ProductSearchHelper.Matches(p, term)).Take(maxResults);
+
+        var matched = query.OrderBy(p => p.Name).ToList();
+        if (matched.Count == 0)
+            return [];
+
+        await EnsureStockLoadedAsync();
+        await EnsureSuggestedPricesLoadedAsync(matched.Select(p => p.Id).ToList());
+
+        var results = new List<ProductSearchSuggestion>(matched.Count);
+        foreach (var product in matched)
         {
             var suggestion = new ProductSearchSuggestion
             {
@@ -79,11 +97,20 @@ public sealed class ProductQuickSearchCatalog
         return results;
     }
 
-    /// <summary>سعر مقترح للتعبئة التلقائية عند اختيار المنتج (كتالوج تسعير أو آخر شراء/متوسط كلفة).</summary>
+    /// <summary>سعر مقترح للتعبئة التلقائية عند اختيار المنتج.</summary>
     public bool TryGetSuggestedPrice(int productId, out decimal price)
     {
         price = ResolvePrice(productId);
         return price > 0;
+    }
+
+    public async Task EnsurePriceLoadedAsync(int productId)
+    {
+        if (_suggestedPrices.ContainsKey(productId)
+            && (!_pricingEnabled || _catalogPrices.ContainsKey(productId) || _productPriceService is null))
+            return;
+
+        await EnsureSuggestedPricesLoadedAsync([productId]);
     }
 
     private decimal ResolvePrice(int productId)
@@ -93,31 +120,54 @@ public sealed class ProductQuickSearchCatalog
         return _suggestedPrices.GetValueOrDefault(productId);
     }
 
-    private async Task LoadStockAsync()
+    private async Task EnsureStockLoadedAsync()
     {
-        _stocksByProduct.Clear();
-        var warehouses = (await _unitOfWork.Warehouses.GetAllAsync())
-            .ToDictionary(w => w.Id, w => w.Name);
-        var stocks = await _unitOfWork.WarehouseStocks.FindAsync(_ => true);
+        if (_stockLoaded)
+            return;
 
-        foreach (var group in stocks.GroupBy(s => s.ProductId))
+        await _stockLock.WaitAsync();
+        try
         {
-            var chips = group
-                .Where(s => warehouses.ContainsKey(s.WarehouseId))
-                .OrderBy(s => warehouses[s.WarehouseId])
-                .Select(s => new WarehouseStockChip
-                {
-                    WarehouseName = warehouses[s.WarehouseId],
-                    Quantity = s.Quantity
-                })
-                .ToList();
-            _stocksByProduct[group.Key] = chips;
+            if (_stockLoaded)
+                return;
+
+            _stocksByProduct.Clear();
+            var warehouses = (await _unitOfWork.Warehouses.GetAllAsync())
+                .ToDictionary(w => w.Id, w => w.Name);
+            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(_ => true);
+
+            foreach (var group in stocks.GroupBy(s => s.ProductId))
+            {
+                var chips = group
+                    .Where(s => warehouses.ContainsKey(s.WarehouseId))
+                    .OrderBy(s => warehouses[s.WarehouseId])
+                    .Select(s => new WarehouseStockChip
+                    {
+                        WarehouseName = warehouses[s.WarehouseId],
+                        Quantity = s.Quantity
+                    })
+                    .ToList();
+                _stocksByProduct[group.Key] = chips;
+            }
+
+            _stockLoaded = true;
+        }
+        finally
+        {
+            _stockLock.Release();
         }
     }
 
-    private async Task LoadSuggestedPricesAsync()
+    private async Task EnsureSuggestedPricesLoadedAsync(IReadOnlyCollection<int> productIds)
     {
-        _suggestedPrices.Clear();
+        var missing = productIds.Where(id => !_suggestedPrices.ContainsKey(id)).ToList();
+        if (missing.Count == 0)
+        {
+            if (_pricingEnabled && _productPriceService is not null)
+                await EnsureCatalogPricesLoadedAsync(productIds);
+            return;
+        }
+
         var invoiceItems = (await _unitOfWork.InvoiceItems.FindAsync(i => i.ProductId != null)).ToList();
 
         if (_mode == InvoicePickerMode.Purchase)
@@ -130,56 +180,56 @@ public sealed class ProductQuickSearchCatalog
                 .Where(i => i.ProductId is not null && purchaseInvoiceIds.Contains(i.InvoiceId))
                 .ToList();
 
-            foreach (var product in _products)
+            foreach (var productId in missing)
             {
                 var lastPurchase = purchaseItems
-                    .Where(i => i.ProductId == product.Id && i.UnitPrice > 0)
+                    .Where(i => i.ProductId == productId && i.UnitPrice > 0)
                     .OrderByDescending(i => i.Id)
                     .FirstOrDefault();
 
-                if (lastPurchase is not null)
-                {
-                    _suggestedPrices[product.Id] = lastPurchase.UnitPrice;
-                    continue;
-                }
-
-                _suggestedPrices[product.Id] = Math.Round(
-                    ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, product.Id), 0);
+                _suggestedPrices[productId] = lastPurchase?.UnitPrice ?? Math.Round(
+                    ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, productId), 0);
             }
-
-            return;
         }
-
-        var saleInvoiceIds = (await _unitOfWork.Invoices.FindAsync(i =>
-                i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment))
-            .Select(i => i.Id)
-            .ToHashSet();
-        var saleItems = invoiceItems
-            .Where(i => i.ProductId is not null && saleInvoiceIds.Contains(i.InvoiceId))
-            .ToList();
-
-        foreach (var product in _products)
+        else
         {
-            var lastSale = saleItems
-                .Where(i => i.ProductId == product.Id && i.UnitPrice > 0)
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefault();
-            _suggestedPrices[product.Id] = lastSale?.UnitPrice ?? 0;
+            var saleInvoiceIds = (await _unitOfWork.Invoices.FindAsync(i =>
+                    i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment))
+                .Select(i => i.Id)
+                .ToHashSet();
+            var saleItems = invoiceItems
+                .Where(i => i.ProductId is not null && saleInvoiceIds.Contains(i.InvoiceId))
+                .ToList();
+
+            foreach (var productId in missing)
+            {
+                var lastSale = saleItems
+                    .Where(i => i.ProductId == productId && i.UnitPrice > 0)
+                    .OrderByDescending(i => i.Id)
+                    .FirstOrDefault();
+                _suggestedPrices[productId] = lastSale?.UnitPrice ?? 0;
+            }
         }
+
+        if (_pricingEnabled && _productPriceService is not null)
+            await EnsureCatalogPricesLoadedAsync(productIds);
     }
 
-    private async Task LoadCatalogPricesAsync()
+    private async Task EnsureCatalogPricesLoadedAsync(IReadOnlyCollection<int> productIds)
     {
-        _catalogPrices.Clear();
-        if (_productPriceService is null || _products.Count == 0)
+        var missing = productIds.Where(id => !_catalogPrices.ContainsKey(id)).ToList();
+        if (missing.Count == 0 || _productPriceService is null)
             return;
 
-        var prices = await _productPriceService.GetByProductIdsAsync(_products.Select(p => p.Id));
+        var prices = await _productPriceService.GetByProductIdsAsync(missing);
         foreach (var group in prices.GroupBy(p => p.ProductId))
         {
             var preferred = group.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? group.First();
             var price = _mode == InvoicePickerMode.Purchase ? preferred.PurchasePrice : preferred.SalePrice;
             _catalogPrices[group.Key] = price;
         }
+
+        foreach (var productId in missing.Where(id => !_catalogPrices.ContainsKey(id)))
+            _catalogPrices[productId] = 0;
     }
 }

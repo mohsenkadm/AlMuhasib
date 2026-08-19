@@ -7,7 +7,11 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:entities="clr-namespace:AlMuhasib.Core.Entities;assembly=AlMuhasib.Core"
              x:Name="Root"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Background="Transparent"
+             IsHitTestVisible="False">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
@@ -65,31 +69,30 @@
         </Style>
     </UserControl.Resources>
 
-    <Popup x:Name="WindowPopup"
-           AllowsTransparency="True"
-           StaysOpen="True"
-           PopupAnimation="Fade"
-           Opened="WindowPopup_Opened">
-        <Grid x:Name="FullScreenHost" Background="#77000000" FlowDirection="RightToLeft">
-            <materialDesign:Card x:Name="DialogCard"
-                               MaxWidth="920" Width="920"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
+    <Grid x:Name="OverlayRoot" Visibility="Collapsed" IsHitTestVisible="False">
+        <Border x:Name="Backdrop"
+                Background="#CC000000"
+                Opacity="0"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                MouseDown="Backdrop_MouseDown"/>
+
+        <materialDesign:Card x:Name="DialogCard"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="12"
+                               MaxWidth="980"
                                UniformCornerRadius="16" Padding="0"
+                               ClipToBounds="True"
                                materialDesign:ElevationAssist.Elevation="Dp16"
                                RenderTransformOrigin="0.5,0.5">
                 <materialDesign:Card.RenderTransform>
-                    <ScaleTransform ScaleX="0.94" ScaleY="0.94"/>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
                 </materialDesign:Card.RenderTransform>
 
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
+                <DockPanel x:Name="DialogRoot" LastChildFill="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                     <!-- Header -->
-                    <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="18,14">
+                    <Border DockPanel.Dock="Top" CornerRadius="16,16,0,0" Padding="18,14">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                 <GradientStop Color="#0D47A1" Offset="0"/>
@@ -133,10 +136,45 @@
                         </Grid>
                     </Border>
 
+                    <!-- Footer -->
+                    <Border DockPanel.Dock="Bottom" Background="#FAFBFD" BorderBrush="#E8EEF5" BorderThickness="0,1,0,0"
+                            CornerRadius="0,0,16,16" Padding="12,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#EEF4FC" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="BasketOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
+                                    <TextBlock FontSize="12" Foreground="#37474F" VerticalAlignment="Center">
+                                        <Run Text="منتجات:" FontWeight="SemiBold"/>
+                                        <Run Text="{Binding SelectedProductCount, Mode=OneWay}"/>
+                                        <Run Text="   كمية:" FontWeight="SemiBold"/>
+                                        <Run Text="{Binding SelectedTotalQuantity, StringFormat=N0, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="مسح" Command="{Binding ClearSelectionCommand}"
+                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
+                                <Button Content="إلغاء" Command="{Binding CancelCommand}"
+                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
+                                <Button Command="{Binding ConfirmCommand}" Style="{StaticResource AccentButton}"
+                                        Height="36" Padding="18,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Check" Width="16" Height="16" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إضافة للفاتورة" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
                     <!-- Body -->
-                    <Grid Grid.Row="1" MinHeight="320">
+                    <Grid ClipToBounds="True">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="190"/>
+                            <ColumnDefinition Width="170" MinWidth="140"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
@@ -205,24 +243,35 @@
                             </DockPanel>
                         </Border>
 
-                        <Grid Grid.Column="1" Margin="12,10,12,8">
+                        <Grid Grid.Column="1" Margin="12,8,12,6">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <TextBox Grid.Row="0"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="بحث بالاسم أو العلمي أو الباركود"
+                                     materialDesign:HintAssist.Hint="بحث في جميع المنتجات بالاسم أو العلمي أو الباركود"
                                      materialDesign:HintAssist.IsFloating="True"
                                      materialDesign:TextFieldAssist.HasLeadingIcon="True"
                                      materialDesign:TextFieldAssist.LeadingIcon="Magnify"
                                      Style="{StaticResource FilledTextBox}"
-                                     MinHeight="48" Height="48"
+                                     MinHeight="44" Height="44"
                                      FontSize="14"
-                                     Padding="12,10"
+                                     Padding="12,8"
                                      VerticalContentAlignment="Center"
-                                     Margin="0,0,0,10"/>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                     Margin="0,0,0,6"/>
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding BrowseHint}"
+                                       FontSize="11"
+                                       Foreground="#607D8B"
+                                       Margin="0,0,0,6"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasBrowseHint, Converter={StaticResource BoolVis}}"/>
+                            <ScrollViewer Grid.Row="2"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          CanContentScroll="False">
                                 <ItemsControl ItemsSource="{Binding DisplayProducts}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -320,43 +369,7 @@
                             </ScrollViewer>
                         </Grid>
                     </Grid>
-
-                    <!-- Footer -->
-                    <Border Grid.Row="2" Background="#FAFBFD" BorderBrush="#E8EEF5" BorderThickness="0,1,0,0"
-                            CornerRadius="0,0,16,16" Padding="14,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="#EEF4FC" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="BasketOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
-                                    <TextBlock FontSize="12" Foreground="#37474F" VerticalAlignment="Center">
-                                        <Run Text="منتجات:" FontWeight="SemiBold"/>
-                                        <Run Text="{Binding SelectedProductCount, Mode=OneWay}"/>
-                                        <Run Text="   كمية:" FontWeight="SemiBold"/>
-                                        <Run Text="{Binding SelectedTotalQuantity, StringFormat=N0, Mode=OneWay}"/>
-                                    </TextBlock>
-                                </StackPanel>
-                            </Border>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Content="مسح" Command="{Binding ClearSelectionCommand}"
-                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
-                                <Button Content="إلغاء" Command="{Binding CancelCommand}"
-                                        Style="{StaticResource FlatButton}" Height="36" Padding="14,0" Margin="0,0,6,0"/>
-                                <Button Command="{Binding ConfirmCommand}" Style="{StaticResource AccentButton}"
-                                        Height="36" Padding="18,0" materialDesign:ButtonAssist.CornerRadius="10">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Check" Width="16" Height="16" VerticalAlignment="Center"/>
-                                        <TextBlock Text="إضافة للفاتورة" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="13"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
+                </DockPanel>
             </materialDesign:Card>
-        </Grid>
-    </Popup>
+    </Grid>
 </UserControl>

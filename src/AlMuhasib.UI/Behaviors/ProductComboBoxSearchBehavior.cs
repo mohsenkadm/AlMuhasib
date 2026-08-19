@@ -130,8 +130,11 @@ public static class ProductComboBoxSearchBehavior
             if (item is not Product product)
                 return true;
 
+            if (product.IsDeleted)
+                return false;
+
             if (string.IsNullOrEmpty(term))
-                return true;
+                return false;
 
             if (combo.SelectedItem is Product selected
                 && string.Equals(selected.Name, term, StringComparison.OrdinalIgnoreCase))

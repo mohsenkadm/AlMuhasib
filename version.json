@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "1.14.16",
-    "releaseDate":  "2026-08-18",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.16/AlMuhasib-1.14.16.zip",
-    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.16/Qayd-Setup-1.14.16.exe",
-    "sha256":  "74BCFDC6F05F1CD56D5B90E982B0B63165599D0B5DA492B7963C581D1AAA40A4",
-    "sizeBytes":  149385246,
-    "releaseNotes":  "تحسين طباعة الفواتير واختيار المنتجات وفحص ربح الفاتورة",
+    "version":  "1.14.17",
+    "releaseDate":  "2026-08-20",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.17/AlMuhasib-1.14.17.zip",
+    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.17/Qayd-Setup-1.14.17.exe",
+    "sha256":  "8E5FD8A55077E3C1D1C7B20B5DC131A9AEF59EFA2BB22AD0C492CB42137FDD4C",
+    "sizeBytes":  149316467,
+    "releaseNotes":  "تحسين البحث السريع عن المنتجات واختيار المنتج في فواتير البيع والشراء والأقساط",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

@@ -9,9 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <NoWarn>NU1701</NoWarn>
-    <Version>1.14.16</Version>
-    <AssemblyVersion>1.14.16.0</AssemblyVersion>
-    <FileVersion>1.14.16.0</FileVersion>
+    <Version>1.14.17</Version>
+    <AssemblyVersion>1.14.17.0</AssemblyVersion>
+    <FileVersion>1.14.17.0</FileVersion>
     <ApplicationIcon>Assets\Brand\qayd-icon.ico</ApplicationIcon>
   </PropertyGroup>
 

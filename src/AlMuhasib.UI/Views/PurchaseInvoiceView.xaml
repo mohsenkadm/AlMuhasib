@@ -681,6 +681,8 @@
 
         <!-- ═══════════════════════════════════════════ -->
         <controls:ProductPickerOverlay Panel.ZIndex="120"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
                                        DataContext="{Binding ProductPicker}"
                                        IsOpen="{Binding DataContext.IsProductPickerOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
 
