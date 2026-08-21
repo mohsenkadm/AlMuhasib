@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -13,17 +15,25 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class OpeningStockViewModel : ViewModelBase
 {
+    private const int DefaultPageSize = 50;
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IOpeningStockExcelService _excelService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly IProductPriceService _productPriceService;
     private readonly IPricingTypeService _pricingTypeService;
+    private readonly List<OpeningStockRow> _allRows = [];
     private bool _initialized;
     private bool _suppressPricingTypeReload;
+    private bool _suppressDirty;
+    private bool _suppressWarehouseReload;
+    private bool _isDirty;
+    private int? _lastLoadedWarehouseId;
     private Dictionary<int, decimal> _warehouseUnitCosts = new();
     private Dictionary<(int ProductId, int PricingTypeId), ProductPrice> _pricesByProductAndType = new();
 
+    /// <summary>الصفحة الحالية من الأرصدة (للعرض فقط).</summary>
     public ObservableCollection<OpeningStockRow> Rows { get; } = [];
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
@@ -44,7 +54,26 @@ public partial class OpeningStockViewModel : ViewModelBase
     [ObservableProperty]
     private string _importStatusMessage = string.Empty;
 
+    [ObservableProperty]
+    private int _currentPage = 1;
+
+    [ObservableProperty]
+    private int _pageSize = DefaultPageSize;
+
+    [ObservableProperty]
+    private int _totalCount;
+
+    [ObservableProperty]
+    private int _totalPages = 1;
+
+    [ObservableProperty]
+    private string _paginationText = string.Empty;
+
     public bool ProductPricingEnabled => _userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+
+    public override bool HasUnsavedChanges => _isDirty;
+
+    public override bool SupportsSaveBeforeLeave => true;
 
     public OpeningStockViewModel(
         IUnitOfWork unitOfWork,
@@ -91,6 +120,12 @@ public partial class OpeningStockViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
+    public override async Task<bool> SavePendingChangesAsync()
+    {
+        await SaveAsync();
+        return !_isDirty;
+    }
+
     private async Task EnsurePricingTypesLoadedAsync()
     {
         PricingTypes.Clear();
@@ -129,8 +164,28 @@ public partial class OpeningStockViewModel : ViewModelBase
 
     partial void OnSelectedWarehouseChanged(Warehouse? value)
     {
-        if (value is not null && _initialized)
-            _ = LoadExistingStockAsync();
+        if (_suppressWarehouseReload || value is null || !_initialized)
+            return;
+
+        _ = HandleWarehouseChangedAsync(value);
+    }
+
+    private async Task HandleWarehouseChangedAsync(Warehouse warehouse)
+    {
+        if (_isDirty
+            && _lastLoadedWarehouseId is int previousId
+            && previousId != warehouse.Id
+            && !BeautifulMessageDialog.ShowConfirm(
+                "لديك تغييرات غير محفوظة في الأرصدة الافتتاحية.\nالمتابعة ستتجاهل التعديلات الحالية. هل تريد المتابعة؟",
+                "تغييرات غير محفوظة"))
+        {
+            _suppressWarehouseReload = true;
+            SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == previousId);
+            _suppressWarehouseReload = false;
+            return;
+        }
+
+        await LoadExistingStockAsync();
     }
 
     partial void OnSelectedPricingTypeChanged(PricingType? value)
@@ -156,11 +211,12 @@ public partial class OpeningStockViewModel : ViewModelBase
             if (ProductPricingEnabled)
                 await ReloadProductPricesCacheAsync();
 
-            Rows.Clear();
+            ClearAllRows();
+            _suppressDirty = true;
             foreach (var product in Products)
             {
                 stockDetails.TryGetValue(product.Id, out var stock);
-                Rows.Add(new OpeningStockRow
+                AddTrackedRow(new OpeningStockRow
                 {
                     SelectedProduct = product,
                     ProductId = product.Id,
@@ -169,8 +225,12 @@ public partial class OpeningStockViewModel : ViewModelBase
                     UnitCost = ResolveDisplayUnitCost(product.Id, stock?.UnitCost ?? 0)
                 });
             }
+            _suppressDirty = false;
 
-            IsSaved = false;
+            CurrentPage = 1;
+            RefreshPagedRows();
+            _lastLoadedWarehouseId = SelectedWarehouse.Id;
+            ClearDirty();
         }
         finally { IsBusy = false; }
     }
@@ -190,26 +250,126 @@ public partial class OpeningStockViewModel : ViewModelBase
 
     private void ApplyUnitCostsForSelectedPricingType()
     {
-        foreach (var row in Rows.Where(r => r.ProductId > 0))
+        _suppressDirty = true;
+        foreach (var row in _allRows.Where(r => r.ProductId > 0))
         {
             _warehouseUnitCosts.TryGetValue(row.ProductId, out var warehouseCost);
             row.UnitCost = ResolveDisplayUnitCost(row.ProductId, warehouseCost);
         }
+        _suppressDirty = false;
+        MarkDirty();
+        RefreshPagedRows();
+    }
 
+    private void RefreshPagedRows()
+    {
+        TotalCount = _allRows.Count;
+        TotalPages = PaginationHelper.ComputeTotalPages(TotalCount, PageSize);
+        if (CurrentPage > TotalPages)
+            CurrentPage = TotalPages;
+        if (CurrentPage < 1)
+            CurrentPage = 1;
+
+        Rows.Clear();
+        var startIndex = (CurrentPage - 1) * PageSize;
+        for (var i = 0; i < _allRows.Count; i++)
+            _allRows[i].RowNumber = i + 1;
+
+        foreach (var row in _allRows.Skip(startIndex).Take(PageSize))
+            Rows.Add(row);
+
+        PaginationText = PaginationHelper.BuildPaginationText(TotalCount, CurrentPage, PageSize);
+    }
+
+    private void ClearAllRows()
+    {
+        foreach (var row in _allRows)
+            row.PropertyChanged -= OnRowPropertyChanged;
+        _allRows.Clear();
+        Rows.Clear();
+    }
+
+    private void AddTrackedRow(OpeningStockRow row)
+    {
+        row.PropertyChanged += OnRowPropertyChanged;
+        _allRows.Add(row);
+    }
+
+    private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_suppressDirty)
+            return;
+
+        if (e.PropertyName is nameof(OpeningStockRow.Quantity)
+            or nameof(OpeningStockRow.UnitCost)
+            or nameof(OpeningStockRow.TotalCost)
+            or nameof(OpeningStockRow.SelectedProduct)
+            or nameof(OpeningStockRow.ProductId)
+            or nameof(OpeningStockRow.ProductName))
+        {
+            MarkDirty();
+        }
+    }
+
+    private void MarkDirty()
+    {
+        _isDirty = true;
         IsSaved = false;
+    }
+
+    private void ClearDirty()
+    {
+        _isDirty = false;
+        IsSaved = true;
+    }
+
+    [RelayCommand]
+    private void FirstPage()
+    {
+        CurrentPage = 1;
+        RefreshPagedRows();
+    }
+
+    [RelayCommand]
+    private void PreviousPage()
+    {
+        if (CurrentPage <= 1) return;
+        CurrentPage--;
+        RefreshPagedRows();
+    }
+
+    [RelayCommand]
+    private void NextPage()
+    {
+        if (CurrentPage >= TotalPages) return;
+        CurrentPage++;
+        RefreshPagedRows();
+    }
+
+    [RelayCommand]
+    private void LastPage()
+    {
+        CurrentPage = TotalPages;
+        RefreshPagedRows();
     }
 
     [RelayCommand]
     private void AddRow()
     {
-        Rows.Add(new OpeningStockRow());
+        AddTrackedRow(new OpeningStockRow());
+        MarkDirty();
+        CurrentPage = PaginationHelper.ComputeTotalPages(_allRows.Count, PageSize);
+        RefreshPagedRows();
     }
 
     [RelayCommand]
     private void RemoveRow(OpeningStockRow? row)
     {
-        if (row is not null)
-            Rows.Remove(row);
+        if (row is null) return;
+        row.PropertyChanged -= OnRowPropertyChanged;
+        _allRows.Remove(row);
+        MarkDirty();
+        RefreshPagedRows();
     }
 
     [RelayCommand]
@@ -312,8 +472,9 @@ public partial class OpeningStockViewModel : ViewModelBase
                     existingPricesByProduct[price.ProductId] = price;
             }
 
-            var rowByProductId = Rows.Where(r => r.ProductId > 0).ToDictionary(r => r.ProductId);
+            var rowByProductId = _allRows.Where(r => r.ProductId > 0).ToDictionary(r => r.ProductId);
 
+            _suppressDirty = true;
             foreach (var importRow in validRows)
             {
                 Product? product = null;
@@ -345,7 +506,7 @@ public partial class OpeningStockViewModel : ViewModelBase
                         Quantity = importRow.Quantity,
                         UnitCost = importRow.UnitCost
                     };
-                    Rows.Add(newRow);
+                    AddTrackedRow(newRow);
                     rowByProductId[product.Id] = newRow;
                 }
 
@@ -379,11 +540,13 @@ public partial class OpeningStockViewModel : ViewModelBase
 
                 applied++;
             }
+            _suppressDirty = false;
 
             if (pricesToSave.Count > 0)
                 await _productPriceService.UpsertManyAsync(pricesToSave);
 
             await SaveImportedRowsAsync();
+            RefreshPagedRows();
 
             if (includePricing)
                 await ReloadProductPricesCacheAsync();
@@ -404,7 +567,7 @@ public partial class OpeningStockViewModel : ViewModelBase
     {
         if (SelectedWarehouse is null) return;
 
-        var validRows = Rows.Where(r => r.ProductId > 0 && r.Quantity > 0 && r.UnitCost > 0).ToList();
+        var validRows = _allRows.Where(r => r.ProductId > 0 && r.Quantity > 0 && r.UnitCost > 0).ToList();
         var username = _currentUserService.Username;
 
         foreach (var row in validRows)
@@ -440,7 +603,7 @@ public partial class OpeningStockViewModel : ViewModelBase
         }
 
         await _unitOfWork.SaveChangesAsync();
-        IsSaved = true;
+        ClearDirty();
     }
 
     [RelayCommand]
@@ -460,7 +623,7 @@ public partial class OpeningStockViewModel : ViewModelBase
             return;
         }
 
-        var validRows = Rows.Where(r => r.ProductId > 0 && r.Quantity > 0).ToList();
+        var validRows = _allRows.Where(r => r.ProductId > 0 && r.Quantity > 0).ToList();
         if (validRows.Count == 0)
         {
             ErrorMessage = "لا توجد بيانات للحفظ";
@@ -530,7 +693,7 @@ public partial class OpeningStockViewModel : ViewModelBase
             if (ProductPricingEnabled && SelectedPricingType is not null)
                 await SavePurchasePricesForSelectedTypeAsync(validRows);
 
-            IsSaved = true;
+            ClearDirty();
             BeautifulMessageDialog.ShowSuccess("تم حفظ الأرصدة الافتتاحية بنجاح");
         }
         catch (Exception ex)
@@ -569,6 +732,7 @@ public partial class OpeningStockViewModel : ViewModelBase
 
 public partial class OpeningStockRow : ObservableObject
 {
+    [ObservableProperty] private int _rowNumber;
     [ObservableProperty] private int _productId;
     [ObservableProperty] private string _productName = string.Empty;
     [ObservableProperty] private decimal _quantity;

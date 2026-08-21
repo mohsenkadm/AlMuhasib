@@ -1,4 +1,5 @@
 using AlMuhasib.UI.ViewModels;
+using AlMuhasib.UI.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using AlMuhasib.UI.Controls;
 
@@ -34,16 +35,27 @@ public class NavigationService : INavigationService
         // Check if the current view model has unsaved changes
         if (CurrentViewModel?.HasUnsavedChanges == true)
         {
-            var result = System.Windows.MessageBox.Show(
-                "يوجد فاتورة لم يتم حفظها. هل تريد المغادرة بدون حفظ؟",
-                "تحذير - بيانات غير محفوظة",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning,
-                System.Windows.MessageBoxResult.No,
-                System.Windows.MessageBoxOptions.RightAlign | System.Windows.MessageBoxOptions.RtlReading);
+            if (CurrentViewModel.SupportsSaveBeforeLeave)
+            {
+                var choice = BeautifulMessageDialog.ShowSaveDiscardCancel(
+                    "لديك تغييرات غير محفوظة.\nهل تريد حفظها قبل المغادرة؟");
 
-            if (result == System.Windows.MessageBoxResult.No)
+                if (choice == UnsavedChangesDialogResult.Cancel)
+                    return;
+
+                if (choice == UnsavedChangesDialogResult.Save)
+                {
+                    var saved = UiTaskHelper.WaitWithMessagePump(CurrentViewModel.SavePendingChangesAsync());
+                    if (!saved)
+                        return;
+                }
+            }
+            else if (!BeautifulMessageDialog.ShowConfirm(
+                         "لديك تغييرات غير محفوظة. هل تريد المغادرة بدون حفظ؟",
+                         "تحذير - بيانات غير محفوظة"))
+            {
                 return;
+            }
         }
 
         // Dispose the scope that is falling off (two navigations back)

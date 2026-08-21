@@ -37,8 +37,9 @@ public static class ModernInvoiceDocumentBuilder
         var hideAmounts = m.HideAmounts;
         // قالب "Compact" في الإعدادات — أو عدد بنود كبير — يضغط الخطوط والحشوات بنفس التصميم.
         var compact = InvoiceA4TemplateTheme.Resolve(m.A4TemplateId).ForceCompactMetrics || m.Items.Count > 18;
-        var baseFont = compact ? 9.5 : 10.5;
-        var cellPadding = compact ? new Thickness(6, 3, 6, 3) : new Thickness(8, 5, 8, 5);
+        // حجم الخط الأساسي 14 لسهولة القراءة؛ القالب المضغوط يقلّل قليلاً فقط.
+        var baseFont = compact ? 13.0 : 14.0;
+        var cellPadding = compact ? new Thickness(6, 4, 6, 4) : new Thickness(8, 5, 8, 5);
         var currency = string.IsNullOrWhiteSpace(m.CurrencyLabel) ? "د.ع" : m.CurrencyLabel;
         var branding = PrintBrandingProvider.Current;
         var pagePadding = compact ? new Thickness(34, 20, 34, 20) : new Thickness(44, 24, 44, 24);
@@ -63,7 +64,7 @@ public static class ModernInvoiceDocumentBuilder
         // ── العنوان ──
         doc.Blocks.Add(new Paragraph(new Run(m.Title))
         {
-            FontSize = compact ? 18 : 21,
+            FontSize = compact ? 20 : 24,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, compact ? 4 : 8, 0, compact ? 6 : 10)

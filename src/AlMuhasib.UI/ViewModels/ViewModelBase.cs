@@ -90,4 +90,15 @@ public abstract partial class ViewModelBase : ObservableObject
     /// Override to indicate there are unsaved changes that should prompt the user before navigating away.
     /// </summary>
     public virtual bool HasUnsavedChanges => false;
+
+    /// <summary>
+    /// When true, the leave prompt offers Save / Discard / Cancel and calls <see cref="SavePendingChangesAsync"/>.
+    /// </summary>
+    public virtual bool SupportsSaveBeforeLeave => false;
+
+    /// <summary>
+    /// Called when the user chooses «حفظ» before leaving a dirty screen.
+    /// Return true if save succeeded (or there was nothing to save); false to cancel navigation.
+    /// </summary>
+    public virtual Task<bool> SavePendingChangesAsync() => Task.FromResult(true);
 }

@@ -128,6 +128,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <controls:ListTableHeaderBar Grid.Row="0"
@@ -167,8 +168,7 @@
                                 <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow},
-                                                       Path=(ItemsControl.AlternationIndex), StringFormat='{}{0}'}"
+                                            <TextBlock Text="{Binding RowNumber}"
                                                        HorizontalAlignment="Center" Foreground="#9E9E9E"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -239,6 +239,8 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                 </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </materialDesign:Card>
 
