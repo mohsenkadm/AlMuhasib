@@ -17,9 +17,17 @@ public enum MessageDialogType
     Confirm
 }
 
+public enum UnsavedChangesDialogResult
+{
+    Save,
+    Discard,
+    Cancel
+}
+
 public partial class BeautifulMessageDialog : Window
 {
     public bool ResultYes { get; private set; }
+    public UnsavedChangesDialogResult UnsavedResult { get; private set; } = UnsavedChangesDialogResult.Cancel;
 
     public BeautifulMessageDialog()
     {
@@ -108,6 +116,29 @@ public partial class BeautifulMessageDialog : Window
     {
         ResolveSoundService()?.Play(SoundEffect.Confirm);
         return Show(message, title, MessageDialogType.Confirm, true);
+    }
+
+    /// <summary>
+    /// حوار مغادرة مع خيارات: حفظ / بدون حفظ / إلغاء.
+    /// </summary>
+    public static UnsavedChangesDialogResult ShowSaveDiscardCancel(
+        string message,
+        string title = "تغييرات غير محفوظة")
+    {
+        ResolveSoundService()?.Play(SoundEffect.Confirm);
+        var dialog = new BeautifulMessageDialog();
+        dialog.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                     ?? Application.Current.MainWindow;
+        dialog.MessageText.Text = message;
+        dialog.TitleText.Text = title;
+        dialog.UnsavedResult = UnsavedChangesDialogResult.Cancel;
+        dialog.Width = 540;
+
+        ApplyTheme(dialog, MessageDialogType.Warning);
+        CreateSaveDiscardCancelButtons(dialog);
+
+        dialog.ShowDialog();
+        return dialog.UnsavedResult;
     }
 
     private static bool Show(string message, string title, MessageDialogType type, bool isConfirm)
@@ -210,6 +241,41 @@ public partial class BeautifulMessageDialog : Window
             okBtn.Click += (_, _) => dialog.Close();
             dialog.ButtonPanel.Children.Add(okBtn);
         }
+    }
+
+    private static void CreateSaveDiscardCancelButtons(BeautifulMessageDialog dialog)
+    {
+        dialog.ButtonPanel.Children.Clear();
+
+        var saveBtn = CreateButton("حفظ", "#2E7D32", "#1B5E20", PackIconKind.ContentSave, true);
+        saveBtn.Click += (_, _) =>
+        {
+            ResolveSoundService()?.Play(SoundEffect.Verify);
+            dialog.UnsavedResult = UnsavedChangesDialogResult.Save;
+            dialog.Close();
+        };
+
+        var discardBtn = CreateButton("بدون حفظ", "#F5F5F5", "#E0E0E0", PackIconKind.DeleteOutline, false);
+        discardBtn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C62828"));
+        discardBtn.Click += (_, _) =>
+        {
+            ResolveSoundService()?.Play(SoundEffect.Cancel);
+            dialog.UnsavedResult = UnsavedChangesDialogResult.Discard;
+            dialog.Close();
+        };
+
+        var cancelBtn = CreateButton("إلغاء", "#F5F5F5", "#E0E0E0", PackIconKind.Close, false);
+        cancelBtn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#616161"));
+        cancelBtn.Click += (_, _) =>
+        {
+            ResolveSoundService()?.Play(SoundEffect.Cancel);
+            dialog.UnsavedResult = UnsavedChangesDialogResult.Cancel;
+            dialog.Close();
+        };
+
+        dialog.ButtonPanel.Children.Add(saveBtn);
+        dialog.ButtonPanel.Children.Add(discardBtn);
+        dialog.ButtonPanel.Children.Add(cancelBtn);
     }
 
     private static Button CreateButton(string text, string bgColor, string hoverColor, PackIconKind icon, bool isPrimary)

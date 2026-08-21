@@ -885,16 +885,27 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (tab.ViewModel.HasUnsavedChanges)
         {
-            var result = MessageBox.Show(
-                "يوجد تغييرات غير محفوظة. هل تريد إغلاق التبويب بدون حفظ؟",
-                "إغلاق التبويب",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning,
-                MessageBoxResult.No,
-                MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
+            if (tab.ViewModel.SupportsSaveBeforeLeave)
+            {
+                var choice = BeautifulMessageDialog.ShowSaveDiscardCancel(
+                    "لديك تغييرات غير محفوظة.\nهل تريد حفظها قبل إغلاق التبويب؟");
 
-            if (result == MessageBoxResult.No)
+                if (choice == UnsavedChangesDialogResult.Cancel)
+                    return;
+
+                if (choice == UnsavedChangesDialogResult.Save)
+                {
+                    var saved = UiTaskHelper.WaitWithMessagePump(tab.ViewModel.SavePendingChangesAsync());
+                    if (!saved)
+                        return;
+                }
+            }
+            else if (!BeautifulMessageDialog.ShowConfirm(
+                         "لديك تغييرات غير محفوظة. هل تريد إغلاق التبويب بدون حفظ؟",
+                         "إغلاق التبويب"))
+            {
                 return;
+            }
         }
 
         var index = OpenTabs.IndexOf(tab);
