@@ -1,7 +1,7 @@
 {
   "supportWhatsApp": "07505496065",
   "supportMessage": "السلام عليكم، أحتاج مساعدة في نظام المحاسب.",
-  "defaultYoutubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+  "defaultYoutubeUrl": "https://youtu.be/8f2BzHMGhhg",
   "categories": [
     {
       "id": "dashboard",
@@ -10,39 +10,8 @@
       "videos": [
         {
           "title": "لوحة التحكم",
-          "description": "شرح مؤشرات لوحة التحكم، الإحصائيات، والاختصارات السريعة.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        }
-      ]
-    },
-    {
-      "id": "master-data",
-      "title": "البيانات الأساسية",
-      "icon": "Database",
-      "videos": [
-        {
-          "title": "المنتجات",
-          "description": "إضافة وتعديل المنتجات، الأسعار، والباركود.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تصنيفات المنتجات",
-          "description": "تنظيم المنتجات ضمن تصنيفات وفئات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "العملاء",
-          "description": "إدارة بيانات العملاء وحساباتهم.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الموردون",
-          "description": "إدارة بيانات الموردين وحساباتهم.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "description": "شرح مفصل لواجهة لوحة التحكم: الإحصائيات، التنبيهات، المخططات، آخر العمليات، والاختصارات.",
+          "youtubeUrl": "https://youtu.be/8f2BzHMGhhg",
           "duration": ""
         }
       ]
@@ -53,315 +22,126 @@
       "icon": "CashRegister",
       "videos": [
         {
-          "title": "فاتورة مبيعات",
-          "description": "إنشاء فاتورة بيع نقدي أو آجل وطباعتها.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "title": "فاتورة بيع",
+          "description": "شرح إنشاء فاتورة بيع نقدي أو آجل وطباعتها.",
+          "youtubeUrl": "https://youtu.be/M3OQFmKxpEk?si=Yp_5zl5YwD6nod6r",
           "duration": ""
-        },
+        }
+      ]
+    },
+    {
+      "id": "damage-invoice",
+      "title": "فاتورة تلف",
+      "icon": "DeleteAlert",
+      "videos": [
+        {
+          "title": "فاتورة تلف",
+          "description": "شرح إنشاء فاتورة تلف وتسجيل الكميات التالفة من المخزون.",
+          "youtubeUrl": "https://youtu.be/mjCneT06jy4",
+          "duration": ""
+        }
+      ]
+    },
+    {
+      "id": "pos",
+      "title": "بيع سريع (POS)",
+      "icon": "PointOfSale",
+      "videos": [
         {
           "title": "بيع سريع (POS)",
-          "description": "شاشة الكاشير للبيع النقدي السريع.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "فاتورة أقساط",
-          "description": "إنشاء فاتورة بيع بالتقسيط وتحديد خطة الأقساط.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "description": "شرح شاشة الكاشير للبيع السريع النقدي.",
+          "youtubeUrl": "https://youtu.be/BZhCpUESSjk",
           "duration": ""
         }
       ]
     },
     {
-      "id": "purchases",
-      "title": "المشتريات",
-      "icon": "CartArrowDown",
+      "id": "products",
+      "title": "المنتجات",
+      "icon": "PackageVariantClosed",
       "videos": [
         {
-          "title": "فاتورة مشتريات",
-          "description": "إدخال فاتورة شراء وتحديث المخزون والذمم.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "title": "المنتجات",
+          "description": "شرح واجهة المنتجات: الإدخال المتعدد، الأسعار، الباركود، والإعدادات.",
+          "youtubeUrl": "https://youtu.be/B-_XRltfkgc",
           "duration": ""
         }
       ]
     },
     {
-      "id": "installments",
-      "title": "الأقساط",
-      "icon": "CalendarClock",
+      "id": "categories",
+      "title": "تصنيفات المنتجات",
+      "icon": "TagMultiple",
       "videos": [
         {
-          "title": "الأقساط",
-          "description": "متابعة الأقساط وتسديدها وإرسال الإيصالات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "أرصدة الأقساط الافتتاحية",
-          "description": "إدخال أرصدة أقساط قديمة عند بدء استخدام النظام.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "title": "تصنيفات المنتجات",
+          "description": "شرح إنشاء وتنظيم تصنيفات وفئات المنتجات.",
+          "youtubeUrl": "https://youtu.be/JN7NDxmJr1c",
           "duration": ""
         }
       ]
     },
     {
-      "id": "finance",
-      "title": "المالية",
-      "icon": "Bank",
+      "id": "packaging-types",
+      "title": "أنواع التعبئة",
+      "icon": "PackageVariant",
       "videos": [
         {
-          "title": "السندات",
-          "description": "سندات القبض والصرف والتحويلات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "المصاريف",
-          "description": "تسجيل المصاريف وأنواعها.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "القاصات والمصرف",
-          "description": "إدارة الصناديق النقدية والحسابات البنكية.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "المستثمرون",
-          "description": "إدارة المستثمرين وتوزيع الأرباح.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "أرصدة المستثمرين الافتتاحية",
-          "description": "إدخال أرصدة المستثمرين عند التهيئة.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "رأس المال",
-          "description": "تعديل رأس المال والتسويات الرأسمالية.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "title": "أنواع التعبئة",
+          "description": "شرح إنشاء وإدارة أنواع التعبئة للمنتجات.",
+          "youtubeUrl": "https://youtu.be/Wz6FNCU_iug",
           "duration": ""
         }
       ]
     },
     {
-      "id": "inventory",
-      "title": "المخزون",
+      "id": "pricing-types",
+      "title": "أنواع التسعير",
+      "icon": "CashMultiple",
+      "videos": [
+        {
+          "title": "أنواع التسعير",
+          "description": "شرح إنشاء وإدارة أنواع التسعير للمنتجات.",
+          "youtubeUrl": "https://youtu.be/hC-5G7hUfiI?si=epH69Da-2FpqjCRr",
+          "duration": ""
+        }
+      ]
+    },
+    {
+      "id": "product-pricing",
+      "title": "تسعير منتجات",
+      "icon": "TagTextOutline",
+      "videos": [
+        {
+          "title": "تسعير منتجات",
+          "description": "شرح تعيين أسعار المنتجات حسب أنواع التسعير.",
+          "youtubeUrl": "https://youtu.be/QRZn_3id2jA",
+          "duration": ""
+        }
+      ]
+    },
+    {
+      "id": "warehouses",
+      "title": "المخازن",
       "icon": "Warehouse",
       "videos": [
         {
           "title": "المخازن",
-          "description": "إنشاء المخازن وإدارتها.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "description": "شرح إنشاء المخازن وإدارتها.",
+          "youtubeUrl": "https://youtu.be/DcYJ0LQmdos",
           "duration": ""
-        },
+        }
+      ]
+    },
+    {
+      "id": "opening-stock",
+      "title": "الأرصدة الافتتاحية",
+      "icon": "PackageVariantClosedPlus",
+      "videos": [
         {
           "title": "الأرصدة الافتتاحية",
-          "description": "إدخال كميات وأسعار المخزون الافتتاحي.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تسوية مخزنية",
-          "description": "تعديل الكميات يدوياً (زيادة أو نقص).",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        }
-      ]
-    },
-    {
-      "id": "reports",
-      "title": "التقارير",
-      "icon": "ChartBar",
-      "videos": [
-        {
-          "title": "تقرير المبيعات",
-          "description": "عرض وتصفية فواتير المبيعات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تقرير المشتريات",
-          "description": "عرض وتصفية فواتير المشتريات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تقرير الأرباح",
-          "description": "تحليل الأرباح والخسائر.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "أفضل المنتجات",
-          "description": "المنتجات الأكثر مبيعاً.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "هامش ربح المنتجات",
-          "description": "تحليل هامش الربح لكل منتج.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "أعمار ذمم الأقساط",
-          "description": "تصنيف ذمم الأقساط حسب العمر.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "ملخص الأقساط",
-          "description": "نظرة عامة على حالة الأقساط.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تفاصيل الأقساط",
-          "description": "تفاصيل أقساط عميل محدد.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الأقساط المسددة",
-          "description": "قائمة الأقساط التي تم تسديدها.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الأقساط غير المسددة",
-          "description": "الأقساط المتبقية على العملاء.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الأقساط المتأخرة",
-          "description": "الأقساط المتأخرة عن موعد السداد.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "ملخص العملاء",
-          "description": "إحصائيات وملخص حسابات العملاء.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "ملخص الموردين",
-          "description": "إحصائيات وملخص حسابات الموردين.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "مقارنة الأرباح",
-          "description": "مقارنة الأرباح بين فترات زمنية.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "حركة المنتجات",
-          "description": "حركة دخول وخروج المنتجات من المخزون.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "كشف حساب عميل",
-          "description": "كشف حساب تفصيلي لعميل.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "كشف حساب مورد",
-          "description": "كشف حساب تفصيلي لمورد.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تقرير المصاريف",
-          "description": "عرض المصاريف حسب النوع والفترة.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الواردات والمصروفات",
-          "description": "ملخص الواردات والمصروفات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تقرير المخازن",
-          "description": "أرصدة المنتجات في المخازن.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "صحة المخزون",
-          "description": "تحليل حالة المخزون والنواقص.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "تقرير المستثمرين",
-          "description": "أرباح ومساهمات المستثمرين.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "التدفق النقدي",
-          "description": "تحليل التدفقات النقدية الداخلة والخارجة.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "موازنة يومية",
-          "description": "الموازنة والأرصدة اليومية.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        }
-      ]
-    },
-    {
-      "id": "admin",
-      "title": "الإدارة والإعدادات",
-      "icon": "Cog",
-      "videos": [
-        {
-          "title": "سجل العمليات",
-          "description": "مراجعة سجل نشاط المستخدمين في النظام.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "المستخدمون",
-          "description": "إضافة وإدارة حسابات المستخدمين.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "الصلاحيات",
-          "description": "تحديد صلاحيات كل مستخدم على الشاشات.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "إعدادات الطباعة",
-          "description": "تخصيص تخطيط وطباعة الفواتير والتقارير.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "النسخ الاحتياطي",
-          "description": "إنشاء نسخة احتياطية واستعادتها.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
-          "duration": ""
-        },
-        {
-          "title": "معالج الإعداد الأولي",
-          "description": "خطوات تهيئة النظام عند أول استخدام.",
-          "youtubeUrl": "https://www.youtube.com/watch?v=ZduZJUhHvls&t=80s",
+          "description": "شرح إدخال الأرصدة الافتتاحية للمنتجات: الكميات والأسعار.",
+          "youtubeUrl": "https://youtu.be/H9Z6NjPfK40",
           "duration": ""
         }
       ]

@@ -45,7 +45,7 @@
                         <TextBlock Text="دليل الفيديوهات التعريفية"
                                    FontSize="24" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
-                    <TextBlock Text="شاهد شرح كل واجهة داخل النظام — يمكنك تعديل الروابط من ملف help-videos.json"
+                    <TextBlock Text="شاهد شرح كل واجهة داخل النظام"
                                FontSize="13" Foreground="#E3F2FD" Margin="44,8,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
                 <Button Grid.Column="1" Click="CloseButton_Click"
