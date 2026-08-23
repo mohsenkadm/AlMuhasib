@@ -74,6 +74,9 @@ public partial class CustomersViewModel : ViewModelBase
     private string _editNotes = string.Empty;
 
     [ObservableProperty]
+    private string _editMaxCreditLimit = string.Empty;
+
+    [ObservableProperty]
     private SalesRepresentative? _editSalesRepresentative;
 
     [ObservableProperty]
@@ -233,6 +236,7 @@ public partial class CustomersViewModel : ViewModelBase
         EditAddress = string.Empty;
         EditFileNumber = string.Empty;
         EditNotes = string.Empty;
+        EditMaxCreditLimit = string.Empty;
         EditSalesRepresentative = null;
         DialogError = string.Empty;
         await ResetCustomFieldEditorsAsync(null);
@@ -251,6 +255,9 @@ public partial class CustomersViewModel : ViewModelBase
         EditAddress = customer.Address ?? string.Empty;
         EditFileNumber = customer.FileNumber ?? string.Empty;
         EditNotes = customer.Notes ?? string.Empty;
+        EditMaxCreditLimit = customer.MaxCreditLimit.HasValue
+            ? customer.MaxCreditLimit.Value.ToString("N0")
+            : string.Empty;
         EditSalesRepresentative = customer.SalesRepresentativeId is int rid
             ? SalesRepresentatives.FirstOrDefault(r => r.Id == rid)
             : null;
@@ -270,6 +277,19 @@ public partial class CustomersViewModel : ViewModelBase
 
         DialogError = string.Empty;
 
+        decimal? maxCreditLimit = null;
+        if (!string.IsNullOrWhiteSpace(EditMaxCreditLimit))
+        {
+            var cleaned = EditMaxCreditLimit.Replace(",", "").Replace(" ", "").Trim();
+            if (!decimal.TryParse(cleaned, out var parsed) || parsed < 0)
+            {
+                DialogError = "حد الدين الآجل غير صالح";
+                return;
+            }
+
+            maxCreditLimit = parsed == 0 ? null : parsed;
+        }
+
         try
         {
             if (IsEditMode && _editingCustomerId.HasValue)
@@ -282,6 +302,7 @@ public partial class CustomersViewModel : ViewModelBase
                 customer.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 customer.FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
                 customer.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
+                customer.MaxCreditLimit = maxCreditLimit;
                 customer.SalesRepresentativeId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null;
                 customer.CustomFieldsJson = SerializeCustomFieldsFromEditors();
                 customer.UpdatedAt = DateTime.UtcNow;
@@ -320,6 +341,7 @@ public partial class CustomersViewModel : ViewModelBase
                     softDeleted.Address = address;
                     softDeleted.FileNumber = fileNumber;
                     softDeleted.Notes = notes;
+                    softDeleted.MaxCreditLimit = maxCreditLimit;
                     softDeleted.SalesRepresentativeId = salesRepId;
                     softDeleted.CustomFieldsJson = customFields;
                     _unitOfWork.Customers.Update(softDeleted);
@@ -334,6 +356,7 @@ public partial class CustomersViewModel : ViewModelBase
                         Address = address,
                         FileNumber = fileNumber,
                         Notes = notes,
+                        MaxCreditLimit = maxCreditLimit,
                         SalesRepresentativeId = salesRepId,
                         CustomFieldsJson = customFields,
                         CreatedBy = _currentUserService.Username

@@ -96,49 +96,52 @@ internal static class InvoicePdfGenerator
                     col.Item().PaddingTop(14).Text(hideAmounts ? "تفاصيل المواد" : "المبالغ الإجمالية")
                         .FontSize(12).Bold();
 
+                    var layout = InvoicePrintLayoutHelper.Resolve(m, compact: m.Items.Count > 18);
+
                     col.Item().PaddingTop(6).Table(table =>
                     {
                         table.ColumnsDefinition(c =>
                         {
                             c.RelativeColumn();
-                            if (hideAmounts)
+                            if (layout.HideAmounts)
                             {
                                 c.ConstantColumn(90);
+                                return;
                             }
-                            else
-                            {
-                                c.ConstantColumn(60);
-                                c.ConstantColumn(95);
-                                c.ConstantColumn(105);
-                            }
+
+                            c.ConstantColumn(60);
+                            if (layout.ShowWarehouse)
+                                c.ConstantColumn(72);
+                            c.ConstantColumn(88);
+                            if (layout.ShowLineDiscount)
+                                c.ConstantColumn(48);
+                            c.ConstantColumn(98);
                         });
 
                         table.Header(h =>
                         {
-                            h.Cell().Element(GridHeaderCell).Text("الوصف");
-                            h.Cell().Element(GridHeaderCell).AlignCenter().Text("الكمية");
-                            if (!hideAmounts)
+                            foreach (var title in InvoicePrintLayoutHelper.BuildColumnTitles(layout, currency))
                             {
-                                h.Cell().Element(GridHeaderCell).AlignCenter().Text($"سعر الوحدة ({currency})");
-                                h.Cell().Element(GridHeaderCell).AlignCenter().Text($"الإجمالي ({currency})");
+                                var cell = h.Cell().Element(GridHeaderCell);
+                                if (title != "الوصف")
+                                    cell.AlignCenter();
+                                cell.Text(title);
                             }
                         });
 
                         foreach (var item in m.Items)
                         {
-                            table.Cell().Element(GridCell).Column(desc =>
-                            {
-                                desc.Item().Text($"{item.Number}. {item.ItemName}");
-                                if (m.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
-                                {
-                                    desc.Item().Text($"طريقة الاستخدام: {item.UsageInstructions}")
-                                        .FontSize(8.5f).FontColor(MutedColor);
-                                }
-                            });
+                            table.Cell().Element(GridCell).Text(
+                                InvoicePrintLayoutHelper.FormatItemName(item, m, layout.HideAmounts && layout.ShowWarehouse));
                             table.Cell().Element(GridCell).AlignCenter().Text(FormatNumber(item.Quantity));
-                            if (!hideAmounts)
+                            if (!layout.HideAmounts)
                             {
+                                if (layout.ShowWarehouse)
+                                    table.Cell().Element(GridCell).AlignCenter().Text(item.WarehouseName ?? "—");
                                 table.Cell().Element(GridCell).AlignCenter().Text(FormatNumber(item.UnitPrice));
+                                if (layout.ShowLineDiscount)
+                                    table.Cell().Element(GridCell).AlignCenter().Text(
+                                        InvoicePrintLayoutHelper.FormatDiscountPercent(item.DiscountPercent));
                                 table.Cell().Element(GridCell).AlignCenter().Text(FormatNumber(item.TotalPrice));
                             }
                         }

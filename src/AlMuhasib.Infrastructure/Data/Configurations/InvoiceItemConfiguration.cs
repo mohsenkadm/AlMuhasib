@@ -16,6 +16,7 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
 
         builder.Property(ii => ii.Quantity).HasPrecision(18, 4);
         builder.Property(ii => ii.UnitPrice).HasPrecision(18, 2);
+        builder.Property(ii => ii.DiscountPercent).HasPrecision(5, 2);
         builder.Property(ii => ii.DiscountAmount).HasPrecision(18, 2);
         builder.Property(ii => ii.TotalPrice).HasPrecision(18, 2);
 
@@ -33,5 +34,10 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             .WithMany()
             .HasForeignKey(ii => ii.PricingTypeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(ii => ii.Warehouse)
+            .WithMany()
+            .HasForeignKey(ii => ii.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

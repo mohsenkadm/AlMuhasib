@@ -211,8 +211,11 @@ public partial class SalesInvoiceViewModel
                 ProductId = item.ProductId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = item.UnitPrice,
+                DiscountAmount = item.DiscountAmount,
+                DiscountPercent = item.DiscountPercent
             };
+            InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             ApplyActiveLabelsToRow(row);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson, ActiveCustomFieldLabels);
             InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);

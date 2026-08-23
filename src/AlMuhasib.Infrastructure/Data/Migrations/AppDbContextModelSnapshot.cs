@@ -1553,6 +1553,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
@@ -1604,6 +1608,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceId");
@@ -1615,6 +1622,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SyncId");
+
+                    b.HasIndex("WarehouseId");
 
                     b.ToTable("InvoiceItems", (string)null);
                 });
@@ -4429,11 +4438,18 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("AlMuhasib.Core.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Invoice");
 
                     b.Navigation("PricingType");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>

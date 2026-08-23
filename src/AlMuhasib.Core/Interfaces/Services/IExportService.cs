@@ -104,6 +104,9 @@ public class InvoicePrintModel
 
     /// <summary>A4 layout template id: Classic, Compact, or Modern. Null = Classic.</summary>
     public string? A4TemplateId { get; set; }
+
+    /// <summary>إظهار عمود خصم السطر في الطباعة.</summary>
+    public bool ShowLineDiscount { get; set; }
 }
 
 public class InvoicePrintItem
@@ -115,6 +118,10 @@ public class InvoicePrintItem
     public decimal TotalPrice { get; set; }
     /// <summary>طريقة استخدام الدواء — تُطبع في إيصال الصيدلية.</summary>
     public string? UsageInstructions { get; set; }
+
+    public decimal DiscountPercent { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public string? WarehouseName { get; set; }
 
     public int? KaratValue { get; set; }
     public decimal? WeightGrams { get; set; }

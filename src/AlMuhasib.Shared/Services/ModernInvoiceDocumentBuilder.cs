@@ -151,13 +151,9 @@ public static class ModernInvoiceDocumentBuilder
         AddHeading(doc, hideAmounts ? "تفاصيل المواد" : "المبالغ الإجمالية", baseFont, compact);
 
         var itemsTable = NewGridTable(new Thickness(0, compact ? 2 : 4, 0, 0));
-        var columnTitles = hideAmounts
-            ? new[] { "الوصف", "الكمية" }
-            : new[] { "الوصف", "الكمية", $"سعر الوحدة ({currency})", $"الإجمالي ({currency})" };
-
-        var numericWidths = hideAmounts
-            ? new[] { 110.0 }
-            : new[] { compact ? 58.0 : 66.0, compact ? 105.0 : 118.0, compact ? 115.0 : 130.0 };
+        var layout = InvoicePrintLayoutHelper.Resolve(m, compact);
+        var columnTitles = InvoicePrintLayoutHelper.BuildColumnTitles(layout, currency);
+        var numericWidths = InvoicePrintLayoutHelper.BuildNumericWidths(layout);
         itemsTable.Columns.Add(new TableColumn { Width = new GridLength(contentWidth - numericWidths.Sum()) });
         foreach (var width in numericWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(width) });
@@ -190,20 +186,11 @@ public static class ModernInvoiceDocumentBuilder
                 BorderBrush = Grid,
                 BorderThickness = InnerBorder(isLastColumn: false)
             };
-            nameCell.Blocks.Add(new Paragraph(new Run($"{item.Number}. {item.ItemName}"))
+            nameCell.Blocks.Add(new Paragraph(new Run(InvoicePrintLayoutHelper.FormatItemName(item, m, layout.HideAmounts && layout.ShowWarehouse)))
             {
                 Margin = new Thickness(0),
                 FontSize = baseFont
             });
-            if (m.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
-            {
-                nameCell.Blocks.Add(new Paragraph(new Run($"طريقة الاستخدام: {item.UsageInstructions}"))
-                {
-                    Margin = new Thickness(0, 1, 0, 0),
-                    FontSize = baseFont - 1.5,
-                    Foreground = Muted
-                });
-            }
             row.Cells.Add(nameCell);
 
             row.Cells.Add(GridCell(
@@ -211,11 +198,30 @@ public static class ModernInvoiceDocumentBuilder
                 cellPadding,
                 baseFont,
                 align: TextAlignment.Center,
-                isLastColumn: hideAmounts));
+                isLastColumn: layout.HideAmounts));
 
-            if (!hideAmounts)
+            if (!layout.HideAmounts)
             {
+                if (layout.ShowWarehouse)
+                {
+                    row.Cells.Add(GridCell(
+                        item.WarehouseName ?? "—",
+                        cellPadding,
+                        baseFont,
+                        align: TextAlignment.Center));
+                }
+
                 row.Cells.Add(GridCell(FormatNumber(item.UnitPrice), cellPadding, baseFont, align: TextAlignment.Center));
+
+                if (layout.ShowLineDiscount)
+                {
+                    row.Cells.Add(GridCell(
+                        InvoicePrintLayoutHelper.FormatDiscountPercent(item.DiscountPercent),
+                        cellPadding,
+                        baseFont,
+                        align: TextAlignment.Center));
+                }
+
                 row.Cells.Add(GridCell(FormatNumber(item.TotalPrice), cellPadding, baseFont, align: TextAlignment.Center, isLastColumn: true));
             }
 

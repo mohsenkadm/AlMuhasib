@@ -181,6 +181,7 @@ public partial class PurchaseInvoiceViewModel
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice
             };
+            InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
             InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);
             WireItemRow(row);

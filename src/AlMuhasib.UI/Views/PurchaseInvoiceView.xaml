@@ -18,6 +18,7 @@
     </UserControl.Resources>
 
     <Grid>
+        <FrameworkElement x:Name="VmProxy" DataContext="{Binding}" Visibility="Collapsed"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0">
@@ -381,6 +382,19 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Quantity -->
+                                <DataGridTemplateColumn Header="المخزن" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.Warehouses, Source={x:Reference VmProxy}}"
+                                                      SelectedItem="{Binding SelectedWarehouse, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="Name"
+                                                      IsEditable="False"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      FontSize="12"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
 
@@ -453,9 +467,9 @@
 
                         <!-- Totals panel -->
                         <Border Grid.Column="1"
-                                CornerRadius="12"
-                                Padding="22,18"
-                                MinWidth="320">
+                                CornerRadius="10"
+                                Padding="16,13"
+                                MinWidth="240">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#E3F2FD" Offset="0"/>
@@ -472,12 +486,12 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="المجموع:"
-                                               FontSize="14"
+                                               FontSize="11"
                                                Foreground="#616161"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}"
-                                               FontSize="14"
+                                               FontSize="11"
                                                Foreground="#424242"
                                                VerticalAlignment="Center" />
                                 </Grid>

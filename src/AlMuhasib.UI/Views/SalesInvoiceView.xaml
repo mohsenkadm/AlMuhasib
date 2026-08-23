@@ -21,7 +21,7 @@
     </UserControl.Resources>
 
     <Grid>
-        <FrameworkElement x:Name="VmProxy" Visibility="Collapsed"/>
+        <FrameworkElement x:Name="VmProxy" DataContext="{Binding}" Visibility="Collapsed"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0">
@@ -552,6 +552,19 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn Header="المخزن" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.Warehouses, Source={x:Reference VmProxy}}"
+                                                      SelectedItem="{Binding SelectedWarehouse, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="Name"
+                                                      IsEditable="False"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      FontSize="12"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
 
@@ -565,15 +578,13 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="الخصم" Width="90" IsReadOnly="True"
+                                <DataGridTemplateColumn Header="خصم %" Width="80"
                                                         Visibility="{Binding DataContext.ShowProductDiscount, Source={x:Reference VmProxy}, Converter={StaticResource BoolToVis}}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Center"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="#2E7D32"/>
+                                            <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
+                                                     Style="{StaticResource NumericCellTextBox}"
+                                                     HorizontalContentAlignment="Center"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -672,9 +683,9 @@
 
                         <!-- Totals panel -->
                         <Border Grid.Column="1"
-                                CornerRadius="12"
-                                Padding="22,18"
-                                MinWidth="320">
+                                CornerRadius="10"
+                                Padding="16,13"
+                                MinWidth="240">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#E8F5E9" Offset="0"/>
@@ -684,44 +695,44 @@
                             <StackPanel>
 
                                 <!-- Subtotal -->
-                                <Grid Margin="0,0,0,10">
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="المجموع:"
-                                               FontSize="14"
+                                               FontSize="11"
                                                Foreground="#616161"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}"
-                                               FontSize="14"
+                                               FontSize="11"
                                                Foreground="#424242"
                                                VerticalAlignment="Center" />
                                 </Grid>
 
                                 <!-- Invoice-level discount (feature-gated) -->
-                                <StackPanel Margin="0,0,0,10"
+                                <StackPanel Margin="0,0,0,8"
                                             Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="خصم الفاتورة" FontSize="13" FontWeight="SemiBold" Foreground="#1B5E20" Margin="0,0,0,6"/>
+                                    <TextBlock Text="خصم الفاتورة" FontSize="10" FontWeight="SemiBold" Foreground="#1B5E20" Margin="0,0,0,4"/>
                                     <ComboBox ItemsSource="{Binding InvoiceDiscountTypeOptions}"
                                               SelectedItem="{Binding SelectedInvoiceDiscountOption}"
                                               DisplayMemberPath="Label"
-                                              Margin="0,0,0,6"
+                                              Margin="0,0,0,4"
                                               Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
                                     <TextBox Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
                                              materialDesign:HintAssist.Hint="قيمة الخصم الكلي"
                                              Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                             Margin="0,0,0,6"/>
+                                             Margin="0,0,0,4"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="مبلغ الخصم:" FontSize="13" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="مبلغ الخصم:" FontSize="10" Foreground="#2E7D32" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
-                                                   FontSize="13" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                                                   FontSize="10" FontWeight="SemiBold" Foreground="#2E7D32"/>
                                     </Grid>
                                 </StackPanel>
 

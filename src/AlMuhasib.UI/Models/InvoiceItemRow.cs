@@ -231,10 +231,49 @@ public partial class InvoiceItemRow : ObservableObject
 
     // ── خصم المنتج ─────────────────────────────────────────
     [ObservableProperty]
+    private decimal _discountPercent;
+
+    [ObservableProperty]
     private decimal _discountAmount;
 
     /// <summary>يُفعَّل من شاشة الفاتورة عند تفعيل ميزة الخصم.</summary>
     public bool ProductDiscountFeatureEnabled { get; set; }
+
+    private bool _suppressDiscountRecalc;
+
+    partial void OnDiscountPercentChanged(decimal value)
+    {
+        if (_isRecalculating || _suppressDiscountRecalc) return;
+        _isManualTotal = false;
+        ApplyDiscountFromPercent();
+        RecalcTotal();
+    }
+
+    // ── مخزن السطر ─────────────────────────────────────────
+    [ObservableProperty]
+    private int? _warehouseId;
+
+    [ObservableProperty]
+    private Warehouse? _selectedWarehouse;
+
+    partial void OnSelectedWarehouseChanged(Warehouse? value)
+    {
+        WarehouseId = value?.Id;
+        WarehouseChanged?.Invoke(this);
+    }
+
+    /// <summary>معرّف المخزن الفعلي للسطر (سطر أو رأس الفاتورة).</summary>
+    public int? ResolveWarehouseId(int? headerWarehouseId) =>
+        WarehouseId ?? headerWarehouseId;
+
+    /// <summary>يُستدعى عند تغيير المخزن العلوي لتطبيقه على السطر.</summary>
+    public void ApplyHeaderWarehouse(Warehouse? warehouse)
+    {
+        SelectedWarehouse = warehouse;
+        WarehouseId = warehouse?.Id;
+    }
+
+    public event Action<InvoiceItemRow>? WarehouseChanged;
 
     /// <summary>سطر هدية من عرض منتجات — سعر صفر ولا يفتح بحث منتج.</summary>
     [ObservableProperty]
@@ -301,7 +340,10 @@ public partial class InvoiceItemRow : ObservableObject
 
         _isManualTotal = false;
         OnPropertyChanged(nameof(LineWeight));
-        RefreshProductDiscount();
+        if (ProductDiscountFeatureEnabled && DiscountPercent > 0)
+            ApplyDiscountFromPercent();
+        else
+            RefreshProductDiscount();
         RecalcTotal();
     }
 
@@ -320,14 +362,21 @@ public partial class InvoiceItemRow : ObservableObject
         }
 
         _isManualTotal = false;
-        RefreshProductDiscount();
+        if (ProductDiscountFeatureEnabled && DiscountPercent > 0)
+            ApplyDiscountFromPercent();
+        else
+            RefreshProductDiscount();
         RecalcTotal();
     }
 
     partial void OnDiscountAmountChanged(decimal value)
     {
-        if (_isRecalculating) return;
+        if (_isRecalculating || _suppressDiscountRecalc) return;
         _isManualTotal = false;
+        var gross = Math.Abs(ProductDiscountHelper.ToBaseQuantity(Quantity, UnitConversionFactor) * UnitPrice);
+        _suppressDiscountRecalc = true;
+        DiscountPercent = ProductDiscountHelper.PercentFromDiscountAmount(gross, value);
+        _suppressDiscountRecalc = false;
         RecalcTotal();
     }
 
@@ -358,15 +407,46 @@ public partial class InvoiceItemRow : ObservableObject
     {
         if (!ProductDiscountFeatureEnabled || SelectedProduct is null)
         {
-            if (DiscountAmount != 0m)
-                DiscountAmount = 0m;
+            _suppressDiscountRecalc = true;
+            if (DiscountPercent != 0m) DiscountPercent = 0m;
+            if (DiscountAmount != 0m) DiscountAmount = 0m;
+            _suppressDiscountRecalc = false;
+            return;
+        }
+
+        var productPercent = ProductDiscountHelper.GetProductDiscountPercent(SelectedProduct);
+        if (productPercent > 0m)
+        {
+            _suppressDiscountRecalc = true;
+            DiscountPercent = productPercent;
+            _suppressDiscountRecalc = false;
+            ApplyDiscountFromPercent();
             return;
         }
 
         var discount = ProductDiscountHelper.CalculateLineDiscount(
             SelectedProduct, Quantity, UnitPrice, conversionFactor: UnitConversionFactor);
+        var gross = Math.Abs(ProductDiscountHelper.ToBaseQuantity(Quantity, UnitConversionFactor) * UnitPrice);
+        _suppressDiscountRecalc = true;
+        DiscountPercent = ProductDiscountHelper.PercentFromDiscountAmount(gross, discount);
+        DiscountAmount = discount;
+        _suppressDiscountRecalc = false;
+    }
+
+    private void ApplyDiscountFromPercent()
+    {
+        if (!ProductDiscountFeatureEnabled)
+        {
+            DiscountAmount = 0m;
+            return;
+        }
+
+        var gross = Math.Abs(ProductDiscountHelper.ToBaseQuantity(Quantity, UnitConversionFactor) * UnitPrice);
+        var discount = ProductDiscountHelper.CalculateDiscountFromPercent(gross, DiscountPercent);
+        _suppressDiscountRecalc = true;
         if (DiscountAmount != discount)
             DiscountAmount = discount;
+        _suppressDiscountRecalc = false;
     }
 
     private void RecalcTotal()
@@ -375,6 +455,7 @@ public partial class InvoiceItemRow : ObservableObject
         {
             _isRecalculating = true;
             UnitPrice = 0m;
+            DiscountPercent = 0m;
             DiscountAmount = 0m;
             TotalPrice = 0m;
             _isRecalculating = false;

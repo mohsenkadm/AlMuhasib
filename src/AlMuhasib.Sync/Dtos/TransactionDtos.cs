@@ -36,9 +36,11 @@ public sealed class InvoiceItemSyncDto : SyncDtoBase
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal DiscountAmount { get; set; }
+    public decimal DiscountPercent { get; set; }
     public decimal TotalPrice { get; set; }
     public bool IsOfferGift { get; set; }
     public int? OfferId { get; set; }
+    public Guid? WarehouseSyncId { get; set; }
 }
 
 public sealed class InstallmentPlanSyncDto : SyncDtoBase

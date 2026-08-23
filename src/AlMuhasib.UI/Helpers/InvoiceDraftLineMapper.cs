@@ -13,6 +13,8 @@ public static class InvoiceDraftLineMapper
         Quantity = row.Quantity,
         UnitPrice = row.UnitPrice,
         DiscountAmount = row.DiscountAmount,
+        DiscountPercent = row.DiscountPercent,
+        WarehouseId = row.WarehouseId,
         PricingTypeId = row.PricingTypeId,
         PricingTypeName = row.PricingTypeName ?? string.Empty,
         SelectedUnitName = row.SelectedUnitName ?? string.Empty,
@@ -46,6 +48,8 @@ public static class InvoiceDraftLineMapper
             Quantity = line.Quantity,
             UnitPrice = line.UnitPrice,
             DiscountAmount = line.DiscountAmount,
+            DiscountPercent = line.DiscountPercent,
+            WarehouseId = line.WarehouseId,
             PricingTypeId = line.PricingTypeId,
             PricingTypeName = line.PricingTypeName ?? string.Empty,
             SelectedUnitName = line.SelectedUnitName ?? string.Empty,
@@ -84,6 +88,8 @@ public static class InvoiceDraftLineMapper
         row.Quantity = line.Quantity;
         row.UnitPrice = line.UnitPrice;
         row.DiscountAmount = line.DiscountAmount;
+        row.DiscountPercent = line.DiscountPercent;
+        row.WarehouseId = line.WarehouseId;
         row.SelectedUnitName = line.SelectedUnitName ?? string.Empty;
         row.UnitConversionFactor = line.UnitConversionFactor <= 0 ? 1m : line.UnitConversionFactor;
         row.PricingTypeId = line.PricingTypeId;
