@@ -361,8 +361,16 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     private void AddRow()
     {
         var row = new InvoiceItemRow();
+        row.ApplyHeaderWarehouse(SelectedWarehouse);
         WireItemRow(row);
         Items.Add(row);
+    }
+
+    partial void OnSelectedWarehouseChanged(Warehouse? value)
+    {
+        InvoiceLineWarehouseHelper.ApplyHeaderWarehouseToAllItems(Items, value);
+        foreach (var row in Items.Where(r => r.ProductId is > 0))
+            _ = LoadPurchaseRowFeatureDataAsync(row);
     }
 
     [RelayCommand]
@@ -408,13 +416,20 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     {
         row.TotalChanged += RecalculateTotals;
         row.ProductChanged += OnPurchaseProductChanged;
+        row.WarehouseChanged += OnRowWarehouseChanged;
+        if (row.SelectedWarehouse is null)
+            row.ApplyHeaderWarehouse(SelectedWarehouse);
     }
 
     private void UnwireItemRow(InvoiceItemRow row)
     {
         row.TotalChanged -= RecalculateTotals;
         row.ProductChanged -= OnPurchaseProductChanged;
+        row.WarehouseChanged -= OnRowWarehouseChanged;
     }
+
+    private async void OnRowWarehouseChanged(InvoiceItemRow row) =>
+        await LoadPurchaseRowFeatureDataAsync(row);
 
     private async void OnPurchaseProductChanged(InvoiceItemRow row)
     {
@@ -558,13 +573,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         // Validation
         if (SelectedWarehouse is null)
         {
-            ErrorMessage = "يرجى اختيار المخزن";
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار المخزن");
             return;
         }
 
         if (IsCashPayment && SelectedCashBox is null)
         {
-            ErrorMessage = "يرجى اختيار القاصة";
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة");
             return;
         }
 
@@ -575,7 +590,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             .ToList();
         if (validItems.Count == 0)
         {
-            ErrorMessage = "يجب إضافة عنصر واحد على الأقل بالكمية والسعر";
+            InvoiceValidationDialog.ShowBlockingError("يجب إضافة عنصر واحد على الأقل بالكمية والسعر");
             return;
         }
 
@@ -585,14 +600,15 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             {
                 if (row.ProductSizeId is not null) continue;
                 if (!await _productSizeService.HasSizesAsync(row.ProductId!.Value)) continue;
-                ErrorMessage = $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.";
+                InvoiceValidationDialog.ShowBlockingError(
+                    $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.");
                 return;
             }
         }
 
         if (IsReturnMode && !_userPreferences.Current.FeatureFlags.PurchaseReturns)
         {
-            ErrorMessage = "فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً";
+            InvoiceValidationDialog.ShowBlockingError("فعّل «مرتجع مشتريات» من إعدادات الميزات أولاً");
             return;
         }
 
@@ -620,7 +636,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     "منتجات ناقصة");
                 if (!confirmed)
                 {
-                    ErrorMessage = "تم إلغاء الحفظ — لم تُضف المنتجات الناقصة";
+                    InvoiceValidationDialog.ShowBlockingError("تم إلغاء الحفظ — لم تُضف المنتجات الناقصة");
                     return;
                 }
 
@@ -631,7 +647,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 }
                 catch (Exception ex)
                 {
-                    ErrorMessage = $"تعذّر إنشاء المنتجات الناقصة: {ex.Message}";
+                    InvoiceValidationDialog.ShowBlockingError($"تعذّر إنشاء المنتجات الناقصة: {ex.Message}");
                     IsBusy = false;
                     return;
                 }
@@ -702,6 +718,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
                 var lineTotal = Math.Abs(row.Quantity) * factor * row.UnitPrice;
 
+                var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(row, SelectedWarehouse.Id);
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
@@ -710,6 +727,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     Quantity = stockQty,
                     UnitPrice = row.UnitPrice,
                     TotalPrice = lineTotal,
+                    WarehouseId = lineWarehouseId,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, [ClothingSizeInvoiceHelper.SizeLabel])
                 });
             }
@@ -851,15 +869,22 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
-            Items = _savedItems.Select((item, i) => new InvoicePrintItem
+            Items = _savedItems.Select((item, i) =>
             {
-                Number = i + 1,
-                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
-                    item.ItemName,
-                    item.CustomFieldsJson),
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                var warehouseName = item.WarehouseId is int wid
+                    ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
+                    : SelectedWarehouse?.Name;
+                return new InvoicePrintItem
+                {
+                    Number = i + 1,
+                    ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                        item.ItemName,
+                        item.CustomFieldsJson),
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice,
+                    WarehouseName = warehouseName
+                };
             }).ToList()
         };
     }

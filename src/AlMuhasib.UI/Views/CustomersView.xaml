@@ -215,6 +215,10 @@
                                  Text="{Binding EditFileNumber, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
+                        <TextBox md:HintAssist.Hint="حد الدين الآجل (د.ع) — اتركه فارغاً لعدم التحديد"
+                                 Text="{Binding EditMaxCreditLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
                         <ComboBox ItemsSource="{Binding SalesRepresentatives}"
                                   SelectedItem="{Binding EditSalesRepresentative}"
                                   DisplayMemberPath="Name"

@@ -30,6 +30,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private readonly IPricingTypeService _pricingTypeService;
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
+    private readonly InvoiceCostGuard _costGuard;
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
@@ -218,6 +219,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _pricingTypeService = pricingTypeService;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
+        _costGuard = new InvoiceCostGuard(unitOfWork, productPriceService, featureFlags.ProductPricingEnabled);
 
         PageTitle = "فاتورة أقساط";
 
@@ -352,8 +354,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private void AddRow()
     {
         var row = new InvoiceItemRow();
+        row.ApplyHeaderWarehouse(SelectedWarehouse);
         WireItemRow(row);
         Items.Add(row);
+    }
+
+    partial void OnSelectedWarehouseChanged(Warehouse? value)
+    {
+        InvoiceLineWarehouseHelper.ApplyHeaderWarehouseToAllItems(Items, value);
+        foreach (var row in Items.Where(r => r.ProductId is > 0))
+            OnProductChanged(row);
     }
 
     [RelayCommand]
@@ -432,13 +442,19 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         row.RefreshProductDiscount();
         row.TotalChanged += RecalculateTotals;
         row.ProductChanged += OnProductChanged;
+        row.WarehouseChanged += OnRowWarehouseChanged;
+        if (row.SelectedWarehouse is null)
+            row.ApplyHeaderWarehouse(SelectedWarehouse);
     }
 
     private void UnwireItemRow(InvoiceItemRow row)
     {
         row.TotalChanged -= RecalculateTotals;
         row.ProductChanged -= OnProductChanged;
+        row.WarehouseChanged -= OnRowWarehouseChanged;
     }
+
+    private void OnRowWarehouseChanged(InvoiceItemRow row) => OnProductChanged(row);
 
     [RelayCommand]
     private void ProcessBarcode()
@@ -513,7 +529,12 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
 
             if (SelectedWarehouse is not null)
-                row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == SelectedWarehouse.Id)?.Quantity ?? 0;
+            {
+                var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse.Id);
+                row.AvailableStock = lineWarehouseId is > 0
+                    ? stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0
+                    : stocks.Sum(s => s.Quantity);
+            }
             else
                 row.AvailableStock = stocks.Sum(s => s.Quantity);
         }
@@ -610,19 +631,19 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         // Validation
         if (SelectedCustomer is null && string.IsNullOrWhiteSpace(CustomerSearchText))
         {
-            ErrorMessage = "يجب اختيار العميل لفاتورة الأقساط";
+            InvoiceValidationDialog.ShowBlockingError("يجب اختيار العميل لفاتورة الأقساط");
             return;
         }
 
         if (SelectedWarehouse is null)
         {
-            ErrorMessage = "يرجى اختيار المخزن";
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار المخزن");
             return;
         }
 
         if (NumberOfInstallments <= 0)
         {
-            ErrorMessage = "عدد الأقساط يجب أن يكون أكبر من صفر";
+            InvoiceValidationDialog.ShowBlockingError("عدد الأقساط يجب أن يكون أكبر من صفر");
             return;
         }
 
@@ -632,24 +653,31 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
 
         if (validItems.Count == 0)
         {
-            ErrorMessage = "يجب إضافة عنصر واحد على الأقل بالكمية والسعر";
+            InvoiceValidationDialog.ShowBlockingError("يجب إضافة عنصر واحد على الأقل بالكمية والسعر");
             return;
         }
 
-        // Stock validation
-        if (SelectedWarehouse is not null)
+        foreach (var item in validItems.Where(i => i.ProductId.HasValue))
         {
-            foreach (var item in validItems.Where(i => i.ProductId.HasValue))
+            var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(item, SelectedWarehouse.Id);
+            var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
+            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
+                s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
+            var available = stocks.FirstOrDefault()?.Quantity ?? 0;
+            if (item.Quantity > available)
             {
-                var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
-                    s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
-                var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-                if (item.Quantity > available)
-                {
-                    ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
-                    return;
-                }
+                InvoiceValidationDialog.ShowBlockingError(
+                    $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{lineWarehouse.Name}'");
+                return;
             }
+        }
+
+        var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount);
+        if (belowCost.Count > 0)
+        {
+            var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost);
+            if (!InvoiceValidationDialog.ShowWarningConfirm($"{msg}\n\nهل تريد المتابعة بالبيع؟"))
+                return;
         }
 
         IsBusy = true;
@@ -709,6 +737,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                 var lineTotal = ProductDiscountHelper.CalculateLineTotal(
                     displayQty, row.UnitPrice, lineDiscount, factor);
 
+                var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(row, SelectedWarehouse.Id);
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
@@ -716,8 +745,10 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
                     UnitPrice = row.UnitPrice,
+                    DiscountPercent = ShowProductDiscount ? row.DiscountPercent : 0m,
                     DiscountAmount = lineDiscount,
                     TotalPrice = lineTotal,
+                    WarehouseId = lineWarehouseId,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row)
                 });
             }
@@ -832,15 +863,25 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             CompanyFeeAmount = _savedPlan?.CompanyFeeAmount > 0 ? _savedPlan.CompanyFeeAmount : null,
             NumberOfInstallments = NumberOfInstallments,
             InstallmentAmount = _savedPlan?.InstallmentAmount,
-            Items = _savedItems.Select((item, i) => new InvoicePrintItem
+            ShowLineDiscount = ShowProductDiscount,
+            Items = _savedItems.Select((item, i) =>
             {
-                Number = i + 1,
-                ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
-                    item.ItemName,
-                    item.CustomFieldsJson),
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                var warehouseName = item.WarehouseId is int wid
+                    ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
+                    : SelectedWarehouse?.Name;
+                return new InvoicePrintItem
+                {
+                    Number = i + 1,
+                    ItemName = InvoiceCustomFieldsHelper.FormatItemDisplayName(
+                        item.ItemName,
+                        item.CustomFieldsJson),
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice,
+                    DiscountPercent = item.DiscountPercent,
+                    DiscountAmount = item.DiscountAmount,
+                    WarehouseName = warehouseName
+                };
             }).ToList(),
             Schedule = _savedPlan?.Installments?.Count > 0
                 ? InstallmentPrintHelpers.ToPrintRows(_savedPlan.Installments)

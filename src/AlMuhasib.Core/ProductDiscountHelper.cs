@@ -117,4 +117,32 @@ public static class ProductDiscountHelper
         DiscountType.FixedAmount => "قيمة",
         _ => "بدون"
     };
+
+    /// <summary>نسبة خصم المنتج إن كان فعّالاً ومن نوع نسبة.</summary>
+    public static decimal GetProductDiscountPercent(Product? product, DateTime? asOfUtc = null)
+    {
+        if (!IsDiscountActive(product, asOfUtc) || product is null)
+            return 0m;
+        return product.DiscountType == DiscountType.Percentage ? product.DiscountValue : 0m;
+    }
+
+    /// <summary>مبلغ الخصم من نسبة مئوية على إجمالي السطر قبل الخصم.</summary>
+    public static decimal CalculateDiscountFromPercent(decimal gross, decimal discountPercent)
+    {
+        if (gross <= 0 || discountPercent <= 0)
+            return 0m;
+        var pct = Math.Clamp(discountPercent, 0m, 100m);
+        var discount = gross * pct / 100m;
+        if (discount > gross) discount = gross;
+        return Math.Round(discount, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>نسبة الخصم المكافئة لمبلغ خصم على إجمالي السطر.</summary>
+    public static decimal PercentFromDiscountAmount(decimal gross, decimal discountAmount)
+    {
+        if (gross <= 0 || discountAmount <= 0)
+            return 0m;
+        var pct = discountAmount / gross * 100m;
+        return Math.Round(Math.Clamp(pct, 0m, 100m), 2, MidpointRounding.AwayFromZero);
+    }
 }

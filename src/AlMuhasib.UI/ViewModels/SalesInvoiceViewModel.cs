@@ -29,6 +29,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
     private readonly ICustomerCreditService _customerCreditService;
+    private readonly InvoiceCostGuard _costGuard;
     private DispatcherTimer? _draftSaveTimer;
     private const string DraftKey = "sales-invoice";
 
@@ -242,6 +243,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
         _customerCreditService = customerCreditService;
+        _costGuard = new InvoiceCostGuard(unitOfWork, productPriceService, featureFlags.ProductPricingEnabled);
         _templateService = templateService;
         _queueService = queueService;
         _productPriceService = productPriceService;
@@ -622,6 +624,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         InvoiceWarningsBanner = string.Join("  |  ", warnings);
     }
 
+    partial void OnSelectedWarehouseChanged(Warehouse? value)
+    {
+        InvoiceLineWarehouseHelper.ApplyHeaderWarehouseToAllItems(Items, value);
+        foreach (var row in Items.Where(r => r.ProductId is > 0))
+            _ = RefreshProductRowAsync(row);
+    }
+
     // ── Customer search ────────────────────────────────────
     partial void OnSelectedCustomerChanged(Customer? value)
     {
@@ -648,6 +657,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         var row = new InvoiceItemRow();
         ApplyActiveLabelsToRow(row);
+        row.ApplyHeaderWarehouse(SelectedWarehouse);
         WireItemRow(row);
         Items.Add(row);
     }
@@ -738,12 +748,23 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         row.RefreshProductDiscount();
         row.TotalChanged += OnItemRowTotalChanged;
         row.ProductChanged += OnProductChanged;
+        row.WarehouseChanged += OnRowWarehouseChanged;
+        if (row.SelectedWarehouse is null)
+            row.ApplyHeaderWarehouse(SelectedWarehouse);
     }
 
     private void UnwireItemRow(InvoiceItemRow row)
     {
         row.TotalChanged -= OnItemRowTotalChanged;
         row.ProductChanged -= OnProductChanged;
+        row.WarehouseChanged -= OnRowWarehouseChanged;
+    }
+
+    private async void OnRowWarehouseChanged(InvoiceItemRow row)
+    {
+        await InvoiceLineWarehouseHelper.RefreshRowAvailableStockAsync(
+            _unitOfWork, row, SelectedWarehouse?.Id, Warehouses.ToList());
+        await LoadRowFeatureDataAsync(row);
     }
 
     private void OnItemRowTotalChanged()
@@ -874,8 +895,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
             row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
 
-            if (SelectedWarehouse is not null)
-                row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == SelectedWarehouse.Id)?.Quantity ?? 0;
+            var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
+            if (lineWarehouseId is > 0)
+                row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0;
             else
                 row.AvailableStock = stocks.Where(s => warehouseDict.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity);
 
@@ -957,49 +979,49 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         // Validation
         if (SelectedWarehouse is null)
         {
-            ErrorMessage = "يرجى اختيار المخزن";
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار المخزن");
             return;
         }
 
         if (IsCashPayment && SelectedCashBox is null && !IsDamageMode)
         {
-            ErrorMessage = "يرجى اختيار القاصة";
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة");
             return;
         }
 
         if (IsDamageMode && _featureFlags is not null && !_featureFlags.DamageInvoices)
         {
-            ErrorMessage = "فعّل «فاتورة التلف» من إعدادات الميزات أولاً";
+            InvoiceValidationDialog.ShowBlockingError("فعّل «فاتورة التلف» من إعدادات الميزات أولاً");
             return;
         }
 
         if (IsCreditPayment && CreditDueDate is null)
         {
-            ErrorMessage = "يرجى تحديد تاريخ استحقاق التسديد للدفع الآجل";
+            InvoiceValidationDialog.ShowBlockingError("يرجى تحديد تاريخ استحقاق التسديد للدفع الآجل");
             return;
         }
 
         if (IsCreditPayment && CreditDueDate.HasValue && CreditDueDate.Value.Date <= InvoiceDate.Date)
         {
-            ErrorMessage = "تاريخ الاستحقاق يجب أن يكون بعد تاريخ الفاتورة";
+            InvoiceValidationDialog.ShowBlockingError("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الفاتورة");
             return;
         }
 
         if (IsCreditPayment && CreditPaidAmount < 0m)
         {
-            ErrorMessage = "المبلغ المدفوع لا يمكن أن يكون سالباً";
+            InvoiceValidationDialog.ShowBlockingError("المبلغ المدفوع لا يمكن أن يكون سالباً");
             return;
         }
 
         if (IsCreditPayment && CreditPaidAmount > GrandTotal)
         {
-            ErrorMessage = "المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة";
+            InvoiceValidationDialog.ShowBlockingError("المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة");
             return;
         }
 
         if (IsInstallmentPayment)
         {
-            ErrorMessage = "لفواتير الأقساط استخدم شاشة «فاتورة أقساط» من القائمة الجانبية";
+            InvoiceValidationDialog.ShowBlockingError("لفواتير الأقساط استخدم شاشة «فاتورة أقساط» من القائمة الجانبية");
             return;
         }
 
@@ -1010,7 +1032,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         if (validItems.Count == 0)
         {
-            ErrorMessage = "يجب إضافة عنصر واحد على الأقل بالكمية والسعر";
+            InvoiceValidationDialog.ShowBlockingError("يجب إضافة عنصر واحد على الأقل بالكمية والسعر");
             return;
         }
 
@@ -1020,29 +1042,33 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             {
                 if (row.ProductSizeId is not null) continue;
                 if (!await _productSizeService.HasSizesAsync(row.ProductId!.Value)) continue;
-                ErrorMessage = $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.";
+                InvoiceValidationDialog.ShowBlockingError(
+                    $"المنتج «{row.ItemName}» يتطلب اختيار القياس. افتح اختيار المنتجات أو أعد تحديد المنتج.");
                 return;
             }
         }
 
         if (IsReturnMode && _featureFlags is not null && !_featureFlags.SalesReturns)
         {
-            ErrorMessage = "فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً";
+            InvoiceValidationDialog.ShowBlockingError("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
             return;
         }
 
         // Stock validation for sales/damage (not returns — returns increase stock)
-        if (SelectedWarehouse is not null && !IsReturnMode)
+        if (!IsReturnMode)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
             {
+                var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(item, SelectedWarehouse.Id);
+                var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
                 var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
-                    s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == item.ProductId!.Value);
+                    s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
                 var available = stocks.FirstOrDefault()?.Quantity ?? 0;
                 var requiredQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(item));
                 if (requiredQty > available)
                 {
-                    ErrorMessage = $"الكمية المطلوبة من '{item.ItemName}' ({requiredQty:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{SelectedWarehouse.Name}'";
+                    InvoiceValidationDialog.ShowBlockingError(
+                        $"الكمية المطلوبة من '{item.ItemName}' ({requiredQty:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{lineWarehouse.Name}'");
                     return;
                 }
             }
@@ -1051,6 +1077,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             {
                 foreach (var item in validItems.Where(i => i.ProductId.HasValue))
                 {
+                    var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(item, SelectedWarehouse.Id);
                     var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(item));
                     if (stockQty <= 0) continue;
 
@@ -1064,14 +1091,25 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                         }
 
                         await _productBatchService.AllocateFefoAsync(
-                            item.ProductId!.Value, SelectedWarehouse.Id, stockQty);
+                            item.ProductId!.Value, lineWarehouseId, stockQty);
                     }
                     catch (InvalidOperationException ex)
                     {
-                        ErrorMessage = $"«{item.ItemName}»: {ex.Message}";
+                        InvoiceValidationDialog.ShowBlockingError($"«{item.ItemName}»: {ex.Message}");
                         return;
                     }
                 }
+            }
+        }
+
+        if (!IsReturnMode && !IsDamageMode)
+        {
+            var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount);
+            if (belowCost.Count > 0)
+            {
+                var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost);
+                if (!InvoiceValidationDialog.ShowWarningConfirm($"{msg}\n\nهل تريد المتابعة بالبيع؟"))
+                    return;
             }
         }
 
@@ -1081,9 +1119,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 SelectedCustomer.Id, GrandTotal, isInstallment: false);
             if (!creditCheck.IsAllowed)
             {
-                if (!BeautifulMessageDialog.ShowConfirm(
-                        $"{creditCheck.Message}\n\nهل تريد المتابعة رغم تجاوز حد الائتمان؟"))
-                    return;
+                InvoiceValidationDialog.ShowBlockingError(creditCheck.Message);
+                return;
             }
         }
 
@@ -1170,6 +1207,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     lineDiscount = Math.Abs(lineGross);
                 var lineTotal = ProductDiscountHelper.CalculateLineTotal(
                     displayQty, row.UnitPrice, lineDiscount, factor);
+                var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(row, SelectedWarehouse.Id);
                 invoiceItems.Add(new InvoiceItem
                 {
                     ProductId = productId,
@@ -1177,8 +1215,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
                     UnitPrice = row.IsOfferGift ? 0m : row.UnitPrice,
+                    DiscountPercent = row.IsOfferGift || !ShowProductDiscount ? 0m : row.DiscountPercent,
                     DiscountAmount = row.IsOfferGift ? 0m : lineDiscount,
                     TotalPrice = row.IsOfferGift ? 0m : lineTotal,
+                    WarehouseId = lineWarehouseId,
                     IsOfferGift = row.IsOfferGift,
                     OfferId = row.OfferId,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
@@ -1192,7 +1232,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 {
                     if (string.IsNullOrWhiteSpace(row.SerialNumber) && !IsReturnMode)
                     {
-                        ErrorMessage = $"أدخل الرقم التسلسلي للصنف «{row.ItemName}»";
+                        InvoiceValidationDialog.ShowBlockingError($"أدخل الرقم التسلسلي للصنف «{row.ItemName}»");
                         return;
                     }
                 }
@@ -1323,6 +1363,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
             GrandTotal = GrandTotal,
+            ShowLineDiscount = ShowProductDiscount,
             Items = _savedItems.Select((item, i) =>
             {
                 var usage = ShowPharmacyUsage
@@ -1334,6 +1375,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 if (!string.IsNullOrWhiteSpace(usage))
                     displayName = $"{displayName}\nطريقة الاستخدام: {usage}";
 
+                var warehouseName = item.WarehouseId is int wid
+                    ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
+                    : SelectedWarehouse?.Name;
+
                 return new InvoicePrintItem
                 {
                     Number = i + 1,
@@ -1341,7 +1386,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     ItemName = displayName,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice
+                    TotalPrice = item.TotalPrice,
+                    DiscountPercent = item.DiscountPercent,
+                    DiscountAmount = item.DiscountAmount,
+                    WarehouseName = warehouseName
                 };
             }).ToList()
         };

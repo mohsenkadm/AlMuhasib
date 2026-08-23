@@ -374,16 +374,20 @@ public partial class SalesInvoiceViewModel
             row.UnitConversionFactor = 1m;
         }
 
-        if (ShowExpiryTracking && _productBatchService is not null && SelectedWarehouse is not null)
+        if (ShowExpiryTracking && _productBatchService is not null)
         {
-            var batches = await _productBatchService.GetByProductAsync(productId, SelectedWarehouse.Id, inStockOnly: true);
-            row.AvailableBatches.Clear();
-            foreach (var b in batches)
-                row.AvailableBatches.Add(b);
-            if (row.BatchId is int existingBatchId)
-                row.SelectedBatch = batches.FirstOrDefault(b => b.Id == existingBatchId) ?? row.SelectedBatch;
-            if (row.SelectedBatch is null && batches.Count > 0)
-                row.SelectedBatch = batches[0];
+            var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
+            if (lineWarehouseId is > 0)
+            {
+                var batches = await _productBatchService.GetByProductAsync(productId, lineWarehouseId.Value, inStockOnly: true);
+                row.AvailableBatches.Clear();
+                foreach (var b in batches)
+                    row.AvailableBatches.Add(b);
+                if (row.BatchId is int existingBatchId)
+                    row.SelectedBatch = batches.FirstOrDefault(b => b.Id == existingBatchId) ?? row.SelectedBatch;
+                if (row.SelectedBatch is null && batches.Count > 0)
+                    row.SelectedBatch = batches[0];
+            }
         }
         else
         {
@@ -393,7 +397,8 @@ public partial class SalesInvoiceViewModel
 
         if (ShowSerialNumbers && _productSerialService is not null)
         {
-            var available = await _productSerialService.GetAvailableAsync(productId, SelectedWarehouse?.Id);
+            var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
+            var available = await _productSerialService.GetAvailableAsync(productId, lineWarehouseId);
             if (string.IsNullOrWhiteSpace(row.SerialNumber) && available.Count == 1)
                 row.SerialNumber = available[0].SerialNumber;
         }
@@ -537,8 +542,12 @@ public partial class SalesInvoiceViewModel
             var item = savedItems[i];
             if (item.ProductId is not int productId) continue;
 
-            if (_featureFlags.ExpiryTracking && _productBatchService is not null && SelectedWarehouse is not null)
+            if (_featureFlags.ExpiryTracking && _productBatchService is not null)
             {
+                var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
+                if (lineWarehouseId is not > 0)
+                    continue;
+
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
                 if (stockQty <= 0)
                     continue;
@@ -549,7 +558,7 @@ public partial class SalesInvoiceViewModel
                 if (row.BatchId is int batchId)
                 {
                     var selected = row.AvailableBatches.FirstOrDefault(b => b.Id == batchId)
-                                   ?? (await _productBatchService.GetByProductAsync(productId, SelectedWarehouse.Id, inStockOnly: true))
+                                   ?? (await _productBatchService.GetByProductAsync(productId, lineWarehouseId.Value, inStockOnly: true))
                                        .FirstOrDefault(b => b.Id == batchId);
                     if (selected is not null && selected.Quantity >= stockQty)
                     {
@@ -559,14 +568,14 @@ public partial class SalesInvoiceViewModel
                 }
 
                 var allocations = await _productBatchService.AllocateFefoAsync(
-                    productId, SelectedWarehouse.Id, stockQty);
+                    productId, lineWarehouseId.Value, stockQty);
                 await _productBatchService.DeductAllocationsAsync(allocations);
 
                 var primary = allocations.FirstOrDefault();
                 if (primary is not null && row.BatchId is null)
                 {
                     row.BatchId = primary.BatchId;
-                    var batch = (await _productBatchService.GetByProductAsync(productId, SelectedWarehouse.Id))
+                    var batch = (await _productBatchService.GetByProductAsync(productId, lineWarehouseId.Value))
                         .FirstOrDefault(b => b.Id == primary.BatchId);
                     if (batch is not null)
                     {
@@ -584,12 +593,15 @@ public partial class SalesInvoiceViewModel
 
             if (ShowClothingSizes && _productSizeService is not null
                 && row.ProductSizeId is int sizeId
-                && SelectedWarehouse is not null
                 && !IsReturnMode)
             {
+                var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
+                if (lineWarehouseId is not > 0)
+                    continue;
+
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
                 if (stockQty > 0)
-                    await _productSizeService.DeductStockAsync(productId, sizeId, SelectedWarehouse.Id, stockQty);
+                    await _productSizeService.DeductStockAsync(productId, sizeId, lineWarehouseId.Value, stockQty);
             }
         }
     }

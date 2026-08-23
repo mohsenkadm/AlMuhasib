@@ -193,8 +193,11 @@ public partial class InstallmentInvoiceViewModel
                 ProductId = item.ProductId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = item.UnitPrice,
+                DiscountAmount = item.DiscountAmount,
+                DiscountPercent = item.DiscountPercent
             };
+            InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
             InvoiceCustomFieldsHelper.ApplyPackDisplayFromStored(row, item.Quantity, item.UnitPrice);
             WireItemRow(row);

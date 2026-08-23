@@ -130,9 +130,10 @@ public class InvoiceService : IInvoiceService
             {
                 foreach (var item in itemsList.Where(i => i.ProductId.HasValue))
                 {
+                    var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
                     var stock = await context.WarehouseStocks
                         .FirstOrDefaultAsync(s =>
-                            s.WarehouseId == invoice.WarehouseId &&
+                            s.WarehouseId == warehouseId &&
                             s.ProductId == item.ProductId!.Value);
 
                     if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
@@ -147,7 +148,7 @@ public class InvoiceService : IInvoiceService
                         {
                             await context.WarehouseStocks.AddAsync(new WarehouseStock
                             {
-                                WarehouseId = invoice.WarehouseId,
+                                WarehouseId = warehouseId,
                                 ProductId = item.ProductId!.Value,
                                 Quantity = item.Quantity,
                                 CreatedBy = username,
@@ -581,9 +582,10 @@ public class InvoiceService : IInvoiceService
 
             foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
             {
+                var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
                 var stock = await context.WarehouseStocks
                     .FirstOrDefaultAsync(s =>
-                        s.WarehouseId == invoice.WarehouseId &&
+                        s.WarehouseId == warehouseId &&
                         s.ProductId == item.ProductId!.Value);
 
                 if (stock is not null)

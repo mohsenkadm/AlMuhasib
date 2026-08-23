@@ -156,7 +156,7 @@ internal static class SyncMapper
             .Select(i => MapInvoice(i, custMap, supMap, whMap, cbMap)).ToList();
         bundle.InvoiceItems = changedInvoiceItems
             .Where(i => invMap.ContainsKey(i.InvoiceId))
-            .Select(i => MapInvoiceItem(i, invMap, prMap, pricingTypeMap)).ToList();
+            .Select(i => MapInvoiceItem(i, invMap, prMap, pricingTypeMap, whMap)).ToList();
         bundle.InstallmentPlans = plansToPush
             .Where(p => invMap.ContainsKey(p.InvoiceId) && custMap.ContainsKey(p.CustomerId))
             .Select(p => MapInstallmentPlan(p, invMap, custMap)).ToList();
@@ -236,7 +236,7 @@ internal static class SyncMapper
         await UpsertWarehouseTransferItemsAsync(db, data.WarehouseTransferItems, wtMap, prBySync, ct);
 
         var invMap = await UpsertInvoicesAsync(db, data.Invoices, custBySync, supBySync, whBySync, cbBySync, ct);
-        await UpsertInvoiceItemsAsync(db, data.InvoiceItems, invMap, prBySync, pricingTypeBySync, ct);
+        await UpsertInvoiceItemsAsync(db, data.InvoiceItems, invMap, prBySync, pricingTypeBySync, whBySync, ct);
         var planMap = await UpsertInstallmentPlansAsync(db, data.InstallmentPlans, invMap, custBySync, ct);
         await UpsertInstallmentsAsync(db, data.Installments, planMap, cbBySync, ct);
         await UpsertVouchersAsync(db, data.Vouchers, custBySync, invBySync, cbBySync, bankBySync, ct);
@@ -379,7 +379,7 @@ internal static class SyncMapper
         return d;
     }
     private static InvoiceSyncDto MapInvoice(Invoice i, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> wh, Dictionary<int, Guid> cb) { var d = new InvoiceSyncDto(); CopyBase(i, d); d.InvoiceNumber = i.InvoiceNumber; d.InvoiceType = i.InvoiceType; d.CustomerSyncId = i.CustomerId.HasValue ? cust.GetValueOrDefault(i.CustomerId.Value) : null; d.SupplierSyncId = i.SupplierId.HasValue ? sup.GetValueOrDefault(i.SupplierId.Value) : null; d.WarehouseSyncId = wh[i.WarehouseId]; d.PaymentMethod = i.PaymentMethod; d.TotalAmount = i.TotalAmount; d.DiscountAmount = i.DiscountAmount; d.NetAmount = i.NetAmount; d.CompanyFeePercentage = i.CompanyFeePercentage; d.CompanyFeeAmount = i.CompanyFeeAmount; d.RoundingAmount = i.RoundingAmount; d.RoundingType = i.RoundingType; d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null; d.Date = i.Date; d.CreditDueDate = i.CreditDueDate; d.Notes = i.Notes; d.PaidAmount = i.PaidAmount; d.RemainingAmount = i.RemainingAmount; d.IsCreditPaid = i.IsCreditPaid; return d; }
-    private static InvoiceItemSyncDto MapInvoiceItem(InvoiceItem i, Dictionary<int, Guid> inv, Dictionary<int, Guid> pr, Dictionary<int, Guid> pricingTypes)
+    private static InvoiceItemSyncDto MapInvoiceItem(InvoiceItem i, Dictionary<int, Guid> inv, Dictionary<int, Guid> pr, Dictionary<int, Guid> pricingTypes, Dictionary<int, Guid> wh)
     {
         var d = new InvoiceItemSyncDto();
         CopyBase(i, d);
@@ -389,10 +389,12 @@ internal static class SyncMapper
         d.ItemName = i.ItemName;
         d.Quantity = i.Quantity;
         d.UnitPrice = i.UnitPrice;
+        d.DiscountPercent = i.DiscountPercent;
         d.DiscountAmount = i.DiscountAmount;
         d.TotalPrice = i.TotalPrice;
         d.IsOfferGift = i.IsOfferGift;
         d.OfferId = i.OfferId;
+        d.WarehouseSyncId = i.WarehouseId.HasValue ? wh.GetValueOrDefault(i.WarehouseId.Value) : null;
         return d;
     }
     private static InstallmentPlanSyncDto MapInstallmentPlan(InstallmentPlan p, Dictionary<int, Guid> inv, Dictionary<int, Guid> cust) { var d = new InstallmentPlanSyncDto(); CopyBase(p, d); d.InvoiceSyncId = inv[p.InvoiceId]; d.CustomerSyncId = cust[p.CustomerId]; d.FileNumber = p.FileNumber; d.TotalAmount = p.TotalAmount; d.NumberOfInstallments = p.NumberOfInstallments; d.InstallmentAmount = p.InstallmentAmount; d.StartDate = p.StartDate; d.InstallmentType = p.InstallmentType; d.CompanyFeePercentage = p.CompanyFeePercentage; d.CompanyFeeAmount = p.CompanyFeeAmount; return d; }
@@ -705,6 +707,7 @@ internal static class SyncMapper
         Dictionary<Guid, int> inv,
         Dictionary<Guid, int> pr,
         Dictionary<Guid, int> pricingTypes,
+        Dictionary<Guid, int> wh,
         CancellationToken ct)
     {
         foreach (var dto in items)
@@ -717,7 +720,9 @@ internal static class SyncMapper
             entity.ProductId = dto.ProductSyncId.HasValue && pr.TryGetValue(dto.ProductSyncId.Value, out var pId) ? pId : null;
             entity.PricingTypeId = dto.PricingTypeSyncId.HasValue && pricingTypes.TryGetValue(dto.PricingTypeSyncId.Value, out var ptId) ? ptId : null;
             entity.ItemName = dto.ItemName; entity.Quantity = dto.Quantity; entity.UnitPrice = dto.UnitPrice;
+            entity.DiscountPercent = dto.DiscountPercent;
             entity.DiscountAmount = dto.DiscountAmount; entity.TotalPrice = dto.TotalPrice;
+            entity.WarehouseId = dto.WarehouseSyncId.HasValue && wh.TryGetValue(dto.WarehouseSyncId.Value, out var wId) ? wId : null;
             entity.IsOfferGift = dto.IsOfferGift; entity.OfferId = dto.OfferId;
         }
         await db.SaveChangesAsync(ct);

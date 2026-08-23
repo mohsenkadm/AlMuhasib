@@ -9,9 +9,15 @@ public class InvoiceItem : BaseEntity
     public string ItemName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    /// <summary>نسبة خصم السطر (0–100).</summary>
+    public decimal DiscountPercent { get; set; }
+
     /// <summary>مبلغ خصم السطر (من خصم المنتج أو يدوي).</summary>
     public decimal DiscountAmount { get; set; }
     public decimal TotalPrice { get; set; }
+
+    /// <summary>المخزن الفعلي للسطر — إن كان null يُستخدم مخزن رأس الفاتورة.</summary>
+    public int? WarehouseId { get; set; }
 
     /// <summary>سطر هدية من عرض منتجات (سعر صفر).</summary>
     public bool IsOfferGift { get; set; }
@@ -26,4 +32,5 @@ public class InvoiceItem : BaseEntity
     public Invoice Invoice { get; set; } = null!;
     public Product? Product { get; set; }
     public PricingType? PricingType { get; set; }
+    public Warehouse? Warehouse { get; set; }
 }

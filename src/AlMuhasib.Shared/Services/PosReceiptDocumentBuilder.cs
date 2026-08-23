@@ -94,14 +94,20 @@ public static class PosReceiptDocumentBuilder
         foreach (var item in model.Items)
         {
             var name = item.ItemName;
+            if (!string.IsNullOrWhiteSpace(item.WarehouseName))
+                name = $"{name}\nالمخزن: {item.WarehouseName}";
             if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
                 name = $"{name}\nطريقة الاستخدام: {item.UsageInstructions.Trim()}";
+
+            var priceCol = FormatMoney(item.UnitPrice);
+            if (model.ShowLineDiscount && item.DiscountPercent > 0)
+                priceCol = $"{priceCol}\nخصم {item.DiscountPercent:0.##}%";
 
             group.Rows.Add(BodyRow(
                 i.ToString(CultureInfo.InvariantCulture),
                 name,
                 FormatQty(item.Quantity),
-                FormatMoney(item.UnitPrice),
+                priceCol,
                 FormatMoney(item.TotalPrice)));
             i++;
         }
@@ -217,8 +223,22 @@ public static class PosReceiptDocumentBuilder
             }
             else
             {
-                doc.Blocks.Add(new Paragraph(new Run(
-                    $"{FormatQty(item.Quantity)} × {FormatMoney(item.UnitPrice)} = {FormatMoney(item.TotalPrice)}"))
+                if (!string.IsNullOrWhiteSpace(item.WarehouseName))
+                {
+                    doc.Blocks.Add(new Paragraph(new Run($"المخزن: {item.WarehouseName}"))
+                    {
+                        Margin = new Thickness(0, 0, 0, 0),
+                        FontSize = fontSize - 0.5,
+                        Foreground = MutedBrush
+                    });
+                }
+
+                var priceLine = $"{FormatQty(item.Quantity)} × {FormatMoney(item.UnitPrice)}";
+                if (model.ShowLineDiscount && item.DiscountPercent > 0)
+                    priceLine += $" (خصم {item.DiscountPercent:0.##}%)";
+                priceLine += $" = {FormatMoney(item.TotalPrice)}";
+
+                doc.Blocks.Add(new Paragraph(new Run(priceLine))
                 {
                     Margin = new Thickness(0, 0, 0, model.PharmacyUsageReceipt ? 0 : 2),
                     FontSize = fontSize - 0.5,

@@ -25,6 +25,8 @@ public class SalesInvoiceDraftLine
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal DiscountAmount { get; set; }
+    public decimal DiscountPercent { get; set; }
+    public int? WarehouseId { get; set; }
     public int? PricingTypeId { get; set; }
     public string PricingTypeName { get; set; } = string.Empty;
     public string SelectedUnitName { get; set; } = string.Empty;
