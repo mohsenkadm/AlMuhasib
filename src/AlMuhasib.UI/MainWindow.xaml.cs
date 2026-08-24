@@ -19,15 +19,19 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly IUserPreferencesService _preferences;
+    private readonly ISessionActivityService _sessionActivity;
     private DispatcherTimer? _idleTimer;
-    private DateTime _lastActivity = DateTime.Now;
     private bool _isSessionLocked;
 
-    public MainWindow(MainWindowViewModel viewModel, IUserPreferencesService preferences)
+    public MainWindow(
+        MainWindowViewModel viewModel,
+        IUserPreferencesService preferences,
+        ISessionActivityService sessionActivity)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _preferences = preferences;
+        _sessionActivity = sessionActivity;
         DataContext = viewModel;
         WindowWorkAreaHelper.Enable(this);
         StateChanged += (_, _) => UpdateMaximizeIcon();
@@ -41,7 +45,7 @@ public partial class MainWindow : Window
         UpdateMaximizeIcon();
     }
 
-    private void TouchActivity() => _lastActivity = DateTime.Now;
+    private void TouchActivity() => _sessionActivity.RecordActivity();
 
     private void StartIdleLockTimer()
     {
@@ -50,7 +54,7 @@ public partial class MainWindow : Window
         {
             var minutes = _preferences.Current.IdleLockMinutes;
             if (minutes <= 0 || _isSessionLocked) return;
-            if ((DateTime.Now - _lastActivity).TotalMinutes < minutes) return;
+            if ((DateTime.Now - _sessionActivity.LastActivity).TotalMinutes < minutes) return;
             PromptIdleReLogin();
         };
         _idleTimer.Start();

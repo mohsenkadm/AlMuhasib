@@ -1,6 +1,6 @@
 const VERSION_URL = 'https://raw.githubusercontent.com/mohsenkadm/AlMuhasib/master/version.json';
 const GITHUB_REPO = 'https://github.com/mohsenkadm/AlMuhasib';
-const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.18/Qayd-Setup-1.14.18.exe';
+const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.19/Qayd-Setup-1.14.19.exe';
 
 let revealObserver = null;
 
@@ -34,17 +34,25 @@ async function loadVersion() {
     // زر التنزيل يشير للمثبت EXE؛ ZIP يبقى لـ downloadUrl (التحديث التلقائي داخل التطبيق)
     applyDownloadLinks(data.installerUrl || data.downloadUrl || FALLBACK_DOWNLOAD);
   } catch {
-    if (els.version) els.version.textContent = '1.14.18';
+    if (els.version) els.version.textContent = '1.14.19';
     applyDownloadLinks(FALLBACK_DOWNLOAD);
   }
 }
 
+function scrollPageToTop() {
+  if (location.hash) return;
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+}
+
 function initScrollTop() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  if (!location.hash) {
-    window.scrollTo(0, 0);
-  }
+  scrollPageToTop();
+  requestAnimationFrame(scrollPageToTop);
+  requestAnimationFrame(() => requestAnimationFrame(scrollPageToTop));
+  window.addEventListener('load', scrollPageToTop, { once: true });
+  window.addEventListener('pageshow', () => scrollPageToTop());
 }
+window.scrollPageToTop = scrollPageToTop;
 
 function initNav() {
   const header = document.querySelector('.site-header');
@@ -126,6 +134,7 @@ async function boot() {
   initSystems?.();
   loadVersion();
   document.querySelectorAll('[data-github]').forEach(a => a.href = GITHUB_REPO);
+  requestAnimationFrame(scrollPageToTop);
 }
 
 document.addEventListener('DOMContentLoaded', boot);

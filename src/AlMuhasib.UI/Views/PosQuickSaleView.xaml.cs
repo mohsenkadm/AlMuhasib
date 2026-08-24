@@ -7,6 +7,22 @@ namespace AlMuhasib.UI.Views;
 
 public partial class PosQuickSaleView : UserControl
 {
+    public static readonly DependencyProperty IsFullscreenHostProperty =
+        DependencyProperty.Register(
+            nameof(IsFullscreenHost),
+            typeof(bool),
+            typeof(PosQuickSaleView),
+            new PropertyMetadata(false));
+
+    /// <summary>
+    /// True when this view is hosted in the dedicated fullscreen window (not the main tab).
+    /// </summary>
+    public bool IsFullscreenHost
+    {
+        get => (bool)GetValue(IsFullscreenHostProperty);
+        set => SetValue(IsFullscreenHostProperty, value);
+    }
+
     public PosQuickSaleView()
     {
         InitializeComponent();
@@ -19,7 +35,7 @@ public partial class PosQuickSaleView : UserControl
         PosFeatureColumnSync.Attach(
             this,
             ColPosSize, ColPosColor, ColPosCustom1, ColPosCustom2,
-            ColPosBatch, ColPosSerial, ColPosPricing, ColPosDiscount);
+            ColPosBatch, ColPosSerial, pricing: null, ColPosDiscount);
     }
 
     private void Root_Loaded(object sender, RoutedEventArgs e)

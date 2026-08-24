@@ -13,10 +13,17 @@ public sealed class ToastNotificationService : IToastNotificationService
 
     private readonly ISoundService _sound;
     private ToastHost? _host;
+    private ToastHost? _overlayHost;
+
+    private ToastHost? ActiveHost => _overlayHost ?? _host;
 
     public ToastNotificationService(ISoundService sound) => _sound = sound;
 
     public void AttachHost(ToastHost host) => _host = host;
+
+    public void AttachOverlayHost(ToastHost host) => _overlayHost = host;
+
+    public void DetachOverlayHost() => _overlayHost = null;
 
     public void ShowSuccess(string message, string? title = null) =>
         _ = ShowFlowAsync(ToastDisplayState.Success, message, title);
@@ -105,7 +112,7 @@ public sealed class ToastNotificationService : IToastNotificationService
 
         await RunOnUiAsync(() => toast.IsExiting = true).ConfigureAwait(false);
         await Task.Delay(380).ConfigureAwait(false);
-        await RunOnUiAsync(() => _host?.RemoveToast(toast)).ConfigureAwait(false);
+        await RunOnUiAsync(() => ActiveHost?.RemoveToast(toast)).ConfigureAwait(false);
     }
 
     private ToastNotification CreateToast(ToastDisplayState state, string message, string title) =>
@@ -122,10 +129,10 @@ public sealed class ToastNotificationService : IToastNotificationService
     {
         RunOnUi(() =>
         {
-            if (_host is null)
+            if (ActiveHost is null)
                 return;
 
-            _host.PushToast(toast);
+            ActiveHost.PushToast(toast);
             _ = ClearEnteringFlagAsync(toast);
         });
     }

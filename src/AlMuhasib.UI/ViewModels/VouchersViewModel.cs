@@ -70,17 +70,36 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private Customer? _selectedCustomer;
 
     [ObservableProperty]
+    private string _customerSearchText = string.Empty;
+
+    [ObservableProperty]
+    private Supplier? _selectedSupplier;
+
+    [ObservableProperty]
+    private string _supplierSearchText = string.Empty;
+
+    [ObservableProperty]
     private Investor? _selectedInvestor;
+
+    [ObservableProperty]
+    private string _investorSearchText = string.Empty;
 
     // Collections
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
     public ObservableCollection<BankAccount> BankAccounts { get; } = [];
     public ObservableCollection<Customer> Customers { get; } = [];
+    public ObservableCollection<Customer> FilteredCustomers { get; } = [];
+    public ObservableCollection<Supplier> Suppliers { get; } = [];
+    public ObservableCollection<Supplier> FilteredSuppliers { get; } = [];
     public ObservableCollection<Investor> Investors { get; } = [];
+    public ObservableCollection<Investor> FilteredInvestors { get; } = [];
 
     // ── Visibility flags per voucher type ──────────────────
     [ObservableProperty]
     private bool _showCustomerField;
+
+    [ObservableProperty]
+    private bool _showSupplierField;
 
     [ObservableProperty]
     private bool _showInvestorField;
@@ -170,6 +189,13 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         Customers.Clear();
         foreach (var c in customers)
             Customers.Add(c);
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, CustomerSearchText);
+
+        var suppliers = await _unitOfWork.Suppliers.GetAllAsync();
+        Suppliers.Clear();
+        foreach (var s in suppliers)
+            Suppliers.Add(s);
+        SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, SupplierSearchText);
 
         await RefreshInvestorsAsync();
 
@@ -184,6 +210,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         Investors.Clear();
         foreach (var inv in investors)
             Investors.Add(inv);
+        InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, InvestorSearchText);
         if (selectedId is int id)
             SelectedInvestor = Investors.FirstOrDefault(i => i.Id == id);
         await Task.CompletedTask;
@@ -200,15 +227,35 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
     private void UpdateFieldVisibility(VoucherType type)
     {
-        ShowCustomerField = type is VoucherType.Receipt or VoucherType.Payment or VoucherType.DebtReceipt;
+        ShowCustomerField = type is VoucherType.Receipt or VoucherType.DebtReceipt;
+        ShowSupplierField = type is VoucherType.Payment;
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;
         ShowBankFeesField = type is VoucherType.BankReceipt;
         RefreshDocumentLinkVisibility();
 
         // Clear unrelated selections
-        if (!ShowCustomerField) SelectedCustomer = null;
-        if (!ShowInvestorField) SelectedInvestor = null;
+        if (!ShowCustomerField)
+        {
+            SelectedCustomer = null;
+            CustomerSearchText = string.Empty;
+            CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
+        }
+
+        if (!ShowSupplierField)
+        {
+            SelectedSupplier = null;
+            SupplierSearchText = string.Empty;
+            SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
+        }
+
+        if (!ShowInvestorField)
+        {
+            SelectedInvestor = null;
+            InvestorSearchText = string.Empty;
+            InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
+        }
+
         if (!ShowBankField) SelectedBankAccount = null;
         if (!ShowBankFeesField) BankFees = 0;
         if (!ShowDocumentLinkFields)
@@ -228,8 +275,51 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
     partial void OnSelectedCustomerChanged(Customer? value)
     {
+        if (value is not null)
+            CustomerSearchText = value.Name;
+
         RefreshDocumentLinkVisibility();
         _ = LoadDocumentLinksAsync();
+    }
+
+    partial void OnCustomerSearchTextChanged(string value)
+    {
+        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+            return;
+
+        SelectedCustomer = null;
+        CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
+        RefreshDocumentLinkVisibility();
+    }
+
+    partial void OnSelectedSupplierChanged(Supplier? value)
+    {
+        if (value is not null)
+            SupplierSearchText = value.Name;
+    }
+
+    partial void OnSupplierSearchTextChanged(string value)
+    {
+        if (SelectedSupplier is not null && SelectedSupplier.Name == value)
+            return;
+
+        SelectedSupplier = null;
+        SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, value);
+    }
+
+    partial void OnSelectedInvestorChanged(Investor? value)
+    {
+        if (value is not null)
+            InvestorSearchText = value.Name;
+    }
+
+    partial void OnInvestorSearchTextChanged(string value)
+    {
+        if (SelectedInvestor is not null && SelectedInvestor.Name == value)
+            return;
+
+        SelectedInvestor = null;
+        InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, value);
     }
 
     private async Task LoadDocumentLinksAsync()
@@ -326,6 +416,11 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             BeautifulMessageDialog.ShowWarning("يرجى اختيار العميل");
             return;
         }
+        if (ShowSupplierField && SelectedSupplier is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار المورد");
+            return;
+        }
         if (ShowInvestorField && SelectedInvestor is null)
         {
             BeautifulMessageDialog.ShowWarning("يرجى اختيار المستثمر");
@@ -353,7 +448,11 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,
                 BankAccountId = SelectedBankAccount?.Id,
-                CustomerId = SelectedCustomer?.Id,
+                CustomerId = ShowCustomerField
+                    ? SelectedCustomer?.Id
+                    : ShowSupplierField
+                        ? SelectedSupplier?.Id
+                        : null,
                 InvestorId = SelectedInvestor?.Id,
                 InvoiceId = ShowDocumentLinkFields ? SelectedLinkedInvoice?.Id : null,
                 InstallmentId = ShowDocumentLinkFields ? SelectedLinkedInstallment?.Id : null,
@@ -370,7 +469,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             BankFees = 0;
             Notes = string.Empty;
             SelectedCustomer = null;
+            CustomerSearchText = string.Empty;
+            SelectedSupplier = null;
+            SupplierSearchText = string.Empty;
             SelectedInvestor = null;
+            InvestorSearchText = string.Empty;
+            CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
+            SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
+            InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
             SelectedBankAccount = null;
             ClearDocumentLinks();
             VoucherDate = DateTime.Now;

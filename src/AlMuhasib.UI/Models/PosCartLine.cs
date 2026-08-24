@@ -89,6 +89,13 @@ public partial class PosCartLine : ObservableObject
 
     partial void OnQuantityChanged(decimal value)
     {
+        if (!IsOfferGift && value <= 0)
+        {
+            if (Quantity != 1m)
+                Quantity = 1m;
+            return;
+        }
+
         if (IsOfferGift)
         {
             DiscountAmount = 0m;

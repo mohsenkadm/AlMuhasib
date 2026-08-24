@@ -27,6 +27,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IProductPriceService _productPriceService;
     private readonly IProductBatchService _productBatchService;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IPosFullscreenService _posFullscreen;
     private readonly DispatcherTimer _searchDebounce;
 
     private List<Product> _allProducts = [];
@@ -59,6 +60,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private string _statusMessage = "امسح الباركود أو ابحث بالاسم ثم Enter للإضافة";
     [ObservableProperty] private string? _lastSavedInvoiceNumber;
     [ObservableProperty] private bool _printAfterSale = true;
+    [ObservableProperty] private bool _isFullscreenActive;
 
     public IReadOnlyList<DiscountTypeOption> InvoiceDiscountTypeOptions { get; } =
     [
@@ -86,7 +88,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IProductSizeService productSizeService,
         IProductColorService productColorService,
         ILoyaltyService loyaltyService,
-        IProductOfferService productOfferService)
+        IProductOfferService productOfferService,
+        IPosFullscreenService posFullscreen)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -104,6 +107,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         ConfigurePosFeatureServices(productSerialService, productSizeService, productColorService);
         ConfigureLoyaltyService(loyaltyService);
         ConfigureProductOfferService(productOfferService);
+        _posFullscreen = posFullscreen;
 
         CartLines.CollectionChanged += OnCartChanged;
 
@@ -729,5 +733,26 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             if (SelectedCashBox is not null)
                 p.DefaultPosCashBoxId = SelectedCashBox.Id;
         });
+    }
+
+    public string FullscreenToggleToolTip =>
+        IsFullscreenActive ? "العودة داخل النظام" : "فتح الكاشير بملء الشاشة";
+
+    partial void OnIsFullscreenActiveChanged(bool value) =>
+        OnPropertyChanged(nameof(FullscreenToggleToolTip));
+
+    [RelayCommand]
+    private void ToggleFullscreen()
+    {
+        if (_posFullscreen.IsOpen)
+            _posFullscreen.Close();
+        else
+            _posFullscreen.Open(this);
+    }
+
+    internal void RequestExitFullscreen()
+    {
+        if (_posFullscreen.IsOpen)
+            _posFullscreen.Close();
     }
 }

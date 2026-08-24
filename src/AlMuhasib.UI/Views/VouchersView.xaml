@@ -131,22 +131,44 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Customer (Receipt, Payment, DebtReceipt) -->
+                    <!-- Customer (Receipt, DebtReceipt) -->
                     <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding Customers}"
-                              SelectedItem="{Binding SelectedCustomer}"
+                              ItemsSource="{Binding FilteredCustomers}"
+                              SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="Name"
-                              materialDesign:HintAssist.Hint="العميل"
+                              Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"
+                              StaysOpenOnEdit="True"
+                              materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو رقم الملف)"
+                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                               Style="{StaticResource FilledComboBox}"
                               FontSize="13"
                               Visibility="{Binding ShowCustomerField, Converter={StaticResource BoolToVis}}" />
 
+                    <!-- Supplier (Payment) -->
+                    <ComboBox Grid.Column="0"
+                              ItemsSource="{Binding FilteredSuppliers}"
+                              SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
+                              DisplayMemberPath="Name"
+                              Text="{Binding SupplierSearchText, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"
+                              StaysOpenOnEdit="True"
+                              materialDesign:HintAssist.Hint="المورد (ابحث بالاسم أو الهاتف)"
+                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                              Style="{StaticResource FilledComboBox}"
+                              FontSize="13"
+                              Visibility="{Binding ShowSupplierField, Converter={StaticResource BoolToVis}}" />
+
                     <!-- Investor (InvestorDeposit, InvestorWithdrawal) -->
                     <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding Investors}"
-                              SelectedItem="{Binding SelectedInvestor}"
+                              ItemsSource="{Binding FilteredInvestors}"
+                              SelectedItem="{Binding SelectedInvestor, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="Name"
-                              materialDesign:HintAssist.Hint="المستثمر"
+                              Text="{Binding InvestorSearchText, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"
+                              StaysOpenOnEdit="True"
+                              materialDesign:HintAssist.Hint="المستثمر (ابحث بالاسم أو الهاتف)"
+                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                               Style="{StaticResource FilledComboBox}"
                               FontSize="13"
                               Visibility="{Binding ShowInvestorField, Converter={StaticResource BoolToVis}}" />

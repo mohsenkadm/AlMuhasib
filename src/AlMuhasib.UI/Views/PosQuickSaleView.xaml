@@ -6,94 +6,127 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:loyalty="clr-namespace:AlMuhasib.UI.Controls.Loyalty"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              mc:Ignorable="d"
              x:Name="Root"
              d:DataContext="{d:DesignInstance Type=vm:PosQuickSaleViewModel}"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              FlowDirection="RightToLeft"
+             VerticalAlignment="Stretch"
+             HorizontalAlignment="Stretch"
+             ClipToBounds="True"
              Loaded="Root_Loaded"
              Focusable="True"
              PreviewKeyDown="Root_PreviewKeyDown">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="0,0,8,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid x:Name="PosShell" Margin="0" MinHeight="0">
+        <Grid.Style>
+            <Style TargetType="Grid">
+                <Setter Property="Visibility" Value="Visible"/>
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding IsFullscreenActive}" Value="True"/>
+                            <Condition Binding="{Binding IsFullscreenHost, ElementName=Root}" Value="False"/>
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="0"/>
+            </Grid.RowDefinitions>
 
         <!-- Proxy outside DataGrid columns to avoid x:Reference cyclical dependency -->
         <FrameworkElement x:Name="VmProxy" Visibility="Collapsed"/>
 
-        <!-- Header -->
-        <Border Grid.Row="0" CornerRadius="14" Margin="0,0,0,12" Padding="18,12">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#0D47A1" Offset="0"/>
-                    <GradientStop Color="#1976D2" Offset="0.55"/>
-                    <GradientStop Color="#0288D1" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
+        <!-- Compact toolbar (replaces large header) -->
+        <Border Grid.Row="0" Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                CornerRadius="10" Padding="10,8" Margin="0,0,0,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="بيع سريع (POS)" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="{Binding StatusMessage}" Foreground="#CCFFFFFF" FontSize="12" Margin="0,3,0,0"
-                               TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,12,0"
+                            VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="CartOutline" Width="16" Height="16"
+                                             VerticalAlignment="Center" Margin="0,0,6,0"
+                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <TextBlock Text="{Binding CartLineCount, StringFormat='{}{0} بند'}"
+                               FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
-                <Border Grid.Column="1" Background="#26FFFFFF" CornerRadius="10" Padding="14,8" Margin="0,0,10,0"
-                        VerticalAlignment="Center">
+                <Button Grid.Column="2"
+                        Command="{Binding ToggleFullscreenCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="36" Padding="12,0"
+                        ToolTip="فتح الكاشير بملء الشاشة"
+                        Visibility="{Binding IsFullscreenHost, ElementName=Root, Converter={StaticResource InverseBoolVis}}">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CartOutline" Width="18" Height="18" Foreground="White"
-                                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding CartLineCount, StringFormat='{}{0} بند'}" Foreground="White"
-                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <materialDesign:PackIcon Kind="Fullscreen" Width="18" Height="18" VerticalAlignment="Center"/>
+                        <TextBlock Text="ملء الشاشة" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Background="#33FFFFFF" CornerRadius="10" Padding="16,8" VerticalAlignment="Center">
-                    <StackPanel>
-                        <TextBlock Text="الإجمالي" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
-                                   FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                </Button>
+                <Button Grid.Column="2"
+                        Command="{Binding ToggleFullscreenCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="36" Padding="12,0"
+                        ToolTip="إغلاق نافذة الكاشير والعودة داخل النظام"
+                        Visibility="{Binding IsFullscreenHost, ElementName=Root, Converter={StaticResource BoolVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FullscreenExit" Width="18" Height="18" VerticalAlignment="Center"/>
+                        <TextBlock Text="إغلاق الكاشير" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
-                </Border>
+                </Button>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" MinHeight="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.1*"/>
-                <ColumnDefinition Width="12"/>
-                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="1.35*" MinWidth="300"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="1*" MinWidth="300"/>
             </Grid.ColumnDefinitions>
 
             <!-- Catalog (right in RTL = col 0) -->
-            <Border Grid.Column="0" Style="{StaticResource PosPanelCard}">
-                <Grid>
+            <Border Grid.Column="0" Style="{StaticResource PosPanelCard}" MinHeight="0">
+                <Grid MinHeight="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" MinHeight="0"/>
                     </Grid.RowDefinitions>
 
                     <!-- Favorites -->
-                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                        <TextBlock Text="المفضلة" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        <ItemsControl ItemsSource="{Binding FavoriteProducts}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
+                    <ScrollViewer Grid.Row="0" Margin="0,0,0,10"
+                                  MaxHeight="76"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  Style="{DynamicResource ThinScrollViewer}">
+                        <StackPanel>
+                            <TextBlock Text="المفضلة" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <ItemsControl ItemsSource="{Binding FavoriteProducts}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -110,7 +143,8 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
 
                     <TextBox x:Name="SearchBox"
                              Grid.Row="1"
@@ -142,16 +176,19 @@
 
                     <ListBox Grid.Row="3"
                              ItemsSource="{Binding FilteredProducts}"
+                             Style="{StaticResource PosProductListBox}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             VirtualizingPanel.IsVirtualizing="True"
-                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.CanContentScroll="False"
+                             VirtualizingPanel.IsVirtualizing="False"
                              BorderThickness="0"
                              Background="Transparent"
-                             Padding="0">
+                             Padding="0"
+                             MinHeight="0"
+                             ClipToBounds="True">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel/>
+                                <UniformGrid Columns="5"/>
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                         <ListBox.ItemContainerStyle>
@@ -171,7 +208,11 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource PosProductCard}" Width="168" Height="108" Margin="0,0,10,10">
+                                <Border Style="{StaticResource PosProductCard}"
+                                        Height="104"
+                                        Margin="3"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="*"/>
@@ -230,12 +271,12 @@
             </Border>
 
             <!-- Cart (left in RTL = col 2) -->
-            <Border Grid.Column="2" Style="{StaticResource PosPanelCard}">
-                <Grid>
+            <Border Grid.Column="2" Style="{StaticResource PosPanelCard}" MinHeight="0">
+                <Grid MinHeight="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -285,13 +326,21 @@
                               CanUserAddRows="False"
                               IsReadOnly="False"
                               HeadersVisibility="Column"
-                              Style="{StaticResource ModernDataGrid}"
+                              Style="{StaticResource PosDataGrid}"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="False"
                               FrozenColumnCount="1"
                               RowHeight="44"
-                              MinRowHeight="44">
+                              MinRowHeight="40"
+                              MinHeight="0"
+                              VerticalAlignment="Stretch"
+                              ClipToBounds="True">
+                        <DataGrid.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource PosHiddenVerticalScrollBar}"/>
+                        </DataGrid.Resources>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="52" MinWidth="52" MaxWidth="52" IsReadOnly="True"
+                            <DataGridTemplateColumn Header="" Width="44" MinWidth="44" MaxWidth="44" IsReadOnly="True"
                                                     CanUserResize="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
@@ -317,16 +366,15 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="المنتج" Width="*" MinWidth="120" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="المنتج" Width="*" MinWidth="90" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding DisplayName}"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   MaxHeight="40"
                                                    VerticalAlignment="Center"
                                                    ToolTip="{Binding DisplayName}"
-                                                   Margin="4,0"/>
+                                                   Margin="4,2"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -370,7 +418,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn x:Name="ColPosBatch" Header="الدفعة" Width="110" Visibility="Collapsed">
+                            <DataGridTemplateColumn x:Name="ColPosBatch" Header="الدفعة" Width="100" Visibility="Collapsed">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableBatches}"
@@ -399,17 +447,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn x:Name="ColPosPricing" Header="التسعير" Width="100" Visibility="Collapsed">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailablePricingOptions}"
-                                                  SelectedItem="{Binding SelectedPricingOption, UpdateSourceTrigger=PropertyChanged}"
-                                                  DisplayMemberPath="Display"
-                                                  FontSize="11"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="الكمية" Width="100" MinWidth="96">
+                            <DataGridTemplateColumn Header="الكمية" Width="100" MinWidth="88">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -417,8 +455,15 @@
                                                     Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
-                                            <TextBlock Text="{Binding Quantity, StringFormat=N0}" Width="32" TextAlignment="Center"
-                                                       VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <Border MinWidth="48" Margin="4,0" CornerRadius="6"
+                                                    Background="#F0F4F8" Padding="2,0" VerticalAlignment="Center">
+                                                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                         Style="{StaticResource NumericCellTextBox}"
+                                                         MinWidth="40"
+                                                         VerticalContentAlignment="Center"
+                                                         FontWeight="SemiBold"
+                                                         IsReadOnly="{Binding IsOfferGift}"/>
+                                            </Border>
                                             <Button Content="+" Width="26" Height="26" Padding="0"
                                                     Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
@@ -427,17 +472,15 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="68" MinWidth="60"/>
-                            <DataGridTextColumn x:Name="ColPosDiscount" Header="الخصم" Binding="{Binding DiscountAmount, StringFormat=N0}" Width="56" IsReadOnly="True"
+                            <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="66" MinWidth="52"/>
+                            <DataGridTextColumn x:Name="ColPosDiscount" Header="الخصم" Binding="{Binding DiscountAmount, StringFormat=N0}" Width="70" IsReadOnly="True"
                                                 Visibility="Collapsed"/>
-                            <DataGridTextColumn Header="المجموع" Binding="{Binding LineTotal, StringFormat=N0}" Width="72" MinWidth="64" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="المجموع" Binding="{Binding LineTotal, StringFormat=N0}" Width="70" MinWidth="56" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Summary -->
-                    <Border Grid.Row="3" Background="#F5F9FC" CornerRadius="12" Padding="12,10" Margin="0,8,0,0"
-                            MaxHeight="220">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <!-- Summary (always visible above pay buttons) -->
+                    <Border Grid.Row="3" Background="#F5F9FC" CornerRadius="12" Padding="12,10" Margin="0,8,0,0">
                         <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -494,13 +537,12 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="الإجمالي" FontSize="15" FontWeight="Bold"
+                                <TextBlock Text="الإجمالي" FontSize="16" FontWeight="Bold"
                                            Foreground="#0D47A1" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
-                                           FontSize="20" FontWeight="Bold" Foreground="#1565C0"/>
+                                           FontSize="24" FontWeight="Bold" Foreground="#1565C0"/>
                             </Grid>
                         </StackPanel>
-                        </ScrollViewer>
                     </Border>
 
                     <!-- Bottom actions -->

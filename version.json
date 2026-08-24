@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "1.14.18",
-    "releaseDate":  "2026-08-21",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.18/AlMuhasib-1.14.18.zip",
-    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.18/Qayd-Setup-1.14.18.exe",
-    "sha256":  "EEFBFB12EE2314EC2F4ECBD6B94F7869462EAD2AE42E206F7B9264265954D686",
-    "sizeBytes":  149407449,
-    "releaseNotes":  "تحسين حجم خط فاتورة البيع A4 وترقيم صفحة الرصيد الافتتاحي واستقرار التنقل",
+    "version":  "1.14.19",
+    "releaseDate":  "2026-08-24",
+    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.19/AlMuhasib-1.14.19.zip",
+    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.19/Qayd-Setup-1.14.19.exe",
+    "sha256":  "0164D1A6C759CD1098079469CC2000D42626D107ADE2F42F7B2EB092EAC116DE",
+    "sizeBytes":  149461307,
+    "releaseNotes":  "تحسين شاشة البيع السريع POS وملء الشاشة، وتحسين السندات والفواتير",
     "isMandatory":  false,
     "minSupportedVersion":  "1.0.0"
 }

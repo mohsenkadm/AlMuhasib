@@ -1,6 +1,9 @@
 const CATEGORY_ICONS = {
   dashboard: '📊', 'master-data': '🗂️', sales: '🛒', purchases: '📥',
-  installments: '📅', finance: '🏦', inventory: '📦', reports: '📈', admin: '⚙️'
+  installments: '📅', finance: '🏦', inventory: '📦', reports: '📈', admin: '⚙️',
+  'damage-invoice': '⚠️', pos: '🏪', products: '📦', categories: '🏷️',
+  'packaging-types': '📦', 'pricing-types': '💰', 'product-pricing': '💲',
+  warehouses: '🏬', 'opening-stock': '📥'
 };
 
 function extractVideoId(url) {
@@ -48,6 +51,7 @@ const VideosUI = {
   filtered: [],
   activeCat: 'all',
   selected: null,
+  userStartedPlayback: false,
 
   init() {
     const manifest = window.HELP_VIDEOS;
@@ -56,7 +60,7 @@ const VideosUI = {
     this.filtered = [...this.all];
     this.renderCategories();
     this.renderList();
-    if (this.all.length) this.select(this.all[0], { scroll: false });
+    if (this.all.length) this.select(this.all[0], { scroll: false, embed: false });
 
     const search = document.getElementById('video-search');
     search?.addEventListener('input', () => this.applyFilter(search.value.trim()));
@@ -73,7 +77,10 @@ const VideosUI = {
       const card = e.target.closest('[data-video-idx]');
       if (!card) return;
       const idx = +card.dataset.videoIdx;
-      if (this.filtered[idx]) this.select(this.filtered[idx], { scroll: true });
+      if (this.filtered[idx]) {
+        this.userStartedPlayback = true;
+        this.select(this.filtered[idx], { scroll: true, embed: true });
+      }
     });
   },
 
@@ -94,7 +101,7 @@ const VideosUI = {
     });
     this.renderList();
     if (this.selected && !this.filtered.includes(this.selected)) {
-      this.select(this.filtered[0] ?? null, { scroll: false });
+      this.select(this.filtered[0] ?? null, { scroll: false, embed: this.userStartedPlayback });
     }
   },
 
@@ -145,7 +152,7 @@ const VideosUI = {
     });
   },
 
-  select(video, { scroll = false } = {}) {
+  select(video, { scroll = false, embed = true } = {}) {
     this.selected = video;
     const wrap = document.getElementById('video-embed-wrap');
     const title = document.getElementById('video-active-title');
@@ -174,11 +181,20 @@ const VideosUI = {
       return;
     }
 
-    if (placeholder) placeholder.style.display = 'none';
-    if (wrap) {
-      wrap.innerHTML = `<iframe src="${embedUrl(video.videoId, video.start)}" title="${video.title}"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen loading="lazy"></iframe>`;
+    if (!embed) {
+      if (wrap) wrap.innerHTML = '';
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+        const pickText = I18N.t('videos.pick');
+        if (placeholder.querySelector('p')) placeholder.querySelector('p').textContent = pickText;
+      }
+    } else {
+      if (placeholder) placeholder.style.display = 'none';
+      if (wrap) {
+        wrap.innerHTML = `<iframe src="${embedUrl(video.videoId, video.start)}" title="${video.title}"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen loading="lazy"></iframe>`;
+      }
     }
 
     const idx = this.filtered.indexOf(video);
@@ -201,6 +217,15 @@ document.addEventListener('i18n-ready', () => {
   if (videosInited) {
     VideosUI.renderCategories();
     VideosUI.renderList();
-    if (VideosUI.selected) VideosUI.select(VideosUI.selected, { scroll: false });
+    if (VideosUI.selected) {
+      VideosUI.select(VideosUI.selected, {
+        scroll: false,
+        embed: VideosUI.userStartedPlayback
+      });
+    }
   }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  requestAnimationFrame(() => window.scrollPageToTop?.());
 });

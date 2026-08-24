@@ -18,11 +18,15 @@ window.LOCALES = {
       categories: {
         dashboard: "لوحة التحكم", "master-data": "البيانات الأساسية", sales: "المبيعات",
         purchases: "المشتريات", installments: "الأقساط", finance: "المالية",
-        inventory: "المخزون", reports: "التقارير", admin: "الإدارة والإعدادات"
+        inventory: "المخزون", reports: "التقارير", admin: "الإدارة والإعدادات",
+        "damage-invoice": "فاتورة تلف", pos: "بيع سريع (POS)", products: "المنتجات",
+        categories: "تصنيفات المنتجات", "packaging-types": "أنواع التعبئة",
+        "pricing-types": "أنواع التسعير", "product-pricing": "تسعير منتجات",
+        warehouses: "المخازن", "opening-stock": "الأرصدة الافتتاحية"
       }
     },
     hero: {
-      badge: "جديد: نظام الذهب + الولاء + الحقول المخصصة",
+      badge: "جديد: خصم لكل بند + مخزن لكل سطر + POS ملء الشاشة",
       title: "قيد",
       subtitle: "منصة أعمال متكاملة —",
       rotateWords: ["محاسبة", "ذهب", "فنادق", "عقود سيارات", "تجارة سيارات", "عقود عقارات"],
@@ -298,14 +302,16 @@ window.LOCALES = {
       subtitle: "أحدث ما أُضيف لمنصة قيد — جاهز للاستخدام الآن",
       newLabel: "جديد",
       items: [
+        { icon: "receipt", title: "خصم نسبة لكل بند", desc: "حقل خصم % على مستوى كل مادة في فواتير البيع والشراء والأقساط — يظهر في الطباعة وإيصال POS." },
+        { icon: "warehouse", title: "مخزن لكل بند", desc: "اختيار مخزن مختلف لكل سطر في الفاتورة — مع تحديث المخزون حسب البند وليس الفاتورة فقط." },
+        { icon: "shield", title: "التحقق قبل الحفظ", desc: "حوار تحقق يمنع الأخطاء — تنبيه البيع تحت التكلفة وحد ائتمان العميل عند تجاوز السقف." },
+        { icon: "pos", title: "POS ملء الشاشة", desc: "نافذة كاشير بملء الشاشة للبيع السريع — مثالية للشاشات اللمسية ونقاط البيع." },
+        { icon: "print", title: "طباعة محسّنة", desc: "تحسين حجم خط فاتورة A4، عرض الخصم % والمخزن على الطباعة، وترقيم صفحات الرصيد الافتتاحي." },
         { icon: "gold", title: "نظام الذهب", desc: "نظام مستقل لمحلات الذهب: أسعار المثقال، المخزون، البيع والآجل، والميزان." },
         { icon: "loyalty", title: "نظام الولاء", desc: "نقاط تُكسب من البيع وتُستبدل خصماً — من الإعدادات والفواتير وPOS." },
         { icon: "customFields", title: "الحقول المخصصة", desc: "حتى 8 حقول (نص، رقم، نعم/لا، اختيارات) للمنتجات والعملاء والموردين والمستثمرين." },
         { icon: "search", title: "بحث ذكي وفحص ربح", desc: "بحث مواد بالاسم مع تمييز وكميات — وزر فحص الربح (تكلفة/بيع/ربح)." },
-        { icon: "chart", title: "ملخص العمل", desc: "تقرير KPIs ومخططات وأفضل عملاء وساعات نشاط — مع تفاصيل زبون/منتج من الفاتورة." },
-        { icon: "whatsapp", title: "واتساب موسّع", desc: "مشاركة PDF عبر واتساب للسندات وإيصالات المستثمرين والكشوف وتقارير البيع/الشراء." },
-        { icon: "truck", title: "نسخة المخزن والسائق", desc: "طباعة نسخة مخزن بدون مبالغ واختيار سائق في فواتير البيع والأقساط." },
-        { icon: "salesBoost", title: "تحسينات البيع", desc: "خصم، أنواع تعبئة، أجور نقل، وزن القائمة، وحاسبة فكة الدينار (F7)." }
+        { icon: "whatsapp", title: "واتساب موسّع", desc: "مشاركة PDF عبر واتساب للسندات وإيصالات المستثمرين والكشوف وتقارير البيع/الشراء." }
       ]
     },
     features: {
@@ -430,11 +436,15 @@ window.LOCALES = {
       categories: {
         dashboard: "Dashboard", "master-data": "Master data", sales: "Sales",
         purchases: "Purchases", installments: "Installments", finance: "Finance",
-        inventory: "Inventory", reports: "Reports", admin: "Admin & settings"
+        inventory: "Inventory", reports: "Reports", admin: "Admin & settings",
+        "damage-invoice": "Damage invoice", pos: "Quick sale (POS)", products: "Products",
+        categories: "Product categories", "packaging-types": "Packaging types",
+        "pricing-types": "Pricing types", "product-pricing": "Product pricing",
+        warehouses: "Warehouses", "opening-stock": "Opening stock"
       }
     },
     hero: {
-      badge: "New: Gold system + loyalty + custom fields",
+      badge: "New: per-line discount + warehouse per row + fullscreen POS",
       title: "Qayd",
       subtitle: "Integrated business platform —",
       rotateWords: ["Accounting", "Gold", "Hotels", "Car contracts", "Car trading", "Real estate"],
@@ -696,14 +706,16 @@ window.LOCALES = {
       subtitle: "The newest Qayd features — ready to use now",
       newLabel: "New",
       items: [
+        { icon: "receipt", title: "Per-line discount %", desc: "Discount % on each line in sales, purchase, and installment invoices — shown on print and POS receipts." },
+        { icon: "warehouse", title: "Warehouse per line", desc: "Pick a different warehouse for each invoice row — stock updates per line, not just per invoice." },
+        { icon: "shield", title: "Pre-save validation", desc: "Validation dialogs block mistakes — below-cost warnings and customer credit limit checks." },
+        { icon: "pos", title: "Fullscreen POS", desc: "Dedicated fullscreen cashier window for quick sales — ideal for touch screens and checkout desks." },
+        { icon: "print", title: "Improved printing", desc: "Better A4 sales invoice font size, discount % and warehouse on printouts, opening stock page numbers." },
         { icon: "gold", title: "Gold system", desc: "Standalone gold-shop system: mithqal prices, stock, cash/credit sales, and scale." },
         { icon: "loyalty", title: "Loyalty system", desc: "Earn points on sales and redeem discounts — from settings, invoices, and POS." },
         { icon: "customFields", title: "Custom fields", desc: "Up to 8 fields (text, number, yes/no, choices) for products, customers, suppliers, and investors." },
         { icon: "search", title: "Smart search & profit check", desc: "Highlight product search with stock qty — plus cost/sell/profit check." },
-        { icon: "chart", title: "Work summary", desc: "KPI report with charts, top customers, and busy hours — plus customer/product details from invoices." },
-        { icon: "whatsapp", title: "Expanded WhatsApp", desc: "Share PDFs for vouchers, investor receipts, statements, and sales/purchase reports." },
-        { icon: "truck", title: "Warehouse copy & driver", desc: "Print a warehouse copy without amounts and pick a driver on sales/installment invoices." },
-        { icon: "salesBoost", title: "Sales upgrades", desc: "Discounts, packing types, shipping fees, list weight, and dinar change calculator (F7)." }
+        { icon: "whatsapp", title: "Expanded WhatsApp", desc: "Share PDFs for vouchers, investor receipts, statements, and sales/purchase reports." }
       ]
     },
     features: {

@@ -157,6 +157,7 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+        services.AddSingleton<ISessionActivityService, SessionActivityService>();
         services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
         services.AddSingleton<ISoundService, SoundService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
@@ -183,6 +184,7 @@ public partial class App : Application
             sp.GetRequiredService<IRecentExcelExportService>()));
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
+        services.AddSingleton<IPosFullscreenService, PosFullscreenService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
         services.AddSingleton<IOpeningStockExcelService, AlMuhasib.Shared.Services.OpeningStockExcelService>();
         services.AddSingleton<IOpeningCustomerBalanceExcelService, AlMuhasib.Shared.Services.OpeningCustomerBalanceExcelService>();
@@ -408,6 +410,7 @@ public partial class App : Application
         services.AddTransient<LoginWindow>();
         services.AddTransient<MainWindow>();
         services.AddTransient<HelpVideosWindow>();
+        services.AddTransient<PosFullscreenWindow>();
     }
 
     protected override async void OnStartup(StartupEventArgs e)

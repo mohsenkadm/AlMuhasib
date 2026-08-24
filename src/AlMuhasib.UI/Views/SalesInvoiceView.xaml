@@ -552,15 +552,20 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="المخزن" Width="130">
+                                <DataGridTemplateColumn Header="المخزن" Width="165" MinWidth="150">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
+                                            <Setter Property="Padding" Value="4,4"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding DataContext.Warehouses, Source={x:Reference VmProxy}}"
                                                       SelectedItem="{Binding SelectedWarehouse, UpdateSourceTrigger=PropertyChanged}"
                                                       DisplayMemberPath="Name"
                                                       IsEditable="False"
-                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                                      FontSize="12"/>
+                                                      Style="{StaticResource InvoiceGridComboBox}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

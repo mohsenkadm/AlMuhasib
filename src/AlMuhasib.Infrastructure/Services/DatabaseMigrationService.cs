@@ -24,8 +24,8 @@ public sealed class DatabaseMigrationService : IDatabaseMigrationService
     await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
     var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
 
-    if (pending.Count > 0)
-      await db.Database.MigrateAsync(cancellationToken);
+    // Always invoke MigrateAsync — it is idempotent and applies any newly discovered migrations.
+    await db.Database.MigrateAsync(cancellationToken);
 
     return pending;
   }
