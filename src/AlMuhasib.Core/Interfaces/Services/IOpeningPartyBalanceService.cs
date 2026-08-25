@@ -5,6 +5,9 @@ namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IOpeningPartyBalanceService
 {
+    Task<OpeningPartyBalancePagedResult> GetCustomerOpeningBalancesAsync(OpeningPartyBalanceQuery query);
+    Task<OpeningPartyBalancePagedResult> GetSupplierOpeningBalancesAsync(OpeningPartyBalanceQuery query);
+
     Task<Invoice> CreateCustomerOpeningBalanceAsync(OpeningPartyBalanceRequest request);
     Task<OpeningPartyBalanceBatchResult> CreateCustomerOpeningBalancesBatchAsync(
         IReadOnlyList<OpeningPartyBalanceRequest> requests);
@@ -12,6 +15,12 @@ public interface IOpeningPartyBalanceService
     Task<Invoice> CreateSupplierOpeningBalanceAsync(OpeningPartyBalanceRequest request);
     Task<OpeningPartyBalanceBatchResult> CreateSupplierOpeningBalancesBatchAsync(
         IReadOnlyList<OpeningPartyBalanceRequest> requests);
+
+    Task UpdateCustomerOpeningBalanceAsync(OpeningPartyBalanceUpdateRequest request);
+    Task UpdateSupplierOpeningBalanceAsync(OpeningPartyBalanceUpdateRequest request);
+
+    Task DeleteCustomerOpeningBalanceAsync(int invoiceId);
+    Task DeleteSupplierOpeningBalanceAsync(int invoiceId);
 }
 
 public interface IOpeningCustomerBalanceExcelService

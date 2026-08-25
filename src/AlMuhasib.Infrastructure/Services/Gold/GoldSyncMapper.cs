@@ -477,11 +477,10 @@ internal static class GoldSyncMapper
                 .FirstOrDefaultAsync(s => s.SyncId == dto.SyncId, ct);
             if (existing is null)
             {
-                existing = await db.GoldSettings.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(s => s.Id == GoldSettings.SingletonId, ct);
+                existing = await db.GoldSettings.IgnoreQueryFilters().FirstOrDefaultAsync(ct);
                 if (existing is null)
                 {
-                    existing = new GoldSettings { Id = GoldSettings.SingletonId };
+                    existing = new GoldSettings();
                     db.GoldSettings.Add(existing);
                 }
             }

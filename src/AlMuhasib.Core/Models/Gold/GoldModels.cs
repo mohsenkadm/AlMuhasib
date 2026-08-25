@@ -236,6 +236,14 @@ public class GoldOpeningCustomerBalanceRequest
     public string Notes { get; set; } = string.Empty;
 }
 
+public class GoldOpeningSupplierBalanceRequest
+{
+    public int SupplierId { get; set; }
+    public decimal CreditBalanceIqd { get; set; }
+    public decimal CreditBalanceUsd { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
 public class GoldReportSummary
 {
     public DateTime? DateFrom { get; set; }

@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:OpeningCustomerBalanceViewModel}"
@@ -15,17 +16,18 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="24">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" CornerRadius="14" Margin="0,0,0,16" Padding="24,18">
+        <!-- Hero -->
+        <Border Grid.Row="0" CornerRadius="16" Margin="0,0,0,14" Padding="22,18">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#01579B" Offset="0"/>
-                    <GradientStop Color="#0277BD" Offset="0.5"/>
+                    <GradientStop Color="#0277BD" Offset="0.55"/>
                     <GradientStop Color="#29B6F6" Offset="1"/>
                 </LinearGradientBrush>
             </Border.Background>
@@ -33,118 +35,227 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Width="52" Height="52" CornerRadius="12"
-                        Background="#FFFFFF22" Margin="0,0,16,0" VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="AccountCash" Width="28" Height="28"
-                                             Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#FFFFFF28"
+                        Margin="0,0,16,0" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="AccountCash" Width="28" Height="28" Foreground="White"
+                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="أرصدة العملاء الافتتاحية" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="إدخال أرصدة آجلة سابقة على ذمة العملاء — بدون أصناف أو تأثير على القاصة"
-                               FontSize="13" Foreground="#B3E5FC" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="إدارة كاملة للأرصدة الآجلة — إضافة · تعديل · حذف · بحث وفلاتر"
+                               FontSize="13" Foreground="#B3E5FC" Margin="0,5,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
+                <Border Grid.Column="2" Background="#FFFFFF22" CornerRadius="10" Padding="14,8"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="{Binding TotalCount, StringFormat={}{0:N0}}" FontSize="18" FontWeight="Bold"
+                                   Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="رصيد مسجّل" FontSize="11" Foreground="#E1F5FE" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Style="{StaticResource MaterialDesignFilledTabControl}">
-            <TabItem Header="إدخال يدوي">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,12,8,0">
-                    <StackPanel>
-                        <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
-                                             Padding="20" Margin="0,0,0,16">
-                            <StackPanel>
-                                <Border Background="#E1F5FE" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="InformationOutline" Foreground="#0277BD" Width="20" Height="20" VerticalAlignment="Top" Margin="0,2,8,0"/>
-                                        <TextBlock TextWrapping="Wrap" Foreground="#01579B" FontSize="13"
-                                                   Text="اختر العميل أو أدخل اسماً جديداً، ثم المبلغ الذي في ذمته. إذا لم يكن العميل موجوداً سيُنشأ تلقائياً عند الحفظ."/>
-                                    </StackPanel>
-                                </Border>
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}"
+                    Style="{StaticResource MaterialDesignFilledTabControl}">
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+            <!-- ===== Management tab ===== -->
+            <TabItem Header="إدارة الأرصدة">
+                <Grid Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                                    <Grid Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox ItemsSource="{Binding FilteredCustomers}"
-                                                  SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                                  DisplayMemberPath="Name"
-                                                  Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                  IsEditable="True" StaysOpenOnEdit="True"
-                                                  materialDesign:HintAssist.Hint="العميل"
-                                                  materialDesign:HintAssist.IsFloating="True"
-                                                  Style="{StaticResource FilledComboBox}" FontSize="14"/>
-                                        <Button Grid.Column="1" Command="{Binding OpenQuickAddCustomerCommand}"
-                                                Style="{StaticResource IconButton}" ToolTip="إضافة عميل جديد"
-                                                Width="40" Height="40" Margin="6,0,0,0">
-                                            <materialDesign:PackIcon Kind="AccountPlus" Width="22" Height="22"/>
-                                        </Button>
-                                    </Grid>
-
-                                    <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
-                                             Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="الهاتف"
-                                             materialDesign:HintAssist.IsFloating="True"
-                                             Style="{StaticResource FilledTextBox}" FontSize="14"/>
-
-                                    <TextBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,12"
-                                             Text="{Binding FileNumber, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="رقم الملف"
-                                             materialDesign:HintAssist.IsFloating="True"
-                                             Style="{StaticResource FilledTextBox}" FontSize="14"/>
-
-                                    <TextBox Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
-                                             Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="مبلغ الرصيد الآجل"
-                                             materialDesign:HintAssist.IsFloating="True"
-                                             Style="{StaticResource NumericTextBox}" FontSize="14"/>
-
-                                    <DatePicker Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
-                                                SelectedDate="{Binding BalanceDate}"
-                                                materialDesign:HintAssist.Hint="التاريخ"
-                                                materialDesign:HintAssist.IsFloating="True"
-                                                Style="{StaticResource FilledDatePicker}" FontSize="14"/>
-
-                                    <TextBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"
-                                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="ملاحظات"
-                                             materialDesign:HintAssist.IsFloating="True"
-                                             Style="{StaticResource FilledTextBox}" FontSize="14"/>
-                                </Grid>
-
-                                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" FontSize="13"
-                                           Margin="0,0,0,12" TextWrapping="Wrap"
-                                           Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
-
-                                <Button Command="{Binding SaveManualCommand}"
+                    <!-- Toolbar -->
+                    <materialDesign:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="14,12"
+                                         Margin="0,0,0,12" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <DockPanel LastChildFill="False">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <Button Command="{Binding OpenAddDialogCommand}"
                                         Style="{StaticResource PrimaryButton}"
-                                        Height="44" Padding="28,0" HorizontalAlignment="Left"
+                                        Height="40" Padding="18,0" Margin="0,0,8,0"
                                         materialDesign:ButtonAssist.CornerRadius="10"
-                                        FontSize="15" FontWeight="SemiBold">
+                                        IsEnabled="{Binding CanAdd}">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="ContentSaveOutline" Width="22" Height="22" VerticalAlignment="Center"/>
-                                        <TextBlock Text="حفظ الرصيد" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="إضافة رصيد" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding RefreshCommand}"
+                                        Style="{StaticResource FlatButton}"
+                                        materialDesign:ButtonAssist.CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="تحديث" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
-                        </materialDesign:Card>
-                    </StackPanel>
-                </ScrollViewer>
+
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <TextBox materialDesign:HintAssist.Hint="بحث بالاسم / الهاتف / رقم الملف / رقم الفاتورة"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FilledTextBox}"
+                                         MinWidth="280" Margin="0,0,10,0"/>
+                                <CheckBox Content="غير المسدد فقط"
+                                          IsChecked="{Binding UnpaidOnly}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,10,0"/>
+                                <Button Command="{Binding ToggleAdvancedFilterCommand}"
+                                        Style="{StaticResource OutlinedButton}" Height="40" Padding="12,0"
+                                        materialDesign:ButtonAssist.CornerRadius="8" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FilterVariant" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="فلاتر" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ClearFiltersCommand}"
+                                        Style="{StaticResource FlatButton}" ToolTip="مسح الفلاتر">
+                                    <materialDesign:PackIcon Kind="FilterRemoveOutline" Width="20" Height="20"/>
+                                </Button>
+                            </StackPanel>
+                        </DockPanel>
+                    </materialDesign:Card>
+
+                    <!-- Advanced filters -->
+                    <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="16,14"
+                                         Margin="0,0,0,12"
+                                         Visibility="{Binding IsAdvancedFilterOpen, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,10">
+                                <TextBlock Text="فلاتر متقدمة" FontWeight="SemiBold" FontSize="14"
+                                           Foreground="#01579B" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding ActiveFiltersSummary}"
+                                           FontSize="12" Foreground="#607D8B" VerticalAlignment="Center"
+                                           HorizontalAlignment="Left" Margin="16,0,0,0"/>
+                            </DockPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <DatePicker Grid.Column="0" Margin="0,0,10,0"
+                                            SelectedDate="{Binding FilterFromDate}"
+                                            materialDesign:HintAssist.Hint="من تاريخ"
+                                            materialDesign:HintAssist.IsFloating="True"
+                                            Style="{StaticResource FilledDatePicker}"/>
+                                <DatePicker Grid.Column="1" Margin="0,0,10,0"
+                                            SelectedDate="{Binding FilterToDate}"
+                                            materialDesign:HintAssist.Hint="إلى تاريخ"
+                                            materialDesign:HintAssist.IsFloating="True"
+                                            Style="{StaticResource FilledDatePicker}"/>
+                                <TextBox Grid.Column="2" Margin="0,0,10,0"
+                                         Text="{Binding FilterMinAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="أقل مبلغ"
+                                         materialDesign:HintAssist.IsFloating="True"
+                                         Style="{StaticResource NumericTextBox}"/>
+                                <TextBox Grid.Column="3" Margin="0,0,10,0"
+                                         Text="{Binding FilterMaxAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="أعلى مبلغ"
+                                         materialDesign:HintAssist.IsFloating="True"
+                                         Style="{StaticResource NumericTextBox}"/>
+                                <Button Grid.Column="4" Command="{Binding ApplyAmountFiltersCommand}"
+                                        Style="{StaticResource AccentButton}" Height="40" Padding="16,0"
+                                        materialDesign:ButtonAssist.CornerRadius="8"
+                                        Content="تطبيق"/>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Grid -->
+                    <materialDesign:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0"
+                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <controls:ListTableHeaderBar Grid.Row="0"
+                                                         Title="قائمة الأرصدة الافتتاحية"
+                                                         TargetDataGrid="{Binding ElementName=OpeningBalancesGrid}"
+                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                         ExportCommand="{Binding ExportToExcelCommand}"
+                                                         PrintCommand="{Binding PrintTableCommand}"
+                                                         ShowCardToggle="False"/>
+
+                            <DataGrid x:Name="OpeningBalancesGrid"
+                                      Grid.Row="1"
+                                      ItemsSource="{Binding Items}"
+                                      SelectedItem="{Binding SelectedItem}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      SelectionMode="Single"
+                                      HeadersVisibility="Column"
+                                      Style="{StaticResource ModernDataGrid}"
+                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                      behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="رقم" Binding="{Binding InvoiceNumber}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceNumber"/>
+                                    <DataGridTextColumn Header="العميل" Binding="{Binding PartyName}" Width="*"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyName"/>
+                                    <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                                    <DataGridTextColumn Header="رقم الملف" Binding="{Binding FileNumber}" Width="100"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber"/>
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                    <DataGridTextColumn Header="المسدد" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
+                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
+                                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding UserNotes}" Width="140"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UserNotes"/>
+                                    <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110"
+                                                            behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                                        <DataGridTemplateColumn.CellStyle>
+                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                        </DataGridTemplateColumn.CellStyle>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource TableEditIconButton}"
+                                                            ToolTip="تعديل"
+                                                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                                        <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource TableDeleteIconButton}"
+                                                            ToolTip="حذف"
+                                                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <controls:PaginationBar Grid.Row="2"/>
+                        </Grid>
+                    </materialDesign:Card>
+                </Grid>
             </TabItem>
 
+            <!-- ===== Excel import ===== -->
             <TabItem Header="استيراد Excel">
                 <Grid Margin="0,12,0,0">
                     <Grid.RowDefinitions>
@@ -156,6 +267,14 @@
                     <materialDesign:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
                                          Padding="20" Margin="0,0,0,16">
                         <StackPanel>
+                            <Border Background="#E1F5FE" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="InformationOutline" Foreground="#0277BD"
+                                                             Width="20" Height="20" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                                    <TextBlock TextWrapping="Wrap" Foreground="#01579B" FontSize="13"
+                                               Text="نزّل القالب، املأ ورقة «البيانات»، ثم اختر الملف للاستيراد الجماعي."/>
+                                </StackPanel>
+                            </Border>
                             <WrapPanel Orientation="Horizontal">
                                 <Button Command="{Binding DownloadTemplateCommand}" Margin="0,0,12,0"
                                         Style="{StaticResource OutlinedButton}" Height="40" Padding="16,0"
@@ -227,18 +346,128 @@
             </TabItem>
         </TabControl>
 
-        <Border Style="{StaticResource PageLoading}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                             IsIndeterminate="True" Width="40" Height="40" Value="0"/>
-                <TextBlock Text="{Binding ImportStatusMessage}" Margin="0,16,0,0"
-                           FontSize="13" Foreground="#757575" HorizontalAlignment="Center"/>
-            </StackPanel>
-        </Border>
+        <!-- Add / Edit dialog -->
+        <materialDesign:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <materialDesign:DialogHost.DialogContent>
+                <materialDesign:Card Padding="24" MinWidth="520" MaxWidth="600" UniformCornerRadius="14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="#E1F5FE" Margin="0,0,12,0">
+                                <materialDesign:PackIcon Kind="AccountCash" Width="22" Height="22"
+                                                         Foreground="#0277BD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
 
-        <!-- Quick add customer dialog -->
-        <Border Background="#88000000" Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}">
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox ItemsSource="{Binding FilteredCustomers}"
+                                      SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
+                                      DisplayMemberPath="Name"
+                                      Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True" StaysOpenOnEdit="True"
+                                      IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
+                                      materialDesign:HintAssist.Hint="العميل *"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <Button Grid.Column="1" Command="{Binding OpenQuickAddCustomerCommand}"
+                                    Style="{StaticResource IconButton}" ToolTip="إضافة عميل جديد"
+                                    Width="40" Height="40" Margin="6,0,0,0"
+                                    Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <materialDesign:PackIcon Kind="AccountPlus" Width="22" Height="22"/>
+                            </Button>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                     Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
+                                     materialDesign:HintAssist.Hint="الهاتف"
+                                     Style="{StaticResource FilledTextBox}"/>
+                            <TextBox Grid.Column="1" Margin="8,0,0,0"
+                                     Text="{Binding FileNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
+                                     materialDesign:HintAssist.Hint="رقم الملف"
+                                     Style="{StaticResource FilledTextBox}"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                     Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="مبلغ الرصيد الآجل *"
+                                     Style="{StaticResource NumericTextBox}"/>
+                            <DatePicker Grid.Column="1" Margin="8,0,0,0"
+                                        SelectedDate="{Binding BalanceDate}"
+                                        materialDesign:HintAssist.Hint="التاريخ"
+                                        Style="{StaticResource FilledDatePicker}"/>
+                        </Grid>
+
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="ملاحظات"
+                                 Style="{StaticResource FilledTextBox}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MinHeight="56"
+                                 Margin="0,0,0,10"/>
+
+                        <TextBlock Text="{Binding DialogError}" Foreground="#C62828" Margin="0,0,0,10"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,0">
+                            <Button Content="حفظ" Command="{Binding SaveBalanceCommand}"
+                                    Style="{StaticResource PrimaryButton}" Height="40" Padding="28,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- Delete confirmation -->
+        <materialDesign:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <materialDesign:DialogHost.DialogContent>
+                <materialDesign:Card Padding="24" MinWidth="400" UniformCornerRadius="14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <materialDesign:PackIcon Kind="AlertCircleOutline" Width="28" Height="28"
+                                                     Foreground="#D32F2F" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="حذف الرصيد الافتتاحي" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Margin="0,0,0,8" TextWrapping="Wrap">
+                            <Run Text="هل تريد حذف رصيد العميل "/>
+                            <Run Text="{Binding ItemToDelete.PartyName, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text=" بمبلغ "/>
+                            <Run Text="{Binding ItemToDelete.Amount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
+                            <Run Text=" د.ع؟"/>
+                        </TextBlock>
+                        <TextBlock Text="لا يمكن التراجع عن هذا الإجراء إذا لم تكن هناك نسخ احتياطي."
+                                   Foreground="#757575" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    materialDesign:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- Quick add customer -->
+        <Border Background="#88000000" Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}"
+                Grid.RowSpan="2" Panel.ZIndex="20">
             <materialDesign:Card Width="420" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center"
                                  UniformCornerRadius="12">
                 <StackPanel>
@@ -258,6 +487,17 @@
                     </StackPanel>
                 </StackPanel>
             </materialDesign:Card>
+        </Border>
+
+        <Border Style="{StaticResource PageLoading}"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                Grid.RowSpan="2" Panel.ZIndex="30">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="40" Height="40" Value="0"/>
+                <TextBlock Text="جارٍ المعالجة..." Margin="0,16,0,0"
+                           FontSize="13" Foreground="#757575" HorizontalAlignment="Center"/>
+            </StackPanel>
         </Border>
     </Grid>
 </UserControl>

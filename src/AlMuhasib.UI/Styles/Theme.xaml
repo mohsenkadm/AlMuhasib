@@ -1665,6 +1665,18 @@
         </Button>
     </DataTemplate>
 
+    <DataTemplate x:Key="GoldInvoiceKaratCellTemplate">
+        <ComboBox ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                  SelectedValue="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
+                  SelectedValuePath="KaratValue"
+                  DisplayMemberPath="Name"
+                  IsEditable="False"
+                  MinWidth="90"
+                  VerticalAlignment="Center"
+                  BorderThickness="0"
+                  Background="Transparent"/>
+    </DataTemplate>
+
     <DataTemplate x:Key="InvoiceDeleteRowCellTemplate">
         <Button Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 CommandParameter="{Binding}"

@@ -22,6 +22,8 @@ public abstract class TenantApiControllerBase : ControllerBase
     protected void EnsureTenant()
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+        if (tenantId <= 0)
+            throw new InvalidOperationException("Invalid tenant_id claim.");
         TenantContext.SetTenant(tenantId);
     }
 

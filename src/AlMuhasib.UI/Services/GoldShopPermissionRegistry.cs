@@ -24,6 +24,7 @@ public static class GoldShopPermissionRegistry
     public const string CustomerStatement = "GoldCustomerStatement";
     public const string OpeningStock = "GoldOpeningStock";
     public const string OpeningCustomerBalance = "GoldOpeningCustomerBalance";
+    public const string OpeningSupplierBalance = "GoldOpeningSupplierBalance";
     public const string CashBoxes = "GoldCashBoxes";
     public const string Vouchers = "GoldVouchers";
     public const string Expenses = "GoldExpenses";
@@ -64,7 +65,8 @@ public static class GoldShopPermissionRegistry
         (Customers, "الزبائن"),
         (CustomerStatement, "كشف حساب زبون"),
         (OpeningStock, "رصيد افتتاحي مخزون"),
-        (OpeningCustomerBalance, "رصيد افتتاحي زبون"),
+        (OpeningCustomerBalance, "أرصدة الزبائن الافتتاحية"),
+        (OpeningSupplierBalance, "أرصدة الموردين الافتتاحية"),
         (CashBoxes, "القاصات"),
         (Vouchers, "السندات"),
         (Expenses, "المصاريف"),
@@ -109,6 +111,7 @@ public static class GoldShopPermissionRegistry
         [typeof(GoldCustomerStatementViewModel)] = CustomerStatement,
         [typeof(GoldOpeningStockViewModel)] = OpeningStock,
         [typeof(GoldOpeningCustomerBalanceViewModel)] = OpeningCustomerBalance,
+        [typeof(GoldOpeningSupplierBalanceViewModel)] = OpeningSupplierBalance,
         [typeof(GoldCashBoxesViewModel)] = CashBoxes,
         [typeof(GoldVouchersViewModel)] = Vouchers,
         [typeof(GoldExpensesViewModel)] = Expenses,
@@ -153,6 +156,7 @@ public static class GoldShopPermissionRegistry
         [CustomerStatement] = typeof(GoldCustomerStatementViewModel),
         [OpeningStock] = typeof(GoldOpeningStockViewModel),
         [OpeningCustomerBalance] = typeof(GoldOpeningCustomerBalanceViewModel),
+        [OpeningSupplierBalance] = typeof(GoldOpeningSupplierBalanceViewModel),
         [CashBoxes] = typeof(GoldCashBoxesViewModel),
         [Vouchers] = typeof(GoldVouchersViewModel),
         [Expenses] = typeof(GoldExpensesViewModel),

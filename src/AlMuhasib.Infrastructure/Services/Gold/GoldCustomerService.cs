@@ -36,7 +36,7 @@ public sealed class GoldCustomerService : IGoldCustomerService
             query = query.Where(c => !c.IsActive);
 
         if (creditOnly)
-            query = query.Where(c => c.CreditBalanceIqd > 0 || c.CreditBalanceUsd > 0);
+            query = query.Where(c => c.CreditBalanceIqd > 0 || c.CreditBalanceUsd > 0 || c.GoldCreditGrams > 0);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -161,7 +161,7 @@ public sealed class GoldCustomerService : IGoldCustomerService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var settings = await context.GoldSettings.AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == GoldSettings.SingletonId, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
         var thresholdDays = settings?.OverdueDaysThreshold ?? 30;
         var cutoff = DateTime.Today.AddDays(-thresholdDays);
 

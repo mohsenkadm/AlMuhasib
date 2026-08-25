@@ -23,8 +23,8 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
 
     public async Task<IReadOnlyList<GoldAlertItem>> GetAlertsAsync(CancellationToken cancellationToken = default)
     {
-        await RefreshAlertsAsync(cancellationToken);
-
+        // Dashboard/read path: do NOT run RefreshAlertsAsync (heavy writes + stock scan).
+        // Notifications screen calls RefreshAlertsAsync explicitly before loading.
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var notifications = await context.GoldNotifications.AsNoTracking()
             .Where(n => !n.IsRead)
@@ -39,11 +39,14 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var today = DateTime.Today;
-        var settings = await GoldSettingsService.EnsureSettingsAsync(context, cancellationToken);
+        var tomorrow = today.AddDays(1);
+        var settings = await context.GoldSettings.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        var overdueDays = settings?.OverdueDaysThreshold > 0 ? settings!.OverdueDaysThreshold : 30;
+        var lowThreshold = settings?.LowStockAlertGrams ?? 10m;
         var tasks = new List<DailyTaskItem>();
 
         var pricesToday = await context.GoldMithqalPrices.AsNoTracking()
-            .AnyAsync(p => p.PriceDate.Date == today, cancellationToken);
+            .AnyAsync(p => p.PriceDate >= today && p.PriceDate < tomorrow, cancellationToken);
         if (!pricesToday)
         {
             tasks.Add(new DailyTaskItem
@@ -55,12 +58,12 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             });
         }
 
-        var cutoff = today.AddDays(-(settings.OverdueDaysThreshold <= 0 ? 30 : settings.OverdueDaysThreshold));
+        var cutoff = today.AddDays(-overdueDays);
         var overdueCount = await context.GoldInvoices.AsNoTracking()
             .Where(i => i.CustomerId.HasValue &&
                         i.RemainingAmount > 0 &&
                         i.Status != GoldInvoiceStatus.Cancelled &&
-                        i.InvoiceDate.Date <= cutoff)
+                        i.InvoiceDate <= cutoff)
             .Select(i => i.CustomerId!.Value)
             .Distinct()
             .CountAsync(cancellationToken);
@@ -75,23 +78,21 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             });
         }
 
-        var stockRows = await GoldInventoryService.BuildStockRowsAsync(context, null, cancellationToken);
-        var lowStock = stockRows.Where(s => s.IsLowStock).ToList();
-        if (lowStock.Count > 0)
+        var lowStockCount = await context.GoldStockBalances.AsNoTracking()
+            .CountAsync(s => s.GramsOnHand < lowThreshold, cancellationToken);
+        if (lowStockCount > 0)
         {
-            var karatCount = lowStock.Select(s => s.KaratValue).Distinct().Count();
-            var warehouseCount = lowStock.Select(s => s.WarehouseId).Distinct().Count();
             tasks.Add(new DailyTaskItem
             {
                 Title = "مراجعة المخزون المنخفض",
-                Description = $"{karatCount} عيار في {warehouseCount} مخزن تحت الحد",
+                Description = $"{lowStockCount} رصيد تحت حد التنبيه ({lowThreshold:N0} غ)",
                 Action = SmartAlertAction.OpenGoldStock,
                 Priority = 3
             });
         }
 
         var hasExpenseToday = await context.GoldExpenses.AsNoTracking()
-            .AnyAsync(e => e.ExpenseDate.Date == today, cancellationToken);
+            .AnyAsync(e => e.ExpenseDate >= today && e.ExpenseDate < tomorrow, cancellationToken);
         if (!hasExpenseToday)
         {
             tasks.Add(new DailyTaskItem
@@ -112,8 +113,9 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
         var today = DateTime.Today;
         var settings = await GoldSettingsService.EnsureSettingsAsync(context, cancellationToken);
 
-        // Prices not updated today
-        var pricesToday = await context.GoldMithqalPrices.AnyAsync(p => p.PriceDate.Date == today, cancellationToken);
+            // Date ranges (sargable) instead of .Date comparisons.
+            var pricesToday = await context.GoldMithqalPrices.AnyAsync(
+                p => p.PriceDate >= today && p.PriceDate < today.AddDays(1), cancellationToken);
         await UpsertOpenAlertAsync(
             context,
             GoldNotificationType.PriceNotUpdated,
@@ -130,7 +132,7 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             .Where(i => i.CustomerId.HasValue &&
                         i.RemainingAmount > 0 &&
                         i.Status != GoldInvoiceStatus.Cancelled &&
-                        i.InvoiceDate.Date <= cutoff)
+                        i.InvoiceDate <= cutoff)
             .Select(i => i.CustomerId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -176,7 +178,8 @@ public sealed class GoldSmartAlertService : IGoldSmartAlertService
             cancellationToken);
 
         // No expense recorded today
-        var hasExpenseToday = await context.GoldExpenses.AnyAsync(e => e.ExpenseDate.Date == today, cancellationToken);
+        var hasExpenseToday = await context.GoldExpenses.AnyAsync(
+            e => e.ExpenseDate >= today && e.ExpenseDate < today.AddDays(1), cancellationToken);
         await UpsertOpenAlertAsync(
             context,
             GoldNotificationType.NoExpenseToday,

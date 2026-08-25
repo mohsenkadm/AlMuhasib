@@ -16,9 +16,14 @@ internal static class GoldCurrencyHelper
             return amount;
 
         var fx = fxRate <= 0 ? 1m : fxRate;
-        return from == GoldCurrency.USD
+        var converted = from == GoldCurrency.USD
             ? amount * fx
             : amount / fx;
+
+        // IQD is typically whole dinars; USD keeps 2 decimals.
+        return to == GoldCurrency.IQD
+            ? Round(converted, 0)
+            : Round(converted, 2);
     }
 
     public static void ApplyDualTotals(GoldInvoice invoice)

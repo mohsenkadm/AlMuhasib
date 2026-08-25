@@ -112,17 +112,38 @@
                                   Style="{StaticResource FilledComboBox}"
                                   Margin="0,0,12,12"/>
 
-                        <ComboBox Grid.Row="0" Grid.Column="2"
-                                  ItemsSource="{Binding Customers}"
-                                  SelectedItem="{Binding SelectedCustomer}"
-                                  DisplayMemberPath="Name"
-                                  IsEditable="True"
-                                  StaysOpenOnEdit="True"
-                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  materialDesign:HintAssist.Hint="الزبون"
-                                  materialDesign:HintAssist.IsFloating="True"
-                                  Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,12,12"/>
+                        <Grid Grid.Row="0" Grid.Column="2" Margin="0,0,12,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Customers}"
+                                      SelectedItem="{Binding SelectedCustomer}"
+                                      DisplayMemberPath="Name"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      materialDesign:HintAssist.Hint="الزبون"
+                                      materialDesign:HintAssist.IsFloating="True"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <Button Grid.Column="1"
+                                    Command="{Binding ShowSelectedPartyDetailsCommand}"
+                                    ToolTip="تفاصيل الزبون"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" Margin="4,0,0,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20" Foreground="#8B6914"/>
+                            </Button>
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenQuickAddCustomerCommand}"
+                                    ToolTip="إضافة زبون جديد"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Button>
+                        </Grid>
 
                         <ComboBox Grid.Row="0" Grid.Column="3"
                                   ItemsSource="{Binding Warehouses}"
@@ -195,13 +216,6 @@
                                 <TextBlock Text="إضافة بند"/>
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding RemoveLineCommand}" CommandParameter="{Binding SelectedLine}"
-                                Style="{StaticResource FlatButton}" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
-                                <TextBlock Text="حذف بند"/>
-                            </StackPanel>
-                        </Button>
                         <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}">
                             <Button.Background>
                                 <SolidColorBrush Color="#B8860B"/>
@@ -212,8 +226,14 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
-                    <TextBlock Text="بنود الفاتورة" FontSize="16" FontWeight="SemiBold"
-                               Foreground="#8B6914" VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="بنود الفاتورة" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#8B6914"/>
+                        <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0" TextWrapping="Wrap">
+                            <Run Text="البيع بالوزن: اترك «قطعة / باركود» فارغاً."/>
+                            <Run Text=" لبيع قطعة مسجّلة: أدخل رقمها أو باركودها — يُملأ العيار والوزن تلقائياً."/>
+                        </TextBlock>
+                    </StackPanel>
                 </DockPanel>
 
                 <!-- Lines grid -->
@@ -221,19 +241,14 @@
                                      Padding="0" Margin="0,0,0,16"
                                      materialDesign:ElevationAssist.Elevation="Dp1">
                     <DataGrid ItemsSource="{Binding Lines}"
-                              SelectedItem="{Binding SelectedLine}"
                               AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              Style="{StaticResource ModernDataGrid}"
-                              MinHeight="220"
+                              Style="{StaticResource InvoiceItemsDataGrid}"
                               Margin="8">
                         <DataGrid.Columns>
-                            <DataGridComboBoxColumn Header="العيار" Width="100"
-                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
-                                                    SelectedValuePath="KaratValue"
-                                                    DisplayMemberPath="Name"
-                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTextColumn Header="قطعة / باركود" Width="110"
+                                                Binding="{Binding ItemLookup, UpdateSourceTrigger=LostFocus}"/>
+                            <DataGridTemplateColumn Header="العيار" Width="100"
+                                                    CellTemplate="{StaticResource GoldInvoiceKaratCellTemplate}"/>
                             <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -261,8 +276,8 @@
                                                 Binding="{Binding LineTotal, StringFormat=N0}"/>
                             <DataGridTextColumn Header="الوصف" Width="*"
                                                 Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
-                            <DataGridTextColumn Header="قطعة #" Width="80"
-                                                Binding="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True"
+                                                    CellTemplate="{StaticResource InvoiceDeleteRowCellTemplate}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </materialDesign:Card>
@@ -351,5 +366,36 @@
             <ProgressBar IsIndeterminate="True" Width="200" Height="6" VerticalAlignment="Center"
                          Foreground="#B8860B"/>
         </Border>
+
+        <Grid Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="420" MaxWidth="500"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp8">
+                <StackPanel>
+                    <TextBlock Text="إضافة زبون جديد" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم الزبون *"
+                             Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="رقم الهاتف"
+                             Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="العنوان"
+                             Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                               Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                materialDesign:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelQuickAddCustomerCommand}"
+                                Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

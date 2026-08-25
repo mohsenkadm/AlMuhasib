@@ -253,7 +253,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
         CancellationToken cancellationToken)
     {
         var settings = await context.GoldSettings.AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == GoldSettings.SingletonId, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
         var lowThreshold = settings?.LowStockAlertGrams ?? 10m;
 
         var balanceQuery = context.GoldStockBalances.AsNoTracking().AsQueryable();

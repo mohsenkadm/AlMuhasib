@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure;
 using AlMuhasib.Infrastructure.Data;
@@ -187,6 +188,7 @@ public partial class App : Application
         services.AddSingleton<IPosFullscreenService, PosFullscreenService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
         services.AddSingleton<IOpeningStockExcelService, AlMuhasib.Shared.Services.OpeningStockExcelService>();
+        services.AddSingleton<IGoldItemsExcelService, AlMuhasib.Shared.Services.Gold.GoldItemsExcelService>();
         services.AddSingleton<IOpeningCustomerBalanceExcelService, AlMuhasib.Shared.Services.OpeningCustomerBalanceExcelService>();
         services.AddSingleton<IOpeningSupplierBalanceExcelService, AlMuhasib.Shared.Services.OpeningSupplierBalanceExcelService>();
         services.AddSingleton<IPlatformDeductionExcelService, AlMuhasib.Shared.Services.PlatformDeductionExcelService>();
@@ -389,6 +391,7 @@ public partial class App : Application
         services.AddTransient<GoldCustomerStatementViewModel>();
         services.AddTransient<GoldOpeningStockViewModel>();
         services.AddTransient<GoldOpeningCustomerBalanceViewModel>();
+        services.AddTransient<GoldOpeningSupplierBalanceViewModel>();
         services.AddTransient<GoldCashBoxesViewModel>();
         services.AddTransient<GoldVouchersViewModel>();
         services.AddTransient<GoldExpensesViewModel>();

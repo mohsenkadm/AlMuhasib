@@ -91,11 +91,19 @@ public sealed class InvoicesController : ControllerBase
     private void EnsureTenant()
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+        if (tenantId <= 0)
+            throw new InvalidOperationException("Invalid tenant_id claim.");
         _tenantContext.SetTenant(tenantId);
     }
 
-    private IQueryable<CloudInvoice> BuildInvoiceQuery() =>
-        _db.Invoices.AsNoTracking()
+    private IQueryable<CloudInvoice> BuildInvoiceQuery()
+    {
+        var tenantId = _tenantContext.TenantId;
+        if (tenantId is null || tenantId.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+
+        return _db.Invoices.AsNoTracking()
+            .ForTenant(tenantId.Value)
             .Include(i => i.Customer)
             .Include(i => i.Supplier)
             .Include(i => i.Warehouse)
@@ -103,6 +111,7 @@ public sealed class InvoicesController : ControllerBase
             .Include(i => i.Items).ThenInclude(item => item.Product)
             .Include(i => i.InstallmentPlans).ThenInclude(p => p.Customer)
             .Include(i => i.InstallmentPlans).ThenInclude(p => p.Installments).ThenInclude(inst => inst.CashBox);
+    }
 
     private static InvoiceDetailResponse MapInvoice(CloudInvoice i) => new()
     {

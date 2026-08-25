@@ -7,13 +7,20 @@ namespace AlMuhasib.UI.ViewModels.Gold;
 public partial class GoldSaleLineDraft : ObservableObject
 {
     private readonly Action<GoldSaleLineDraft>? _onQuoteNeeded;
+    private readonly Action<GoldSaleLineDraft>? _onItemLookupChanged;
+    private bool _suppressItemLookupCallback;
 
-    public GoldSaleLineDraft(Action<GoldSaleLineDraft>? onQuoteNeeded = null)
+    public GoldSaleLineDraft(
+        Action<GoldSaleLineDraft>? onQuoteNeeded = null,
+        Action<GoldSaleLineDraft>? onItemLookupChanged = null)
     {
         _onQuoteNeeded = onQuoteNeeded;
+        _onItemLookupChanged = onItemLookupChanged;
     }
 
     [ObservableProperty] private int? _itemId;
+    /// <summary>رقم القطعة أو الباركود — يُحلّ عند مغادرة الخلية.</summary>
+    [ObservableProperty] private string _itemLookup = string.Empty;
     [ObservableProperty] private int _karatValue = 21;
     [ObservableProperty] private decimal _weightGrams;
     [ObservableProperty] private decimal _mithqalPrice;
@@ -35,6 +42,20 @@ public partial class GoldSaleLineDraft : ObservableObject
     partial void OnMakingChargeChanged(decimal value) => RequestQuote();
     partial void OnMakingChargeModeChanged(GoldMakingChargeMode value) => RequestQuote();
     partial void OnMakingChargeRateChanged(decimal value) => RequestQuote();
+
+    partial void OnItemLookupChanged(string value)
+    {
+        if (_suppressItemLookupCallback)
+            return;
+        _onItemLookupChanged?.Invoke(this);
+    }
+
+    public void SetItemLookupSilently(string value)
+    {
+        _suppressItemLookupCallback = true;
+        ItemLookup = value;
+        _suppressItemLookupCallback = false;
+    }
 
     public void RequestQuote()
     {

@@ -1,4 +1,5 @@
 using AlMuhasib.Cloud.Application.Abstractions;
+using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
@@ -10,53 +11,67 @@ namespace AlMuhasib.Cloud.Infrastructure.Reports;
 public sealed class CloudDashboardService : ICloudDashboardService
 {
     private readonly CloudDbContext _db;
+    private readonly ITenantContext _tenantContext;
 
-    public CloudDashboardService(CloudDbContext db) => _db = db;
+    public CloudDashboardService(CloudDbContext db, ITenantContext tenantContext)
+    {
+        _db = db;
+        _tenantContext = tenantContext;
+    }
+
+    private int RequireTenantId()
+    {
+        var tid = _tenantContext.TenantId;
+        if (tid is null || tid.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+        return tid.Value;
+    }
 
     public async Task<DashboardData> GetDashboardAsync(CancellationToken ct = default)
     {
+        var tenantId = RequireTenantId();
         var today = DateTime.Today;
         var tomorrow = today.AddDays(1);
         var thirtyDaysAgo = today.AddDays(-30);
         var data = new DashboardData();
 
-        data.TodaySales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices, _db.InstallmentPlans)
+        data.TodaySales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
             .Where(i => i.Date >= today && i.Date < tomorrow)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
 
-        data.TodayPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices)
+        data.TodayPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
             .Where(i => i.Date >= today && i.Date < tomorrow)
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
 
-        var totalSales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices, _db.InstallmentPlans)
+        var totalSales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
-        var totalPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices)
+        var totalPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
-        var totalExpenses = await _db.Expenses.SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
-        var distributedProfits = await _db.ProfitDistributions
+        var totalExpenses = await _db.Expenses.ForTenant(tenantId).SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
+        var distributedProfits = await _db.ProfitDistributions.ForTenant(tenantId)
             .SumAsync(pd => (decimal?)pd.DistributedAmount, ct) ?? 0;
         var profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(_db);
         data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
 
-        data.OverdueInstallmentsCount = await _db.Installments
+        data.OverdueInstallmentsCount = await _db.Installments.ForTenant(tenantId)
             .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate < today, ct);
 
-        data.InvestorBalance = await _db.Investors.SumAsync(i => (decimal?)i.TotalDeposit, ct) ?? 0;
+        data.InvestorBalance = await _db.Investors.ForTenant(tenantId).SumAsync(i => (decimal?)i.TotalDeposit, ct) ?? 0;
 
-        data.UnpaidInstallmentsBalance = await _db.Installments
+        data.UnpaidInstallmentsBalance = await _db.Installments.ForTenant(tenantId)
             .Where(i => i.Status != InstallmentStatus.Paid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
 
-        data.CustomerCreditBalance = await _db.Invoices
+        data.CustomerCreditBalance = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
-        var unappliedDebt = await _db.Vouchers
+        var unappliedDebt = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
         data.CustomerCreditBalance = Math.Max(0, data.CustomerCreditBalance - unappliedDebt);
 
-        var salesRaw = await _db.Invoices
+        var salesRaw = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)
             .Select(i => new { i.Date, i.NetAmount })
             .ToListAsync(ct);
@@ -75,7 +90,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             })
             .ToList();
 
-        var expensesRaw = await _db.Expenses
+        var expensesRaw = await _db.Expenses.ForTenant(tenantId)
             .Include(e => e.ExpenseType)
             .Select(e => new { ExpenseTypeName = e.ExpenseType.Name, e.Amount })
             .ToListAsync(ct);
@@ -87,7 +102,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .Take(8)
             .ToList();
 
-        var recentInvoices = await _db.Invoices
+        var recentInvoices = await _db.Invoices.ForTenant(tenantId)
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
             .Take(5)
@@ -107,7 +122,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             })
             .ToListAsync(ct);
 
-        var recentVouchers = await _db.Vouchers
+        var recentVouchers = await _db.Vouchers.ForTenant(tenantId)
             .OrderByDescending(v => v.Date)
             .ThenByDescending(v => v.Id)
             .Take(5)
@@ -133,7 +148,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .Take(8)
             .ToList();
 
-        var upcomingRaw = await _db.Installments
+        var upcomingRaw = await _db.Installments.ForTenant(tenantId)
             .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= today)
             .OrderBy(i => i.DueDate)
             .Take(6)
@@ -155,13 +170,13 @@ public sealed class CloudDashboardService : ICloudDashboardService
             })
             .ToList();
 
-        data.CashBoxes = await _db.CashBoxes
+        data.CashBoxes = await _db.CashBoxes.ForTenant(tenantId)
             .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance })
             .ToListAsync(ct);
 
-        data.BankBalance = await _db.BankAccounts.SumAsync(b => (decimal?)b.Balance, ct) ?? 0;
+        data.BankBalance = await _db.BankAccounts.ForTenant(tenantId).SumAsync(b => (decimal?)b.Balance, ct) ?? 0;
 
-        var stockValues = await _db.WarehouseStocks
+        var stockValues = await _db.WarehouseStocks.ForTenant(tenantId)
             .GroupBy(ws => ws.ProductId)
             .Select(g => new { TotalQty = g.Sum(ws => ws.Quantity), ProductId = g.Key })
             .ToListAsync(ct);
@@ -169,7 +184,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
         if (stockValues.Count > 0)
         {
             var productIds = stockValues.Select(s => s.ProductId).ToList();
-            var allStocks = await _db.WarehouseStocks
+            var allStocks = await _db.WarehouseStocks.ForTenant(tenantId)
                 .Where(ws => productIds.Contains(ws.ProductId))
                 .ToListAsync(ct);
             var purchasesByProduct = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(_db, productIds);

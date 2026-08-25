@@ -23,10 +23,21 @@ public sealed class GoldPricingService : IGoldPricingService
         if (activeOnly)
             query = query.Where(k => k.IsActive);
 
-        return await query
+        var karats = await query
             .OrderBy(k => k.DisplayOrder)
             .ThenBy(k => k.KaratValue)
             .ToListAsync(cancellationToken);
+
+        var settings = await context.GoldSettings.AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+        if (settings is null)
+            return karats;
+
+        var enabledValues = GoldSettingsService.ParseEnabledKarats(settings.EnabledKaratsCsv);
+        var filtered = karats
+            .Where(k => enabledValues.Contains(k.KaratValue))
+            .ToList();
+        return filtered.Count > 0 ? filtered : karats;
     }
 
     public async Task<GoldKarat> SaveKaratAsync(GoldKarat karat, CancellationToken cancellationToken = default)
@@ -82,25 +93,19 @@ public sealed class GoldPricingService : IGoldPricingService
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var mithqalGrams = await GetMithqalGramsAsync(context, cancellationToken);
 
-        var latestDates = await context.GoldMithqalPrices.AsNoTracking()
-            .GroupBy(p => p.KaratValue)
-            .Select(g => new { KaratValue = g.Key, MaxDate = g.Max(x => x.PriceDate) })
+        // One pass: load recent prices only, pick latest per karat in memory.
+        var prices = await context.GoldMithqalPrices.AsNoTracking()
+            .OrderByDescending(p => p.PriceDate)
+            .ThenByDescending(p => p.Id)
+            .Take(200)
             .ToListAsync(cancellationToken);
 
-        if (latestDates.Count == 0)
+        if (prices.Count == 0)
             return [];
 
-        var dateByKarat = latestDates.ToDictionary(x => x.KaratValue, x => x.MaxDate.Date);
-        var karatValues = dateByKarat.Keys.ToList();
-
-        var prices = await context.GoldMithqalPrices.AsNoTracking()
-            .Where(p => karatValues.Contains(p.KaratValue))
-            .ToListAsync(cancellationToken);
-
         var latest = prices
-            .Where(p => dateByKarat.TryGetValue(p.KaratValue, out var d) && p.PriceDate.Date == d)
             .GroupBy(p => p.KaratValue)
-            .Select(g => g.OrderByDescending(x => x.Id).First())
+            .Select(g => g.First())
             .OrderBy(p => p.KaratValue)
             .ToList();
 
@@ -328,7 +333,7 @@ public sealed class GoldPricingService : IGoldPricingService
     private static async Task<decimal> GetMithqalGramsAsync(GoldDbContext context, CancellationToken cancellationToken)
     {
         var settings = await context.GoldSettings.AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == GoldSettings.SingletonId, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
         var grams = settings?.MithqalGrams ?? 5m;
         return grams <= 0 ? 5m : grams;
     }

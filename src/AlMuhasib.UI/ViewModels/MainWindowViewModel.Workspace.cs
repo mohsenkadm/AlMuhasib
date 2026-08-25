@@ -1,8 +1,11 @@
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
+using AlMuhasib.UI.ViewModels.Gold;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -24,6 +27,8 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _showQuickCarContractsList;
     [ObservableProperty] private bool _showQuickNewReservation;
     [ObservableProperty] private bool _showQuickCheckIn;
+
+    [ObservableProperty] private bool _showQuickGoldFx;
 
     public string WorkspaceProfileDisplay => WorkspaceProfile switch
     {
@@ -108,8 +113,11 @@ public partial class MainWindowViewModel
             ShowQuickAssistant = false;
             ShowQuickNewCarContract = false;
             ShowQuickCarContractsList = false;
+            ShowQuickGoldFx = _currentUserService.CanView(GoldShopPermissionRegistry.FxRates);
             return;
         }
+
+        ShowQuickGoldFx = false;
 
         ShowQuickNewCarContract = false;
         ShowQuickCarContractsList = false;
@@ -199,5 +207,15 @@ public partial class MainWindowViewModel
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private async Task OpenQuickGoldFx()
+    {
+        await OpenTabAsync(
+            typeof(GoldFxRatesViewModel),
+            "أسعار الصرف",
+            PackIconKind.CashMultiple,
+            activateIfExists: true);
     }
 }

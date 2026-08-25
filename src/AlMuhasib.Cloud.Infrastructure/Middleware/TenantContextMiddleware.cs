@@ -11,12 +11,14 @@ public sealed class TenantContextMiddleware
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
     {
-        if (context.User.IsInRole("Tenant"))
+        // Bind tenant from JWT whenever the claim is present (tenant users).
+        // Do not rely solely on role mapping — claim is the source of truth for isolation.
+        if (context.User.Identity?.IsAuthenticated == true)
         {
             var tenantClaim = context.User.FindFirst("tenant_id")?.Value;
-            var accountClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(tenantClaim, out var tenantId))
+            if (int.TryParse(tenantClaim, out var tenantId) && tenantId > 0)
             {
+                var accountClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 int? accountId = int.TryParse(accountClaim, out var aid) ? aid : null;
                 tenantContext.SetTenant(tenantId, accountId);
             }

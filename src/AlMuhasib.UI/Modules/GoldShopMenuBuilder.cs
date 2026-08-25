@@ -60,6 +60,7 @@ public static class GoldShopMenuBuilder
                 [
                     ("فاتورة شراء", PackIconKind.CartArrowDown, typeof(GoldPurchaseInvoiceViewModel), GoldShopPermissionRegistry.PurchaseInvoice),
                     ("موردون", PackIconKind.TruckDelivery, typeof(GoldSuppliersViewModel), GoldShopPermissionRegistry.Suppliers),
+                    ("أرصدة الموردين الافتتاحية", PackIconKind.CashRefund, typeof(GoldOpeningSupplierBalanceViewModel), GoldShopPermissionRegistry.OpeningSupplierBalance),
                 ]),
             FlyoutGroup(
                 key: "customers",
@@ -70,7 +71,7 @@ public static class GoldShopMenuBuilder
                 [
                     ("الزبائن", PackIconKind.AccountGroup, typeof(GoldCustomersViewModel), GoldShopPermissionRegistry.Customers),
                     ("كشف حساب زبون", PackIconKind.AccountDetails, typeof(GoldCustomerStatementViewModel), GoldShopPermissionRegistry.CustomerStatement),
-                    ("رصيد افتتاحي زبون", PackIconKind.AccountCash, typeof(GoldOpeningCustomerBalanceViewModel), GoldShopPermissionRegistry.OpeningCustomerBalance),
+                    ("أرصدة الزبائن الافتتاحية", PackIconKind.AccountCash, typeof(GoldOpeningCustomerBalanceViewModel), GoldShopPermissionRegistry.OpeningCustomerBalance),
                 ]),
             FlyoutGroup(
                 key: "finance",

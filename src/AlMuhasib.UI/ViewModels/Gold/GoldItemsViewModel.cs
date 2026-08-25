@@ -17,7 +17,9 @@ public partial class GoldItemsViewModel : ViewModelBase
 {
     private readonly IGoldInventoryService _inventoryService;
     private readonly IGoldPricingService _pricingService;
+    private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
+    private readonly IGoldItemsExcelService _excelService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _debounceTimer;
@@ -52,13 +54,17 @@ public partial class GoldItemsViewModel : ViewModelBase
     public GoldItemsViewModel(
         IGoldInventoryService inventoryService,
         IGoldPricingService pricingService,
+        IGoldSettingsService settingsService,
         IGoldPrintService printService,
+        IGoldItemsExcelService excelService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _inventoryService = inventoryService;
         _pricingService = pricingService;
+        _settingsService = settingsService;
         _printService = printService;
+        _excelService = excelService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أصناف الذهب";
@@ -67,6 +73,8 @@ public partial class GoldItemsViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.Items);
+        await _settingsService.EnsureDefaultsAsync();
+        Karats.Clear();
         foreach (var karat in await _pricingService.GetKaratsAsync())
             Karats.Add(karat);
         await LoadItemsAsync();

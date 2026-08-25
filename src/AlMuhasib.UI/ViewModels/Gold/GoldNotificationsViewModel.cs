@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
@@ -73,11 +74,25 @@ public partial class GoldNotificationsViewModel : PagedViewModelBase
         ErrorMessage = string.Empty;
         try
         {
-            var alerts = await _alertService.GetAlertsAsync();
-            if (UnreadOnly)
-                alerts = alerts.Where(a => !a.IsRead).ToList();
+            await _alertService.RefreshAlertsAsync();
 
-            _allAlerts = alerts.ToList();
+            var (items, totalCount) = await _alertService.GetNotificationsPagedAsync(
+                1,
+                int.MaxValue,
+                unreadOnly: UnreadOnly);
+
+            _allAlerts = items.Select(n => new GoldAlertItem
+            {
+                NotificationId = n.Id,
+                Type = n.Type,
+                Title = n.Title,
+                Message = n.Message,
+                RelatedEntity = n.RelatedEntity,
+                RelatedId = n.RelatedId,
+                CreatedAt = n.CreatedAt,
+                IsRead = n.IsRead
+            }).ToList();
+
             UnreadCount = _allAlerts.Count(a => !a.IsRead);
             ApplyDisplay();
         }

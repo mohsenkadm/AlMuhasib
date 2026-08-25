@@ -7,6 +7,12 @@ namespace AlMuhasib.Cloud.Infrastructure.Data;
 
 public class CloudDbContext : DbContext
 {
+    /// <summary>
+    /// Sentinel used when no tenant is bound. Fail-closed: matches no real tenant rows.
+    /// Cross-tenant admin/sync paths must use IgnoreQueryFilters() with an explicit TenantId.
+    /// </summary>
+    public const int UnsetTenantId = -1;
+
     private readonly ITenantContext? _tenantContext;
 
     public CloudDbContext(DbContextOptions<CloudDbContext> options, ITenantContext? tenantContext = null)
@@ -14,6 +20,12 @@ public class CloudDbContext : DbContext
     {
         _tenantContext = tenantContext;
     }
+
+    /// <summary>
+    /// Evaluated per query against the current DbContext instance (EF rewrites the filter).
+    /// Do not capture ITenantContext via Expression.Constant — that freezes the first scoped instance.
+    /// </summary>
+    public int CurrentTenantId => _tenantContext?.TenantId ?? UnsetTenantId;
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<TenantAccount> TenantAccounts => Set<TenantAccount>();
@@ -531,18 +543,54 @@ public class CloudDbContext : DbContext
             var isDeleted = Expression.Property(parameter, nameof(CloudBaseEntity.IsDeleted));
             Expression body = Expression.Equal(isDeleted, Expression.Constant(false));
 
-            if (_tenantContext is not null)
-            {
-                var tenantId = Expression.Property(parameter, nameof(CloudBaseEntity.TenantId));
-                var contextTenant = Expression.Property(Expression.Constant(_tenantContext), nameof(ITenantContext.TenantId));
-                var hasValue = Expression.Property(contextTenant, nameof(Nullable<int>.HasValue));
-                var value = Expression.Property(contextTenant, nameof(Nullable<int>.Value));
-                var tenantMatch = Expression.Equal(tenantId, value);
-                var tenantFilter = Expression.OrElse(Expression.Not(hasValue), tenantMatch);
-                body = Expression.AndAlso(body, tenantFilter);
-            }
+            // Always apply tenant isolation via DbContext.CurrentTenantId (per-request, fail-closed).
+            var entityTenantId = Expression.Property(parameter, nameof(CloudBaseEntity.TenantId));
+            var currentTenantId = Expression.Property(
+                Expression.Constant(this),
+                nameof(CurrentTenantId));
+            var tenantMatch = Expression.Equal(entityTenantId, currentTenantId);
+            body = Expression.AndAlso(body, tenantMatch);
 
             builder.HasQueryFilter(Expression.Lambda(body, parameter));
+        }
+    }
+
+    public override int SaveChanges()
+    {
+        ApplyTenantWriteGuards();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyTenantWriteGuards();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// When a tenant is bound, stamp missing TenantId on inserts and block cross-tenant mutations.
+    /// When unbound (admin/design-time), leave entities unchanged.
+    /// </summary>
+    private void ApplyTenantWriteGuards()
+    {
+        var tenantId = _tenantContext?.TenantId;
+        if (!tenantId.HasValue || tenantId.Value <= 0)
+            return;
+
+        foreach (var entry in ChangeTracker.Entries<CloudBaseEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (entry.Entity.TenantId <= 0)
+                    entry.Entity.TenantId = tenantId.Value;
+                else if (entry.Entity.TenantId != tenantId.Value)
+                    throw new InvalidOperationException("Cross-tenant write denied.");
+            }
+            else if (entry.State is EntityState.Modified or EntityState.Deleted)
+            {
+                if (entry.Entity.TenantId != tenantId.Value)
+                    throw new InvalidOperationException("Cross-tenant write denied.");
+            }
         }
     }
 }

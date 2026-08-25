@@ -35,7 +35,9 @@ public sealed class MobileFinanceQueryController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var query = _db.Vouchers.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(v => v.Customer)
             .Include(v => v.Investor)
             .Include(v => v.CashBox)
@@ -97,7 +99,9 @@ public sealed class MobileFinanceQueryController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var query = _db.Expenses.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(e => e.ExpenseType)
             .Include(e => e.CashBox)
             .AsQueryable();
@@ -146,7 +150,8 @@ public sealed class MobileFinanceQueryController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
-        var query = _db.Transfers.AsNoTracking().AsQueryable();
+        var tenantId = RequireTenantId();
+        var query = _db.Transfers.AsNoTracking().ForTenant(tenantId);
         if (from.HasValue) query = query.Where(t => t.Date >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Date <= to.Value);
 
@@ -156,8 +161,8 @@ public sealed class MobileFinanceQueryController : ControllerBase
         var items = await query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 
-        var cashBoxes = await _db.CashBoxes.AsNoTracking().ToDictionaryAsync(c => c.Id, ct);
-        var banks = await _db.BankAccounts.AsNoTracking().ToDictionaryAsync(b => b.Id, ct);
+        var cashBoxes = await _db.CashBoxes.AsNoTracking().ForTenant(tenantId).ToDictionaryAsync(c => c.Id, ct);
+        var banks = await _db.BankAccounts.AsNoTracking().ForTenant(tenantId).ToDictionaryAsync(b => b.Id, ct);
 
         string ResolveName(TransferAccountType type, int id) =>
             type == TransferAccountType.CashBox
@@ -200,7 +205,9 @@ public sealed class MobileFinanceQueryController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var query = _db.WarehouseStocks.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(s => s.Warehouse)
             .Include(s => s.Product)
             .AsQueryable();
@@ -252,7 +259,9 @@ public sealed class MobileFinanceQueryController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var query = _db.WarehouseTransfers.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(t => t.FromWarehouse)
             .Include(t => t.ToWarehouse)
             .Include(t => t.Items).ThenInclude(i => i.Product)
@@ -296,6 +305,16 @@ public sealed class MobileFinanceQueryController : ControllerBase
     private void EnsureTenant()
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+        if (tenantId <= 0)
+            throw new InvalidOperationException("Invalid tenant_id claim.");
         _tenantContext.SetTenant(tenantId);
+    }
+
+    private int RequireTenantId()
+    {
+        var tid = _tenantContext.TenantId;
+        if (tid is null || tid.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+        return tid.Value;
     }
 }

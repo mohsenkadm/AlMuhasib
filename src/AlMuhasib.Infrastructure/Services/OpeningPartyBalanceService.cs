@@ -13,14 +13,23 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAccountingPeriodLockService _periodLockService;
 
     public OpeningPartyBalanceService(
         IDbContextFactory<AppDbContext> contextFactory,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAccountingPeriodLockService periodLockService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _periodLockService = periodLockService;
     }
+
+    public Task<OpeningPartyBalancePagedResult> GetCustomerOpeningBalancesAsync(OpeningPartyBalanceQuery query)
+        => GetOpeningBalancesAsync(query, InvoiceType.Sale, isCustomer: true);
+
+    public Task<OpeningPartyBalancePagedResult> GetSupplierOpeningBalancesAsync(OpeningPartyBalanceQuery query)
+        => GetOpeningBalancesAsync(query, InvoiceType.Purchase, isCustomer: false);
 
     public Task<Invoice> CreateCustomerOpeningBalanceAsync(OpeningPartyBalanceRequest request)
         => CreateCustomerCoreAsync(request, nameCache: null);
@@ -108,11 +117,225 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         return result;
     }
 
+    public Task UpdateCustomerOpeningBalanceAsync(OpeningPartyBalanceUpdateRequest request)
+        => UpdateOpeningBalanceAsync(request, InvoiceType.Sale, "عميل");
+
+    public Task UpdateSupplierOpeningBalanceAsync(OpeningPartyBalanceUpdateRequest request)
+        => UpdateOpeningBalanceAsync(request, InvoiceType.Purchase, "مورد");
+
+    public Task DeleteCustomerOpeningBalanceAsync(int invoiceId)
+        => DeleteOpeningBalanceAsync(invoiceId, InvoiceType.Sale, "عميل");
+
+    public Task DeleteSupplierOpeningBalanceAsync(int invoiceId)
+        => DeleteOpeningBalanceAsync(invoiceId, InvoiceType.Purchase, "مورد");
+
+    private async Task<OpeningPartyBalancePagedResult> GetOpeningBalancesAsync(
+        OpeningPartyBalanceQuery query,
+        InvoiceType invoiceType,
+        bool isCustomer)
+    {
+        query ??= new OpeningPartyBalanceQuery();
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Clamp(query.PageSize, 1, 500);
+        var search = query.Search?.Trim();
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var invoices = context.Invoices
+            .AsNoTracking()
+            .Where(i => i.InvoiceType == invoiceType
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Notes != null
+                        && i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix));
+
+        if (isCustomer)
+            invoices = invoices.Where(i => i.CustomerId != null);
+        else
+            invoices = invoices.Where(i => i.SupplierId != null);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            if (isCustomer)
+            {
+                invoices = invoices.Where(i =>
+                    (i.Customer != null && i.Customer.Name.Contains(search))
+                    || (i.Customer != null && i.Customer.Phone != null && i.Customer.Phone.Contains(search))
+                    || (i.Customer != null && i.Customer.FileNumber != null && i.Customer.FileNumber.Contains(search))
+                    || i.InvoiceNumber.Contains(search));
+            }
+            else
+            {
+                invoices = invoices.Where(i =>
+                    (i.Supplier != null && i.Supplier.Name.Contains(search))
+                    || (i.Supplier != null && i.Supplier.Phone != null && i.Supplier.Phone.Contains(search))
+                    || i.InvoiceNumber.Contains(search));
+            }
+        }
+
+        if (query.FromDate is DateTime from)
+            invoices = invoices.Where(i => i.Date >= from.Date);
+        if (query.ToDate is DateTime to)
+            invoices = invoices.Where(i => i.Date <= to.Date);
+        if (query.MinAmount is decimal minAmount)
+            invoices = invoices.Where(i => i.NetAmount >= minAmount);
+        if (query.MaxAmount is decimal maxAmount)
+            invoices = invoices.Where(i => i.NetAmount <= maxAmount);
+        if (query.UnpaidOnly)
+            invoices = invoices.Where(i => !i.IsCreditPaid && i.RemainingAmount > 0);
+
+        var totalCount = await invoices.CountAsync();
+
+        var pageItems = await invoices
+            .OrderByDescending(i => i.Date)
+            .ThenByDescending(i => i.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(i => new
+            {
+                i.Id,
+                i.InvoiceNumber,
+                PartyId = isCustomer ? i.CustomerId!.Value : i.SupplierId!.Value,
+                PartyName = isCustomer
+                    ? (i.Customer != null ? i.Customer.Name : string.Empty)
+                    : (i.Supplier != null ? i.Supplier.Name : string.Empty),
+                Phone = isCustomer
+                    ? (i.Customer != null ? i.Customer.Phone : null)
+                    : (i.Supplier != null ? i.Supplier.Phone : null),
+                FileNumber = isCustomer && i.Customer != null ? i.Customer.FileNumber : null,
+                Amount = i.NetAmount,
+                i.PaidAmount,
+                i.RemainingAmount,
+                i.Date,
+                i.Notes,
+                i.IsCreditPaid
+            })
+            .ToListAsync();
+
+        var items = pageItems.Select(i => new OpeningPartyBalanceListItem
+        {
+            InvoiceId = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            PartyId = i.PartyId,
+            PartyName = i.PartyName,
+            Phone = i.Phone,
+            FileNumber = i.FileNumber,
+            Amount = i.Amount,
+            PaidAmount = i.PaidAmount,
+            RemainingAmount = i.RemainingAmount,
+            Date = i.Date,
+            Notes = i.Notes,
+            UserNotes = OpeningCreditBalanceMarkers.ExtractUserNotes(i.Notes),
+            IsFullyPaid = i.IsCreditPaid || i.RemainingAmount <= 0
+        }).ToList();
+
+        return new OpeningPartyBalancePagedResult
+        {
+            Items = items,
+            TotalCount = totalCount
+        };
+    }
+
+    private async Task UpdateOpeningBalanceAsync(
+        OpeningPartyBalanceUpdateRequest request,
+        InvoiceType invoiceType,
+        string partyLabel)
+    {
+        if (request.Amount <= 0)
+            throw new InvalidOperationException("المبلغ يجب أن يكون أكبر من صفر");
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == request.InvoiceId)
+            ?? throw new InvalidOperationException("الرصيد الافتتاحي غير موجود");
+
+        EnsureOpeningBalanceInvoice(invoice, invoiceType, partyLabel);
+
+        if (invoice.PaidAmount > 0)
+            throw new InvalidOperationException("لا يمكن تعديل رصيد تم تسديد جزء منه. احذف التسديدات أولاً أو أنشئ رصيداً جديداً.");
+
+        await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
+        await _periodLockService.EnsureDateAllowedAsync(request.Date.Date);
+
+        var username = _currentUserService.Username;
+        var oldAmount = invoice.NetAmount;
+
+        invoice.Date = request.Date.Date;
+        invoice.TotalAmount = request.Amount;
+        invoice.NetAmount = request.Amount;
+        invoice.RemainingAmount = request.Amount;
+        invoice.PaidAmount = 0;
+        invoice.IsCreditPaid = false;
+        invoice.Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes);
+        invoice.UpdatedBy = username;
+        invoice.UpdatedAt = DateTime.UtcNow;
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Edit,
+                EntityName = nameof(Invoice),
+                EntityId = invoice.Id,
+                OldValues = $"رصيد افتتاحي {partyLabel} بمبلغ {oldAmount:N0}",
+                NewValues = $"تعديل رصيد افتتاحي {partyLabel} بمبلغ {request.Amount:N0}",
+                Timestamp = DateTime.UtcNow,
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private async Task DeleteOpeningBalanceAsync(int invoiceId, InvoiceType invoiceType, string partyLabel)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId)
+            ?? throw new InvalidOperationException("الرصيد الافتتاحي غير موجود");
+
+        EnsureOpeningBalanceInvoice(invoice, invoiceType, partyLabel);
+
+        if (invoice.PaidAmount > 0)
+            throw new InvalidOperationException("لا يمكن حذف رصيد تم تسديد جزء منه. احذف التسديدات المرتبطة أولاً.");
+
+        await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
+
+        var username = _currentUserService.Username;
+        invoice.MarkSoftDeleted(username);
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Delete,
+                EntityName = nameof(Invoice),
+                EntityId = invoice.Id,
+                OldValues = $"حذف رصيد افتتاحي {partyLabel} بمبلغ {invoice.NetAmount:N0}",
+                Timestamp = DateTime.UtcNow,
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static void EnsureOpeningBalanceInvoice(Invoice invoice, InvoiceType invoiceType, string partyLabel)
+    {
+        if (invoice.InvoiceType != invoiceType
+            || invoice.PaymentMethod != PaymentMethod.Credit
+            || !OpeningCreditBalanceMarkers.IsOpeningCreditBalance(invoice.Notes))
+        {
+            throw new InvalidOperationException($"الفاتورة المحددة ليست رصيداً افتتاحياً لـ{partyLabel}");
+        }
+    }
+
     private async Task<Invoice> CreateCustomerCoreAsync(
         OpeningPartyBalanceRequest request,
         Dictionary<string, int>? nameCache)
     {
         ValidateRequest(request, "عميل");
+        await _periodLockService.EnsureDateAllowedAsync(request.Date.Date);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -178,6 +401,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         Dictionary<string, int>? nameCache)
     {
         ValidateRequest(request, "مورد");
+        await _periodLockService.EnsureDateAllowedAsync(request.Date.Date);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();

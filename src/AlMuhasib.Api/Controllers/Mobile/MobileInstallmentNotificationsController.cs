@@ -31,10 +31,13 @@ public sealed class MobileInstallmentNotificationsController : ControllerBase
     public async Task<IActionResult> NotifyOverdue(CancellationToken ct)
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+        if (tenantId <= 0)
+            throw new InvalidOperationException("Invalid tenant_id claim.");
         _tenantContext.SetTenant(tenantId);
 
         var today = DateTime.UtcNow.Date;
         var overdue = await _db.Installments.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
             .Where(i =>
                 i.Status != InstallmentStatus.Paid &&

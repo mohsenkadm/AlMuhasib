@@ -87,12 +87,91 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
         customer.CreditBalanceIqd = GoldCurrencyHelper.Round(request.CreditBalanceIqd);
         customer.CreditBalanceUsd = GoldCurrencyHelper.Round(request.CreditBalanceUsd);
         customer.GoldCreditGrams = GoldCurrencyHelper.Round(request.GoldCreditGrams, 3);
-        if (!string.IsNullOrWhiteSpace(request.Notes))
-            customer.Notes = string.IsNullOrWhiteSpace(customer.Notes)
-                ? $"[افتتاح] {request.Notes.Trim()}"
-                : $"{customer.Notes}\n[افتتاح] {request.Notes.Trim()}";
+        AppendOpeningNote(customer, request.Notes);
 
         await context.SaveChangesAsync(cancellationToken);
         return customer;
+    }
+
+    public async Task ClearCustomerOpeningBalanceAsync(
+        int customerId,
+        string? notes = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (customerId <= 0)
+            throw new InvalidOperationException("اختر الزبون");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var customer = await context.GoldCustomers.FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken)
+            ?? throw new InvalidOperationException("الزبون غير موجود");
+
+        customer.CreditBalanceIqd = 0;
+        customer.CreditBalanceUsd = 0;
+        customer.GoldCreditGrams = 0;
+        AppendOpeningNote(customer, string.IsNullOrWhiteSpace(notes) ? "تم تصفير الرصيد الافتتاحي" : notes);
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<GoldSupplier> SetSupplierOpeningBalanceAsync(
+        GoldOpeningSupplierBalanceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.SupplierId <= 0)
+            throw new InvalidOperationException("اختر المورد");
+        if (request.CreditBalanceIqd < 0 || request.CreditBalanceUsd < 0)
+            throw new InvalidOperationException("أرصدة الافتتاح لا يمكن أن تكون سالبة");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId, cancellationToken)
+            ?? throw new InvalidOperationException("المورد غير موجود");
+
+        supplier.CreditBalanceIqd = GoldCurrencyHelper.Round(request.CreditBalanceIqd);
+        supplier.CreditBalanceUsd = GoldCurrencyHelper.Round(request.CreditBalanceUsd);
+        AppendOpeningNote(supplier, request.Notes);
+
+        await context.SaveChangesAsync(cancellationToken);
+        return supplier;
+    }
+
+    public async Task ClearSupplierOpeningBalanceAsync(
+        int supplierId,
+        string? notes = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (supplierId <= 0)
+            throw new InvalidOperationException("اختر المورد");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == supplierId, cancellationToken)
+            ?? throw new InvalidOperationException("المورد غير موجود");
+
+        supplier.CreditBalanceIqd = 0;
+        supplier.CreditBalanceUsd = 0;
+        AppendOpeningNote(supplier, string.IsNullOrWhiteSpace(notes) ? "تم تصفير الرصيد الافتتاحي" : notes);
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void AppendOpeningNote(GoldCustomer customer, string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+            return;
+
+        var line = $"[افتتاح] {notes.Trim()}";
+        customer.Notes = string.IsNullOrWhiteSpace(customer.Notes)
+            ? line
+            : $"{customer.Notes}\n{line}";
+    }
+
+    private static void AppendOpeningNote(GoldSupplier supplier, string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+            return;
+
+        var line = $"[افتتاح] {notes.Trim()}";
+        supplier.Notes = string.IsNullOrWhiteSpace(supplier.Notes)
+            ? line
+            : $"{supplier.Notes}\n{line}";
     }
 }

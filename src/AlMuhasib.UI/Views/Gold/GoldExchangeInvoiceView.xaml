@@ -108,17 +108,34 @@
                                   Style="{StaticResource FilledComboBox}"
                                   Margin="0,0,12,12"/>
 
-                        <ComboBox Grid.Row="0" Grid.Column="2"
-                                  ItemsSource="{Binding Customers}"
-                                  SelectedItem="{Binding SelectedCustomer}"
-                                  DisplayMemberPath="Name"
-                                  IsEditable="True"
-                                  StaysOpenOnEdit="True"
-                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  materialDesign:HintAssist.Hint="الزبون"
-                                  materialDesign:HintAssist.IsFloating="True"
-                                  Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,12,12"/>
+                        <Grid Grid.Row="0" Grid.Column="2" Margin="0,0,12,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Customers}"
+                                      SelectedItem="{Binding SelectedCustomer}"
+                                      DisplayMemberPath="Name"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      materialDesign:HintAssist.Hint="الزبون"
+                                      materialDesign:HintAssist.IsFloating="True"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <Button Grid.Column="1" Command="{Binding ShowSelectedPartyDetailsCommand}"
+                                    ToolTip="تفاصيل الزبون" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" Margin="4,0,0,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20" Foreground="#8B6914"/>
+                            </Button>
+                            <Button Grid.Column="2" Command="{Binding OpenQuickAddCustomerCommand}"
+                                    ToolTip="إضافة زبون جديد" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Button>
+                        </Grid>
 
                         <ComboBox Grid.Row="0" Grid.Column="3"
                                   ItemsSource="{Binding Warehouses}"
@@ -185,13 +202,6 @@
                                 <TextBlock Text="إضافة وارد"/>
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding RemoveInLineCommand}" CommandParameter="{Binding SelectedInLine}"
-                                Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnInSectionFocus">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
-                                <TextBlock Text="حذف"/>
-                            </StackPanel>
-                        </Button>
                         <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Click="OnInSectionFocus">
                             <Button.Background>
                                 <SolidColorBrush Color="#2E7D32"/>
@@ -211,19 +221,12 @@
                                      materialDesign:ElevationAssist.Elevation="Dp1"
                                      GotFocus="OnInSectionFocus" PreviewMouseDown="OnInSectionFocus">
                     <DataGrid ItemsSource="{Binding InLines}"
-                              SelectedItem="{Binding SelectedInLine}"
                               AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              Style="{StaticResource ModernDataGrid}"
-                              MinHeight="160"
+                              Style="{StaticResource InvoiceItemsDataGrid}"
                               Margin="8">
                         <DataGrid.Columns>
-                            <DataGridComboBoxColumn Header="العيار" Width="100"
-                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
-                                                    SelectedValuePath="KaratValue"
-                                                    DisplayMemberPath="Name"
-                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTemplateColumn Header="العيار" Width="100"
+                                                    CellTemplate="{StaticResource GoldInvoiceKaratCellTemplate}"/>
                             <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -245,6 +248,20 @@
                                                 Binding="{Binding LineTotal, StringFormat=N0}"/>
                             <DataGridTextColumn Header="الوصف" Width="*"
                                                 Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.RemoveInRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource InvoiceDeleteRowButton}"
+                                                Width="34" Height="34"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                ToolTip="حذف السطر">
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="17" Height="17"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </materialDesign:Card>
@@ -257,13 +274,6 @@
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/>
                                 <TextBlock Text="إضافة صادر"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding RemoveOutLineCommand}" CommandParameter="{Binding SelectedOutLine}"
-                                Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnOutSectionFocus">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="DeleteOutline" Margin="0,0,6,0"/>
-                                <TextBlock Text="حذف"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Click="OnOutSectionFocus">
@@ -285,19 +295,12 @@
                                      materialDesign:ElevationAssist.Elevation="Dp1"
                                      GotFocus="OnOutSectionFocus" PreviewMouseDown="OnOutSectionFocus">
                     <DataGrid ItemsSource="{Binding OutLines}"
-                              SelectedItem="{Binding SelectedOutLine}"
                               AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              Style="{StaticResource ModernDataGrid}"
-                              MinHeight="160"
+                              Style="{StaticResource InvoiceItemsDataGrid}"
                               Margin="8">
                         <DataGrid.Columns>
-                            <DataGridComboBoxColumn Header="العيار" Width="100"
-                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
-                                                    SelectedValuePath="KaratValue"
-                                                    DisplayMemberPath="Name"
-                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTemplateColumn Header="العيار" Width="100"
+                                                    CellTemplate="{StaticResource GoldInvoiceKaratCellTemplate}"/>
                             <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -323,6 +326,20 @@
                                                 Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
                             <DataGridTextColumn Header="قطعة #" Width="80"
                                                 Binding="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.RemoveOutRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource InvoiceDeleteRowButton}"
+                                                Width="34" Height="34"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                ToolTip="حذف السطر">
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="17" Height="17"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </materialDesign:Card>
@@ -401,5 +418,22 @@
             <ProgressBar IsIndeterminate="True" Width="200" Height="6" VerticalAlignment="Center"
                          Foreground="#B8860B"/>
         </Border>
+
+        <Grid Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center" UniformCornerRadius="16">
+                <StackPanel>
+                    <TextBlock Text="إضافة زبون جديد" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم الزبون *" Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="رقم الهاتف" Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="العنوان" Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelQuickAddCustomerCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

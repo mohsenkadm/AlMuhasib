@@ -2,74 +2,256 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
-        <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-            <md:Card Padding="0" Margin="0,0,0,16" UniformCornerRadius="16"
-                     BorderBrush="#D4AF37" BorderThickness="1" md:ElevationAssist.Elevation="Dp3">
-                <Grid>
-                    <Border CornerRadius="16">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#5D4037" Offset="0"/>
-                                <GradientStop Color="#A67C00" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <StackPanel Margin="22,18">
-                        <TextBlock Text="رصيد افتتاحي للزبون" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock Text="عيّن ذمم الدينار والدولار وغرامات الذهب الآجلة" FontSize="13"
-                                   Foreground="#FFF8E1" Margin="0,6,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </md:Card>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <md:Card Padding="24" UniformCornerRadius="14" BorderBrush="#E8D5A3" BorderThickness="1"
-                     md:ElevationAssist.Elevation="Dp2">
-                <StackPanel>
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="بحث عن زبون"
-                             Style="{StaticResource FilledTextBox}"
-                             Margin="0,0,0,14"/>
-
-                    <ComboBox ItemsSource="{Binding Customers}"
-                              SelectedItem="{Binding SelectedCustomer}"
-                              DisplayMemberPath="Name"
-                              IsEditable="True"
-                              md:HintAssist.Hint="الزبون"
-                              Style="{StaticResource FilledComboBox}"
-                              Margin="0,0,0,14"/>
-
-                    <TextBox Text="{Binding CreditBalanceIqd, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="رصيد آجل د.ع"
-                             Style="{StaticResource FilledTextBox}"
-                             Margin="0,0,0,14"/>
-
-                    <TextBox Text="{Binding CreditBalanceUsd, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="رصيد آجل $"
-                             Style="{StaticResource FilledTextBox}"
-                             Margin="0,0,0,14"/>
-
-                    <TextBox Text="{Binding GoldCreditGrams, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="غرامات ذهب آجلة"
-                             Style="{StaticResource FilledTextBox}"
-                             Margin="0,0,0,14"/>
-
-                    <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                             md:HintAssist.Hint="ملاحظات"
-                             Style="{StaticResource FilledTextBox}"
-                             TextWrapping="Wrap" AcceptsReturn="True" MinHeight="72"
-                             Margin="0,0,0,10"/>
-
-                    <TextBlock Text="{Binding FormError}" Foreground="#D32F2F" Margin="0,0,0,12"/>
-
-                    <Button Content="حفظ أرصدة الافتتاح" Command="{Binding SubmitCommand}"
-                            Style="{StaticResource PrimaryButton}" Height="40" Padding="24,0"
-                            HorizontalAlignment="Left" IsEnabled="{Binding CanAdd}"/>
+        <!-- Hero -->
+        <Border Grid.Row="0" CornerRadius="16" Margin="0,0,0,14" Padding="22,18"
+                BorderBrush="#D4AF37" BorderThickness="1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#5D4037" Offset="0"/>
+                    <GradientStop Color="#A67C00" Offset="0.55"/>
+                    <GradientStop Color="#C9A227" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#FFFFFF28"
+                        Margin="0,0,16,0" VerticalAlignment="Center">
+                    <md:PackIcon Kind="AccountCash" Width="28" Height="28" Foreground="White"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="أرصدة الزبائن الافتتاحية" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="إدارة ذمم الدينار والدولار وغرامات الذهب — إضافة · تعديل · تصفير · بحث وفلاتر"
+                               FontSize="13" Foreground="#FFF8E1" Margin="0,5,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
-            </md:Card>
-        </StackPanel>
-    </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- Action bar -->
+        <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="16,14" Margin="0,0,0,14"
+                 md:ElevationAssist.Elevation="Dp2">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Command="{Binding OpenAddDialogCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanSaveBalance}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تعيين رصيد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBox md:HintAssist.Hint="بحث بالاسم أو الهاتف..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="240" Margin="0,0,16,0"/>
+                    <CheckBox Content="أرصدة فقط"
+                              IsChecked="{Binding ShowWithBalanceOnly}"
+                              VerticalAlignment="Center"
+                              ToolTip="عرض الزبائن الذين لديهم رصيد آجل فقط"/>
+                </StackPanel>
+            </DockPanel>
+        </md:Card>
+
+        <!-- Grid -->
+        <md:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة الأرصدة الافتتاحية"
+                                             TargetDataGrid="{Binding ElementName=OpeningBalancesGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="OpeningBalancesGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Items}"
+                          SelectedItem="{Binding SelectedItem}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                        <DataGridTextColumn Header="رصيد آجل د.ع" Binding="{Binding CreditBalanceIqd, StringFormat=N0}" Width="130"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreditBalanceIqd"/>
+                        <DataGridTextColumn Header="رصيد آجل $" Binding="{Binding CreditBalanceUsd, StringFormat=N2}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CreditBalanceUsd"/>
+                        <DataGridTextColumn Header="ذهب آجل (غ)" Binding="{Binding GoldCreditGrams, StringFormat=N3}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GoldCreditGrams"/>
+                        <DataGridTextColumn Header="فواتير مفتوحة" Binding="{Binding OpenInvoiceCount}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OpenInvoiceCount"/>
+                        <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="70" IsReadOnly="True"
+                                               behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IsActive"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="120" MinWidth="120"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="تعديل الرصيد"
+                                                IsEnabled="{Binding DataContext.CanSaveBalance, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmClearCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                ToolTip="تصفير الرصيد"
+                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="CashMinus" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <!-- Add / Edit dialog -->
+        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="460" MaxWidth="540" UniformCornerRadius="14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="#FFF8E1" Margin="0,0,12,0">
+                                <md:PackIcon Kind="AccountCash" Width="22" Height="22"
+                                             Foreground="#A67C00" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ComboBox ItemsSource="{Binding PartyPickerItems}"
+                                  SelectedItem="{Binding SelectedParty}"
+                                  DisplayMemberPath="Name"
+                                  IsEditable="True"
+                                  Text="{Binding PartySearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  StaysOpenOnEdit="True"
+                                  IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
+                                  md:HintAssist.Hint="الزبون *"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                     Text="{Binding EditCreditBalanceIqd, UpdateSourceTrigger=PropertyChanged}"
+                                     md:HintAssist.Hint="رصيد آجل د.ع"
+                                     Style="{StaticResource FilledTextBox}"/>
+                            <TextBox Grid.Column="1" Margin="8,0,0,0"
+                                     Text="{Binding EditCreditBalanceUsd, UpdateSourceTrigger=PropertyChanged}"
+                                     md:HintAssist.Hint="رصيد آجل $"
+                                     Style="{StaticResource FilledTextBox}"/>
+                        </Grid>
+
+                        <TextBox Text="{Binding EditGoldCreditGrams, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="غرامات ذهب آجلة"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Margin="0,0,0,12"/>
+
+                        <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="ملاحظة (اختياري — تُسجَّل في سجل الزبون)"
+                                 Style="{StaticResource FilledTextBox}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MinHeight="64"
+                                 Margin="0,0,0,10"/>
+
+                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,10"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,0">
+                            <Button Content="حفظ" Command="{Binding SaveBalanceCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="28,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- Clear confirmation -->
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="380" UniformCornerRadius="14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <md:PackIcon Kind="AlertCircleOutline" Width="28" Height="28"
+                                         Foreground="#D32F2F" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="تصفير الرصيد الافتتاحي" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Margin="0,0,0,8" TextWrapping="Wrap">
+                            <Run Text="هل تريد تصفير أرصدة الزبون "/>
+                            <Run Text="{Binding ItemToClear.Name, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <TextBlock Text="سيتم ضبط ذمم الدينار والدولار وغرامات الذهب إلى صفر."
+                                   Foreground="#757575" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="تصفير" Command="{Binding ExecuteClearCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelClearCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
 </UserControl>

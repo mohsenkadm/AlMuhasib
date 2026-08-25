@@ -320,7 +320,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
         services.AddScoped<IUserNoteService, NoOpUserNoteService>();
         services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
-        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IPartyQuickDetailService, GoldPartyQuickDetailService>();
         services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<GoldDbContext>>();
         services.AddScoped<SyncApiClient>();

@@ -1,5 +1,6 @@
 ﻿using AlMuhasib.Cloud.Application.Abstractions;
 using AlMuhasib.Cloud.Core.Entities;
+using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
@@ -13,8 +14,21 @@ namespace AlMuhasib.Cloud.Infrastructure.Reports;
 public sealed partial class CloudReportService : Application.Abstractions.ICloudReportService
 {
     private readonly CloudDbContext _db;
+    private readonly ITenantContext _tenantContext;
 
-    public CloudReportService(CloudDbContext db) => _db = db;
+    public CloudReportService(CloudDbContext db, ITenantContext tenantContext)
+    {
+        _db = db;
+        _tenantContext = tenantContext;
+    }
+
+    private int RequireTenantId()
+    {
+        var tid = _tenantContext.TenantId;
+        if (tid is null || tid.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+        return tid.Value;
+    }
 
     /// <summary>Normalize "to" date to include the entire day (start of next day).</summary>
     private static DateTime? EndOfDay(DateTime? to) => to?.Date.AddDays(1);
@@ -25,8 +39,10 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
 
     public async Task<SalesReportResult> GetSalesReportAsync(DateTime? from, DateTime? to, int? customerId, PaymentMethod? method, int? warehouseId = null)
     {
+        var tenantId = RequireTenantId();
         var context = _db;
         var query = context.Invoices
+            .ForTenant(tenantId)
             .Include(i => i.Customer)
             .Include(i => i.Warehouse)
             .Include(i => i.InstallmentPlans)

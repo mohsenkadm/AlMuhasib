@@ -21,6 +21,17 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         _tenantContext = tenantContext;
     }
 
+    private int RequireTenantId()
+    {
+        var tid = _tenantContext.TenantId;
+        if (tid is null || tid.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+        return tid.Value;
+    }
+
+    private IQueryable<T> Scoped<T>() where T : CloudBaseEntity =>
+        _db.Set<T>().AsNoTracking().ForTenant(RequireTenantId());
+
     public async Task<MasterDataBundle> GetAllAsync(CancellationToken ct = default) => new()
     {
         Categories = await GetCategoriesAsync(ct: ct),
@@ -38,7 +49,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetCategoriesAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.Categories.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudCategory>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -53,7 +64,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     public async Task<List<ProductLookupItem>> GetProductsAsync(
         string? search = null, Guid? categorySyncId = null, string? barcode = null, CancellationToken ct = default)
     {
-        var query = _db.Products.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudProduct>();
         if (categorySyncId.HasValue)
             query = query.Where(p => p.Category.SyncId == categorySyncId.Value);
         if (!string.IsNullOrWhiteSpace(barcode))
@@ -85,7 +96,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             return products;
 
         var productIds = products.Select(p => p.Id).ToHashSet();
-        var prices = await _db.ProductPrices.AsNoTracking()
+        var prices = await Scoped<CloudProductPrice>()
             .Where(p => productIds.Contains(p.ProductId))
             .Select(p => new
             {
@@ -117,7 +128,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     {
         await EnsureDefaultPricingDataAsync(ct);
 
-        var query = _db.PricingTypes.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudPricingType>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -139,7 +150,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     public async Task<List<ProductPriceLookupItem>> GetProductPricesAsync(
         Guid? productSyncId = null, Guid? pricingTypeSyncId = null, CancellationToken ct = default)
     {
-        var query = _db.ProductPrices.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudProductPrice>();
         if (productSyncId.HasValue)
             query = query.Where(p => p.Product.SyncId == productSyncId.Value);
         if (pricingTypeSyncId.HasValue)
@@ -178,7 +189,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public async Task<List<LookupItem>> GetCustomersAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.Customers.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudCustomer>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -196,21 +207,21 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
         var customerIds = customers.Select(c => c.Id).ToList();
 
-        var creditByCustomer = await _db.Invoices.AsNoTracking()
+        var creditByCustomer = await Scoped<CloudInvoice>()
             .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) &&
                         i.PaymentMethod == PaymentMethod.Credit)
             .GroupBy(i => i.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
             .ToListAsync(ct);
 
-        var planRows = await _db.InstallmentPlans.AsNoTracking()
+        var planRows = await Scoped<CloudInstallmentPlan>()
             .Where(p => customerIds.Contains(p.CustomerId))
             .Select(p => new { p.Id, p.CustomerId })
             .ToListAsync(ct);
         var planIds = planRows.Select(p => p.Id).ToList();
         var installmentByPlan = planIds.Count == 0
             ? []
-            : await _db.Installments.AsNoTracking()
+            : await Scoped<CloudInstallment>()
                 .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
                 .GroupBy(i => i.InstallmentPlanId)
                 .Select(g => new { PlanId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
@@ -222,7 +233,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 g => g.Key,
                 g => g.Sum(p => installmentByPlan.FirstOrDefault(x => x.PlanId == p.Id)?.Remaining ?? 0));
 
-        var unappliedDebt = await _db.Vouchers.AsNoTracking()
+        var unappliedDebt = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.DebtReceipt &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -230,7 +241,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
             .ToListAsync(ct);
 
-        var receipts = await _db.Vouchers.AsNoTracking()
+        var receipts = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.Receipt)
             .GroupBy(v => v.CustomerId!.Value)
@@ -251,7 +262,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetSuppliersAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.Suppliers.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudSupplier>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -267,7 +278,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetWarehousesAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.Warehouses.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudWarehouse>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -281,7 +292,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetCashBoxesAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.CashBoxes.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudCashBox>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -295,7 +306,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetBankAccountsAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.BankAccounts.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudBankAccount>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -309,7 +320,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetExpenseTypesAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.ExpenseTypes.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudExpenseType>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -323,7 +334,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     public Task<List<LookupItem>> GetInvestorsAsync(string? search = null, CancellationToken ct = default)
     {
-        var query = _db.Investors.AsNoTracking().AsQueryable();
+        var query = Scoped<CloudInvestor>();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";
@@ -375,8 +386,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     {
         await EnsureBusinessSettingsAsync(ct);
 
-        var tenantId = _tenantContext.TenantId
-            ?? throw new InvalidOperationException("Tenant context is required");
+        var tenantId = RequireTenantId();
 
         var hasDefault = await _db.PricingTypes.IgnoreQueryFilters()
             .AnyAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.IsDefault, ct);
@@ -418,16 +428,14 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
     private async Task<CloudBusinessSettings> EnsureBusinessSettingsAsync(CancellationToken ct)
     {
+        var tenantId = RequireTenantId();
         var existing = await _db.BusinessSettings
             .IgnoreQueryFilters()
-            .Where(s => !s.IsDeleted && s.TenantId == _tenantContext.TenantId)
+            .Where(s => !s.IsDeleted && s.TenantId == tenantId)
             .OrderBy(s => s.Id)
             .FirstOrDefaultAsync(ct);
         if (existing is not null)
             return existing;
-
-        var tenantId = _tenantContext.TenantId
-            ?? throw new InvalidOperationException("Tenant context is required");
 
         var settings = new CloudBusinessSettings
         {
@@ -443,23 +451,25 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         return settings;
     }
 
-    private static async Task<int?> ResolveAsync<T>(DbSet<T> set, Guid syncId, CancellationToken ct)
+    private async Task<int?> ResolveAsync<T>(DbSet<T> set, Guid syncId, CancellationToken ct)
         where T : CloudBaseEntity
     {
-        var id = await set.AsNoTracking()
+        var tenantId = RequireTenantId();
+        return await set.AsNoTracking()
+            .ForTenant(tenantId)
             .Where(e => e.SyncId == syncId)
             .Select(e => (int?)e.Id)
             .FirstOrDefaultAsync(ct);
-        return id;
     }
 
-    private static async Task<Guid?> ResolveSyncAsync<T>(DbSet<T> set, int id, CancellationToken ct)
+    private async Task<Guid?> ResolveSyncAsync<T>(DbSet<T> set, int id, CancellationToken ct)
         where T : CloudBaseEntity
     {
-        var syncId = await set.AsNoTracking()
+        var tenantId = RequireTenantId();
+        return await set.AsNoTracking()
+            .ForTenant(tenantId)
             .Where(e => e.Id == id)
             .Select(e => (Guid?)e.SyncId)
             .FirstOrDefaultAsync(ct);
-        return syncId;
     }
 }

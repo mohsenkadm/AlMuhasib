@@ -5,12 +5,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
-             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:GoldDashboardViewModel, IsDesignTimeCreatable=False}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
              Background="Transparent"
              FlowDirection="RightToLeft"
@@ -1004,7 +1002,7 @@
                                                     YAxes="{Binding SalesYAxes}"
                                                     TooltipPosition="Top"
                                                     MinHeight="260"
-                                                    AnimationsSpeed="00:00:00.500"/>
+                                                    AnimationsSpeed="00:00:00"/>
                             </Border>
                         </Grid>
                     </materialDesign:Card>
@@ -1032,7 +1030,7 @@
                                 <lvc:PieChart Series="{Binding StockSeries}"
                                               LegendPosition="Bottom"
                                               MinHeight="260"
-                                              AnimationsSpeed="00:00:00.500"/>
+                                              AnimationsSpeed="00:00:00"/>
                             </Border>
                         </Grid>
                     </materialDesign:Card>
@@ -1154,13 +1152,13 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" FontSize="12"
                                                        Foreground="{DynamicResource TextSecondaryBrush}">
-                                                <Run Text="{Binding Name}"/>
+                                                <Run Text="{Binding Name, Mode=OneWay}"/>
                                                 <Run Text=" ("/>
-                                                <Run Text="{Binding CurrencyLabel}"/>
+                                                <Run Text="{Binding CurrencyLabel, Mode=OneWay}"/>
                                                 <Run Text=")"/>
                                             </TextBlock>
                                             <TextBlock Grid.Column="1"
-                                                       Text="{Binding BalanceDisplay}"
+                                                       Text="{Binding BalanceDisplay, Mode=OneWay}"
                                                        FontSize="12" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource DashboardKpiTealBrush}"/>
                                         </Grid>

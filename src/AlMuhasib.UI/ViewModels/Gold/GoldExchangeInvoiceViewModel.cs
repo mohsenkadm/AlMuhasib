@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
@@ -23,8 +24,11 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     private readonly IGoldPrintService _printService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IPartyQuickDetailService _partyQuickDetail;
     private GoldInvoice? _lastSavedInvoice;
     private bool _allowManualWeightEdit = true;
+    private bool _autoSyncPaidAmount = true;
+    private bool _suppressPaidAmountChanged;
 
     public ObservableCollection<GoldSaleLineDraft> InLines { get; } = [];
     public ObservableCollection<GoldSaleLineDraft> OutLines { get; } = [];
@@ -80,7 +84,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         IGoldSettingsService settingsService,
         IGoldPrintService printService,
         IToastNotificationService toast,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IPartyQuickDetailService partyQuickDetail)
     {
         _exchangeService = exchangeService;
         _pricingService = pricingService;
@@ -92,9 +97,18 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         _printService = printService;
         _toast = toast;
         _currentUserService = currentUserService;
+        _partyQuickDetail = partyQuickDetail;
         PageTitle = "تبديل ذهب";
         InLines.CollectionChanged += (_, _) => RecalculateTotals();
         OutLines.CollectionChanged += (_, _) => RecalculateTotals();
+        GoldFxRateRefreshHelper.Register(this, ApplyBroadcastFxRateAsync);
+    }
+
+    private Task ApplyBroadcastFxRateAsync(decimal rate)
+    {
+        FxRate = rate;
+        RecalculateTotals();
+        return Task.CompletedTask;
     }
 
     public override async Task InitializeAsync()
@@ -120,6 +134,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
             foreach (var c in customers)
                 Customers.Add(c);
 
+            await _settingsService.EnsureDefaultsAsync();
             Karats.Clear();
             foreach (var k in await _pricingService.GetKaratsAsync())
                 Karats.Add(k);
@@ -175,17 +190,40 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
             ?? CashBoxes.FirstOrDefault();
     }
 
-    partial void OnPaymentCurrencyChanged(GoldCurrency value) => _ = ReloadCashBoxesAsync();
+    partial void OnPaymentCurrencyChanged(GoldCurrency value)
+    {
+        _autoSyncPaidAmount = true;
+        _ = ReloadCashBoxesAsync();
+        RecalculateTotals();
+    }
 
     partial void OnPricingCurrencyChanged(GoldCurrency value)
     {
+        _autoSyncPaidAmount = true;
         foreach (var line in InLines)
             _ = QuoteLineAsync(line);
         foreach (var line in OutLines)
             _ = QuoteLineAsync(line);
     }
 
-    partial void OnFxRateChanged(decimal value) => RecalculateTotals();
+    partial void OnPaymentMethodChanged(GoldPaymentMethod value)
+    {
+        _autoSyncPaidAmount = value == GoldPaymentMethod.Cash;
+        RecalculateTotals();
+    }
+
+    partial void OnPaidAmountChanged(decimal value)
+    {
+        if (_suppressPaidAmountChanged)
+            return;
+        _autoSyncPaidAmount = false;
+    }
+
+    partial void OnFxRateChanged(decimal value)
+    {
+        _autoSyncPaidAmount = true;
+        RecalculateTotals();
+    }
 
     [RelayCommand]
     private void AddInLine()
@@ -216,7 +254,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveInLine(GoldSaleLineDraft? line)
+    private void RemoveInRow(GoldSaleLineDraft? line)
     {
         line ??= SelectedInLine;
         if (line is null || InLines.Count <= 1)
@@ -227,7 +265,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveOutLine(GoldSaleLineDraft? line)
+    private void RemoveOutRow(GoldSaleLineDraft? line)
     {
         line ??= SelectedOutLine;
         if (line is null || OutLines.Count <= 1)
@@ -283,8 +321,13 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         if (ExchangeCashDifference == 0 || Math.Abs(ExchangeCashDifference - ComputedDifference) < 0.01m)
             ExchangeCashDifference = ComputedDifference;
 
-        if (PaymentMethod == GoldPaymentMethod.Cash && PaidAmount <= 0)
+        if (PaymentMethod == GoldPaymentMethod.Cash && (_autoSyncPaidAmount || PaidAmount <= 0))
+        {
+            _suppressPaidAmountChanged = true;
             PaidAmount = Math.Abs(ExchangeCashDifference);
+            _suppressPaidAmountChanged = false;
+            _autoSyncPaidAmount = true;
+        }
     }
 
     [RelayCommand]
@@ -483,6 +526,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
         ExchangeCashDifference = 0;
+        _autoSyncPaidAmount = true;
         PaidAmount = 0;
         Notes = string.Empty;
         WeightFromScale = false;

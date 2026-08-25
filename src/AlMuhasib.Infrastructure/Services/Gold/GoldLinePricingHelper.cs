@@ -6,8 +6,9 @@ namespace AlMuhasib.Infrastructure.Services.Gold;
 
 /// <summary>
 /// Shared gold-value / making-charge math for quote, sale, purchase, and exchange lines.
-/// Formula: goldValue = weight × (mithqalPrice / mithqalGrams) × purityFactor
-/// where purityFactor comes from <see cref="GoldKarat.PurityFactor"/> (pureGrams = weight × purity).
+/// Iraqi market: mithqal price is already per karat (سعر مثقال عيار 21), so:
+/// goldValue = weight × (mithqalPrice / mithqalGrams)
+/// Purity is tracked only for pureGrams reporting — never re-applied to the gold value.
 /// </summary>
 internal static class GoldLinePricingHelper
 {
@@ -48,8 +49,8 @@ internal static class GoldLinePricingHelper
         var purity = purityFactor <= 0 ? 1m : purityFactor;
         var pricePerGram = GoldCurrencyHelper.Round(mithqalPrice / grams, 6);
         var pureGrams = GoldCurrencyHelper.Round(weightGrams * purity, 6);
-        // goldValue = weight * (mithqalPrice/mithqalGrams) * purityFactor
-        var goldValue = GoldCurrencyHelper.Round(weightGrams * pricePerGram * purity);
+        // Per-karat mithqal price — do not multiply purity again (would understate 21k by ~12.5%).
+        var goldValue = GoldCurrencyHelper.Round(weightGrams * pricePerGram);
         var making = ComputeMakingCharge(
             makingChargeMode,
             makingChargeFixed,

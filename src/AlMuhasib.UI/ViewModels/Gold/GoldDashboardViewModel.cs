@@ -88,6 +88,14 @@ public partial class GoldDashboardViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
         PageTitle = "لوحة التحكم";
+        GoldFxRateRefreshHelper.Register(this, ApplyBroadcastFxRateAsync);
+    }
+
+    private Task ApplyBroadcastFxRateAsync(decimal rate)
+    {
+        LatestUsdToIqd = rate;
+        FxRateDisplay = $"1 USD = {rate:N0} IQD";
+        return Task.CompletedTask;
     }
 
     public override async Task InitializeAsync()
@@ -123,36 +131,86 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [RelayCommand]
     private async Task LoadDataAsync()
     {
-        IsLoaded = false;
         IsBusy = true;
         try
         {
             var data = await _dashboardService.GetDashboardAsync();
+
+            // Apply KPIs first so the page becomes interactive quickly.
             ApplyDashboard(data);
 
             Alerts.Clear();
-            var alerts = data.Alerts.Count > 0
-                ? data.Alerts
-                : (await _alertService.GetAlertsAsync()).ToList();
-            foreach (var alert in alerts)
+            foreach (var alert in data.Alerts)
                 Alerts.Add(alert);
             SmartAlertCount = Alerts.Count;
 
+            // Build daily tasks from already-loaded dashboard data (no second DB round-trip).
             DailyTasks.Clear();
-            var tasks = await _alertService.GetDailyTasksAsync();
-            foreach (var task in tasks)
+            foreach (var task in BuildDailyTasksFromDashboard(data))
                 DailyTasks.Add(task);
             DailyTaskCount = DailyTasks.Count;
+
+            IsLoaded = true;
         }
         catch (Exception ex)
         {
+            IsLoaded = true;
             Controls.BeautifulMessageDialog.ShowError($"تعذر تحميل لوحة التحكم:\n{ex.Message}");
         }
         finally
         {
             IsBusy = false;
-            IsLoaded = true;
         }
+    }
+
+    private static List<DailyTaskItem> BuildDailyTasksFromDashboard(GoldDashboardData data)
+    {
+        var tasks = new List<DailyTaskItem>();
+        if (!data.PricesUpdatedToday)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تحديث أسعار المثقال",
+                Description = "أسعار اليوم غير مسجّلة — حدّث التسعير قبل البيع",
+                Action = SmartAlertAction.OpenGoldMithqalPrices,
+                Priority = 1
+            });
+        }
+
+        if (data.OverdueCreditCount > 0)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تحصيل الذمم المتأخرة",
+                Description = $"{data.OverdueCreditCount} زبون لديهم ذمم متأخرة",
+                Action = SmartAlertAction.OpenGoldCollection,
+                Priority = 2
+            });
+        }
+
+        if (data.LowStockKaratCount > 0)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "مراجعة المخزون المنخفض",
+                Description = $"{data.LowStockKaratCount} عيار تحت حد التنبيه",
+                Action = SmartAlertAction.OpenGoldStock,
+                Priority = 3
+            });
+        }
+
+        if (!data.HasExpenseToday)
+        {
+            tasks.Add(new DailyTaskItem
+            {
+                Title = "تسجيل مصروف اليوم",
+                Description = "لا يوجد مصروف مسجّل اليوم — أضف مصروفاً إن وُجد",
+                Action = SmartAlertAction.OpenGoldExpenses,
+                Priority = 4
+            });
+        }
+
+        return tasks.OrderBy(t => t.Priority).ToList();
     }
 
     private void ApplyDashboard(GoldDashboardData data)

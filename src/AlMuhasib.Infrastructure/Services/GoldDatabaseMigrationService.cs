@@ -1,6 +1,7 @@
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data.Gold;
+using AlMuhasib.Infrastructure.Services.Gold;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Infrastructure.Services;
@@ -42,6 +43,21 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
             var hasDefault = await db.GoldWarehouses.AnyAsync(w => w.IsDefault, cancellationToken);
             if (!hasDefault)
                 return ["SeedPhase2Defaults"];
+
+            _ = await db.GoldNotifications.AsNoTracking().AnyAsync(cancellationToken);
+
+            var hasKarats = await db.GoldKarats.AnyAsync(cancellationToken);
+            if (!hasKarats)
+                return ["SeedPhase2Defaults"];
+
+            var hasActiveKarats = await db.GoldKarats.AnyAsync(k => k.IsActive, cancellationToken);
+            if (!hasActiveKarats)
+                return ["SeedPhase2Defaults"];
+
+            // EF materializes all mapped columns — missing schema upgrades surface here.
+            _ = await db.GoldSettings.AsNoTracking()
+                .Select(s => s.DefaultMakingChargeMode)
+                .FirstOrDefaultAsync(cancellationToken);
 
             return [];
         }
@@ -171,6 +187,33 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
                     [Notes] NVARCHAR(2000) NOT NULL,
                     [WarehouseId] INT NULL
                 );
+            END
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldNotifications', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[GoldNotifications](
+                    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    [SyncId] UNIQUEIDENTIFIER NOT NULL,
+                    [CreatedAt] DATETIME2 NOT NULL,
+                    [CreatedBy] NVARCHAR(100) NOT NULL,
+                    [UpdatedAt] DATETIME2 NULL,
+                    [UpdatedBy] NVARCHAR(100) NULL,
+                    [IsDeleted] BIT NOT NULL,
+                    [DeletedAt] DATETIME2 NULL,
+                    [DeletedBy] NVARCHAR(100) NULL,
+                    [RowVersion] ROWVERSION NOT NULL,
+                    [Type] NVARCHAR(40) NOT NULL,
+                    [Title] NVARCHAR(200) NOT NULL,
+                    [Message] NVARCHAR(2000) NOT NULL,
+                    [IsRead] BIT NOT NULL,
+                    [ReadAt] DATETIME2 NULL,
+                    [RelatedEntity] NVARCHAR(100) NULL,
+                    [RelatedId] INT NULL
+                );
+                CREATE INDEX [IX_GoldNotifications_IsRead] ON [dbo].[GoldNotifications]([IsRead]);
+                CREATE INDEX [IX_GoldNotifications_Type] ON [dbo].[GoldNotifications]([Type]);
             END
             """, cancellationToken);
 
@@ -309,6 +352,16 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
             """, cancellationToken);
     }
 
+    /// <summary>
+    /// Idempotent raw-SQL upgrades for existing Gold Shop databases.
+    /// Safe to call from settings bootstrap when startup migration was skipped.
+    /// </summary>
+    internal static async Task EnsureSchemaCurrentAsync(GoldDbContext db, CancellationToken cancellationToken)
+    {
+        await ApplyPhase2SchemaUpgradesAsync(db, cancellationToken);
+        await ApplyMustFeatureSchemaUpgradesAsync(db, cancellationToken);
+    }
+
     internal static async Task SeedPhase2DefaultsAsync(GoldDbContext db, CancellationToken cancellationToken)
     {
         var defaultWarehouse = await db.GoldWarehouses
@@ -352,6 +405,9 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
 
             await db.SaveChangesAsync(cancellationToken);
         }
+
+        await GoldSettingsService.EnsureDefaultKaratsInternalAsync(db, cancellationToken);
+        await GoldSettingsService.EnsureDefaultCashBoxesInternalAsync(db, cancellationToken);
     }
 
     private static async Task TryExecAsync(GoldDbContext db, string sql, CancellationToken cancellationToken)

@@ -70,7 +70,7 @@ public partial class GoldSettingsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError($"تعذر تحميل الإعدادات:\n{ex.Message}");
+            BeautifulMessageDialog.ShowError($"تعذر تحميل الإعدادات:\n{FormatSettingsError(ex)}");
         }
         finally
         {
@@ -151,11 +151,12 @@ public partial class GoldSettingsViewModel : ViewModelBase
             settings.UpdatedBy = _currentUserService.Username;
 
             await _settingsService.SaveSettingsAsync(settings);
+            await _settingsService.EnsureDefaultsAsync();
             BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الذهب");
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError($"تعذر حفظ الإعدادات:\n{FormatSettingsError(ex)}");
         }
         finally
         {
@@ -223,5 +224,29 @@ public partial class GoldSettingsViewModel : ViewModelBase
         {
             BeautifulMessageDialog.ShowError(ex.Message);
         }
+    }
+
+    private static string FormatSettingsError(Exception ex)
+    {
+        var message = ex.InnerException?.Message ?? ex.Message;
+        if (message.Contains("identity column", StringComparison.OrdinalIgnoreCase)
+            && message.Contains("GoldSettings", StringComparison.OrdinalIgnoreCase))
+        {
+            return "تعذر تهيئة إعدادات الذهب. أعد تشغيل البرنامج — سيتم إصلاح السجل تلقائياً.";
+        }
+
+        if (message.Contains("DefaultMakingChargeMode", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("Invalid column name", StringComparison.OrdinalIgnoreCase))
+        {
+            return "قاعدة بيانات الذهب تحتاج تحديثاً. أعد تشغيل البرنامج ليتم تطبيق التحديث تلقائياً، ثم حاول مرة أخرى.";
+        }
+
+        if (message.Contains("GoldKarats", StringComparison.OrdinalIgnoreCase)
+            && message.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase))
+        {
+            return "جدول العيارات غير موجود في قاعدة البيانات. أعد تشغيل البرنامج لإنشاء الجداول الناقصة.";
+        }
+
+        return message;
     }
 }

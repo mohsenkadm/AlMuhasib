@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using AlMuhasib.Core.Entities.Gold;
 using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Controls;
@@ -19,8 +20,10 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
     private readonly IGoldCustomerService _customerService;
     private readonly IGoldWarehouseService _warehouseService;
     private readonly IGoldCashService _cashService;
+    private readonly IGoldSettingsService _settingsService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IPartyQuickDetailService _partyQuickDetail;
 
     public ObservableCollection<GoldSaleLineDraft> Lines { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
@@ -67,18 +70,30 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
         IGoldCustomerService customerService,
         IGoldWarehouseService warehouseService,
         IGoldCashService cashService,
+        IGoldSettingsService settingsService,
         IToastNotificationService toast,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IPartyQuickDetailService partyQuickDetail)
     {
         _saleService = saleService;
         _pricingService = pricingService;
         _customerService = customerService;
         _warehouseService = warehouseService;
         _cashService = cashService;
+        _settingsService = settingsService;
         _toast = toast;
         _currentUserService = currentUserService;
+        _partyQuickDetail = partyQuickDetail;
         PageTitle = "مرتجع بيع ذهب";
         Lines.CollectionChanged += OnLinesCollectionChanged;
+        GoldFxRateRefreshHelper.Register(this, ApplyBroadcastFxRateAsync);
+    }
+
+    private Task ApplyBroadcastFxRateAsync(decimal rate)
+    {
+        FxRate = rate;
+        RecalculateTotals();
+        return Task.CompletedTask;
     }
 
     public override async Task InitializeAsync()
@@ -107,6 +122,7 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
                 Warehouses.Add(w);
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
 
+            await _settingsService.EnsureDefaultsAsync();
             Karats.Clear();
             foreach (var k in await _pricingService.GetKaratsAsync())
                 Karats.Add(k);
@@ -168,9 +184,11 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RemoveLine(GoldSaleLineDraft? line)
+    private void RemoveRow(GoldSaleLineDraft? line)
     {
-        if (line is null) return;
+        line ??= SelectedLine;
+        if (line is null || Lines.Count <= 1)
+            return;
         Lines.Remove(line);
         SelectedLine = Lines.LastOrDefault();
         RecalculateTotals();

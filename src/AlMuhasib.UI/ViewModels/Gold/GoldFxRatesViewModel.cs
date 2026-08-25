@@ -62,7 +62,10 @@ public partial class GoldFxRatesViewModel : ViewModelBase
             if (latest is not null)
                 NewUsdToIqd = latest.UsdToIqd;
 
-            _allRates = (await _pricingService.GetFxRatesAsync()).ToList();
+            _allRates = (await _pricingService.GetFxRatesAsync())
+                .OrderByDescending(r => r.RateDate)
+                .ThenByDescending(r => r.Id)
+                .ToList();
             ApplyFilters();
         }
         catch (Exception ex)
@@ -119,6 +122,7 @@ public partial class GoldFxRatesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowSuccess("تم حفظ سعر الصرف");
             NewNotes = string.Empty;
             await LoadAsync();
+            GoldFxRateRefreshHelper.Publish(NewUsdToIqd, NewRateDate.Date);
         }
         catch (Exception ex)
         {

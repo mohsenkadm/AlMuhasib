@@ -93,21 +93,57 @@
                                   SelectedValue="{Binding PaymentMethod}" SelectedValuePath="Value" DisplayMemberPath="Label"
                                   materialDesign:HintAssist.Hint="طريقة الدفع" materialDesign:HintAssist.IsFloating="True"
                                   Style="{StaticResource FilledComboBox}" Margin="0,0,12,12"/>
-                        <ComboBox Grid.Row="0" Grid.Column="2" ItemsSource="{Binding Suppliers}"
-                                  SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" IsEditable="True"
-                                  StaysOpenOnEdit="True" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  materialDesign:HintAssist.Hint="المورد" materialDesign:HintAssist.IsFloating="True"
-                                  Style="{StaticResource FilledComboBox}" Margin="0,0,12,12"/>
+                        <Grid Grid.Row="0" Grid.Column="2" Margin="0,0,12,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Suppliers}"
+                                      SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" IsEditable="True"
+                                      StaysOpenOnEdit="True" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      materialDesign:HintAssist.Hint="المورد" materialDesign:HintAssist.IsFloating="True"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <Button Grid.Column="1" Command="{Binding ShowSelectedSupplierDetailsCommand}"
+                                    ToolTip="تفاصيل المورد" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" Margin="4,0,0,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20" Foreground="#5D4037"/>
+                            </Button>
+                            <Button Grid.Column="2" Command="{Binding OpenQuickAddSupplierCommand}"
+                                    ToolTip="إضافة مورد جديد" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Button>
+                        </Grid>
                         <ComboBox Grid.Row="0" Grid.Column="3" ItemsSource="{Binding Warehouses}"
                                   SelectedItem="{Binding SelectedWarehouse}" DisplayMemberPath="Name"
                                   materialDesign:HintAssist.Hint="المخزن" materialDesign:HintAssist.IsFloating="True"
                                   Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
 
-                        <ComboBox Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Customers}"
-                                  SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" IsEditable="True"
-                                  StaysOpenOnEdit="True" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  materialDesign:HintAssist.Hint="الزبون (اختياري)" materialDesign:HintAssist.IsFloating="True"
-                                  Style="{StaticResource FilledComboBox}" Margin="0,0,12,12"/>
+                        <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,12,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Customers}"
+                                      SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" IsEditable="True"
+                                      StaysOpenOnEdit="True" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      materialDesign:HintAssist.Hint="الزبون (اختياري)" materialDesign:HintAssist.IsFloating="True"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <Button Grid.Column="1" Command="{Binding ShowSelectedCustomerDetailsCommand}"
+                                    ToolTip="تفاصيل الزبون" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" Margin="4,0,0,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20" Foreground="#5D4037"/>
+                            </Button>
+                            <Button Grid.Column="2" Command="{Binding OpenQuickAddCustomerCommand}"
+                                    ToolTip="إضافة زبون جديد" Style="{StaticResource MaterialDesignIconButton}"
+                                    Width="36" Height="36" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Button>
+                        </Grid>
                         <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding CashBoxes}"
                                   SelectedItem="{Binding SelectedCashBox}" DisplayMemberPath="Name"
                                   materialDesign:HintAssist.Hint="القاصة" materialDesign:HintAssist.IsFloating="True"
@@ -141,22 +177,18 @@
                 <DockPanel Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                         <Button Command="{Binding AddLineCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0" Content="إضافة بند"/>
-                        <Button Command="{Binding RemoveLineCommand}" CommandParameter="{Binding SelectedLine}"
-                                Style="{StaticResource FlatButton}" Margin="0,0,8,0" Content="حذف بند"/>
                         <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Content="قراءة الميزان"/>
                     </StackPanel>
                     <TextBlock Text="بنود الشراء" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </DockPanel>
 
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,16">
-                    <DataGrid ItemsSource="{Binding Lines}" SelectedItem="{Binding SelectedLine}"
-                              AutoGenerateColumns="False" CanUserAddRows="False" Style="{StaticResource ModernDataGrid}"
-                              MinHeight="220" Margin="8">
+                    <DataGrid ItemsSource="{Binding Lines}"
+                              AutoGenerateColumns="False" Style="{StaticResource InvoiceItemsDataGrid}"
+                              Margin="8">
                         <DataGrid.Columns>
-                            <DataGridComboBoxColumn Header="العيار" Width="100"
-                                                    SelectedValueBinding="{Binding KaratValue, UpdateSourceTrigger=PropertyChanged}"
-                                                    SelectedValuePath="KaratValue" DisplayMemberPath="Name"
-                                                    ItemsSource="{Binding DataContext.Karats, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <DataGridTemplateColumn Header="العيار" Width="100"
+                                                    CellTemplate="{StaticResource GoldInvoiceKaratCellTemplate}"/>
                             <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -182,6 +214,8 @@
                                                 Binding="{Binding LineTotal, StringFormat=N0}"/>
                             <DataGridTextColumn Header="الوصف" Width="*"
                                                 Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True"
+                                                    CellTemplate="{StaticResource InvoiceDeleteRowCellTemplate}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </materialDesign:Card>
@@ -230,5 +264,39 @@
         <Border Background="#88000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <ProgressBar IsIndeterminate="True" Width="200" Height="6" VerticalAlignment="Center"/>
         </Border>
+
+        <Grid Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center" UniformCornerRadius="16">
+                <StackPanel>
+                    <TextBlock Text="إضافة زبون جديد" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم الزبون *" Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="رقم الهاتف" Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="العنوان" Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelQuickAddCustomerCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <Grid Visibility="{Binding IsQuickAddSupplierOpen, Converter={StaticResource BoolToVis}}" Panel.ZIndex="100">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center" UniformCornerRadius="16">
+                <StackPanel>
+                    <TextBlock Text="إضافة مورد جديد" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم المورد *" Text="{Binding QuickSupplierName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="رقم الهاتف" Text="{Binding QuickSupplierPhone, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="العنوان" Text="{Binding QuickSupplierAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding QuickSupplierError}" Foreground="#D32F2F" Visibility="{Binding QuickSupplierError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="حفظ" Command="{Binding SaveQuickSupplierCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelQuickAddSupplierCommand}" Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

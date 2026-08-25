@@ -34,8 +34,10 @@ public sealed class MobileInstallmentsController : ControllerBase
         CancellationToken ct = default)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var today = DateTime.UtcNow.Date;
         var query = _db.Installments.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
             .Include(i => i.CashBox)
             .AsQueryable();
@@ -105,8 +107,10 @@ public sealed class MobileInstallmentsController : ControllerBase
     public async Task<ActionResult<InstallmentPlanDetailResponse>> GetPlan(Guid syncId, CancellationToken ct)
     {
         EnsureTenant();
+        var tenantId = RequireTenantId();
         var today = DateTime.UtcNow.Date;
         var plan = await _db.InstallmentPlans.AsNoTracking()
+            .ForTenant(tenantId)
             .Include(p => p.Customer)
             .Include(p => p.Invoice)
             .Include(p => p.Installments).ThenInclude(i => i.CashBox)
@@ -181,6 +185,16 @@ public sealed class MobileInstallmentsController : ControllerBase
     private void EnsureTenant()
     {
         var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+        if (tenantId <= 0)
+            throw new InvalidOperationException("Invalid tenant_id claim.");
         _tenantContext.SetTenant(tenantId);
+    }
+
+    private int RequireTenantId()
+    {
+        var tid = _tenantContext.TenantId;
+        if (tid is null || tid.Value <= 0)
+            throw new InvalidOperationException("Tenant context is required");
+        return tid.Value;
     }
 }

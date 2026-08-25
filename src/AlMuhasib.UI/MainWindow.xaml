@@ -1129,6 +1129,17 @@
                                 </materialDesign:PackIcon.Style>
                             </materialDesign:PackIcon>
                         </Button>
+                        <Button Command="{Binding OpenQuickGoldFxCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                Visibility="{Binding ShowQuickGoldFx, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                ToolTip="أسعار الصرف (USD → IQD)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="سعر الصرف" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                         <Button Command="{Binding ToggleThemeCommand}"
                                 Style="{StaticResource OutlinedButton}"
                                 Height="34" Padding="10,0" Margin="0,0,4,0"
@@ -1339,6 +1350,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldOpeningCustomerBalanceViewModel}">
                             <goldViews:GoldOpeningCustomerBalanceView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldOpeningSupplierBalanceViewModel}">
+                            <goldViews:GoldOpeningSupplierBalanceView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldCashBoxesViewModel}">
                             <goldViews:GoldCashBoxesView />

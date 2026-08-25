@@ -14,4 +14,21 @@ public interface IGoldOpeningBalanceService
     Task<GoldCustomer> SetCustomerOpeningBalanceAsync(
         GoldOpeningCustomerBalanceRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Clears customer opening credit balances to zero.</summary>
+    Task ClearCustomerOpeningBalanceAsync(
+        int customerId,
+        string? notes = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Sets supplier money credit balances (opening balances).</summary>
+    Task<GoldSupplier> SetSupplierOpeningBalanceAsync(
+        GoldOpeningSupplierBalanceRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Clears supplier opening credit balances to zero.</summary>
+    Task ClearSupplierOpeningBalanceAsync(
+        int supplierId,
+        string? notes = null,
+        CancellationToken cancellationToken = default);
 }
