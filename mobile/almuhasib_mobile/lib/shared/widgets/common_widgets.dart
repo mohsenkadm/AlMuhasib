@@ -287,7 +287,7 @@ class AppLogoMark extends StatelessWidget {
   final double size;
   final bool elevated;
 
-  static const assetPath = 'assets/images/qayd-icon.png';
+  static const assetPath = 'assets/images/qayd-mark.png';
 
   @override
   Widget build(BuildContext context) {

@@ -123,6 +123,22 @@ class GoldShopApi {
     );
   }
 
+  Future<List<GoldStockRow>> getStock() {
+    return _api.get(
+      '/api/gold-shop/master/stock',
+      parser: (data) {
+        if (data is Map<String, dynamic> && data['rows'] is List) {
+          return (data['rows'] as List<dynamic>)
+              .map((e) => GoldStockRow.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+        return (data as List<dynamic>)
+            .map((e) => GoldStockRow.fromJson(e as Map<String, dynamic>))
+            .toList();
+      },
+    );
+  }
+
   Future<GoldInvoiceDetail> createSale(CreateGoldSaleRequest request) {
     return _api.post(
       '$_base/invoices/sale',

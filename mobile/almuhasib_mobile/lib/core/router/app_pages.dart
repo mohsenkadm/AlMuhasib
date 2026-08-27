@@ -33,6 +33,7 @@ import '../../features/gold_shop/notifications/gold_notifications_screen.dart';
 import '../../features/gold_shop/prices/gold_prices_screen.dart';
 import '../../features/gold_shop/sales/gold_create_sale_screen.dart';
 import '../../features/gold_shop/sales/gold_sale_detail_screen.dart';
+import '../../features/gold_shop/stock/gold_stock_suppliers_screens.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
 import '../../features/hotel/guests/hotel_guest_form_screen.dart';
@@ -682,6 +683,20 @@ abstract final class AppPages {
       name: AppRoutes.goldShopNotifications,
       page: () => const GoldNotificationsScreen(),
       binding: GoldNotificationsBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopStock,
+      page: () => const GoldStockScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopSuppliers,
+      page: () => const GoldSuppliersScreen(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

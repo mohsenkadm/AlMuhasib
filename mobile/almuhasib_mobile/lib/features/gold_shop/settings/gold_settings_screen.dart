@@ -37,6 +37,18 @@ class GoldSettingsScreen extends GetView<SettingsController> {
             subtitle: 'gold_alerts'.tr(),
             onTap: () => Get.toNamed(AppRoutes.goldShopNotifications),
           ).fadeSlideIn(delayMs: 80),
+          _ModuleTile(
+            icon: Icons.inventory_2_outlined,
+            title: 'مخزون الذهب',
+            subtitle: 'أرصدة العيارات',
+            onTap: () => Get.toNamed(AppRoutes.goldShopStock),
+          ).fadeSlideIn(delayMs: 100),
+          _ModuleTile(
+            icon: Icons.local_shipping_outlined,
+            title: 'الموردون',
+            subtitle: 'قائمة الموردين والذمم',
+            onTap: () => Get.toNamed(AppRoutes.goldShopSuppliers),
+          ).fadeSlideIn(delayMs: 120),
           const SizedBox(height: 8),
           const Divider(height: 32),
           Card(

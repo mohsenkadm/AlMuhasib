@@ -102,6 +102,8 @@ abstract final class AppRoutes {
   static const goldShopPrices = '/gold-shop/prices';
   static const goldShopNotifications = '/gold-shop/notifications';
   static const goldShopSettings = '/gold-shop/settings';
+  static const goldShopStock = '/gold-shop/stock';
+  static const goldShopSuppliers = '/gold-shop/suppliers';
 
   static const profile = '/profile';
   static const about = '/about';
