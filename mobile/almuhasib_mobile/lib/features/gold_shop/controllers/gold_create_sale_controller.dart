@@ -14,6 +14,7 @@ class GoldSaleLineDraft {
     this.mithqalPrice = 0,
     this.makingCharge = 0,
     this.description = '',
+    this.mithqalGrams = 5,
   });
 
   int karatValue;
@@ -21,9 +22,11 @@ class GoldSaleLineDraft {
   double mithqalPrice;
   double makingCharge;
   String description;
+  double mithqalGrams;
 
   double get lineTotal {
-    final pricePerGram = mithqalPrice / 5.0;
+    final grams = mithqalGrams > 0 ? mithqalGrams : 5.0;
+    final pricePerGram = mithqalPrice / grams;
     return (weightGrams * pricePerGram) + makingCharge;
   }
 }
@@ -51,13 +54,15 @@ class GoldCreateSaleController extends GetxController {
   final pricingCurrency = 'USD'.obs;
   final paymentCurrency = 'IQD'.obs;
   final lines = <GoldSaleLineDraft>[GoldSaleLineDraft()].obs;
+  final mithqalGrams = 5.0.obs;
 
   static const karatOptions = [24, 22, 21, 18];
 
   double get totalsGold {
+    final grams = mithqalGrams.value > 0 ? mithqalGrams.value : 5.0;
     var sum = 0.0;
     for (final line in lines) {
-      sum += line.weightGrams * (line.mithqalPrice / 5.0);
+      sum += line.weightGrams * (line.mithqalPrice / grams);
     }
     return sum;
   }
@@ -105,6 +110,13 @@ class GoldCreateSaleController extends GetxController {
       prices.assignAll(results[2] as List<GoldMithqalPriceRow>);
       final dash = results[3] as GoldDashboardDto;
 
+      if (dash.mithqalGrams > 0) {
+        mithqalGrams.value = dash.mithqalGrams;
+        for (final line in lines) {
+          line.mithqalGrams = dash.mithqalGrams;
+        }
+      }
+
       if (dash.latestUsdToIqd != null && dash.latestUsdToIqd! > 0) {
         fxRate.text = dash.latestUsdToIqd!.toStringAsFixed(0);
       }
@@ -151,7 +163,7 @@ class GoldCreateSaleController extends GetxController {
   }
 
   void addLine() {
-    final draft = GoldSaleLineDraft();
+    final draft = GoldSaleLineDraft(mithqalGrams: mithqalGrams.value);
     lines.add(draft);
     _applyPriceForLine(lines.length - 1, draft.karatValue);
     lines.refresh();

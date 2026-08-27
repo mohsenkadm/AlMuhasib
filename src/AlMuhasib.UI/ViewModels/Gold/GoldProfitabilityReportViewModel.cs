@@ -28,7 +28,7 @@ public partial class GoldProfitabilityReportViewModel : GoldReportViewModelBase
         ICurrentUserService currentUserService)
         : base(reportService, exportService, toast, currentUserService)
     {
-        PageTitle = "ربحية الذهب";
+        PageTitle = "ربحية الذهب (التكلفة تقديرية حسب متوسط المخزون الحالي)";
     }
 
     public override async Task InitializeAsync()

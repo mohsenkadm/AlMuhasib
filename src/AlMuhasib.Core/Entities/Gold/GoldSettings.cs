@@ -16,4 +16,6 @@ public class GoldSettings : BaseEntity
     public int OverdueDaysThreshold { get; set; } = 30;
     public string EnabledKaratsCsv { get; set; } = "24,22,21,18";
     public GoldMakingChargeMode DefaultMakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    /// <summary>True after the first-run gold setup wizard completes.</summary>
+    public bool IsConfigured { get; set; }
 }

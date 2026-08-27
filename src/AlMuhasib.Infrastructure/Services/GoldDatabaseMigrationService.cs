@@ -56,7 +56,7 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
 
             // EF materializes all mapped columns — missing schema upgrades surface here.
             _ = await db.GoldSettings.AsNoTracking()
-                .Select(s => s.DefaultMakingChargeMode)
+                .Select(s => new { s.DefaultMakingChargeMode, s.IsConfigured })
                 .FirstOrDefaultAsync(cancellationToken);
 
             return [];
@@ -369,6 +369,29 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
             IF OBJECT_ID(N'dbo.GoldInvoices', N'U') IS NOT NULL
                AND COL_LENGTH('GoldInvoices','RelatedInvoiceId') IS NULL
                 ALTER TABLE [dbo].[GoldInvoices] ADD [RelatedInvoiceId] INT NULL;
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldSettings', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldSettings','IsConfigured') IS NULL
+                ALTER TABLE [dbo].[GoldSettings] ADD [IsConfigured] BIT NOT NULL CONSTRAINT DF_GoldSettings_IsConfigured DEFAULT(0);
+            """, cancellationToken);
+
+        // Existing shops that already have operational data should skip the new first-run wizard.
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldSettings', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldSettings','IsConfigured') IS NOT NULL
+            BEGIN
+                UPDATE s SET s.IsConfigured = 1
+                FROM [dbo].[GoldSettings] s
+                WHERE s.IsConfigured = 0
+                  AND (
+                        EXISTS (SELECT 1 FROM [dbo].[GoldInvoices])
+                     OR EXISTS (SELECT 1 FROM [dbo].[GoldMithqalPrices])
+                     OR EXISTS (SELECT 1 FROM [dbo].[GoldVouchers])
+                     OR EXISTS (SELECT 1 FROM [dbo].[GoldStockBalances] WHERE [GramsOnHand] > 0)
+                  );
+            END
             """, cancellationToken);
     }
 
