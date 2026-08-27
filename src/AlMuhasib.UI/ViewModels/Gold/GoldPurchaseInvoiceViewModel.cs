@@ -24,6 +24,7 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
     private readonly IGoldScaleService _scaleService;
     private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPartyQuickDetailService _partyQuickDetail;
@@ -87,6 +88,7 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         IGoldScaleService scaleService,
         IGoldSettingsService settingsService,
         IGoldPrintService printService,
+        IWhatsAppShareService whatsAppShare,
         IToastNotificationService toast,
         ICurrentUserService currentUserService,
         IPartyQuickDetailService partyQuickDetail)
@@ -100,10 +102,11 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         _scaleService = scaleService;
         _settingsService = settingsService;
         _printService = printService;
+        _whatsAppShare = whatsAppShare;
         _toast = toast;
         _currentUserService = currentUserService;
         _partyQuickDetail = partyQuickDetail;
-        PageTitle = "فاتورة شراء خردة";
+        PageTitle = "فاتورة شراء ذهب";
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
         GoldFxRateRefreshHelper.Register(this, ApplyBroadcastFxRateAsync);
     }
@@ -221,6 +224,14 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
     {
         if (_suppressPaidAmountChanged)
             return;
+
+        if (PaymentMethod == GoldPaymentMethod.Cash && value <= 0)
+        {
+            _autoSyncPaidAmount = true;
+            SyncPaidAmountFromTotals();
+            return;
+        }
+
         _autoSyncPaidAmount = false;
     }
 
@@ -326,17 +337,16 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         if (PaymentMethod != GoldPaymentMethod.Cash)
             return;
 
+        if (!_autoSyncPaidAmount)
+            return;
+
         var expected = PaymentCurrency == PricingCurrency
             ? GrandTotal
             : PaymentCurrency == GoldCurrency.IQD ? TotalIqd : TotalUsd;
 
-        if (!_autoSyncPaidAmount && PaidAmount > 0)
-            return;
-
         _suppressPaidAmountChanged = true;
         PaidAmount = expected;
         _suppressPaidAmountChanged = false;
-        _autoSyncPaidAmount = true;
     }
 
     [RelayCommand]
@@ -426,6 +436,20 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
             return;
         }
 
+        var pieceCount = validLines.Count(l => l.CreateAsPiece);
+        if (pieceCount > 0)
+        {
+            foreach (var line in validLines.Where(l => l.CreateAsPiece))
+            {
+                if (string.IsNullOrWhiteSpace(line.Description))
+                {
+                    ErrorMessage = "أدخل اسم القطعة في عمود الوصف عند تفعيل «قطعة؟»";
+                    _toast.ShowWarning(ErrorMessage);
+                    return;
+                }
+            }
+        }
+
         IsBusy = true;
         try
         {
@@ -455,14 +479,18 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
                     MakingChargeMode = l.MakingChargeMode,
                     MakingChargeRate = l.MakingChargeRate,
                     Description = l.Description,
-                    WeightFromScale = l.WeightFromScale
+                    WeightFromScale = l.WeightFromScale,
+                    CreateAsPiece = l.CreateAsPiece,
+                    PieceBarcode = l.PieceBarcode
                 }).ToList()
             };
 
             var invoice = await _purchaseService.CreatePurchaseAsync(request);
             _lastSavedInvoice = invoice;
             CanPrintInvoice = CanPrint;
-            Message = $"تم حفظ فاتورة الشراء {invoice.InvoiceNumber}";
+            Message = pieceCount > 0
+                ? $"تم حفظ فاتورة الشراء {invoice.InvoiceNumber} وتسجيل {pieceCount} قطعة في الأصناف"
+                : $"تم حفظ فاتورة الشراء {invoice.InvoiceNumber}";
             _toast.ShowSuccess(Message);
 
             if (BeautifulMessageDialog.ShowConfirm(
@@ -503,7 +531,34 @@ public partial class GoldPurchaseInvoiceViewModel : ViewModelBase
         }
     }
 
-    partial void OnCanPrintInvoiceChanged(bool value) => PrintInvoiceCommand.NotifyCanExecuteChanged();
+    [RelayCommand(CanExecute = nameof(CanPrintInvoice))]
+    private void SendInvoiceWhatsApp()
+    {
+        if (_lastSavedInvoice is null || !CanPrint)
+            return;
+
+        try
+        {
+            var model = _printService.BuildInvoicePrintModel(_lastSavedInvoice);
+            _whatsAppShare.ShareInvoice(
+                model,
+                _lastSavedInvoice.Supplier?.Phone ?? SelectedSupplier?.Phone
+                    ?? _lastSavedInvoice.Customer?.Phone ?? SelectedCustomer?.Phone,
+                _lastSavedInvoice.Supplier?.Name ?? SelectedSupplier?.Name
+                    ?? _lastSavedInvoice.Customer?.Name ?? SelectedCustomer?.Name ?? "مورد");
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError(ex.Message, "واتساب");
+        }
+    }
+
+    partial void OnCanPrintInvoiceChanged(bool value)
+    {
+        PrintInvoiceCommand.NotifyCanExecuteChanged();
+        SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     private async Task NewInvoiceAsync() => await ResetFormAsync();

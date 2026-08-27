@@ -67,6 +67,8 @@ public class GoldInvoiceListItem
     public GoldPaymentMethod PaymentMethod { get; set; }
     public GoldInvoiceStatus Status { get; set; }
     public string? CustomerName { get; set; }
+    public string? SupplierName { get; set; }
+    public string? CreatedBy { get; set; }
     public GoldCurrency PricingCurrency { get; set; }
     public GoldCurrency PaymentCurrency { get; set; }
     public decimal TotalWeightGrams { get; set; }
@@ -148,6 +150,10 @@ public class GoldSaleLineRequest
     public decimal MakingChargeRate { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    /// <summary>Purchase only: create a trackable GoldItem from this line.</summary>
+    public bool CreateAsPiece { get; set; }
+    /// <summary>Optional barcode when CreateAsPiece is true.</summary>
+    public string? PieceBarcode { get; set; }
 }
 
 public class GoldPurchaseRequest
@@ -390,4 +396,42 @@ public class GoldAuditReportRow
     public int? EntityId { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
+}
+
+public class GoldCashMovementRow
+{
+    public DateTime Date { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public string PartyName { get; set; } = string.Empty;
+    public int CashBoxId { get; set; }
+    public string CashBoxName { get; set; } = string.Empty;
+    public GoldCurrency Currency { get; set; }
+    public decimal AmountIn { get; set; }
+    public decimal AmountOut { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class GoldUserPerformanceRow
+{
+    public string UserName { get; set; } = string.Empty;
+    public int SalesCount { get; set; }
+    public int PurchasesCount { get; set; }
+    public int ExchangeCount { get; set; }
+    public int PaymentsCount { get; set; }
+    public int AuditActionsCount { get; set; }
+    public decimal SalesAmountIqd { get; set; }
+    public decimal PurchasesAmountIqd { get; set; }
+}
+
+public class GoldDeletedInvoiceRow
+{
+    public int Id { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime InvoiceDate { get; set; }
+    public string InvoiceType { get; set; } = string.Empty;
+    public string PartyName { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string DeletedBy { get; set; } = string.Empty;
 }

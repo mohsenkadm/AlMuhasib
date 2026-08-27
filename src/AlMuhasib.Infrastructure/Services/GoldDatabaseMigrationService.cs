@@ -166,6 +166,26 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
             """, cancellationToken);
 
         await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldCategories', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[GoldCategories](
+                    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    [SyncId] UNIQUEIDENTIFIER NOT NULL,
+                    [CreatedAt] DATETIME2 NOT NULL,
+                    [CreatedBy] NVARCHAR(100) NOT NULL,
+                    [UpdatedAt] DATETIME2 NULL,
+                    [UpdatedBy] NVARCHAR(100) NULL,
+                    [IsDeleted] BIT NOT NULL,
+                    [DeletedAt] DATETIME2 NULL,
+                    [DeletedBy] NVARCHAR(100) NULL,
+                    [RowVersion] ROWVERSION NOT NULL,
+                    [Name] NVARCHAR(200) NOT NULL,
+                    [IsActive] BIT NOT NULL
+                );
+            END
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
             IF OBJECT_ID(N'dbo.GoldExpenses', N'U') IS NULL
             BEGIN
                 CREATE TABLE [dbo].[GoldExpenses](

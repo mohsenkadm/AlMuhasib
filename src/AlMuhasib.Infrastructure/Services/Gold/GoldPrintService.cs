@@ -65,6 +65,39 @@ public sealed class GoldPrintService : IGoldPrintService
         return Task.CompletedTask;
     }
 
+    public Task PrintItemLabelsAsync(IEnumerable<GoldItem> items, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var list = items.Where(i => i is not null).ToList();
+        if (list.Count == 0)
+            throw new InvalidOperationException("لا توجد قطع للطباعة");
+
+        if (_barcodeLabelService is not null)
+        {
+            var labels = list
+                .Where(i => !string.IsNullOrWhiteSpace(i.Barcode))
+                .Select(i => new BarcodeLabelItem
+                {
+                    ProductName = i.Name,
+                    Barcode = i.Barcode.Trim(),
+                    KaratValue = i.KaratValue,
+                    WeightGrams = i.WeightGrams
+                })
+                .ToList();
+
+            if (labels.Count == 0)
+                throw new InvalidOperationException("القطع المحددة بلا باركود — عيّن باركوداً أولاً");
+
+            _barcodeLabelService.PrintLabels(labels);
+            return Task.CompletedTask;
+        }
+
+        foreach (var item in list)
+            _ = PrintItemLabelAsync(item, cancellationToken);
+
+        return Task.CompletedTask;
+    }
+
     internal static InvoicePrintModel BuildPrintModel(GoldInvoice invoice)
     {
         var typeLabel = invoice.InvoiceType switch

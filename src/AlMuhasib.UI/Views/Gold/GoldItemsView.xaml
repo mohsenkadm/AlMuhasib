@@ -56,6 +56,17 @@
                         </StackPanel>
                     </Button>
 
+                    <Button Command="{Binding PrintAllLabelsCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="12,8" Margin="0,0,8,0"
+                            ToolTip="طباعة ملصقات جماعية للقطع المتوفرة"
+                            IsEnabled="{Binding CanPrint}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Barcode" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="ملصقات جماعية"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button Command="{Binding RefreshCommand}"
                             Style="{StaticResource FlatButton}"
                             md:ButtonAssist.CornerRadius="8">
@@ -120,7 +131,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CostPerGram"/>
                         <DataGridTextColumn Header="التصنيف" Binding="{Binding Category}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Category"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="90"
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status, Converter={StaticResource GoldItemStatusLabelConverter}}" Width="90"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Status"/>
                         <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
@@ -180,8 +191,11 @@
                                  md:HintAssist.Hint="أجور الصياغة" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
                         <TextBox Text="{Binding EditCostPerGram, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="التكلفة لكل غرام" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
-                        <TextBox Text="{Binding EditCategory, UpdateSourceTrigger=PropertyChanged}"
-                                 md:HintAssist.Hint="التصنيف" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                        <ComboBox ItemsSource="{Binding CategoryNames}"
+                                  Text="{Binding EditCategory, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="True"
+                                  md:HintAssist.Hint="التصنيف"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
                                    Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">

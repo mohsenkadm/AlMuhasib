@@ -137,6 +137,22 @@ public sealed class GoldSupplierService : IGoldSupplierService
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<GoldInvoiceListItem>> GetSupplierInvoicesAsync(
+        int supplierId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoices = await context.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Supplier)
+            .Where(i => i.SupplierId == supplierId)
+            .OrderByDescending(i => i.InvoiceDate)
+            .ThenByDescending(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        return invoices.Select(GoldCurrencyHelper.ToListItem).ToList();
+    }
+
     internal static void AdjustCredit(GoldSupplier supplier, GoldCurrency currency, decimal delta)
     {
         if (currency == GoldCurrency.IQD)

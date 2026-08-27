@@ -86,6 +86,8 @@ internal static class GoldCurrencyHelper
         PaymentMethod = invoice.PaymentMethod,
         Status = invoice.Status,
         CustomerName = invoice.Customer?.Name,
+        SupplierName = invoice.Supplier?.Name,
+        CreatedBy = invoice.CreatedBy,
         PricingCurrency = invoice.PricingCurrency,
         PaymentCurrency = invoice.PaymentCurrency,
         TotalWeightGrams = invoice.TotalWeightGrams,

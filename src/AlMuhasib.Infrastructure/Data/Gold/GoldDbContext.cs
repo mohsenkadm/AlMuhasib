@@ -43,6 +43,7 @@ public class GoldDbContext : DbContext
     public DbSet<GoldSupplier> GoldSuppliers => Set<GoldSupplier>();
     public DbSet<GoldExpenseType> GoldExpenseTypes => Set<GoldExpenseType>();
     public DbSet<GoldExpense> GoldExpenses => Set<GoldExpense>();
+    public DbSet<GoldCategory> GoldCategories => Set<GoldCategory>();
     public DbSet<GoldWarehouse> GoldWarehouses => Set<GoldWarehouse>();
     public DbSet<GoldWarehouseTransfer> GoldWarehouseTransfers => Set<GoldWarehouseTransfer>();
 

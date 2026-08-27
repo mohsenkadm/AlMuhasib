@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "1.14.19",
-    "releaseDate":  "2026-08-24",
-    "downloadUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.19/AlMuhasib-1.14.19.zip",
-    "installerUrl":  "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.19/Qayd-Setup-1.14.19.exe",
-    "sha256":  "0164D1A6C759CD1098079469CC2000D42626D107ADE2F42F7B2EB092EAC116DE",
-    "sizeBytes":  149461307,
-    "releaseNotes":  "تحسين شاشة البيع السريع POS وملء الشاشة، وتحسين السندات والفواتير",
-    "isMandatory":  false,
-    "minSupportedVersion":  "1.0.0"
+  "version": "1.14.20",
+  "releaseDate": "2026-08-27",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.20/AlMuhasib-1.14.20.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.20/Qayd-Setup-1.14.20.exe",
+  "sha256": "C1FA29BCF412D4BEDB66E855913F198B046F678E75BFDF821B788138725DF402",
+  "sizeBytes": 149607028,
+  "releaseNotes": "تطوير نظام الذهب: تصنيفات، تقارير، مدفوعات الموردين، واختيار الأصناف — بدون تعارض مع بيانات العملاء الحاليين",
+  "isMandatory": false,
+  "minSupportedVersion": "1.0.0"
 }

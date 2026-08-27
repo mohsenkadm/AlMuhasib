@@ -17,4 +17,8 @@ public interface IGoldSupplierService
     Task<GoldSupplier> CreateAsync(GoldSupplier supplier, CancellationToken cancellationToken = default);
     Task<GoldSupplier> UpdateAsync(GoldSupplier supplier, CancellationToken cancellationToken = default);
     Task DeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<GoldInvoiceListItem>> GetSupplierInvoicesAsync(
+        int supplierId,
+        CancellationToken cancellationToken = default);
 }

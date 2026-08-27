@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
+using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,6 +13,8 @@ namespace AlMuhasib.UI.ViewModels.Gold;
 public partial class GoldCustomerStatementViewModel : ViewModelBase
 {
     private readonly IGoldCustomerService _customerService;
+    private readonly IExportService _exportService;
+    private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
 
@@ -29,10 +33,14 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
 
     public GoldCustomerStatementViewModel(
         IGoldCustomerService customerService,
+        IExportService exportService,
+        IWhatsAppShareService whatsAppShare,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _customerService = customerService;
+        _exportService = exportService;
+        _whatsAppShare = whatsAppShare;
         _toast = toast;
         _currentUserService = currentUserService;
         PageTitle = "كشف حساب زبون";
@@ -102,6 +110,83 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void PrintStatement()
+    {
+        if (SelectedCustomer is null)
+        {
+            _toast.ShowWarning("اختر زبوناً أولاً");
+            return;
+        }
+
+        var columns = new[] { "رقم الفاتورة", "التاريخ", "النوع", "الإجمالي", "المدفوع", "المتبقي" };
+        IList<object[]> rows = Invoices.Select(i => new object[]
+        {
+            i.InvoiceNumber,
+            i.InvoiceDate.ToString("yyyy/MM/dd"),
+            i.InvoiceType.ToString(),
+            i.TotalAmount.ToString("N0"),
+            i.PaidAmount.ToString("N0"),
+            i.RemainingAmount.ToString("N0")
+        }).ToList();
+
+        var summary = new List<string>
+        {
+            $"إجمالي الفواتير: {TotalAmount:N0}",
+            $"المدفوع: {TotalPaid:N0}",
+            $"المتبقي: {TotalRemaining:N0}",
+            $"رصيد آجل د.ع: {CreditBalanceIqd:N0}",
+            $"رصيد آجل $: {CreditBalanceUsd:N2}",
+            $"ذهب آجل (غ): {GoldCreditGrams:N3}"
+        };
+        _exportService.PrintTable($"كشف حساب زبون — {SelectedCustomer.Name}", columns, rows, summary);
+    }
+
+    [RelayCommand]
+    private void ShareWhatsApp()
+    {
+        if (SelectedCustomer is null)
+        {
+            _toast.ShowWarning("اختر زبوناً أولاً");
+            return;
+        }
+
+        try
+        {
+            var model = new StatementPrintModel
+            {
+                Title = "كشف حساب زبون ذهب",
+                PartyName = SelectedCustomer.Name,
+                PartyPhone = SelectedCustomer.Phone,
+                Columns = ["رقم الفاتورة", "التاريخ", "الإجمالي", "المدفوع", "المتبقي"],
+                Rows = Invoices.Select(i => new object[]
+                {
+                    i.InvoiceNumber,
+                    i.InvoiceDate.ToString("yyyy/MM/dd"),
+                    i.TotalAmount.ToString("N0"),
+                    i.PaidAmount.ToString("N0"),
+                    i.RemainingAmount.ToString("N0")
+                }).ToList(),
+                SummaryLines =
+                [
+                    $"إجمالي: {TotalAmount:N0}",
+                    $"مدفوع: {TotalPaid:N0}",
+                    $"متبقي: {TotalRemaining:N0}",
+                    $"آجل د.ع: {CreditBalanceIqd:N0}",
+                    $"آجل $: {CreditBalanceUsd:N2}",
+                    $"ذهب آجل غ: {GoldCreditGrams:N3}"
+                ]
+            };
+            _whatsAppShare.ShareStatement(model, SelectedCustomer.Phone, SelectedCustomer.Name);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toast.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError(ex.Message, "واتساب");
         }
     }
 }

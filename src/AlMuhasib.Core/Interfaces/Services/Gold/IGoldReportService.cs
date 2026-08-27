@@ -49,4 +49,21 @@ public interface IGoldReportService
         DateTime? dateTo = null,
         string? entityName = null,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<GoldCashMovementRow>> GetCashBoxMovementReportAsync(
+        int? cashBoxId = null,
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<GoldUserPerformanceRow>> GetUserPerformanceReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        string? userName = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<GoldDeletedInvoiceRow>> GetDeletedInvoicesReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        CancellationToken cancellationToken = default);
 }

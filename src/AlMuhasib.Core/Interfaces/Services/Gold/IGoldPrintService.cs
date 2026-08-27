@@ -13,4 +13,7 @@ public interface IGoldPrintService
 
     /// <summary>Prints a barcode/weight label for a gold item.</summary>
     Task PrintItemLabelAsync(GoldItem item, CancellationToken cancellationToken = default);
+
+    /// <summary>Prints labels for multiple gold items in one job.</summary>
+    Task PrintItemLabelsAsync(IEnumerable<GoldItem> items, CancellationToken cancellationToken = default);
 }

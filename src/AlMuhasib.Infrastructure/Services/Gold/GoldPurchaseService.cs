@@ -45,6 +45,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
         return await context.GoldInvoices
             .AsNoTracking()
             .Include(i => i.Customer)
+            .Include(i => i.Supplier)
             .Include(i => i.Lines)
             .Include(i => i.Payments)
             .FirstOrDefaultAsync(i => i.Id == id && i.InvoiceType == GoldInvoiceType.Purchase, cancellationToken);
@@ -117,14 +118,62 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                 purityByKarat.TryGetValue(lineReq.KaratValue, out var purity);
                 if (purity <= 0) purity = 1m;
 
+                if (lineReq.CreateAsPiece)
+                {
+                    var pieceName = string.IsNullOrWhiteSpace(lineReq.Description)
+                        ? $"قطعة عيار {lineReq.KaratValue}"
+                        : lineReq.Description.Trim();
+                    var barcode = string.IsNullOrWhiteSpace(lineReq.PieceBarcode)
+                        ? string.Empty
+                        : lineReq.PieceBarcode.Trim();
+
+                    if (!string.IsNullOrEmpty(barcode))
+                    {
+                        var barcodeTaken = await context.GoldItems.AnyAsync(i => i.Barcode == barcode, cancellationToken);
+                        if (barcodeTaken)
+                            throw new InvalidOperationException($"الباركود «{barcode}» مستخدم مسبقاً");
+                    }
+
+                    var costPerGram = lineReq.WeightGrams > 0
+                        ? GoldLinePricingHelper.Calculate(
+                            lineReq.WeightGrams,
+                            lineReq.MithqalPrice,
+                            mithqalGrams,
+                            purity,
+                            lineReq.MakingChargeMode,
+                            lineReq.MakingCharge,
+                            lineReq.MakingChargeRate).PricePerGram
+                        : 0m;
+
+                    var item = new GoldItem
+                    {
+                        Name = pieceName,
+                        Barcode = barcode,
+                        KaratValue = lineReq.KaratValue,
+                        WeightGrams = lineReq.WeightGrams,
+                        SuggestedMakingCharge = lineReq.MakingCharge,
+                        MakingChargeCurrency = request.PricingCurrency,
+                        CostPerGram = costPerGram,
+                        Status = GoldItemStatus.InStock,
+                        TrackAsPiece = true,
+                        Category = "شراء",
+                        Notes = $"من فاتورة شراء — {invoice.InvoiceNumber}"
+                    };
+                    await context.GoldItems.AddAsync(item, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
+                    lineReq.ItemId = item.Id;
+                    if (string.IsNullOrWhiteSpace(lineReq.Description))
+                        lineReq.Description = pieceName;
+                }
+
                 var line = GoldLinePricingHelper.BuildInvoiceLine(
                     lineReq,
                     mithqalGrams,
                     purity,
                     GoldInvoiceLineDirection.In,
-                    "شراء كسر");
+                    lineReq.CreateAsPiece ? "شراء قطعة" : "شراء كسر");
 
-                // Scrap purchase increases stock and recalculates average cost.
+                // Scrap or piece purchase increases karat stock once (piece catalog is separate tracking).
                 await GoldInventoryService.AdjustStockInternalAsync(
                     context,
                     line.KaratValue,
@@ -224,6 +273,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             return await context.GoldInvoices
                 .AsNoTracking()
                 .Include(i => i.Customer)
+                .Include(i => i.Supplier)
                 .Include(i => i.Lines)
                 .Include(i => i.Payments)
                 .FirstAsync(i => i.Id == invoice.Id, cancellationToken);
@@ -313,6 +363,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             return await context.GoldInvoices
                 .AsNoTracking()
                 .Include(i => i.Customer)
+                .Include(i => i.Supplier)
                 .Include(i => i.Lines)
                 .Include(i => i.Payments)
                 .FirstAsync(i => i.Id == invoice.Id, cancellationToken);
@@ -333,6 +384,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
         {
             var invoice = await context.GoldInvoices
                 .Include(i => i.Customer)
+                .Include(i => i.Supplier)
                 .Include(i => i.Lines)
                 .Include(i => i.Payments)
                 .FirstOrDefaultAsync(i => i.Id == id && i.InvoiceType == GoldInvoiceType.Purchase, cancellationToken)

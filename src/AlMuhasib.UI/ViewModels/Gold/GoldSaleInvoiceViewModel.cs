@@ -71,6 +71,10 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private string _message = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private bool _canPrintInvoice;
+    [ObservableProperty] private string _barcodeInput = string.Empty;
+    [ObservableProperty] private bool _isItemPickerOpen;
+
+    public GoldItemPickerViewModel ItemPicker { get; }
 
     [ObservableProperty] private decimal _totalGoldValue;
     [ObservableProperty] private decimal _totalMakingCharge;
@@ -107,6 +111,9 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _partyQuickDetail = partyQuickDetail;
         PageTitle = "فاتورة بيع ذهب";
+        ItemPicker = new GoldItemPickerViewModel(inventoryService);
+        ItemPicker.Confirmed += OnItemPickerConfirmed;
+        ItemPicker.Cancelled += () => IsItemPickerOpen = false;
         Lines.CollectionChanged += OnLinesCollectionChanged;
         GoldFxRateRefreshHelper.Register(this, ApplyBroadcastFxRateAsync);
     }
@@ -219,6 +226,15 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     {
         if (_suppressPaidAmountChanged)
             return;
+
+        // نقدي + مدفوع صفر ≠ آجل: أعد ملء المدفوع بالإجمالي تلقائياً
+        if (PaymentMethod == GoldPaymentMethod.Cash && value <= 0)
+        {
+            _autoSyncPaidAmount = true;
+            SyncPaidAmountFromTotals();
+            return;
+        }
+
         _autoSyncPaidAmount = false;
     }
 
@@ -338,28 +354,114 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
 
             if (item.Status != GoldItemStatus.InStock)
             {
-                ErrorMessage = $"القطعة «{item.Name}» غير متاحة للبيع (الحالة: {item.Status})";
+                ErrorMessage = $"القطعة «{item.Name}» غير متاحة للبيع (الحالة: {GoldItemStatusDisplay.ToArabic(item.Status)})";
                 line.ItemId = null;
                 return;
             }
 
-            line.ItemId = item.Id;
-            line.KaratValue = item.KaratValue;
-            line.WeightGrams = item.WeightGrams;
-            line.MakingCharge = item.SuggestedMakingCharge;
-            line.Description = item.Name;
-            line.IsWeightReadOnly = item.TrackAsPiece || !_allowManualWeightEdit;
-            line.SetItemLookupSilently(
-                string.IsNullOrWhiteSpace(item.Barcode) ? item.Id.ToString() : item.Barcode);
-            ErrorMessage = string.Empty;
-            Message = $"تم تحميل القطعة: {item.Name} — عيار {item.KaratValue}، {item.WeightGrams:N3} غ";
-            await QuoteLineAsync(line);
+            await ApplyItemToLineAsync(line, item);
         }
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
             _toast.ShowWarning(ex.Message);
         }
+    }
+
+    private async Task ApplyItemToLineAsync(GoldSaleLineDraft line, GoldItem item)
+    {
+        line.ItemId = item.Id;
+        line.KaratValue = item.KaratValue;
+        line.WeightGrams = item.WeightGrams;
+        line.MakingCharge = item.SuggestedMakingCharge;
+        line.Description = item.Name;
+        line.IsWeightReadOnly = item.TrackAsPiece || !_allowManualWeightEdit;
+        line.SetItemLookupSilently(
+            string.IsNullOrWhiteSpace(item.Barcode) ? item.Id.ToString() : item.Barcode);
+        ErrorMessage = string.Empty;
+        Message = $"تم تحميل القطعة: {item.Name} — عيار {item.KaratValue}، {item.WeightGrams:N3} غ";
+        await QuoteLineAsync(line);
+    }
+
+    [RelayCommand]
+    private async Task ProcessBarcodeAsync()
+    {
+        var code = BarcodeInput?.Trim();
+        if (string.IsNullOrEmpty(code))
+            return;
+
+        try
+        {
+            GoldItem? item = null;
+            if (int.TryParse(code, out var id))
+                item = await _inventoryService.GetItemByIdAsync(id);
+            item ??= await _inventoryService.GetItemByBarcodeAsync(code);
+
+            if (item is null)
+            {
+                ErrorMessage = $"القطعة «{code}» غير موجودة";
+                _toast.ShowWarning(ErrorMessage);
+                return;
+            }
+
+            if (item.Status != GoldItemStatus.InStock)
+            {
+                ErrorMessage = $"القطعة «{item.Name}» غير متاحة ({GoldItemStatusDisplay.ToArabic(item.Status)})";
+                _toast.ShowWarning(ErrorMessage);
+                return;
+            }
+
+            if (Lines.Any(l => l.ItemId == item.Id))
+            {
+                ErrorMessage = $"القطعة «{item.Name}» مضافة مسبقاً في الفاتورة";
+                _toast.ShowWarning(ErrorMessage);
+                BarcodeInput = string.Empty;
+                return;
+            }
+
+            var emptyLine = Lines.FirstOrDefault(l => l.ItemId is null && l.WeightGrams <= 0);
+            var line = emptyLine ?? CreateLineDraft(item.KaratValue);
+            if (emptyLine is null)
+                Lines.Add(line);
+
+            SelectedLine = line;
+            await ApplyItemToLineAsync(line, item);
+            BarcodeInput = string.Empty;
+            _toast.ShowSuccess(Message);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toast.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenItemPickerAsync()
+    {
+        await ItemPicker.InitializeAsync();
+        IsItemPickerOpen = true;
+    }
+
+    private async void OnItemPickerConfirmed(IReadOnlyList<GoldItem> items)
+    {
+        IsItemPickerOpen = false;
+        foreach (var item in items)
+        {
+            if (Lines.Any(l => l.ItemId == item.Id))
+                continue;
+
+            var emptyLine = Lines.FirstOrDefault(l => l.ItemId is null && l.WeightGrams <= 0);
+            var line = emptyLine ?? CreateLineDraft(item.KaratValue);
+            if (emptyLine is null)
+                Lines.Add(line);
+
+            SelectedLine = line;
+            await ApplyItemToLineAsync(line, item);
+        }
+
+        if (items.Count > 0)
+            _toast.ShowSuccess($"تمت إضافة {items.Count} قطعة");
     }
 
     private void RecalculateTotals()
@@ -399,17 +501,16 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
         if (PaymentMethod != GoldPaymentMethod.Cash)
             return;
 
+        if (!_autoSyncPaidAmount)
+            return;
+
         var expected = PaymentCurrency == PricingCurrency
             ? GrandTotal
             : PaymentCurrency == GoldCurrency.IQD ? TotalIqd : TotalUsd;
 
-        if (!_autoSyncPaidAmount && PaidAmount > 0)
-            return;
-
         _suppressPaidAmountChanged = true;
         PaidAmount = expected;
         _suppressPaidAmountChanged = false;
-        _autoSyncPaidAmount = true;
     }
 
     [RelayCommand]

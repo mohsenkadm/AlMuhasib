@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft"
              d:DataContext="{d:DesignInstance Type=vm:GoldSaleInvoiceViewModel}"
@@ -210,6 +212,29 @@
                 <!-- Lines toolbar -->
                 <DockPanel Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                        <Border Width="220" Background="#FFF8E1" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Kind="BarcodeScan" Width="18" Height="18"
+                                                         Foreground="#8B6914" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="الباركود + Enter"
+                                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                         BorderThickness="0" Background="Transparent" FontSize="13"
+                                         behaviors:EnterKeyCommandBehavior.Command="{Binding ProcessBarcodeCommand}"/>
+                            </Grid>
+                        </Border>
+                        <Button Command="{Binding OpenItemPickerCommand}"
+                                Style="{StaticResource OutlinedButton}" Margin="0,0,8,0" Height="36" Padding="12,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Gold" Margin="0,0,6,0"/>
+                                <TextBlock Text="اختيار قطع"/>
+                            </StackPanel>
+                        </Button>
                         <Button Command="{Binding AddLineCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0"/>
@@ -229,10 +254,8 @@
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="بنود الفاتورة" FontSize="16" FontWeight="SemiBold"
                                    Foreground="#8B6914"/>
-                        <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0" TextWrapping="Wrap">
-                            <Run Text="البيع بالوزن: اترك «قطعة / باركود» فارغاً."/>
-                            <Run Text=" لبيع قطعة مسجّلة: أدخل رقمها أو باركودها — يُملأ العيار والوزن تلقائياً."/>
-                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0" TextWrapping="Wrap"
+                                   Text="امسح الباركود أو اختر قطعة — أو أدخل العيار والوزن يدوياً للبيع بالوزن."/>
                     </StackPanel>
                 </DockPanel>
 
@@ -356,11 +379,17 @@
                                      materialDesign:HintAssist.Hint="المبلغ المدفوع"
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"/>
+                            <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,4,0,0" TextWrapping="Wrap"
+                                       Text="نقدي: اترك المدفوع أو اجعله صفر ليُحسب كامل المبلغ. للآجل اختر «آجل» صراحةً."/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </StackPanel>
         </ScrollViewer>
+
+        <controls:GoldItemPickerOverlay Panel.ZIndex="120"
+                                        DataContext="{Binding ItemPicker}"
+                                        IsOpen="{Binding DataContext.IsItemPickerOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
 
         <Border Background="#88000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <ProgressBar IsIndeterminate="True" Width="200" Height="6" VerticalAlignment="Center"

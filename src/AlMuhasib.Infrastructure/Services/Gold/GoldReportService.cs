@@ -457,4 +457,226 @@ public sealed class GoldReportService : IGoldReportService
             Details = string.Empty
         }).ToList();
     }
+
+    public async Task<IReadOnlyList<GoldCashMovementRow>> GetCashBoxMovementReportAsync(
+        int? cashBoxId = null,
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var boxes = await context.GoldCashBoxes.AsNoTracking()
+            .ToDictionaryAsync(b => b.Id, cancellationToken);
+
+        var rows = new List<GoldCashMovementRow>();
+
+        var paymentsQuery = context.GoldPayments.AsNoTracking()
+            .Include(p => p.Invoice!).ThenInclude(i => i.Customer)
+            .Include(p => p.Invoice!).ThenInclude(i => i.Supplier)
+            .AsQueryable();
+        if (cashBoxId.HasValue)
+            paymentsQuery = paymentsQuery.Where(p => p.CashBoxId == cashBoxId.Value);
+        if (dateFrom.HasValue)
+            paymentsQuery = paymentsQuery.Where(p => p.PaymentDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            paymentsQuery = paymentsQuery.Where(p => p.PaymentDate.Date <= dateTo.Value.Date);
+
+        foreach (var p in await paymentsQuery.OrderByDescending(p => p.PaymentDate).Take(3000).ToListAsync(cancellationToken))
+        {
+            var isPurchase = p.Invoice?.InvoiceType == GoldInvoiceType.Purchase;
+            boxes.TryGetValue(p.CashBoxId ?? 0, out var box);
+            rows.Add(new GoldCashMovementRow
+            {
+                Date = p.PaymentDate,
+                MovementType = isPurchase ? "دفع شراء" : "تحصيل بيع",
+                Reference = p.Invoice?.InvoiceNumber ?? $"دفعة #{p.Id}",
+                PartyName = p.Invoice?.Supplier?.Name ?? p.Invoice?.Customer?.Name ?? "—",
+                CashBoxId = p.CashBoxId ?? 0,
+                CashBoxName = box?.Name ?? "—",
+                Currency = p.Currency,
+                AmountIn = isPurchase ? 0 : p.Amount,
+                AmountOut = isPurchase ? p.Amount : 0,
+                Notes = p.Notes
+            });
+        }
+
+        var vouchersQuery = context.GoldVouchers.AsNoTracking().AsQueryable();
+        if (cashBoxId.HasValue)
+            vouchersQuery = vouchersQuery.Where(v => v.CashBoxId == cashBoxId.Value);
+        if (dateFrom.HasValue)
+            vouchersQuery = vouchersQuery.Where(v => v.VoucherDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            vouchersQuery = vouchersQuery.Where(v => v.VoucherDate.Date <= dateTo.Value.Date);
+
+        var customerNames = await context.GoldCustomers.AsNoTracking()
+            .ToDictionaryAsync(c => c.Id, c => c.Name, cancellationToken);
+
+        foreach (var v in await vouchersQuery.OrderByDescending(v => v.VoucherDate).Take(2000).ToListAsync(cancellationToken))
+        {
+            boxes.TryGetValue(v.CashBoxId ?? 0, out var box);
+            var isReceipt = v.VoucherType == GoldVoucherType.Receipt;
+            var party = v.CustomerId.HasValue && customerNames.TryGetValue(v.CustomerId.Value, out var cn) ? cn : "—";
+            rows.Add(new GoldCashMovementRow
+            {
+                Date = v.VoucherDate,
+                MovementType = isReceipt ? "سند قبض" : "سند صرف",
+                Reference = v.VoucherNumber,
+                PartyName = party,
+                CashBoxId = v.CashBoxId ?? 0,
+                CashBoxName = box?.Name ?? "—",
+                Currency = v.Currency,
+                AmountIn = isReceipt ? v.Amount : 0,
+                AmountOut = isReceipt ? 0 : v.Amount,
+                Notes = v.Notes
+            });
+        }
+
+        var expensesQuery = context.GoldExpenses.AsNoTracking().AsQueryable();
+        if (cashBoxId.HasValue)
+            expensesQuery = expensesQuery.Where(e => e.CashBoxId == cashBoxId.Value);
+        if (dateFrom.HasValue)
+            expensesQuery = expensesQuery.Where(e => e.ExpenseDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            expensesQuery = expensesQuery.Where(e => e.ExpenseDate.Date <= dateTo.Value.Date);
+
+        foreach (var e in await expensesQuery.OrderByDescending(e => e.ExpenseDate).Take(2000).ToListAsync(cancellationToken))
+        {
+            boxes.TryGetValue(e.CashBoxId, out var box);
+            rows.Add(new GoldCashMovementRow
+            {
+                Date = e.ExpenseDate,
+                MovementType = "مصروف",
+                Reference = $"مصروف #{e.Id}",
+                PartyName = "—",
+                CashBoxId = e.CashBoxId,
+                CashBoxName = box?.Name ?? "—",
+                Currency = e.Currency,
+                AmountIn = 0,
+                AmountOut = e.Amount,
+                Notes = e.Notes
+            });
+        }
+
+        return rows.OrderByDescending(r => r.Date).ThenByDescending(r => r.Reference).ToList();
+    }
+
+    public async Task<IReadOnlyList<GoldUserPerformanceRow>> GetUserPerformanceReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        string? userName = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var invoicesQuery = context.GoldInvoices.AsNoTracking()
+            .Where(i => i.Status != GoldInvoiceStatus.Cancelled);
+        if (dateFrom.HasValue)
+            invoicesQuery = invoicesQuery.Where(i => i.InvoiceDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            invoicesQuery = invoicesQuery.Where(i => i.InvoiceDate.Date <= dateTo.Value.Date);
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            var term = userName.Trim();
+            invoicesQuery = invoicesQuery.Where(i => i.CreatedBy.Contains(term));
+        }
+
+        var invoices = await invoicesQuery.ToListAsync(cancellationToken);
+
+        var paymentsQuery = context.GoldPayments.AsNoTracking().AsQueryable();
+        if (dateFrom.HasValue)
+            paymentsQuery = paymentsQuery.Where(p => p.PaymentDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            paymentsQuery = paymentsQuery.Where(p => p.PaymentDate.Date <= dateTo.Value.Date);
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            var term = userName.Trim();
+            paymentsQuery = paymentsQuery.Where(p => p.CreatedBy.Contains(term));
+        }
+
+        var payments = await paymentsQuery.ToListAsync(cancellationToken);
+
+        var auditQuery = context.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityName.StartsWith("Gold"));
+        if (dateFrom.HasValue)
+            auditQuery = auditQuery.Where(a => a.Timestamp.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            auditQuery = auditQuery.Where(a => a.Timestamp.Date <= dateTo.Value.Date);
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            var term = userName.Trim();
+            auditQuery = auditQuery.Where(a => a.CreatedBy.Contains(term));
+        }
+
+        var audits = await auditQuery.Take(10_000).ToListAsync(cancellationToken);
+
+        var users = invoices.Select(i => i.CreatedBy)
+            .Concat(payments.Select(p => p.CreatedBy))
+            .Concat(audits.Select(a => a.CreatedBy))
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return users.Select(u =>
+        {
+            var userInvoices = invoices.Where(i => string.Equals(i.CreatedBy, u, StringComparison.OrdinalIgnoreCase)).ToList();
+            return new GoldUserPerformanceRow
+            {
+                UserName = u,
+                SalesCount = userInvoices.Count(i => i.InvoiceType == GoldInvoiceType.Sale),
+                PurchasesCount = userInvoices.Count(i => i.InvoiceType == GoldInvoiceType.Purchase),
+                ExchangeCount = userInvoices.Count(i => i.InvoiceType == GoldInvoiceType.Exchange),
+                PaymentsCount = payments.Count(p => string.Equals(p.CreatedBy, u, StringComparison.OrdinalIgnoreCase)),
+                AuditActionsCount = audits.Count(a => string.Equals(a.CreatedBy, u, StringComparison.OrdinalIgnoreCase)),
+                SalesAmountIqd = GoldCurrencyHelper.Round(userInvoices
+                    .Where(i => i.InvoiceType == GoldInvoiceType.Sale)
+                    .Sum(i => i.TotalAmountIqd)),
+                PurchasesAmountIqd = GoldCurrencyHelper.Round(userInvoices
+                    .Where(i => i.InvoiceType == GoldInvoiceType.Purchase)
+                    .Sum(i => i.TotalAmountIqd))
+            };
+        })
+        .OrderByDescending(r => r.SalesCount + r.PurchasesCount + r.PaymentsCount)
+        .ToList();
+    }
+
+    public async Task<IReadOnlyList<GoldDeletedInvoiceRow>> GetDeletedInvoicesReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = context.GoldInvoices.IgnoreQueryFilters().AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Supplier)
+            .Where(i => i.IsDeleted);
+
+        if (dateFrom.HasValue)
+            query = query.Where(i => (i.DeletedAt ?? i.UpdatedAt ?? i.CreatedAt).Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            query = query.Where(i => (i.DeletedAt ?? i.UpdatedAt ?? i.CreatedAt).Date <= dateTo.Value.Date);
+
+        var invoices = await query
+            .OrderByDescending(i => i.DeletedAt)
+            .Take(2000)
+            .ToListAsync(cancellationToken);
+
+        return invoices.Select(i => new GoldDeletedInvoiceRow
+        {
+            Id = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            InvoiceDate = i.InvoiceDate,
+            InvoiceType = i.InvoiceType switch
+            {
+                GoldInvoiceType.Sale => "بيع",
+                GoldInvoiceType.Purchase => "شراء",
+                GoldInvoiceType.Exchange => "تبديل",
+                GoldInvoiceType.SaleReturn => "مرتجع بيع",
+                _ => i.InvoiceType.ToString()
+            },
+            PartyName = i.Supplier?.Name ?? i.Customer?.Name ?? "—",
+            TotalAmount = i.TotalAmount,
+            DeletedAt = i.DeletedAt,
+            DeletedBy = i.DeletedBy ?? i.UpdatedBy ?? "—"
+        }).ToList();
+    }
 }

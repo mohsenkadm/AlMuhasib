@@ -179,6 +179,8 @@ public sealed class GoldSaleService : IGoldSaleService
 
             invoice.PaidAmount = GoldCurrencyHelper.Round(paidInPricing);
             invoice.RemainingAmount = GoldCurrencyHelper.Round(invoice.TotalAmount - invoice.PaidAmount);
+            // طريقة الدفع تُحفظ كما اختارها المستخدم — المدفوع صفر مع نقدي ≠ آجل
+            invoice.PaymentMethod = request.PaymentMethod;
             invoice.Status = GoldCurrencyHelper.ResolveStatus(invoice.TotalAmount, invoice.PaidAmount, request.PaymentMethod);
 
             await GoldCashService.EnsureDefaultCashBoxesAsync(context, cancellationToken);

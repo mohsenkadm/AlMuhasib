@@ -81,6 +81,17 @@ public class GoldItemConfiguration : IEntityTypeConfiguration<GoldItem>
     }
 }
 
+public class GoldCategoryConfiguration : IEntityTypeConfiguration<GoldCategory>
+{
+    public void Configure(EntityTypeBuilder<GoldCategory> builder)
+    {
+        builder.ToTable("GoldCategories");
+        builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
+        builder.HasIndex(c => c.Name);
+        builder.HasIndex(c => c.IsActive);
+    }
+}
+
 public class GoldInvoiceConfiguration : IEntityTypeConfiguration<GoldInvoice>
 {
     public void Configure(EntityTypeBuilder<GoldInvoice> builder)

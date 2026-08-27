@@ -28,7 +28,9 @@
                           IsEditable="True"
                           materialDesign:HintAssist.Hint="اختر الزبون"
                           Style="{StaticResource FilledComboBox}"/>
-                <Button Content="تحميل الكشف" Command="{Binding LoadStatementCommand}" Style="{StaticResource PrimaryButton}"/>
+                <Button Content="تحميل الكشف" Command="{Binding LoadStatementCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                <Button Content="طباعة" Command="{Binding PrintStatementCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"/>
+                <Button Content="واتساب" Command="{Binding ShareWhatsAppCommand}" Style="{StaticResource OutlinedButton}"/>
             </StackPanel>
         </Border>
 

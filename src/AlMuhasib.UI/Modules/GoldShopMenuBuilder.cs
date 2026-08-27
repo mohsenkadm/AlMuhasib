@@ -33,6 +33,7 @@ public static class GoldShopMenuBuilder
                 accentLight: "#FFF8E1",
                 [
                     ("أصناف الذهب", PackIconKind.DiamondStone, typeof(GoldItemsViewModel), GoldShopPermissionRegistry.Items),
+                    ("تصنيفات الذهب", PackIconKind.TagMultiple, typeof(GoldCategoriesViewModel), GoldShopPermissionRegistry.Categories),
                     ("المخزون", PackIconKind.PackageVariantClosed, typeof(GoldStockViewModel), GoldShopPermissionRegistry.Stock),
                     ("تسوية مخزون", PackIconKind.TuneVerticalVariant, typeof(GoldStockAdjustmentViewModel), GoldShopPermissionRegistry.StockAdjustment),
                     ("رصيد افتتاحي", PackIconKind.PackageDown, typeof(GoldOpeningStockViewModel), GoldShopPermissionRegistry.OpeningStock),
@@ -60,6 +61,8 @@ public static class GoldShopMenuBuilder
                 [
                     ("فاتورة شراء", PackIconKind.CartArrowDown, typeof(GoldPurchaseInvoiceViewModel), GoldShopPermissionRegistry.PurchaseInvoice),
                     ("موردون", PackIconKind.TruckDelivery, typeof(GoldSuppliersViewModel), GoldShopPermissionRegistry.Suppliers),
+                    ("كشف حساب مورد", PackIconKind.AccountDetails, typeof(GoldSupplierStatementViewModel), GoldShopPermissionRegistry.SupplierStatement),
+                    ("تسديد الموردين", PackIconKind.CashCheck, typeof(GoldSupplierPaymentViewModel), GoldShopPermissionRegistry.SupplierPayment),
                     ("أرصدة الموردين الافتتاحية", PackIconKind.CashRefund, typeof(GoldOpeningSupplierBalanceViewModel), GoldShopPermissionRegistry.OpeningSupplierBalance),
                 ]),
             FlyoutGroup(
@@ -99,6 +102,9 @@ public static class GoldShopMenuBuilder
                     ("حركة العيارات", PackIconKind.SwapVertical, typeof(GoldKaratMovementReportViewModel), GoldShopPermissionRegistry.KaratMovementReport),
                     ("الربحية", PackIconKind.ChartAreaspline, typeof(GoldProfitabilityReportViewModel), GoldShopPermissionRegistry.ProfitabilityReport),
                     ("سجل التدقيق", PackIconKind.ClipboardTextClock, typeof(GoldAuditReportViewModel), GoldShopPermissionRegistry.AuditReport),
+                    ("الفواتير المحذوفة", PackIconKind.DeleteForever, typeof(GoldDeletedInvoicesReportViewModel), GoldShopPermissionRegistry.DeletedInvoicesReport),
+                    ("أداء المستخدمين", PackIconKind.AccountStar, typeof(GoldUserPerformanceReportViewModel), GoldShopPermissionRegistry.UserPerformanceReport),
+                    ("حركة القاصات", PackIconKind.CashMultiple, typeof(GoldCashBoxMovementReportViewModel), GoldShopPermissionRegistry.CashBoxMovementReport),
                     ("تقرير المشتريات", PackIconKind.CartOutline, typeof(GoldPurchasesReportViewModel), GoldShopPermissionRegistry.PurchasesReport),
                 ]),
             FlyoutGroup(

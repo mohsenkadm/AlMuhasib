@@ -20,6 +20,7 @@ public partial class GoldItemsViewModel : ViewModelBase
     private readonly IGoldSettingsService _settingsService;
     private readonly IGoldPrintService _printService;
     private readonly IGoldItemsExcelService _excelService;
+    private readonly IGoldCategoryService _categoryService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _debounceTimer;
@@ -50,6 +51,7 @@ public partial class GoldItemsViewModel : ViewModelBase
 
     public ObservableCollection<GoldItem> Items { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
+    public ObservableCollection<string> CategoryNames { get; } = [];
 
     public GoldItemsViewModel(
         IGoldInventoryService inventoryService,
@@ -57,6 +59,7 @@ public partial class GoldItemsViewModel : ViewModelBase
         IGoldSettingsService settingsService,
         IGoldPrintService printService,
         IGoldItemsExcelService excelService,
+        IGoldCategoryService categoryService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
@@ -65,6 +68,7 @@ public partial class GoldItemsViewModel : ViewModelBase
         _settingsService = settingsService;
         _printService = printService;
         _excelService = excelService;
+        _categoryService = categoryService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "أصناف الذهب";
@@ -77,7 +81,22 @@ public partial class GoldItemsViewModel : ViewModelBase
         Karats.Clear();
         foreach (var karat in await _pricingService.GetKaratsAsync())
             Karats.Add(karat);
+        await LoadCategoriesAsync();
         await LoadItemsAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        CategoryNames.Clear();
+        try
+        {
+            foreach (var c in await _categoryService.GetAllAsync(activeOnly: true))
+                CategoryNames.Add(c.Name);
+        }
+        catch
+        {
+            // Categories table may be created on first migration run.
+        }
     }
 
     private async Task LoadItemsAsync()
@@ -312,7 +331,7 @@ public partial class GoldItemsViewModel : ViewModelBase
                 أجور_الصياغة = i.SuggestedMakingCharge,
                 تكلفة_غرام = i.CostPerGram,
                 التصنيف = i.Category,
-                الحالة = i.Status.ToString()
+                الحالة = GoldItemStatusDisplay.ToArabic(i.Status)
             });
 
             var dialog = new SaveFileDialog
@@ -350,7 +369,7 @@ public partial class GoldItemsViewModel : ViewModelBase
                 i.SuggestedMakingCharge.ToString("N0"),
                 i.CostPerGram.ToString("N0"),
                 i.Category,
-                i.Status.ToString()
+                GoldItemStatusDisplay.ToArabic(i.Status)
             }).ToList();
             _exportService.PrintTable("قائمة أصناف الذهب", columns, rows);
         }
@@ -383,6 +402,40 @@ public partial class GoldItemsViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"تعذر طباعة الملصق:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintAllLabelsAsync()
+    {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        try
+        {
+            var (allItems, _) = await _inventoryService.GetItemsPagedAsync(
+                1, 500, SearchText, status: GoldItemStatus.InStock);
+            var withBarcode = allItems.Where(i => !string.IsNullOrWhiteSpace(i.Barcode)).ToList();
+            if (withBarcode.Count == 0)
+            {
+                BeautifulMessageDialog.ShowWarning("لا توجد قطع متوفرة بباركود للطباعة");
+                return;
+            }
+
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    $"طباعة {withBarcode.Count} ملصق للقطع المتوفرة؟",
+                    "ملصقات جماعية"))
+                return;
+
+            await _printService.PrintItemLabelsAsync(withBarcode);
+            BeautifulMessageDialog.ShowSuccess($"تمت طباعة {withBarcode.Count} ملصق");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر طباعة الملصقات:\n{ex.Message}");
         }
     }
 }

@@ -26,6 +26,7 @@ internal static class GoldInvoiceQueryHelper
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var query = context.GoldInvoices.AsNoTracking()
             .Include(i => i.Customer)
+            .Include(i => i.Supplier)
             .Where(i => i.InvoiceType == invoiceType);
 
         if (dateFrom.HasValue)
@@ -42,7 +43,8 @@ internal static class GoldInvoiceQueryHelper
             query = query.Where(i =>
                 i.InvoiceNumber.Contains(term) ||
                 i.Notes.Contains(term) ||
-                (i.Customer != null && i.Customer.Name.Contains(term)));
+                (i.Customer != null && i.Customer.Name.Contains(term)) ||
+                (i.Supplier != null && i.Supplier.Name.Contains(term)));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

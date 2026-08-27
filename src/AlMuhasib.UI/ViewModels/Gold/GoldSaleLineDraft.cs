@@ -21,6 +21,10 @@ public partial class GoldSaleLineDraft : ObservableObject
     [ObservableProperty] private int? _itemId;
     /// <summary>رقم القطعة أو الباركود — يُحلّ عند مغادرة الخلية.</summary>
     [ObservableProperty] private string _itemLookup = string.Empty;
+    /// <summary>في فاتورة الشراء: تسجيل البند كقطعة في أصناف الذهب.</summary>
+    [ObservableProperty] private bool _createAsPiece;
+    /// <summary>باركود اختياري عند إنشاء قطعة من الشراء.</summary>
+    [ObservableProperty] private string _pieceBarcode = string.Empty;
     [ObservableProperty] private int _karatValue = 21;
     [ObservableProperty] private decimal _weightGrams;
     [ObservableProperty] private decimal _mithqalPrice;

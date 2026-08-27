@@ -35,7 +35,7 @@
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="فاتورة شراء خردة" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="فاتورة شراء ذهب" FontSize="22" FontWeight="Bold" Foreground="White"/>
                             <TextBlock Foreground="#EEFFFFFF" FontSize="13" Margin="0,4,0,0">
                                 <Run Text="رقم الفاتورة:"/>
                                 <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="SemiBold" FontFamily="Consolas"/>
@@ -179,7 +179,11 @@
                         <Button Command="{Binding AddLineCommand}" Style="{StaticResource OutlinedButton}" Margin="0,0,8,0" Content="إضافة بند"/>
                         <Button Command="{Binding ReadScaleCommand}" Style="{StaticResource PrimaryButton}" Content="قراءة الميزان"/>
                     </StackPanel>
-                    <TextBlock Text="بنود الشراء" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="بنود الشراء" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,2,0,0" TextWrapping="Wrap"
+                                   Text="خردة/وزن: اترك «قطعة؟» بدون تحديد. لشراء قطعة جاهزة: فعّل «قطعة؟» وأدخل الاسم في الوصف والباركود اختياري."/>
+                    </StackPanel>
                 </DockPanel>
 
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,16">
@@ -187,6 +191,10 @@
                               AutoGenerateColumns="False" Style="{StaticResource InvoiceItemsDataGrid}"
                               Margin="8">
                         <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="قطعة؟" Width="60"
+                                                    Binding="{Binding CreateAsPiece, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="باركود القطعة" Width="110"
+                                                Binding="{Binding PieceBarcode, UpdateSourceTrigger=PropertyChanged}"/>
                             <DataGridTemplateColumn Header="العيار" Width="100"
                                                     CellTemplate="{StaticResource GoldInvoiceKaratCellTemplate}"/>
                             <DataGridTemplateColumn Header="الوزن (غ)" Width="110">
@@ -231,6 +239,8 @@
                             <Button Content="حفظ فاتورة الشراء" Command="{Binding SaveCommand}"
                                     Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,0"/>
                             <Button Content="طباعة" Command="{Binding PrintInvoiceCommand}"
+                                    Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"/>
+                            <Button Content="واتساب" Command="{Binding SendInvoiceWhatsAppCommand}"
                                     Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"/>
                             <Button Content="فاتورة جديدة" Command="{Binding NewInvoiceCommand}" Style="{StaticResource OutlinedButton}"/>
                         </StackPanel>
