@@ -1,0 +1,225 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldSetupWizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+            <md:PackIcon Kind="Gold" Width="48" Height="48" HorizontalAlignment="Center"
+                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+            <TextBlock Text="معالج إعداد نظام الذهب" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="#757575" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <ProgressBar Grid.Row="1" Maximum="{Binding TotalSteps}" Value="{Binding CurrentStep}" Height="6" Margin="0,0,0,20"/>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="720">
+
+                <!-- Step 0: Settings -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12"
+                         Visibility="{Binding IsStep0, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="إعدادات المثقال والعيارات" Style="{StaticResource SectionSubHeader}"/>
+                        <TextBlock Text="قيمة الذهب = الوزن × (سعر المثقال ÷ وزن المثقال). سعر المثقال لكل عيار جاهز دون ضرب النقاوة مرة ثانية."
+                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="وزن المثقال (غرام)" Text="{Binding MithqalGrams}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBlock Text="العيارات المفعّلة" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <WrapPanel>
+                            <CheckBox Content="عيار 24" IsChecked="{Binding EnableKarat24}" Margin="0,0,16,8"/>
+                            <CheckBox Content="عيار 22" IsChecked="{Binding EnableKarat22}" Margin="0,0,16,8"/>
+                            <CheckBox Content="عيار 21" IsChecked="{Binding EnableKarat21}" Margin="0,0,16,8"/>
+                            <CheckBox Content="عيار 18" IsChecked="{Binding EnableKarat18}" Margin="0,0,16,8"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </md:Card>
+
+                <!-- Step 1: Cash boxes -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12"
+                         Visibility="{Binding IsStep1, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="القاصات والأرصدة الافتتاحية" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="اسم القاصة" Text="{Binding NewCashBoxName}" Style="{StaticResource FilledTextBox}"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding Currencies}"
+                                      SelectedValue="{Binding NewCashBoxCurrency}"
+                                      SelectedValuePath="Value" DisplayMemberPath="Label"
+                                      Margin="8,0,0,0"/>
+                            <TextBox Grid.Column="2" md:HintAssist.Hint="الرصيد" Text="{Binding NewCashBoxBalance}"
+                                     Style="{StaticResource FilledTextBox}" Margin="8,0,0,0"/>
+                            <Button Grid.Column="3" Command="{Binding AddCashBoxCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0">
+                                <md:PackIcon Kind="Plus"/>
+                            </Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding CashBoxes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding Name}" Style="{StaticResource FilledTextBox}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Currency}" VerticalAlignment="Center" Margin="8,0"/>
+                                        <TextBox Grid.Column="2" Text="{Binding Balance}" Style="{StaticResource FilledTextBox}" Margin="8,0"/>
+                                        <Button Grid.Column="3"
+                                                Command="{Binding DataContext.RemoveCashBoxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource FlatButton}">
+                                            <md:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+
+                <!-- Step 2: Opening stock -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12"
+                         Visibility="{Binding IsStep2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="أرصدة المخزون الافتتاحية (اختياري)" Style="{StaticResource SectionSubHeader}"/>
+                        <TextBlock Text="أدخل وزن الذهب الموجود لكل عيار ومتوسط تكلفته للغرام إن وُجد."
+                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox ItemsSource="{Binding KaratOptions}" SelectedItem="{Binding NewStockKarat}"/>
+                            <TextBox Grid.Column="1" md:HintAssist.Hint="الوزن (غ)" Text="{Binding NewStockGrams}"
+                                     Style="{StaticResource FilledTextBox}" Margin="8,0,0,0"/>
+                            <TextBox Grid.Column="2" md:HintAssist.Hint="تكلفة/غ" Text="{Binding NewStockCostPerGram}"
+                                     Style="{StaticResource FilledTextBox}" Margin="8,0,0,0"/>
+                            <Button Grid.Column="3" Command="{Binding AddOpeningStockCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0">
+                                <md:PackIcon Kind="Plus"/>
+                            </Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding OpeningStockItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock VerticalAlignment="Center">
+                                            <Run Text="عيار "/><Run Text="{Binding KaratValue}"/><Run Text=" — "/><Run Text="{Binding GramsOnHand, StringFormat=N2}"/><Run Text=" غ — تكلفة "/><Run Text="{Binding CostPerGram, StringFormat=N0}"/>
+                                        </TextBlock>
+                                        <Button Grid.Column="1"
+                                                Command="{Binding DataContext.RemoveOpeningStockCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource FlatButton}">
+                                            <md:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+
+                <!-- Step 3: Prices + FX -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12"
+                         Visibility="{Binding IsStep3, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="أسعار المثقال وسعر الصرف" Style="{StaticResource SectionSubHeader}"/>
+                        <TextBlock Text="أدخل أسعار اليوم للعيارات المستخدمة. يمكن ترك السعر صفراً وتحديثه لاحقاً."
+                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                        <ComboBox ItemsSource="{Binding Currencies}" SelectedValue="{Binding PriceCurrency}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                  md:HintAssist.Hint="عملة التسعير" Margin="0,0,0,12"/>
+                        <ItemsControl ItemsSource="{Binding MithqalPrices}" Margin="0,0,0,16">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding KaratValue, StringFormat=عيار {0}}" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1" Text="{Binding PricePerMithqal}"
+                                                 md:HintAssist.Hint="سعر المثقال" Style="{StaticResource FilledTextBox}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBox md:HintAssist.Hint="سعر الصرف (دولار → دينار)" Text="{Binding FxRate}"
+                                 Style="{StaticResource FilledTextBox}"/>
+                    </StackPanel>
+                </md:Card>
+
+                <!-- Step 4: Expense types -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12"
+                         Visibility="{Binding IsStep4, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="أنواع المصاريف" Style="{StaticResource SectionSubHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox md:HintAssist.Hint="نوع مصروف" Text="{Binding NewExpenseTypeName}" Style="{StaticResource FilledTextBox}"/>
+                            <Button Grid.Column="1" Command="{Binding AddExpenseTypeCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0">
+                                <md:PackIcon Kind="Plus"/>
+                            </Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding ExpenseTypes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1"
+                                                Command="{Binding DataContext.RemoveExpenseTypeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource FlatButton}">
+                                            <md:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+            <Button Command="{Binding PreviousStepCommand}" Style="{StaticResource OutlinedButton}"
+                    IsEnabled="{Binding CanGoBack}" Margin="0,0,8,0">
+                <TextBlock Text="السابق"/>
+            </Button>
+            <Button Command="{Binding NextStepCommand}" Style="{StaticResource PrimaryButton}"
+                    Visibility="{Binding IsLastStep, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                    Margin="0,0,8,0">
+                <TextBlock Text="التالي"/>
+            </Button>
+            <Button Command="{Binding FinishCommand}" Style="{StaticResource PrimaryButton}"
+                    Visibility="{Binding IsLastStep, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                <TextBlock Text="إنهاء الإعداد"/>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

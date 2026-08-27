@@ -15,6 +15,7 @@ class GoldDashboardDto {
     this.lowStockKaratCount = 0,
     this.pricesUpdatedToday = false,
     this.latestUsdToIqd,
+    this.mithqalGrams = 5,
     this.stockByKarat = const [],
     this.recentInvoices = const [],
     this.alerts = const [],
@@ -40,6 +41,10 @@ class GoldDashboardDto {
       latestUsdToIqd: json['latestUsdToIqd'] == null
           ? null
           : _num(json['latestUsdToIqd']),
+      mithqalGrams: () {
+        final v = _num(json['mithqalGrams']);
+        return v > 0 ? v : 5;
+      }(),
       stockByKarat: (json['stockByKarat'] as List<dynamic>?)
               ?.map((e) => GoldStockRow.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -78,6 +83,7 @@ class GoldDashboardDto {
   final int lowStockKaratCount;
   final bool pricesUpdatedToday;
   final double? latestUsdToIqd;
+  final double mithqalGrams;
   final List<GoldStockRow> stockByKarat;
   final List<GoldInvoiceListItem> recentInvoices;
   final List<GoldAlertItem> alerts;

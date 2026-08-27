@@ -10,7 +10,7 @@ public sealed class GoldShopSystemModule : ISystemModule
     public ApplicationSystemType SystemType => ApplicationSystemType.GoldShop;
     public string DisplayName => "نظام الذهب";
     public Type DashboardViewModelType => typeof(GoldDashboardViewModel);
-    public Type? SetupWizardViewModelType => null;
+    public Type? SetupWizardViewModelType => typeof(GoldSetupWizardViewModel);
 
     public IReadOnlyList<(string Name, string Label)> PermissionScreens =>
         GoldShopPermissionRegistry.Screens;

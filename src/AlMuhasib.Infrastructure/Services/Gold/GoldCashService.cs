@@ -73,7 +73,12 @@ public sealed class GoldCashService : IGoldCashService
 
     public async Task<GoldCashBox> UpdateCashBoxAsync(GoldCashBox cashBox, CancellationToken cancellationToken = default)
     {
+        if (cashBox.Balance < 0)
+            throw new InvalidOperationException("رصيد القاصة لا يمكن أن يكون سالباً");
+
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
         var existing = await context.GoldCashBoxes.FirstOrDefaultAsync(c => c.Id == cashBox.Id, cancellationToken)
             ?? throw new InvalidOperationException("الصندوق غير موجود");
 
@@ -86,13 +91,35 @@ public sealed class GoldCashService : IGoldCashService
                 other.IsDefault = false;
         }
 
+        var newBalance = GoldCurrencyHelper.Round(cashBox.Balance);
+        var delta = GoldCurrencyHelper.Round(newBalance - existing.Balance);
+
         existing.Name = cashBox.Name;
         existing.Currency = cashBox.Currency;
         existing.IsDefault = cashBox.IsDefault;
         existing.IsActive = cashBox.IsActive;
-        // Balance is adjusted via vouchers/sales/purchases only.
+
+        if (delta != 0)
+        {
+            // Keep cash-movement reports consistent: apply balance via adjustment voucher.
+            var voucherType = delta > 0 ? GoldVoucherType.Receipt : GoldVoucherType.Payment;
+            var amount = Math.Abs(delta);
+            var voucher = new GoldVoucher
+            {
+                VoucherNumber = await GetNextVoucherNumberInternalAsync(context, voucherType, cancellationToken),
+                VoucherDate = DateTime.Today,
+                VoucherType = voucherType,
+                Currency = existing.Currency,
+                Amount = amount,
+                CashBoxId = existing.Id,
+                Notes = "تعديل رصيد القاصة"
+            };
+            await context.GoldVouchers.AddAsync(voucher, cancellationToken);
+            AdjustCashBoxBalance(existing, delta);
+        }
 
         await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return existing;
     }
 

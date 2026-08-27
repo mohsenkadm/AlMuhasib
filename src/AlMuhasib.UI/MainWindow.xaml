@@ -1294,6 +1294,9 @@
                         <DataTemplate DataType="{x:Type hotelVm:HotelSetupWizardViewModel}">
                             <hotelViews:HotelSetupWizardView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSetupWizardViewModel}">
+                            <goldViews:GoldSetupWizardView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldDashboardViewModel}">
                             <goldViews:GoldDashboardView />
                         </DataTemplate>

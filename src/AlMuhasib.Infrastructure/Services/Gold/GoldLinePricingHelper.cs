@@ -10,7 +10,7 @@ namespace AlMuhasib.Infrastructure.Services.Gold;
 /// goldValue = weight × (mithqalPrice / mithqalGrams)
 /// Purity is tracked only for pureGrams reporting — never re-applied to the gold value.
 /// </summary>
-internal static class GoldLinePricingHelper
+public static class GoldLinePricingHelper
 {
     public static decimal ResolvePurityFactor(GoldKarat? karat) =>
         karat is null || karat.PurityFactor <= 0 ? 1m : karat.PurityFactor;

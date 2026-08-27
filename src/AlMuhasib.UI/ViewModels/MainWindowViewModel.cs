@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels.Hotel;
+using AlMuhasib.UI.ViewModels.Gold;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -619,6 +620,12 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         if (viewModelType == typeof(HotelSetupWizardViewModel))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
+        if (viewModelType == typeof(GoldSetupWizardViewModel))
         {
             deniedMessage = null;
             return true;

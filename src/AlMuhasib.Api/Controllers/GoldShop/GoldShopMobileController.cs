@@ -86,6 +86,7 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             LowStockKaratCount = stocks.Count(s => s.GramsOnHand <= lowThreshold),
             PricesUpdatedToday = pricesUpdatedToday,
             LatestUsdToIqd = latestFx?.UsdToIqd,
+            MithqalGrams = settings?.MithqalGrams > 0 ? settings.MithqalGrams : 5m,
             StockByKarat = stocks
                 .GroupBy(s => s.KaratValue)
                 .OrderByDescending(g => g.Key)
@@ -390,6 +391,7 @@ public sealed class GoldShopDashboardDto
     public int LowStockKaratCount { get; set; }
     public bool PricesUpdatedToday { get; set; }
     public decimal? LatestUsdToIqd { get; set; }
+    public decimal MithqalGrams { get; set; } = 5m;
     public List<GoldStockRowDto> StockByKarat { get; set; } = [];
     public List<GoldPriceDto> LatestPrices { get; set; } = [];
     public List<GoldInvoiceListDto> RecentInvoices { get; set; } = [];

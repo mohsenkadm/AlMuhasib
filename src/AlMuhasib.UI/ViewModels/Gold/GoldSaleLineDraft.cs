@@ -43,6 +43,7 @@ public partial class GoldSaleLineDraft : ObservableObject
 
     partial void OnKaratValueChanged(int value) => RequestQuote();
     partial void OnWeightGramsChanged(decimal value) => RequestQuote();
+    partial void OnMithqalPriceChanged(decimal value) => RequestQuote();
     partial void OnMakingChargeChanged(decimal value) => RequestQuote();
     partial void OnMakingChargeModeChanged(GoldMakingChargeMode value) => RequestQuote();
     partial void OnMakingChargeRateChanged(decimal value) => RequestQuote();

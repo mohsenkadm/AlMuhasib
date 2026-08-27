@@ -13,6 +13,7 @@ public sealed class GoldSettingsSyncDto : SyncDtoBase
     public int OverdueDaysThreshold { get; set; } = 30;
     public string EnabledKaratsCsv { get; set; } = "24,22,21,18";
     public GoldMakingChargeMode DefaultMakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    public bool IsConfigured { get; set; }
 }
 
 public sealed class GoldFxRateSyncDto : SyncDtoBase

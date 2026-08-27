@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AlMuhasib.Core\AlMuhasib.Core.csproj" />
+    <ProjectReference Include="..\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

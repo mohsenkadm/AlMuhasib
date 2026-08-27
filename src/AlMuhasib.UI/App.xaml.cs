@@ -372,6 +372,7 @@ public partial class App : Application
         services.AddSingleton<ICarTradePrintService, CarTradePrintService>();
         services.AddSingleton<IHotelInvoicePrintService, HotelInvoicePrintService>();
 
+        services.AddTransient<GoldSetupWizardViewModel>();
         services.AddTransient<GoldDashboardViewModel>();
         services.AddTransient<GoldMithqalPricesViewModel>();
         services.AddTransient<GoldFxRatesViewModel>();
@@ -747,6 +748,12 @@ public partial class App : Application
                     var hotelSettings = scope.ServiceProvider.GetRequiredService<IHotelSettingsService>();
                     needsSetup = currentUser.IsAdmin && !await hotelSettings.IsConfiguredAsync();
                 }
+                else if (!_systemProfile.IsBranchClient && _systemProfile.ActiveSystem == ApplicationSystemType.GoldShop)
+                {
+                    using var scope = _serviceProvider!.CreateScope();
+                    var goldSettings = scope.ServiceProvider.GetRequiredService<IGoldSettingsService>();
+                    needsSetup = currentUser.IsAdmin && !await goldSettings.IsConfiguredAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -778,6 +785,25 @@ public partial class App : Application
                 else if (mainVm.CurrentViewModel is HotelSetupWizardViewModel hotelWizardVm)
                 {
                     hotelWizardVm.SetupCompleted += async () =>
+                    {
+                        mainVm.CloseAllTabs();
+                        await mainVm.OpenInitialSessionTabsAsync();
+                        mainVm.TryStartFeatureTour();
+                        _ = mainVm.InitializeNotificationCenterAsync();
+                        _ = mainVm.InitializePersonalWorkspaceAsync();
+                    };
+                }
+            }
+            else if (needsSetup && _systemProfile.ActiveSystem == ApplicationSystemType.GoldShop)
+            {
+                await mainVm.OpenTabAsync(typeof(GoldSetupWizardViewModel), "إعداد نظام الذهب", PackIconKind.Gold, activateIfExists: false);
+                if (mainVm.CurrentViewModel is not GoldSetupWizardViewModel)
+                {
+                    await mainVm.OpenInitialSessionTabsAsync();
+                }
+                else if (mainVm.CurrentViewModel is GoldSetupWizardViewModel goldWizardVm)
+                {
+                    goldWizardVm.SetupCompleted += async () =>
                     {
                         mainVm.CloseAllTabs();
                         await mainVm.OpenInitialSessionTabsAsync();

@@ -27,12 +27,15 @@ public sealed class GoldSettingsService : IGoldSettingsService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var settings = await FindSettingsAsync(context, cancellationToken);
-        if (settings is null)
-            return false;
+        return settings?.IsConfigured == true;
+    }
 
-        var hasKarats = await context.GoldKarats.AnyAsync(cancellationToken);
-        var hasCash = await context.GoldCashBoxes.AnyAsync(cancellationToken);
-        return hasKarats && hasCash;
+    public async Task MarkConfiguredAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var settings = await EnsureSettingsAsync(context, cancellationToken);
+        settings.IsConfigured = true;
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<GoldSettings> GetSettingsAsync(CancellationToken cancellationToken = default)

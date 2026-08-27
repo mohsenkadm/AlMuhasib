@@ -154,7 +154,8 @@ internal static class GoldSyncMapper
             LowStockAlertGrams = s.LowStockAlertGrams,
             OverdueDaysThreshold = s.OverdueDaysThreshold,
             EnabledKaratsCsv = s.EnabledKaratsCsv,
-            DefaultMakingChargeMode = s.DefaultMakingChargeMode
+            DefaultMakingChargeMode = s.DefaultMakingChargeMode,
+            IsConfigured = s.IsConfigured
         };
         CopyBase(s, d);
         return d;
@@ -494,6 +495,9 @@ internal static class GoldSyncMapper
             existing.OverdueDaysThreshold = dto.OverdueDaysThreshold;
             existing.EnabledKaratsCsv = dto.EnabledKaratsCsv;
             existing.DefaultMakingChargeMode = dto.DefaultMakingChargeMode;
+            // Never clear local first-run completion via sync.
+            if (dto.IsConfigured)
+                existing.IsConfigured = true;
             ApplyBase(existing, dto);
             await db.SaveChangesAsync(ct);
         }
