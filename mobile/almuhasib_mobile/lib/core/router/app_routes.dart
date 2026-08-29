@@ -104,6 +104,15 @@ abstract final class AppRoutes {
   static const goldShopSettings = '/gold-shop/settings';
   static const goldShopStock = '/gold-shop/stock';
   static const goldShopSuppliers = '/gold-shop/suppliers';
+  static const goldShopReports = '/gold-shop/reports';
+  static const goldShopReportDetail = '/gold-shop/reports/:type';
+  static const goldShopStatement = '/gold-shop/statements/:partyType/:id';
+  static const goldShopVouchers = '/gold-shop/vouchers';
+  static const goldShopVoucherNew = '/gold-shop/vouchers/new';
+  static const goldShopCollection = '/gold-shop/collection';
+  static const goldShopPurchaseNew = '/gold-shop/purchases/new';
+  static const goldShopReturnNew = '/gold-shop/returns/new';
+  static const goldShopExchangeNew = '/gold-shop/exchanges/new';
 
   static const profile = '/profile';
   static const about = '/about';
@@ -164,4 +173,17 @@ abstract final class AppRoutes {
   static String realEstateContractDetailPath(String syncId) =>
       '/real-estate/contracts/$syncId';
   static String goldShopSaleDetailPath(int id) => '/gold-shop/sales/$id';
+  static String goldShopReportDetailPath(String type) =>
+      '/gold-shop/reports/$type';
+  static String goldShopCustomerStatementPath(int id, {String? name}) {
+    final base = '/gold-shop/statements/customer/$id';
+    if (name == null || name.isEmpty) return base;
+    return '$base?name=${Uri.encodeComponent(name)}';
+  }
+
+  static String goldShopSupplierStatementPath(int id, {String? name}) {
+    final base = '/gold-shop/statements/supplier/$id';
+    if (name == null || name.isEmpty) return base;
+    return '$base?name=${Uri.encodeComponent(name)}';
+  }
 }

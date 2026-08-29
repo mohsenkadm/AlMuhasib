@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/system_themes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/design_system/design_system.dart';
@@ -78,6 +79,9 @@ class GoldCustomersScreen extends GetView<GoldCustomersController> {
                       ? const Color(0xFF2E7D32)
                       : Theme.of(context).disabledColor,
                 ),
+          onTap: () => Get.toNamed(
+            AppRoutes.goldShopCustomerStatementPath(c.id, name: c.name),
+          ),
         );
       },
     );

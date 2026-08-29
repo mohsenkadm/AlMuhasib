@@ -18,11 +18,31 @@ class GoldDashboardDto {
     this.mithqalGrams = 5,
     this.stockByKarat = const [],
     this.recentInvoices = const [],
+    this.recentReturns = const [],
+    this.recentExchanges = const [],
+    this.todayReturnCount = 0,
+    this.todayReturnIqd = 0,
+    this.todayExchangeCount = 0,
+    this.todayExchangeCashDiffIqd = 0,
+    this.supplierCreditCount = 0,
+    this.supplierCreditIqd = 0,
+    this.supplierCreditUsd = 0,
+    this.todayExpensesIqd = 0,
+    this.todayExpensesUsd = 0,
+    this.hasExpenseToday = false,
     this.alerts = const [],
     this.latestPrices = const [],
   });
 
   factory GoldDashboardDto.fromJson(Map<String, dynamic> json) {
+    List<GoldInvoiceListItem> parseInvoices(dynamic raw) =>
+        (raw as List<dynamic>?)
+            ?.map(
+              (e) => GoldInvoiceListItem.fromJson(e as Map<String, dynamic>),
+            )
+            .toList() ??
+        const [];
+
     return GoldDashboardDto(
       todaySalesIqd: _num(json['todaySalesIqd']),
       todaySalesUsd: _num(json['todaySalesUsd']),
@@ -49,12 +69,19 @@ class GoldDashboardDto {
               ?.map((e) => GoldStockRow.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      recentInvoices: (json['recentInvoices'] as List<dynamic>?)
-              ?.map(
-                (e) => GoldInvoiceListItem.fromJson(e as Map<String, dynamic>),
-              )
-              .toList() ??
-          const [],
+      recentInvoices: parseInvoices(json['recentInvoices']),
+      recentReturns: parseInvoices(json['recentReturns']),
+      recentExchanges: parseInvoices(json['recentExchanges']),
+      todayReturnCount: json['todayReturnCount'] as int? ?? 0,
+      todayReturnIqd: _num(json['todayReturnIqd']),
+      todayExchangeCount: json['todayExchangeCount'] as int? ?? 0,
+      todayExchangeCashDiffIqd: _num(json['todayExchangeCashDiffIqd']),
+      supplierCreditCount: json['supplierCreditCount'] as int? ?? 0,
+      supplierCreditIqd: _num(json['supplierCreditIqd']),
+      supplierCreditUsd: _num(json['supplierCreditUsd']),
+      todayExpensesIqd: _num(json['todayExpensesIqd']),
+      todayExpensesUsd: _num(json['todayExpensesUsd']),
+      hasExpenseToday: json['hasExpenseToday'] as bool? ?? false,
       alerts: (json['alerts'] as List<dynamic>?)
               ?.map((e) => GoldAlertItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -86,6 +113,18 @@ class GoldDashboardDto {
   final double mithqalGrams;
   final List<GoldStockRow> stockByKarat;
   final List<GoldInvoiceListItem> recentInvoices;
+  final List<GoldInvoiceListItem> recentReturns;
+  final List<GoldInvoiceListItem> recentExchanges;
+  final int todayReturnCount;
+  final double todayReturnIqd;
+  final int todayExchangeCount;
+  final double todayExchangeCashDiffIqd;
+  final int supplierCreditCount;
+  final double supplierCreditIqd;
+  final double supplierCreditUsd;
+  final double todayExpensesIqd;
+  final double todayExpensesUsd;
+  final bool hasExpenseToday;
   final List<GoldAlertItem> alerts;
   final List<GoldMithqalPriceRow> latestPrices;
 }
@@ -573,7 +612,7 @@ class CreateGoldSaleRequest {
     this.customerId,
     this.supplierId,
     this.warehouseId,
-    this.pricingCurrency = 'USD',
+    this.pricingCurrency = 'IQD',
     this.paymentCurrency = 'IQD',
     this.fxRate = 0,
     this.discountAmount = 0,
@@ -581,6 +620,7 @@ class CreateGoldSaleRequest {
     this.cashBoxId,
     this.notes = '',
     this.weightFromScale = false,
+    this.relatedInvoiceId,
   });
 
   final DateTime? invoiceDate;
@@ -596,6 +636,7 @@ class CreateGoldSaleRequest {
   final int? cashBoxId;
   final String notes;
   final bool weightFromScale;
+  final int? relatedInvoiceId;
   final List<CreateGoldSaleLineRequest> lines;
 
   Map<String, dynamic> toJson() => {
@@ -612,8 +653,324 @@ class CreateGoldSaleRequest {
         if (cashBoxId != null) 'cashBoxId': cashBoxId,
         'notes': notes,
         'weightFromScale': weightFromScale,
+        if (relatedInvoiceId != null) 'relatedInvoiceId': relatedInvoiceId,
         'lines': lines.map((e) => e.toJson()).toList(),
       };
+}
+
+class CreateGoldExchangeRequest {
+  CreateGoldExchangeRequest({
+    required this.inLines,
+    required this.outLines,
+    this.invoiceDate,
+    this.paymentMethod = 'Cash',
+    this.customerId,
+    this.warehouseId,
+    this.pricingCurrency = 'IQD',
+    this.paymentCurrency = 'IQD',
+    this.fxRate = 0,
+    this.exchangeCashDifference = 0,
+    this.paidAmount = 0,
+    this.cashBoxId,
+    this.notes = '',
+    this.weightFromScale = false,
+  });
+
+  final DateTime? invoiceDate;
+  final String paymentMethod;
+  final int? customerId;
+  final int? warehouseId;
+  final String pricingCurrency;
+  final String paymentCurrency;
+  final double fxRate;
+  final double exchangeCashDifference;
+  final double paidAmount;
+  final int? cashBoxId;
+  final String notes;
+  final bool weightFromScale;
+  final List<CreateGoldSaleLineRequest> inLines;
+  final List<CreateGoldSaleLineRequest> outLines;
+
+  Map<String, dynamic> toJson() => {
+        'invoiceDate': (invoiceDate ?? DateTime.now()).toIso8601String(),
+        'paymentMethod': paymentMethod,
+        if (customerId != null) 'customerId': customerId,
+        if (warehouseId != null) 'warehouseId': warehouseId,
+        'pricingCurrency': pricingCurrency,
+        'paymentCurrency': paymentCurrency,
+        'fxRate': fxRate,
+        'exchangeCashDifference': exchangeCashDifference,
+        'paidAmount': paidAmount,
+        if (cashBoxId != null) 'cashBoxId': cashBoxId,
+        'notes': notes,
+        'weightFromScale': weightFromScale,
+        'inLines': inLines.map((e) => e.toJson()).toList(),
+        'outLines': outLines.map((e) => e.toJson()).toList(),
+      };
+}
+
+class CreateGoldCollectionRequest {
+  CreateGoldCollectionRequest({
+    required this.invoiceId,
+    required this.amount,
+    this.currency = 'IQD',
+    this.cashBoxId,
+    this.paymentDate,
+    this.notes = '',
+  });
+
+  final int invoiceId;
+  final double amount;
+  final String currency;
+  final int? cashBoxId;
+  final DateTime? paymentDate;
+  final String notes;
+
+  Map<String, dynamic> toJson() => {
+        'invoiceId': invoiceId,
+        'amount': amount,
+        'currency': currency,
+        if (cashBoxId != null) 'cashBoxId': cashBoxId,
+        'paymentDate': (paymentDate ?? DateTime.now()).toIso8601String(),
+        'notes': notes,
+      };
+}
+
+class CreateGoldVoucherRequest {
+  CreateGoldVoucherRequest({
+    required this.amount,
+    this.voucherDate,
+    this.voucherType = 'Receipt',
+    this.currency = 'IQD',
+    this.cashBoxId,
+    this.customerId,
+    this.supplierId,
+    this.isOpeningBalance = false,
+    this.affectsCashBox = true,
+    this.notes = '',
+  });
+
+  final DateTime? voucherDate;
+  final String voucherType;
+  final String currency;
+  final double amount;
+  final int? cashBoxId;
+  final int? customerId;
+  final int? supplierId;
+  final bool isOpeningBalance;
+  final bool affectsCashBox;
+  final String notes;
+
+  Map<String, dynamic> toJson() => {
+        'voucherDate': (voucherDate ?? DateTime.now()).toIso8601String(),
+        'voucherType': voucherType,
+        'currency': currency,
+        'amount': amount,
+        if (cashBoxId != null) 'cashBoxId': cashBoxId,
+        if (customerId != null) 'customerId': customerId,
+        if (supplierId != null) 'supplierId': supplierId,
+        'isOpeningBalance': isOpeningBalance,
+        'affectsCashBox': affectsCashBox,
+        'notes': notes,
+      };
+}
+
+class GoldVoucherItem {
+  GoldVoucherItem({
+    required this.id,
+    required this.voucherNumber,
+    required this.voucherDate,
+    this.voucherType = '',
+    this.currency = '',
+    this.amount = 0,
+    this.customerId,
+    this.supplierId,
+    this.cashBoxId,
+    this.isOpeningBalance = false,
+    this.affectsCashBox = true,
+    this.notes = '',
+  });
+
+  factory GoldVoucherItem.fromJson(Map<String, dynamic> json) {
+    return GoldVoucherItem(
+      id: json['id'] as int? ?? 0,
+      voucherNumber: json['voucherNumber'] as String? ?? '',
+      voucherDate: DateTime.tryParse(json['voucherDate'] as String? ?? '') ??
+          DateTime.now(),
+      voucherType: json['voucherType']?.toString() ?? '',
+      currency: json['currency']?.toString() ?? '',
+      amount: _num(json['amount']),
+      customerId: json['customerId'] as int?,
+      supplierId: json['supplierId'] as int?,
+      cashBoxId: json['cashBoxId'] as int?,
+      isOpeningBalance: json['isOpeningBalance'] as bool? ?? false,
+      affectsCashBox: json['affectsCashBox'] as bool? ?? true,
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  final int id;
+  final String voucherNumber;
+  final DateTime voucherDate;
+  final String voucherType;
+  final String currency;
+  final double amount;
+  final int? customerId;
+  final int? supplierId;
+  final int? cashBoxId;
+  final bool isOpeningBalance;
+  final bool affectsCashBox;
+  final String notes;
+}
+
+class GoldCashBoxItem {
+  GoldCashBoxItem({
+    required this.id,
+    required this.name,
+    this.currency = 'IQD',
+    this.balance = 0,
+    this.isDefault = false,
+  });
+
+  factory GoldCashBoxItem.fromJson(Map<String, dynamic> json) {
+    return GoldCashBoxItem(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      currency: json['currency']?.toString() ?? 'IQD',
+      balance: _num(json['balance']),
+      isDefault: json['isDefault'] as bool? ?? false,
+    );
+  }
+
+  final int id;
+  final String name;
+  final String currency;
+  final double balance;
+  final bool isDefault;
+}
+
+class GoldExpenseItem {
+  GoldExpenseItem({
+    required this.id,
+    required this.expenseDate,
+    this.expenseTypeName = '',
+    this.amount = 0,
+    this.currency = 'IQD',
+    this.cashBoxId = 0,
+    this.notes = '',
+  });
+
+  factory GoldExpenseItem.fromJson(Map<String, dynamic> json) {
+    return GoldExpenseItem(
+      id: json['id'] as int? ?? 0,
+      expenseDate: DateTime.tryParse(json['expenseDate'] as String? ?? '') ??
+          DateTime.now(),
+      expenseTypeName: json['expenseTypeName'] as String? ?? '',
+      amount: _num(json['amount']),
+      currency: json['currency']?.toString() ?? 'IQD',
+      cashBoxId: json['cashBoxId'] as int? ?? 0,
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  final int id;
+  final DateTime expenseDate;
+  final String expenseTypeName;
+  final double amount;
+  final String currency;
+  final int cashBoxId;
+  final String notes;
+}
+
+class GoldExpenseTypeItem {
+  GoldExpenseTypeItem({required this.id, required this.name});
+
+  factory GoldExpenseTypeItem.fromJson(Map<String, dynamic> json) {
+    return GoldExpenseTypeItem(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+    );
+  }
+
+  final int id;
+  final String name;
+}
+
+class GoldStatementRow {
+  GoldStatementRow({
+    required this.date,
+    this.documentType = '',
+    this.documentNumber = '',
+    this.debit = 0,
+    this.credit = 0,
+    this.balance = 0,
+    this.notes = '',
+  });
+
+  factory GoldStatementRow.fromJson(Map<String, dynamic> json) {
+    return GoldStatementRow(
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      documentType: json['documentType']?.toString() ?? '',
+      documentNumber: json['documentNumber']?.toString() ?? '',
+      debit: _num(json['debit']),
+      credit: _num(json['credit']),
+      balance: _num(json['balance']),
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  final DateTime date;
+  final String documentType;
+  final String documentNumber;
+  final double debit;
+  final double credit;
+  final double balance;
+  final String notes;
+}
+
+class GoldStatementDto {
+  GoldStatementDto({
+    required this.partyId,
+    required this.partyName,
+    this.partyType = '',
+    this.creditBalanceIqd = 0,
+    this.creditBalanceUsd = 0,
+    this.openingBalance = 0,
+    this.closingBalance = 0,
+    this.rows = const [],
+  });
+
+  factory GoldStatementDto.fromJson(Map<String, dynamic> json) {
+    return GoldStatementDto(
+      partyId: json['partyId'] as int? ?? 0,
+      partyName: json['partyName'] as String? ?? '',
+      partyType: json['partyType']?.toString() ?? '',
+      creditBalanceIqd: _num(json['creditBalanceIqd']),
+      creditBalanceUsd: _num(json['creditBalanceUsd']),
+      openingBalance: _num(json['openingBalance']),
+      closingBalance: _num(json['closingBalance']),
+      rows: (json['rows'] as List<dynamic>?)
+              ?.map((e) => GoldStatementRow.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+
+  final int partyId;
+  final String partyName;
+  final String partyType;
+  final double creditBalanceIqd;
+  final double creditBalanceUsd;
+  final double openingBalance;
+  final double closingBalance;
+  final List<GoldStatementRow> rows;
+}
+
+class GoldReportSummary {
+  GoldReportSummary({this.kpis = const {}, this.rows = const []});
+
+  final Map<String, String> kpis;
+  final List<Map<String, String>> rows;
 }
 
 double _num(dynamic v) {
@@ -630,8 +987,8 @@ int _enumInt(dynamic v, {int fallback = 0}) {
     return switch (v.toLowerCase()) {
       'iqd' || 'cash' || 'sale' || 'completed' || 'instock' || 'receipt' => 0,
       'usd' || 'credit' || 'purchase' || 'open' || 'sold' || 'payment' => 1,
-      'partiallypaid' || 'reserved' => 2,
-      'cancelled' => 3,
+      'partiallypaid' || 'reserved' || 'exchange' => 2,
+      'cancelled' || 'salereturn' => 3,
       'pricenotupdated' => 0,
       'overduecredit' => 1,
       'lowstock' => 2,

@@ -168,6 +168,86 @@ class _GoldDashboardBody extends StatelessWidget {
             ],
           ),
         ).fadeSlideIn(delayMs: 120),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 148,
+          child: Row(
+            children: [
+              Expanded(
+                child: GoldKpiCard(
+                  title: 'gold_kpi_returns'.tr(),
+                  value: '${data.todayReturnCount}',
+                  subtitle: formatCurrency(data.todayReturnIqd),
+                  icon: Icons.undo,
+                  color: const Color(0xFFAD1457),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GoldKpiCard(
+                  title: 'gold_kpi_exchanges'.tr(),
+                  value: '${data.todayExchangeCount}',
+                  subtitle: formatCurrency(data.todayExchangeCashDiffIqd),
+                  icon: Icons.swap_horiz,
+                  color: const Color(0xFF5E35B1),
+                ),
+              ),
+            ],
+          ),
+        ).fadeSlideIn(delayMs: 130),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 148,
+          child: Row(
+            children: [
+              Expanded(
+                child: GoldKpiCard(
+                  title: 'gold_kpi_supplier_credit'.tr(),
+                  value: '${data.supplierCreditCount}',
+                  subtitle: formatCurrency(data.supplierCreditIqd),
+                  icon: Icons.local_shipping_outlined,
+                  color: const Color(0xFF455A64),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () => Get.toNamed(AppRoutes.goldShopReports),
+                  borderRadius: BorderRadius.circular(16),
+                  child: GoldKpiCard(
+                    title: 'gold_reports_hub'.tr(),
+                    value: '→',
+                    subtitle: 'gold_reports_hub_desc'.tr(),
+                    icon: Icons.assessment_outlined,
+                    color: SystemThemes.goldSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ).fadeSlideIn(delayMs: 140),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ActionChip(
+              avatar: const Icon(Icons.payments_outlined, size: 18),
+              label: Text('gold_collection_title'.tr()),
+              onPressed: () => Get.toNamed(AppRoutes.goldShopCollection),
+            ),
+            ActionChip(
+              avatar: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: Text('gold_vouchers_title'.tr()),
+              onPressed: () => Get.toNamed(AppRoutes.goldShopVouchers),
+            ),
+            ActionChip(
+              avatar: const Icon(Icons.assessment_outlined, size: 18),
+              label: Text('gold_reports_hub'.tr()),
+              onPressed: () => Get.toNamed(AppRoutes.goldShopReports),
+            ),
+          ],
+        ).fadeSlideIn(delayMs: 145),
         if (data.alerts.isNotEmpty) ...[
           const SizedBox(height: 22),
           GoldSectionHeader(

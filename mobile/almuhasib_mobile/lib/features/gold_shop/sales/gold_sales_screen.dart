@@ -29,25 +29,77 @@ class GoldSalesScreen extends GetView<GoldSalesController> {
       emptyIcon: Icons.receipt_long_outlined,
       fabLabel: 'gold_new_sale'.tr(),
       onFab: () => Get.toNamed(AppRoutes.goldShopSaleNew),
-      filterPanel: AppFilterBar(
-        onSearchChanged: controller.updateSearch,
-        filterChips: [
-          FilterChipOption(id: '0', label: 'gold_status_completed'.tr()),
-          FilterChipOption(id: '1', label: 'gold_status_open'.tr()),
-          FilterChipOption(id: '2', label: 'gold_status_partial'.tr()),
-          FilterChipOption(id: '3', label: 'gold_status_cancelled'.tr()),
+      filterPanel: Column(
+        children: [
+          AppFilterBar(
+            onSearchChanged: controller.updateSearch,
+            filterChips: [
+              FilterChipOption(id: '0', label: 'gold_status_completed'.tr()),
+              FilterChipOption(id: '1', label: 'gold_status_open'.tr()),
+              FilterChipOption(id: '2', label: 'gold_status_partial'.tr()),
+              FilterChipOption(id: '3', label: 'gold_status_cancelled'.tr()),
+            ],
+            onFilterSelected: (id) {
+              controller.updateStatusFilter(
+                id == null ? null : int.tryParse(id),
+              );
+            },
+            onClear: controller.clearFilters,
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Obx(
+              () => Row(
+                children: [
+                  for (final e in [
+                    (0, 'gold_invoice_type_sale'.tr()),
+                    (1, 'gold_invoice_type_purchase'.tr()),
+                    (2, 'gold_invoice_type_exchange'.tr()),
+                    (3, 'gold_invoice_type_return'.tr()),
+                    (null, 'all'.tr()),
+                  ])
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: ChoiceChip(
+                        label: Text(e.$2),
+                        selected: controller.typeFilter.value == e.$1,
+                        onSelected: (_) => controller.updateTypeFilter(e.$1),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.shopping_cart_outlined, size: 18),
+                  label: Text('gold_new_purchase'.tr()),
+                  onPressed: () => Get.toNamed(AppRoutes.goldShopPurchaseNew),
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.swap_horiz, size: 18),
+                  label: Text('gold_new_exchange'.tr()),
+                  onPressed: () => Get.toNamed(AppRoutes.goldShopExchangeNew),
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.undo, size: 18),
+                  label: Text('gold_new_return'.tr()),
+                  onPressed: () => Get.toNamed(AppRoutes.goldShopReturnNew),
+                ),
+              ],
+            ),
+          ),
         ],
-        onFilterSelected: (id) {
-          controller.updateStatusFilter(
-            id == null ? null : int.tryParse(id),
-          );
-        },
-        onClear: controller.clearFilters,
       ),
       itemBuilder: (context, inv, index) => AppEntityCard(
         title: inv.invoiceNumber,
         subtitle:
-            '${inv.customerName.isEmpty ? '—' : inv.customerName}\n${formatDate(inv.invoiceDate)} • ${goldPaymentMethodLabel(inv.paymentMethod)}',
+            '${goldInvoiceTypeLabel(inv.invoiceType)} · ${inv.customerName.isEmpty ? '—' : inv.customerName}\n${formatDate(inv.invoiceDate)} · ${goldPaymentMethodLabel(inv.paymentMethod)}',
         leading: Container(
           width: 46,
           height: 46,

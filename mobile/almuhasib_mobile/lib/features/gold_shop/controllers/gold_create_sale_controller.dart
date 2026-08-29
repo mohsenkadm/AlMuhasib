@@ -51,7 +51,7 @@ class GoldCreateSaleController extends GetxController {
   final selectedCustomer = Rxn<GoldCustomerListItem>();
   final selectedWarehouse = Rxn<GoldWarehouseItem>();
   final paymentMethod = 'Cash'.obs;
-  final pricingCurrency = 'USD'.obs;
+  final pricingCurrency = 'IQD'.obs;
   final paymentCurrency = 'IQD'.obs;
   final lines = <GoldSaleLineDraft>[GoldSaleLineDraft()].obs;
   final mithqalGrams = 5.0.obs;

@@ -49,6 +49,42 @@ class GoldSettingsScreen extends GetView<SettingsController> {
             subtitle: 'قائمة الموردين والذمم',
             onTap: () => Get.toNamed(AppRoutes.goldShopSuppliers),
           ).fadeSlideIn(delayMs: 120),
+          _ModuleTile(
+            icon: Icons.assessment_outlined,
+            title: 'gold_reports_hub'.tr(),
+            subtitle: 'gold_reports_hub_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopReports),
+          ).fadeSlideIn(delayMs: 140),
+          _ModuleTile(
+            icon: Icons.receipt_long_outlined,
+            title: 'gold_vouchers_title'.tr(),
+            subtitle: 'gold_vouchers_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopVouchers),
+          ).fadeSlideIn(delayMs: 160),
+          _ModuleTile(
+            icon: Icons.payments_outlined,
+            title: 'gold_collection_title'.tr(),
+            subtitle: 'gold_collection_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopCollection),
+          ).fadeSlideIn(delayMs: 180),
+          _ModuleTile(
+            icon: Icons.shopping_cart_outlined,
+            title: 'gold_new_purchase'.tr(),
+            subtitle: 'gold_ops_purchase_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopPurchaseNew),
+          ).fadeSlideIn(delayMs: 200),
+          _ModuleTile(
+            icon: Icons.swap_horiz,
+            title: 'gold_new_exchange'.tr(),
+            subtitle: 'gold_ops_exchange_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopExchangeNew),
+          ).fadeSlideIn(delayMs: 220),
+          _ModuleTile(
+            icon: Icons.undo,
+            title: 'gold_new_return'.tr(),
+            subtitle: 'gold_ops_return_desc'.tr(),
+            onTap: () => Get.toNamed(AppRoutes.goldShopReturnNew),
+          ).fadeSlideIn(delayMs: 240),
           const SizedBox(height: 8),
           const Divider(height: 32),
           Card(

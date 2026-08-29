@@ -6,6 +6,7 @@ import '../models/gold_shop_models.dart';
 class GoldSalesController extends GetxController {
   final search = ''.obs;
   final statusFilter = RxnInt();
+  final typeFilter = RxnInt(0);
   final isLoading = true.obs;
   final error = Rxn<Object>();
   final items = <GoldInvoiceListItem>[].obs;
@@ -24,9 +25,15 @@ class GoldSalesController extends GetxController {
     load();
   }
 
+  void updateTypeFilter(int? type) {
+    typeFilter.value = type;
+    load();
+  }
+
   void clearFilters() {
     search.value = '';
     statusFilter.value = null;
+    typeFilter.value = 0;
     load();
   }
 
@@ -37,7 +44,7 @@ class GoldSalesController extends GetxController {
       items.value = await AppServices.goldShop.getInvoices(
         search: search.value.trim(),
         status: statusFilter.value,
-        invoiceType: 0, // sales
+        invoiceType: typeFilter.value,
       );
     } catch (e) {
       error.value = e;

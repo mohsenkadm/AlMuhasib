@@ -5,6 +5,8 @@ String goldInvoiceTypeLabel(int type) {
   return switch (type) {
     0 => 'gold_invoice_type_sale'.tr(),
     1 => 'gold_invoice_type_purchase'.tr(),
+    2 => 'gold_invoice_type_exchange'.tr(),
+    3 => 'gold_invoice_type_return'.tr(),
     _ => 'gold_invoice'.tr(),
   };
 }

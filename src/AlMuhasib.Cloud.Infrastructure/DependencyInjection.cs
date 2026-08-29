@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<ICloudMasterDataService, CloudMasterDataService>();
         services.AddScoped<ICloudMobileWriteService, CloudMobileWriteService>();
         services.AddScoped<CloudGoldSaleHelper>();
+        services.AddScoped<CloudGoldOpsHelper>();
 
         services.AddHttpClient("OneSignal");
 

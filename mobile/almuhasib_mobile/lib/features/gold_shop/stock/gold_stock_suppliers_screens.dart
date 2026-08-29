@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/getx/app_services.dart';
+import '../../../core/router/app_routes.dart';
 import '../models/gold_shop_models.dart';
 
 class GoldStockController extends GetxController {
@@ -170,6 +171,13 @@ class GoldSuppliersScreen extends StatelessWidget {
                             if (s.creditBalanceUsd > 0)
                               'آجل \$ ${s.creditBalanceUsd.toStringAsFixed(2)}',
                           ].join(' · '),
+                        ),
+                        trailing: const Icon(Icons.chevron_left),
+                        onTap: () => Get.toNamed(
+                          AppRoutes.goldShopSupplierStatementPath(
+                            s.id,
+                            name: s.name,
+                          ),
                         ),
                       ),
                     );

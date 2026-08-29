@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/system_themes.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/common_widgets.dart';
@@ -39,6 +40,19 @@ class GoldSaleDetailScreen extends GetView<GoldSaleDetailController> {
       final inv = controller.invoice.value!;
       return Scaffold(
         appBar: AppBar(title: Text(inv.invoiceNumber)),
+        floatingActionButton: inv.remainingAmount > 0 && inv.invoiceType == 0
+            ? FloatingActionButton.extended(
+                onPressed: () async {
+                  final ok = await Get.toNamed(
+                    AppRoutes.goldShopCollection,
+                    arguments: inv.id,
+                  );
+                  if (ok == true) controller.load();
+                },
+                icon: const Icon(Icons.payments_outlined),
+                label: Text('gold_collection_title'.tr()),
+              )
+            : null,
         body: RefreshIndicator(
           onRefresh: controller.load,
           child: ListView(

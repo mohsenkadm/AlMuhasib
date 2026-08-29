@@ -15,13 +15,16 @@ namespace AlMuhasib.Api.Controllers.GoldShop;
 public sealed class GoldShopMobileController : GoldShopApiControllerBase
 {
     private readonly CloudGoldSaleHelper _saleHelper;
+    private readonly CloudGoldOpsHelper _opsHelper;
 
     public GoldShopMobileController(
         ITenantContext tenantContext,
         CloudDbContext db,
-        CloudGoldSaleHelper saleHelper) : base(db, tenantContext)
+        CloudGoldSaleHelper saleHelper,
+        CloudGoldOpsHelper opsHelper) : base(db, tenantContext)
     {
         _saleHelper = saleHelper;
+        _opsHelper = opsHelper;
     }
 
     // Also exposed under /mobile/* for Flutter clients.
@@ -39,6 +42,8 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
 
         var todaySales = invoices.Where(i => i.InvoiceType == GoldInvoiceType.Sale && i.InvoiceDate.Date == today).ToList();
         var todayPurchases = invoices.Where(i => i.InvoiceType == GoldInvoiceType.Purchase && i.InvoiceDate.Date == today).ToList();
+        var todayReturns = invoices.Where(i => i.InvoiceType == GoldInvoiceType.SaleReturn && i.InvoiceDate.Date == today).ToList();
+        var todayExchanges = invoices.Where(i => i.InvoiceType == GoldInvoiceType.Exchange && i.InvoiceDate.Date == today).ToList();
         var credit = invoices.Where(i => i.RemainingAmount > 0 && i.InvoiceType == GoldInvoiceType.Sale).ToList();
 
         var cashBoxes = await Db.GoldCashBoxes.AsNoTracking()
@@ -48,6 +53,12 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         var settings = await Db.GoldSettings.AsNoTracking()
             .FirstOrDefaultAsync(s => s.TenantId == TenantId, ct);
         var lowThreshold = settings?.LowStockAlertGrams ?? 10m;
+        var suppliers = await Db.GoldSuppliers.AsNoTracking()
+            .Where(s => s.TenantId == TenantId && (s.CreditBalanceIqd > 0 || s.CreditBalanceUsd > 0))
+            .ToListAsync(ct);
+        var todayExpenses = await Db.GoldExpenses.AsNoTracking()
+            .Where(e => e.TenantId == TenantId && e.ExpenseDate.Date == today)
+            .ToListAsync(ct);
 
         var latestFx = await Db.GoldFxRates.AsNoTracking()
             .Where(r => r.TenantId == TenantId)
@@ -109,6 +120,27 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
                 .Take(10)
                 .Select(GoldShopInvoiceMapper.ToListItem)
                 .ToList(),
+            RecentReturns = todayReturns.Concat(
+                    invoices.Where(i => i.InvoiceType == GoldInvoiceType.SaleReturn && i.InvoiceDate.Date != today))
+                .OrderByDescending(i => i.InvoiceDate).Take(5)
+                .Select(GoldShopInvoiceMapper.ToListItem).ToList(),
+            RecentExchanges = todayExchanges.Concat(
+                    invoices.Where(i => i.InvoiceType == GoldInvoiceType.Exchange && i.InvoiceDate.Date != today))
+                .OrderByDescending(i => i.InvoiceDate).Take(5)
+                .Select(GoldShopInvoiceMapper.ToListItem).ToList(),
+            TodayReturnCount = todayReturns.Count,
+            TodayReturnIqd = todayReturns.Sum(i => i.TotalAmountIqd),
+            TodayExchangeCount = todayExchanges.Count,
+            TodayExchangeCashDiffIqd = todayExchanges.Sum(i =>
+                i.PaymentCurrency == GoldCurrency.IQD
+                    ? i.ExchangeCashDifference
+                    : (i.FxRate > 0 ? i.ExchangeCashDifference * i.FxRate : i.ExchangeCashDifference)),
+            SupplierCreditCount = suppliers.Count,
+            SupplierCreditIqd = suppliers.Sum(s => s.CreditBalanceIqd),
+            SupplierCreditUsd = suppliers.Sum(s => s.CreditBalanceUsd),
+            TodayExpensesIqd = todayExpenses.Where(e => e.Currency == GoldCurrency.IQD).Sum(e => e.Amount),
+            TodayExpensesUsd = todayExpenses.Where(e => e.Currency == GoldCurrency.USD).Sum(e => e.Amount),
+            HasExpenseToday = todayExpenses.Count > 0,
             Alerts = notifications.Select(n => new GoldAlertDto
             {
                 Id = n.Id,
@@ -188,6 +220,11 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
     // Keep under /mobile/* only — GoldShopInvoicesController owns GET api/gold-shop/invoices.
     [HttpGet("mobile/invoices")]
     public async Task<ActionResult<List<GoldInvoiceListDto>>> GetInvoices(
+        [FromQuery] string? search = null,
+        [FromQuery] int? status = null,
+        [FromQuery] int? invoiceType = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
@@ -196,9 +233,29 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var items = await Db.GoldInvoices.AsNoTracking()
+        var query = Db.GoldInvoices.AsNoTracking()
             .Include(i => i.Customer)
-            .Where(i => i.TenantId == TenantId)
+            .Include(i => i.Supplier)
+            .Where(i => i.TenantId == TenantId);
+
+        if (invoiceType.HasValue && Enum.IsDefined(typeof(GoldInvoiceType), invoiceType.Value))
+            query = query.Where(i => i.InvoiceType == (GoldInvoiceType)invoiceType.Value);
+        if (status.HasValue && Enum.IsDefined(typeof(GoldInvoiceStatus), status.Value))
+            query = query.Where(i => i.Status == (GoldInvoiceStatus)status.Value);
+        if (from.HasValue)
+            query = query.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue)
+            query = query.Where(i => i.InvoiceDate <= to.Value.Date);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(i =>
+                i.InvoiceNumber.Contains(term) ||
+                (i.Customer != null && i.Customer.Name.Contains(term)) ||
+                (i.Supplier != null && i.Supplier.Name.Contains(term)));
+        }
+
+        var items = await query
             .OrderByDescending(i => i.InvoiceDate)
             .ThenByDescending(i => i.Id)
             .Skip((page - 1) * pageSize)
@@ -279,6 +336,134 @@ public sealed class GoldShopMobileController : GoldShopApiControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPost("mobile/invoices/purchase")]
+    public async Task<ActionResult<GoldInvoiceDetailDto>> CreatePurchase(
+        [FromBody] GoldCreateSaleRequestDto request, CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        try
+        {
+            var username = User.Identity?.Name ?? "mobile";
+            var created = await _opsHelper.CreatePurchaseAsync(TenantId, MapSaleRequest(request), username, ct);
+            return Ok(GoldShopInvoiceMapper.ToDetail(created));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
+
+    [HttpPost("mobile/invoices/sale-return")]
+    public async Task<ActionResult<GoldInvoiceDetailDto>> CreateSaleReturn(
+        [FromBody] GoldCreateSaleReturnRequestDto request, CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        try
+        {
+            var username = User.Identity?.Name ?? "mobile";
+            var created = await _opsHelper.CreateSaleReturnAsync(
+                TenantId, MapSaleRequest(request), request.RelatedInvoiceId, username, ct);
+            return Ok(GoldShopInvoiceMapper.ToDetail(created));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
+
+    [HttpPost("mobile/invoices/exchange")]
+    public async Task<ActionResult<GoldInvoiceDetailDto>> CreateExchange(
+        [FromBody] GoldCreateExchangeRequestDto request, CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        try
+        {
+            var username = User.Identity?.Name ?? "mobile";
+            var created = await _opsHelper.CreateExchangeAsync(TenantId, new CloudGoldCreateExchangeRequest
+            {
+                InvoiceDate = request.InvoiceDate == default ? DateTime.Today : request.InvoiceDate,
+                PaymentMethod = ParseEnum(request.PaymentMethod, GoldPaymentMethod.Cash),
+                CustomerId = request.CustomerId,
+                WarehouseId = request.WarehouseId,
+                PricingCurrency = ParseEnum(request.PricingCurrency, GoldCurrency.IQD),
+                PaymentCurrency = ParseEnum(request.PaymentCurrency, GoldCurrency.IQD),
+                FxRate = request.FxRate,
+                ExchangeCashDifference = request.ExchangeCashDifference,
+                PaidAmount = request.PaidAmount,
+                CashBoxId = request.CashBoxId,
+                Notes = request.Notes ?? string.Empty,
+                WeightFromScale = request.WeightFromScale,
+                InLines = (request.InLines ?? []).Select(MapLine).ToList(),
+                OutLines = (request.OutLines ?? []).Select(MapLine).ToList()
+            }, username, ct);
+            return Ok(GoldShopInvoiceMapper.ToDetail(created));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
+
+    [HttpPost("mobile/invoices/collection")]
+    public async Task<ActionResult<object>> Collect(
+        [FromBody] GoldCollectionRequestDto request, CancellationToken ct)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        try
+        {
+            var username = User.Identity?.Name ?? "mobile";
+            var payment = await _opsHelper.CollectAsync(TenantId, new CloudGoldCollectionRequest
+            {
+                InvoiceId = request.InvoiceId,
+                Amount = request.Amount,
+                Currency = ParseEnum(request.Currency, GoldCurrency.IQD),
+                CashBoxId = request.CashBoxId,
+                PaymentDate = request.PaymentDate == default ? DateTime.Today : request.PaymentDate,
+                Notes = request.Notes ?? string.Empty
+            }, username, ct);
+            return Ok(new { payment.Id, payment.SyncId, payment.Amount, Currency = payment.Currency.ToString() });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
+
+    private CloudGoldCreateSaleRequest MapSaleRequest(GoldCreateSaleRequestDto request) =>
+        MapSaleRequestCore(
+            request.InvoiceDate, request.PaymentMethod, request.CustomerId, request.SupplierId,
+            request.WarehouseId, request.PricingCurrency, request.PaymentCurrency, request.FxRate,
+            request.DiscountAmount, request.PaidAmount, request.CashBoxId, request.Notes,
+            request.WeightFromScale, request.Lines);
+
+    private CloudGoldCreateSaleRequest MapSaleRequest(GoldCreateSaleReturnRequestDto request) =>
+        MapSaleRequestCore(
+            request.InvoiceDate, request.PaymentMethod, request.CustomerId, request.SupplierId,
+            request.WarehouseId, request.PricingCurrency, request.PaymentCurrency, request.FxRate,
+            request.DiscountAmount, request.PaidAmount, request.CashBoxId, request.Notes,
+            request.WeightFromScale, request.Lines);
+
+    private CloudGoldCreateSaleRequest MapSaleRequestCore(
+        DateTime invoiceDate, string paymentMethod, int? customerId, int? supplierId,
+        int? warehouseId, string pricingCurrency, string paymentCurrency, decimal fxRate,
+        decimal discountAmount, decimal paidAmount, int? cashBoxId, string? notes,
+        bool weightFromScale, List<GoldCreateSaleLineDto>? lines) => new()
+    {
+        InvoiceDate = invoiceDate == default ? DateTime.Today : invoiceDate,
+        PaymentMethod = ParseEnum(paymentMethod, GoldPaymentMethod.Cash),
+        CustomerId = customerId,
+        SupplierId = supplierId,
+        WarehouseId = warehouseId,
+        PricingCurrency = ParseEnum(pricingCurrency, GoldCurrency.IQD),
+        PaymentCurrency = ParseEnum(paymentCurrency, GoldCurrency.IQD),
+        FxRate = fxRate,
+        DiscountAmount = discountAmount,
+        PaidAmount = paidAmount,
+        CashBoxId = cashBoxId,
+        Notes = notes ?? string.Empty,
+        WeightFromScale = weightFromScale,
+        Lines = (lines ?? []).Select(MapLine).ToList()
+    };
+
+    private static CloudGoldCreateSaleLineRequest MapLine(GoldCreateSaleLineDto l) => new()
+    {
+        ItemId = l.ItemId,
+        KaratValue = l.KaratValue,
+        WeightGrams = l.WeightGrams,
+        MithqalPrice = l.MithqalPrice,
+        MakingCharge = l.MakingCharge,
+        Description = l.Description ?? string.Empty,
+        WeightFromScale = l.WeightFromScale
+    };
 
     [HttpGet("customers")]
     [HttpGet("mobile/customers")]
@@ -395,6 +580,18 @@ public sealed class GoldShopDashboardDto
     public List<GoldStockRowDto> StockByKarat { get; set; } = [];
     public List<GoldPriceDto> LatestPrices { get; set; } = [];
     public List<GoldInvoiceListDto> RecentInvoices { get; set; } = [];
+    public List<GoldInvoiceListDto> RecentReturns { get; set; } = [];
+    public List<GoldInvoiceListDto> RecentExchanges { get; set; } = [];
+    public int TodayReturnCount { get; set; }
+    public decimal TodayReturnIqd { get; set; }
+    public int TodayExchangeCount { get; set; }
+    public decimal TodayExchangeCashDiffIqd { get; set; }
+    public int SupplierCreditCount { get; set; }
+    public decimal SupplierCreditIqd { get; set; }
+    public decimal SupplierCreditUsd { get; set; }
+    public decimal TodayExpensesIqd { get; set; }
+    public decimal TodayExpensesUsd { get; set; }
+    public bool HasExpenseToday { get; set; }
     public List<GoldAlertDto> Alerts { get; set; } = [];
 }
 
@@ -496,4 +693,51 @@ public sealed class GoldCreateSaleLineDto
     public decimal MakingCharge { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+}
+
+public sealed class GoldCreateSaleReturnRequestDto
+{
+    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public string PaymentMethod { get; set; } = "Cash";
+    public int? CustomerId { get; set; }
+    public int? SupplierId { get; set; }
+    public int? WarehouseId { get; set; }
+    public string PricingCurrency { get; set; } = "IQD";
+    public string PaymentCurrency { get; set; } = "IQD";
+    public decimal FxRate { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public int? CashBoxId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool WeightFromScale { get; set; }
+    public int? RelatedInvoiceId { get; set; }
+    public List<GoldCreateSaleLineDto>? Lines { get; set; }
+}
+
+public sealed class GoldCreateExchangeRequestDto
+{
+    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public string PaymentMethod { get; set; } = "Cash";
+    public int? CustomerId { get; set; }
+    public int? WarehouseId { get; set; }
+    public string PricingCurrency { get; set; } = "IQD";
+    public string PaymentCurrency { get; set; } = "IQD";
+    public decimal FxRate { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
+    public decimal PaidAmount { get; set; }
+    public int? CashBoxId { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public bool WeightFromScale { get; set; }
+    public List<GoldCreateSaleLineDto>? InLines { get; set; }
+    public List<GoldCreateSaleLineDto>? OutLines { get; set; }
+}
+
+public sealed class GoldCollectionRequestDto
+{
+    public int InvoiceId { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = "IQD";
+    public int? CashBoxId { get; set; }
+    public DateTime PaymentDate { get; set; } = DateTime.Today;
+    public string? Notes { get; set; }
 }

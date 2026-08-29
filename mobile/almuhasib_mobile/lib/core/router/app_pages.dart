@@ -30,10 +30,13 @@ import '../../features/data_tab/presentation/product_prices_screen.dart';
 import '../../features/finance/presentation/finance_list_screen.dart';
 import '../../features/gold_shop/gold_shop_shell.dart';
 import '../../features/gold_shop/notifications/gold_notifications_screen.dart';
+import '../../features/gold_shop/ops/gold_create_ops_screen.dart';
 import '../../features/gold_shop/prices/gold_prices_screen.dart';
+import '../../features/gold_shop/reports/gold_reports_screens.dart';
 import '../../features/gold_shop/sales/gold_create_sale_screen.dart';
 import '../../features/gold_shop/sales/gold_sale_detail_screen.dart';
 import '../../features/gold_shop/stock/gold_stock_suppliers_screens.dart';
+import '../../features/gold_shop/vouchers/gold_vouchers_screens.dart';
 import '../../features/hotel/check_in_out/hotel_check_in_out_screen.dart';
 import '../../features/hotel/dashboard/hotel_dashboard_screen.dart';
 import '../../features/hotel/guests/hotel_guest_form_screen.dart';
@@ -697,6 +700,77 @@ abstract final class AppPages {
     GetPage(
       name: AppRoutes.goldShopSuppliers,
       page: () => const GoldSuppliersScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopReports,
+      page: () => const GoldReportsHubScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopReportDetail,
+      page: () => GoldReportDetailScreen(
+        reportKey: Get.parameters['type'] ?? 'sales',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopStatement,
+      page: () => GoldStatementScreen(
+        partyId: int.tryParse(Get.parameters['id'] ?? '') ?? 0,
+        isSupplier: (Get.parameters['partyType'] ?? '') == 'supplier',
+        partyName: Get.parameters['name'] ??
+            Uri.base.queryParameters['name'] ??
+            '',
+      ),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopVouchers,
+      page: () => const GoldVouchersScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopVoucherNew,
+      page: () => const GoldCreateVoucherScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopCollection,
+      page: () => const GoldCollectionScreen(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopPurchaseNew,
+      page: () => const GoldCreateOpsScreen(mode: GoldOpsMode.purchase),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopReturnNew,
+      page: () => const GoldCreateOpsScreen(mode: GoldOpsMode.saleReturn),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.goldShopExchangeNew,
+      page: () => const GoldCreateOpsScreen(mode: GoldOpsMode.exchange),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

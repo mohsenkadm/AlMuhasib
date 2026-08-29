@@ -273,6 +273,212 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
         if (to.HasValue) query = query.Where(i => i.InvoiceDate <= to.Value.Date);
         return await query.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).ToListAsync(ct);
     }
+
+    [HttpGet("cash-movement")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldCashMovementDto>>> GetCashMovement(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? cashBoxId, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var boxes = await Db.GoldCashBoxes.AsNoTracking().Where(b => b.TenantId == TenantId)
+            .ToDictionaryAsync(b => b.Id, ct);
+        var rows = new List<GoldCashMovementDto>();
+
+        var paymentsQ = Db.GoldPayments.AsNoTracking()
+            .Include(p => p.Invoice!).ThenInclude(i => i!.Customer)
+            .Include(p => p.Invoice!).ThenInclude(i => i!.Supplier)
+            .Where(p => p.TenantId == TenantId);
+        if (cashBoxId.HasValue) paymentsQ = paymentsQ.Where(p => p.CashBoxId == cashBoxId.Value);
+        if (from.HasValue) paymentsQ = paymentsQ.Where(p => p.PaymentDate >= from.Value.Date);
+        if (to.HasValue) paymentsQ = paymentsQ.Where(p => p.PaymentDate <= to.Value.Date);
+        foreach (var p in await paymentsQ.OrderByDescending(p => p.PaymentDate).Take(3000).ToListAsync(ct))
+        {
+            var isPurchase = p.Invoice?.InvoiceType == GoldInvoiceType.Purchase;
+            boxes.TryGetValue(p.CashBoxId ?? 0, out var box);
+            rows.Add(new GoldCashMovementDto
+            {
+                Date = p.PaymentDate,
+                MovementType = isPurchase ? "دفع شراء" : "تحصيل بيع",
+                Reference = p.Invoice?.InvoiceNumber ?? $"#{p.Id}",
+                PartyName = p.Invoice?.Supplier?.Name ?? p.Invoice?.Customer?.Name ?? "—",
+                CashBoxName = box?.Name ?? "—",
+                Currency = p.Currency.ToString(),
+                AmountIn = isPurchase ? 0 : p.Amount,
+                AmountOut = isPurchase ? p.Amount : 0,
+                Notes = p.Notes
+            });
+        }
+
+        var vouchersQ = Db.GoldVouchers.AsNoTracking().Where(v => v.TenantId == TenantId && !v.IsDeleted);
+        if (cashBoxId.HasValue) vouchersQ = vouchersQ.Where(v => v.CashBoxId == cashBoxId.Value);
+        if (from.HasValue) vouchersQ = vouchersQ.Where(v => v.VoucherDate >= from.Value.Date);
+        if (to.HasValue) vouchersQ = vouchersQ.Where(v => v.VoucherDate <= to.Value.Date);
+        var customers = await Db.GoldCustomers.AsNoTracking().Where(c => c.TenantId == TenantId)
+            .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
+        var suppliers = await Db.GoldSuppliers.AsNoTracking().Where(s => s.TenantId == TenantId)
+            .ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        foreach (var v in await vouchersQ.OrderByDescending(v => v.VoucherDate).Take(2000).ToListAsync(ct))
+        {
+            boxes.TryGetValue(v.CashBoxId ?? 0, out var box);
+            var isReceipt = v.VoucherType == GoldVoucherType.Receipt;
+            var party = v.SupplierId.HasValue && suppliers.TryGetValue(v.SupplierId.Value, out var sn) ? sn
+                : v.CustomerId.HasValue && customers.TryGetValue(v.CustomerId.Value, out var cn) ? cn : "—";
+            rows.Add(new GoldCashMovementDto
+            {
+                Date = v.VoucherDate,
+                MovementType = isReceipt ? "سند قبض" : "سند صرف",
+                Reference = v.VoucherNumber,
+                PartyName = party,
+                CashBoxName = box?.Name ?? "—",
+                Currency = v.Currency.ToString(),
+                AmountIn = isReceipt ? v.Amount : 0,
+                AmountOut = isReceipt ? 0 : v.Amount,
+                Notes = v.Notes
+            });
+        }
+
+        var expensesQ = Db.GoldExpenses.AsNoTracking().Where(e => e.TenantId == TenantId);
+        if (cashBoxId.HasValue) expensesQ = expensesQ.Where(e => e.CashBoxId == cashBoxId.Value);
+        if (from.HasValue) expensesQ = expensesQ.Where(e => e.ExpenseDate >= from.Value.Date);
+        if (to.HasValue) expensesQ = expensesQ.Where(e => e.ExpenseDate <= to.Value.Date);
+        foreach (var e in await expensesQ.OrderByDescending(e => e.ExpenseDate).Take(2000).ToListAsync(ct))
+        {
+            boxes.TryGetValue(e.CashBoxId, out var box);
+            rows.Add(new GoldCashMovementDto
+            {
+                Date = e.ExpenseDate,
+                MovementType = "مصروف",
+                Reference = $"مصروف #{e.Id}",
+                PartyName = "—",
+                CashBoxName = box?.Name ?? "—",
+                Currency = e.Currency.ToString(),
+                AmountIn = 0,
+                AmountOut = e.Amount,
+                Notes = e.Notes
+            });
+        }
+
+        var ordered = rows.OrderByDescending(r => r.Date).ThenByDescending(r => r.Reference).ToList();
+        return Ok(new GoldPagedReportDto<GoldCashMovementDto> { TotalCount = ordered.Count, Items = ordered });
+    }
+
+    [HttpGet("karat-movement")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldKaratMovementDto>>> GetKaratMovement(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? warehouseId, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var invQ = Db.GoldInvoices.AsNoTracking().Include(i => i.Lines)
+            .Where(i => i.TenantId == TenantId && i.Status != GoldInvoiceStatus.Cancelled);
+        if (from.HasValue) invQ = invQ.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue) invQ = invQ.Where(i => i.InvoiceDate <= to.Value.Date);
+        if (warehouseId.HasValue) invQ = invQ.Where(i => i.WarehouseId == warehouseId.Value);
+        var invoices = await invQ.ToListAsync(ct);
+        var stocks = await Db.GoldStockBalances.AsNoTracking().Where(s => s.TenantId == TenantId).ToListAsync(ct);
+        if (warehouseId.HasValue) stocks = stocks.Where(s => s.WarehouseId == warehouseId.Value).ToList();
+
+        var byKarat = invoices.SelectMany(i => i.Lines.Select(l => new { i.InvoiceType, l }))
+            .GroupBy(x => x.l.KaratValue)
+            .Select(g =>
+            {
+                decimal purchased = 0, sold = 0, exIn = 0, exOut = 0, returned = 0;
+                foreach (var x in g)
+                {
+                    if (x.InvoiceType == GoldInvoiceType.Purchase) purchased += x.l.WeightGrams;
+                    else if (x.InvoiceType == GoldInvoiceType.Sale) sold += x.l.WeightGrams;
+                    else if (x.InvoiceType == GoldInvoiceType.SaleReturn) returned += x.l.WeightGrams;
+                    else if (x.InvoiceType == GoldInvoiceType.Exchange)
+                    {
+                        if (x.l.LineDirection == GoldInvoiceLineDirection.In) exIn += x.l.WeightGrams;
+                        else exOut += x.l.WeightGrams;
+                    }
+                }
+                var closing = stocks.Where(s => s.KaratValue == g.Key).Sum(s => s.GramsOnHand);
+                return new GoldKaratMovementDto
+                {
+                    KaratValue = g.Key,
+                    KaratName = $"عيار {g.Key}",
+                    PurchasedGrams = purchased,
+                    SoldGrams = sold,
+                    ReturnedGrams = returned,
+                    ExchangeInGrams = exIn,
+                    ExchangeOutGrams = exOut,
+                    NetMovementGrams = purchased + exIn + returned - sold - exOut,
+                    ClosingGrams = closing
+                };
+            }).OrderBy(r => r.KaratValue).ToList();
+
+        return Ok(new GoldPagedReportDto<GoldKaratMovementDto> { TotalCount = byKarat.Count, Items = byKarat });
+    }
+
+    [HttpGet("profitability")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldProfitabilityDto>>> GetProfitability(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var q = Db.GoldInvoices.AsNoTracking().Include(i => i.Lines)
+            .Where(i => i.TenantId == TenantId && i.InvoiceType == GoldInvoiceType.Sale && i.Status != GoldInvoiceStatus.Cancelled);
+        if (from.HasValue) q = q.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue) q = q.Where(i => i.InvoiceDate <= to.Value.Date);
+        var sales = await q.ToListAsync(ct);
+        var avgCosts = await Db.GoldStockBalances.AsNoTracking().Where(s => s.TenantId == TenantId)
+            .GroupBy(s => s.KaratValue)
+            .Select(g => new { KaratValue = g.Key, AvgCost = g.Average(x => x.AverageCostPerGram) })
+            .ToDictionaryAsync(x => x.KaratValue, x => x.AvgCost, ct);
+
+        var rows = sales.SelectMany(s => s.Lines.Select(l => new { Sale = s, Line = l }))
+            .GroupBy(x => x.Line.KaratValue)
+            .Select(g =>
+            {
+                decimal salesValue = 0, making = 0, weight = 0, cost = 0;
+                foreach (var x in g)
+                {
+                    weight += x.Line.WeightGrams;
+                    var fx = x.Sale.FxRate > 0 ? x.Sale.FxRate : 1m;
+                    salesValue += x.Sale.PricingCurrency == GoldCurrency.IQD ? x.Line.GoldValue : x.Line.GoldValue * fx;
+                    making += x.Sale.PricingCurrency == GoldCurrency.IQD ? x.Line.MakingCharge : x.Line.MakingCharge * fx;
+                    avgCosts.TryGetValue(x.Line.KaratValue, out var avg);
+                    cost += x.Line.WeightGrams * avg;
+                }
+                return new GoldProfitabilityDto
+                {
+                    KaratValue = g.Key,
+                    KaratName = $"عيار {g.Key}",
+                    WeightSoldGrams = weight,
+                    SalesGoldValue = salesValue,
+                    MakingCharges = making,
+                    EstimatedCost = cost,
+                    GrossProfit = salesValue + making - cost
+                };
+            }).OrderBy(r => r.KaratValue).ToList();
+
+        return Ok(new GoldPagedReportDto<GoldProfitabilityDto> { TotalCount = rows.Count, Items = rows });
+    }
+
+    [HttpGet("user-performance")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldUserPerformanceDto>>> GetUserPerformance(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var q = Db.GoldInvoices.AsNoTracking()
+            .Where(i => i.TenantId == TenantId && i.Status != GoldInvoiceStatus.Cancelled);
+        if (from.HasValue) q = q.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue) q = q.Where(i => i.InvoiceDate <= to.Value.Date);
+        var invoices = await q.ToListAsync(ct);
+        var rows = invoices.Where(i => !string.IsNullOrWhiteSpace(i.CreatedBy))
+            .GroupBy(i => i.CreatedBy, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new GoldUserPerformanceDto
+            {
+                UserName = g.Key,
+                SalesCount = g.Count(i => i.InvoiceType == GoldInvoiceType.Sale),
+                PurchasesCount = g.Count(i => i.InvoiceType == GoldInvoiceType.Purchase),
+                ExchangeCount = g.Count(i => i.InvoiceType == GoldInvoiceType.Exchange),
+                ReturnCount = g.Count(i => i.InvoiceType == GoldInvoiceType.SaleReturn),
+                SalesAmountIqd = g.Where(i => i.InvoiceType == GoldInvoiceType.Sale).Sum(i => i.TotalAmountIqd),
+                PurchasesAmountIqd = g.Where(i => i.InvoiceType == GoldInvoiceType.Purchase).Sum(i => i.TotalAmountIqd)
+            })
+            .OrderByDescending(r => r.SalesCount + r.PurchasesCount)
+            .ToList();
+        return Ok(new GoldPagedReportDto<GoldUserPerformanceDto> { TotalCount = rows.Count, Items = rows });
+    }
 }
 
 public sealed class GoldStockReportDto
@@ -350,4 +556,52 @@ public sealed class GoldExchangeRowDto
     public decimal InTotalValue { get; set; }
     public decimal OutTotalValue { get; set; }
     public decimal ExchangeCashDifference { get; set; }
+}
+
+public sealed class GoldCashMovementDto
+{
+    public DateTime Date { get; set; }
+    public string MovementType { get; set; } = string.Empty;
+    public string Reference { get; set; } = string.Empty;
+    public string PartyName { get; set; } = string.Empty;
+    public string CashBoxName { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
+    public decimal AmountIn { get; set; }
+    public decimal AmountOut { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public sealed class GoldKaratMovementDto
+{
+    public int KaratValue { get; set; }
+    public string KaratName { get; set; } = string.Empty;
+    public decimal PurchasedGrams { get; set; }
+    public decimal SoldGrams { get; set; }
+    public decimal ReturnedGrams { get; set; }
+    public decimal ExchangeInGrams { get; set; }
+    public decimal ExchangeOutGrams { get; set; }
+    public decimal NetMovementGrams { get; set; }
+    public decimal ClosingGrams { get; set; }
+}
+
+public sealed class GoldProfitabilityDto
+{
+    public int KaratValue { get; set; }
+    public string KaratName { get; set; } = string.Empty;
+    public decimal WeightSoldGrams { get; set; }
+    public decimal SalesGoldValue { get; set; }
+    public decimal MakingCharges { get; set; }
+    public decimal EstimatedCost { get; set; }
+    public decimal GrossProfit { get; set; }
+}
+
+public sealed class GoldUserPerformanceDto
+{
+    public string UserName { get; set; } = string.Empty;
+    public int SalesCount { get; set; }
+    public int PurchasesCount { get; set; }
+    public int ExchangeCount { get; set; }
+    public int ReturnCount { get; set; }
+    public decimal SalesAmountIqd { get; set; }
+    public decimal PurchasesAmountIqd { get; set; }
 }
