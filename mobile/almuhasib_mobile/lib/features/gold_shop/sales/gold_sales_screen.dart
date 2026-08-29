@@ -18,70 +18,68 @@ class GoldSalesScreen extends GetView<GoldSalesController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => AppListPage<GoldInvoiceListItem>(
-        title: 'gold_sales_title'.tr(),
-        isLoading: controller.isLoading,
-        error: controller.error,
-        items: controller.items,
-        onRefresh: controller.load,
-        onRetry: controller.load,
-        emptyMessage: 'gold_no_sales'.tr(),
-        emptyIcon: Icons.receipt_long_outlined,
-        fabLabel: 'gold_new_sale'.tr(),
-        onFab: () => Get.toNamed(AppRoutes.goldShopSaleNew),
-        filterPanel: AppFilterBar(
-          onSearchChanged: controller.updateSearch,
-          filterChips: [
-            FilterChipOption(id: '0', label: 'gold_status_completed'.tr()),
-            FilterChipOption(id: '1', label: 'gold_status_open'.tr()),
-            FilterChipOption(id: '2', label: 'gold_status_partial'.tr()),
-            FilterChipOption(id: '3', label: 'gold_status_cancelled'.tr()),
+    return AppListPage<GoldInvoiceListItem>(
+      title: 'gold_sales_title'.tr(),
+      isLoading: controller.isLoading,
+      error: controller.error,
+      items: controller.items,
+      onRefresh: controller.load,
+      onRetry: controller.load,
+      emptyMessage: 'gold_no_sales'.tr(),
+      emptyIcon: Icons.receipt_long_outlined,
+      fabLabel: 'gold_new_sale'.tr(),
+      onFab: () => Get.toNamed(AppRoutes.goldShopSaleNew),
+      filterPanel: AppFilterBar(
+        onSearchChanged: controller.updateSearch,
+        filterChips: [
+          FilterChipOption(id: '0', label: 'gold_status_completed'.tr()),
+          FilterChipOption(id: '1', label: 'gold_status_open'.tr()),
+          FilterChipOption(id: '2', label: 'gold_status_partial'.tr()),
+          FilterChipOption(id: '3', label: 'gold_status_cancelled'.tr()),
+        ],
+        onFilterSelected: (id) {
+          controller.updateStatusFilter(
+            id == null ? null : int.tryParse(id),
+          );
+        },
+        onClear: controller.clearFilters,
+      ),
+      itemBuilder: (context, inv, index) => AppEntityCard(
+        title: inv.invoiceNumber,
+        subtitle:
+            '${inv.customerName.isEmpty ? '—' : inv.customerName}\n${formatDate(inv.invoiceDate)} • ${goldPaymentMethodLabel(inv.paymentMethod)}',
+        leading: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: SystemThemes.goldPrimary.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.receipt_long_outlined,
+            color: SystemThemes.goldPrimary,
+          ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              formatCurrency(inv.totalAmountIqd),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            Text(
+              goldInvoiceStatusLabel(inv.status),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: goldInvoiceStatusColor(inv.status),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ],
-          onFilterSelected: (id) {
-            controller.updateStatusFilter(
-              id == null ? null : int.tryParse(id),
-            );
-          },
-          onClear: controller.clearFilters,
         ),
-        itemBuilder: (context, inv, index) => AppEntityCard(
-          title: inv.invoiceNumber,
-          subtitle:
-              '${inv.customerName.isEmpty ? '—' : inv.customerName}\n${formatDate(inv.invoiceDate)} • ${goldPaymentMethodLabel(inv.paymentMethod)}',
-          leading: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: SystemThemes.goldPrimary.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              color: SystemThemes.goldPrimary,
-            ),
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                formatCurrency(inv.totalAmountIqd),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              Text(
-                goldInvoiceStatusLabel(inv.status),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: goldInvoiceStatusColor(inv.status),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-          onTap: () => Get.toNamed(AppRoutes.goldShopSaleDetailPath(inv.id)),
-        ),
+        onTap: () => Get.toNamed(AppRoutes.goldShopSaleDetailPath(inv.id)),
       ),
     );
   }

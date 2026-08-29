@@ -43,7 +43,7 @@ class GoldDashboardDto {
           : _num(json['latestUsdToIqd']),
       mithqalGrams: () {
         final v = _num(json['mithqalGrams']);
-        return v > 0 ? v : 5;
+        return v > 0 ? v : 5.0;
       }(),
       stockByKarat: (json['stockByKarat'] as List<dynamic>?)
               ?.map((e) => GoldStockRow.fromJson(e as Map<String, dynamic>))
