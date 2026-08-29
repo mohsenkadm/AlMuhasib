@@ -366,3 +366,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Desktop license private key (never commit)
+src/AlMuhasib.Admin/appsettings.DesktopLicense.json
+

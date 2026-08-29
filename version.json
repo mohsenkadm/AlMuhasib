@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.20",
-  "releaseDate": "2026-08-27",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.20/AlMuhasib-1.14.20.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.20/Qayd-Setup-1.14.20.exe",
-  "sha256": "C1FA29BCF412D4BEDB66E855913F198B046F678E75BFDF821B788138725DF402",
-  "sizeBytes": 149607028,
-  "releaseNotes": "تطوير نظام الذهب: تصنيفات، تقارير، مدفوعات الموردين، واختيار الأصناف — بدون تعارض مع بيانات العملاء الحاليين",
+  "version": "1.14.21",
+  "releaseDate": "2026-08-29",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.21/AlMuhasib-1.14.21.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.21/Qayd-Setup-1.14.21.exe",
+  "sha256": "5BCBA84E7160F9FFBC95CA2C351E89BAF1F612628DE96B938182C2EFF6915166",
+  "sizeBytes": 149824940,
+  "releaseNotes": "إصلاح تفعيل مدى الحياة: مفتاح عام محدّث وتوليد المفاتيح من لوحة المطوّر يعمل بشكل صحيح",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

@@ -5,6 +5,9 @@ using AlMuhasib.Cloud.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Local signing key for desktop lifetime activation (gitignored — never commit).
+builder.Configuration.AddJsonFile("appsettings.DesktopLicense.json", optional: true, reloadOnChange: true);
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
