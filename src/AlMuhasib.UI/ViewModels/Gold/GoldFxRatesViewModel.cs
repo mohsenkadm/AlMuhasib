@@ -46,9 +46,9 @@ public partial class GoldFxRatesViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task LoadAsync()
+    private async Task LoadAsync(bool force = false)
     {
-        if (IsBusy) return;
+        if (IsBusy && !force) return;
         IsBusy = true;
         try
         {
@@ -121,7 +121,7 @@ public partial class GoldFxRatesViewModel : ViewModelBase
             });
             BeautifulMessageDialog.ShowSuccess("تم حفظ سعر الصرف");
             NewNotes = string.Empty;
-            await LoadAsync();
+            await LoadAsync(force: true);
             GoldFxRateRefreshHelper.Publish(NewUsdToIqd, NewRateDate.Date);
         }
         catch (Exception ex)

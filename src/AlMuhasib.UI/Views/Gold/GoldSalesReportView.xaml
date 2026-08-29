@@ -42,7 +42,8 @@
         </Border>
 
         <materialDesign:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0">
-            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+            <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                      AutoGenerateColumns="False" IsReadOnly="True"
                       Style="{StaticResource ModernDataGrid}" Margin="8">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="120"/>
@@ -55,6 +56,15 @@
                     <DataGridTextColumn Header="د.ع" Binding="{Binding TotalAmountIqd, StringFormat=N0}" Width="110"/>
                     <DataGridTextColumn Header="$" Binding="{Binding TotalAmountUsd, StringFormat=N2}" Width="90"/>
                     <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
+                    <DataGridTemplateColumn Header="مرتجع" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="مرتجع" Style="{StaticResource FlatButton}" Padding="4,2"
+                                        Command="{Binding DataContext.CreateReturnCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </materialDesign:Card>

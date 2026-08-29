@@ -18,6 +18,8 @@ public partial class GoldSuppliersViewModel : ViewModelBase
     private readonly IGoldSupplierService _supplierService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
+    private readonly INavigationService _navigationService;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
 
@@ -41,17 +43,23 @@ public partial class GoldSuppliersViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GoldSupplierListItem? _supplierToDelete;
+    [ObservableProperty] private bool _isCardView;
 
     public ObservableCollection<GoldSupplierListItem> Suppliers { get; } = [];
 
     public GoldSuppliersViewModel(
         IGoldSupplierService supplierService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences,
+        INavigationService navigationService)
     {
         _supplierService = supplierService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        _navigationService = navigationService;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldSuppliers);
         PageTitle = "الموردون";
     }
 
@@ -339,4 +347,15 @@ public partial class GoldSuppliersViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private void OpenSupplierStatement(GoldSupplierListItem? supplier)
+    {
+        if (supplier is null) return;
+        GoldNavigationContext.PendingSupplierId = supplier.Id;
+        _navigationService.NavigateTo<GoldSupplierStatementViewModel>();
+    }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldSuppliers, value);
 }

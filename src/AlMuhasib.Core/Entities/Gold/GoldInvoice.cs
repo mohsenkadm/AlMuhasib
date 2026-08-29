@@ -17,7 +17,7 @@ public class GoldInvoice : BaseEntity
     public GoldWarehouse? Warehouse { get; set; }
     public bool IsExchange { get; set; }
     public decimal ExchangeCashDifference { get; set; }
-    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.IQD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
     public decimal TotalGoldValue { get; set; }

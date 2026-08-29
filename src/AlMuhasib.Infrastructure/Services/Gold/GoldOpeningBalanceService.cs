@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities.Gold;
+using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.Infrastructure.Data.Gold;
@@ -33,16 +34,20 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
                 context, request.WarehouseId, cancellationToken);
 
             var balance = await context.GoldStockBalances
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(
                     s => s.WarehouseId == warehouseId && s.KaratValue == request.KaratValue,
                     cancellationToken);
+
+            if (balance is { IsDeleted: true })
+                balance.RestoreFromSoftDelete("System");
 
             var current = balance?.GramsOnHand ?? 0m;
             var delta = request.GramsOnHand - current;
 
             if (delta != 0 || balance is null)
             {
-                await GoldInventoryService.AdjustStockInternalAsync(
+                balance = await GoldInventoryService.AdjustStockInternalAsync(
                     context,
                     request.KaratValue,
                     delta == 0 && balance is null ? request.GramsOnHand : delta,
@@ -50,9 +55,6 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
                     warehouseId,
                     cancellationToken);
 
-                // Ensure absolute target after adjust (guards rounding / first create)
-                balance = await context.GoldStockBalances
-                    .FirstAsync(s => s.WarehouseId == warehouseId && s.KaratValue == request.KaratValue, cancellationToken);
                 balance.GramsOnHand = GoldCurrencyHelper.Round(request.GramsOnHand, 4);
                 if (request.CostPerGram is > 0)
                     balance.AverageCostPerGram = request.CostPerGram.Value;
@@ -61,8 +63,13 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
             await context.SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
 
-            return await context.GoldStockBalances.AsNoTracking()
-                .FirstAsync(s => s.WarehouseId == warehouseId && s.KaratValue == request.KaratValue, cancellationToken);
+            return balance
+                ?? await context.GoldStockBalances.AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        s => s.WarehouseId == warehouseId && s.KaratValue == request.KaratValue,
+                        cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"تعذر حفظ رصيد الافتتاح للعيار {request.KaratValue} في المخزن #{warehouseId}");
         }
         catch
         {
@@ -89,6 +96,7 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
         customer.GoldCreditGrams = GoldCurrencyHelper.Round(request.GoldCreditGrams, 3);
         AppendOpeningNote(customer, request.Notes);
 
+        await SyncCustomerOpeningVouchersAsync(context, customer.Id, customer.CreditBalanceIqd, customer.CreditBalanceUsd, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return customer;
     }
@@ -110,6 +118,7 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
         customer.GoldCreditGrams = 0;
         AppendOpeningNote(customer, string.IsNullOrWhiteSpace(notes) ? "تم تصفير الرصيد الافتتاحي" : notes);
 
+        await RemoveOpeningVouchersAsync(context, customerId: customerId, supplierId: null, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
     }
 
@@ -130,6 +139,7 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
         supplier.CreditBalanceUsd = GoldCurrencyHelper.Round(request.CreditBalanceUsd);
         AppendOpeningNote(supplier, request.Notes);
 
+        await SyncSupplierOpeningVouchersAsync(context, supplier.Id, supplier.CreditBalanceIqd, supplier.CreditBalanceUsd, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return supplier;
     }
@@ -150,7 +160,108 @@ public sealed class GoldOpeningBalanceService : IGoldOpeningBalanceService
         supplier.CreditBalanceUsd = 0;
         AppendOpeningNote(supplier, string.IsNullOrWhiteSpace(notes) ? "تم تصفير الرصيد الافتتاحي" : notes);
 
+        await RemoveOpeningVouchersAsync(context, customerId: null, supplierId: supplierId, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SyncCustomerOpeningVouchersAsync(
+        GoldDbContext context,
+        int customerId,
+        decimal iqd,
+        decimal usd,
+        CancellationToken cancellationToken)
+    {
+        await UpsertOpeningVoucherAsync(
+            context, customerId, null, GoldVoucherType.Receipt, GoldCurrency.IQD, iqd, cancellationToken);
+        await UpsertOpeningVoucherAsync(
+            context, customerId, null, GoldVoucherType.Receipt, GoldCurrency.USD, usd, cancellationToken);
+    }
+
+    private static async Task SyncSupplierOpeningVouchersAsync(
+        GoldDbContext context,
+        int supplierId,
+        decimal iqd,
+        decimal usd,
+        CancellationToken cancellationToken)
+    {
+        await UpsertOpeningVoucherAsync(
+            context, null, supplierId, GoldVoucherType.Payment, GoldCurrency.IQD, iqd, cancellationToken);
+        await UpsertOpeningVoucherAsync(
+            context, null, supplierId, GoldVoucherType.Payment, GoldCurrency.USD, usd, cancellationToken);
+    }
+
+    private static async Task UpsertOpeningVoucherAsync(
+        GoldDbContext context,
+        int? customerId,
+        int? supplierId,
+        GoldVoucherType voucherType,
+        GoldCurrency currency,
+        decimal amount,
+        CancellationToken cancellationToken)
+    {
+        var existing = await context.GoldVouchers
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(v =>
+                v.IsOpeningBalance &&
+                !v.IsDeleted &&
+                v.CustomerId == customerId &&
+                v.SupplierId == supplierId &&
+                v.Currency == currency,
+                cancellationToken);
+
+        if (amount <= 0)
+        {
+            if (existing is not null && !existing.IsDeleted)
+                existing.MarkSoftDeleted("System");
+            return;
+        }
+
+        if (existing is { IsDeleted: true })
+            existing.RestoreFromSoftDelete("System");
+
+        if (existing is null)
+        {
+            var partyKey = customerId ?? supplierId ?? 0;
+            var partyPrefix = customerId.HasValue ? "C" : "S";
+            existing = new GoldVoucher
+            {
+                VoucherNumber = $"OB-{partyPrefix}{partyKey}-{currency}",
+                VoucherDate = DateTime.Today,
+                VoucherType = voucherType,
+                Currency = currency,
+                CustomerId = customerId,
+                SupplierId = supplierId,
+                IsOpeningBalance = true,
+                AffectsCashBox = false,
+                CashBoxId = null,
+                Notes = "رصيد افتتاحي — سند توثيقي"
+            };
+            await context.GoldVouchers.AddAsync(existing, cancellationToken);
+        }
+
+        existing.Amount = GoldCurrencyHelper.Round(amount);
+        existing.VoucherDate = DateTime.Today;
+        existing.VoucherType = voucherType;
+        existing.Notes = "رصيد افتتاحي — سند توثيقي";
+    }
+
+    private static async Task RemoveOpeningVouchersAsync(
+        GoldDbContext context,
+        int? customerId,
+        int? supplierId,
+        CancellationToken cancellationToken)
+    {
+        var vouchers = await context.GoldVouchers
+            .IgnoreQueryFilters()
+            .Where(v =>
+                v.IsOpeningBalance &&
+                !v.IsDeleted &&
+                v.CustomerId == customerId &&
+                v.SupplierId == supplierId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var voucher in vouchers)
+            voucher.MarkSoftDeleted("System");
     }
 
     private static void AppendOpeningNote(GoldCustomer customer, string? notes)

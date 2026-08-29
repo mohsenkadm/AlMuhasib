@@ -150,7 +150,10 @@ public sealed class GoldCashService : IGoldCashService
         pageSize = Math.Clamp(pageSize, 1, 200);
 
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        var query = context.GoldVouchers.AsNoTracking().AsQueryable();
+        var query = context.GoldVouchers.AsNoTracking()
+            .Include(v => v.Customer)
+            .Include(v => v.Supplier)
+            .AsQueryable();
 
         if (type.HasValue)
             query = query.Where(v => v.VoucherType == type.Value);
@@ -195,18 +198,32 @@ public sealed class GoldCashService : IGoldCashService
         if (string.IsNullOrWhiteSpace(voucher.VoucherNumber))
             voucher.VoucherNumber = await GetNextVoucherNumberInternalAsync(context, voucher.VoucherType, cancellationToken);
 
-        AdjustCashBoxBalance(cashBox, voucher.VoucherType == GoldVoucherType.Receipt ? voucher.Amount : -voucher.Amount);
+        if (voucher.AffectsCashBox)
+        {
+            AdjustCashBoxBalance(cashBox,
+                voucher.VoucherType == GoldVoucherType.Receipt ? voucher.Amount : -voucher.Amount);
+        }
 
-        if (voucher.CustomerId.HasValue)
+        if (!voucher.IsOpeningBalance && voucher.CustomerId.HasValue)
         {
             var customer = await context.GoldCustomers.FirstOrDefaultAsync(c => c.Id == voucher.CustomerId.Value, cancellationToken)
                 ?? throw new InvalidOperationException("الزبون غير موجود");
 
-            // Receipt from customer reduces credit; payment to customer increases credit.
             var creditDelta = voucher.VoucherType == GoldVoucherType.Receipt
                 ? -voucher.Amount
                 : voucher.Amount;
             GoldCustomerService.AdjustCredit(customer, voucher.Currency, creditDelta);
+        }
+
+        if (!voucher.IsOpeningBalance && voucher.SupplierId.HasValue)
+        {
+            var supplier = await context.GoldSuppliers.FirstOrDefaultAsync(s => s.Id == voucher.SupplierId.Value, cancellationToken)
+                ?? throw new InvalidOperationException("المورد غير موجود");
+
+            var creditDelta = voucher.VoucherType == GoldVoucherType.Payment
+                ? -voucher.Amount
+                : voucher.Amount;
+            GoldSupplierService.AdjustCredit(supplier, voucher.Currency, creditDelta);
         }
 
         await context.GoldVouchers.AddAsync(voucher, cancellationToken);
@@ -222,48 +239,8 @@ public sealed class GoldCashService : IGoldCashService
 
     internal static async Task EnsureDefaultCashBoxesAsync(GoldDbContext context, CancellationToken cancellationToken)
     {
-        var boxes = await context.GoldCashBoxes.ToListAsync(cancellationToken);
-        var changed = false;
-
-        if (!boxes.Any(b => b.Currency == GoldCurrency.IQD && b.IsActive))
-        {
-            await context.GoldCashBoxes.AddAsync(new GoldCashBox
-            {
-                Name = "صندوق الدينار",
-                Currency = GoldCurrency.IQD,
-                IsDefault = true,
-                IsActive = true,
-                Balance = 0
-            }, cancellationToken);
-            changed = true;
-        }
-        else if (!boxes.Any(b => b.Currency == GoldCurrency.IQD && b.IsDefault))
-        {
-            var iqd = boxes.First(b => b.Currency == GoldCurrency.IQD && b.IsActive);
-            iqd.IsDefault = true;
-            changed = true;
-        }
-
-        if (!boxes.Any(b => b.Currency == GoldCurrency.USD && b.IsActive))
-        {
-            await context.GoldCashBoxes.AddAsync(new GoldCashBox
-            {
-                Name = "صندوق الدولار",
-                Currency = GoldCurrency.USD,
-                IsDefault = true,
-                IsActive = true,
-                Balance = 0
-            }, cancellationToken);
-            changed = true;
-        }
-        else if (!boxes.Any(b => b.Currency == GoldCurrency.USD && b.IsDefault))
-        {
-            var usd = boxes.First(b => b.Currency == GoldCurrency.USD && b.IsActive);
-            usd.IsDefault = true;
-            changed = true;
-        }
-
-        if (changed)
+        await GoldSettingsService.EnsureDefaultCashBoxesInternalAsync(context, cancellationToken);
+        if (context.ChangeTracker.HasChanges())
             await context.SaveChangesAsync(cancellationToken);
     }
 

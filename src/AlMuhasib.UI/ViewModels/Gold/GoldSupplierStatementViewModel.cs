@@ -49,6 +49,42 @@ public partial class GoldSupplierStatementViewModel : ViewModelBase
     {
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.SupplierStatement);
         await LoadSuppliersAsync();
+        await SelectPendingSupplierAsync();
+    }
+
+    private async Task SelectPendingSupplierAsync()
+    {
+        var pendingId = GoldNavigationContext.TakePendingSupplierId();
+        if (pendingId is null)
+            return;
+
+        SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == pendingId.Value);
+        if (SelectedSupplier is not null)
+            return;
+
+        try
+        {
+            var entity = await _supplierService.GetByIdAsync(pendingId.Value);
+            if (entity is null)
+                return;
+
+            var item = new GoldSupplierListItem
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Phone = entity.Phone,
+                Address = entity.Address,
+                CreditBalanceIqd = entity.CreditBalanceIqd,
+                CreditBalanceUsd = entity.CreditBalanceUsd,
+                IsActive = entity.IsActive
+            };
+            Suppliers.Insert(0, item);
+            SelectedSupplier = item;
+        }
+        catch
+        {
+            // Ignore pre-selection failures; user can pick manually.
+        }
     }
 
     [RelayCommand]

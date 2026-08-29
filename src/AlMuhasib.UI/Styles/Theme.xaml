@@ -46,6 +46,18 @@
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
     <SolidColorBrush x:Key="HintForegroundBrush" Color="#9E9E9E"/>
     <SolidColorBrush x:Key="CardBorderBrush" Color="#E8EEF5"/>
+    <LinearGradientBrush x:Key="GoldInvoiceTotalsBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFF8E7" Offset="0"/>
+        <GradientStop Color="#F5E6C8" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="GoldInvoiceTotalsTextBrush" Color="#5D4037"/>
+    <SolidColorBrush x:Key="GoldInvoiceTotalsAccentBrush" Color="#8B6914"/>
+    <SolidColorBrush x:Key="GoldInvoiceTotalsMutedBrush" Color="#8D6E63"/>
+    <Style x:Key="GoldInvoiceTotalsPanelStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="20,16"/>
+        <Setter Property="Background" Value="{DynamicResource GoldInvoiceTotalsBackgroundBrush}"/>
+    </Style>
     <SolidColorBrush x:Key="DashboardTasksPanelBrush" Color="#F8FAFC"/>
     <SolidColorBrush x:Key="DashboardTasksPanelBorderBrush" Color="#E2E8F0"/>
     <SolidColorBrush x:Key="DashboardAlertsPanelBrush" Color="#FFFBF0"/>

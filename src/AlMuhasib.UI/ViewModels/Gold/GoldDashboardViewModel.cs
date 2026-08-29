@@ -60,6 +60,16 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [ObservableProperty] private int _dailyTaskCount;
     [ObservableProperty] private int _smartAlertCount;
 
+    [ObservableProperty] private int _todayReturnCount;
+    [ObservableProperty] private decimal _todayReturnIqd;
+    [ObservableProperty] private int _todayExchangeCount;
+    [ObservableProperty] private decimal _todayExchangeCashDiffIqd;
+    [ObservableProperty] private int _supplierCreditCount;
+    [ObservableProperty] private decimal _supplierCreditIqd;
+    [ObservableProperty] private string _todayReturnsDisplay = "—";
+    [ObservableProperty] private string _todayExchangesDisplay = "—";
+    [ObservableProperty] private string _supplierCreditDisplay = "—";
+
     [ObservableProperty] private bool _showQuickSale = true;
     [ObservableProperty] private bool _showQuickPurchase = true;
     [ObservableProperty] private bool _showQuickExchange = true;
@@ -73,6 +83,8 @@ public partial class GoldDashboardViewModel : ViewModelBase
     public ObservableCollection<GoldAlertItem> Alerts { get; } = [];
     public ObservableCollection<DailyTaskItem> DailyTasks { get; } = [];
     public ObservableCollection<GoldInvoiceListItem> RecentInvoices { get; } = [];
+    public ObservableCollection<GoldInvoiceListItem> RecentReturns { get; } = [];
+    public ObservableCollection<GoldInvoiceListItem> RecentExchanges { get; } = [];
     public ObservableCollection<GoldMithqalPriceRow> LatestPrices { get; } = [];
     public ObservableCollection<GoldStockRow> StockByKarat { get; } = [];
     public ObservableCollection<GoldCashBoxSummary> CashBoxes { get; } = [];
@@ -272,6 +284,24 @@ public partial class GoldDashboardViewModel : ViewModelBase
         foreach (var invoice in data.RecentInvoices)
             RecentInvoices.Add(invoice);
 
+        RecentReturns.Clear();
+        foreach (var invoice in data.RecentReturns)
+            RecentReturns.Add(invoice);
+
+        RecentExchanges.Clear();
+        foreach (var invoice in data.RecentExchanges)
+            RecentExchanges.Add(invoice);
+
+        TodayReturnCount = data.TodayReturnCount;
+        TodayReturnIqd = data.TodayReturnIqd;
+        TodayExchangeCount = data.TodayExchangeCount;
+        TodayExchangeCashDiffIqd = data.TodayExchangeCashDiffIqd;
+        SupplierCreditCount = data.SupplierCreditCount;
+        SupplierCreditIqd = data.SupplierCreditIqd;
+        TodayReturnsDisplay = $"{data.TodayReturnCount} مرتجع\n{data.TodayReturnIqd:N0} د.ع";
+        TodayExchangesDisplay = $"{data.TodayExchangeCount} عملية\n{data.TodayExchangeCashDiffIqd:N0} د.ع";
+        SupplierCreditDisplay = $"{data.SupplierCreditCount} مورد\n{data.SupplierCreditIqd:N0} د.ع";
+
         LatestPrices.Clear();
         foreach (var price in data.LatestPrices)
             LatestPrices.Add(price);
@@ -368,4 +398,12 @@ public partial class GoldDashboardViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenCashBoxesAsync() =>
         await _mainWindow.OpenTabAsync(typeof(GoldCashBoxesViewModel), "القاصات", PackIconKind.SafeSquareOutline);
+
+    [RelayCommand]
+    private async Task OpenExchangeReportAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldExchangeReportViewModel), "تقرير التبديل", PackIconKind.SwapHorizontal);
+
+    [RelayCommand]
+    private async Task OpenSaleReturnsReportAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(GoldSaleReturnsReportViewModel), "تقرير مرتجعات البيع", PackIconKind.BackupRestore);
 }

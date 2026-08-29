@@ -99,9 +99,9 @@ public partial class GoldExpensesViewModel : ViewModelBase
         FormWarehouse = Warehouses.FirstOrDefault(w => w.IsDefault) ?? Warehouses.FirstOrDefault();
     }
 
-    private async Task LoadExpensesAsync()
+    private async Task LoadExpensesAsync(bool force = false)
     {
-        if (IsBusy) return;
+        if (IsBusy && !force) return;
         IsBusy = true;
         try
         {
@@ -252,8 +252,9 @@ public partial class GoldExpensesViewModel : ViewModelBase
             FormNotes = string.Empty;
 
             BeautifulMessageDialog.ShowSuccess("تم إضافة المصروف بنجاح");
+            CurrentPage = 1;
             await LoadLookupsAsync();
-            await LoadExpensesAsync();
+            await LoadExpensesAsync(force: true);
         }
         catch (Exception ex)
         {
@@ -279,8 +280,9 @@ public partial class GoldExpensesViewModel : ViewModelBase
             IsBusy = true;
             await _expenseService.DeleteExpenseAsync(expense.Id, _currentUserService.Username);
             BeautifulMessageDialog.ShowSuccess("تم حذف المصروف");
+            CurrentPage = 1;
             await LoadLookupsAsync();
-            await LoadExpensesAsync();
+            await LoadExpensesAsync(force: true);
         }
         catch (Exception ex)
         {

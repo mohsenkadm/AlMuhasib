@@ -18,6 +18,7 @@ public partial class GoldWarehousesViewModel : ViewModelBase
     private readonly IGoldWarehouseService _warehouseService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
 
@@ -40,17 +41,21 @@ public partial class GoldWarehousesViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GoldWarehouseListItem? _warehouseToDelete;
+    [ObservableProperty] private bool _isCardView;
 
     public ObservableCollection<GoldWarehouseListItem> Warehouses { get; } = [];
 
     public GoldWarehousesViewModel(
         IGoldWarehouseService warehouseService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _warehouseService = warehouseService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldWarehouses);
         PageTitle = "المخازن";
     }
 
@@ -359,4 +364,7 @@ public partial class GoldWarehousesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldWarehouses, value);
 }

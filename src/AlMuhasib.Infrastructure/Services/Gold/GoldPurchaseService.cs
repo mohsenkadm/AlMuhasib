@@ -46,6 +46,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             .AsNoTracking()
             .Include(i => i.Customer)
             .Include(i => i.Supplier)
+            .Include(i => i.Warehouse)
             .Include(i => i.Lines)
             .Include(i => i.Payments)
             .FirstOrDefaultAsync(i => i.Id == id && i.InvoiceType == GoldInvoiceType.Purchase, cancellationToken);

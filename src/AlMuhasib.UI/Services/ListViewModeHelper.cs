@@ -19,6 +19,12 @@ public static class ListViewModeKeys
     public const string HotelRatePlans = "HotelRatePlans";
     public const string HotelHousekeeping = "HotelHousekeeping";
     public const string CarTradeTransactions = "CarTradeTransactions";
+    public const string GoldCustomers = "GoldCustomers";
+    public const string GoldSuppliers = "GoldSuppliers";
+    public const string GoldItems = "GoldItems";
+    public const string GoldCategories = "GoldCategories";
+    public const string GoldWarehouses = "GoldWarehouses";
+    public const string GoldCashBoxes = "GoldCashBoxes";
 }
 
 public static class ListViewModeHelper

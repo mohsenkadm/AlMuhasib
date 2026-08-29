@@ -57,7 +57,7 @@ public partial class GoldSaleInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldPaymentMethod _paymentMethod = GoldPaymentMethod.Cash;
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
-    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
+    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.IQD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private GoldCashBox? _selectedCashBox;

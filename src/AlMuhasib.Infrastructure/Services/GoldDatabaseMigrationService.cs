@@ -59,6 +59,9 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
                 .Select(s => new { s.DefaultMakingChargeMode, s.IsConfigured })
                 .FirstOrDefaultAsync(cancellationToken);
 
+            // UX upgrades: voucher opening-balance columns and other must-feature fields.
+            await ProbeMustFeatureSchemaAsync(db, cancellationToken);
+
             return [];
         }
         catch
@@ -66,6 +69,32 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
             // Model/table mismatch — need EnsureCreated and/or raw SQL upgrades.
             return ["Phase2SchemaUpgrade"];
         }
+    }
+
+    /// <summary>
+    /// Throws if mapped columns from <see cref="ApplyMustFeatureSchemaUpgradesAsync"/> are missing.
+    /// </summary>
+    private static async Task ProbeMustFeatureSchemaAsync(GoldDbContext db, CancellationToken cancellationToken)
+    {
+        _ = await db.GoldCustomers.AsNoTracking()
+            .Select(c => c.GoldCreditGrams)
+            .Take(1)
+            .ToListAsync(cancellationToken);
+
+        _ = await db.GoldVouchers.AsNoTracking()
+            .Select(v => new { v.SupplierId, v.IsOpeningBalance, v.AffectsCashBox })
+            .Take(1)
+            .ToListAsync(cancellationToken);
+
+        _ = await db.GoldInvoiceLines.AsNoTracking()
+            .Select(l => new { l.MakingChargeMode, l.MakingChargeRate })
+            .Take(1)
+            .ToListAsync(cancellationToken);
+
+        _ = await db.GoldInvoices.AsNoTracking()
+            .Select(i => new { i.RelatedInvoiceId, i.SupplierId, i.WarehouseId, i.IsExchange })
+            .Take(1)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> ApplyPendingMigrationsAsync(CancellationToken cancellationToken = default)
@@ -79,11 +108,10 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
         if (created)
             applied.Add("EnsureCreated");
 
-        await ApplyPhase2SchemaUpgradesAsync(db, cancellationToken);
-        applied.Add("Phase2SchemaUpgrade");
-
-        await ApplyMustFeatureSchemaUpgradesAsync(db, cancellationToken);
-        applied.Add("MustFeatureSchemaUpgrade");
+        // Always run idempotent raw-SQL upgrades (existing DBs may skip EnsureCreated).
+        await EnsureSchemaCurrentAsync(db, cancellationToken);
+        if (!applied.Contains("Phase2SchemaUpgrade"))
+            applied.Add("Phase2SchemaUpgrade");
 
         await SeedPhase2DefaultsAsync(db, cancellationToken);
         applied.Add("SeedPhase2Defaults");
@@ -377,6 +405,24 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
                 ALTER TABLE [dbo].[GoldSettings] ADD [IsConfigured] BIT NOT NULL CONSTRAINT DF_GoldSettings_IsConfigured DEFAULT(0);
             """, cancellationToken);
 
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldVouchers', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldVouchers','SupplierId') IS NULL
+                ALTER TABLE [dbo].[GoldVouchers] ADD [SupplierId] INT NULL;
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldVouchers', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldVouchers','IsOpeningBalance') IS NULL
+                ALTER TABLE [dbo].[GoldVouchers] ADD [IsOpeningBalance] BIT NOT NULL CONSTRAINT DF_GoldVouchers_IsOpeningBalance DEFAULT(0);
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.GoldVouchers', N'U') IS NOT NULL
+               AND COL_LENGTH('GoldVouchers','AffectsCashBox') IS NULL
+                ALTER TABLE [dbo].[GoldVouchers] ADD [AffectsCashBox] BIT NOT NULL CONSTRAINT DF_GoldVouchers_AffectsCashBox DEFAULT(1);
+            """, cancellationToken);
+
         // Existing shops that already have operational data should skip the new first-run wizard.
         await TryExecAsync(db, """
             IF OBJECT_ID(N'dbo.GoldSettings', N'U') IS NOT NULL
@@ -459,9 +505,10 @@ public sealed class GoldDatabaseMigrationService : IDatabaseMigrationService
         {
             await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort upgrade path; EnsureCreated / later seed covers fresh DBs.
+            // Best-effort upgrade path; log so missing columns can be diagnosed.
+            System.Diagnostics.Debug.WriteLine($"[GoldSchemaUpgrade] SQL skipped/failed: {ex.Message}");
         }
     }
 }

@@ -23,6 +23,7 @@ public partial class GoldItemsViewModel : ViewModelBase
     private readonly IGoldCategoryService _categoryService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
 
@@ -48,6 +49,7 @@ public partial class GoldItemsViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GoldItem? _itemToDelete;
+    [ObservableProperty] private bool _isCardView;
 
     public ObservableCollection<GoldItem> Items { get; } = [];
     public ObservableCollection<GoldKarat> Karats { get; } = [];
@@ -61,7 +63,8 @@ public partial class GoldItemsViewModel : ViewModelBase
         IGoldItemsExcelService excelService,
         IGoldCategoryService categoryService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _inventoryService = inventoryService;
         _pricingService = pricingService;
@@ -71,6 +74,8 @@ public partial class GoldItemsViewModel : ViewModelBase
         _categoryService = categoryService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldItems);
         PageTitle = "أصناف الذهب";
     }
 
@@ -438,4 +443,7 @@ public partial class GoldItemsViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"تعذر طباعة الملصقات:\n{ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldItems, value);
 }

@@ -78,6 +78,7 @@ public sealed class ThemeService
             SetBrush(res, "PrimaryHueDarkForegroundBrush", isDark ? "#212121" : "#FFFFFF");
             SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#D4AF37" : "#C9A227");
             SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#FFF8E1" : "#6D4C00");
+            ApplyGoldInvoiceTotalsBrushes(res, isDark);
         }
         else
         {
@@ -137,6 +138,31 @@ public sealed class ThemeService
     private static void SetBrush(ResourceDictionary res, string key, string colorHex)
     {
         res[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)!);
+    }
+
+    private static void ApplyGoldInvoiceTotalsBrushes(ResourceDictionary res, bool isDark)
+    {
+        res["GoldInvoiceTotalsBackgroundBrush"] = CreateGoldInvoiceTotalsBrush(isDark);
+        SetBrush(res, "GoldInvoiceTotalsTextBrush", isDark ? "#ECEFF1" : "#5D4037");
+        SetBrush(res, "GoldInvoiceTotalsAccentBrush", isDark ? "#D4AF37" : "#8B6914");
+        SetBrush(res, "GoldInvoiceTotalsMutedBrush", isDark ? "#BCAAA4" : "#8D6E63");
+    }
+
+    private static LinearGradientBrush CreateGoldInvoiceTotalsBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#2A2418")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A160E")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FFF8E7")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F5E6C8")!, 1));
+        }
+
+        return brush;
     }
 
     private static LinearGradientBrush CreateChromeTabStripBrush(bool isDark)

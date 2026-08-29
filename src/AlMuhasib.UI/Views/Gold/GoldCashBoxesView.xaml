@@ -74,10 +74,10 @@
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                              ExportCommand="{Binding ExportToExcelCommand}"
                                              PrintCommand="{Binding PrintTableCommand}"
-                                             ShowCardToggle="False"/>
+                                             ShowCardToggle="True"/>
 
+                <Grid Grid.Row="1">
                 <DataGrid x:Name="GoldCashBoxesGrid"
-                          Grid.Row="1"
                           ItemsSource="{Binding CashBoxes}"
                           SelectedItem="{Binding SelectedCashBox}"
                           AutoGenerateColumns="False"
@@ -86,6 +86,7 @@
                           SelectionMode="Single"
                           HeadersVisibility="Column"
                           Style="{StaticResource ModernDataGrid}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -126,6 +127,19 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding CashBoxes}"
+                                      ItemTemplate="{StaticResource GoldCashBoxCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
             </Grid>
         </md:Card>
 

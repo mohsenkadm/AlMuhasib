@@ -19,6 +19,7 @@ public partial class GoldCashBoxesViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
     private List<GoldCashBox> _allBoxes = [];
     private int? _editingId;
 
@@ -40,19 +41,23 @@ public partial class GoldCashBoxesViewModel : ViewModelBase
     [ObservableProperty] private bool _editIsActive = true;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private string _message = string.Empty;
+    [ObservableProperty] private bool _isCardView;
 
     public GoldCashBoxesViewModel(
         IGoldCashService cashService,
         IGoldSettingsService settingsService,
         IExportService exportService,
         IToastNotificationService toast,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _cashService = cashService;
         _settingsService = settingsService;
         _exportService = exportService;
         _toast = toast;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldCashBoxes);
         PageTitle = "القاصات";
     }
 
@@ -277,4 +282,7 @@ public partial class GoldCashBoxesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldCashBoxes, value);
 }

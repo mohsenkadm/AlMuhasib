@@ -50,7 +50,7 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
     [ObservableProperty] private GoldInvoiceListItem? _selectedOriginalSale;
-    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
+    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.IQD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private GoldCashBox? _selectedCashBox;
@@ -101,6 +101,32 @@ public partial class GoldSaleReturnViewModel : ViewModelBase
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.SaleReturn);
         await LoadLookupsAsync();
         AddLine();
+    }
+
+    public async Task PrepareFromSaleIdAsync(int saleId)
+    {
+        var sale = await _saleService.GetByIdAsync(saleId);
+        if (sale is null)
+        {
+            _toast.ShowWarning("لم يتم العثور على فاتورة البيع");
+            return;
+        }
+
+        if (OriginalSales.All(s => s.Id != saleId))
+        {
+            OriginalSales.Insert(0, new GoldInvoiceListItem
+            {
+                Id = sale.Id,
+                InvoiceNumber = sale.InvoiceNumber,
+                InvoiceDate = sale.InvoiceDate,
+                CustomerName = sale.Customer?.Name,
+                PricingCurrency = sale.PricingCurrency,
+                PaymentCurrency = sale.PaymentCurrency,
+                Status = sale.Status
+            });
+        }
+
+        SelectedOriginalSale = OriginalSales.FirstOrDefault(s => s.Id == saleId);
     }
 
     public override bool HasUnsavedChanges => Lines.Any(l => l.WeightGrams > 0);

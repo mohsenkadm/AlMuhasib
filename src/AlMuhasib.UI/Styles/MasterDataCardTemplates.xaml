@@ -6,6 +6,8 @@
                     xmlns:hotelModels="clr-namespace:AlMuhasib.Core.Models.Hotel;assembly=AlMuhasib.Core"
                     xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
                     xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
+                    xmlns:gold="clr-namespace:AlMuhasib.Core.Entities.Gold;assembly=AlMuhasib.Core"
+                    xmlns:goldModels="clr-namespace:AlMuhasib.Core.Models.Gold;assembly=AlMuhasib.Core"
                     xmlns:controls="clr-namespace:AlMuhasib.UI.Controls">
 
     <Style x:Key="MasterDataEntityCardBorder" TargetType="Border">
@@ -541,5 +543,248 @@
     <ItemsPanelTemplate x:Key="MasterDataCardWrapPanel">
         <WrapPanel Orientation="Horizontal"/>
     </ItemsPanelTemplate>
+
+    <!-- ═══ Gold master data cards (gold accent #B8860B / #FFF8E1) ═══ -->
+    <Style x:Key="GoldMasterDataEntityCardBorder" TargetType="Border" BasedOn="{StaticResource MasterDataEntityCardBorder}">
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="#B8860B"/>
+                <Setter Property="Background" Value="#FFF8E1"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="GoldCustomerCardTemplate" DataType="{x:Type goldModels:GoldCustomerListItem}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Account" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهاتف: "/><Run Text="{Binding Phone, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="آجل د.ع: "/><Run Text="{Binding CreditBalanceIqd, StringFormat=N0}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="ذهب آجل (غ): "/><Run Text="{Binding GoldCreditGrams, StringFormat=N3}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenCustomerStatementCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}" ToolTip="كشف حساب">
+                        <md:PackIcon Kind="FileDocumentOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GoldSupplierCardTemplate" DataType="{x:Type goldModels:GoldSupplierListItem}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="TruckDelivery" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الهاتف: "/><Run Text="{Binding Phone, TargetNullValue=—}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="آجل د.ع: "/><Run Text="{Binding CreditBalanceIqd, StringFormat=N0}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="فواتير مفتوحة: "/><Run Text="{Binding OpenInvoiceCount}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenSupplierStatementCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}" ToolTip="كشف حساب">
+                        <md:PackIcon Kind="FileDocumentOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GoldItemCardTemplate" DataType="{x:Type gold:GoldItem}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Gold" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="عيار "/><Run Text="{Binding KaratValue}"/><Run Text=" — "/><Run Text="{Binding WeightGrams, StringFormat=N2}"/><Run Text=" غ"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="باركود: "/><Run Text="{Binding Barcode, TargetNullValue=—}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GoldCategoryCardTemplate" DataType="{x:Type gold:GoldCategory}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="ShapeOutline" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GoldWarehouseCardTemplate" DataType="{x:Type goldModels:GoldWarehouseListItem}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="Warehouse" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الرصيد (غ): "/><Run Text="{Binding TotalGrams, StringFormat=N2}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="افتراضي: "/><Run Text="{Binding IsDefault}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GoldCashBoxCardTemplate" DataType="{x:Type gold:GoldCashBox}">
+        <Border Style="{StaticResource GoldMasterDataEntityCardBorder}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                    <md:PackIcon Kind="CashRegister" Width="20" Height="20" Foreground="#B8860B"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}" ToolTip="{Binding Name}"/>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="الرصيد: "/><Run Text="{Binding Balance, StringFormat=N0}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MasterDataCardMeta}">
+                        <Run Text="العملة: "/><Run Text="{Binding Currency}"/>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
+                    <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
 
 </ResourceDictionary>

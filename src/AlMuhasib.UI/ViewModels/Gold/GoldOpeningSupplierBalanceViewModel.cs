@@ -68,9 +68,9 @@ public partial class GoldOpeningSupplierBalanceViewModel : ViewModelBase
         await LoadItemsAsync();
     }
 
-    private async Task LoadItemsAsync()
+    private async Task LoadItemsAsync(bool force = false)
     {
-        if (IsBusy) return;
+        if (IsBusy && !force) return;
         IsBusy = true;
         try
         {
@@ -287,7 +287,8 @@ public partial class GoldOpeningSupplierBalanceViewModel : ViewModelBase
 
             IsDialogOpen = false;
             BeautifulMessageDialog.ShowSuccess(IsEditMode ? "تم تعديل الرصيد الافتتاحي" : "تم تعيين الرصيد الافتتاحي");
-            await LoadItemsAsync();
+            CurrentPage = 1;
+            await LoadItemsAsync(force: true);
         }
         catch (Exception ex)
         {
@@ -324,6 +325,7 @@ public partial class GoldOpeningSupplierBalanceViewModel : ViewModelBase
             IsDeleteDialogOpen = false;
             ItemToClear = null;
             BeautifulMessageDialog.ShowSuccess("تم تصفير الرصيد الافتتاحي");
+            CurrentPage = 1;
             await LoadItemsAsync();
         }
         catch (Exception ex)

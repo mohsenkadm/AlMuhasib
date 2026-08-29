@@ -52,8 +52,9 @@
                     </Grid>
                 </Border>
 
-                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="8" Background="#FFF8E1"
-                        BorderBrush="#E8D5A3" BorderThickness="1">
+                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="8"
+                        Background="{DynamicResource PrimaryHueLightBrush}"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
                             <Ellipse.Style>
@@ -68,8 +69,8 @@
                             </Ellipse.Style>
                         </Ellipse>
                         <materialDesign:PackIcon Kind="ScaleBalance" Width="18" Height="18"
-                                                 Foreground="#8B6914" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock FontSize="13" Foreground="#8B6914" VerticalAlignment="Center">
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center">
                             <Run Text="الميزان:"/>
                             <Run Text="{Binding ScaleStatusText, Mode=OneWay}" FontWeight="SemiBold"/>
                         </TextBlock>
@@ -378,13 +379,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="1" CornerRadius="14" Padding="20,16">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#FFF8E7" Offset="0"/>
-                                <GradientStop Color="#F5E6C8" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <Border Grid.Column="1" Style="{StaticResource GoldInvoiceTotalsPanelStyle}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
                                 <TextBlock Text="إجمالي الوارد" Foreground="#2E7D32"/>
@@ -406,7 +401,10 @@
                                      materialDesign:HintAssist.Hint="فرق النقدية (+ زبون يدفع / − المحل يدفع)"
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"
-                                     Margin="0,0,0,8"/>
+                                     Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding CashDifferenceHint}" FontSize="11" Foreground="#EF6C00"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Visibility="{Binding HasManualCashDifference, Converter={StaticResource BoolToVis}}"/>
                             <TextBox Text="{Binding PaidAmount, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="المبلغ المدفوع"
                                      materialDesign:HintAssist.IsFloating="True"

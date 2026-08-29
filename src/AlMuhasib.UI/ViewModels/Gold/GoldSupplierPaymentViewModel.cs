@@ -264,4 +264,28 @@ public partial class GoldSupplierPaymentViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private async Task OpenInvoiceDetail(GoldInvoiceListItem? invoice)
+    {
+        invoice ??= SelectedInvoice;
+        if (invoice is null)
+            return;
+
+        try
+        {
+            var full = await _purchaseService.GetByIdAsync(invoice.Id);
+            if (full is null)
+            {
+                _toast.ShowError("لم يتم العثور على الفاتورة.");
+                return;
+            }
+
+            GoldInvoiceDetailDialog.Show(full);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+        }
+    }
 }

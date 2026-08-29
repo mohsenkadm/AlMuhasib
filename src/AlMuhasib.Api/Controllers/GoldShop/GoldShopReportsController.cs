@@ -175,6 +175,104 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
             TotalRemaining = rows.Sum(r => r.Invoice.RemainingAmount)
         });
     }
+
+    [HttpGet("purchases")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldInvoiceListDto>>> GetPurchasesReport(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var rows = await FilterInvoicesAsync(GoldInvoiceType.Purchase, from, to, ct);
+        return Ok(new GoldPagedReportDto<GoldInvoiceListDto>
+        {
+            TotalCount = rows.Count,
+            Items = rows.Select(GoldShopInvoiceMapper.ToListItem).ToList()
+        });
+    }
+
+    [HttpGet("sale-returns")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldSaleReturnRowDto>>> GetSaleReturnsReport(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var invoices = await FilterInvoicesAsync(GoldInvoiceType.SaleReturn, from, to, ct);
+        var relatedIds = invoices.Where(i => i.RelatedInvoiceId.HasValue).Select(i => i.RelatedInvoiceId!.Value).Distinct().ToList();
+        var relatedMap = relatedIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await Db.GoldInvoices.AsNoTracking()
+                .Where(i => i.TenantId == TenantId && relatedIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id, i => i.InvoiceNumber, ct);
+
+        var items = invoices.Select(i => new GoldSaleReturnRowDto
+        {
+            Invoice = GoldShopInvoiceMapper.ToListItem(i),
+            RelatedInvoiceNumber = i.RelatedInvoiceId.HasValue && relatedMap.TryGetValue(i.RelatedInvoiceId.Value, out var num) ? num : null
+        }).ToList();
+
+        return Ok(new GoldPagedReportDto<GoldSaleReturnRowDto> { TotalCount = items.Count, Items = items });
+    }
+
+    [HttpGet("exchanges")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldExchangeRowDto>>> GetExchangesReport(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var query = Db.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Lines)
+            .Where(i => i.TenantId == TenantId && i.InvoiceType == GoldInvoiceType.Exchange && i.Status != GoldInvoiceStatus.Cancelled);
+        if (from.HasValue) query = query.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue) query = query.Where(i => i.InvoiceDate <= to.Value.Date);
+
+        var invoices = await query.OrderByDescending(i => i.InvoiceDate).ToListAsync(ct);
+        var items = invoices.Select(i =>
+        {
+            var inLines = i.Lines.Where(l => l.LineDirection == GoldInvoiceLineDirection.In).ToList();
+            var outLines = i.Lines.Where(l => l.LineDirection == GoldInvoiceLineDirection.Out).ToList();
+            return new GoldExchangeRowDto
+            {
+                Invoice = GoldShopInvoiceMapper.ToListItem(i),
+                InWeightGrams = inLines.Sum(l => l.WeightGrams),
+                OutWeightGrams = outLines.Sum(l => l.WeightGrams),
+                InTotalValue = inLines.Sum(l => l.LineTotal),
+                OutTotalValue = outLines.Sum(l => l.LineTotal),
+                ExchangeCashDifference = i.ExchangeCashDifference
+            };
+        }).ToList();
+
+        return Ok(new GoldPagedReportDto<GoldExchangeRowDto> { TotalCount = items.Count, Items = items });
+    }
+
+    [HttpGet("deleted-invoices")]
+    public async Task<ActionResult<GoldPagedReportDto<GoldInvoiceListDto>>> GetDeletedInvoicesReport(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct = default)
+    {
+        if (await EnsureGoldShopTenantAsync(ct) is { } err) return err;
+        var query = Db.GoldInvoices.IgnoreQueryFilters().AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.TenantId == TenantId && i.IsDeleted);
+        if (from.HasValue)
+            query = query.Where(i => (i.DeletedAt ?? i.UpdatedAt ?? i.CreatedAt) >= from.Value.Date);
+        if (to.HasValue)
+            query = query.Where(i => (i.DeletedAt ?? i.UpdatedAt ?? i.CreatedAt) <= to.Value.Date);
+
+        var items = await query.OrderByDescending(i => i.DeletedAt).ToListAsync(ct);
+        return Ok(new GoldPagedReportDto<GoldInvoiceListDto>
+        {
+            TotalCount = items.Count,
+            Items = items.Select(GoldShopInvoiceMapper.ToListItem).ToList()
+        });
+    }
+
+    private async Task<List<Cloud.Core.Entities.CloudGoldInvoice>> FilterInvoicesAsync(
+        GoldInvoiceType type, DateTime? from, DateTime? to, CancellationToken ct)
+    {
+        var query = Db.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.TenantId == TenantId && i.InvoiceType == type && i.Status != GoldInvoiceStatus.Cancelled);
+        if (from.HasValue) query = query.Where(i => i.InvoiceDate >= from.Value.Date);
+        if (to.HasValue) query = query.Where(i => i.InvoiceDate <= to.Value.Date);
+        return await query.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).ToListAsync(ct);
+    }
 }
 
 public sealed class GoldStockReportDto
@@ -230,4 +328,26 @@ public sealed class GoldAgingReportDto
     public decimal Bucket61To90 { get; set; }
     public decimal Bucket90Plus { get; set; }
     public decimal TotalRemaining { get; set; }
+}
+
+public sealed class GoldPagedReportDto<T>
+{
+    public int TotalCount { get; set; }
+    public List<T> Items { get; set; } = [];
+}
+
+public sealed class GoldSaleReturnRowDto
+{
+    public GoldInvoiceListDto Invoice { get; set; } = new();
+    public string? RelatedInvoiceNumber { get; set; }
+}
+
+public sealed class GoldExchangeRowDto
+{
+    public GoldInvoiceListDto Invoice { get; set; } = new();
+    public decimal InWeightGrams { get; set; }
+    public decimal OutWeightGrams { get; set; }
+    public decimal InTotalValue { get; set; }
+    public decimal OutTotalValue { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
 }

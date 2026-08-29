@@ -18,6 +18,8 @@ public partial class GoldCustomersViewModel : ViewModelBase
     private readonly IGoldCustomerService _customerService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
+    private readonly INavigationService _navigationService;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingId;
 
@@ -41,17 +43,23 @@ public partial class GoldCustomersViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GoldCustomerListItem? _customerToDelete;
+    [ObservableProperty] private bool _isCardView;
 
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
 
     public GoldCustomersViewModel(
         IGoldCustomerService customerService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences,
+        INavigationService navigationService)
     {
         _customerService = customerService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        _navigationService = navigationService;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldCustomers);
         PageTitle = "الزبائن";
     }
 
@@ -338,4 +346,15 @@ public partial class GoldCustomersViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private void OpenCustomerStatement(GoldCustomerListItem? customer)
+    {
+        if (customer is null) return;
+        GoldNavigationContext.PendingCustomerId = customer.Id;
+        _navigationService.NavigateTo<GoldCustomerStatementViewModel>();
+    }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldCustomers, value);
 }

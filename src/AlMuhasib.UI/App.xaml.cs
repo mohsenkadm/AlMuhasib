@@ -413,6 +413,8 @@ public partial class App : Application
         services.AddTransient<GoldCashBoxMovementReportViewModel>();
         services.AddTransient<GoldUserPerformanceReportViewModel>();
         services.AddTransient<GoldDeletedInvoicesReportViewModel>();
+        services.AddTransient<GoldExchangeReportViewModel>();
+        services.AddTransient<GoldSaleReturnsReportViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 
@@ -632,6 +634,14 @@ public partial class App : Application
 
                     var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
                     await authService.EnsureAdminAccountAsync();
+
+                    if (_systemProfile.ActiveSystem == ApplicationSystemType.GoldShop)
+                    {
+                        splash.SetStatus("جاري تحديث قاعدة بيانات الذهب...");
+                        splash.SetProgress(0.58);
+                        var goldSettings = scope.ServiceProvider.GetRequiredService<IGoldSettingsService>();
+                        await goldSettings.EnsureDefaultsAsync();
+                    }
                 }
                 else
                 {

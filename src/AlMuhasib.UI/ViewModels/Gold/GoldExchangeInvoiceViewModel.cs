@@ -55,7 +55,7 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     [ObservableProperty] private GoldPaymentMethod _paymentMethod = GoldPaymentMethod.Cash;
     [ObservableProperty] private GoldCustomerListItem? _selectedCustomer;
     [ObservableProperty] private GoldWarehouse? _selectedWarehouse;
-    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.USD;
+    [ObservableProperty] private GoldCurrency _pricingCurrency = GoldCurrency.IQD;
     [ObservableProperty] private GoldCurrency _paymentCurrency = GoldCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private GoldCashBox? _selectedCashBox;
@@ -73,6 +73,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
     [ObservableProperty] private decimal _inTotalValue;
     [ObservableProperty] private decimal _outTotalValue;
     [ObservableProperty] private decimal _computedDifference;
+    [ObservableProperty] private bool _hasManualCashDifference;
+    [ObservableProperty] private string _cashDifferenceHint = string.Empty;
     [ObservableProperty] private bool _canPrintInvoice;
 
     public GoldExchangeInvoiceViewModel(
@@ -228,6 +230,21 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         RecalculateTotals();
     }
 
+    partial void OnExchangeCashDifferenceChanged(decimal value)
+    {
+        HasManualCashDifference = Math.Abs(value - ComputedDifference) >= 0.01m && value != 0;
+        UpdateCashDifferenceHint();
+        if (PaymentMethod == GoldPaymentMethod.Cash)
+            SyncPaidAmountFromExchangeDifference();
+    }
+
+    private void UpdateCashDifferenceHint()
+    {
+        CashDifferenceHint = HasManualCashDifference
+            ? $"الفرق المحسوب: {ComputedDifference:N0} | تم تعديل فرق النقدية يدوياً"
+            : string.Empty;
+    }
+
     [RelayCommand]
     private void AddInLine()
     {
@@ -321,16 +338,44 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         InTotalValue = InLines.Sum(l => l.LineTotal);
         OutTotalValue = OutLines.Sum(l => l.LineTotal);
         ComputedDifference = OutTotalValue - InTotalValue;
-        if (ExchangeCashDifference == 0 || Math.Abs(ExchangeCashDifference - ComputedDifference) < 0.01m)
-            ExchangeCashDifference = ComputedDifference;
 
-        if (PaymentMethod == GoldPaymentMethod.Cash && (_autoSyncPaidAmount || PaidAmount <= 0))
+        if (!HasManualCashDifference &&
+            (ExchangeCashDifference == 0 || Math.Abs(ExchangeCashDifference - ComputedDifference) < 0.01m))
         {
-            _suppressPaidAmountChanged = true;
-            PaidAmount = Math.Abs(ExchangeCashDifference);
-            _suppressPaidAmountChanged = false;
-            _autoSyncPaidAmount = true;
+            ExchangeCashDifference = ComputedDifference;
+            HasManualCashDifference = false;
         }
+
+        UpdateCashDifferenceHint();
+        SyncPaidAmountFromExchangeDifference();
+    }
+
+    private void SyncPaidAmountFromExchangeDifference()
+    {
+        if (PaymentMethod != GoldPaymentMethod.Cash || !_autoSyncPaidAmount)
+            return;
+
+        var expected = ConvertAmount(
+            Math.Abs(ExchangeCashDifference),
+            PricingCurrency,
+            PaymentCurrency,
+            FxRate);
+
+        _suppressPaidAmountChanged = true;
+        PaidAmount = expected;
+        _suppressPaidAmountChanged = false;
+    }
+
+    private static decimal ConvertAmount(decimal amount, GoldCurrency from, GoldCurrency to, decimal fxRate)
+    {
+        if (from == to)
+            return amount;
+
+        var fx = fxRate <= 0 ? 1m : fxRate;
+        var converted = from == GoldCurrency.USD ? amount * fx : amount / fx;
+        return to == GoldCurrency.IQD
+            ? Math.Round(converted, 0, MidpointRounding.AwayFromZero)
+            : Math.Round(converted, 2, MidpointRounding.AwayFromZero);
     }
 
     [RelayCommand]
@@ -554,6 +599,8 @@ public partial class GoldExchangeInvoiceViewModel : ViewModelBase
         PaymentMethod = GoldPaymentMethod.Cash;
         SelectedCustomer = null;
         ExchangeCashDifference = 0;
+        HasManualCashDifference = false;
+        CashDifferenceHint = string.Empty;
         _autoSyncPaidAmount = true;
         PaidAmount = 0;
         Notes = string.Empty;

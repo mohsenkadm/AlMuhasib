@@ -6,6 +6,7 @@ using AlMuhasib.Core.Models.Gold;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.ViewModels.Gold;
 
@@ -14,6 +15,7 @@ public partial class GoldSalesReportViewModel : ViewModelBase
     private readonly IGoldReportService _reportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
+    private readonly MainWindowViewModel _mainWindow;
 
     public ObservableCollection<GoldInvoiceListItem> Rows { get; } = [];
 
@@ -35,15 +37,18 @@ public partial class GoldSalesReportViewModel : ViewModelBase
     [ObservableProperty] private decimal _totalSalesUsd;
     [ObservableProperty] private decimal _totalWeightGrams;
     [ObservableProperty] private decimal _totalMakingIqd;
+    [ObservableProperty] private GoldInvoiceListItem? _selectedRow;
 
     public GoldSalesReportViewModel(
         IGoldReportService reportService,
         IToastNotificationService toast,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        MainWindowViewModel mainWindow)
     {
         _reportService = reportService;
         _toast = toast;
         _currentUserService = currentUserService;
+        _mainWindow = mainWindow;
         PageTitle = "تقرير المبيعات";
     }
 
@@ -82,5 +87,20 @@ public partial class GoldSalesReportViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task CreateReturnAsync(GoldInvoiceListItem? row)
+    {
+        row ??= SelectedRow;
+        if (row is null)
+        {
+            _toast.ShowWarning("اختر فاتورة بيع أولاً");
+            return;
+        }
+
+        await _mainWindow.OpenTabAsync(typeof(GoldSaleReturnViewModel), "مرتجع بيع", PackIconKind.BackupRestore);
+        if (_mainWindow.SelectedTab?.ViewModel is GoldSaleReturnViewModel returnVm)
+            await returnVm.PrepareFromSaleIdAsync(row.Id);
     }
 }

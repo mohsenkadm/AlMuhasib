@@ -28,6 +28,15 @@ public class GoldDashboardData
     public List<GoldCashBoxSummary> CashBoxes { get; set; } = [];
     public List<GoldStockRow> StockByKarat { get; set; } = [];
     public List<GoldInvoiceListItem> RecentInvoices { get; set; } = [];
+    public List<GoldInvoiceListItem> RecentReturns { get; set; } = [];
+    public List<GoldInvoiceListItem> RecentExchanges { get; set; } = [];
+    public int TodayReturnCount { get; set; }
+    public decimal TodayReturnIqd { get; set; }
+    public int TodayExchangeCount { get; set; }
+    public decimal TodayExchangeCashDiffIqd { get; set; }
+    public decimal SupplierCreditIqd { get; set; }
+    public decimal SupplierCreditUsd { get; set; }
+    public int SupplierCreditCount { get; set; }
     public List<GoldAlertItem> Alerts { get; set; } = [];
     public List<GoldMithqalPriceRow> LatestPrices { get; set; } = [];
 }
@@ -80,6 +89,60 @@ public class GoldInvoiceListItem
     public string Notes { get; set; } = string.Empty;
 }
 
+public class GoldExchangeReportRow
+{
+    public int Id { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime InvoiceDate { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CreatedBy { get; set; }
+    public GoldPaymentMethod PaymentMethod { get; set; }
+    public GoldInvoiceStatus Status { get; set; }
+    public GoldCurrency PricingCurrency { get; set; }
+    public GoldCurrency PaymentCurrency { get; set; }
+    public decimal InWeightGrams { get; set; }
+    public decimal OutWeightGrams { get; set; }
+    public decimal InTotalValue { get; set; }
+    public decimal OutTotalValue { get; set; }
+    public decimal ExchangeCashDifference { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class GoldExchangeReportSummary
+{
+    public int ExchangeCount { get; set; }
+    public decimal TotalCashDifferenceIqd { get; set; }
+    public decimal TotalInWeightGrams { get; set; }
+    public decimal TotalOutWeightGrams { get; set; }
+}
+
+public class GoldSaleReturnReportRow
+{
+    public int Id { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime InvoiceDate { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CreatedBy { get; set; }
+    public GoldPaymentMethod PaymentMethod { get; set; }
+    public GoldInvoiceStatus Status { get; set; }
+    public decimal TotalWeightGrams { get; set; }
+    public decimal TotalAmountIqd { get; set; }
+    public decimal TotalAmountUsd { get; set; }
+    public int? RelatedInvoiceId { get; set; }
+    public string? RelatedInvoiceNumber { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class GoldSaleReturnReportSummary
+{
+    public int ReturnCount { get; set; }
+    public decimal TotalAmountIqd { get; set; }
+    public decimal TotalAmountUsd { get; set; }
+    public decimal TotalWeightGrams { get; set; }
+}
+
 public class GoldCustomerListItem
 {
     public int Id { get; set; }
@@ -126,7 +189,7 @@ public class GoldSaleRequest
     public int? CustomerId { get; set; }
     public int? SupplierId { get; set; }
     public int? WarehouseId { get; set; }
-    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.IQD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
     public decimal DiscountAmount { get; set; }
@@ -163,7 +226,7 @@ public class GoldPurchaseRequest
     public int? CustomerId { get; set; }
     public int? SupplierId { get; set; }
     public int? WarehouseId { get; set; }
-    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.IQD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
     public decimal DiscountAmount { get; set; }
@@ -212,7 +275,7 @@ public class GoldSaleReturnRequest
     public int? CustomerId { get; set; }
     public int? WarehouseId { get; set; }
     public int? RelatedInvoiceId { get; set; }
-    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.IQD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
     public decimal DiscountAmount { get; set; }
@@ -319,7 +382,7 @@ public class GoldExchangeRequest
     public GoldPaymentMethod PaymentMethod { get; set; } = GoldPaymentMethod.Cash;
     public int? CustomerId { get; set; }
     public int? WarehouseId { get; set; }
-    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.USD;
+    public GoldCurrency PricingCurrency { get; set; } = GoldCurrency.IQD;
     public GoldCurrency PaymentCurrency { get; set; } = GoldCurrency.IQD;
     public decimal FxRate { get; set; }
     /// <summary>Positive = customer pays shop; negative = shop pays customer.</summary>

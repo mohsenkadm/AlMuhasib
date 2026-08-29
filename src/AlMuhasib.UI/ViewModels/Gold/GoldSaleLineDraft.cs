@@ -99,6 +99,16 @@ public sealed record GoldPaymentMethodOption(GoldPaymentMethod Value, string Lab
     public override string ToString() => Label;
 }
 
+public sealed record GoldPaymentMethodFilterOption(GoldPaymentMethod? Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
+public sealed record GoldCurrencyFilterOption(GoldCurrency? Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
 public sealed record GoldStatusFilterOption(GoldInvoiceStatus? Value, string Label)
 {
     public override string ToString() => Label;

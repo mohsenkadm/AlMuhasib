@@ -40,13 +40,19 @@ public sealed class GoldDashboardService : IGoldDashboardService
         var expensesTask = SumTodayExpensesAsync(today, tomorrow, cancellationToken);
         var fxTask = LoadLatestFxAsync(cancellationToken);
         var recentTask = LoadRecentInvoicesAsync(cancellationToken);
+        var todayReturnsTask = SumTodayReturnsAsync(today, tomorrow, cancellationToken);
+        var todayExchangesTask = LoadTodayExchangesAsync(today, tomorrow, cancellationToken);
+        var supplierCreditTask = LoadSupplierCreditAsync(cancellationToken);
+        var recentReturnsTask = LoadRecentByTypeAsync(GoldInvoiceType.SaleReturn, cancellationToken);
+        var recentExchangesTask = LoadRecentByTypeAsync(GoldInvoiceType.Exchange, cancellationToken);
         var sales30Task = LoadSalesLast30DaysAsync(thirtyDaysAgo, tomorrow, cancellationToken);
         var pricesTask = _pricingService.GetLatestPricesAsync(cancellationToken);
         var alertsTask = LoadUnreadAlertsAsync(cancellationToken);
 
         await Task.WhenAll(
             todaySalesTask, todayPurchasesTask, cashTask, stockTask, creditTask,
-            settingsTask, expensesTask, fxTask, recentTask, sales30Task, pricesTask, alertsTask);
+            settingsTask, expensesTask, fxTask, recentTask, sales30Task, pricesTask, alertsTask,
+            todayReturnsTask, todayExchangesTask, supplierCreditTask, recentReturnsTask, recentExchangesTask);
 
         var (todaySalesIqd, todaySalesUsd) = todaySalesTask.Result;
         var (todayPurchasesIqd, todayPurchasesUsd) = todayPurchasesTask.Result;
@@ -57,6 +63,11 @@ public sealed class GoldDashboardService : IGoldDashboardService
         var (todayExpensesIqd, todayExpensesUsd, hasExpenseToday) = expensesTask.Result;
         var latestFx = fxTask.Result;
         var recent = recentTask.Result;
+        var recentReturns = recentReturnsTask.Result;
+        var recentExchanges = recentExchangesTask.Result;
+        var (todayReturnCount, todayReturnIqd) = todayReturnsTask.Result;
+        var (todayExchangeCount, todayExchangeCashDiffIqd) = todayExchangesTask.Result;
+        var (supplierCreditCount, supplierCreditIqd, supplierCreditUsd) = supplierCreditTask.Result;
         var salesLast30Days = sales30Task.Result;
         var latestPrices = pricesTask.Result;
         var alerts = alertsTask.Result;
@@ -94,6 +105,15 @@ public sealed class GoldDashboardService : IGoldDashboardService
             CashBoxes = cashBoxes,
             StockByKarat = stockRows,
             RecentInvoices = recent,
+            RecentReturns = recentReturns,
+            RecentExchanges = recentExchanges,
+            TodayReturnCount = todayReturnCount,
+            TodayReturnIqd = todayReturnIqd,
+            TodayExchangeCount = todayExchangeCount,
+            TodayExchangeCashDiffIqd = todayExchangeCashDiffIqd,
+            SupplierCreditCount = supplierCreditCount,
+            SupplierCreditIqd = supplierCreditIqd,
+            SupplierCreditUsd = supplierCreditUsd,
             Alerts = alerts.Take(8).ToList(),
             LatestPrices = latestPrices.ToList()
         };
@@ -190,6 +210,57 @@ public sealed class GoldDashboardService : IGoldDashboardService
             .Take(10)
             .ToListAsync(ct);
         return recent.Select(GoldCurrencyHelper.ToListItem).ToList();
+    }
+
+    private async Task<List<GoldInvoiceListItem>> LoadRecentByTypeAsync(GoldInvoiceType type, CancellationToken ct)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var recent = await context.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.InvoiceType == type && i.Status != GoldInvoiceStatus.Cancelled)
+            .OrderByDescending(i => i.InvoiceDate)
+            .ThenByDescending(i => i.Id)
+            .Take(5)
+            .ToListAsync(ct);
+        return recent.Select(GoldCurrencyHelper.ToListItem).ToList();
+    }
+
+    private async Task<(int Count, decimal Iqd)> LoadTodayExchangesAsync(DateTime today, DateTime tomorrow, CancellationToken ct)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var items = await context.GoldInvoices.AsNoTracking()
+            .Where(i => i.InvoiceType == GoldInvoiceType.Exchange &&
+                        i.Status != GoldInvoiceStatus.Cancelled &&
+                        i.InvoiceDate >= today && i.InvoiceDate < tomorrow)
+            .ToListAsync(ct);
+        return (items.Count, items.Sum(i =>
+            i.PaymentCurrency == GoldCurrency.IQD
+                ? i.ExchangeCashDifference
+                : GoldCurrencyHelper.ConvertAmount(i.ExchangeCashDifference, GoldCurrency.USD, GoldCurrency.IQD, i.FxRate)));
+    }
+
+    private async Task<(int Count, decimal Iqd, decimal Usd)> LoadSupplierCreditAsync(CancellationToken ct)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var suppliers = await context.GoldSuppliers.AsNoTracking()
+            .Where(s => s.CreditBalanceIqd > 0 || s.CreditBalanceUsd > 0)
+            .ToListAsync(ct);
+        return (suppliers.Count, suppliers.Sum(s => s.CreditBalanceIqd), suppliers.Sum(s => s.CreditBalanceUsd));
+    }
+
+    private async Task<(int Count, decimal Iqd)> SumTodayReturnsAsync(DateTime today, DateTime tomorrow, CancellationToken ct)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var count = await context.GoldInvoices.AsNoTracking()
+            .CountAsync(i => i.InvoiceType == GoldInvoiceType.SaleReturn &&
+                             i.Status != GoldInvoiceStatus.Cancelled &&
+                             i.InvoiceDate >= today && i.InvoiceDate < tomorrow, ct);
+        var iqd = await context.GoldInvoices.AsNoTracking()
+            .Where(i => i.InvoiceType == GoldInvoiceType.SaleReturn &&
+                        i.Status != GoldInvoiceStatus.Cancelled &&
+                        i.InvoiceDate >= today && i.InvoiceDate < tomorrow)
+            .SumAsync(i => (decimal?)i.TotalAmountIqd, ct) ?? 0;
+        return (count, iqd);
     }
 
     private async Task<List<DailySalesPoint>> LoadSalesLast30DaysAsync(

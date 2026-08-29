@@ -69,10 +69,10 @@
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                              ExportCommand="{Binding ExportToExcelCommand}"
                                              PrintCommand="{Binding PrintTableCommand}"
-                                             ShowCardToggle="False"/>
+                                             ShowCardToggle="True"/>
 
+                <Grid Grid.Row="1">
                 <DataGrid x:Name="GoldCustomersGrid"
-                          Grid.Row="1"
                           ItemsSource="{Binding Customers}"
                           SelectedItem="{Binding SelectedCustomer}"
                           AutoGenerateColumns="False"
@@ -81,6 +81,7 @@
                           SelectionMode="Single"
                           HeadersVisibility="Column"
                           Style="{StaticResource ModernDataGrid}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -101,7 +102,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OpenInvoiceCount"/>
                         <DataGridCheckBoxColumn Header="نشط" Binding="{Binding IsActive}" Width="70" IsReadOnly="True"
                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IsActive"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="120" MinWidth="120"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -109,6 +110,12 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenCustomerStatementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableViewIconButton}"
+                                                ToolTip="كشف حساب">
+                                            <md:PackIcon Kind="FileDocumentOutline" Width="18" Height="18"/>
+                                        </Button>
                                         <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource TableEditIconButton}"
@@ -127,6 +134,19 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding Customers}"
+                                      ItemTemplate="{StaticResource GoldCustomerCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
 
                 <controls:PaginationBar Grid.Row="2"/>
             </Grid>

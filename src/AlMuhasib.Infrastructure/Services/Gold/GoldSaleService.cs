@@ -45,9 +45,11 @@ public sealed class GoldSaleService : IGoldSaleService
         return await context.GoldInvoices
             .AsNoTracking()
             .Include(i => i.Customer)
+            .Include(i => i.Supplier)
+            .Include(i => i.Warehouse)
             .Include(i => i.Lines)
             .Include(i => i.Payments)
-            .FirstOrDefaultAsync(i => i.Id == id && i.InvoiceType == GoldInvoiceType.Sale, cancellationToken);
+            .FirstOrDefaultAsync(i => i.Id == id && i.InvoiceType != GoldInvoiceType.Purchase, cancellationToken);
     }
 
     public async Task<GoldInvoice> CreateSaleAsync(GoldSaleRequest request, CancellationToken cancellationToken = default)

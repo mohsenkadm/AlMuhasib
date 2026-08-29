@@ -529,6 +529,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- 1. Expanded gold hero -->
@@ -969,8 +970,26 @@
                                                ValueBrush="{DynamicResource DashboardKpiBlueBrush}"/>
                 </Grid>
 
+                <!-- 3c. KPI row 3: returns, exchanges, supplier credit -->
+                <Grid Grid.Row="4" Margin="0,0,0,16" Style="{StaticResource DashboardReveal1}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:DashboardKpiCard Grid.Column="0" Margin="0,0,8,0"
+                                               Title="مرتجعات اليوم" Value="{Binding TodayReturnsDisplay}"
+                                               Icon="BackupRestore" AccentBrush="#B8860B" AccentLightBrush="#FFF8E1" ValueBrush="#5D4037"/>
+                    <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
+                                               Title="تبديل اليوم" Value="{Binding TodayExchangesDisplay}"
+                                               Icon="SwapHorizontal" AccentBrush="#1565C0" AccentLightBrush="#E3F2FD" ValueBrush="#1565C0"/>
+                    <controls:DashboardKpiCard Grid.Column="2" Margin="8,0,0,0"
+                                               Title="ديون الموردين" Value="{Binding SupplierCreditDisplay}"
+                                               Icon="TruckDelivery" AccentBrush="#EF6C00" AccentLightBrush="#FFF3E0" ValueBrush="#EF6C00"/>
+                </Grid>
+
                 <!-- 4. Charts 2:1 — 30-day sales + karat pie -->
-                <Grid Grid.Row="4" Margin="0,0,0,16" Style="{StaticResource DashboardReveal2}">
+                <Grid Grid.Row="5" Margin="0,0,0,16" Style="{StaticResource DashboardReveal2}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="16"/>
@@ -1037,7 +1056,7 @@
                 </Grid>
 
                 <!-- 5. Two tables: recent invoices + latest mithqal prices -->
-                <Grid Grid.Row="5" Margin="0,0,0,16" Style="{StaticResource DashboardReveal3}">
+                <Grid Grid.Row="6" Margin="0,0,0,16" Style="{StaticResource DashboardReveal3}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="16"/>
@@ -1123,7 +1142,7 @@
                 </Grid>
 
                 <!-- 6. Bottom: cash boxes + inventory value + FX strip -->
-                <Grid Grid.Row="6" Style="{StaticResource DashboardReveal4}">
+                <Grid Grid.Row="7" Style="{StaticResource DashboardReveal4}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="16"/>

@@ -17,6 +17,7 @@ public partial class GoldCategoriesViewModel : ViewModelBase
     private readonly IGoldCategoryService _categoryService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserPreferencesService _userPreferences;
     private System.Timers.Timer? _debounceTimer;
     private List<GoldCategory> _allCategories = [];
     private int? _editingId;
@@ -38,17 +39,21 @@ public partial class GoldCategoriesViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private GoldCategory? _categoryToDelete;
+    [ObservableProperty] private bool _isCardView;
 
     public ObservableCollection<GoldCategory> Categories { get; } = [];
 
     public GoldCategoriesViewModel(
         IGoldCategoryService categoryService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUserPreferencesService userPreferences)
     {
         _categoryService = categoryService;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _userPreferences = userPreferences;
+        IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.GoldCategories);
         PageTitle = "تصنيفات الذهب";
     }
 
@@ -304,4 +309,7 @@ public partial class GoldCategoriesViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الطباعة: {ex.Message}");
         }
     }
+
+    partial void OnIsCardViewChanged(bool value) =>
+        ListViewModeHelper.SaveIsCardView(_userPreferences, ListViewModeKeys.GoldCategories, value);
 }

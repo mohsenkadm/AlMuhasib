@@ -106,6 +106,8 @@ public static class GoldShopMenuBuilder
                     ("أداء المستخدمين", PackIconKind.AccountStar, typeof(GoldUserPerformanceReportViewModel), GoldShopPermissionRegistry.UserPerformanceReport),
                     ("حركة القاصات", PackIconKind.CashMultiple, typeof(GoldCashBoxMovementReportViewModel), GoldShopPermissionRegistry.CashBoxMovementReport),
                     ("تقرير المشتريات", PackIconKind.CartOutline, typeof(GoldPurchasesReportViewModel), GoldShopPermissionRegistry.PurchasesReport),
+                    ("تقرير التبديل", PackIconKind.SwapHorizontal, typeof(GoldExchangeReportViewModel), GoldShopPermissionRegistry.ExchangeReport),
+                    ("تقرير مرتجعات البيع", PackIconKind.BackupRestore, typeof(GoldSaleReturnsReportViewModel), GoldShopPermissionRegistry.SaleReturnsReport),
                 ]),
             FlyoutGroup(
                 key: "system",

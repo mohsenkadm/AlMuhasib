@@ -181,48 +181,69 @@ public sealed class GoldSettingsService : IGoldSettingsService
 
     private static async Task EnsureDefaultCashBoxesAsync(GoldDbContext context, CancellationToken cancellationToken)
     {
-        var boxes = await context.GoldCashBoxes.ToListAsync(cancellationToken);
+        var boxes = await context.GoldCashBoxes
+            .IgnoreQueryFilters()
+            .Where(b => !b.IsDeleted)
+            .ToListAsync(cancellationToken);
 
-        if (!boxes.Any(b => b.Currency == Core.Enums.Gold.GoldCurrency.IQD && b.IsDefault))
+        await EnsureDefaultCashBoxForCurrencyAsync(
+            context,
+            boxes,
+            Core.Enums.Gold.GoldCurrency.IQD,
+            "صندوق الدينار",
+            cancellationToken);
+
+        await EnsureDefaultCashBoxForCurrencyAsync(
+            context,
+            boxes,
+            Core.Enums.Gold.GoldCurrency.USD,
+            "صندوق الدولار",
+            cancellationToken);
+    }
+
+    private static async Task EnsureDefaultCashBoxForCurrencyAsync(
+        GoldDbContext context,
+        List<GoldCashBox> boxes,
+        Core.Enums.Gold.GoldCurrency currency,
+        string defaultName,
+        CancellationToken cancellationToken)
+    {
+        var active = boxes
+            .Where(b => b.Currency == currency && b.IsActive)
+            .OrderByDescending(b => b.IsDefault)
+            .ThenBy(b => b.Id)
+            .ToList();
+
+        if (active.Count == 0)
         {
-            var iqd = boxes.FirstOrDefault(b => b.Currency == Core.Enums.Gold.GoldCurrency.IQD);
-            if (iqd is null)
+            var inactive = boxes
+                .Where(b => b.Currency == currency)
+                .OrderBy(b => b.Id)
+                .FirstOrDefault();
+
+            if (inactive is not null)
             {
-                await context.GoldCashBoxes.AddAsync(new GoldCashBox
-                {
-                    Name = "صندوق الدينار",
-                    Currency = Core.Enums.Gold.GoldCurrency.IQD,
-                    IsDefault = true,
-                    IsActive = true,
-                    Balance = 0
-                }, cancellationToken);
+                inactive.IsActive = true;
+                inactive.IsDefault = true;
+                if (string.IsNullOrWhiteSpace(inactive.Name))
+                    inactive.Name = defaultName;
+                return;
             }
-            else
+
+            await context.GoldCashBoxes.AddAsync(new GoldCashBox
             {
-                iqd.IsDefault = true;
-                iqd.IsActive = true;
-            }
+                Name = defaultName,
+                Currency = currency,
+                IsDefault = true,
+                IsActive = true,
+                Balance = 0
+            }, cancellationToken);
+            return;
         }
 
-        if (!boxes.Any(b => b.Currency == Core.Enums.Gold.GoldCurrency.USD && b.IsDefault))
-        {
-            var usd = boxes.FirstOrDefault(b => b.Currency == Core.Enums.Gold.GoldCurrency.USD);
-            if (usd is null)
-            {
-                await context.GoldCashBoxes.AddAsync(new GoldCashBox
-                {
-                    Name = "صندوق الدولار",
-                    Currency = Core.Enums.Gold.GoldCurrency.USD,
-                    IsDefault = true,
-                    IsActive = true,
-                    Balance = 0
-                }, cancellationToken);
-            }
-            else
-            {
-                usd.IsDefault = true;
-                usd.IsActive = true;
-            }
-        }
+        if (active.Any(b => b.IsDefault))
+            return;
+
+        active[0].IsDefault = true;
     }
 }

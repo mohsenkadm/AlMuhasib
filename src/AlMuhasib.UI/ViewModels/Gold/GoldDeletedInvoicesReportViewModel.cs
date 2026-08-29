@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
@@ -12,6 +13,8 @@ namespace AlMuhasib.UI.ViewModels.Gold;
 
 public partial class GoldDeletedInvoicesReportViewModel : GoldReportViewModelBase
 {
+    private readonly IGoldSaleService _saleService;
+    private readonly IGoldPurchaseService _purchaseService;
     private List<GoldDeletedInvoiceRow> _allRows = [];
 
     public ObservableCollection<GoldDeletedInvoiceRow> Rows { get; } = [];
@@ -23,11 +26,15 @@ public partial class GoldDeletedInvoicesReportViewModel : GoldReportViewModelBas
 
     public GoldDeletedInvoicesReportViewModel(
         IGoldReportService reportService,
+        IGoldSaleService saleService,
+        IGoldPurchaseService purchaseService,
         IExportService exportService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
         : base(reportService, exportService, toast, currentUserService)
     {
+        _saleService = saleService;
+        _purchaseService = purchaseService;
         PageTitle = "الفواتير المحذوفة";
     }
 
@@ -98,4 +105,29 @@ public partial class GoldDeletedInvoicesReportViewModel : GoldReportViewModelBas
         }).ToList();
         PrintTable("الفواتير المحذوفة — الذهب", cols, rows);
     }
+
+    [RelayCommand]
+    private async Task OpenInvoiceDetail(GoldDeletedInvoiceRow? row)
+    {
+        if (row is null)
+            return;
+
+        try
+        {
+            var invoiceType = ParseInvoiceType(row.InvoiceType);
+            await GoldInvoiceDetailDialog.ShowAsync(row.Id, invoiceType, _saleService, _purchaseService);
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+        }
+    }
+
+    private static GoldInvoiceType ParseInvoiceType(string label) => label switch
+    {
+        "شراء" => GoldInvoiceType.Purchase,
+        "تبديل" => GoldInvoiceType.Exchange,
+        "مرتجع بيع" => GoldInvoiceType.SaleReturn,
+        _ => GoldInvoiceType.Sale
+    };
 }

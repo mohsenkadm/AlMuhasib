@@ -67,10 +67,10 @@
                                              ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                              ExportCommand="{Binding ExportToExcelCommand}"
                                              PrintCommand="{Binding PrintTableCommand}"
-                                             ShowCardToggle="False"/>
+                                             ShowCardToggle="True"/>
 
+                <Grid Grid.Row="1">
                 <DataGrid x:Name="GoldCategoriesGrid"
-                          Grid.Row="1"
                           ItemsSource="{Binding Categories}"
                           SelectedItem="{Binding SelectedCategory}"
                           AutoGenerateColumns="False"
@@ -79,6 +79,7 @@
                           SelectionMode="Single"
                           HeadersVisibility="Column"
                           Style="{StaticResource ModernDataGrid}"
+                          Visibility="{Binding IsCardView, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
@@ -113,6 +114,19 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12"
+                                  Visibility="{Binding IsCardView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding Categories}"
+                                      ItemTemplate="{StaticResource GoldCategoryCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
 
                 <controls:PaginationBar Grid.Row="2"/>
             </Grid>

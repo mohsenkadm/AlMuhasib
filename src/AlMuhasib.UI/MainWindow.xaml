@@ -1417,6 +1417,12 @@
                         <DataTemplate DataType="{x:Type goldVm:GoldPurchasesReportViewModel}">
                             <goldViews:GoldPurchasesReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldExchangeReportViewModel}">
+                            <goldViews:GoldExchangeReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type goldVm:GoldSaleReturnsReportViewModel}">
+                            <goldViews:GoldSaleReturnsReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>

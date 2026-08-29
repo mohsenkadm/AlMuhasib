@@ -679,4 +679,173 @@ public sealed class GoldReportService : IGoldReportService
             DeletedBy = i.DeletedBy ?? i.UpdatedBy ?? "—"
         }).ToList();
     }
+
+    public async Task<(IReadOnlyList<GoldExchangeReportRow> Rows, GoldExchangeReportSummary Summary)> GetExchangeReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        int? customerId = null,
+        int? warehouseId = null,
+        GoldPaymentMethod? paymentMethod = null,
+        GoldCurrency? paymentCurrency = null,
+        GoldInvoiceStatus? status = null,
+        decimal? cashDiffFrom = null,
+        decimal? cashDiffTo = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = context.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Lines)
+            .Where(i => i.InvoiceType == GoldInvoiceType.Exchange &&
+                        i.Status != GoldInvoiceStatus.Cancelled);
+
+        if (dateFrom.HasValue)
+            query = query.Where(i => i.InvoiceDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            query = query.Where(i => i.InvoiceDate.Date <= dateTo.Value.Date);
+        if (customerId.HasValue)
+            query = query.Where(i => i.CustomerId == customerId.Value);
+        if (warehouseId.HasValue)
+            query = query.Where(i => i.WarehouseId == warehouseId.Value);
+        if (paymentMethod.HasValue)
+            query = query.Where(i => i.PaymentMethod == paymentMethod.Value);
+        if (paymentCurrency.HasValue)
+            query = query.Where(i => i.PaymentCurrency == paymentCurrency.Value);
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+        if (cashDiffFrom.HasValue)
+            query = query.Where(i => i.ExchangeCashDifference >= cashDiffFrom.Value);
+        if (cashDiffTo.HasValue)
+            query = query.Where(i => i.ExchangeCashDifference <= cashDiffTo.Value);
+
+        var invoices = await query
+            .OrderByDescending(i => i.InvoiceDate)
+            .ThenByDescending(i => i.Id)
+            .Take(10_000)
+            .ToListAsync(cancellationToken);
+
+        var rows = invoices.Select(i =>
+        {
+            var inLines = i.Lines.Where(l => l.LineDirection == GoldInvoiceLineDirection.In).ToList();
+            var outLines = i.Lines.Where(l => l.LineDirection == GoldInvoiceLineDirection.Out).ToList();
+            return new GoldExchangeReportRow
+            {
+                Id = i.Id,
+                InvoiceNumber = i.InvoiceNumber,
+                InvoiceDate = i.InvoiceDate,
+                CustomerName = i.Customer?.Name,
+                CreatedBy = i.CreatedBy,
+                PaymentMethod = i.PaymentMethod,
+                Status = i.Status,
+                PricingCurrency = i.PricingCurrency,
+                PaymentCurrency = i.PaymentCurrency,
+                InWeightGrams = inLines.Sum(l => l.WeightGrams),
+                OutWeightGrams = outLines.Sum(l => l.WeightGrams),
+                InTotalValue = inLines.Sum(l => l.LineTotal),
+                OutTotalValue = outLines.Sum(l => l.LineTotal),
+                ExchangeCashDifference = i.ExchangeCashDifference,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
+                Notes = i.Notes
+            };
+        }).ToList();
+
+        var summary = new GoldExchangeReportSummary
+        {
+            ExchangeCount = rows.Count,
+            TotalCashDifferenceIqd = GoldCurrencyHelper.Round(invoices.Sum(i =>
+                i.PaymentCurrency == GoldCurrency.IQD
+                    ? i.ExchangeCashDifference
+                    : GoldCurrencyHelper.ConvertAmount(i.ExchangeCashDifference, GoldCurrency.USD, GoldCurrency.IQD, i.FxRate))),
+            TotalInWeightGrams = rows.Sum(r => r.InWeightGrams),
+            TotalOutWeightGrams = rows.Sum(r => r.OutWeightGrams)
+        };
+
+        return (rows, summary);
+    }
+
+    public async Task<(IReadOnlyList<GoldSaleReturnReportRow> Rows, GoldSaleReturnReportSummary Summary)> GetSaleReturnsReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        int? customerId = null,
+        int? warehouseId = null,
+        GoldInvoiceStatus? status = null,
+        string? relatedInvoiceNumber = null,
+        string? userName = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = context.GoldInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.InvoiceType == GoldInvoiceType.SaleReturn &&
+                        i.Status != GoldInvoiceStatus.Cancelled);
+
+        if (dateFrom.HasValue)
+            query = query.Where(i => i.InvoiceDate.Date >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            query = query.Where(i => i.InvoiceDate.Date <= dateTo.Value.Date);
+        if (customerId.HasValue)
+            query = query.Where(i => i.CustomerId == customerId.Value);
+        if (warehouseId.HasValue)
+            query = query.Where(i => i.WarehouseId == warehouseId.Value);
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            var term = userName.Trim();
+            query = query.Where(i => i.CreatedBy.Contains(term));
+        }
+
+        var invoices = await query
+            .OrderByDescending(i => i.InvoiceDate)
+            .ThenByDescending(i => i.Id)
+            .Take(10_000)
+            .ToListAsync(cancellationToken);
+
+        var relatedIds = invoices.Where(i => i.RelatedInvoiceId.HasValue)
+            .Select(i => i.RelatedInvoiceId!.Value)
+            .Distinct()
+            .ToList();
+
+        var relatedMap = relatedIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.GoldInvoices.AsNoTracking()
+                .Where(i => relatedIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id, i => i.InvoiceNumber, cancellationToken);
+
+        var rows = invoices.Select(i => new GoldSaleReturnReportRow
+        {
+            Id = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            InvoiceDate = i.InvoiceDate,
+            CustomerName = i.Customer?.Name,
+            CreatedBy = i.CreatedBy,
+            PaymentMethod = i.PaymentMethod,
+            Status = i.Status,
+            TotalWeightGrams = i.TotalWeightGrams,
+            TotalAmountIqd = i.TotalAmountIqd,
+            TotalAmountUsd = i.TotalAmountUsd,
+            RelatedInvoiceId = i.RelatedInvoiceId,
+            RelatedInvoiceNumber = i.RelatedInvoiceId.HasValue && relatedMap.TryGetValue(i.RelatedInvoiceId.Value, out var num)
+                ? num
+                : null,
+            Notes = i.Notes
+        }).ToList();
+
+        if (!string.IsNullOrWhiteSpace(relatedInvoiceNumber))
+        {
+            var term = relatedInvoiceNumber.Trim();
+            rows = rows.Where(r => r.RelatedInvoiceNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true).ToList();
+        }
+
+        var summary = new GoldSaleReturnReportSummary
+        {
+            ReturnCount = rows.Count,
+            TotalAmountIqd = GoldCurrencyHelper.Round(rows.Sum(r => r.TotalAmountIqd)),
+            TotalAmountUsd = GoldCurrencyHelper.Round(rows.Sum(r => r.TotalAmountUsd)),
+            TotalWeightGrams = rows.Sum(r => r.TotalWeightGrams)
+        };
+
+        return (rows, summary);
+    }
 }

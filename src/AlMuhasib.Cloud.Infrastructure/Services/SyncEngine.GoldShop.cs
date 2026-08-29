@@ -174,9 +174,21 @@ public sealed partial class SyncEngine
                     }
                 }
 
-                accepted += await UpsertGoldInvoiceAsync(tenantId, dto, customerId, supplierId, warehouseId, cashBoxId, response, ct);
+                accepted += await UpsertGoldInvoiceAsync(tenantId, dto, customerId, supplierId, warehouseId, cashBoxId, null, response, ct);
             }
             await FlushAndCacheAsync(_db.GoldInvoices, tenantId, request.Data.GoldInvoices.Select(i => i.SyncId), resolver, ct);
+
+            foreach (var dto in request.Data.GoldInvoices.Where(i => i.RelatedInvoiceSyncId.HasValue))
+            {
+                var existing = await FindBySyncIdAsync(_db.GoldInvoices, tenantId, dto.SyncId, ct);
+                if (existing is null) continue;
+                var relatedId = await resolver.ResolveGoldInvoiceAsync(dto.RelatedInvoiceSyncId, ct);
+                if (relatedId.HasValue)
+                {
+                    existing.RelatedInvoiceId = relatedId;
+                    accepted++;
+                }
+            }
 
             foreach (var dto in request.Data.GoldInvoiceLines)
             {
@@ -234,7 +246,18 @@ public sealed partial class SyncEngine
                     }
                 }
 
-                accepted += await UpsertGoldVoucherAsync(tenantId, dto, cashBoxId, customerId, response, ct);
+                int? supplierId = null;
+                if (dto.SupplierSyncId.HasValue && dto.SupplierSyncId != Guid.Empty)
+                {
+                    supplierId = await resolver.ResolveGoldSupplierAsync(dto.SupplierSyncId, ct);
+                    if (supplierId is null)
+                    {
+                        AddConflict(response, "GoldVoucher", dto.SyncId, "Supplier not found");
+                        continue;
+                    }
+                }
+
+                accepted += await UpsertGoldVoucherAsync(tenantId, dto, cashBoxId, customerId, supplierId, response, ct);
             }
 
             foreach (var dto in request.Data.GoldNotifications)
@@ -345,6 +368,7 @@ public sealed partial class SyncEngine
             TotalAmount = i.TotalAmount, TotalAmountIqd = i.TotalAmountIqd, TotalAmountUsd = i.TotalAmountUsd,
             PaidAmount = i.PaidAmount, RemainingAmount = i.RemainingAmount, TotalWeightGrams = i.TotalWeightGrams,
             CashBoxSyncId = i.CashBoxId.HasValue ? cashBoxMap.GetValueOrDefault(i.CashBoxId.Value) : null,
+            RelatedInvoiceSyncId = i.RelatedInvoiceId.HasValue ? invoiceMap.GetValueOrDefault(i.RelatedInvoiceId.Value) : null,
             Notes = i.Notes, WeightFromScale = i.WeightFromScale
         }).ToList();
 
@@ -359,7 +383,7 @@ public sealed partial class SyncEngine
             KaratValue = l.KaratValue, WeightGrams = l.WeightGrams, MithqalPrice = l.MithqalPrice,
             PricePerGram = l.PricePerGram, GoldValue = l.GoldValue, MakingCharge = l.MakingCharge,
             LineTotal = l.LineTotal, Description = l.Description, WeightFromScale = l.WeightFromScale,
-            LineDirection = l.LineDirection
+            LineDirection = l.LineDirection, MakingChargeMode = l.MakingChargeMode, MakingChargeRate = l.MakingChargeRate
         }).ToList();
 
         var payments = await _db.GoldPayments.IgnoreQueryFilters()
@@ -384,6 +408,9 @@ public sealed partial class SyncEngine
             Currency = v.Currency, Amount = v.Amount,
             CashBoxSyncId = v.CashBoxId.HasValue ? cashBoxMap.GetValueOrDefault(v.CashBoxId.Value) : null,
             CustomerSyncId = v.CustomerId.HasValue ? customerMap.GetValueOrDefault(v.CustomerId.Value) : null,
+            SupplierSyncId = v.SupplierId.HasValue ? supplierMap.GetValueOrDefault(v.SupplierId.Value) : null,
+            IsOpeningBalance = v.IsOpeningBalance,
+            AffectsCashBox = v.AffectsCashBox,
             Notes = v.Notes
         }).ToList();
 
@@ -460,7 +487,8 @@ public sealed partial class SyncEngine
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, Notes = e.Notes,
-        CreditBalanceIqd = e.CreditBalanceIqd, CreditBalanceUsd = e.CreditBalanceUsd, IsActive = e.IsActive
+        CreditBalanceIqd = e.CreditBalanceIqd, CreditBalanceUsd = e.CreditBalanceUsd,
+        GoldCreditGrams = e.GoldCreditGrams, IsActive = e.IsActive
     };
 
     private static GoldSupplierSyncDto MapGoldSupplier(CloudGoldSupplier e, Dictionary<int, Guid> _) => new()
@@ -507,6 +535,8 @@ public sealed partial class SyncEngine
         existing.LowStockAlertGrams = dto.LowStockAlertGrams;
         existing.OverdueDaysThreshold = dto.OverdueDaysThreshold;
         existing.EnabledKaratsCsv = dto.EnabledKaratsCsv;
+        existing.DefaultMakingChargeMode = dto.DefaultMakingChargeMode;
+        existing.IsConfigured = dto.IsConfigured;
         return 1;
     }
 
@@ -610,6 +640,7 @@ public sealed partial class SyncEngine
         existing.Notes = dto.Notes;
         existing.CreditBalanceIqd = dto.CreditBalanceIqd;
         existing.CreditBalanceUsd = dto.CreditBalanceUsd;
+        existing.GoldCreditGrams = dto.GoldCreditGrams;
         existing.IsActive = dto.IsActive;
         return 1;
     }
@@ -692,7 +723,7 @@ public sealed partial class SyncEngine
 
     private async Task<int> UpsertGoldInvoiceAsync(
         int tenantId, GoldInvoiceSyncDto dto, int? customerId, int? supplierId, int? warehouseId, int? cashBoxId,
-        SyncPushResponse response, CancellationToken ct)
+        int? relatedInvoiceId, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldInvoices, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "GoldInvoice", dto.SyncId, "Server version is newer"); return 0; }
@@ -721,6 +752,7 @@ public sealed partial class SyncEngine
         existing.RemainingAmount = dto.RemainingAmount;
         existing.TotalWeightGrams = dto.TotalWeightGrams;
         existing.CashBoxId = cashBoxId;
+        existing.RelatedInvoiceId = relatedInvoiceId ?? existing.RelatedInvoiceId;
         existing.Notes = dto.Notes;
         existing.WeightFromScale = dto.WeightFromScale;
         return 1;
@@ -745,6 +777,8 @@ public sealed partial class SyncEngine
         existing.Description = dto.Description;
         existing.WeightFromScale = dto.WeightFromScale;
         existing.LineDirection = dto.LineDirection;
+        existing.MakingChargeMode = dto.MakingChargeMode;
+        existing.MakingChargeRate = dto.MakingChargeRate;
         return 1;
     }
 
@@ -766,7 +800,7 @@ public sealed partial class SyncEngine
     }
 
     private async Task<int> UpsertGoldVoucherAsync(
-        int tenantId, GoldVoucherSyncDto dto, int? cashBoxId, int? customerId, SyncPushResponse response, CancellationToken ct)
+        int tenantId, GoldVoucherSyncDto dto, int? cashBoxId, int? customerId, int? supplierId, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.GoldVouchers, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "GoldVoucher", dto.SyncId, "Server version is newer"); return 0; }
@@ -779,6 +813,9 @@ public sealed partial class SyncEngine
         existing.Amount = dto.Amount;
         existing.CashBoxId = cashBoxId;
         existing.CustomerId = customerId;
+        existing.SupplierId = supplierId;
+        existing.IsOpeningBalance = dto.IsOpeningBalance;
+        existing.AffectsCashBox = dto.AffectsCashBox;
         existing.Notes = dto.Notes;
         return 1;
     }

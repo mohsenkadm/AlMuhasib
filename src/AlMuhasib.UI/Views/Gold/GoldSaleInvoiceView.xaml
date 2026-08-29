@@ -335,51 +335,45 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="1" CornerRadius="14" Padding="20,16">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#FFF8E7" Offset="0"/>
-                                <GradientStop Color="#F5E6C8" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <Border Grid.Column="1" Style="{StaticResource GoldInvoiceTotalsPanelStyle}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="قيمة الذهب" Foreground="#5D4E37"/>
+                                <TextBlock Text="قيمة الذهب" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                                 <TextBlock Text="{Binding TotalGoldValue, StringFormat=N0}" FontWeight="SemiBold"
-                                           HorizontalAlignment="Left" Foreground="#5D4E37"/>
+                                           HorizontalAlignment="Left" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="أجور الصياغة" Foreground="#5D4E37"/>
+                                <TextBlock Text="أجور الصياغة" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                                 <TextBlock Text="{Binding TotalMakingCharge, StringFormat=N0}" FontWeight="SemiBold"
-                                           HorizontalAlignment="Left" Foreground="#5D4E37"/>
+                                           HorizontalAlignment="Left" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="الخصم" Foreground="#5D4E37" VerticalAlignment="Center"/>
+                                <TextBlock Text="الخصم" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}" VerticalAlignment="Center"/>
                                 <TextBox Text="{Binding DiscountAmount, UpdateSourceTrigger=PropertyChanged}"
                                          Width="120" HorizontalAlignment="Left"
                                          Style="{StaticResource FilledTextBox}"/>
                             </DockPanel>
                             <Separator Margin="0,4,0,10"/>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="الإجمالي" FontSize="16" FontWeight="Bold" Foreground="#8B6914"/>
+                                <TextBlock Text="الإجمالي" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource GoldInvoiceTotalsAccentBrush}"/>
                                 <TextBlock Text="{Binding GrandTotal, StringFormat=N0}" FontSize="18" FontWeight="Bold"
-                                           HorizontalAlignment="Left" Foreground="#8B6914"/>
+                                           HorizontalAlignment="Left" Foreground="{DynamicResource GoldInvoiceTotalsAccentBrush}"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,4">
-                                <TextBlock Text="بالدينار" Foreground="#5D4E37"/>
+                                <TextBlock Text="بالدينار" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                                 <TextBlock Text="{Binding TotalIqd, StringFormat='{}{0:N0} د.ع'}" FontWeight="SemiBold"
-                                           HorizontalAlignment="Left" Foreground="#5D4E37"/>
+                                           HorizontalAlignment="Left" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="بالدولار" Foreground="#5D4E37"/>
+                                <TextBlock Text="بالدولار" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                                 <TextBlock Text="{Binding TotalUsd, StringFormat='{}{0:N2} $'}" FontWeight="SemiBold"
-                                           HorizontalAlignment="Left" Foreground="#5D4E37"/>
+                                           HorizontalAlignment="Left" Foreground="{DynamicResource GoldInvoiceTotalsTextBrush}"/>
                             </DockPanel>
                             <TextBox Text="{Binding PaidAmount, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="المبلغ المدفوع"
                                      materialDesign:HintAssist.IsFloating="True"
                                      Style="{StaticResource FilledTextBox}"/>
-                            <TextBlock FontSize="11" Foreground="#8D6E63" Margin="0,4,0,0" TextWrapping="Wrap"
+                            <TextBlock FontSize="11" Foreground="{DynamicResource GoldInvoiceTotalsMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
                                        Text="نقدي: اترك المدفوع أو اجعله صفر ليُحسب كامل المبلغ. للآجل اختر «آجل» صراحةً."/>
                         </StackPanel>
                     </Border>

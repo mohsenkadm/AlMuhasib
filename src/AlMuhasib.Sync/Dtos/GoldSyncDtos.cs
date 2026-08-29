@@ -201,6 +201,9 @@ public sealed class GoldVoucherSyncDto : SyncDtoBase
     public decimal Amount { get; set; }
     public Guid? CashBoxSyncId { get; set; }
     public Guid? CustomerSyncId { get; set; }
+    public Guid? SupplierSyncId { get; set; }
+    public bool IsOpeningBalance { get; set; }
+    public bool AffectsCashBox { get; set; } = true;
     public string Notes { get; set; } = string.Empty;
 }
 

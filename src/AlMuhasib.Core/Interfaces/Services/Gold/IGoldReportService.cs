@@ -66,4 +66,26 @@ public interface IGoldReportService
         DateTime? dateFrom = null,
         DateTime? dateTo = null,
         CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<GoldExchangeReportRow> Rows, GoldExchangeReportSummary Summary)> GetExchangeReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        int? customerId = null,
+        int? warehouseId = null,
+        GoldPaymentMethod? paymentMethod = null,
+        GoldCurrency? paymentCurrency = null,
+        GoldInvoiceStatus? status = null,
+        decimal? cashDiffFrom = null,
+        decimal? cashDiffTo = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<GoldSaleReturnReportRow> Rows, GoldSaleReturnReportSummary Summary)> GetSaleReturnsReportAsync(
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        int? customerId = null,
+        int? warehouseId = null,
+        GoldInvoiceStatus? status = null,
+        string? relatedInvoiceNumber = null,
+        string? userName = null,
+        CancellationToken cancellationToken = default);
 }

@@ -24,10 +24,12 @@
         <materialDesign:Card HorizontalAlignment="Center"
                              VerticalAlignment="Center"
                              Margin="16"
-                             Width="720"
+                             MinWidth="920"
+                             Width="980"
                              MaxHeight="640"
                              UniformCornerRadius="16"
                              Padding="0"
+                             Background="{DynamicResource CardBrush}"
                              materialDesign:ElevationAssist.Elevation="Dp16">
             <DockPanel LastChildFill="True">
                 <Border DockPanel.Dock="Top" Padding="18,14" CornerRadius="16,16,0,0">
@@ -38,12 +40,12 @@
                         </LinearGradientBrush>
                     </Border.Background>
                     <DockPanel>
-                                <Button Command="{Binding CancelCommand}"
-                                        Style="{StaticResource MaterialDesignIconButton}"
-                                        Foreground="White"
-                                        ToolTip="إغلاق">
-                                    <materialDesign:PackIcon Kind="Close"/>
-                                </Button>
+                        <Button Command="{Binding CancelCommand}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Foreground="White"
+                                ToolTip="إغلاق">
+                            <materialDesign:PackIcon Kind="Close"/>
+                        </Button>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="اختيار قطع الذهب" FontSize="18" FontWeight="Bold" Foreground="White"/>
                             <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#EEFFFFFF" Margin="0,2,0,0"/>
@@ -51,11 +53,13 @@
                     </DockPanel>
                 </Border>
 
-                <Border DockPanel.Dock="Bottom" Padding="16" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                <Border DockPanel.Dock="Bottom" Padding="16"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center"
                                    Text="{Binding SelectedCount, StringFormat='المحدد: {0}'}"
-                                   Foreground="#5D4037" FontWeight="SemiBold"/>
+                                   Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Button Content="إضافة المحدد" Command="{Binding ConfirmCommand}"
                                     Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Padding="20,8">
@@ -77,53 +81,60 @@
                 </StackPanel>
 
                 <Grid Margin="12,0,12,8">
-                    <ListBox ItemsSource="{Binding VisibleItems}"
-                             BorderThickness="0"
-                             Background="Transparent"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:GoldItemPickerDisplayItem}">
-                                <Border Margin="0,0,0,8" Padding="12,10" CornerRadius="10"
-                                        BorderThickness="1" Cursor="Hand"
-                                        MouseLeftButtonUp="ItemRow_MouseLeftButtonUp">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="White"/>
-                                            <Setter Property="BorderBrush" Value="#E8D5A3"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Background" Value="#FFF8E1"/>
-                                                    <Setter Property="BorderBrush" Value="#B8860B"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#5D4037"/>
-                                            <TextBlock Text="{Binding Summary}" FontSize="12" Foreground="#8D6E63" Margin="0,2,0,0"/>
-                                            <TextBlock FontSize="11" Foreground="#A1887F" Margin="0,2,0,0">
-                                                <Run Text="باركود:"/>
-                                                <Run Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—}"/>
-                                                <Run Text="  |  #"/>
-                                                <Run Text="{Binding Id, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" VerticalAlignment="Center"
-                                                   FontWeight="SemiBold" Foreground="#2E7D32"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding VisibleItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:GoldItemPickerDisplayItem}">
+                                    <Border Margin="0,0,10,10" Padding="10,8" CornerRadius="10"
+                                            BorderThickness="1" Cursor="Hand"
+                                            Background="{DynamicResource CardBrush}"
+                                            BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                            MouseLeftButtonUp="ItemRow_MouseLeftButtonUp">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Background" Value="#FFF8E1"/>
+                                                        <Setter Property="BorderBrush" Value="#B8860B"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,4">
+                                                <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                            <TextBlock Grid.Row="1" Text="{Binding Summary}" FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                            <DockPanel Grid.Row="2" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding StatusLabel}" FontWeight="SemiBold" FontSize="11"
+                                                           Foreground="#2E7D32" DockPanel.Dock="Left"/>
+                                                <TextBlock FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           HorizontalAlignment="Left" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="#"/><Run Text="{Binding Id, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </DockPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
 
-                    <Border Background="#88FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}">
+                    <Border Background="#88000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}">
                         <ProgressBar IsIndeterminate="True" Width="180" Height="5" VerticalAlignment="Center"
                                      Foreground="#B8860B"/>
                     </Border>

@@ -805,6 +805,8 @@ public class CloudGoldSettings : CloudBaseEntity
     public decimal LowStockAlertGrams { get; set; } = 10;
     public int OverdueDaysThreshold { get; set; } = 30;
     public string EnabledKaratsCsv { get; set; } = "24,22,21,18";
+    public GoldMakingChargeMode DefaultMakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    public bool IsConfigured { get; set; }
 }
 
 public class CloudGoldFxRate : CloudBaseEntity
@@ -865,6 +867,7 @@ public class CloudGoldCustomer : CloudBaseEntity
     public string Notes { get; set; } = string.Empty;
     public decimal CreditBalanceIqd { get; set; }
     public decimal CreditBalanceUsd { get; set; }
+    public decimal GoldCreditGrams { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -958,6 +961,7 @@ public class CloudGoldInvoice : CloudBaseEntity
     public int? CashBoxId { get; set; }
     public string Notes { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
+    public int? RelatedInvoiceId { get; set; }
 
     public ICollection<CloudGoldInvoiceLine> Lines { get; set; } = [];
     public ICollection<CloudGoldPayment> Payments { get; set; } = [];
@@ -974,6 +978,8 @@ public class CloudGoldInvoiceLine : CloudBaseEntity
     public decimal PricePerGram { get; set; }
     public decimal GoldValue { get; set; }
     public decimal MakingCharge { get; set; }
+    public GoldMakingChargeMode MakingChargeMode { get; set; } = GoldMakingChargeMode.Fixed;
+    public decimal MakingChargeRate { get; set; }
     public decimal LineTotal { get; set; }
     public string Description { get; set; } = string.Empty;
     public bool WeightFromScale { get; set; }
@@ -1001,6 +1007,9 @@ public class CloudGoldVoucher : CloudBaseEntity
     public decimal Amount { get; set; }
     public int? CashBoxId { get; set; }
     public int? CustomerId { get; set; }
+    public int? SupplierId { get; set; }
+    public bool IsOpeningBalance { get; set; }
+    public bool AffectsCashBox { get; set; } = true;
     public string Notes { get; set; } = string.Empty;
 }
 

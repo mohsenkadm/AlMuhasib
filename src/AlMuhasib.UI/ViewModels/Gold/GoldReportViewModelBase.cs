@@ -99,4 +99,38 @@ public abstract partial class GoldReportViewModelBase : ViewModelBase
     }
 
     protected static string FormatCurrency(decimal value) => $"{value:N0} د.ع";
+
+    [RelayCommand]
+    protected void SetDateToday()
+    {
+        DateFrom = DateTo = DateTime.Today;
+    }
+
+    [RelayCommand]
+    protected void SetDateWeek()
+    {
+        DateTo = DateTime.Today;
+        DateFrom = DateTime.Today.AddDays(-7);
+    }
+
+    [RelayCommand]
+    protected void SetDateMonth()
+    {
+        DateTo = DateTime.Today;
+        DateFrom = DateTime.Today.AddMonths(-1);
+    }
+
+    [RelayCommand]
+    protected void SetDateQuarter()
+    {
+        DateTo = DateTime.Today;
+        DateFrom = DateTime.Today.AddMonths(-3);
+    }
+
+    [RelayCommand]
+    protected void ResetDateFilters()
+    {
+        DateFrom = DateTime.Today.AddMonths(-1);
+        DateTo = DateTime.Today;
+    }
 }

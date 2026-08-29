@@ -1,0 +1,34 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.GoldReportFilterBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             FlowDirection="RightToLeft">
+    <Border Style="{StaticResource FilterBar}">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <DatePicker SelectedDate="{Binding DateFrom, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Style="{StaticResource FilledDatePicker}"
+                            materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
+                <DatePicker SelectedDate="{Binding DateTo, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Style="{StaticResource FilledDatePicker}"
+                            materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
+                <ContentPresenter Content="{Binding FilterContent, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                <Button Content="بحث" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding SearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Margin="0,0,8,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="اليوم" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                        Command="{Binding SetDateTodayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                <Button Content="أسبوع" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                        Command="{Binding SetDateWeekCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                <Button Content="شهر" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,4,0"
+                        Command="{Binding SetDateMonthCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                <Button Content="ربع سنة" Style="{StaticResource FlatButton}" Padding="8,4" Margin="0,0,12,0"
+                        Command="{Binding SetDateQuarterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                <Button Content="مسح الفلاتر" Style="{StaticResource FlatButton}" Padding="8,4"
+                        Command="{Binding ResetDateFiltersCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

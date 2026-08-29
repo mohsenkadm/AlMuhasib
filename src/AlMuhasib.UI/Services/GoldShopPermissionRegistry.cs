@@ -45,6 +45,8 @@ public static class GoldShopPermissionRegistry
     public const string CashBoxMovementReport = "GoldCashBoxMovementReport";
     public const string UserPerformanceReport = "GoldUserPerformanceReport";
     public const string DeletedInvoicesReport = "GoldDeletedInvoicesReport";
+    public const string ExchangeReport = "GoldExchangeReport";
+    public const string SaleReturnsReport = "GoldSaleReturnsReport";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
@@ -93,6 +95,8 @@ public static class GoldShopPermissionRegistry
         (CashBoxMovementReport, "حركة القاصات"),
         (UserPerformanceReport, "أداء المستخدمين"),
         (DeletedInvoicesReport, "الفواتير المحذوفة"),
+        (ExchangeReport, "تقرير التبديل"),
+        (SaleReturnsReport, "تقرير مرتجعات البيع"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (PrintSettings, "إعدادات الطباعة"),
@@ -144,6 +148,8 @@ public static class GoldShopPermissionRegistry
         [typeof(GoldCashBoxMovementReportViewModel)] = CashBoxMovementReport,
         [typeof(GoldUserPerformanceReportViewModel)] = UserPerformanceReport,
         [typeof(GoldDeletedInvoicesReportViewModel)] = DeletedInvoicesReport,
+        [typeof(GoldExchangeReportViewModel)] = ExchangeReport,
+        [typeof(GoldSaleReturnsReportViewModel)] = SaleReturnsReport,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
@@ -195,6 +201,8 @@ public static class GoldShopPermissionRegistry
         [CashBoxMovementReport] = typeof(GoldCashBoxMovementReportViewModel),
         [UserPerformanceReport] = typeof(GoldUserPerformanceReportViewModel),
         [DeletedInvoicesReport] = typeof(GoldDeletedInvoicesReportViewModel),
+        [ExchangeReport] = typeof(GoldExchangeReportViewModel),
+        [SaleReturnsReport] = typeof(GoldSaleReturnsReportViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),

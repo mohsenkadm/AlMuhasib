@@ -189,4 +189,27 @@ public partial class GoldCreditSalesViewModel : PagedViewModelBase
         if (_allLoaded.Count == 0)
             await LoadAsync();
     }
+
+    [RelayCommand]
+    private async Task OpenInvoiceDetail(GoldInvoiceListItem? invoice)
+    {
+        if (invoice is null)
+            return;
+
+        try
+        {
+            var full = await _saleService.GetByIdAsync(invoice.Id);
+            if (full is null)
+            {
+                _toast.ShowError("لم يتم العثور على الفاتورة.");
+                return;
+            }
+
+            GoldInvoiceDetailDialog.Show(full);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
+        }
+    }
 }

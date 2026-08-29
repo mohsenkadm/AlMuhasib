@@ -90,6 +90,22 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
                         <DataGridTextColumn Header="العملة" Binding="{Binding PaymentCurrency}" Width="80"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentCurrency"/>
+                        <DataGridTemplateColumn Header="تفاصيل" Width="70" MinWidth="70"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.OpenInvoiceDetailCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource TableViewIconButton}"
+                                            ToolTip="عرض التفاصيل">
+                                        <md:PackIcon Kind="Eye" Width="18" Height="18"/>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

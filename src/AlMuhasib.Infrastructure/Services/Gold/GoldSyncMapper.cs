@@ -80,7 +80,7 @@ internal static class GoldSyncMapper
                 .Select(p => MapPayment(p, invoiceMap, cashBoxMap))
                 .ToList(),
             GoldVouchers = vouchers.Where(ShouldSync)
-                .Select(v => MapVoucher(v, cashBoxMap, customerMap))
+                .Select(v => MapVoucher(v, cashBoxMap, customerMap, supplierMap))
                 .ToList(),
             GoldNotifications = notifications.Where(ShouldSync).Select(MapNotification).ToList()
         };
@@ -107,7 +107,7 @@ internal static class GoldSyncMapper
             var invoiceMap = await ApplyInvoicesAsync(db, data.GoldInvoices, customerMap, supplierMap, warehouseMap, cashBoxMap, ct);
             await ApplyInvoiceLinesAsync(db, data.GoldInvoiceLines, invoiceMap, itemMap, ct);
             await ApplyPaymentsAsync(db, data.GoldPayments, invoiceMap, cashBoxMap, ct);
-            await ApplyVouchersAsync(db, data.GoldVouchers, cashBoxMap, customerMap, ct);
+            await ApplyVouchersAsync(db, data.GoldVouchers, cashBoxMap, customerMap, supplierMap, ct);
             await ApplyNotificationsAsync(db, data.GoldNotifications, ct);
             await db.SaveChangesAsync(ct);
         }
@@ -435,7 +435,8 @@ internal static class GoldSyncMapper
     private static GoldVoucherSyncDto MapVoucher(
         GoldVoucher v,
         Dictionary<int, Guid> cashBoxMap,
-        Dictionary<int, Guid> customerMap)
+        Dictionary<int, Guid> customerMap,
+        Dictionary<int, Guid> supplierMap)
     {
         var d = new GoldVoucherSyncDto
         {
@@ -446,11 +447,15 @@ internal static class GoldSyncMapper
             Amount = v.Amount,
             CashBoxSyncId = v.CashBoxId.HasValue ? cashBoxMap.GetValueOrDefault(v.CashBoxId.Value) : null,
             CustomerSyncId = v.CustomerId.HasValue ? customerMap.GetValueOrDefault(v.CustomerId.Value) : null,
+            SupplierSyncId = v.SupplierId.HasValue ? supplierMap.GetValueOrDefault(v.SupplierId.Value) : null,
+            IsOpeningBalance = v.IsOpeningBalance,
+            AffectsCashBox = v.AffectsCashBox,
             Notes = v.Notes
         };
         CopyBase(v, d);
         if (d.CashBoxSyncId == Guid.Empty) d.CashBoxSyncId = null;
         if (d.CustomerSyncId == Guid.Empty) d.CustomerSyncId = null;
+        if (d.SupplierSyncId == Guid.Empty) d.SupplierSyncId = null;
         return d;
     }
 
@@ -998,6 +1003,7 @@ internal static class GoldSyncMapper
         List<GoldVoucherSyncDto> dtos,
         Dictionary<Guid, int> cashBoxMap,
         Dictionary<Guid, int> customerMap,
+        Dictionary<Guid, int> supplierMap,
         CancellationToken ct)
     {
         foreach (var dto in dtos)
@@ -1019,6 +1025,10 @@ internal static class GoldSyncMapper
                 ? boxId : null;
             existing.CustomerId = dto.CustomerSyncId.HasValue && customerMap.TryGetValue(dto.CustomerSyncId.Value, out var cid)
                 ? cid : null;
+            existing.SupplierId = dto.SupplierSyncId.HasValue && supplierMap.TryGetValue(dto.SupplierSyncId.Value, out var sid)
+                ? sid : null;
+            existing.IsOpeningBalance = dto.IsOpeningBalance;
+            existing.AffectsCashBox = dto.AffectsCashBox;
             existing.Notes = dto.Notes;
             ApplyBase(existing, dto);
         }

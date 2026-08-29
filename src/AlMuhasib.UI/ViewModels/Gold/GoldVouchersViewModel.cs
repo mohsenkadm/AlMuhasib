@@ -17,6 +17,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
 {
     private readonly IGoldCashService _cashService;
     private readonly IGoldCustomerService _customerService;
+    private readonly IGoldSupplierService _supplierService;
     private readonly IExportService _exportService;
     private readonly IToastNotificationService _toast;
     private readonly ICurrentUserService _currentUserService;
@@ -24,6 +25,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
     public ObservableCollection<GoldVoucher> Vouchers { get; } = [];
     public ObservableCollection<GoldCashBox> CashBoxes { get; } = [];
     public ObservableCollection<GoldCustomerListItem> Customers { get; } = [];
+    public ObservableCollection<GoldSupplierListItem> Suppliers { get; } = [];
 
     public IReadOnlyList<GoldVoucherTypeFilterOption> TypeFilters { get; } =
     [
@@ -56,20 +58,41 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
     [ObservableProperty] private decimal _editAmount;
     [ObservableProperty] private GoldCashBox? _editCashBox;
     [ObservableProperty] private GoldCustomerListItem? _editCustomer;
+    [ObservableProperty] private GoldSupplierListItem? _editSupplier;
     [ObservableProperty] private string _editNotes = string.Empty;
     [ObservableProperty] private string _editVoucherNumber = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private string _message = string.Empty;
 
+    [ObservableProperty] private decimal _customerCreditIqd;
+    [ObservableProperty] private decimal _customerCreditUsd;
+    [ObservableProperty] private decimal _customerGoldCreditGrams;
+    [ObservableProperty] private decimal _projectedCreditIqd;
+    [ObservableProperty] private decimal _projectedCreditUsd;
+    [ObservableProperty] private string _customerCreditSummary = string.Empty;
+
+    [ObservableProperty] private decimal _supplierCreditIqd;
+    [ObservableProperty] private decimal _supplierCreditUsd;
+    [ObservableProperty] private decimal _projectedSupplierCreditIqd;
+    [ObservableProperty] private decimal _projectedSupplierCreditUsd;
+    [ObservableProperty] private string _supplierCreditSummary = string.Empty;
+
+    public bool ShowCustomerField => EditType == GoldVoucherType.Receipt;
+    public bool ShowCustomerCreditPanel => ShowCustomerField && EditCustomer is not null;
+    public bool ShowSupplierField => EditType == GoldVoucherType.Payment;
+    public bool ShowSupplierCreditPanel => ShowSupplierField && EditSupplier is not null;
+
     public GoldVouchersViewModel(
         IGoldCashService cashService,
         IGoldCustomerService customerService,
+        IGoldSupplierService supplierService,
         IExportService exportService,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _cashService = cashService;
         _customerService = customerService;
+        _supplierService = supplierService;
         _exportService = exportService;
         _toast = toast;
         _currentUserService = currentUserService;
@@ -87,6 +110,11 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
         var (customers, _) = await _customerService.GetPagedAsync(1, 500, activeOnly: true);
         foreach (var c in customers)
             Customers.Add(c);
+
+        Suppliers.Clear();
+        var (suppliers, _) = await _supplierService.GetPagedAsync(1, 500, activeOnly: true);
+        foreach (var s in suppliers)
+            Suppliers.Add(s);
 
         await LoadAsync();
     }
@@ -159,6 +187,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
         EditCashBox = CashBoxes.FirstOrDefault(b => b.IsDefault && b.Currency == GoldCurrency.IQD)
             ?? CashBoxes.FirstOrDefault();
         EditCustomer = null;
+        EditSupplier = null;
         EditNotes = string.Empty;
         try
         {
@@ -169,9 +198,130 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
             EditVoucherNumber = string.Empty;
         }
         IsDialogOpen = true;
+        await RefreshPartyCreditPreviewAsync();
     }
 
-    partial void OnEditTypeChanged(GoldVoucherType value) => _ = RefreshVoucherNumberAsync();
+    partial void OnEditTypeChanged(GoldVoucherType value)
+    {
+        OnPropertyChanged(nameof(ShowCustomerField));
+        OnPropertyChanged(nameof(ShowCustomerCreditPanel));
+        OnPropertyChanged(nameof(ShowSupplierField));
+        OnPropertyChanged(nameof(ShowSupplierCreditPanel));
+        if (value == GoldVoucherType.Payment)
+            EditCustomer = null;
+        else
+            EditSupplier = null;
+        _ = RefreshVoucherNumberAsync();
+        _ = RefreshPartyCreditPreviewAsync();
+    }
+
+    partial void OnEditCustomerChanged(GoldCustomerListItem? value)
+    {
+        OnPropertyChanged(nameof(ShowCustomerCreditPanel));
+        _ = RefreshPartyCreditPreviewAsync();
+    }
+
+    partial void OnEditSupplierChanged(GoldSupplierListItem? value)
+    {
+        OnPropertyChanged(nameof(ShowSupplierCreditPanel));
+        _ = RefreshPartyCreditPreviewAsync();
+    }
+
+    partial void OnEditAmountChanged(decimal value) => _ = RefreshPartyCreditPreviewAsync();
+    partial void OnEditCurrencyChanged(GoldCurrency value) => _ = RefreshPartyCreditPreviewAsync();
+
+    private async Task RefreshPartyCreditPreviewAsync()
+    {
+        await RefreshCustomerCreditPreviewAsync();
+        await RefreshSupplierCreditPreviewAsync();
+    }
+
+    private async Task RefreshCustomerCreditPreviewAsync()
+    {
+        if (!ShowCustomerField || EditCustomer is null)
+        {
+            CustomerCreditIqd = CustomerCreditUsd = CustomerGoldCreditGrams = 0;
+            ProjectedCreditIqd = ProjectedCreditUsd = 0;
+            CustomerCreditSummary = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var customer = await _customerService.GetByIdAsync(EditCustomer.Id);
+            if (customer is null)
+            {
+                CustomerCreditSummary = "تعذر تحميل بيانات الزبون";
+                return;
+            }
+
+            CustomerCreditIqd = customer.CreditBalanceIqd;
+            CustomerCreditUsd = customer.CreditBalanceUsd;
+            CustomerGoldCreditGrams = customer.GoldCreditGrams;
+
+            if (EditCurrency == GoldCurrency.IQD)
+            {
+                ProjectedCreditIqd = Math.Max(0, CustomerCreditIqd - EditAmount);
+                ProjectedCreditUsd = CustomerCreditUsd;
+            }
+            else
+            {
+                ProjectedCreditUsd = Math.Max(0, CustomerCreditUsd - EditAmount);
+                ProjectedCreditIqd = CustomerCreditIqd;
+            }
+
+            CustomerCreditSummary =
+                $"دين حالي: {CustomerCreditIqd:N0} د.ع | {CustomerCreditUsd:N2} $ | {CustomerGoldCreditGrams:N3} غ\n" +
+                $"بعد سند القبض ({EditAmount:N0} {EditCurrency}): {ProjectedCreditIqd:N0} د.ع | {ProjectedCreditUsd:N2} $";
+        }
+        catch (Exception ex)
+        {
+            CustomerCreditSummary = ex.Message;
+        }
+    }
+
+    private async Task RefreshSupplierCreditPreviewAsync()
+    {
+        if (!ShowSupplierField || EditSupplier is null)
+        {
+            SupplierCreditIqd = SupplierCreditUsd = 0;
+            ProjectedSupplierCreditIqd = ProjectedSupplierCreditUsd = 0;
+            SupplierCreditSummary = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var supplier = await _supplierService.GetByIdAsync(EditSupplier.Id);
+            if (supplier is null)
+            {
+                SupplierCreditSummary = "تعذر تحميل بيانات المورد";
+                return;
+            }
+
+            SupplierCreditIqd = supplier.CreditBalanceIqd;
+            SupplierCreditUsd = supplier.CreditBalanceUsd;
+
+            if (EditCurrency == GoldCurrency.IQD)
+            {
+                ProjectedSupplierCreditIqd = Math.Max(0, SupplierCreditIqd - EditAmount);
+                ProjectedSupplierCreditUsd = SupplierCreditUsd;
+            }
+            else
+            {
+                ProjectedSupplierCreditUsd = Math.Max(0, SupplierCreditUsd - EditAmount);
+                ProjectedSupplierCreditIqd = SupplierCreditIqd;
+            }
+
+            SupplierCreditSummary =
+                $"دين حالي: {SupplierCreditIqd:N0} د.ع | {SupplierCreditUsd:N2} $\n" +
+                $"بعد سند الصرف ({EditAmount:N0} {EditCurrency}): {ProjectedSupplierCreditIqd:N0} د.ع | {ProjectedSupplierCreditUsd:N2} $";
+        }
+        catch (Exception ex)
+        {
+            SupplierCreditSummary = ex.Message;
+        }
+    }
 
     private async Task RefreshVoucherNumberAsync()
     {
@@ -211,7 +361,10 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
                 Currency = EditCurrency,
                 Amount = EditAmount,
                 CashBoxId = EditCashBox.Id,
-                CustomerId = EditCustomer?.Id,
+                CustomerId = EditType == GoldVoucherType.Receipt ? EditCustomer?.Id : null,
+                SupplierId = EditType == GoldVoucherType.Payment ? EditSupplier?.Id : null,
+                AffectsCashBox = true,
+                IsOpeningBalance = false,
                 Notes = EditNotes
             };
 
@@ -244,6 +397,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
                 النوع = v.VoucherType.ToString(),
                 العملة = v.Currency.ToString(),
                 المبلغ = v.Amount,
+                الطرف = v.PartyDisplayName,
                 ملاحظات = v.Notes
             });
 
@@ -273,7 +427,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
         {
             var (allItems, _) = await _cashService.GetVouchersPagedAsync(
                 1, int.MaxValue, TypeFilter, CurrencyFilter, DateFrom, DateTo);
-            var columns = new[] { "رقم السند", "التاريخ", "النوع", "العملة", "المبلغ", "ملاحظات" };
+            var columns = new[] { "رقم السند", "التاريخ", "النوع", "العملة", "المبلغ", "الزبون/المورد", "ملاحظات" };
             IList<object[]> rows = allItems.Select(v => new object[]
             {
                 v.VoucherNumber,
@@ -281,6 +435,7 @@ public partial class GoldVouchersViewModel : PagedViewModelBase
                 v.VoucherType.ToString(),
                 v.Currency.ToString(),
                 v.Amount.ToString("N0"),
+                v.PartyDisplayName,
                 v.Notes
             }).ToList();
             _exportService.PrintTable("قائمة السندات", columns, rows);

@@ -192,8 +192,20 @@ public class GoldVoucherConfiguration : IEntityTypeConfiguration<GoldVoucher>
         builder.Property(v => v.Currency).HasConversion<string>().HasMaxLength(10);
         builder.Property(v => v.Amount).HasPrecision(18, 2);
         builder.Property(v => v.Notes).HasMaxLength(2000);
+        builder.Property(v => v.IsOpeningBalance).HasDefaultValue(false);
+        builder.Property(v => v.AffectsCashBox).HasDefaultValue(true);
         builder.HasIndex(v => v.VoucherDate);
         builder.HasIndex(v => v.CustomerId);
+        builder.HasIndex(v => v.SupplierId);
+        builder.HasIndex(v => v.IsOpeningBalance);
+        builder.HasOne(v => v.Customer)
+            .WithMany()
+            .HasForeignKey(v => v.CustomerId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(v => v.Supplier)
+            .WithMany()
+            .HasForeignKey(v => v.SupplierId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

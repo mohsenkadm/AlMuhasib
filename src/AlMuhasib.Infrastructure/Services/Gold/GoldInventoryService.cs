@@ -218,7 +218,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    internal static async Task AdjustStockInternalAsync(
+    internal static async Task<GoldStockBalance> AdjustStockInternalAsync(
         GoldDbContext context,
         int karatValue,
         decimal gramsDelta,
@@ -227,7 +227,13 @@ public sealed class GoldInventoryService : IGoldInventoryService
         CancellationToken cancellationToken)
     {
         var balance = await context.GoldStockBalances
-            .FirstOrDefaultAsync(s => s.KaratValue == karatValue && s.WarehouseId == warehouseId, cancellationToken);
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                s => s.KaratValue == karatValue && s.WarehouseId == warehouseId,
+                cancellationToken);
+
+        if (balance is { IsDeleted: true })
+            balance.RestoreFromSoftDelete("System");
 
         if (balance is null)
         {
@@ -245,6 +251,7 @@ public sealed class GoldInventoryService : IGoldInventoryService
             throw new InvalidOperationException($"المخزون غير كافٍ للعيار {karatValue}");
 
         GoldCurrencyHelper.ApplyStockDelta(balance, gramsDelta, costPerGram);
+        return balance;
     }
 
     internal static async Task<List<GoldStockRow>> BuildStockRowsAsync(

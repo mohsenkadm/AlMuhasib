@@ -6,6 +6,11 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -100,6 +105,8 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Currency"/>
                         <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                        <DataGridTextColumn Header="الزبون/المورد" Binding="{Binding PartyDisplayName}" Width="160"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyDisplayName"/>
                         <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
                     </DataGrid.Columns>
@@ -132,8 +139,35 @@
                                   DisplayMemberPath="Name" md:HintAssist.Hint="القاصة"
                                   Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
                         <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding EditCustomer}"
-                                  DisplayMemberPath="Name" md:HintAssist.Hint="الزبون (اختياري)"
-                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
+                                  DisplayMemberPath="Name" md:HintAssist.Hint="الزبون (اختياري — تحصيل آجل)"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"
+                                  Visibility="{Binding ShowCustomerField, Converter={StaticResource BoolToVis}}"/>
+                        <Border Margin="0,0,0,12" Padding="12" CornerRadius="10"
+                                Background="{DynamicResource PrimaryHueLightBrush}"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
+                                Visibility="{Binding ShowCustomerCreditPanel, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="تفاصيل دين الزبون" FontWeight="SemiBold" Margin="0,0,0,6"
+                                           Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                <TextBlock Text="{Binding CustomerCreditSummary}" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
+                        <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding EditSupplier}"
+                                  DisplayMemberPath="Name" md:HintAssist.Hint="المورد (اختياري — تسديد آجل)"
+                                  Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"
+                                  Visibility="{Binding ShowSupplierField, Converter={StaticResource BoolToVis}}"/>
+                        <Border Margin="0,0,0,12" Padding="12" CornerRadius="10"
+                                Background="{DynamicResource PrimaryHueLightBrush}"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
+                                Visibility="{Binding ShowSupplierCreditPanel, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="تفاصيل دين المورد" FontWeight="SemiBold" Margin="0,0,0,6"
+                                           Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                <TextBlock Text="{Binding SupplierCreditSummary}" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
                         <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="ملاحظات" Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">

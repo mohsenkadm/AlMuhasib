@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums.Gold;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Gold;
@@ -13,6 +14,7 @@ namespace AlMuhasib.UI.ViewModels.Gold;
 public partial class GoldCustomerStatementViewModel : ViewModelBase
 {
     private readonly IGoldCustomerService _customerService;
+    private readonly IGoldSaleService _saleService;
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IToastNotificationService _toast;
@@ -33,12 +35,14 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
 
     public GoldCustomerStatementViewModel(
         IGoldCustomerService customerService,
+        IGoldSaleService saleService,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
         IToastNotificationService toast,
         ICurrentUserService currentUserService)
     {
         _customerService = customerService;
+        _saleService = saleService;
         _exportService = exportService;
         _whatsAppShare = whatsAppShare;
         _toast = toast;
@@ -50,6 +54,43 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
     {
         LoadPermissions(_currentUserService, GoldShopPermissionRegistry.CustomerStatement);
         await LoadCustomersAsync();
+        await SelectPendingCustomerAsync();
+    }
+
+    private async Task SelectPendingCustomerAsync()
+    {
+        var pendingId = GoldNavigationContext.TakePendingCustomerId();
+        if (pendingId is null)
+            return;
+
+        SelectedCustomer = Customers.FirstOrDefault(c => c.Id == pendingId.Value);
+        if (SelectedCustomer is not null)
+            return;
+
+        try
+        {
+            var entity = await _customerService.GetByIdAsync(pendingId.Value);
+            if (entity is null)
+                return;
+
+            var item = new GoldCustomerListItem
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Phone = entity.Phone,
+                Address = entity.Address,
+                CreditBalanceIqd = entity.CreditBalanceIqd,
+                CreditBalanceUsd = entity.CreditBalanceUsd,
+                GoldCreditGrams = entity.GoldCreditGrams,
+                IsActive = entity.IsActive
+            };
+            Customers.Insert(0, item);
+            SelectedCustomer = item;
+        }
+        catch
+        {
+            // Ignore pre-selection failures; user can pick manually.
+        }
     }
 
     [RelayCommand]
@@ -187,6 +228,32 @@ public partial class GoldCustomerStatementViewModel : ViewModelBase
             ErrorMessage = ex.Message;
             _toast.ShowError(ex.Message);
             BeautifulMessageDialog.ShowError(ex.Message, "واتساب");
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenInvoiceDetail(GoldInvoiceListItem? invoice)
+    {
+        if (invoice is null)
+            return;
+
+        try
+        {
+            var full = invoice.InvoiceType == GoldInvoiceType.Purchase
+                ? null
+                : await _saleService.GetByIdAsync(invoice.Id);
+
+            if (full is null)
+            {
+                _toast.ShowError("لم يتم العثور على الفاتورة.");
+                return;
+            }
+
+            GoldInvoiceDetailDialog.Show(full);
+        }
+        catch (Exception ex)
+        {
+            _toast.ShowError(ex.Message);
         }
     }
 }
