@@ -488,7 +488,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 throw new ArgumentException("يجب تحديد المصرف لسند القبض المصرفي");
             case VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal when !request.InvestorSyncId.HasValue:
                 throw new ArgumentException("يجب تحديد المستثمر");
-            case VoucherType.Receipt or VoucherType.DebtReceipt or VoucherType.Payment when !request.CustomerSyncId.HasValue:
+            case VoucherType.Receipt or VoucherType.DebtReceipt when !request.CustomerSyncId.HasValue:
                 throw new ArgumentException("يجب تحديد العميل");
         }
 
