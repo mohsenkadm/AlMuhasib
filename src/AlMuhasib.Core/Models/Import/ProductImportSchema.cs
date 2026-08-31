@@ -16,11 +16,12 @@ public static class ProductImportSchema
     public const string DiscountExpiresAt = "انتهاء الخصم";
     public const string SalePrice = "سعر البيع";
     public const string PurchasePrice = "سعر الشراء";
+    public const string MinQuantity = "الحد الأدنى";
 
     public static IReadOnlyList<string> BuildHeaders(ProductImportOptions? options = null)
     {
         options ??= new ProductImportOptions();
-        var headers = new List<string> { Name, Barcode, Category, Description };
+        var headers = new List<string> { Name, Barcode, Category, Description, MinQuantity };
 
         if (options.IncludePharmacyFields)
         {
@@ -79,6 +80,7 @@ public static class ProductImportSchema
                 DiscountExpiresAt => "",
                 SalePrice => "1000",
                 PurchasePrice => "800",
+                MinQuantity => "5",
                 _ => ""
             };
         }

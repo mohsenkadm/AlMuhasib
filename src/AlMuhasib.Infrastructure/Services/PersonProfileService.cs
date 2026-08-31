@@ -172,7 +172,9 @@ public class PersonProfileService : IPersonProfileService
 
         var vouchers = await context.Vouchers.AsNoTracking()
             .Where(v => v.CustomerId == id &&
-                        (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt))
+                        (v.VoucherType == VoucherType.Receipt
+                         || v.VoucherType == VoucherType.DebtReceipt
+                         || v.VoucherType == VoucherType.Payment))
             .Where(v => !from.HasValue || v.Date >= from.Value)
             .Where(v => !to.HasValue || v.Date < EndOfDay(to))
             .OrderByDescending(v => v.Date)

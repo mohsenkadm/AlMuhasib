@@ -99,6 +99,18 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private bool _showCustomerField;
 
     [ObservableProperty]
+    private bool _showOptionalCustomerField;
+
+    [ObservableProperty]
+    private bool _showCustomerPickerField;
+
+    [ObservableProperty]
+    private bool _isCustomerRequired;
+
+    [ObservableProperty]
+    private string _customerFieldHint = "العميل (ابحث بالاسم أو الهاتف أو رقم الملف)";
+
+    [ObservableProperty]
     private bool _showSupplierField;
 
     [ObservableProperty]
@@ -228,6 +240,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private void UpdateFieldVisibility(VoucherType type)
     {
         ShowCustomerField = type is VoucherType.Receipt or VoucherType.DebtReceipt;
+        ShowOptionalCustomerField = type is VoucherType.Payment;
+        ShowCustomerPickerField = ShowCustomerField || ShowOptionalCustomerField;
+        IsCustomerRequired = ShowCustomerField;
+        CustomerFieldHint = ShowOptionalCustomerField
+            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم الملف)"
+            : "العميل (ابحث بالاسم أو الهاتف أو رقم الملف)";
         ShowSupplierField = type is VoucherType.Payment;
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;
@@ -235,7 +253,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         RefreshDocumentLinkVisibility();
 
         // Clear unrelated selections
-        if (!ShowCustomerField)
+        if (!ShowCustomerField && !ShowOptionalCustomerField)
         {
             SelectedCustomer = null;
             CustomerSearchText = string.Empty;
@@ -278,6 +296,13 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         if (value is not null)
             CustomerSearchText = value.Name;
 
+        if (ShowOptionalCustomerField && value is not null && SelectedSupplier is not null)
+        {
+            SelectedSupplier = null;
+            SupplierSearchText = string.Empty;
+            SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
+        }
+
         RefreshDocumentLinkVisibility();
         _ = LoadDocumentLinksAsync();
     }
@@ -296,6 +321,13 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         if (value is not null)
             SupplierSearchText = value.Name;
+
+        if (ShowOptionalCustomerField && value is not null && SelectedCustomer is not null)
+        {
+            SelectedCustomer = null;
+            CustomerSearchText = string.Empty;
+            CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
+        }
     }
 
     partial void OnSupplierSearchTextChanged(string value)
@@ -411,14 +443,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             BeautifulMessageDialog.ShowWarning("يرجى اختيار القاصة");
             return;
         }
-        if (ShowCustomerField && SelectedCustomer is null)
+        if (IsCustomerRequired && SelectedCustomer is null)
         {
             BeautifulMessageDialog.ShowWarning("يرجى اختيار العميل");
             return;
         }
-        if (ShowSupplierField && SelectedSupplier is null)
+        if (ShowOptionalCustomerField && SelectedCustomer is not null && SelectedSupplier is not null)
         {
-            BeautifulMessageDialog.ShowWarning("يرجى اختيار المورد");
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار الزبون أو المورد فقط، وليس كلاهما");
             return;
         }
         if (ShowInvestorField && SelectedInvestor is null)
@@ -448,11 +480,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,
                 BankAccountId = SelectedBankAccount?.Id,
-                CustomerId = ShowCustomerField
-                    ? SelectedCustomer?.Id
-                    : ShowSupplierField
-                        ? SelectedSupplier?.Id
-                        : null,
+                CustomerId = SelectedVoucherType switch
+                {
+                    VoucherType.Receipt or VoucherType.DebtReceipt => SelectedCustomer?.Id,
+                    VoucherType.Payment => SelectedCustomer?.Id ?? SelectedSupplier?.Id,
+                    _ => null
+                },
                 InvestorId = SelectedInvestor?.Id,
                 InvoiceId = ShowDocumentLinkFields ? SelectedLinkedInvoice?.Id : null,
                 InstallmentId = ShowDocumentLinkFields ? SelectedLinkedInstallment?.Id : null,

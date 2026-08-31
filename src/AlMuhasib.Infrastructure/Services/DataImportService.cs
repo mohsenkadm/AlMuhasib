@@ -193,6 +193,10 @@ public class DataImportService : IDataImportService
                     }
                 }
 
+                var minQty = ParseDecimal(GetCell(row, headerMap, ProductImportSchema.MinQuantity));
+                if (minQty > 0)
+                    await ApplyMinQuantityToAllWarehousesAsync(context, product.Id, minQty);
+
                 result.ImportedCount++;
             }
             catch (Exception ex)
@@ -312,5 +316,39 @@ public class DataImportService : IDataImportService
             || value == "2")
             return DiscountType.FixedAmount;
         return DiscountType.None;
+    }
+
+    private static async Task ApplyMinQuantityToAllWarehousesAsync(AppDbContext context, int productId, decimal minQuantity)
+    {
+        minQuantity = minQuantity < 0 ? 0 : minQuantity;
+        var warehouses = await context.Warehouses.ToListAsync();
+        if (warehouses.Count == 0)
+            return;
+
+        var existing = await context.WarehouseStocks
+            .Where(s => s.ProductId == productId)
+            .ToDictionaryAsync(s => s.WarehouseId);
+
+        foreach (var warehouse in warehouses)
+        {
+            if (existing.TryGetValue(warehouse.Id, out var stock))
+            {
+                stock.MinQuantity = minQuantity;
+            }
+            else
+            {
+                context.WarehouseStocks.Add(new WarehouseStock
+                {
+                    WarehouseId = warehouse.Id,
+                    ProductId = productId,
+                    Quantity = 0,
+                    OpeningQuantity = 0,
+                    UnitCost = 0,
+                    MinQuantity = minQuantity
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 }
