@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'app_selectable_text.dart';
 
 class AppEntityCard extends StatelessWidget {
   const AppEntityCard({
@@ -50,7 +51,7 @@ class AppEntityCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppSelectableText(
                         title,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
@@ -58,7 +59,7 @@ class AppEntityCard extends StatelessWidget {
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: AppSpacing.xs),
-                        Text(
+                        AppSelectableText(
                           subtitle!,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
@@ -76,7 +77,7 @@ class AppEntityCard extends StatelessWidget {
                             borderRadius:
                                 BorderRadius.circular(AppSpacing.radiusFull),
                           ),
-                          child: Text(
+                          child: AppSelectableText(
                             status!,
                             style: TextStyle(
                               fontSize: 11,

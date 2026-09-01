@@ -412,7 +412,7 @@ class _DataListBody extends StatelessWidget {
         ].where((e) => e.isNotEmpty).join(' • '),
         leading: _LeadingBadge(icon: icon, color: accent, letter: item.name),
         trailing: showBalance
-            ? Text(
+            ? AppSelectableText(
                 formatCurrency(item.balance!),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -440,7 +440,7 @@ class _DataListBody extends StatelessWidget {
           icon: isSale ? Icons.south_west_rounded : Icons.north_east_rounded,
           color: tone,
         ),
-        trailing: Text(
+        trailing: AppSelectableText(
           formatCurrency(item.netAmount),
           style: TextStyle(
             fontWeight: FontWeight.w800,
@@ -895,7 +895,7 @@ class InvoiceDetailScreen extends GetView<InvoiceDetailController> {
                         icon: Icons.inventory_2_outlined,
                         color: AppColors.moduleOrange,
                       ),
-                      trailing: Text(
+                      trailing: AppSelectableText(
                         formatCurrency(entry.value.totalPrice),
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,

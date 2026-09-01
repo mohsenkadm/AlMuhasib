@@ -1349,7 +1349,39 @@
         </Setter>
     </Style>
 
-    <!-- Row style -->
+    <!-- Row style — read-only lists (copy-friendly cursor) -->
+    <Style x:Key="ModernDataGridReadOnlyRow" TargetType="DataGridRow"
+           BasedOn="{StaticResource MaterialDesignDataGridRow}">
+        <Setter Property="MinHeight" Value="52"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+        <Setter Property="Margin" Value="8,0"/>
+        <Setter Property="Background" Value="{DynamicResource DataGridRowBrush}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="AlternationIndex" Value="1">
+                <Setter Property="Background" Value="{DynamicResource DataGridRowAltBrush}"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource DataGridRowHoverBrush}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBrush}"/>
+                <Setter Property="BorderBrush" Value="#64B5F6"/>
+                <Setter Property="BorderThickness" Value="3,0,0,0"/>
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsSelected" Value="True"/>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBrush}"/>
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Row style — interactive (clickable rows, e.g. invoices) -->
     <Style x:Key="ModernDataGridRow" TargetType="DataGridRow"
            BasedOn="{StaticResource MaterialDesignDataGridRow}">
         <Setter Property="MinHeight" Value="52"/>
@@ -1379,6 +1411,18 @@
                 <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBrush}"/>
             </MultiTrigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- TextBox for read-only copyable DataGrid cells -->
+    <Style x:Key="CopyableDataGridTextBox" TargetType="TextBox">
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="IsReadOnlyCaretVisible" Value="False"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Cursor" Value="IBeam"/>
     </Style>
 
     <!-- Cell style -->
@@ -1421,10 +1465,11 @@
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="RowHeight" Value="52"/>
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource ModernDataGridColumnHeader}"/>
-        <Setter Property="RowStyle" Value="{StaticResource ModernDataGridRow}"/>
+        <Setter Property="RowStyle" Value="{StaticResource ModernDataGridReadOnlyRow}"/>
         <Setter Property="CellStyle" Value="{StaticResource ModernDataGridCell}"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="behaviors:DataGridCopyableCellsBehavior.IsEnabled" Value="True"/>
     </Style>
 
     <!-- نص خلايا جداول الفندق — تلميح عند قصّ النص -->
@@ -1705,6 +1750,8 @@
     </Style>
 
     <Style x:Key="InvoiceItemsDataGrid" TargetType="DataGrid" BasedOn="{StaticResource ModernDataGrid}">
+        <Setter Property="behaviors:DataGridCopyableCellsBehavior.IsEnabled" Value="False"/>
+        <Setter Property="RowStyle" Value="{StaticResource ModernDataGridRow}"/>
         <Setter Property="CanUserSortColumns" Value="False"/>
         <Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="CanUserDeleteRows" Value="False"/>
@@ -3658,6 +3705,8 @@
     </Style>
 
     <Style x:Key="PosDataGrid" TargetType="DataGrid" BasedOn="{StaticResource ModernDataGrid}">
+        <Setter Property="behaviors:DataGridCopyableCellsBehavior.IsEnabled" Value="False"/>
+        <Setter Property="RowStyle" Value="{StaticResource ModernDataGridRow}"/>
         <Setter Property="MinHeight" Value="0"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
