@@ -236,8 +236,8 @@ class _PartyStep extends StatelessWidget {
               children: [
                 _PickerButton(
                   icon: Icons.person_outline,
-                  label:
-                      controller.customer.value?.name ?? 'select_customer'.tr(),
+                  label: controller.customer.value?.displayName ??
+                      'select_customer'.tr(),
                   filled: controller.customer.value != null,
                   onPressed: () => controller.pickLookup(
                     title: 'select_customer'.tr(),
@@ -247,6 +247,41 @@ class _PartyStep extends StatelessWidget {
                         controller.customer.value = customer,
                   ),
                 ),
+                if (controller.customer.value?.balance != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: controller.customer.value!.balance! > 0
+                            ? Colors.orange.shade50
+                            : Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            size: 18,
+                            color: controller.customer.value!.balance! > 0
+                                ? Colors.orange.shade800
+                                : Colors.green.shade800,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${'balance'.tr()}: ${formatCurrency(controller.customer.value!.balance!)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: controller.customer.value!.balance! > 0
+                                  ? Colors.orange.shade900
+                                  : Colors.green.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ).fadeSlideIn(slideY: 0.04),
           if (controller.needsSupplier)
@@ -538,7 +573,7 @@ class _ReviewStep extends StatelessWidget {
           if (controller.customer.value != null)
             _ReviewRow(
               label: 'customers'.tr(),
-              value: controller.customer.value!.name,
+              value: controller.customer.value!.displayName,
             ),
           if (controller.supplier.value != null)
             _ReviewRow(

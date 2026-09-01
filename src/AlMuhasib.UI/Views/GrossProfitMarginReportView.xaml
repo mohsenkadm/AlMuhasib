@@ -115,6 +115,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceNumber"/>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الإيراد" Binding="{Binding Revenue, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Revenue"/>
                                 <DataGridTextColumn Header="التكلفة" Binding="{Binding Cost, StringFormat=N0}" Width="130"

@@ -1122,6 +1122,7 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName" />
+                                                        <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                     <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="90"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                         <DataGridTextColumn.ElementStyle>
@@ -1131,6 +1132,8 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
+                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerFileNumber"/>
                                     <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="110"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate" />
                                     <DataGridTemplateColumn Header="المتبقي" Width="80"

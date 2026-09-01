@@ -11,6 +11,7 @@ public class CustomerQuickStatementResult
 {
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string? Phone { get; set; }
     public decimal Balance { get; set; }
     public decimal TotalDebit { get; set; }

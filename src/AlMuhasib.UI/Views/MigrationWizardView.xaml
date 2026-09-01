@@ -384,6 +384,7 @@
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RowNumber"/>
                                     <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                        <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                     <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat=N0}" Width="90"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
                                     <DataGridTextColumn Header="أقساط" Binding="{Binding NumberOfInstallments}" Width="60"

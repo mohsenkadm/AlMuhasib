@@ -100,8 +100,12 @@ class _LookupPickerSheet<T extends LookupItem> extends StatelessWidget {
             );
           }
           return ListTile(
-            title: Text(item.name),
-            subtitle: item.extra != null ? Text(item.extra!) : null,
+            title: Text(item.displayName),
+            subtitle: Text([
+              if (item.extra != null && item.extra!.isNotEmpty) item.extra!,
+              if (item.balance != null)
+                '${'balance'.tr()}: ${item.balance!.toStringAsFixed(0)}',
+            ].where((e) => e.isNotEmpty).join(' • ')),
             onTap: () => Navigator.pop(context, item),
           );
         },

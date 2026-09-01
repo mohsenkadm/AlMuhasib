@@ -6,6 +6,7 @@ public class LookupItem
     public Guid SyncId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Extra { get; set; }
+    public string? FileNumber { get; set; }
     /// <summary>رصيد الزبون المستحق (للعملاء فقط).</summary>
     public decimal? Balance { get; set; }
 }

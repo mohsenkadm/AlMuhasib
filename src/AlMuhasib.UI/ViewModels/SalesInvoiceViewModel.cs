@@ -29,6 +29,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
     private readonly ICustomerCreditService _customerCreditService;
+    private readonly IReportService _reportService;
+    private CancellationTokenSource? _customerBalanceCts;
     private readonly InvoiceCostGuard _costGuard;
     private DispatcherTimer? _draftSaveTimer;
     private const string DraftKey = "sales-invoice";
@@ -51,6 +53,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
     [ObservableProperty]
     private Customer? _selectedCustomer;
+
+    [ObservableProperty]
+    private decimal? _customerOutstandingBalance;
+
+    [ObservableProperty]
+    private bool _isCustomerBalanceLoading;
+
+    public bool ShowCustomerBalance => SelectedCustomer is not null;
+
+    public bool HasCustomerOutstandingBalance =>
+        CustomerOutstandingBalance is > 0;
 
     public ObservableCollection<Customer> Customers { get; } = [];
     public ObservableCollection<Customer> FilteredCustomers { get; } = [];
@@ -230,7 +243,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         ISalesRepService salesRepService,
         IPartyQuickDetailService partyQuickDetail,
         IProductQuickDetailService productQuickDetail,
-        ICustomerCreditService customerCreditService)
+        ICustomerCreditService customerCreditService,
+        IReportService reportService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -243,6 +257,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
         _customerCreditService = customerCreditService;
+        _reportService = reportService;
         _costGuard = new InvoiceCostGuard(unitOfWork, productPriceService, featureFlags.ProductPricingEnabled);
         _templateService = templateService;
         _queueService = queueService;
@@ -489,7 +504,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         {
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == invoice.CustomerId);
             if (SelectedCustomer is not null)
-                CustomerSearchText = SelectedCustomer.Name;
+                CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber);
         }
 
         if (ShowDriverSelection && invoice.DriverId.HasValue)
@@ -636,18 +651,78 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         // When user picks from dropdown, update search text to show selected name
         if (value is not null)
-            CustomerSearchText = value.Name;
+            CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(value.Name, value.FileNumber);
         ApplyCustomerDefaultSalesRep(value);
         _ = RefreshLoyaltyQuoteAsync();
         RefreshInvoiceWarnings();
+        _ = RefreshCustomerBalanceAsync();
+    }
+
+    partial void OnIsCustomerBalanceLoadingChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+
+    partial void OnCustomerOutstandingBalanceChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasCustomerOutstandingBalance));
+        OnPropertyChanged(nameof(CustomerBalanceText));
+    }
+
+    public string CustomerBalanceText =>
+        CustomerOutstandingBalance is null
+            ? string.Empty
+            : $"رصيد العميل: {CustomerOutstandingBalance:N0} د.ع";
+
+    private async Task RefreshCustomerBalanceAsync()
+    {
+        _customerBalanceCts?.Cancel();
+        _customerBalanceCts?.Dispose();
+        _customerBalanceCts = new CancellationTokenSource();
+        var token = _customerBalanceCts.Token;
+
+        if (SelectedCustomer is null)
+        {
+            CustomerOutstandingBalance = null;
+            IsCustomerBalanceLoading = false;
+            OnPropertyChanged(nameof(ShowCustomerBalance));
+            return;
+        }
+
+        IsCustomerBalanceLoading = true;
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+
+        try
+        {
+            var statement = await _reportService.GetCustomerStatementAsync(SelectedCustomer.Id);
+            if (token.IsCancellationRequested)
+                return;
+
+            CustomerOutstandingBalance = statement.Balance;
+        }
+        catch
+        {
+            if (!token.IsCancellationRequested)
+                CustomerOutstandingBalance = null;
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                IsCustomerBalanceLoading = false;
+                OnPropertyChanged(nameof(ShowCustomerBalance));
+            }
+        }
     }
 
     partial void OnCustomerSearchTextChanged(string value)
     {
-        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+        if (SelectedCustomer is not null &&
+            CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber) == value)
             return;
 
         SelectedCustomer = null;
+        CustomerOutstandingBalance = null;
+        IsCustomerBalanceLoading = false;
+        OnPropertyChanged(nameof(ShowCustomerBalance));
         CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
     }
 
@@ -1341,9 +1416,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             Date = _savedInvoice.Date,
             CreditDueDate = _savedInvoice.CreditDueDate,
             PartyLabel = "العميل",
-            PartyName = SelectedCustomer?.Name ?? CustomerSearchText,
+            PartyName = SelectedCustomer is not null
+                ? CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber)
+                : CustomerSearchText,
             PartyPhone = SelectedCustomer?.Phone,
             PartyAddress = SelectedCustomer?.Address,
+            FileNumber = SelectedCustomer?.FileNumber,
             DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
             SalesRepresentativeName = salesRepresentative?.Name,
             SalesRepresentativePhone = salesRepresentative?.Phone,

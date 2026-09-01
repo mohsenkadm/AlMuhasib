@@ -43,6 +43,7 @@ public class CollectionDashboardService : ICollectionDashboardService
                 InvoiceId = inst.InstallmentPlan?.InvoiceId,
                 CustomerId = inst.InstallmentPlan?.CustomerId ?? 0,
                 CustomerName = inst.InstallmentPlan?.Customer?.Name ?? "—",
+                CustomerFileNumber = inst.InstallmentPlan?.Customer?.FileNumber,
                 CustomerPhone = inst.InstallmentPlan?.Customer?.Phone,
                 DueDate = inst.DueDate,
                 RemainingAmount = inst.RemainingAmount,

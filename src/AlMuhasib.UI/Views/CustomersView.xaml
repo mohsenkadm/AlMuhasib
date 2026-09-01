@@ -119,7 +119,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
                         <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="160"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Address"/>
-                        <DataGridTextColumn Header="رقم الملف" Binding="{Binding FileNumber}" Width="100"
+                        <DataGridTextColumn Header="رقم العميل" Binding="{Binding FileNumber}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber"/>
                         <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="160"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
@@ -211,7 +211,7 @@
                                  Text="{Binding EditAddress, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
-                        <TextBox md:HintAssist.Hint="رقم الملف"
+                        <TextBox md:HintAssist.Hint="رقم العميل"
                                  Text="{Binding EditFileNumber, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 

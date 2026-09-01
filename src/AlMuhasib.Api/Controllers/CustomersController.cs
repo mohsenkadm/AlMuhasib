@@ -31,7 +31,8 @@ public sealed class CustomersController : ControllerBase
             var term = $"%{search.Trim()}%";
             query = query.Where(c =>
                 EF.Functions.Like(c.Name, term) ||
-                (c.Phone != null && EF.Functions.Like(c.Phone, term)));
+                (c.Phone != null && EF.Functions.Like(c.Phone, term)) ||
+                (c.FileNumber != null && EF.Functions.Like(c.FileNumber, term)));
         }
 
         query = query.OrderBy(c => c.Name);

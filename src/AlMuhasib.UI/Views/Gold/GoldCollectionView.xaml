@@ -88,6 +88,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceDate"/>
                         <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                            <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                         <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
                         <DataGridTextColumn Header="العملة" Binding="{Binding PaymentCurrency}" Width="80"

@@ -130,7 +130,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="رقم الملف" Width="110"
+                            <DataGridTextColumn Header="رقم العميل" Width="110"
                                                 Binding="{Binding FileNumber}"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FileNumber">
                                 <DataGridTextColumn.ElementStyle>

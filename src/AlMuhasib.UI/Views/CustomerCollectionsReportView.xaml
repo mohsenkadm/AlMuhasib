@@ -117,6 +117,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SourceType"/>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="المرجع" Binding="{Binding Reference}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Reference"/>
                                 <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Helpers;
@@ -107,7 +108,9 @@ public partial class SalesInvoiceViewModel
                 {
                     Id = invoice.Id,
                     InvoiceNumber = invoice.InvoiceNumber,
-                    PartyName = invoice.Customer?.Name ?? "—",
+                    PartyName = invoice.Customer is null
+                        ? "—"
+                        : CustomerDisplayHelper.FormatDisplayName(invoice.Customer.Name, invoice.Customer.FileNumber),
                     Date = invoice.Date,
                     NetAmount = invoice.NetAmount
                 });

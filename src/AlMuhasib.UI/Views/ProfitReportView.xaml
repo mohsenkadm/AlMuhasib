@@ -103,6 +103,7 @@
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
                                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                            <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                         <DataGridTextColumn Header="النوع" Binding="{Binding InvoiceTypeLabel}" Width="80"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceTypeLabel"/>
                                         <DataGridTextColumn Header="البنود" Binding="{Binding ItemCount}" Width="70"

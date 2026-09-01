@@ -34,6 +34,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Name = request.Name.Trim(),
             Phone = request.Phone,
             Address = request.Address,
+            FileNumber = string.IsNullOrWhiteSpace(request.FileNumber) ? null : request.FileNumber.Trim(),
             Notes = request.Notes,
             CreatedAt = now,
             CreatedBy = username

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -108,7 +109,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private bool _isCustomerRequired;
 
     [ObservableProperty]
-    private string _customerFieldHint = "العميل (ابحث بالاسم أو الهاتف أو رقم الملف)";
+    private string _customerFieldHint = "العميل (ابحث بالاسم أو الهاتف أو رقم العميل)";
 
     [ObservableProperty]
     private bool _showSupplierField;
@@ -244,8 +245,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         ShowCustomerPickerField = ShowCustomerField || ShowOptionalCustomerField;
         IsCustomerRequired = ShowCustomerField;
         CustomerFieldHint = ShowOptionalCustomerField
-            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم الملف)"
-            : "العميل (ابحث بالاسم أو الهاتف أو رقم الملف)";
+            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم العميل)"
+            : "العميل (ابحث بالاسم أو الهاتف أو رقم العميل)";
         ShowSupplierField = type is VoucherType.Payment;
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;
@@ -294,7 +295,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     partial void OnSelectedCustomerChanged(Customer? value)
     {
         if (value is not null)
-            CustomerSearchText = value.Name;
+            CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(value.Name, value.FileNumber);
 
         if (ShowOptionalCustomerField && value is not null && SelectedSupplier is not null)
         {
@@ -309,7 +310,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
     partial void OnCustomerSearchTextChanged(string value)
     {
-        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+        if (SelectedCustomer is not null &&
+            CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber) == value)
             return;
 
         SelectedCustomer = null;
@@ -636,7 +638,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         if (voucher.Customer is not null)
         {
             partyLabel = "العميل";
-            partyName = voucher.Customer.Name;
+            partyName = CustomerDisplayHelper.FormatDisplayName(voucher.Customer.Name, voucher.Customer.FileNumber);
             partyPhone = voucher.Customer.Phone;
         }
         else if (voucher.Investor is not null)

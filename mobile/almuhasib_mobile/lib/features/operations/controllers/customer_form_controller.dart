@@ -14,6 +14,7 @@ class CustomerFormController extends GetxController {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final addressController = TextEditingController();
+  final fileNumberController = TextEditingController();
   final notesController = TextEditingController();
 
   final saving = false.obs;
@@ -34,6 +35,9 @@ class CustomerFormController extends GetxController {
           address: addressController.text.trim().isEmpty
               ? null
               : addressController.text.trim(),
+          fileNumber: fileNumberController.text.trim().isEmpty
+              ? null
+              : fileNumberController.text.trim(),
           notes: notesController.text.trim().isEmpty
               ? null
               : notesController.text.trim(),
@@ -57,6 +61,7 @@ class CustomerFormController extends GetxController {
     nameController.dispose();
     phoneController.dispose();
     addressController.dispose();
+    fileNumberController.dispose();
     notesController.dispose();
     super.onClose();
   }

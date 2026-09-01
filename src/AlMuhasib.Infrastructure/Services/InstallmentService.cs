@@ -360,6 +360,8 @@ public class InstallmentService : IInstallmentService
         {
             var term = searchTerm.Trim();
             query = query.Where(p => p.Customer.Name.Contains(term) ||
+                (p.Customer.Phone != null && p.Customer.Phone.Contains(term)) ||
+                (p.Customer.FileNumber != null && p.Customer.FileNumber.Contains(term)) ||
                 (p.FileNumber != null && p.FileNumber.Contains(term)) || p.Invoice.InvoiceNumber.Contains(term));
         }
         if (statusFilter.HasValue) query = query.Where(p => p.Installments.Any(i => i.Status == statusFilter.Value));
@@ -477,6 +479,8 @@ public class InstallmentService : IInstallmentService
         {
             var term = searchTerm.Trim();
             query = query.Where(i => i.InstallmentPlan.Customer.Name.Contains(term) ||
+                (i.InstallmentPlan.Customer.Phone != null && i.InstallmentPlan.Customer.Phone.Contains(term)) ||
+                (i.InstallmentPlan.Customer.FileNumber != null && i.InstallmentPlan.Customer.FileNumber.Contains(term)) ||
                 (i.InstallmentPlan.FileNumber != null && i.InstallmentPlan.FileNumber.Contains(term)));
         }
 

@@ -195,11 +195,19 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             var term = $"%{search.Trim()}%";
             query = query.Where(c =>
                 EF.Functions.Like(c.Name, term) ||
-                (c.Phone != null && EF.Functions.Like(c.Phone, term)));
+                (c.Phone != null && EF.Functions.Like(c.Phone, term)) ||
+                (c.FileNumber != null && EF.Functions.Like(c.FileNumber, term)));
         }
 
         var customers = await query.OrderBy(c => c.Name)
-            .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name, Extra = c.Phone })
+            .Select(c => new LookupItem
+            {
+                Id = c.Id,
+                SyncId = c.SyncId,
+                Name = c.Name,
+                Extra = c.Phone,
+                FileNumber = c.FileNumber
+            })
             .ToListAsync(ct);
 
         if (customers.Count == 0)

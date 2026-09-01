@@ -149,7 +149,7 @@ public partial class SalesInvoiceViewModel
         {
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == template.CustomerId);
             if (SelectedCustomer is not null)
-                CustomerSearchText = SelectedCustomer.Name;
+                CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber);
         }
 
         if (template.WarehouseId.HasValue)
@@ -200,6 +200,6 @@ public partial class SalesInvoiceViewModel
         if (customer is null) return;
 
         SelectedCustomer = customer;
-        CustomerSearchText = customer.Name;
+        CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(customer.Name, customer.FileNumber);
     }
 }

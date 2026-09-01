@@ -96,6 +96,7 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
                             <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                             <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="100"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetAmount"/>
                             <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"
@@ -120,6 +121,7 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceDate"/>
                             <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                             <DataGridTextColumn Header="النوع" Binding="{Binding CommissionType}" Width="120"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CommissionType"/>
                             <DataGridTextColumn Header="العمولة" Binding="{Binding CommissionAmount, StringFormat=N0}" Width="100"

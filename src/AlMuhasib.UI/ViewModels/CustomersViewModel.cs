@@ -520,7 +520,7 @@ public partial class CustomersViewModel : ViewModelBase
         try
         {
             var (allItems, _) = await _unitOfWork.Customers.GetPagedAsync(1, int.MaxValue);
-            var columns = new[] { "الاسم", "الهاتف", "العنوان", "رقم الملف", "ملاحظات", "تاريخ الإنشاء" };
+            var columns = new[] { "الاسم", "الهاتف", "العنوان", "رقم العميل", "ملاحظات", "تاريخ الإنشاء" };
             IList<object[]> rows = allItems.Select(c => new object[]
             {
                 c.Name,

@@ -201,6 +201,7 @@ public sealed class LoyaltyService : ILoyaltyService
                 AccountId = a.Id,
                 CustomerId = a.CustomerId,
                 CustomerName = a.Customer.Name,
+                CustomerFileNumber = a.Customer.FileNumber,
                 Phone = a.Customer.Phone,
                 PointsBalance = a.PointsBalance,
                 LifetimeEarned = a.LifetimeEarned,
@@ -253,6 +254,7 @@ public sealed class LoyaltyService : ILoyaltyService
         {
             CustomerId = a.CustomerId,
             CustomerName = a.Customer.Name,
+                CustomerFileNumber = a.Customer.FileNumber,
             Phone = a.Customer.Phone,
             PointsBalance = a.PointsBalance,
             LifetimeEarned = a.LifetimeEarned,

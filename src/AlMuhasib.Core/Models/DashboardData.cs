@@ -51,6 +51,7 @@ public class RecentTransaction
 public class UpcomingInstallment
 {
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public decimal Amount { get; set; }
     public DateTime DueDate { get; set; }
     public int DaysRemaining { get; set; }

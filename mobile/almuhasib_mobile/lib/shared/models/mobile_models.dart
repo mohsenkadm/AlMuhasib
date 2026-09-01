@@ -41,6 +41,7 @@ class CreateCustomerRequest {
     required this.name,
     this.phone,
     this.address,
+    this.fileNumber,
     this.notes,
   });
 
@@ -49,6 +50,7 @@ class CreateCustomerRequest {
         'name': name,
         if (phone != null) 'phone': phone,
         if (address != null) 'address': address,
+        if (fileNumber != null) 'fileNumber': fileNumber,
         if (notes != null) 'notes': notes,
       };
 
@@ -56,6 +58,7 @@ class CreateCustomerRequest {
   final String name;
   final String? phone;
   final String? address;
+  final String? fileNumber;
   final String? notes;
 }
 

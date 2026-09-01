@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -214,7 +215,9 @@ public partial class SalesReportViewModel : ReportViewModelBase
             Date = invoice.Date,
             CreditDueDate = invoice.CreditDueDate,
             PartyLabel = "العميل",
-            PartyName = invoice.Customer?.Name ?? "—",
+            PartyName = invoice.Customer is null
+                ? "—"
+                : CustomerDisplayHelper.FormatDisplayName(invoice.Customer.Name, invoice.Customer.FileNumber),
             PartyPhone = invoice.Customer?.Phone,
             PartyAddress = invoice.Customer?.Address,
             DriverName = invoice.Driver?.Name,

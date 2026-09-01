@@ -133,47 +133,101 @@
                                     FontSize="14" />
 
                         <!-- Customer (searchable ComboBox) -->
-                        <Grid Grid.Row="0" Grid.Column="2"
-                              Visibility="{Binding ShowCustomerAndPayment, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox Grid.Column="0"
-                                      ItemsSource="{Binding FilteredCustomers}"
-                                      SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="Name"
-                                      Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="True"
-                                      materialDesign:HintAssist.Hint="العميل (ابحث أو اكتب اسم جديد)"
-                                      materialDesign:HintAssist.IsFloating="True"
-                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                      StaysOpenOnEdit="True"
-                                      Style="{StaticResource FilledComboBox}"
-                                      Margin="0,0,0,12"
-                                      FontSize="14" />
-                            <Button Grid.Column="1"
-                                    Command="{Binding ShowSelectedPartyDetailsCommand}"
-                                    ToolTip="تفاصيل العميل"
-                                    Style="{StaticResource MaterialDesignIconButton}"
-                                    Width="36" Height="36"
-                                    Margin="4,0,0,12"
-                                    VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20"
-                                                         Foreground="#00695C"/>
-                            </Button>
-                            <Button Grid.Column="2"
-                                    Command="{Binding OpenQuickAddCustomerCommand}"
-                                    ToolTip="إضافة عميل جديد"
-                                    Style="{StaticResource MaterialDesignIconButton}"
-                                    Width="36" Height="36"
-                                    Margin="0,0,0,12"
-                                    VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
-                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                            </Button>
-                        </Grid>
+                        <StackPanel Grid.Row="0" Grid.Column="2"
+                                    Visibility="{Binding ShowCustomerAndPayment, Converter={StaticResource BoolToVis}}">
+                            <Grid Margin="0,0,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox Grid.Column="0"
+                                          ItemsSource="{Binding FilteredCustomers}"
+                                          SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
+                                          Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
+                                          materialDesign:HintAssist.IsFloating="True"
+                                          materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                          StaysOpenOnEdit="True"
+                                          Style="{StaticResource FilledComboBox}"
+                                          Margin="0,0,0,4"
+                                          FontSize="14" />
+                                <Button Grid.Column="1"
+                                        Command="{Binding ShowSelectedPartyDetailsCommand}"
+                                        ToolTip="تفاصيل العميل"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="36" Height="36"
+                                        Margin="4,0,0,4"
+                                        VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="AccountDetails" Width="20" Height="20"
+                                                             Foreground="#00695C"/>
+                                </Button>
+                                <Button Grid.Column="2"
+                                        Command="{Binding OpenQuickAddCustomerCommand}"
+                                        ToolTip="إضافة عميل جديد"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="36" Height="36"
+                                        Margin="0,0,0,4"
+                                        VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="AccountPlusOutline" Width="20" Height="20"
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                </Button>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="0,0,0,8"
+                                        Visibility="{Binding ShowCustomerBalance, Converter={StaticResource BoolToVis}}">
+                                <Border CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
+                                                    <Setter Property="Background" Value="#ECEFF1"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="WalletOutline" Width="14" Height="14"
+                                                                 VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Foreground" Value="#2E7D32"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding CustomerBalanceText}"/>
+                                                    <Setter Property="Foreground" Value="#2E7D32"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
+                                                            <Setter Property="Text" Value="جاري تحميل الرصيد..."/>
+                                                            <Setter Property="Foreground" Value="#607D8B"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
 
                         <!-- Row 1 -->
                         <!-- Warehouse -->

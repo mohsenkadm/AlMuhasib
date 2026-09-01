@@ -75,7 +75,7 @@ internal static class InvoicePdfGenerator
                         AddInfoRow(customerRows, "الاسم", m.PartyName);
                         AddInfoRow(customerRows, "الهاتف", m.PartyPhone);
                         AddInfoRow(customerRows, "العنوان", m.PartyAddress);
-                        AddInfoRow(customerRows, "رقم الملف", m.FileNumber);
+                        AddInfoRow(customerRows, "رقم العميل", m.FileNumber);
                         if (customerRows.Count == 0)
                             customerRows.Add(("الاسم", "—"));
 
@@ -281,7 +281,7 @@ internal static class InvoicePdfGenerator
                         .Text("إيصال تسديد قسط").FontSize(18).Bold().FontColor(Colors.White).AlignCenter();
                     col.Item().PaddingTop(8).Text($"العميل: {m.CustomerName}");
                     if (!string.IsNullOrWhiteSpace(m.FileNumber))
-                        col.Item().Text($"رقم الملف: {m.FileNumber}");
+                        col.Item().Text($"رقم العميل: {m.FileNumber}");
                     col.Item().Text($"فاتورة الأقساط: {m.InvoiceNumber}");
                     col.Item().Text($"تاريخ التسديد: {m.PaymentDate:yyyy/MM/dd HH:mm}");
                     if (!string.IsNullOrWhiteSpace(m.CashBoxName))

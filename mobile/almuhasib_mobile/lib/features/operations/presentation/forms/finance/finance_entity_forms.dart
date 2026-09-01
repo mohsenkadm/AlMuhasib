@@ -530,7 +530,7 @@ class VoucherFormScreen extends GetView<VoucherFormController> {
                 leading: const Icon(Icons.person_outline),
                 title: Text('customer'.tr()),
                 subtitle: Text(
-                  controller.customer.value?.name ?? 'select_customer'.tr(),
+                  controller.customer.value?.displayName ?? 'select_customer'.tr(),
                 ),
                 onTap: () => controller.pickCustomer(context),
               ),

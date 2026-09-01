@@ -78,6 +78,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalesRepresentativeName"/>
                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                            <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                         <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
                         <DataGridTextColumn Header="التاريخ" Binding="{Binding CollectionDate, StringFormat=yyyy/MM/dd}" Width="100"

@@ -135,7 +135,7 @@
                     <ComboBox Grid.Column="0"
                               ItemsSource="{Binding FilteredCustomers}"
                               SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                              DisplayMemberPath="Name"
+                              ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
                               Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
                               IsEditable="True"
                               StaysOpenOnEdit="True"

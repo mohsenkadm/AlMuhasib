@@ -49,6 +49,7 @@
                     <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="120"/>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="110"/>
                     <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"/>
+                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                     <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMethod}" Width="80"/>
                     <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="90"/>
                     <DataGridTextColumn Header="الوزن" Binding="{Binding TotalWeightGrams, StringFormat=N3}" Width="90"/>
