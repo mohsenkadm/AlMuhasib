@@ -90,6 +90,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                             <DataGridTextColumn Header="الهاتف" Binding="{Binding CustomerPhone}" Width="120"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerPhone"/>
                             <DataGridTextColumn Header="الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="100"

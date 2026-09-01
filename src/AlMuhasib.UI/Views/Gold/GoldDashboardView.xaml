@@ -1089,6 +1089,7 @@
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="95"/>
                                     <DataGridTextColumn Header="النوع" Binding="{Binding InvoiceType}" Width="70"/>
                                     <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"/>
+                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                     <DataGridTextColumn Header="المبلغ د.ع" Binding="{Binding TotalAmountIqd, StringFormat=N0}" Width="100">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">

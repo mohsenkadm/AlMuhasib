@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -235,7 +236,11 @@ public partial class PosQuickSaleViewModel
         {
             InvoiceNumber = inv.InvoiceNumber,
             Date = inv.Date,
-            PartyName = inv.Customer?.Name ?? SelectedPosCustomer?.Name ?? "—",
+            PartyName = inv.Customer is not null
+                ? CustomerDisplayHelper.FormatDisplayName(inv.Customer.Name, inv.Customer.FileNumber)
+                : SelectedPosCustomer is not null
+                    ? CustomerDisplayHelper.FormatDisplayName(SelectedPosCustomer.Name, SelectedPosCustomer.FileNumber)
+                    : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             Subtotal = items.Sum(i => i.TotalPrice),
@@ -290,7 +295,11 @@ public partial class PosQuickSaleViewModel
         {
             InvoiceNumber = inv.InvoiceNumber,
             Date = inv.Date,
-            PartyName = inv.Customer?.Name ?? SelectedPosCustomer?.Name ?? "—",
+            PartyName = inv.Customer is not null
+                ? CustomerDisplayHelper.FormatDisplayName(inv.Customer.Name, inv.Customer.FileNumber)
+                : SelectedPosCustomer is not null
+                    ? CustomerDisplayHelper.FormatDisplayName(SelectedPosCustomer.Name, SelectedPosCustomer.FileNumber)
+                    : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             Subtotal = items.Sum(i => i.TotalPrice),
@@ -331,7 +340,9 @@ public partial class PosQuickSaleViewModel
         {
             InvoiceNumber = saved.InvoiceNumber,
             Date = saved.Date,
-            PartyName = SelectedPosCustomer?.Name ?? "—",
+            PartyName = SelectedPosCustomer is not null
+                ? CustomerDisplayHelper.FormatDisplayName(SelectedPosCustomer.Name, SelectedPosCustomer.FileNumber)
+                : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
             Subtotal = totalSnapshot,

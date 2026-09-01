@@ -76,6 +76,7 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                            <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                         <DataGridCheckBoxColumn Header="فعال" Binding="{Binding IsActive}" Width="70"
                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IsActive"/>
                         <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110"

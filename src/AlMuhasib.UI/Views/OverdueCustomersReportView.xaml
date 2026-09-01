@@ -105,6 +105,7 @@
                     <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
                                 <DataGridTextColumn Header="النوع" Binding="{Binding SourceType}" Width="130"

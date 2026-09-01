@@ -31,6 +31,7 @@ public sealed class SalesRepStatementLine
     public string InvoiceNumber { get; init; } = string.Empty;
     public DateTime Date { get; init; }
     public string CustomerName { get; init; } = string.Empty;
+    public string? CustomerFileNumber { get; init; }
     public decimal NetAmount { get; init; }
     public decimal PaidAmount { get; init; }
     public decimal RemainingAmount { get; init; }
@@ -44,6 +45,7 @@ public sealed class SalesRepCommissionRow
     public string InvoiceNumber { get; init; } = string.Empty;
     public DateTime InvoiceDate { get; init; }
     public string CustomerName { get; init; } = string.Empty;
+    public string? CustomerFileNumber { get; init; }
     public SalesRepCommissionType CommissionType { get; init; }
     public decimal BaseAmount { get; init; }
     public decimal CommissionAmount { get; init; }
@@ -87,6 +89,7 @@ public sealed class SalesRepCustomerRow
 {
     public int CustomerId { get; init; }
     public string CustomerName { get; init; } = string.Empty;
+    public string? CustomerFileNumber { get; init; }
     public string? Phone { get; init; }
     public decimal TotalSales { get; init; }
     public decimal PaidAmount { get; init; }

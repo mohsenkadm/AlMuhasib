@@ -15,6 +15,7 @@ public sealed class LoyaltyTopCustomerRow
 {
     public int CustomerId { get; init; }
     public string CustomerName { get; init; } = string.Empty;
+    public string? CustomerFileNumber { get; init; }
     public string? Phone { get; init; }
     public int PointsBalance { get; init; }
     public int LifetimeEarned { get; init; }
@@ -27,6 +28,7 @@ public sealed class LoyaltyAccountRow
     public int AccountId { get; init; }
     public int CustomerId { get; init; }
     public string CustomerName { get; init; } = string.Empty;
+    public string? CustomerFileNumber { get; init; }
     public string? Phone { get; init; }
     public int PointsBalance { get; init; }
     public int LifetimeEarned { get; init; }

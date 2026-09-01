@@ -45,6 +45,12 @@ class CustomerFormScreen extends GetView<CustomerFormController> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
+              controller: controller.fileNumberController,
+              label: 'رقم العميل',
+              prefixIcon: Icons.tag_outlined,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
               controller: controller.notesController,
               label: 'notes'.tr(),
               prefixIcon: Icons.notes_outlined,

@@ -73,6 +73,7 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                            <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                         <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
                         <DataGridTextColumn Header="جاري" Binding="{Binding CurrentIqd, StringFormat=N0}" Width="100"

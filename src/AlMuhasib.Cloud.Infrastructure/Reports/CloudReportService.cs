@@ -90,6 +90,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                 InvoiceNumber = i.InvoiceNumber,
                 Date = i.Date,
                 CustomerName = i.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.Customer?.FileNumber,
                 WarehouseName = i.Warehouse?.Name ?? "\u2014",
                 PaymentMethod = i.PaymentMethod switch
                 {
@@ -362,6 +363,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                 InvoiceNumber = invoice.InvoiceNumber,
                 Date = invoice.Date,
                 CustomerName = invoice.Customer?.Name ?? "—",
+                CustomerFileNumber = invoice.Customer?.FileNumber,
                 InvoiceTypeLabel = invoice.InvoiceType == InvoiceType.Installment ? "أقساط" : "مبيعات",
                 ItemCount = lineItems.Count,
                 Revenue = revenue,
@@ -405,6 +407,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             rows.Add(new InstallmentSummaryRow
             {
                 CustomerName = plan.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = plan.Customer?.FileNumber,
                 PlanNumber = plan.Id.ToString(),
                 TotalAmount = total, PaidAmount = paid, RemainingAmount = remaining,
                 InstallmentCount = insts.Count, Status = statusText
@@ -499,6 +502,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             Rows = insts.Select(i => new PaidInstallmentRow
             {
                 CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.InstallmentPlan?.Customer?.FileNumber,
                 PlanNumber = i.InstallmentPlanId.ToString(),
                 Amount = i.PaidAmount, PaymentDate = i.PaymentDate ?? i.DueDate,
                 CashBoxName = i.CashBox?.Name ?? "\u2014"
@@ -537,6 +541,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                 InstallmentId = i.Id,
                 InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
                 CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.InstallmentPlan?.Customer?.FileNumber,
                 PlanNumber = i.InstallmentPlanId.ToString(),
                 DueDate = i.DueDate, Amount = i.Amount, RemainingAmount = i.RemainingAmount,
                 OverdueDays = i.DueDate < today ? (today - i.DueDate).Days : 0
@@ -567,6 +572,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             InstallmentId = i.Id,
             InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
             CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.InstallmentPlan?.Customer?.FileNumber,
             Phone = i.InstallmentPlan?.Customer?.Phone ?? "\u2014",
             PlanNumber = i.InstallmentPlanId.ToString(),
             OverdueAmount = i.RemainingAmount,
@@ -594,6 +600,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             InstallmentId = 0,
             InvoiceId = i.Id,
             CustomerName = i.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.Customer?.FileNumber,
             Phone = i.Customer?.Phone ?? "\u2014",
             PlanNumber = i.InvoiceNumber,
             OverdueAmount = i.RemainingAmount > 0 ? i.RemainingAmount : i.NetAmount,
@@ -734,6 +741,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         return new CustomerStatementResult
         {
             CustomerName = customer.Name,
+            CustomerFileNumber = customer.FileNumber,
             TotalDebit = rows.Sum(r => r.Debit),
             TotalCredit = rows.Sum(r => r.Credit),
             Balance = balance,
@@ -1541,6 +1549,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             {
                 CustomerId = g.Key,
                 CustomerName = customer?.Name ?? "—",
+                CustomerFileNumber = customer?.FileNumber,
                 Phone = customer?.Phone ?? "—",
                 InvoiceCount = invoiceIds,
                 SalesAmount = sales,
@@ -1613,6 +1622,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                 InstallmentId = i.Id,
                 InvoiceId = i.InstallmentPlan?.InvoiceId ?? 0,
                 CustomerName = i.InstallmentPlan?.Customer?.Name ?? "\u2014",
+                CustomerFileNumber = i.InstallmentPlan?.Customer?.FileNumber,
                 Phone = i.InstallmentPlan?.Customer?.Phone ?? "\u2014",
                 PlanNumber = i.InstallmentPlanId.ToString(),
                 DueDate = i.DueDate,
@@ -1707,6 +1717,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             {
                 CustomerId = customer.Id,
                 CustomerName = customer.Name,
+            CustomerFileNumber = customer.FileNumber,
                 Phone = customer.Phone ?? "-",
                 InvoiceCount = invoiceCount,
                 SalesAmount = salesAmount,

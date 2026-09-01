@@ -96,7 +96,7 @@
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding FileNumber, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="رقم الملف" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="رقم العميل" FontSize="11" Foreground="#90A4AE"/>
                                         <TextBlock Text="{Binding FileNumber}" FontWeight="SemiBold" Foreground="#37474F"/>
                                     </StackPanel>
                                 </Border>

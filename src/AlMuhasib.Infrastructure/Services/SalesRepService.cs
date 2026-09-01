@@ -155,6 +155,7 @@ public sealed class SalesRepService : ISalesRepService
                 InvoiceNumber = i.InvoiceNumber,
                 Date = i.Date,
                 CustomerName = i.Customer?.Name ?? "—",
+                CustomerFileNumber = i.Customer?.FileNumber,
                 NetAmount = i.NetAmount,
                 PaidAmount = i.PaidAmount,
                 RemainingAmount = i.RemainingAmount,
@@ -343,6 +344,7 @@ public sealed class SalesRepService : ISalesRepService
             {
                 CustomerId = customer.Id,
                 CustomerName = customer.Name,
+            CustomerFileNumber = customer.FileNumber,
                 Phone = customer.Phone,
                 TotalSales = invoices.Sum(i => i.NetAmount),
                 PaidAmount = invoices.Sum(i => i.PaidAmount),
@@ -396,6 +398,7 @@ public sealed class SalesRepService : ISalesRepService
         InvoiceNumber = e.Invoice?.InvoiceNumber ?? $"#{e.InvoiceId}",
         InvoiceDate = e.InvoiceDate,
         CustomerName = e.Customer?.Name ?? "—",
+                CustomerFileNumber = e.Customer?.FileNumber,
         CommissionType = e.CommissionType,
         BaseAmount = e.BaseAmount,
         CommissionAmount = e.CommissionAmount,

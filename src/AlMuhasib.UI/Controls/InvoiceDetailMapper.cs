@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Helpers;
@@ -58,7 +59,9 @@ internal static class InvoiceDetailMapper
             PartyLabel = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn ? "المورد" : "العميل",
             PartyName = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? invoice.Supplier?.Name ?? "—"
-                : invoice.Customer?.Name ?? "—",
+                : CustomerDisplayHelper.FormatDisplayName(
+                    invoice.Customer?.Name ?? "—",
+                    invoice.Customer?.FileNumber),
             WarehouseName = invoice.Warehouse?.Name ?? "—",
             PaymentMethod = payment,
             Notes = string.IsNullOrWhiteSpace(invoice.Notes) ? null : invoice.Notes.Trim(),

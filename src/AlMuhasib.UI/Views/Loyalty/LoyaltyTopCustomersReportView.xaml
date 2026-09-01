@@ -51,6 +51,7 @@
                           IsReadOnly="True" AutoGenerateColumns="False" MinHeight="280">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"/>
+                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                         <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"/>
                         <DataGridTextColumn Header="الرصيد" Binding="{Binding PointsBalance}" Width="90"/>
                         <DataGridTextColumn Header="مكتسب" Binding="{Binding LifetimeEarned}" Width="90"/>

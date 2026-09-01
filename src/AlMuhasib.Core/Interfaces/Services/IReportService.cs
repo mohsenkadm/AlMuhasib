@@ -195,6 +195,7 @@ public class SalesReportRow
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string WarehouseName { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
@@ -286,6 +287,7 @@ public class ProfitInvoiceDetailRow
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string InvoiceTypeLabel { get; set; } = string.Empty;
     public int ItemCount { get; set; }
     public decimal Revenue { get; set; }
@@ -316,6 +318,7 @@ public class InstallmentsSummaryResult
 public class InstallmentSummaryRow
 {
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string PlanNumber { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
@@ -331,6 +334,7 @@ public class InstallmentDetailResult
     public decimal CollectionRate { get; set; }
     public decimal AverageInstallment { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public List<InstallmentDetailRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> MonthlyDueChart { get; set; } = [];
 }
@@ -360,6 +364,7 @@ public class PaidInstallmentsResult
 public class PaidInstallmentRow
 {
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string PlanNumber { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; }
@@ -381,6 +386,7 @@ public class UnpaidInstallmentRow
     public int InstallmentId { get; set; }
     public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string PlanNumber { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
@@ -404,6 +410,7 @@ public class OverdueRow
     public int InstallmentId { get; set; }
     public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string PlanNumber { get; set; } = string.Empty;
     public decimal OverdueAmount { get; set; }
@@ -419,6 +426,7 @@ public class OverdueRow
 public class CustomerStatementResult
 {
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal Balance { get; set; }
@@ -739,6 +747,7 @@ public class CustomerNetProfitRow
     public int Rank { get; set; }
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public int InvoiceCount { get; set; }
     public decimal SalesAmount { get; set; }
@@ -773,6 +782,7 @@ public class InstallmentAgingRow
     public int InstallmentId { get; set; }
     public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string PlanNumber { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }
@@ -799,6 +809,7 @@ public class CustomerOverviewRow
 {
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public int InvoiceCount { get; set; }
     public decimal SalesAmount { get; set; }
@@ -1072,6 +1083,7 @@ public class OpeningInstallmentBalanceRow
     public int PlanId { get; set; }
     public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public decimal TotalAmount { get; set; }
@@ -1098,6 +1110,7 @@ public class CompanyFeeRow
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public decimal NetAmount { get; set; }
     public decimal FeePercent { get; set; }
     public decimal FeeAmount { get; set; }
@@ -1121,6 +1134,7 @@ public class InstallmentScheduleReportRow
     public int PlanId { get; set; }
     public int InvoiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
@@ -1209,6 +1223,7 @@ public class GrossProfitMarginRow
     public DateTime Date { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public decimal Revenue { get; set; }
     public decimal Cost { get; set; }
     public decimal GrossProfit { get; set; }
@@ -1257,6 +1272,7 @@ public class ReceivablesAgingRow
     public string SourceType { get; set; } = string.Empty;
     public int ReferenceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
@@ -1304,6 +1320,7 @@ public class CustomerCollectionRow
     public string SourceType { get; set; } = string.Empty;
     public string Reference { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public decimal Amount { get; set; }
     public string AccountName { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
@@ -1324,6 +1341,7 @@ public class OverdueCustomerRow
 {
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string SourceType { get; set; } = string.Empty;
     public int ReferenceId { get; set; }

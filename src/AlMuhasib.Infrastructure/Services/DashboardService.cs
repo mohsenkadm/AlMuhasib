@@ -236,6 +236,7 @@ public class DashboardService : IDashboardService
                 .Select(i => new
                 {
                     CustomerName = i.InstallmentPlan.Customer.Name,
+                    CustomerFileNumber = i.InstallmentPlan.Customer.FileNumber,
                     i.RemainingAmount,
                     i.DueDate
                 })
@@ -245,6 +246,7 @@ public class DashboardService : IDashboardService
                 .Select(i => new UpcomingInstallment
                 {
                     CustomerName = i.CustomerName,
+                    CustomerFileNumber = i.CustomerFileNumber,
                     Amount = i.RemainingAmount,
                     DueDate = i.DueDate,
                     DaysRemaining = (int)(i.DueDate - today).TotalDays

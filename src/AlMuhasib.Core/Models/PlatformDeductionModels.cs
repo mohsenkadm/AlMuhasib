@@ -6,6 +6,7 @@ public class PlatformDeductionImportRow
     public string? PlatformInvoiceId { get; set; }
     public string? DeductionId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string? MotherName { get; set; }
     public string? GovernmentNumber { get; set; }
     public decimal RequestedAmount { get; set; }

@@ -121,6 +121,7 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="رقم الخطة" Binding="{Binding PlanNumber}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlanNumber"/>
                                 <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="130"

@@ -18,6 +18,7 @@ public class CollectionInstallmentRow
     public int? InvoiceId { get; set; }
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
     public string? CustomerPhone { get; set; }
     public DateTime DueDate { get; set; }
     public decimal RemainingAmount { get; set; }

@@ -116,7 +116,7 @@ public static class ModernInvoiceDocumentBuilder
         AddInfoRow(customerRows, "الاسم", m.PartyName);
         AddInfoRow(customerRows, "الهاتف", m.PartyPhone);
         AddInfoRow(customerRows, "العنوان", m.PartyAddress);
-        AddInfoRow(customerRows, "رقم الملف", m.FileNumber);
+        AddInfoRow(customerRows, "رقم العميل", m.FileNumber);
         if (customerRows.Count == 0)
             customerRows.Add(("الاسم", "—"));
 

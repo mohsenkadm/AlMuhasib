@@ -384,7 +384,7 @@ public class ExcelExportService : IExportService
             if (!string.IsNullOrWhiteSpace(m.DriverName))
                 AddMetaRow("السائق", m.DriverName);
             if (!string.IsNullOrWhiteSpace(m.FileNumber))
-                AddMetaRow("رقم الملف", m.FileNumber);
+                AddMetaRow("رقم العميل", m.FileNumber);
             if (!string.IsNullOrWhiteSpace(m.Notes))
                 AddMetaRow("ملاحظات", m.Notes);
 
@@ -473,7 +473,7 @@ public class ExcelExportService : IExportService
             if (!string.IsNullOrWhiteSpace(m.DriverName))
                 AddInfoRow("السائق", m.DriverName);
             if (!string.IsNullOrWhiteSpace(m.FileNumber))
-                AddInfoRow("رقم الملف", m.FileNumber);
+                AddInfoRow("رقم العميل", m.FileNumber);
             if (!string.IsNullOrWhiteSpace(m.Notes))
                 AddInfoRow("ملاحظات", m.Notes);
 

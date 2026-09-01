@@ -61,6 +61,7 @@ public sealed class InvoicesController : ControllerBase
             query = query.Where(i =>
                 EF.Functions.Like(i.InvoiceNumber, term) ||
                 (i.Customer != null && EF.Functions.Like(i.Customer.Name, term)) ||
+                (i.Customer != null && i.Customer.FileNumber != null && EF.Functions.Like(i.Customer.FileNumber, term)) ||
                 (i.Supplier != null && EF.Functions.Like(i.Supplier.Name, term)));
         }
 

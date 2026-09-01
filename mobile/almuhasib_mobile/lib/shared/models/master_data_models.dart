@@ -4,6 +4,7 @@ class LookupItem {
     required this.syncId,
     required this.name,
     this.extra,
+    this.fileNumber,
     this.balance,
   });
 
@@ -13,6 +14,7 @@ class LookupItem {
       syncId: json['syncId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       extra: json['extra'] as String?,
+      fileNumber: json['fileNumber'] as String?,
       balance: json['balance'] == null ? null : _num(json['balance']),
     );
   }
@@ -21,7 +23,14 @@ class LookupItem {
   final String syncId;
   final String name;
   final String? extra;
+  final String? fileNumber;
   final double? balance;
+
+  String get displayName {
+    final number = fileNumber?.trim();
+    if (number == null || number.isEmpty) return name;
+    return '$name $number';
+  }
 }
 
 class ProductPriceLookupItem {

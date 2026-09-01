@@ -69,6 +69,7 @@ class SalesReportRow {
     required this.invoiceNumber,
     required this.date,
     required this.customerName,
+    this.customerFileNumber,
     required this.netAmount,
     this.paymentMethod = '',
     this.paidAmount = 0,
@@ -80,6 +81,7 @@ class SalesReportRow {
       invoiceNumber: json['invoiceNumber'] as String? ?? '',
       date: DateTime.parse(json['date'] as String),
       customerName: json['customerName'] as String? ?? '',
+      customerFileNumber: json['customerFileNumber'] as String?,
       netAmount: _num(json['netAmount']),
       paymentMethod: json['paymentMethod'] as String? ?? '',
       paidAmount: _num(json['paidAmount']),
@@ -90,6 +92,7 @@ class SalesReportRow {
   final String invoiceNumber;
   final DateTime date;
   final String customerName;
+  final String? customerFileNumber;
   final double netAmount;
   final String paymentMethod;
   final double paidAmount;
@@ -211,6 +214,7 @@ class OverdueResult {
 class OverdueRow {
   OverdueRow({
     required this.customerName,
+    this.customerFileNumber,
     required this.phone,
     required this.overdueAmount,
     required this.overdueDays,
@@ -220,6 +224,7 @@ class OverdueRow {
   factory OverdueRow.fromJson(Map<String, dynamic> json) {
     return OverdueRow(
       customerName: json['customerName'] as String? ?? '',
+      customerFileNumber: json['customerFileNumber'] as String?,
       phone: json['phone'] as String? ?? '',
       overdueAmount: _num(json['overdueAmount']),
       overdueDays: json['overdueDays'] as int? ?? 0,
@@ -228,6 +233,7 @@ class OverdueRow {
   }
 
   final String customerName;
+  final String? customerFileNumber;
   final String phone;
   final double overdueAmount;
   final int overdueDays;
@@ -237,6 +243,7 @@ class OverdueRow {
 class CustomerStatementResult {
   CustomerStatementResult({
     required this.customerName,
+    this.customerFileNumber,
     required this.balance,
     required this.rows,
   });
@@ -244,6 +251,7 @@ class CustomerStatementResult {
   factory CustomerStatementResult.fromJson(Map<String, dynamic> json) {
     return CustomerStatementResult(
       customerName: json['customerName'] as String? ?? '',
+      customerFileNumber: json['customerFileNumber'] as String?,
       balance: _num(json['balance']),
       rows: (json['rows'] as List<dynamic>? ?? [])
           .map((e) => CustomerStatementRow.fromJson(e as Map<String, dynamic>))
@@ -252,6 +260,7 @@ class CustomerStatementResult {
   }
 
   final String customerName;
+  final String? customerFileNumber;
   final double balance;
   final List<CustomerStatementRow> rows;
 }
@@ -403,6 +412,7 @@ class ProfitInvoiceDetailRow {
     required this.invoiceNumber,
     required this.date,
     required this.customerName,
+    this.customerFileNumber,
     required this.invoiceTypeLabel,
     required this.itemCount,
     required this.revenue,
@@ -416,6 +426,7 @@ class ProfitInvoiceDetailRow {
       invoiceNumber: json['invoiceNumber'] as String? ?? '',
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
       customerName: json['customerName'] as String? ?? '',
+      customerFileNumber: json['customerFileNumber'] as String?,
       invoiceTypeLabel: json['invoiceTypeLabel'] as String? ?? '',
       itemCount: json['itemCount'] as int? ?? 0,
       revenue: _num(json['revenue']),
@@ -428,6 +439,7 @@ class ProfitInvoiceDetailRow {
   final String invoiceNumber;
   final DateTime date;
   final String customerName;
+  final String? customerFileNumber;
   final String invoiceTypeLabel;
   final int itemCount;
   final double revenue;

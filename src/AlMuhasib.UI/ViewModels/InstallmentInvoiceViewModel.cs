@@ -310,12 +310,13 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     partial void OnSelectedCustomerChanged(Customer? value)
     {
         if (value is not null)
-            CustomerSearchText = value.Name;
+            CustomerSearchText = CustomerDisplayHelper.FormatDisplayName(value.Name, value.FileNumber);
     }
 
     partial void OnCustomerSearchTextChanged(string value)
     {
-        if (SelectedCustomer is not null && SelectedCustomer.Name == value)
+        if (SelectedCustomer is not null &&
+            CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber) == value)
             return;
 
         SelectedCustomer = null;
@@ -834,7 +835,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _whatsAppShare.ShareInvoice(
             BuildSavedInvoicePrintModel(),
             SelectedCustomer?.Phone,
-            SelectedCustomer?.Name ?? CustomerSearchText);
+            CustomerDisplayHelper.FormatDisplayName(
+                SelectedCustomer?.Name ?? CustomerSearchText,
+                SelectedCustomer?.FileNumber));
     }
 
     private InvoicePrintModel BuildSavedInvoicePrintModel()
@@ -848,7 +851,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             InvoiceNumber = _savedInvoice.InvoiceNumber,
             Date = _savedInvoice.Date,
             PartyLabel = "العميل",
-            PartyName = SelectedCustomer?.Name ?? CustomerSearchText,
+            PartyName = SelectedCustomer is not null
+                ? CustomerDisplayHelper.FormatDisplayName(SelectedCustomer.Name, SelectedCustomer.FileNumber)
+                : CustomerSearchText,
             PartyPhone = SelectedCustomer?.Phone,
             PartyAddress = SelectedCustomer?.Address,
             DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,

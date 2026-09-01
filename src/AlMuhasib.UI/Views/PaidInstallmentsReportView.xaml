@@ -123,6 +123,7 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="رقم الخطة" Binding="{Binding PlanNumber}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlanNumber"/>
                                 <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"

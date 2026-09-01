@@ -401,11 +401,15 @@ class _DataListBody extends StatelessWidget {
           ? '${'balance'.tr()}: ${formatCurrency(item.balance!)}'
           : null;
       return AppEntityCard(
-        title: item.name,
+        title: listType == 'customers' ? item.displayName : item.name,
         subtitle: [
+          if (listType == 'customers' &&
+              item.fileNumber != null &&
+              item.fileNumber!.isNotEmpty)
+            'رقم العميل: ${item.fileNumber}',
           if (item.extra != null && item.extra!.isNotEmpty) item.extra!,
           if (balanceText != null) balanceText,
-        ].join(' • '),
+        ].where((e) => e.isNotEmpty).join(' • '),
         leading: _LeadingBadge(icon: icon, color: accent, letter: item.name),
         trailing: showBalance
             ? Text(
@@ -585,7 +589,7 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
     final customer = _customer;
     final displayName = widget.name.isNotEmpty
         ? widget.name
-        : (product?.name ?? customer?.name ?? '');
+        : (product?.name ?? customer?.displayName ?? '');
     final customerBalance = customer?.balance;
 
     return AppPageScaffold(
@@ -627,7 +631,14 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                               _ => displayName,
                             },
                   subtitle: widget.entityType == 'customer'
-                      ? (customer?.extra ?? displayName)
+                      ? [
+                          if (customer?.fileNumber != null &&
+                              customer!.fileNumber!.isNotEmpty)
+                            'رقم العميل: ${customer.fileNumber}',
+                          if (customer?.extra != null &&
+                              customer!.extra!.isNotEmpty)
+                            customer.extra!,
+                        ].where((e) => e.isNotEmpty).join(' • ')
                       : product?.barcode,
                 ).fadeSlideIn(),
                 const SizedBox(height: 14),

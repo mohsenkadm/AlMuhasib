@@ -60,7 +60,7 @@
                                   StaysOpenOnEdit="True"
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                   Style="{StaticResource FilledComboBox}"
-                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف)"/>
+                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو رقم العميل)"/>
                         <ComboBox ItemsSource="{Binding Warehouses}" SelectedValue="{Binding SelectedWarehouseId}" SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="المخزن" Width="160" Margin="0,0,12,0"/>
                         <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding SelectedPaymentMethodItem}" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="طريقة الدفع" Width="150" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
@@ -111,6 +111,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMethod}" Width="60"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMethod"/>
                                 <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="90"

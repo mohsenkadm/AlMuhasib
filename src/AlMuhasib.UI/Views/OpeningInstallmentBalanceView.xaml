@@ -292,6 +292,7 @@
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="سطر" Binding="{Binding RowNumber}" Width="60" MinWidth="50"/>
                                             <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="220" MinWidth="160"/>
+                                <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                             <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat={}{0:N0}}" Width="120" MinWidth="100"/>
                                             <DataGridTextColumn Header="الأقساط" Binding="{Binding NumberOfInstallments}" Width="90" MinWidth="80"/>
                                             <DataGridTextColumn Header="مسدد" Binding="{Binding PaidInstallmentsCount}" Width="90" MinWidth="70"/>

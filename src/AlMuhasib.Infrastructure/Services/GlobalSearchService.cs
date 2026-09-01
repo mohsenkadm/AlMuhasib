@@ -30,7 +30,9 @@ public class GlobalSearchService : IGlobalSearchService
         var hits = new List<GlobalSearchHit>();
 
         var customers = await context.Customers.AsNoTracking()
-            .Where(c => EF.Functions.Like(c.Name, like) || (c.Phone != null && EF.Functions.Like(c.Phone, like)))
+            .Where(c => EF.Functions.Like(c.Name, like)
+                        || (c.Phone != null && EF.Functions.Like(c.Phone, like))
+                        || (c.FileNumber != null && EF.Functions.Like(c.FileNumber, like)))
             .OrderBy(c => c.Name)
             .Take(PerCategoryLimit)
             .Select(c => new GlobalSearchHit
@@ -82,7 +84,8 @@ public class GlobalSearchService : IGlobalSearchService
             .Include(i => i.Customer)
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
                         && (EF.Functions.Like(i.InvoiceNumber, like)
-                            || (i.Customer != null && EF.Functions.Like(i.Customer.Name, like))))
+                            || (i.Customer != null && EF.Functions.Like(i.Customer.Name, like))
+                            || (i.Customer != null && i.Customer.FileNumber != null && EF.Functions.Like(i.Customer.FileNumber, like))))
             .OrderByDescending(i => i.Date)
             .Take(PerCategoryLimit)
             .Select(i => new GlobalSearchHit
@@ -141,7 +144,9 @@ public class GlobalSearchService : IGlobalSearchService
                         && i.InstallmentPlan.Customer != null
                         && (EF.Functions.Like(i.InstallmentPlan.Customer.Name, like)
                             || (i.InstallmentPlan.Customer.Phone != null
-                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))))
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))
+                            || (i.InstallmentPlan.Customer.FileNumber != null
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.FileNumber, like))))
             .OrderBy(i => i.DueDate)
             .Take(PerCategoryLimit)
             .Select(i => new GlobalSearchHit
@@ -167,7 +172,9 @@ public class GlobalSearchService : IGlobalSearchService
                         && i.InstallmentPlan.Customer != null
                         && (EF.Functions.Like(i.InstallmentPlan.Customer.Name, like)
                             || (i.InstallmentPlan.Customer.Phone != null
-                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))))
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))
+                            || (i.InstallmentPlan.Customer.FileNumber != null
+                                && EF.Functions.Like(i.InstallmentPlan.Customer.FileNumber, like))))
             .GroupBy(i => i.InstallmentPlan!.CustomerId)
             .Select(g => new
             {

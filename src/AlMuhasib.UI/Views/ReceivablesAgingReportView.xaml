@@ -107,6 +107,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SourceType"/>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                                                    <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الاستحقاق" Binding="{Binding DueDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate"/>
                                 <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="130"

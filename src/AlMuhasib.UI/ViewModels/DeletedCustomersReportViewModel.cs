@@ -49,7 +49,7 @@ public partial class DeletedCustomersReportViewModel : SupervisoryReportViewMode
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "عملاء_محذوفون.xlsx" };
         if (dlg.ShowDialog() != true) return;
 
-        var cols = new[] { "الاسم", "الهاتف", "رقم الملف", "العنوان", "تاريخ الحذف", "حذف بواسطة" };
+        var cols = new[] { "الاسم", "الهاتف", "رقم العميل", "العنوان", "تاريخ الحذف", "حذف بواسطة" };
         var data = Rows.Select(r => new object[]
         {
             r.Name, r.Phone ?? "", r.FileNumber ?? "", r.Address ?? "",
@@ -63,7 +63,7 @@ public partial class DeletedCustomersReportViewModel : SupervisoryReportViewMode
     private void PrintTable()
     {
         if (Rows.Count == 0) return;
-        var cols = new[] { "الاسم", "الهاتف", "رقم الملف", "العنوان", "تاريخ الحذف", "حذف بواسطة" };
+        var cols = new[] { "الاسم", "الهاتف", "رقم العميل", "العنوان", "تاريخ الحذف", "حذف بواسطة" };
         var data = Rows.Select(r => new object[]
         {
             r.Name, r.Phone ?? "", r.FileNumber ?? "", r.Address ?? "",
