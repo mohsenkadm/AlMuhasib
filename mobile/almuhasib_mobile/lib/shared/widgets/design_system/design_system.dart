@@ -1,3 +1,4 @@
+export 'app_selectable_text.dart';
 export 'app_filter_bar.dart';
 export '../search_filter_bar.dart' show FilterChipOption;
 export 'app_async_body.dart';

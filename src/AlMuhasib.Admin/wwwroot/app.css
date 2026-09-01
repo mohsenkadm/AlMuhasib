@@ -446,6 +446,8 @@ textarea.form-control { resize: vertical; }
     background: #f9fafb;
     border-bottom: 1.5px solid var(--border);
     white-space: nowrap;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .data-table td {
@@ -453,6 +455,8 @@ textarea.form-control { resize: vertical; }
     border-bottom: 1px solid var(--border);
     font-size: .9rem;
     vertical-align: middle;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .data-table tr:last-child td { border-bottom: none; }
