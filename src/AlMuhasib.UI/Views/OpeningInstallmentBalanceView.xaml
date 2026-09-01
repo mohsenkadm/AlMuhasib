@@ -88,12 +88,10 @@
                                             </Grid.ColumnDefinitions>
                                             <ComboBox ItemsSource="{Binding FilteredCustomers}"
                                                       SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="Name"
                                                       Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                      IsEditable="True" StaysOpenOnEdit="True"
                                                       materialDesign:HintAssist.Hint="الزبون"
                                                       materialDesign:HintAssist.IsFloating="True"
-                                                      Style="{StaticResource FilledComboBox}" FontSize="14"/>
+                                                      Style="{StaticResource CustomerSearchableComboBox}"/>
                                             <Button Grid.Column="1" Command="{Binding OpenQuickAddCustomerCommand}"
                                                     Style="{StaticResource IconButton}" ToolTip="إضافة زبون جديد"
                                                     Width="40" Height="40" Margin="6,0,0,0">

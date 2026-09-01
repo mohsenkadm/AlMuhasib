@@ -33,6 +33,15 @@
         </Grid>
     </DataTemplate>
 
+    <Style x:Key="CustomerSearchableComboBox" TargetType="ComboBox" BasedOn="{StaticResource FilledComboBox}">
+        <Setter Property="IsEditable" Value="True"/>
+        <Setter Property="StaysOpenOnEdit" Value="True"/>
+        <Setter Property="TextSearch.TextPath" Value="Name"/>
+        <Setter Property="ItemTemplate" Value="{StaticResource CustomerAutoCompleteItemTemplate}"/>
+        <Setter Property="md:ComboBoxAssist.ShowSelectedItem" Value="True"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
     <Style x:Key="MasterDataEntityCardBorder" TargetType="Border">
         <Setter Property="Width" Value="228"/>
         <Setter Property="Margin" Value="0,0,12,12"/>

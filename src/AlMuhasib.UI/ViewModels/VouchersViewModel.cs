@@ -521,7 +521,17 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError(ex.Message);
+            var message = ex.InnerException?.Message ?? ex.Message;
+            if (message.Contains("Invalid column name", StringComparison.OrdinalIgnoreCase))
+            {
+                BeautifulMessageDialog.ShowError(
+                    "تعذر حفظ السند لأن قاعدة البيانات تحتاج تحديث.\n\n" +
+                    "أغلق البرنامج ثم افتحه مرة أخرى بعد التحديث لتطبيق تحديثات قاعدة البيانات.\n\n" +
+                    $"التفاصيل: {message}");
+                return;
+            }
+
+            BeautifulMessageDialog.ShowError(message);
         }
         finally
         {

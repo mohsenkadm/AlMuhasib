@@ -590,18 +590,21 @@ public partial class App : Application
                     async Task ApplyMigrationsWithStatusAsync()
                     {
                         var pendingMigrations = await migrationService.GetPendingMigrationsAsync();
-                        if (pendingMigrations.Count == 0)
-                            return;
-
-                        splash.SetStatus(
-                            pendingMigrations.Count == 1
-                                ? "جاري تطبيق تحديث قاعدة البيانات..."
-                                : $"جاري تطبيق {pendingMigrations.Count} تحديثات على قاعدة البيانات...");
-                        splash.SetProgress(0.52);
+                        if (pendingMigrations.Count > 0)
+                        {
+                            splash.SetStatus(
+                                pendingMigrations.Count == 1
+                                    ? "جاري تطبيق تحديث قاعدة البيانات..."
+                                    : $"جاري تطبيق {pendingMigrations.Count} تحديثات على قاعدة البيانات...");
+                            splash.SetProgress(0.52);
+                        }
 
                         var applied = await migrationService.ApplyPendingMigrationsAsync();
-                        System.Diagnostics.Debug.WriteLine(
-                            $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                        if (applied.Count > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine(
+                                $"[Startup] Applied migrations: {string.Join(", ", applied)}");
+                        }
                     }
 
                     try
@@ -647,6 +650,21 @@ public partial class App : Application
                 {
                     splash.SetStatus("تم التحقق من الاتصال بالحاسبة الرئيسية...");
                     splash.SetProgress(0.62);
+
+                    if (_systemProfile.ActiveSystem == ApplicationSystemType.Accounting)
+                    {
+                        splash.SetStatus("جاري التحقق من قاعدة البيانات...");
+                        var branchFactory = scope.ServiceProvider.GetRequiredService<
+                            Microsoft.EntityFrameworkCore.IDbContextFactory<
+                                AlMuhasib.Infrastructure.Data.AppDbContext>>();
+                        await using var branchDb = await branchFactory.CreateDbContextAsync();
+                        if (!await AlMuhasib.Infrastructure.Services.AccountingSchemaRepair
+                                .IsVoucherSchemaReadyAsync(branchDb))
+                        {
+                            throw new InvalidOperationException(
+                                AlMuhasib.Infrastructure.Services.AccountingSchemaRepair.BranchSchemaOutdatedMessage);
+                        }
+                    }
                 }
 
                 var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();

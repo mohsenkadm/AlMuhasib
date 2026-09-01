@@ -254,14 +254,13 @@ public static class DataGridCopyableCellsBehavior
         var clone = new Binding
         {
             Path = source.Path,
-            Mode = source.Mode,
+            Mode = BindingMode.OneWay,
             Converter = source.Converter,
             ConverterParameter = source.ConverterParameter,
             ConverterCulture = source.ConverterCulture,
             StringFormat = source.StringFormat,
             FallbackValue = source.FallbackValue,
             TargetNullValue = source.TargetNullValue,
-            UpdateSourceTrigger = source.UpdateSourceTrigger,
             ValidatesOnDataErrors = source.ValidatesOnDataErrors,
             ValidatesOnExceptions = source.ValidatesOnExceptions,
             NotifyOnSourceUpdated = source.NotifyOnSourceUpdated,

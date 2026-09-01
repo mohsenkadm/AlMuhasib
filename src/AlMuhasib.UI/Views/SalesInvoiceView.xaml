@@ -144,16 +144,11 @@
                                 <ComboBox Grid.Column="0"
                                           ItemsSource="{Binding FilteredCustomers}"
                                           SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                          ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
                                           Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
                                           materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
                                           materialDesign:HintAssist.IsFloating="True"
-                                          materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                          StaysOpenOnEdit="True"
-                                          Style="{StaticResource FilledComboBox}"
-                                          Margin="0,0,0,4"
-                                          FontSize="14" />
+                                          Style="{StaticResource CustomerSearchableComboBox}"
+                                          Margin="0,0,0,4" />
                                 <Button Grid.Column="1"
                                         Command="{Binding ShowSelectedPartyDetailsCommand}"
                                         ToolTip="تفاصيل العميل"

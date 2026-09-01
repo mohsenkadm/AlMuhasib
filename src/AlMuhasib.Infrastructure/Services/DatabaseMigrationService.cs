@@ -27,6 +27,12 @@ public sealed class DatabaseMigrationService : IDatabaseMigrationService
     // Always invoke MigrateAsync — it is idempotent and applies any newly discovered migrations.
     await db.Database.MigrateAsync(cancellationToken);
 
+    await AccountingSchemaRepair.ApplyAsync(db, cancellationToken);
+    if (!await AccountingSchemaRepair.IsVoucherSchemaReadyAsync(db, cancellationToken))
+    {
+      throw new InvalidOperationException(AccountingSchemaRepair.StandaloneSchemaOutdatedMessage);
+    }
+
     return pending;
   }
 }

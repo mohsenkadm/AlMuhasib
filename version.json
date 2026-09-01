@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.21",
-  "releaseDate": "2026-08-29",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.21/AlMuhasib-1.14.21.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.21/Qayd-Setup-1.14.21.exe",
-  "sha256": "5BCBA84E7160F9FFBC95CA2C351E89BAF1F612628DE96B938182C2EFF6915166",
-  "sizeBytes": 149824940,
-  "releaseNotes": "إصلاح تفعيل مدى الحياة: مفتاح عام محدّث وتوليد المفاتيح من لوحة المطوّر يعمل بشكل صحيح",
+  "version": "1.14.22",
+  "releaseDate": "2026-09-02",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.22/AlMuhasib-1.14.22.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.22/Qayd-Setup-1.14.22.exe",
+  "sha256": "6EF1555F00B30DD825C56D0693FF54042507AEBA9E0288FE76D54C6688FF82B5",
+  "sizeBytes": 149868768,
+  "releaseNotes": "نسخ محتوى الجداول، توحيد رقم العميل، السندات مع اختيار العميل، وإصلاحات إعداد النظام — تحديث اختياري آمن للعملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

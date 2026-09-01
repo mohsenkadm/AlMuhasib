@@ -6,11 +6,15 @@ namespace AlMuhasib.UI.Services;
 
 public static class CustomerComboBoxFilter
 {
+    private const int DefaultSearchLimit = 50;
+    private const int DefaultBrowseLimit = 500;
+
     public static void Apply(
         ObservableCollection<Customer> allCustomers,
         ObservableCollection<Customer> filtered,
         string? searchText,
-        int maxResults = 30)
+        int maxSearchResults = DefaultSearchLimit,
+        int maxBrowseResults = DefaultBrowseLimit)
     {
         filtered.Clear();
         var term = searchText?.Trim() ?? string.Empty;
@@ -18,7 +22,8 @@ public static class CustomerComboBoxFilter
             ? allCustomers
             : allCustomers.Where(c => CustomerDisplayHelper.MatchesSearch(c, term));
 
-        foreach (var c in source.Take(maxResults))
+        var limit = string.IsNullOrEmpty(term) ? maxBrowseResults : maxSearchResults;
+        foreach (var c in source.Take(limit))
             filtered.Add(c);
     }
 }

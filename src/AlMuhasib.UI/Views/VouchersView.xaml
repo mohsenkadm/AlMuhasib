@@ -135,13 +135,9 @@
                     <ComboBox Grid.Column="0"
                               ItemsSource="{Binding FilteredCustomers}"
                               SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                              ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
                               Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                              IsEditable="True"
-                              StaysOpenOnEdit="True"
                               materialDesign:HintAssist.Hint="{Binding CustomerFieldHint}"
-                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                              Style="{StaticResource FilledComboBox}"
+                              Style="{StaticResource CustomerSearchableComboBox}"
                               FontSize="13"
                               Visibility="{Binding ShowCustomerPickerField, Converter={StaticResource BoolToVis}}" />
 

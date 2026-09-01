@@ -1,6 +1,6 @@
 const VERSION_URL = 'https://raw.githubusercontent.com/mohsenkadm/AlMuhasib/master/version.json';
 const GITHUB_REPO = 'https://github.com/mohsenkadm/AlMuhasib';
-const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.20/Qayd-Setup-1.14.20.exe';
+const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.22/Qayd-Setup-1.14.22.exe';
 
 let revealObserver = null;
 
@@ -34,7 +34,7 @@ async function loadVersion() {
     // زر التنزيل يشير للمثبت EXE؛ ZIP يبقى لـ downloadUrl (التحديث التلقائي داخل التطبيق)
     applyDownloadLinks(data.installerUrl || data.downloadUrl || FALLBACK_DOWNLOAD);
   } catch {
-    if (els.version) els.version.textContent = '1.14.20';
+    if (els.version) els.version.textContent = '1.14.22';
     applyDownloadLinks(FALLBACK_DOWNLOAD);
   }
 }

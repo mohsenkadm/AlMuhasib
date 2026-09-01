@@ -68,12 +68,8 @@
                         <ComboBox Width="260" Margin="0,0,12,0"
                                   ItemsSource="{Binding FilteredCustomers}"
                                   SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                  DisplayMemberPath="Name"
                                   Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                  IsEditable="True"
-                                  StaysOpenOnEdit="True"
-                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  Style="{StaticResource FilledComboBox}"
+                                  Style="{StaticResource CustomerSearchableComboBox}"
                                   materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف)"/>
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>

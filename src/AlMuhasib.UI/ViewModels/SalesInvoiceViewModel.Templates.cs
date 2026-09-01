@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;

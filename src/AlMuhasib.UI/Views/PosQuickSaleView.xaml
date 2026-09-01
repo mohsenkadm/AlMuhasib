@@ -312,12 +312,9 @@
                     <ComboBox Grid.Row="1"
                               ItemsSource="{Binding PosCustomers}"
                               SelectedItem="{Binding SelectedPosCustomer}"
-                              ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
                               materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
-                              Style="{StaticResource FilledComboBox}"
-                              Margin="0,0,0,10"
-                              IsEditable="True"
-                              StaysOpenOnEdit="True"/>
+                              Style="{StaticResource CustomerSearchableComboBox}"
+                              Margin="0,0,0,10"/>
 
                     <DataGrid x:Name="PosCartGrid"
                               Grid.Row="2"
@@ -704,13 +701,10 @@
 
                         <ComboBox ItemsSource="{Binding PosCustomers}"
                                   SelectedItem="{Binding SelectedPosCustomer}"
-                                  ItemTemplate="{StaticResource CustomerAutoCompleteItemTemplate}"
                                   materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
                                   materialDesign:HintAssist.IsFloating="True"
-                                  Style="{StaticResource FilledComboBox}"
+                                  Style="{StaticResource CustomerSearchableComboBox}"
                                   Margin="0,4,0,16"
-                                  IsEditable="True"
-                                  StaysOpenOnEdit="True"
                                   Visibility="{Binding ShowCreditRemaining, Converter={StaticResource BoolVis}}"/>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">

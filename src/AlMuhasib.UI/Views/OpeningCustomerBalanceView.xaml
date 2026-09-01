@@ -367,12 +367,10 @@
                             </Grid.ColumnDefinitions>
                             <ComboBox ItemsSource="{Binding FilteredCustomers}"
                                       SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="Name"
                                       Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="True" StaysOpenOnEdit="True"
                                       IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
                                       materialDesign:HintAssist.Hint="العميل *"
-                                      Style="{StaticResource FilledComboBox}"/>
+                                      Style="{StaticResource CustomerSearchableComboBox}"/>
                             <Button Grid.Column="1" Command="{Binding OpenQuickAddCustomerCommand}"
                                     Style="{StaticResource IconButton}" ToolTip="إضافة عميل جديد"
                                     Width="40" Height="40" Margin="6,0,0,0"

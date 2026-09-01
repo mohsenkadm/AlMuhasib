@@ -49,6 +49,9 @@ public partial class SetupWizardHostWindow : Window
         SqlServerCombo.AddHandler(
             System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
             new TextChangedEventHandler(OnSqlServerTextChanged));
+
+        // Default first-run path: standalone machine with LocalDB.
+        SelectDeployment(DeploymentMode.Standalone, StandaloneCard, "#E65100", "#FFF3E0");
     }
 
     private void OnSqlServerTextChanged(object sender, TextChangedEventArgs e)
@@ -289,10 +292,12 @@ public partial class SetupWizardHostWindow : Window
                 return;
             }
 
-            var preferred = instances.FirstOrDefault(i => i.IsLocalDb && i.Source == "Detected")
+            var preferred = instances.FirstOrDefault(i =>
+                                i.IsLocalDb &&
+                                string.Equals(i.InstanceName, LocalDbInstanceBootstrapper.DefaultInstanceName, StringComparison.OrdinalIgnoreCase))
+                            ?? instances.FirstOrDefault(i => i.IsLocalDb)
                             ?? instances.FirstOrDefault(i =>
                                 string.Equals(i.InstanceName, "SQLEXPRESS", StringComparison.OrdinalIgnoreCase))
-                            ?? instances.FirstOrDefault(i => i.IsLocalDb)
                             ?? instances[0];
 
             SqlServerCombo.SelectedItem = preferred;
