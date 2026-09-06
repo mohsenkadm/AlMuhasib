@@ -152,7 +152,10 @@ public partial class CustomersViewModel : ViewModelBase
 
         System.Linq.Expressions.Expression<Func<Customer, bool>>? searchPredicate = filter is null
             ? null
-            : c => c.Name.Contains(filter) || (c.Phone != null && c.Phone.Contains(filter)) || (c.FileNumber != null && c.FileNumber.Contains(filter));
+            : c => c.Name.Contains(filter)
+                  || (c.Phone != null && c.Phone.Contains(filter))
+                  || (c.FileNumber != null && c.FileNumber.Contains(filter))
+                  || c.Id.ToString().StartsWith(filter);
 
         if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
         {

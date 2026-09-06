@@ -358,12 +358,10 @@
                             </Grid.ColumnDefinitions>
                             <ComboBox ItemsSource="{Binding FilteredSuppliers}"
                                       SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="Name"
                                       Text="{Binding SupplierSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="True" StaysOpenOnEdit="True"
                                       IsEnabled="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"
-                                      materialDesign:HintAssist.Hint="المورد *"
-                                      Style="{StaticResource FilledComboBox}"/>
+                                      materialDesign:HintAssist.Hint="المورد * (ابحث بالاسم أو الهاتف أو المعرف)"
+                                      Style="{StaticResource SupplierSearchableComboBox}"/>
                             <Button Grid.Column="1" Command="{Binding OpenQuickAddSupplierCommand}"
                                     Style="{StaticResource IconButton}" ToolTip="إضافة مورد جديد"
                                     Width="40" Height="40" Margin="6,0,0,0"

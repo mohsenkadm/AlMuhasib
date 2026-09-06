@@ -82,15 +82,24 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
-                            <!-- Add CashBox panel -->
+                            <!-- Add / Edit CashBox panel -->
                             <StackPanel Grid.Row="2" Margin="12,8">
-                                <!-- Toggle button -->
-                                <Button Content="إضافة صندوق" Command="{Binding ShowAddCashBoxCommand}"
-                                        Style="{StaticResource PrimaryButton}"
-                                        HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                                        Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                            Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                    <Button Content="إضافة صندوق" Command="{Binding ShowAddCashBoxCommand}"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Margin="0,0,8,0"
+                                            IsEnabled="{Binding CanAdd}" />
+                                    <Button Content="تعديل" Command="{Binding ShowEditCashBoxCommand}"
+                                            Style="{StaticResource OutlinedButton}"
+                                            Margin="0,0,8,0"
+                                            IsEnabled="{Binding CanEdit}" />
+                                    <Button Content="حذف" Command="{Binding DeleteCashBoxCommand}"
+                                            Style="{StaticResource FlatButton}"
+                                            IsEnabled="{Binding CanDelete}" />
+                                </StackPanel>
 
-                                <!-- Add form -->
+                                <!-- Add / Edit form -->
                                 <StackPanel Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource BoolToVis}}">
                                     <TextBox Text="{Binding NewCashBoxName, UpdateSourceTrigger=PropertyChanged}"
                                              materialDesign:HintAssist.Hint="اسم الصندوق"
@@ -99,7 +108,8 @@
                                     <TextBox Text="{Binding NewCashBoxBalance, UpdateSourceTrigger=PropertyChanged}"
                                              materialDesign:HintAssist.Hint="الرصيد الافتتاحي"
                                              Style="{StaticResource FilledTextBox}"
-                                             FontSize="13" Margin="0,0,0,8" />
+                                             FontSize="13" Margin="0,0,0,8"
+                                             IsEnabled="{Binding IsEditCashBoxMode, Converter={StaticResource InverseBooleanConverter}}" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                         <Button Content="حفظ" Command="{Binding SaveCashBoxCommand}"
                                                 Style="{StaticResource PrimaryButton}"
@@ -126,7 +136,7 @@
                             <controls:ListTableHeaderBar Grid.Row="0"
                                                          Title="حركات الصندوق"
                                                          TargetDataGrid="{Binding ElementName=CashBoxTransactionsGrid}"
-                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         IsFilterPanelOpen="{Binding IsCashBoxColumnFilterPanelOpen, Mode=TwoWay}"
                                                          ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                          ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                                          ExportCommand="{Binding ExportCashBoxTransactionsCommand}"
@@ -175,7 +185,7 @@
                                       HeadersVisibility="Column" FontSize="13" Margin="8,8,8,0"
                                       MinHeight="220"
                                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsCashBoxColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
@@ -352,7 +362,7 @@
                             <controls:ListTableHeaderBar Grid.Row="0"
                                                          Title="حركات البنك"
                                                          TargetDataGrid="{Binding ElementName=BankTransactionsGrid}"
-                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         IsFilterPanelOpen="{Binding IsBankColumnFilterPanelOpen, Mode=TwoWay}"
                                                          ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                          ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                                          ExportCommand="{Binding ExportBankTransactionsCommand}"
@@ -408,7 +418,7 @@
                                       HeadersVisibility="Column" FontSize="13" Margin="8,8,8,0"
                                       MinHeight="220"
                                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsBankColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
@@ -694,7 +704,7 @@
                             <controls:ListTableHeaderBar Grid.Row="0"
                                                          Title="سجل التحويلات"
                                                          TargetDataGrid="{Binding ElementName=TransfersGrid}"
-                                                         IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                         IsFilterPanelOpen="{Binding IsTransfersColumnFilterPanelOpen, Mode=TwoWay}"
                                                          ActiveFilterCount="{Binding ActiveColumnFilterCount}"
                                                          ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
                                                          ExportCommand="{Binding ExportTransfersCommand}"
@@ -709,7 +719,7 @@
                                       materialDesign:DataGridAssist.CellPadding="10 6"
                                       HeadersVisibility="Column" FontSize="13" Margin="8"
                                       behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsTransfersColumnFilterPanelOpen, Mode=TwoWay}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />

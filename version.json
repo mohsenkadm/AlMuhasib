@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.22",
-  "releaseDate": "2026-09-02",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.22/AlMuhasib-1.14.22.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.22/Qayd-Setup-1.14.22.exe",
-  "sha256": "6EF1555F00B30DD825C56D0693FF54042507AEBA9E0288FE76D54C6688FF82B5",
-  "sizeBytes": 149868768,
-  "releaseNotes": "نسخ محتوى الجداول، توحيد رقم العميل، السندات مع اختيار العميل، وإصلاحات إعداد النظام — تحديث اختياري آمن للعملاء الحاليين",
+  "version": "1.14.23",
+  "releaseDate": "2026-09-06",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.23/AlMuhasib-1.14.23.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.23/Qayd-Setup-1.14.23.exe",
+  "sha256": "D5B00FECF7A99406F2CEA741CB451A6FF588C3CC1C59018FC22BACCFF08756BB",
+  "sizeBytes": 149884311,
+  "releaseNotes": "تحسين عرض العملاء والموردين، القاصات والبنوك، وتقارير المندوبين — تحديث اختياري آمن للعملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

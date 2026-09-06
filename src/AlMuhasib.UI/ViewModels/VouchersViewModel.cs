@@ -109,7 +109,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private bool _isCustomerRequired;
 
     [ObservableProperty]
-    private string _customerFieldHint = "العميل (ابحث بالاسم أو الهاتف أو رقم العميل)";
+    private string _customerFieldHint = "العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)";
 
     [ObservableProperty]
     private bool _showSupplierField;
@@ -245,8 +245,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         ShowCustomerPickerField = ShowCustomerField || ShowOptionalCustomerField;
         IsCustomerRequired = ShowCustomerField;
         CustomerFieldHint = ShowOptionalCustomerField
-            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم العميل)"
-            : "العميل (ابحث بالاسم أو الهاتف أو رقم العميل)";
+            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)"
+            : "العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)";
         ShowSupplierField = type is VoucherType.Payment;
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;

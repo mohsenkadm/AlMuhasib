@@ -4,6 +4,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.SalesRep;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -18,6 +19,7 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
     private List<SalesRepCustomerRow> _allRows = [];
 
     [ObservableProperty] private SalesRepresentative? _selectedSalesRep;
+    [ObservableProperty] private PaymentMethodItem? _selectedPaymentMethodItem;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private string _totalSales = "0";
     [ObservableProperty] private string _totalPaid = "0";
@@ -34,6 +36,7 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
     {
         _salesRepService = salesRepService;
         PageTitle = "عملاء المندوب";
+        SelectedPaymentMethodItem = PaymentMethods[0];
     }
 
     public override async Task InitializeAsync()
@@ -59,7 +62,8 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
         try
         {
             IsBusy = true;
-            var data = await _salesRepService.GetCustomersByRepAsync(SelectedSalesRep.Id, DateFrom, DateTo);
+            var data = await _salesRepService.GetCustomersByRepAsync(
+                SelectedSalesRep.Id, DateFrom, DateTo, SelectedPaymentMethodItem?.Value);
             _allRows = data.ToList();
 
             TotalSales = FormatCurrency(_allRows.Sum(r => r.TotalSales));

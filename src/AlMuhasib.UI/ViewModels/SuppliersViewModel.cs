@@ -119,7 +119,9 @@ public partial class SuppliersViewModel : ViewModelBase
 
         System.Linq.Expressions.Expression<Func<Supplier, bool>>? searchPredicate = filter is null
             ? null
-            : s => s.Name.Contains(filter) || (s.Phone != null && s.Phone.Contains(filter));
+            : s => s.Name.Contains(filter)
+                  || (s.Phone != null && s.Phone.Contains(filter))
+                  || s.Id.ToString().StartsWith(filter);
 
         if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
         {

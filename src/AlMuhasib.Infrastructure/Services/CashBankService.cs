@@ -64,6 +64,81 @@ public class CashBankService : ICashBankService
         return cashBox;
     }
 
+    public async Task UpdateCashBoxAsync(int id, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidOperationException("يرجى إدخال اسم القاصة");
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == id)
+            ?? throw new InvalidOperationException("الصندوق غير موجود");
+
+        var trimmed = name.Trim();
+        var oldName = cashBox.Name;
+        cashBox.Name = trimmed;
+        cashBox.UpdatedAt = DateTime.UtcNow;
+        cashBox.UpdatedBy = _currentUserService.Username;
+        await context.SaveChangesAsync();
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Edit,
+                EntityName = "CashBox",
+                EntityId = cashBox.Id,
+                OldValues = $"قاصة: {oldName}",
+                NewValues = $"قاصة: {trimmed}",
+                Timestamp = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task DeleteCashBoxAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == id)
+            ?? throw new InvalidOperationException("الصندوق غير موجود");
+
+        var hasVouchers = await context.Vouchers.AnyAsync(v => v.CashBoxId == id);
+        if (hasVouchers)
+            throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود سندات مرتبطة به");
+
+        var hasTransfers = await context.Transfers.AnyAsync(t =>
+            (t.FromType == TransferAccountType.CashBox && t.FromId == id)
+            || (t.ToType == TransferAccountType.CashBox && t.ToId == id));
+        if (hasTransfers)
+            throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود تحويلات مرتبطة به");
+
+        var hasInvoices = await context.Invoices.AnyAsync(i => i.CashBoxId == id);
+        if (hasInvoices)
+            throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود فواتير مرتبطة به");
+
+        var hasExpenses = await context.Expenses.AnyAsync(e => e.CashBoxId == id);
+        if (hasExpenses)
+            throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود مصروفات مرتبطة به");
+
+        var username = _currentUserService.Username ?? "system";
+        cashBox.MarkSoftDeleted(username);
+        await context.SaveChangesAsync();
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Delete,
+                EntityName = "CashBox",
+                EntityId = cashBox.Id,
+                OldValues = $"قاصة: {cashBox.Name}, الرصيد: {cashBox.Balance:N0}",
+                Timestamp = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     // BankAccounts
     // ══════════════════════════════════════════════════════
@@ -229,8 +304,8 @@ public class CashBankService : ICashBankService
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
 
-            if (string.IsNullOrEmpty(voucher.VoucherNumber))
-                voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);
+            // Always assign server-side to avoid stale UI numbers and soft-delete collisions.
+            voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);
 
             if (voucher.InvoiceId.HasValue && voucher.InstallmentId.HasValue)
                 throw new InvalidOperationException("لا يمكن ربط السند بفاتورة وقسط في نفس الوقت");
@@ -287,7 +362,15 @@ public class CashBankService : ICashBankService
             }
 
             await context.Vouchers.AddAsync(voucher);
-            await context.SaveChangesAsync();
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);
+                await context.SaveChangesAsync();
+            }
 
             if (_currentUserService.UserId.HasValue)
             {
@@ -311,6 +394,26 @@ public class CashBankService : ICashBankService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        for (var inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            var message = inner.Message;
+            if (message.Contains("IX_Vouchers_VoucherNumber", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("unique index", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("UNIQUE KEY", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // SQL Server unique/duplicate: 2601, 2627
+            var numberProp = inner.GetType().GetProperty("Number");
+            if (numberProp?.GetValue(inner) is int number && number is 2601 or 2627)
+                return true;
+        }
+
+        return false;
     }
 
     public async Task DeleteVoucherAsync(int id)
@@ -425,20 +528,23 @@ public class CashBankService : ICashBankService
             _ => "VCH"
         };
 
-        var lastVoucher = await context.Vouchers
-            .Where(v => v.VoucherType == type)
-            .OrderByDescending(v => v.Id)
-            .FirstOrDefaultAsync();
+        // Include soft-deleted rows so numbers still held by the unique index are not reused.
+        var numbers = await context.Vouchers
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(v => v.VoucherType == type && v.VoucherNumber.StartsWith(prefix + "-"))
+            .Select(v => v.VoucherNumber)
+            .ToListAsync();
 
-        int nextNum = 1;
-        if (lastVoucher is not null && lastVoucher.VoucherNumber.Contains('-'))
+        var max = 0;
+        foreach (var num in numbers)
         {
-            var parts = lastVoucher.VoucherNumber.Split('-');
-            if (parts.Length == 2 && int.TryParse(parts[1], out int lastNum))
-                nextNum = lastNum + 1;
+            var parts = num.Split('-');
+            if (parts.Length == 2 && int.TryParse(parts[1], out var seq) && seq > max)
+                max = seq;
         }
 
-        return $"{prefix}-{nextNum:D4}";
+        return $"{prefix}-{(max + 1):D4}";
     }
 
     public async Task<(IEnumerable<Voucher> Items, int TotalCount)> GetPagedVouchersAsync(

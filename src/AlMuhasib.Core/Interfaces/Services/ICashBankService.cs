@@ -8,6 +8,8 @@ public interface ICashBankService
     // ── CashBoxes ────────────────────────────────────────
     Task<IEnumerable<CashBox>> GetAllCashBoxesAsync();
     Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0);
+    Task UpdateCashBoxAsync(int id, string name);
+    Task DeleteCashBoxAsync(int id);
 
     // ── BankAccounts ─────────────────────────────────────
     Task<IEnumerable<BankAccount>> GetAllBankAccountsAsync();

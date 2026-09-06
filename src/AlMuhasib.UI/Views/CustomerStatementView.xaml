@@ -70,7 +70,7 @@
                                   SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                                   Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
                                   Style="{StaticResource CustomerSearchableComboBox}"
-                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف)"/>
+                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)"/>
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>

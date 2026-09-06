@@ -294,7 +294,7 @@ public sealed class SalesRepService : ISalesRepService
     }
 
     public async Task<IReadOnlyList<SalesRepCustomerRow>> GetCustomersByRepAsync(
-        int salesRepresentativeId, DateTime? from, DateTime? to, CancellationToken ct = default)
+        int salesRepresentativeId, DateTime? from, DateTime? to, PaymentMethod? paymentMethod = null, CancellationToken ct = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -315,6 +315,8 @@ public sealed class SalesRepService : ISalesRepService
                             && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
             if (fromDate is not null) invoicesQ = invoicesQ.Where(i => i.Date >= fromDate);
             if (toDate is not null) invoicesQ = invoicesQ.Where(i => i.Date < toDate);
+            if (paymentMethod.HasValue)
+                invoicesQ = invoicesQ.Where(i => i.PaymentMethod == paymentMethod.Value);
 
             var invoices = await invoicesQ.OrderByDescending(i => i.Date).ToListAsync(ct);
             var lastInvoice = invoices.FirstOrDefault();

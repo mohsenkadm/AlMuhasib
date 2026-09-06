@@ -40,6 +40,9 @@
                                     materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
                                     materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding SelectedPaymentMethodItem}"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="طريقة الدفع" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
                         <TextBox materialDesign:HintAssist.Hint="بحث..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" MinWidth="200"/>

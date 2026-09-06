@@ -113,6 +113,8 @@
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
+                        <DataGridTextColumn Header="المعرف" Binding="{Binding Id}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Id"/>
                         <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
                         <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="130"

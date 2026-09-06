@@ -145,7 +145,7 @@
                                           ItemsSource="{Binding FilteredCustomers}"
                                           SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                          materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
+                                          materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل أو المعرف)"
                                           materialDesign:HintAssist.IsFloating="True"
                                           Style="{StaticResource CustomerSearchableComboBox}"
                                           Margin="0,0,0,4" />

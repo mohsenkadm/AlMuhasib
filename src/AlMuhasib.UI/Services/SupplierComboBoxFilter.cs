@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 
 namespace AlMuhasib.UI.Services;
@@ -15,9 +16,7 @@ public static class SupplierComboBoxFilter
         var term = searchText?.Trim() ?? string.Empty;
         var source = string.IsNullOrEmpty(term)
             ? allSuppliers
-            : allSuppliers.Where(s =>
-                s.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (s.Phone?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+            : allSuppliers.Where(s => SupplierDisplayHelper.MatchesSearch(s, term));
 
         foreach (var s in source.Take(maxResults))
             filtered.Add(s);

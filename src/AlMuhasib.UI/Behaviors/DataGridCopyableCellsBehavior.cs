@@ -139,15 +139,21 @@ public static class DataGridCopyableCellsBehavior
         SetIsProcessing(grid, true);
         try
         {
-            for (var i = 0; i < grid.Columns.Count; i++)
+            // Snapshot first — mutating Columns while iterating causes DisplayIndex out-of-range.
+            var toConvert = grid.Columns
+                .OfType<DataGridTextColumn>()
+                .Where(c => !GetIsConvertedColumn(c))
+                .ToList();
+
+            foreach (var textColumn in toConvert)
             {
-                var column = grid.Columns[i];
-                if (column is not DataGridTextColumn textColumn || GetIsConvertedColumn(textColumn))
+                var index = grid.Columns.IndexOf(textColumn);
+                if (index < 0)
                     continue;
 
                 var templateColumn = CreateTemplateColumn(grid, textColumn);
-                grid.Columns.RemoveAt(i);
-                grid.Columns.Insert(i, templateColumn);
+                grid.Columns.RemoveAt(index);
+                grid.Columns.Insert(index, templateColumn);
             }
         }
         finally
@@ -169,7 +175,7 @@ public static class DataGridCopyableCellsBehavior
             CanUserSort = textColumn.CanUserSort,
             CanUserReorder = textColumn.CanUserReorder,
             CanUserResize = textColumn.CanUserResize,
-            DisplayIndex = textColumn.DisplayIndex,
+            // Do not set DisplayIndex during Insert — WPF throws IndexOutOfRange on tabbed grids.
             IsReadOnly = true,
             CellTemplate = CreateCellTemplate(grid, textColumn),
         };

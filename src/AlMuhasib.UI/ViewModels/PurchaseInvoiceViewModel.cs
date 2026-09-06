@@ -341,19 +341,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             return;
 
         SelectedSupplier = null;
-
-        FilteredSuppliers.Clear();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            foreach (var s in Suppliers)
-                FilteredSuppliers.Add(s);
-        }
-        else
-        {
-            var term = value.Trim();
-            foreach (var s in Suppliers.Where(s => s.Name.Contains(term, StringComparison.OrdinalIgnoreCase)))
-                FilteredSuppliers.Add(s);
-        }
+        SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, value, maxResults: 50);
     }
 
     // ── Items management ───────────────────────────────────

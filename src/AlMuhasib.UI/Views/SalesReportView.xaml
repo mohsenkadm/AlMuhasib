@@ -56,7 +56,7 @@
                                   SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                                   Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
                                   Style="{StaticResource CustomerSearchableComboBox}"
-                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو رقم العميل)"/>
+                                  materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)"/>
                         <ComboBox ItemsSource="{Binding Warehouses}" SelectedValue="{Binding SelectedWarehouseId}" SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="المخزن" Width="160" Margin="0,0,12,0"/>
                         <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding SelectedPaymentMethodItem}" Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="طريقة الدفع" Width="150" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>

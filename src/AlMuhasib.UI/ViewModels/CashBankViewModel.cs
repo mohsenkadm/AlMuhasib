@@ -49,6 +49,12 @@ public partial class CashBankViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isAddCashBoxVisible;
 
+    [ObservableProperty]
+    private bool _isEditCashBoxMode;
+
+    [ObservableProperty]
+    private int? _editingCashBoxId;
+
     public ObservableCollection<AccountTransactionRow> CashBoxTransactions { get; } = [];
 
     [ObservableProperty]
@@ -71,6 +77,9 @@ public partial class CashBankViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _cashBoxFilteredNet;
+
+    [ObservableProperty]
+    private bool _isCashBoxColumnFilterPanelOpen;
 
     private readonly List<AccountTransactionRow> _allCashBoxTransactions = [];
     private bool _isClearingCashBoxFilters;
@@ -121,6 +130,9 @@ public partial class CashBankViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showUnreconciledOnly;
 
+    [ObservableProperty]
+    private bool _isBankColumnFilterPanelOpen;
+
     private readonly List<AccountTransactionRow> _allBankTransactions = [];
     private bool _isClearingBankFilters;
 
@@ -154,6 +166,9 @@ public partial class CashBankViewModel : ViewModelBase
     private string _transferNotes = string.Empty;
 
     public PagerState TransferPager { get; } = new() { PageSize = 20 };
+
+    [ObservableProperty]
+    private bool _isTransfersColumnFilterPanelOpen;
 
     // Source balance display
     [ObservableProperty]
@@ -196,8 +211,21 @@ public partial class CashBankViewModel : ViewModelBase
     [RelayCommand]
     private void ShowAddCashBox()
     {
+        IsEditCashBoxMode = false;
+        EditingCashBoxId = null;
         NewCashBoxName = string.Empty;
         NewCashBoxBalance = 0;
+        IsAddCashBoxVisible = true;
+    }
+
+    [RelayCommand]
+    private void ShowEditCashBox()
+    {
+        if (SelectedCashBox is null || !CanEdit) return;
+        IsEditCashBoxMode = true;
+        EditingCashBoxId = SelectedCashBox.Id;
+        NewCashBoxName = SelectedCashBox.Name;
+        NewCashBoxBalance = SelectedCashBox.Balance;
         IsAddCashBoxVisible = true;
     }
 
@@ -205,6 +233,8 @@ public partial class CashBankViewModel : ViewModelBase
     private void CancelAddCashBox()
     {
         IsAddCashBoxVisible = false;
+        IsEditCashBoxMode = false;
+        EditingCashBoxId = null;
     }
 
     [RelayCommand]
@@ -218,8 +248,40 @@ public partial class CashBankViewModel : ViewModelBase
 
         try
         {
-            await _cashBankService.AddCashBoxAsync(NewCashBoxName.Trim(), NewCashBoxBalance);
+            if (IsEditCashBoxMode && EditingCashBoxId.HasValue)
+            {
+                await _cashBankService.UpdateCashBoxAsync(EditingCashBoxId.Value, NewCashBoxName.Trim());
+            }
+            else
+            {
+                await _cashBankService.AddCashBoxAsync(NewCashBoxName.Trim(), NewCashBoxBalance);
+            }
+
             IsAddCashBoxVisible = false;
+            IsEditCashBoxMode = false;
+            EditingCashBoxId = null;
+            await LoadCashBoxesAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteCashBoxAsync()
+    {
+        if (SelectedCashBox is null || !CanDelete) return;
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"هل تريد حذف الصندوق «{SelectedCashBox.Name}»؟",
+                "تأكيد الحذف"))
+            return;
+
+        try
+        {
+            await _cashBankService.DeleteCashBoxAsync(SelectedCashBox.Id);
+            SelectedCashBox = null;
             await LoadCashBoxesAsync();
         }
         catch (Exception ex)

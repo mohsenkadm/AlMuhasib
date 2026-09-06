@@ -225,14 +225,7 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
             return;
 
         SelectedSupplier = null;
-        FilteredSuppliers.Clear();
-        var term = value?.Trim() ?? string.Empty;
-        var source = string.IsNullOrEmpty(term)
-            ? Suppliers
-            : Suppliers.Where(s => s.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                                   || (s.Phone?.Contains(term) ?? false));
-        foreach (var s in source.Take(30))
-            FilteredSuppliers.Add(s);
+        SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, value);
     }
 
     [RelayCommand]

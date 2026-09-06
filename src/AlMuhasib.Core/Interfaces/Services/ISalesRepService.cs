@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Models.SalesRep;
 
 namespace AlMuhasib.Core.Interfaces.Services;
@@ -14,7 +15,8 @@ public interface ISalesRepService
 
     Task<IReadOnlyList<SalesRepTargetProgress>> GetTargetProgressAsync(int? salesRepresentativeId, DateTime? asOf, CancellationToken ct = default);
 
-    Task<IReadOnlyList<SalesRepCustomerRow>> GetCustomersByRepAsync(int salesRepresentativeId, DateTime? from, DateTime? to, CancellationToken ct = default);
+    Task<IReadOnlyList<SalesRepCustomerRow>> GetCustomersByRepAsync(
+        int salesRepresentativeId, DateTime? from, DateTime? to, PaymentMethod? paymentMethod = null, CancellationToken ct = default);
 
     Task MarkCommissionPaidAsync(int commissionEntryId, decimal amount, CancellationToken ct = default);
 
