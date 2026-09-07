@@ -4,6 +4,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -32,6 +33,7 @@ public partial class CustomerNetProfitReportViewModel : ReportViewModelBase
     public Visibility TopCountVisibility => IsLeastProfitableMode ? Visibility.Visible : Visibility.Collapsed;
 
     private List<CustomerNetProfitRow> _allRows = [];
+    private CustomerNetProfitReportResult? _lastResult;
     public ObservableCollection<CustomerNetProfitRow> Rows { get; } = [];
 
     public CustomerNetProfitReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
@@ -57,6 +59,7 @@ public partial class CustomerNetProfitReportViewModel : ReportViewModelBase
             int? topN = IsLeastProfitableMode ? TopCount : null;
             var result = await _reportService.GetCustomerNetProfitReportAsync(
                 DateFrom, DateTo, IsLeastProfitableMode, topN);
+            _lastResult = result;
 
             TotalNetProfit = FormatCurrency(result.TotalNetProfit);
             TotalOutstanding = FormatCurrency(result.TotalOutstanding);
@@ -81,6 +84,43 @@ public partial class CustomerNetProfitReportViewModel : ReportViewModelBase
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void ShowAmountDetails(string? key)
+    {
+        if (_lastResult is null || string.IsNullOrWhiteSpace(key)) return;
+        var r = _lastResult;
+        var totalRevenue = _allRows.Sum(x => x.SalesAmount);
+        var totalCost = _allRows.Sum(x => x.Cost);
+        AmountBreakdownDialog.Show(key switch
+        {
+            "net" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل صافي أرباح العملاء",
+                Formula = "صافي الأرباح = Σ (مبيعات العميل − تكلفتها)",
+                ResultLabel = "صافي الأرباح",
+                ResultAmount = r.TotalNetProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "إجمالي مبيعات العملاء", Amount = totalRevenue },
+                    new AmountBreakdownLine { Operator = "−", Label = "إجمالي التكلفة", Amount = totalCost },
+                    new AmountBreakdownLine { Operator = "=", Label = "صافي الأرباح", Amount = r.TotalNetProfit, IsResult = true }
+                ],
+                Note = r.TotalNetProfit < 0
+                    ? "سالب لأن تكلفة مبيعات بعض العملاء أعلى من إيرادهم."
+                    : $"مجموع صافي ربح {r.CustomerCount} عميل في التقرير."
+            },
+            "outstanding" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي الديون",
+                Formula = "الديون = Σ المتبقي على العملاء الظاهرين",
+                ResultLabel = "إجمالي الديون",
+                ResultAmount = r.TotalOutstanding,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "ذمم العملاء", Amount = r.TotalOutstanding }]
+            },
+            _ => new AmountBreakdownModel { Title = "تفاصيل", ResultAmount = 0 }
+        });
     }
 
     protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);

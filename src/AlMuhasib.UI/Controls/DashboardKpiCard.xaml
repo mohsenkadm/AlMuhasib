@@ -11,6 +11,7 @@
 
     <UserControl.Resources>
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <materialDesign:Card UniformCornerRadius="20"
@@ -82,9 +83,47 @@
                 </StackPanel>
             </Grid>
 
-            <ContentPresenter Margin="20,12,20,16"
+            <ContentPresenter Margin="20,12,20,8"
                               Content="{Binding DetailsContent, ElementName=Root}"
                               Visibility="{Binding DetailsContent, ElementName=Root, Converter={StaticResource NullToCollapsed}}" />
+
+            <Button Margin="20,0,20,16"
+                    HorizontalAlignment="Left"
+                    Visibility="{Binding ShowDetailButton, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                    Command="{Binding DetailCommand, ElementName=Root}"
+                    Cursor="Hand"
+                    ToolTip="كيف جُمعت الأرباح الصافية؟"
+                    Padding="12,6">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="{Binding AccentLightBrush, ElementName=Root}"/>
+                        <Setter Property="Foreground" Value="{Binding AccentBrush, ElementName=Root}"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                            CornerRadius="14" Padding="{TemplateBinding Padding}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="MagnifyScan" Width="15" Height="15"
+                                                                     VerticalAlignment="Center" Margin="0,0,6,0"
+                                                                     Foreground="{TemplateBinding Foreground}"/>
+                                            <TextBlock Text="تفاصيل الحساب" FontSize="12" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{TemplateBinding Foreground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
     </materialDesign:Card>
 </UserControl>

@@ -43,6 +43,9 @@
                         <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding SelectedPaymentMethodItem}"
                                   Style="{StaticResource FilledComboBox}"
                                   materialDesign:HintAssist.Hint="طريقة الدفع" Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding BalanceFilters}" SelectedItem="{Binding SelectedBalanceFilter}"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="فلتر الرصيد" Width="160" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
                         <TextBox materialDesign:HintAssist.Hint="بحث..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" MinWidth="200"/>

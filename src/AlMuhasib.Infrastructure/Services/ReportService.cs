@@ -177,7 +177,8 @@ public partial class ReportService : IReportService
         {
             TotalSales = totalSales, TotalPurchases = cogs, GrossProfit = grossProfit,
             TotalExpenses = totalExpenses, TotalBankFees = totalBankFees,
-            DistributedProfits = distributed, NetProfit = netProfit,
+            DistributedProfits = distributed, ProfitOpeningBalance = profitOpening,
+            NetProfit = netProfit,
             ProfitMargin = totalSales > 0 ? Math.Round(grossProfit / totalSales * 100, 1) : 0
         };
     }

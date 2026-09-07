@@ -39,15 +39,20 @@
                 <!-- Stat Cards -->
                 <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="إجمالي المبيعات" TextValue="{Binding TotalSales}"
-                                                Icon="CashRegister" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                                Icon="CashRegister" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                                ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="sales"/>
                     <controls:AnimatedStatCard Title="تكلفة المبيعات" TextValue="{Binding CostOfSales}"
-                                                Icon="CartArrowDown" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+                                                Icon="CartArrowDown" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"
+                                                ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="cogs"/>
                     <controls:AnimatedStatCard Title="إجمالي الربح" TextValue="{Binding GrossProfit}"
-                                                Icon="TrendingUp" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                                Icon="TrendingUp" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"
+                                                ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="gross"/>
                     <controls:AnimatedStatCard Title="إجمالي المصاريف" TextValue="{Binding TotalExpenses}"
-                                                Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"/>
+                                                Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"
+                                                ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="expenses"/>
                     <controls:AnimatedStatCard Title="صافي الأرباح" TextValue="{Binding NetProfit}"
-                                                Icon="Finance" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+                                                Icon="Finance" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"
+                                                ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="net"/>
                 </UniformGrid>
 
                 <!-- Chart -->

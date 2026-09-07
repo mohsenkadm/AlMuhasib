@@ -14,6 +14,7 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using MaterialDesignThemes.Wpf;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -61,6 +62,21 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _netProfit;
+
+    [ObservableProperty]
+    private decimal _netProfitSales;
+
+    [ObservableProperty]
+    private decimal _netProfitPurchases;
+
+    [ObservableProperty]
+    private decimal _netProfitExpenses;
+
+    [ObservableProperty]
+    private decimal _netProfitDistributions;
+
+    [ObservableProperty]
+    private decimal _netProfitOpening;
 
     [ObservableProperty]
     private int _overdueInstallmentsCount;
@@ -147,6 +163,64 @@ public partial class DashboardViewModel : ViewModelBase
         await _mainWindow.OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
 
     [RelayCommand]
+    private void ShowNetProfitDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل الأرباح الصافية",
+            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
+            Formula = "الصافي = المبيعات − المشتريات − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
+            ResultLabel = "الأرباح الصافية",
+            ResultAmount = NetProfit,
+            Lines =
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "إجمالي المبيعات",
+                    Amount = NetProfitSales,
+                    Description = "فواتير البيع والأقساط (بدون أرصدة افتتاحية)"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "إجمالي المشتريات",
+                    Amount = NetProfitPurchases,
+                    Description = "مجموع فواتير المشتريات (وليس كلفة البضاعة المباعة)"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "إجمالي المصاريف",
+                    Amount = NetProfitExpenses
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "توزيعات الأرباح",
+                    Amount = NetProfitDistributions
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "رصيد افتتاحي للأرباح",
+                    Amount = NetProfitOpening
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "الأرباح الصافية",
+                    Amount = NetProfit,
+                    IsResult = true
+                }
+            ],
+            Note = NetProfit < 0
+                ? "الرقم السالب يعني أن المشتريات والمصاريف والتوزيعات تجاوزت المبيعات. ملاحظة: لوحة التحكم تخصم فواتير المشتريات وليس تكلفة المبيعات (COGS) كما في تقرير الأرباح."
+                : "ملاحظة: لوحة التحكم تخصم فواتير المشتريات وليس تكلفة المبيعات (COGS) كما في تقرير الأرباح — لذلك قد يختلف الرقم."
+        });
+    }
+
+    [RelayCommand]
     private async Task OpenPurchaseInvoiceAsync() =>
         await _mainWindow.OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown);
 
@@ -193,6 +267,11 @@ public partial class DashboardViewModel : ViewModelBase
                 TodaySales = data.TodaySales;
                 TodayPurchases = data.TodayPurchases;
                 NetProfit = data.NetProfit;
+                NetProfitSales = data.NetProfitSales;
+                NetProfitPurchases = data.NetProfitPurchases;
+                NetProfitExpenses = data.NetProfitExpenses;
+                NetProfitDistributions = data.NetProfitDistributions;
+                NetProfitOpening = data.NetProfitOpening;
                 OverdueInstallmentsCount = data.OverdueInstallmentsCount;
                 InvestorBalance = data.InvestorBalance;
                 UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;

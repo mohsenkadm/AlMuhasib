@@ -64,6 +64,11 @@ public class DashboardService : IDashboardService
             var distributedProfits = await context.ProfitDistributions
                 .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
             var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
+            data.NetProfitSales = totalSales;
+            data.NetProfitPurchases = totalPurchases;
+            data.NetProfitExpenses = totalExpenses;
+            data.NetProfitDistributions = distributedProfits;
+            data.NetProfitOpening = profitOpening;
             data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
         }
         catch (Exception ex)

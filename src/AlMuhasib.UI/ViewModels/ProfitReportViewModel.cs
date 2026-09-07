@@ -1,12 +1,13 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Charts;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -83,6 +84,140 @@ public partial class ProfitReportViewModel : ReportViewModelBase
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void ShowAmountDetails(string? key)
+    {
+        if (_lastResult is null || string.IsNullOrWhiteSpace(key))
+            return;
+
+        var r = _lastResult;
+        var periodNet = r.GrossProfit - r.TotalExpenses;
+        AmountBreakdownModel model = key switch
+        {
+            "sales" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي المبيعات",
+                Subtitle = "مجموع صافي فواتير المبيعات والأقساط ضمن الفترة",
+                Formula = "المبيعات = Σ صافي فواتير البيع والأقساط (بدون أرصدة افتتاحية)",
+                ResultLabel = "إجمالي المبيعات",
+                ResultAmount = r.TotalSales,
+                Lines =
+                [
+                    new AmountBreakdownLine
+                    {
+                        Operator = "Σ",
+                        Label = "فواتير المبيعات والأقساط",
+                        Amount = r.TotalSales,
+                        Description = "يُستبعد رصيد افتتاحي العملاء وخطط الأقساط الافتتاحية"
+                    }
+                ],
+                Note = r.TotalSales < 0
+                    ? "المبلغ سالب بسبب مرتجعات مبيعات أكبر من المبيعات في الفترة."
+                    : null
+            },
+            "cogs" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل تكلفة المبيعات",
+                Subtitle = "كلفة البضاعة المباعة (متوسط التكلفة × الكمية)",
+                Formula = "التكلفة = Σ (كمية المباعة × متوسط تكلفة الوحدة)",
+                ResultLabel = "تكلفة المبيعات",
+                ResultAmount = r.TotalPurchases,
+                Lines =
+                [
+                    new AmountBreakdownLine
+                    {
+                        Operator = "Σ",
+                        Label = "كلفة البضاعة المباعة (COGS)",
+                        Amount = r.TotalPurchases,
+                        Description = "ليست مجموع فواتير المشتريات؛ تُحسب من متوسط كلفة المخزون"
+                    }
+                ]
+            },
+            "gross" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي الربح",
+                Subtitle = "المبيعات ناقص تكلفة البضاعة المباعة",
+                Formula = "إجمالي الربح = المبيعات − تكلفة المبيعات",
+                ResultLabel = "إجمالي الربح",
+                ResultAmount = r.GrossProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "إجمالي المبيعات", Amount = r.TotalSales },
+                    new AmountBreakdownLine { Operator = "−", Label = "تكلفة المبيعات", Amount = r.TotalPurchases },
+                    new AmountBreakdownLine { Operator = "=", Label = "إجمالي الربح", Amount = r.GrossProfit, IsResult = true }
+                ],
+                Note = r.GrossProfit < 0
+                    ? "الرقم سالب لأن تكلفة المبيعات أكبر من المبيعات في هذه الفترة."
+                    : null
+            },
+            "expenses" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي المصاريف",
+                Subtitle = "مجموع المصروفات المسجّلة ضمن الفترة",
+                Formula = "المصاريف = Σ مبالغ المصروفات",
+                ResultLabel = "إجمالي المصاريف",
+                ResultAmount = r.TotalExpenses,
+                Lines =
+                [
+                    new AmountBreakdownLine
+                    {
+                        Operator = "Σ",
+                        Label = "المصروفات",
+                        Amount = r.TotalExpenses,
+                        Description = "لا تشمل الرسوم البنكية ولا توزيعات الأرباح"
+                    }
+                ]
+            },
+            "net" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل صافي الأرباح",
+                Subtitle = "الصافي الظاهر في البطاقة، مع المكونات الكاملة للإيضاح",
+                Formula = "الصافي الظاهر = إجمالي الربح − المصاريف",
+                ResultLabel = "صافي الأرباح (البطاقة)",
+                ResultAmount = periodNet,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "−", Label = "إجمالي المصاريف", Amount = r.TotalExpenses },
+                    new AmountBreakdownLine { Operator = "=", Label = "صافي الأرباح الظاهر", Amount = periodNet, IsResult = true },
+                    new AmountBreakdownLine
+                    {
+                        Operator = "−",
+                        Label = "رسوم بنكية (غير ظاهرة في البطاقة)",
+                        Amount = r.TotalBankFees,
+                        Description = "تُخصم في الصافي الكامل فقط"
+                    },
+                    new AmountBreakdownLine
+                    {
+                        Operator = "−",
+                        Label = "توزيعات أرباح (غير ظاهرة في البطاقة)",
+                        Amount = r.DistributedProfits
+                    },
+                    new AmountBreakdownLine
+                    {
+                        Operator = "+",
+                        Label = "رصيد افتتاحي للأرباح",
+                        Amount = r.ProfitOpeningBalance
+                    },
+                    new AmountBreakdownLine
+                    {
+                        Operator = "=",
+                        Label = "الصافي الكامل",
+                        Amount = r.NetProfit,
+                        IsResult = true,
+                        Description = "المبيعات − التكلفة − المصاريف − الرسوم − التوزيعات + الافتتاحي"
+                    }
+                ],
+                Note = periodNet < 0 || r.NetProfit < 0
+                    ? "الرقم السالب يعني أن الخصومات (تكلفة/مصاريف/رسوم/توزيعات) تجاوزت الإيرادات في الفترة."
+                    : null
+            },
+            _ => new AmountBreakdownModel { Title = "تفاصيل المبلغ", ResultAmount = 0 }
+        };
+
+        AmountBreakdownDialog.Show(model);
     }
 
     [RelayCommand]

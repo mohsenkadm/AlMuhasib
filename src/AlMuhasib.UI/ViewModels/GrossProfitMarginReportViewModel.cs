@@ -6,9 +6,10 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Charts;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -27,6 +28,7 @@ public partial class GrossProfitMarginReportViewModel : ReportViewModelBase
     [ObservableProperty] private Axis[] _dailyYAxes = [];
 
     private List<GrossProfitMarginRow> _allRows = [];
+    private GrossProfitMarginReportResult? _lastResult;
     public ObservableCollection<GrossProfitMarginRow> Rows { get; } = [];
 
     public GrossProfitMarginReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
@@ -51,6 +53,7 @@ public partial class GrossProfitMarginReportViewModel : ReportViewModelBase
         {
             IsBusy = true;
             var result = await _reportService.GetGrossProfitMarginReportAsync(DateFrom, DateTo);
+            _lastResult = result;
 
             TotalSales = FormatCurrency(result.TotalSales);
             CostOfGoodsSold = FormatCurrency(result.CostOfGoodsSold);
@@ -71,6 +74,60 @@ public partial class GrossProfitMarginReportViewModel : ReportViewModelBase
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void ShowAmountDetails(string? key)
+    {
+        if (_lastResult is null || string.IsNullOrWhiteSpace(key)) return;
+        var r = _lastResult;
+        AmountBreakdownDialog.Show(key switch
+        {
+            "sales" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل المبيعات",
+                Formula = "المبيعات = Σ إيراد فواتير البيع في الفترة",
+                ResultLabel = "المبيعات",
+                ResultAmount = r.TotalSales,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "إيراد الفواتير", Amount = r.TotalSales }]
+            },
+            "cogs" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل تكلفة البضاعة",
+                Formula = "التكلفة = Σ كلفة بنود الفواتير المباعة",
+                ResultLabel = "تكلفة البضاعة",
+                ResultAmount = r.CostOfGoodsSold,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "كلفة البضاعة المباعة", Amount = r.CostOfGoodsSold }]
+            },
+            "gross" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي الربح",
+                Formula = "إجمالي الربح = المبيعات − تكلفة البضاعة",
+                ResultLabel = "إجمالي الربح",
+                ResultAmount = r.GrossProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "المبيعات", Amount = r.TotalSales },
+                    new AmountBreakdownLine { Operator = "−", Label = "تكلفة البضاعة", Amount = r.CostOfGoodsSold },
+                    new AmountBreakdownLine { Operator = "=", Label = "إجمالي الربح", Amount = r.GrossProfit, IsResult = true }
+                ],
+                Note = r.GrossProfit < 0 ? "سالب لأن التكلفة أكبر من المبيعات." : null
+            },
+            "margin" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل هامش الربح %",
+                Formula = "الهامش % = (إجمالي الربح ÷ المبيعات) × 100",
+                ResultLabel = "هامش %",
+                ResultAmount = r.GrossMarginPercent,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "÷", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "÷", Label = "المبيعات", Amount = r.TotalSales },
+                    new AmountBreakdownLine { Operator = "=", Label = "الهامش %", Amount = r.GrossMarginPercent, IsResult = true }
+                ]
+            },
+            _ => new AmountBreakdownModel { Title = "تفاصيل", ResultAmount = 0 }
+        });
     }
 
     protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);

@@ -35,28 +35,32 @@
                         Icon="CashRegister"
                         IconBackground="#E8F5E9"
                         IconForeground="#2E7D32"
-                        ValueForeground="#2E7D32"/>
+                        ValueForeground="#2E7D32"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="sales"/>
                     <controls:AnimatedStatCard
                         Title="إجمالي الربح"
                         TextValue="{Binding GrossProfit}"
                         Icon="TrendingUp"
                         IconBackground="#E3F2FD"
                         IconForeground="#1565C0"
-                        ValueForeground="#1565C0"/>
+                        ValueForeground="#1565C0"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="gross"/>
                     <controls:AnimatedStatCard
                         Title="تشغيلي"
                         TextValue="{Binding OperatingProfit}"
                         Icon="ChartLine"
                         IconBackground="#FFF3E0"
                         IconForeground="#EF6C00"
-                        ValueForeground="#EF6C00"/>
+                        ValueForeground="#EF6C00"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="operating"/>
                     <controls:AnimatedStatCard
                         Title="صافي الربح"
                         TextValue="{Binding NetProfit}"
                         Icon="CashPlus"
                         IconBackground="#F3E5F5"
                         IconForeground="#6A1B9A"
-                        ValueForeground="#6A1B9A"/>
+                        ValueForeground="#6A1B9A"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="net"/>
                 </UniformGrid>
 
                 <UniformGrid Columns="2" Margin="0,0,0,4">

@@ -900,7 +900,9 @@
                                                Icon="ChartLine"
                                                AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}"
+                                               ShowDetailButton="True"
+                                               DetailCommand="{Binding ShowNetProfitDetailsCommand}" />
 
                     <controls:DashboardKpiCard Grid.Column="3" Margin="8,0,0,0"
                                                HorizontalAlignment="Stretch"

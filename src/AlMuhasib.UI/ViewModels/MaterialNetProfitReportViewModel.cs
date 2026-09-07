@@ -5,6 +5,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -35,6 +36,7 @@ public partial class MaterialNetProfitReportViewModel : ReportViewModelBase
     public Visibility TopCountVisibility => IsLeastProfitableMode ? Visibility.Visible : Visibility.Collapsed;
 
     private List<MaterialNetProfitRow> _allRows = [];
+    private MaterialNetProfitReportResult? _lastResult;
     public ObservableCollection<MaterialNetProfitRow> Rows { get; } = [];
 
     public MaterialNetProfitReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
@@ -62,6 +64,7 @@ public partial class MaterialNetProfitReportViewModel : ReportViewModelBase
             int? topN = IsLeastProfitableMode ? TopCount : null;
             var result = await _reportService.GetMaterialNetProfitReportAsync(
                 DateFrom, DateTo, SelectedWarehouseId, IsLeastProfitableMode, topN);
+            _lastResult = result;
 
             TotalNetProfit = FormatCurrency(result.TotalNetProfit);
             TotalStockValue = FormatCurrency(result.TotalStockValue);
@@ -86,6 +89,43 @@ public partial class MaterialNetProfitReportViewModel : ReportViewModelBase
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void ShowAmountDetails(string? key)
+    {
+        if (_lastResult is null || string.IsNullOrWhiteSpace(key)) return;
+        var r = _lastResult;
+        var totalRevenue = _allRows.Sum(x => x.Revenue);
+        var totalCost = _allRows.Sum(x => x.Cost);
+        AmountBreakdownDialog.Show(key switch
+        {
+            "net" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل صافي أرباح المواد",
+                Formula = "صافي الأرباح = Σ (إيراد المادة − تكلفتها)",
+                ResultLabel = "صافي الأرباح",
+                ResultAmount = r.TotalNetProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "إجمالي إيراد المواد", Amount = totalRevenue },
+                    new AmountBreakdownLine { Operator = "−", Label = "إجمالي تكلفة المواد", Amount = totalCost },
+                    new AmountBreakdownLine { Operator = "=", Label = "صافي الأرباح", Amount = r.TotalNetProfit, IsResult = true }
+                ],
+                Note = r.TotalNetProfit < 0
+                    ? "سالب لأن تكلفة بعض/كل المواد أعلى من إيرادها — راجع قائمة المواد الأقل ربحاً."
+                    : $"مجموع صافي ربح {r.ProductCount} مادة ظاهرة في التقرير."
+            },
+            "stock" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل قيمة المخزون",
+                Formula = "قيمة المخزون = Σ (الكمية × متوسط التكلفة)",
+                ResultLabel = "قيمة المخزون",
+                ResultAmount = r.TotalStockValue,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "قيمة مخزون المواد", Amount = r.TotalStockValue }]
+            },
+            _ => new AmountBreakdownModel { Title = "تفاصيل", ResultAmount = 0 }
+        });
     }
 
     protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);

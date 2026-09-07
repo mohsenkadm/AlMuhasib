@@ -51,6 +51,11 @@ public sealed class CloudDashboardService : ICloudDashboardService
         var distributedProfits = await _db.ProfitDistributions.ForTenant(tenantId)
             .SumAsync(pd => (decimal?)pd.DistributedAmount, ct) ?? 0;
         var profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(_db);
+        data.NetProfitSales = totalSales;
+        data.NetProfitPurchases = totalPurchases;
+        data.NetProfitExpenses = totalExpenses;
+        data.NetProfitDistributions = distributedProfits;
+        data.NetProfitOpening = profitOpening;
         data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
 
         data.OverdueInstallmentsCount = await _db.Installments.ForTenant(tenantId)

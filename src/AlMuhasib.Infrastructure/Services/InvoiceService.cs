@@ -643,6 +643,148 @@ public class InvoiceService : IInvoiceService
         }
     }
 
+    public async Task RestoreInvoiceAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var invoice = await context.Invoices
+            .IgnoreQueryFilters()
+            .Include(i => i.Items)
+            .Include(i => i.InstallmentPlans)
+                .ThenInclude(p => p.Installments)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice is null)
+            throw new InvalidOperationException("الفاتورة غير موجودة");
+        if (!invoice.IsDeleted)
+            throw new InvalidOperationException("الفاتورة ليست محذوفة");
+
+        // Ensure soft-deleted children are present even if navigation filters apply.
+        if (invoice.Items.Count == 0)
+        {
+            await context.Entry(invoice).Collection(i => i.Items).Query()
+                .IgnoreQueryFilters().LoadAsync();
+        }
+        if (invoice.InstallmentPlans.Count == 0)
+        {
+            await context.Entry(invoice).Collection(i => i.InstallmentPlans).Query()
+                .IgnoreQueryFilters()
+                .Include(p => p.Installments)
+                .LoadAsync();
+        }
+
+        await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
+
+        var username = _currentUserService.Username;
+        var restoredNumber = RestoreInvoiceNumberFromSoftDelete(invoice.InvoiceNumber, invoice.Id);
+
+        var numberTaken = await context.Invoices
+            .IgnoreQueryFilters()
+            .AnyAsync(i => i.Id != invoice.Id && i.InvoiceNumber == restoredNumber && !i.IsDeleted);
+        if (numberTaken)
+            throw new InvalidOperationException(
+                $"لا يمكن استرجاع الفاتورة لأن رقمها ({restoredNumber}) مستخدم حالياً في فاتورة أخرى.");
+
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            // Re-apply cash effects (opposite of delete)
+            if (invoice.CashBoxId.HasValue &&
+                (invoice.PaymentMethod == PaymentMethod.Cash
+                 || (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)))
+            {
+                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
+                if (cashBox is not null)
+                {
+                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
+                        ? invoice.PaidAmount
+                        : invoice.NetAmount;
+
+                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
+                        cashBox.Balance -= cashAmount;
+                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                        cashBox.Balance += cashAmount;
+                    else
+                        cashBox.Balance += cashAmount;
+
+                    cashBox.UpdatedBy = username;
+                    cashBox.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            // Re-apply stock effects (opposite of delete)
+            foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
+            {
+                var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
+                var stock = await context.WarehouseStocks
+                    .FirstOrDefaultAsync(s =>
+                        s.WarehouseId == warehouseId &&
+                        s.ProductId == item.ProductId!.Value);
+
+                if (stock is null)
+                {
+                    stock = new WarehouseStock
+                    {
+                        WarehouseId = warehouseId,
+                        ProductId = item.ProductId!.Value,
+                        Quantity = 0,
+                        CreatedBy = username,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await context.WarehouseStocks.AddAsync(stock);
+                }
+
+                if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
+                    stock.Quantity += item.Quantity;
+                else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                    stock.Quantity -= item.Quantity;
+                else
+                    stock.Quantity -= item.Quantity;
+
+                stock.UpdatedBy = username;
+                stock.UpdatedAt = DateTime.UtcNow;
+            }
+
+            invoice.InvoiceNumber = restoredNumber;
+            invoice.RestoreFromSoftDelete(username);
+
+            foreach (var item in invoice.Items)
+                item.RestoreFromSoftDelete(username);
+
+            foreach (var plan in invoice.InstallmentPlans)
+            {
+                plan.RestoreFromSoftDelete(username);
+                foreach (var installment in plan.Installments)
+                    installment.RestoreFromSoftDelete(username);
+            }
+
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Edit,
+                    EntityName = "Invoice",
+                    EntityId = invoice.Id,
+                    OldValues = $"استرجاع فاتورة محذوفة رقم: {restoredNumber}, المبلغ: {invoice.NetAmount}, النوع: {invoice.InvoiceType}",
+                    NewValues = "تم الاسترجاع مع إعادة تطبيق المخزون والصندوق",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task PayCreditInvoiceAsync(int invoiceId, decimal amount, int cashBoxId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -764,5 +906,19 @@ public class InvoiceService : IInvoiceService
             number = number[..maxBaseLength];
 
         invoice.InvoiceNumber = number + suffix;
+    }
+
+    private static string RestoreInvoiceNumberFromSoftDelete(string invoiceNumber, int invoiceId)
+    {
+        var suffix = $"-D{invoiceId}";
+        if (invoiceNumber.EndsWith(suffix, StringComparison.Ordinal))
+            return invoiceNumber[..^suffix.Length];
+
+        var idx = invoiceNumber.LastIndexOf("-D", StringComparison.Ordinal);
+        if (idx <= 0) return invoiceNumber;
+        var maybeId = invoiceNumber[(idx + 2)..];
+        return int.TryParse(maybeId, out var parsed) && parsed == invoiceId
+            ? invoiceNumber[..idx]
+            : invoiceNumber;
     }
 }

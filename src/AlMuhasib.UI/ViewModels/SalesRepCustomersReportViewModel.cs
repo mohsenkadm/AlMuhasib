@@ -21,10 +21,18 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
     [ObservableProperty] private SalesRepresentative? _selectedSalesRep;
     [ObservableProperty] private PaymentMethodItem? _selectedPaymentMethodItem;
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private BalanceFilterItem? _selectedBalanceFilter;
     [ObservableProperty] private string _totalSales = "0";
     [ObservableProperty] private string _totalPaid = "0";
     [ObservableProperty] private string _totalRemaining = "0";
     [ObservableProperty] private string _customerCount = "0";
+
+    public ObservableCollection<BalanceFilterItem> BalanceFilters { get; } =
+    [
+        new("كل الأرصدة", BalanceFilterMode.All),
+        new("أرصدة مصفّرة", BalanceFilterMode.Zero),
+        new("أرصدة غير مصفّرة", BalanceFilterMode.NonZero)
+    ];
 
     public SalesRepCustomersReportViewModel(
         ISalesRepService salesRepService,
@@ -37,6 +45,7 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
         _salesRepService = salesRepService;
         PageTitle = "عملاء المندوب";
         SelectedPaymentMethodItem = PaymentMethods[0];
+        SelectedBalanceFilter = BalanceFilters[0];
     }
 
     public override async Task InitializeAsync()
@@ -90,6 +99,12 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
         ApplyFilterAndPage();
     }
 
+    partial void OnSelectedBalanceFilterChanged(BalanceFilterItem? value)
+    {
+        CurrentPage = 1;
+        ApplyFilterAndPage();
+    }
+
     protected override void OnPageChanged() => ApplyFilterAndPage();
 
     private void ApplyFilterAndPage()
@@ -104,7 +119,20 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
                 || (r.LastInvoiceNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
-        UpdatePaginationWithFilters(filtered.ToList(), Rows);
+        filtered = SelectedBalanceFilter?.Mode switch
+        {
+            BalanceFilterMode.Zero => filtered.Where(r => r.RemainingAmount == 0),
+            BalanceFilterMode.NonZero => filtered.Where(r => r.RemainingAmount != 0),
+            _ => filtered
+        };
+
+        var list = filtered.ToList();
+        TotalSales = FormatCurrency(list.Sum(r => r.TotalSales));
+        TotalPaid = FormatCurrency(list.Sum(r => r.PaidAmount));
+        TotalRemaining = FormatCurrency(list.Sum(r => r.RemainingAmount));
+        CustomerCount = list.Count.ToString("N0");
+
+        UpdatePaginationWithFilters(list, Rows);
     }
 
     [RelayCommand]
@@ -162,4 +190,16 @@ public partial class SalesRepCustomersReportViewModel : ReportViewModelBase
             BeautifulMessageDialog.ShowError(ex.Message);
         }
     }
+}
+
+public enum BalanceFilterMode
+{
+    All,
+    Zero,
+    NonZero
+}
+
+public record BalanceFilterItem(string Name, BalanceFilterMode Mode)
+{
+    public override string ToString() => Name;
 }
