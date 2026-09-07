@@ -266,6 +266,7 @@ public class ProfitReportResult
     public decimal TotalExpenses { get; set; }
     public decimal TotalBankFees { get; set; }
     public decimal DistributedProfits { get; set; }
+    public decimal ProfitOpeningBalance { get; set; }
     public decimal NetProfit { get; set; }
     public decimal ProfitMargin { get; set; }
 }

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
@@ -88,6 +89,22 @@ public partial class AnimatedStatCard : UserControl
         DependencyProperty.Register(nameof(ComparisonLabel), typeof(string), typeof(AnimatedStatCard),
             new PropertyMetadata(null, OnComparisonChanged));
     public string? ComparisonLabel { get => (string?)GetValue(ComparisonLabelProperty); set => SetValue(ComparisonLabelProperty, value); }
+
+    // ── Detail button ──
+    public static readonly DependencyProperty ShowDetailButtonProperty =
+        DependencyProperty.Register(nameof(ShowDetailButton), typeof(bool), typeof(AnimatedStatCard),
+            new PropertyMetadata(false));
+    public bool ShowDetailButton { get => (bool)GetValue(ShowDetailButtonProperty); set => SetValue(ShowDetailButtonProperty, value); }
+
+    public static readonly DependencyProperty DetailCommandProperty =
+        DependencyProperty.Register(nameof(DetailCommand), typeof(ICommand), typeof(AnimatedStatCard),
+            new PropertyMetadata(null));
+    public ICommand? DetailCommand { get => (ICommand?)GetValue(DetailCommandProperty); set => SetValue(DetailCommandProperty, value); }
+
+    public static readonly DependencyProperty DetailCommandParameterProperty =
+        DependencyProperty.Register(nameof(DetailCommandParameter), typeof(object), typeof(AnimatedStatCard),
+            new PropertyMetadata(null));
+    public object? DetailCommandParameter { get => GetValue(DetailCommandParameterProperty); set => SetValue(DetailCommandParameterProperty, value); }
 
     // ── Callbacks ──
 

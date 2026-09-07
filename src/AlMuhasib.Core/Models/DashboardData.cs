@@ -8,6 +8,13 @@ public class DashboardData
     public decimal NetProfit { get; set; }
     public int OverdueInstallmentsCount { get; set; }
 
+    /// <summary>مكونات معادلة الأرباح الصافية في لوحة التحكم.</summary>
+    public decimal NetProfitSales { get; set; }
+    public decimal NetProfitPurchases { get; set; }
+    public decimal NetProfitExpenses { get; set; }
+    public decimal NetProfitDistributions { get; set; }
+    public decimal NetProfitOpening { get; set; }
+
     // Charts
     public List<DailySalesPoint> SalesLast30Days { get; set; } = [];
     public List<ExpenseCategoryShare> ExpenseDistribution { get; set; } = [];

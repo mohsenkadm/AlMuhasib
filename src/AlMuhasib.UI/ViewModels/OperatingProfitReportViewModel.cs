@@ -6,9 +6,10 @@ using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Charts;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
-using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -27,6 +28,7 @@ public partial class OperatingProfitReportViewModel : ReportViewModelBase
     [ObservableProperty] private Axis[] _dailyYAxes = [];
 
     private List<OperatingProfitLineRow> _allRows = [];
+    private OperatingProfitReportResult? _lastResult;
     public ObservableCollection<OperatingProfitLineRow> Rows { get; } = [];
 
     public OperatingProfitReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
@@ -51,6 +53,7 @@ public partial class OperatingProfitReportViewModel : ReportViewModelBase
         {
             IsBusy = true;
             var result = await _reportService.GetOperatingProfitReportAsync(DateFrom, DateTo);
+            _lastResult = result;
 
             GrossProfit = FormatCurrency(result.GrossProfit);
             TotalExpenses = FormatCurrency(result.TotalExpenses);
@@ -71,6 +74,62 @@ public partial class OperatingProfitReportViewModel : ReportViewModelBase
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
         finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void ShowAmountDetails(string? key)
+    {
+        if (_lastResult is null || string.IsNullOrWhiteSpace(key)) return;
+        var r = _lastResult;
+        AmountBreakdownDialog.Show(key switch
+        {
+            "gross" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل إجمالي الربح",
+                Formula = "إجمالي الربح = المبيعات − تكلفة البضاعة",
+                ResultLabel = "إجمالي الربح",
+                ResultAmount = r.GrossProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "المبيعات", Amount = r.TotalSales },
+                    new AmountBreakdownLine { Operator = "−", Label = "تكلفة البضاعة", Amount = r.CostOfGoodsSold },
+                    new AmountBreakdownLine { Operator = "=", Label = "إجمالي الربح", Amount = r.GrossProfit, IsResult = true }
+                ],
+                Note = r.GrossProfit < 0 ? "سالب لأن التكلفة أكبر من المبيعات." : null
+            },
+            "expenses" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل المصاريف",
+                Formula = "المصاريف = Σ مبالغ المصروفات",
+                ResultLabel = "المصاريف",
+                ResultAmount = r.TotalExpenses,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "المصروفات", Amount = r.TotalExpenses }]
+            },
+            "fees" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل الرسوم البنكية",
+                Formula = "الرسوم = Σ رسوم سندات القبض المصرفي",
+                ResultLabel = "رسوم بنكية",
+                ResultAmount = r.TotalBankFees,
+                Lines = [new AmountBreakdownLine { Operator = "Σ", Label = "رسوم بنكية", Amount = r.TotalBankFees }]
+            },
+            "operating" => new AmountBreakdownModel
+            {
+                Title = "تفاصيل صافي الربح التشغيلي",
+                Formula = "تشغيلي = إجمالي الربح − المصاريف − الرسوم البنكية",
+                ResultLabel = "صافي تشغيلي",
+                ResultAmount = r.OperatingProfit,
+                Lines =
+                [
+                    new AmountBreakdownLine { Operator = "+", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "−", Label = "المصاريف", Amount = r.TotalExpenses },
+                    new AmountBreakdownLine { Operator = "−", Label = "رسوم بنكية", Amount = r.TotalBankFees },
+                    new AmountBreakdownLine { Operator = "=", Label = "صافي تشغيلي", Amount = r.OperatingProfit, IsResult = true }
+                ],
+                Note = r.OperatingProfit < 0 ? "سالب لأن المصاريف والرسوم تجاوزت إجمالي الربح." : null
+            },
+            _ => new AmountBreakdownModel { Title = "تفاصيل", ResultAmount = 0 }
+        });
     }
 
     protected override void OnPageChanged() => UpdatePaginationWithFilters(_allRows, Rows);

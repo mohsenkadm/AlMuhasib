@@ -35,28 +35,32 @@
                         Icon="TrendingUp"
                         IconBackground="#E8F5E9"
                         IconForeground="#2E7D32"
-                        ValueForeground="#2E7D32"/>
+                        ValueForeground="#2E7D32"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="gross"/>
                     <controls:AnimatedStatCard
                         Title="المصاريف"
                         TextValue="{Binding TotalExpenses}"
                         Icon="CashMinus"
                         IconBackground="#FFEBEE"
                         IconForeground="#C62828"
-                        ValueForeground="#C62828"/>
+                        ValueForeground="#C62828"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="expenses"/>
                     <controls:AnimatedStatCard
                         Title="رسوم بنكية"
                         TextValue="{Binding TotalBankFees}"
                         Icon="Bank"
                         IconBackground="#FFF3E0"
                         IconForeground="#EF6C00"
-                        ValueForeground="#EF6C00"/>
+                        ValueForeground="#EF6C00"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="fees"/>
                     <controls:AnimatedStatCard
                         Title="صافي تشغيلي"
                         TextValue="{Binding OperatingProfit}"
                         Icon="ChartLine"
                         IconBackground="#E3F2FD"
                         IconForeground="#1565C0"
-                        ValueForeground="#1565C0"/>
+                        ValueForeground="#1565C0"
+                        ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="operating"/>
                 </UniformGrid>
 
                 <UniformGrid Columns="2" Margin="0,0,0,4">

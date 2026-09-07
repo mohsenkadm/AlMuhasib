@@ -1,7 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Markup;
 using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.Controls;
@@ -38,6 +39,14 @@ public partial class DashboardKpiCard : UserControl
 
     public static readonly DependencyProperty DetailsContentProperty =
         DependencyProperty.Register(nameof(DetailsContent), typeof(object), typeof(DashboardKpiCard),
+            new PropertyMetadata(null));
+
+    public static readonly DependencyProperty ShowDetailButtonProperty =
+        DependencyProperty.Register(nameof(ShowDetailButton), typeof(bool), typeof(DashboardKpiCard),
+            new PropertyMetadata(false));
+
+    public static readonly DependencyProperty DetailCommandProperty =
+        DependencyProperty.Register(nameof(DetailCommand), typeof(ICommand), typeof(DashboardKpiCard),
             new PropertyMetadata(null));
 
     public string Title
@@ -80,5 +89,17 @@ public partial class DashboardKpiCard : UserControl
     {
         get => GetValue(DetailsContentProperty);
         set => SetValue(DetailsContentProperty, value);
+    }
+
+    public bool ShowDetailButton
+    {
+        get => (bool)GetValue(ShowDetailButtonProperty);
+        set => SetValue(ShowDetailButtonProperty, value);
+    }
+
+    public ICommand? DetailCommand
+    {
+        get => (ICommand?)GetValue(DetailCommandProperty);
+        set => SetValue(DetailCommandProperty, value);
     }
 }

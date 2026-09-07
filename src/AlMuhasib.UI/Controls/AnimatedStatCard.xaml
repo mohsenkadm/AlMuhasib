@@ -7,6 +7,33 @@
 
     <UserControl.Resources>
         <CubicEase x:Key="CubicEaseOut" EasingMode="EaseOut" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style x:Key="AmountDetailButton" TargetType="Button">
+            <Setter Property="Background" Value="#E0F2F1"/>
+            <Setter Property="Foreground" Value="#00695C"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="14" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#B2DFDB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#80CBC4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <materialDesign:Card Style="{StaticResource StatCard}">
@@ -48,8 +75,23 @@
 
             <!-- Text Content -->
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Title, ElementName=Root}"
-                           FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
+                <Grid>
+                    <TextBlock Text="{Binding Title, ElementName=Root}"
+                               FontSize="12" Foreground="{DynamicResource HintForegroundBrush}"
+                               VerticalAlignment="Center" Margin="0,0,72,0"/>
+                    <Button HorizontalAlignment="Left"
+                            Style="{StaticResource AmountDetailButton}"
+                            Command="{Binding DetailCommand, ElementName=Root}"
+                            CommandParameter="{Binding DetailCommandParameter, ElementName=Root}"
+                            Visibility="{Binding ShowDetailButton, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                            ToolTip="كيف جُمع هذا المبلغ؟">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="MagnifyScan" Width="14" Height="14"
+                                                     VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="تفاصيل" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
 
                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                     <TextBlock x:Name="ValueText"

@@ -207,6 +207,21 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="استرجاع" behaviors:DataGridColumnFilterBehavior.IsFilterable="False" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.RestoreInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource IconButton}"
+                                                ToolTip="استرجاع الفاتورة"
+                                                Width="36" Height="32"
+                                                Background="#E8F5E9"
+                                                Foreground="#2E7D32">
+                                            <md:PackIcon Kind="Restore" Width="18" Height="18" Foreground="#2E7D32"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <controls:PaginationBar Grid.Row="2" ShowFirstLastButtons="True"/>
@@ -233,10 +248,23 @@
                         </Button>
                     </Grid>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <Border Background="#FFF8F8" CornerRadius="8" Padding="12"
-                                BorderBrush="#FFCDD2" BorderThickness="1">
-                            <TextBlock Text="{Binding DetailsBody}" TextWrapping="Wrap" FontSize="13" LineHeight="22"/>
-                        </Border>
+                        <StackPanel>
+                            <Border Background="#FFF8F8" CornerRadius="8" Padding="12"
+                                    BorderBrush="#FFCDD2" BorderThickness="1">
+                                <TextBlock Text="{Binding DetailsBody}" TextWrapping="Wrap" FontSize="13" LineHeight="22"/>
+                            </Border>
+                            <Button Margin="0,16,0,0" Height="42"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding RestoreInvoiceCommand}"
+                                    CommandParameter="{Binding SelectedRow}"
+                                    Background="#2E7D32"
+                                    BorderBrush="#2E7D32">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Restore" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="استرجاع الفاتورة" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </md:Card>

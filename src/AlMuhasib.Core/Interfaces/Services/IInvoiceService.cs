@@ -26,6 +26,11 @@ public interface IInvoiceService
     Task DeleteInvoiceAsync(int id);
 
     /// <summary>
+    /// Restores a soft-deleted invoice and re-applies stock/cash effects (opposite of delete).
+    /// </summary>
+    Task RestoreInvoiceAsync(int id);
+
+    /// <summary>
     /// Search invoices by number or party name for quick lookup in invoice screens.
     /// </summary>
     Task<IReadOnlyList<Invoice>> SearchAsync(

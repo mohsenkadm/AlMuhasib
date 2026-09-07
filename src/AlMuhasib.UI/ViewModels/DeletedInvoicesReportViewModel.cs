@@ -10,12 +10,16 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class DeletedInvoicesReportViewModel : SupervisoryReportViewModelBase
 {
+    private readonly IInvoiceService _invoiceService;
+
     public DeletedInvoicesReportViewModel(
         ISupervisoryReportService supervisoryService,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IInvoiceService invoiceService)
         : base(supervisoryService, exportService, currentUserService)
     {
+        _invoiceService = invoiceService;
         PageTitle = "فواتير محذوفة";
     }
 
@@ -60,6 +64,37 @@ public partial class DeletedInvoicesReportViewModel : SupervisoryReportViewModel
         ShowDetailsPanel(
             $"فاتورة محذوفة — {row.InvoiceNumber}",
             $"{row.DetailsSummary}\n\nتاريخ الفاتورة: {row.InvoiceDate:yyyy/MM/dd}\nتاريخ الحذف: {row.DeletedAt:yyyy/MM/dd HH:mm}\nحُذفت بواسطة: {row.DeletedBy}\nملاحظات: {row.Notes ?? "—"}");
+    }
+
+    [RelayCommand]
+    private async Task RestoreInvoice(DeletedInvoiceRow? row)
+    {
+        if (row is null) return;
+
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
+            $"استرجاع الفاتورة {row.InvoiceNumber}؟\n\n" +
+            "سيتم إعادة تفعيل الفاتورة وإرجاع تأثيرها على المخزون والصندوق " +
+            "(نفس منطق الحذف المعكوس — الكمية تُعاد كما كانت قبل الحذف).",
+            "تأكيد الاسترجاع");
+        if (!confirmed) return;
+
+        try
+        {
+            IsBusy = true;
+            await _invoiceService.RestoreInvoiceAsync(row.Id);
+            BeautifulMessageDialog.ShowSuccess($"تم استرجاع الفاتورة {row.InvoiceNumber} بنجاح");
+            if (SelectedRow?.Id == row.Id)
+                IsDetailsOpen = false;
+            await ExecuteQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
