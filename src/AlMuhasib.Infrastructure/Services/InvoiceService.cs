@@ -658,6 +658,20 @@ public class InvoiceService : IInvoiceService
         if (!invoice.IsDeleted)
             throw new InvalidOperationException("الفاتورة ليست محذوفة");
 
+        // Ensure soft-deleted children are present even if navigation filters apply.
+        if (invoice.Items.Count == 0)
+        {
+            await context.Entry(invoice).Collection(i => i.Items).Query()
+                .IgnoreQueryFilters().LoadAsync();
+        }
+        if (invoice.InstallmentPlans.Count == 0)
+        {
+            await context.Entry(invoice).Collection(i => i.InstallmentPlans).Query()
+                .IgnoreQueryFilters()
+                .Include(p => p.Installments)
+                .LoadAsync();
+        }
+
         await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
 
         var username = _currentUserService.Username;
