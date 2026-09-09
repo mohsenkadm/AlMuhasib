@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.23",
-  "releaseDate": "2026-09-06",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.23/AlMuhasib-1.14.23.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.23/Qayd-Setup-1.14.23.exe",
-  "sha256": "D5B00FECF7A99406F2CEA741CB451A6FF588C3CC1C59018FC22BACCFF08756BB",
-  "sizeBytes": 149884311,
-  "releaseNotes": "تحسين عرض العملاء والموردين، القاصات والبنوك، وتقارير المندوبين — تحديث اختياري آمن للعملاء الحاليين",
+  "version": "1.14.24",
+  "releaseDate": "2026-09-09",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.24/AlMuhasib-1.14.24.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.24/Qayd-Setup-1.14.24.exe",
+  "sha256": "E8C0B0F81937BE67CE87CD4D41D76C4B7FE6F81B95AF148C3AD22C6A89641F22",
+  "sizeBytes": 149937200,
+  "releaseNotes": "فلتر أرصدة المندوب وتفاصيل الأرباح واسترجاع الفواتير المحذوفة — تحديث اختياري آمن للعملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }
