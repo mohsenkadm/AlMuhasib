@@ -7,6 +7,7 @@ public class PurchaseInvoiceDraft
     public int? WarehouseId { get; set; }
     public bool IsCashPayment { get; set; } = true;
     public int? CashBoxId { get; set; }
+    public decimal PaidAmount { get; set; }
     public string? Notes { get; set; }
     public List<SalesInvoiceDraftLine> Lines { get; set; } = [];
 }

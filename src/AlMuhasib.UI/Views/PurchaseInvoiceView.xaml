@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PurchaseInvoiceViewModel}"
              Style="{StaticResource PageStyle}"
@@ -15,6 +16,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBooleanConverter x:Key="InverseBool" />
     </UserControl.Resources>
 
     <Grid>
@@ -174,13 +176,13 @@
                                          Margin="0,0,8,0" />
 
                             <RadioButton Content="آجل"
-                                         IsChecked="{Binding IsCashPayment, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                                         IsChecked="{Binding IsCashPayment, Converter={StaticResource InverseBool}}"
                                          Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
                                          Padding="16,8"
                                          FontSize="13" />
                         </StackPanel>
 
-                        <!-- CashBox (visible only for Cash) -->
+                        <!-- CashBox (نقدي أو دفعة مقدمة على الآجل) -->
                         <ComboBox Grid.Row="1" Grid.Column="2"
                                   ItemsSource="{Binding CashBoxes}"
                                   SelectedItem="{Binding SelectedCashBox}"
@@ -190,7 +192,48 @@
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                   Style="{StaticResource FilledComboBox}"
                                   FontSize="14"
-                                  Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}" />
+                                  Visibility="{Binding ShowCashBox, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Credit down-payment -->
+                <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="10"
+                                     Padding="14,10"
+                                     Margin="0,0,0,16"
+                                     Background="#E3F2FD"
+                                     materialDesign:ElevationAssist.Elevation="Dp0"
+                                     Visibility="{Binding IsCreditPayment, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CashMinus"
+                                                     Width="20" Height="20"
+                                                     Foreground="#1565C0"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,10,0" />
+                            <TextBlock FontSize="13" Foreground="#0D47A1" VerticalAlignment="Center"
+                                       Text="فاتورة مشتريات آجلة — أدخل الدفعة المقدمة إن وُجدت"/>
+                        </StackPanel>
+                        <TextBox Grid.Column="1" Width="150" Margin="12,0,8,0"
+                                 Text="{Binding CreditPaidAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                 materialDesign:HintAssist.Hint="المبلغ المدفوع"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 FontSize="13"
+                                 Background="White"/>
+                        <TextBox Grid.Column="2" Width="150"
+                                 Text="{Binding CreditRemainingAmount, StringFormat=N0, Mode=OneWay}"
+                                 materialDesign:HintAssist.Hint="المتبقي"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 FontSize="13"
+                                 IsReadOnly="True"
+                                 Background="White"
+                                 Foreground="#E65100"/>
                     </Grid>
                 </materialDesign:Card>
 

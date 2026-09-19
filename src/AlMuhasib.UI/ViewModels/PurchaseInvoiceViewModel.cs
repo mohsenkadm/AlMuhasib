@@ -56,12 +56,55 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
     // Payment
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCreditPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowCashBox))]
     private bool _isCashPayment = true;
+
+    public bool IsCreditPayment => !IsCashPayment;
+
+    /// <summary>الصندوق يظهر للنقدي، أو للآجل عند وجود دفعة مقدمة.</summary>
+    public bool ShowCashBox => IsCashPayment || (IsCreditPayment && CreditPaidAmount > 0m);
+
+    [ObservableProperty]
+    private decimal _creditPaidAmount;
+
+    [ObservableProperty]
+    private decimal _creditRemainingAmount;
 
     [ObservableProperty]
     private CashBox? _selectedCashBox;
 
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
+
+    partial void OnCreditPaidAmountChanged(decimal value)
+    {
+        if (!IsCreditPayment) return;
+        var paid = Math.Clamp(value, 0m, GrandTotal);
+        if (paid != value)
+        {
+            CreditPaidAmount = paid;
+            return;
+        }
+
+        CreditRemainingAmount = Math.Max(0m, GrandTotal - paid);
+        OnPropertyChanged(nameof(ShowCashBox));
+    }
+
+    partial void OnIsCashPaymentChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsCreditPayment));
+        OnPropertyChanged(nameof(ShowCashBox));
+        if (value)
+        {
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = 0m;
+        }
+        else
+        {
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = GrandTotal;
+        }
+    }
 
     // ── Items ──────────────────────────────────────────────
     public ObservableCollection<InvoiceItemRow> Items { get; } = [];
@@ -279,6 +322,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == invoice.WarehouseId);
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
+        CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
@@ -548,6 +592,22 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         _isRecalculating = true;
         GrandTotal = grand;
         _isRecalculating = false;
+
+        if (IsCreditPayment)
+        {
+            if (CreditPaidAmount < 0m)
+                CreditPaidAmount = 0m;
+            if (CreditPaidAmount > grand)
+                CreditPaidAmount = grand;
+            CreditRemainingAmount = Math.Max(0m, grand - CreditPaidAmount);
+        }
+        else
+        {
+            CreditPaidAmount = 0m;
+            CreditRemainingAmount = 0m;
+        }
+
+        OnPropertyChanged(nameof(ShowCashBox));
     }
 
     partial void OnTransportFeeAmountChanged(decimal value) => RecalculateTotals();
@@ -568,6 +628,24 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         if (IsCashPayment && SelectedCashBox is null)
         {
             InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة");
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount > 0m && SelectedCashBox is null)
+        {
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة لتسجيل الدفعة المقدمة");
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount < 0m)
+        {
+            InvoiceValidationDialog.ShowBlockingError("المبلغ المدفوع لا يمكن أن يكون سالباً");
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount > GrandTotal)
+        {
+            InvoiceValidationDialog.ShowBlockingError("المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة");
             return;
         }
 
@@ -672,8 +750,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 SupplierId = supplierId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
-                CashBoxId = IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
+                CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
+                PaidAmount = IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -840,6 +919,17 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         }
     }
 
+    private int? ResolveCashBoxIdForSave()
+    {
+        if (SelectedCashBox is null)
+            return null;
+        if (IsCashPayment)
+            return SelectedCashBox.Id;
+        if (IsCreditPayment && CreditPaidAmount > 0m)
+            return SelectedCashBox.Id;
+        return null;
+    }
+
     // ── Print / WhatsApp ───────────────────────────────────
     [RelayCommand(CanExecute = nameof(CanPrint))]
     private void PrintInvoice()
@@ -863,6 +953,11 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         if (_savedInvoice is null)
             throw new InvalidOperationException("لا توجد فاتورة محفوظة");
 
+        var paidAmount = IsCashPayment
+            ? GrandTotal
+            : Math.Clamp(_savedInvoice.PaidAmount, 0m, GrandTotal);
+        var remainingAmount = Math.Max(0m, GrandTotal - paidAmount);
+
         return new InvoicePrintModel
         {
             Title = IsReturnMode ? "مرتجع مشتريات" : "فاتورة مشتريات",
@@ -878,6 +973,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             GrandTotal = GrandTotal,
+            PaidAmount = paidAmount,
+            RemainingAmount = remainingAmount,
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
@@ -911,6 +1008,9 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         ErrorMessage = string.Empty;
         Notes = string.Empty;
         TransportFeeAmount = 0m;
+        CreditPaidAmount = 0m;
+        CreditRemainingAmount = 0m;
+        IsCashPayment = true;
         SupplierSearchText = string.Empty;
         SelectedSupplier = null;
         InvoiceDate = DateTime.Now;

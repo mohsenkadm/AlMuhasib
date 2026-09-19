@@ -36,6 +36,7 @@ public partial class PurchaseInvoiceViewModel
         WarehouseId = SelectedWarehouse?.Id,
         IsCashPayment = IsCashPayment,
         CashBoxId = SelectedCashBox?.Id,
+        PaidAmount = CreditPaidAmount,
         Notes = Notes,
         Lines = Items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName))
             .Select(InvoiceDraftLineMapper.ToDraftLine)
@@ -47,6 +48,8 @@ public partial class PurchaseInvoiceViewModel
         InvoiceDate = draft.InvoiceDate;
         IsCashPayment = draft.IsCashPayment;
         Notes = draft.Notes ?? string.Empty;
+        if (!draft.IsCashPayment)
+            CreditPaidAmount = Math.Max(0m, draft.PaidAmount);
         if (draft.SupplierId.HasValue)
         {
             SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == draft.SupplierId);

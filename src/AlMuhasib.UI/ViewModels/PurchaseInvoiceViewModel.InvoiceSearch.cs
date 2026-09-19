@@ -165,8 +165,13 @@ public partial class PurchaseInvoiceViewModel
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
 
-        if (IsCashPayment && invoice.CashBoxId.HasValue)
+        if (invoice.CashBoxId.HasValue)
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId);
+
+        CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+        CreditRemainingAmount = IsCashPayment
+            ? 0m
+            : Math.Max(0m, invoice.NetAmount - CreditPaidAmount);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
