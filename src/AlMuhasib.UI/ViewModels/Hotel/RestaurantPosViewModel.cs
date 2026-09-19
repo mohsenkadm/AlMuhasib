@@ -55,6 +55,7 @@ public partial class RestaurantPosViewModel : ViewModelBase
     public bool IsTakeaway => SelectedOrderType == RestaurantOrderType.Takeaway;
     public bool HasActiveOrder => CurrentOrder is not null;
     public bool HasMenuItems => MenuItems.Count > 0;
+    public bool HasFavorites => FavoriteItems.Count > 0;
     public bool IsCartEmpty => CartLines.Count == 0;
     public bool ShowReadOnlyBanner => !CanAdd;
     public int OccupiedTablesCount => Tables.Count(t => t.Status == RestaurantTableStatus.Occupied);
@@ -66,6 +67,28 @@ public partial class RestaurantPosViewModel : ViewModelBase
     public bool ShowCashPaymentFields => !IsRoomService;
     public bool ShowChangeDue => PaymentMethod == RestaurantPaymentMethod.Cash && ChangeDue > 0;
     public bool IsCashPayment => PaymentMethod == RestaurantPaymentMethod.Cash;
+
+    public string OrderTypeLabel => SelectedOrderType switch
+    {
+        RestaurantOrderType.DineIn => "صالة",
+        RestaurantOrderType.Takeaway => "سفري",
+        RestaurantOrderType.RoomService => "خدمة غرف",
+        _ => string.Empty
+    };
+
+    public string ContextLabel => SelectedOrderType switch
+    {
+        RestaurantOrderType.DineIn when SelectedTable is not null => $"طاولة {SelectedTable.TableNumber}",
+        RestaurantOrderType.DineIn => "اختر طاولة",
+        RestaurantOrderType.RoomService when SelectedRoom is not null =>
+            $"غرفة {SelectedRoom.RoomNumber} · {SelectedRoom.GuestName}",
+        RestaurantOrderType.RoomService => "اختر غرفة",
+        _ => "طلب سفري"
+    };
+
+    public string TicketTitle => HasActiveOrder
+        ? $"طلب {CurrentOrderNumber}"
+        : "التذكرة";
 
     public IReadOnlyList<RestaurantOrderType> OrderTypeOptions { get; } = Enum.GetValues<RestaurantOrderType>().ToList();
     public IReadOnlyList<RestaurantPaymentMethod> PaymentMethodOptions { get; } =
@@ -250,6 +273,8 @@ public partial class RestaurantPosViewModel : ViewModelBase
             foreach (var item in items.Where(i => i.IsActive).Take(6))
                 FavoriteItems.Add(item);
         }
+
+        OnPropertyChanged(nameof(HasFavorites));
     }
 
     partial void OnSelectedCategoryChanged(RestaurantMenuCategory? value) => _ = LoadMenuItemsAsync();
@@ -261,16 +286,23 @@ public partial class RestaurantPosViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTakeaway));
         OnPropertyChanged(nameof(IsRoomService));
         OnPropertyChanged(nameof(ShowCashPaymentFields));
+        OnPropertyChanged(nameof(OrderTypeLabel));
+        OnPropertyChanged(nameof(ContextLabel));
         if (value != RestaurantOrderType.DineIn)
             SelectedTable = null;
         if (value != RestaurantOrderType.RoomService)
             SelectedRoom = null;
     }
 
+    partial void OnSelectedTableChanged(RestaurantTable? value) => OnPropertyChanged(nameof(ContextLabel));
+
+    partial void OnSelectedRoomChanged(ActiveRoomForService? value) => OnPropertyChanged(nameof(ContextLabel));
+
     partial void OnCurrentOrderChanged(RestaurantOrder? value)
     {
         OnPropertyChanged(nameof(CurrentOrderNumber));
         OnPropertyChanged(nameof(HasActiveOrder));
+        OnPropertyChanged(nameof(TicketTitle));
     }
 
     [RelayCommand]
