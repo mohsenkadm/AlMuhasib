@@ -259,6 +259,10 @@
                                                     Description="صلاحية ودفعات"
                                                     Icon="Pill" IconBackground="#E0F7FA" IconForeground="#00838F"
                                                     IsChecked="{Binding TemplatePharmacy}"/>
+                        <controls:FeatureToggleCard Title="معرض سيارات"
+                                                    Description="حقول نوع السيارة ورقم الشاصي واللون وعدد الركاب ورقم اللوحة ونوعها على المنتجات"
+                                                    Icon="Car" IconBackground="#EFEBE9" IconForeground="#5D4037"
+                                                    IsChecked="{Binding CarShowroom}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

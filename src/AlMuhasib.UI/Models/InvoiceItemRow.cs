@@ -60,6 +60,25 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _itemName = string.Empty;
 
+    // ── معرض سيارات — عند إضافة منتجات ناقصة من فاتورة مشتريات ──
+    [ObservableProperty]
+    private string _vehicleType = string.Empty;
+
+    [ObservableProperty]
+    private string _chassisNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _vehicleColor = string.Empty;
+
+    [ObservableProperty]
+    private string _passengerCountText = string.Empty;
+
+    [ObservableProperty]
+    private string _plateNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _plateTypeText = "بدون";
+
     [ObservableProperty]
     private decimal _quantity = 1m;
 

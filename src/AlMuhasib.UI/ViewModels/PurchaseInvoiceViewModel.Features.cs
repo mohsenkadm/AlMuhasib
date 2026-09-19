@@ -25,6 +25,7 @@ public partial class PurchaseInvoiceViewModel
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private bool _showCarShowroomFields;
     [ObservableProperty] private decimal _transportFeeAmount;
     [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
     [ObservableProperty] private string _clothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
@@ -69,6 +70,8 @@ public partial class PurchaseInvoiceViewModel
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowTransportFee = _featureFlags.TransportFees;
+        ShowCarShowroomFields = _featureFlags.CarShowroom
+            && _featureFlags.AddMissingProductsOnPurchase;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
         ClothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
         OnPropertyChanged(nameof(ShowCustomField1));

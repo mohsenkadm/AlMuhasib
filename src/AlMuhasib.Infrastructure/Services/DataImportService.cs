@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Import;
 using AlMuhasib.Infrastructure.Data;
@@ -143,6 +144,16 @@ public class DataImportService : IDataImportService
                 {
                     product.ScientificName = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.ScientificName));
                     product.UsageInstructions = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.UsageInstructions));
+                }
+
+                if (options.IncludeCarShowroomFields)
+                {
+                    product.VehicleType = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.VehicleType));
+                    product.ChassisNumber = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.ChassisNumber));
+                    product.VehicleColor = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.VehicleColor));
+                    product.PassengerCount = ParseNullableInt(GetCell(row, headerMap, ProductImportSchema.PassengerCount));
+                    product.PlateNumber = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.PlateNumber));
+                    product.PlateType = ParsePlateType(GetCell(row, headerMap, ProductImportSchema.PlateType));
                 }
 
                 if (options.IncludeWeightFields)
@@ -316,6 +327,19 @@ public class DataImportService : IDataImportService
             || value == "2")
             return DiscountType.FixedAmount;
         return DiscountType.None;
+    }
+
+    private static VehiclePlateType ParsePlateType(string value) =>
+        VehiclePlateTypeHelper.Parse(value);
+
+    private static int? ParseNullableInt(string value)
+    {
+        value = value.Trim().Replace(",", "");
+        if (string.IsNullOrEmpty(value)) return null;
+        if (int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var n)
+            || int.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out n))
+            return n;
+        return null;
     }
 
     private static async Task ApplyMinQuantityToAllWarehousesAsync(AppDbContext context, int productId, decimal minQuantity)

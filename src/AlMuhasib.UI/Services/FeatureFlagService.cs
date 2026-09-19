@@ -33,9 +33,10 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool TemplateClothing => Current.TemplateClothing;
     public bool TemplateConstruction => Current.TemplateConstruction;
     public bool TemplatePharmacy => Current.TemplatePharmacy;
+    public bool CarShowroom => Current.CarShowroom;
 
     public bool AnyMarketTemplateEnabled =>
-        TemplateMobileShop || TemplateClothing || TemplateConstruction || TemplatePharmacy;
+        TemplateMobileShop || TemplateClothing || TemplateConstruction || TemplatePharmacy || CarShowroom;
 
     public event EventHandler? FlagsChanged;
 

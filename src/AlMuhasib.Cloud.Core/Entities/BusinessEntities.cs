@@ -11,6 +11,12 @@ public class CloudProduct : CloudBaseEntity
     public string? Barcode { get; set; }
     public string? ScientificName { get; set; }
     public string? UsageInstructions { get; set; }
+    public string? VehicleType { get; set; }
+    public string? ChassisNumber { get; set; }
+    public string? VehicleColor { get; set; }
+    public int? PassengerCount { get; set; }
+    public string? PlateNumber { get; set; }
+    public VehiclePlateType PlateType { get; set; }
     public int CategoryId { get; set; }
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }

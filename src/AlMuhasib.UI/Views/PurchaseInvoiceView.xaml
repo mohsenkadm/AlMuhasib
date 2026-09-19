@@ -293,6 +293,25 @@
                                 <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
+                                <DataGridTextColumn x:Name="ColVehicleType" Header="نوع السيارة"
+                                                    Binding="{Binding VehicleType, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100" MinWidth="80" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColChassisNumber" Header="رقم الشاصي"
+                                                    Binding="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="110" MinWidth="90" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColVehicleColor" Header="اللون"
+                                                    Binding="{Binding VehicleColor, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="80" MinWidth="60" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColPassengerCount" Header="عدد الركاب"
+                                                    Binding="{Binding PassengerCountText, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="90" MinWidth="70" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColPlateNumber" Header="رقم اللوحة"
+                                                    Binding="{Binding PlateNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100" MinWidth="80" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColPlateType" Header="نوع اللوحة"
+                                                    Binding="{Binding PlateTypeText, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="90" MinWidth="70" Visibility="Collapsed"/>
+
                                 <DataGridTemplateColumn x:Name="ColSize" Width="90" MinWidth="70"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.Header>

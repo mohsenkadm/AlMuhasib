@@ -64,7 +64,11 @@ public class GlobalSearchService : IGlobalSearchService
         var products = await context.Products.AsNoTracking()
             .Where(p => EF.Functions.Like(p.Name, like)
                         || (p.Barcode != null && EF.Functions.Like(p.Barcode, like))
-                        || (p.ScientificName != null && EF.Functions.Like(p.ScientificName, like)))
+                        || (p.ScientificName != null && EF.Functions.Like(p.ScientificName, like))
+                        || (p.VehicleType != null && EF.Functions.Like(p.VehicleType, like))
+                        || (p.ChassisNumber != null && EF.Functions.Like(p.ChassisNumber, like))
+                        || (p.VehicleColor != null && EF.Functions.Like(p.VehicleColor, like))
+                        || (p.PlateNumber != null && EF.Functions.Like(p.PlateNumber, like)))
             .OrderBy(p => p.Name)
             .Take(PerCategoryLimit)
             .Select(p => new GlobalSearchHit
@@ -72,9 +76,13 @@ public class GlobalSearchService : IGlobalSearchService
                 Kind = GlobalSearchKind.Product,
                 EntityId = p.Id,
                 Title = p.Name,
-                Subtitle = !string.IsNullOrWhiteSpace(p.ScientificName)
-                    ? p.ScientificName
-                    : (p.Barcode ?? "منتج"),
+                Subtitle = !string.IsNullOrWhiteSpace(p.ChassisNumber)
+                    ? p.ChassisNumber
+                    : !string.IsNullOrWhiteSpace(p.PlateNumber)
+                        ? p.PlateNumber
+                        : !string.IsNullOrWhiteSpace(p.ScientificName)
+                            ? p.ScientificName
+                            : (p.Barcode ?? "منتج"),
                 ScreenName = "Products"
             })
             .ToListAsync(cancellationToken);

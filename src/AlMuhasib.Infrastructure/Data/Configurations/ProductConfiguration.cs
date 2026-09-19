@@ -38,6 +38,18 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.CustomFieldsJson)
             .HasMaxLength(4000);
 
+        builder.Property(p => p.VehicleType)
+            .HasMaxLength(100);
+
+        builder.Property(p => p.ChassisNumber)
+            .HasMaxLength(100);
+
+        builder.Property(p => p.VehicleColor)
+            .HasMaxLength(50);
+
+        builder.Property(p => p.PlateNumber)
+            .HasMaxLength(50);
+
         builder.HasOne(p => p.Category)
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)

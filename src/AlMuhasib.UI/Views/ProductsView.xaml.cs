@@ -18,7 +18,16 @@ public partial class ProductsView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
-        ProductFeatureColumnSync.Attach(this, ColScientificName, ColUsageInstructions);
+        ProductFeatureColumnSync.Attach(
+            this,
+            ColScientificName,
+            ColUsageInstructions,
+            ColVehicleType,
+            ColChassisNumber,
+            ColVehicleColor,
+            ColPassengerCount,
+            ColPlateNumber,
+            ColPlateType);
         CustomFieldColumnSync.Attach(
             this,
             ProductsGrid,

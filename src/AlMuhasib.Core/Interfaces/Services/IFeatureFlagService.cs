@@ -28,6 +28,7 @@ public interface IFeatureFlagService
     bool TemplateClothing { get; }
     bool TemplateConstruction { get; }
     bool TemplatePharmacy { get; }
+    bool CarShowroom { get; }
 
     /// <summary>أي قالب سوق مفعّل</summary>
     bool AnyMarketTemplateEnabled { get; }

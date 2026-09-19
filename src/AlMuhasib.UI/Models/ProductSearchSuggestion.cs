@@ -17,8 +17,14 @@ public partial class ProductSearchSuggestion : ObservableObject
     public string Name => Product.Name;
     public string? Barcode => Product.Barcode;
     public string? ScientificName => Product.ScientificName;
+    public string? ChassisNumber => Product.ChassisNumber;
+    public string? PlateNumber => Product.PlateNumber;
+    public string? VehicleType => Product.VehicleType;
     public bool HasScientificName => !string.IsNullOrWhiteSpace(ScientificName);
     public bool HasBarcode => !string.IsNullOrWhiteSpace(Barcode);
+    public bool HasChassisNumber => !string.IsNullOrWhiteSpace(ChassisNumber);
+    public bool HasPlateNumber => !string.IsNullOrWhiteSpace(PlateNumber);
+    public bool HasVehicleType => !string.IsNullOrWhiteSpace(VehicleType);
 
     public ObservableCollection<WarehouseStockChip> WarehouseStocks { get; } = [];
 

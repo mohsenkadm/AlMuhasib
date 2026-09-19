@@ -37,6 +37,7 @@ public partial class ProductsViewModel
     [ObservableProperty] private bool _showColorsSection;
     [ObservableProperty] private bool _showScientificName;
     [ObservableProperty] private bool _showUsageInstructions;
+    [ObservableProperty] private bool _showCarShowroomFields;
 
     [ObservableProperty] private PackagingType? _selectedPackagingTypeToAdd;
     [ObservableProperty] private decimal _newUnitFactor = 1m;
@@ -67,7 +68,15 @@ public partial class ProductsViewModel
         new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع لكل وحدة)")
     ];
 
+    public IReadOnlyList<VehiclePlateTypeOption> PlateTypeOptions { get; } =
+    [
+        new(VehiclePlateType.None, "بدون"),
+        new(VehiclePlateType.Inspection, "فحص"),
+        new(VehiclePlateType.Official, "رسمي")
+    ];
+
     [ObservableProperty] private DiscountTypeOption? _editDiscountTypeOption;
+    [ObservableProperty] private VehiclePlateTypeOption? _editPlateTypeOption;
 
     partial void OnEditDiscountTypeChanged(DiscountType value)
     {
@@ -80,6 +89,19 @@ public partial class ProductsViewModel
     {
         if (value is not null && EditDiscountType != value.Type)
             EditDiscountType = value.Type;
+    }
+
+    partial void OnEditPlateTypeChanged(VehiclePlateType value)
+    {
+        var match = PlateTypeOptions.FirstOrDefault(o => o.Type == value);
+        if (!Equals(EditPlateTypeOption, match))
+            EditPlateTypeOption = match;
+    }
+
+    partial void OnEditPlateTypeOptionChanged(VehiclePlateTypeOption? value)
+    {
+        if (value is not null && EditPlateType != value.Type)
+            EditPlateType = value.Type;
     }
 
     partial void OnSelectedSizeFilterChanged(string? value)
@@ -152,6 +174,7 @@ public partial class ProductsViewModel
         ShowColorsSection = _featureFlags.TemplateClothing;
         ShowScientificName = _featureFlags.TemplatePharmacy;
         ShowUsageInstructions = _featureFlags.TemplatePharmacy;
+        ShowCarShowroomFields = _featureFlags.CarShowroom;
 
         if (!ShowSizesSection)
         {

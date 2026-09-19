@@ -50,4 +50,7 @@ public class BusinessFeatureFlags
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }
     public bool TemplatePharmacy { get; set; }
+
+    /// <summary>معرض سيارات — حقول نوع السيارة والشاصي واللون والركاب واللوحة على المنتج — معطّل افتراضياً.</summary>
+    public bool CarShowroom { get; set; }
 }

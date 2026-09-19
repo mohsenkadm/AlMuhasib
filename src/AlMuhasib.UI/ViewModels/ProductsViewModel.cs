@@ -91,6 +91,24 @@ public partial class ProductsViewModel : ViewModelBase
     private string _editUsageInstructions = string.Empty;
 
     [ObservableProperty]
+    private string _editVehicleType = string.Empty;
+
+    [ObservableProperty]
+    private string _editChassisNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _editVehicleColor = string.Empty;
+
+    [ObservableProperty]
+    private string _editPassengerCountText = string.Empty;
+
+    [ObservableProperty]
+    private string _editPlateNumber = string.Empty;
+
+    [ObservableProperty]
+    private VehiclePlateType _editPlateType = VehiclePlateType.None;
+
+    [ObservableProperty]
     private Category? _editCategory;
 
     [ObservableProperty]
@@ -484,6 +502,13 @@ public partial class ProductsViewModel : ViewModelBase
         EditBarcode = string.Empty;
         EditScientificName = string.Empty;
         EditUsageInstructions = string.Empty;
+        EditVehicleType = string.Empty;
+        EditChassisNumber = string.Empty;
+        EditVehicleColor = string.Empty;
+        EditPassengerCountText = string.Empty;
+        EditPlateNumber = string.Empty;
+        EditPlateType = VehiclePlateType.None;
+        EditPlateTypeOption = PlateTypeOptions[0];
         EditCategory = null;
         EditWeight = 0m;
         EditWeightUnit = "كغ";
@@ -512,6 +537,14 @@ public partial class ProductsViewModel : ViewModelBase
         EditBarcode = product.Barcode ?? string.Empty;
         EditScientificName = product.ScientificName ?? string.Empty;
         EditUsageInstructions = product.UsageInstructions ?? string.Empty;
+        EditVehicleType = product.VehicleType ?? string.Empty;
+        EditChassisNumber = product.ChassisNumber ?? string.Empty;
+        EditVehicleColor = product.VehicleColor ?? string.Empty;
+        EditPassengerCountText = product.PassengerCount?.ToString() ?? string.Empty;
+        EditPlateNumber = product.PlateNumber ?? string.Empty;
+        EditPlateType = product.PlateType;
+        EditPlateTypeOption = PlateTypeOptions.FirstOrDefault(o => o.Type == product.PlateType)
+            ?? PlateTypeOptions[0];
         EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         EditWeight = product.Weight;
         EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
@@ -576,6 +609,7 @@ public partial class ProductsViewModel : ViewModelBase
                 product.Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim();
                 product.ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim();
                 product.UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim();
+                ApplyCarShowroomFieldsToProduct(product);
                 product.CategoryId = EditCategory.Id;
                 product.Weight = EditWeight < 0 ? 0m : EditWeight;
                 product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
@@ -599,6 +633,7 @@ public partial class ProductsViewModel : ViewModelBase
                     WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim(),
                     CustomFieldsJson = SerializeCustomFieldsFromEditors()
                 };
+                ApplyCarShowroomFieldsToProduct(product);
                 ApplyEditDiscountToProduct(product);
 
                 var created = await _productService.CreateAsync(product);
@@ -636,6 +671,21 @@ public partial class ProductsViewModel : ViewModelBase
         product.DiscountValue = Math.Max(0m, EditDiscountValue);
         product.DiscountExpiresAt = EditDiscountHasExpiry && EditDiscountExpiresAt is DateTime d
             ? DateTime.SpecifyKind(d.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local).ToUniversalTime()
+            : null;
+    }
+
+    private void ApplyCarShowroomFieldsToProduct(Product product)
+    {
+        if (!ShowCarShowroomFields)
+            return;
+
+        product.VehicleType = string.IsNullOrWhiteSpace(EditVehicleType) ? null : EditVehicleType.Trim();
+        product.ChassisNumber = string.IsNullOrWhiteSpace(EditChassisNumber) ? null : EditChassisNumber.Trim();
+        product.VehicleColor = string.IsNullOrWhiteSpace(EditVehicleColor) ? null : EditVehicleColor.Trim();
+        product.PlateNumber = string.IsNullOrWhiteSpace(EditPlateNumber) ? null : EditPlateNumber.Trim();
+        product.PlateType = EditPlateType;
+        product.PassengerCount = int.TryParse(EditPassengerCountText?.Trim(), out var passengers) && passengers >= 0
+            ? passengers
             : null;
     }
 

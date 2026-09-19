@@ -50,6 +50,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _templateClothing;
     [ObservableProperty] private bool _templateConstruction;
     [ObservableProperty] private bool _templatePharmacy;
+    [ObservableProperty] private bool _carShowroom;
 
     [ObservableProperty] private int _idleLockMinutes;
     [ObservableProperty] private decimal _posMinInstallmentAmount = 50_000m;
@@ -68,7 +69,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
             DamageInvoices,
             TemplateMobileShop, TemplateClothing,
-            TemplateConstruction, TemplatePharmacy);
+            TemplateConstruction, TemplatePharmacy, CarShowroom);
 
     public BusinessFeaturesSettingsViewModel(
         IUserPreferencesService preferences,
@@ -150,6 +151,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         TemplateClothing = p.FeatureFlags.TemplateClothing;
         TemplateConstruction = p.FeatureFlags.TemplateConstruction;
         TemplatePharmacy = p.FeatureFlags.TemplatePharmacy;
+        CarShowroom = p.FeatureFlags.CarShowroom;
 
         IdleLockMinutes = p.IdleLockMinutes;
         PosMinInstallmentAmount = p.PosMinInstallmentAmount;
@@ -185,6 +187,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplatePharmacyChanged(bool value) => NotifyFeaturesCount();
+    partial void OnCarShowroomChanged(bool value) => NotifyFeaturesCount();
 
     [RelayCommand]
     private void BrowseBackupFolder()
@@ -234,6 +237,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.TemplateClothing = TemplateClothing;
             p.FeatureFlags.TemplateConstruction = TemplateConstruction;
             p.FeatureFlags.TemplatePharmacy = TemplatePharmacy;
+            p.FeatureFlags.CarShowroom = CarShowroom;
 
             p.IdleLockMinutes = Math.Max(0, IdleLockMinutes);
             p.PosMinInstallmentAmount = Math.Max(0, PosMinInstallmentAmount);

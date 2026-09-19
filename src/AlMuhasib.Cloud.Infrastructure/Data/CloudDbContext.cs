@@ -145,6 +145,10 @@ public class CloudDbContext : DbContext
         {
             e.Property(x => x.ScientificName).HasMaxLength(300);
             e.Property(x => x.UsageInstructions).HasMaxLength(2000);
+            e.Property(x => x.VehicleType).HasMaxLength(100);
+            e.Property(x => x.ChassisNumber).HasMaxLength(100);
+            e.Property(x => x.VehicleColor).HasMaxLength(50);
+            e.Property(x => x.PlateNumber).HasMaxLength(50);
             e.Property(x => x.Weight).HasPrecision(18, 4);
             e.Property(x => x.WeightUnit).HasMaxLength(20);
         });

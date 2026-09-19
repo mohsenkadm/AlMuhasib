@@ -805,6 +805,27 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 CreatedBy = _currentUserService.Username,
                 CreatedAt = DateTime.UtcNow
             };
+
+            var sourceRow = validItems.FirstOrDefault(r =>
+                r.ProductId is null or 0
+                && r.ItemName.Trim().Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (_userPreferences.Current.FeatureFlags.CarShowroom && sourceRow is not null)
+            {
+                product.VehicleType = string.IsNullOrWhiteSpace(sourceRow.VehicleType)
+                    ? null : sourceRow.VehicleType.Trim();
+                product.ChassisNumber = string.IsNullOrWhiteSpace(sourceRow.ChassisNumber)
+                    ? null : sourceRow.ChassisNumber.Trim();
+                product.VehicleColor = string.IsNullOrWhiteSpace(sourceRow.VehicleColor)
+                    ? null : sourceRow.VehicleColor.Trim();
+                product.PlateNumber = string.IsNullOrWhiteSpace(sourceRow.PlateNumber)
+                    ? null : sourceRow.PlateNumber.Trim();
+                product.PlateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(sourceRow.PlateTypeText);
+                product.PassengerCount = int.TryParse(sourceRow.PassengerCountText?.Trim(), out var passengers) && passengers >= 0
+                    ? passengers
+                    : null;
+            }
+
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.SaveChangesAsync();
             Products.Add(product);

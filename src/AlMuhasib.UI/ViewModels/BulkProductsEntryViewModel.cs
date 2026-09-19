@@ -29,11 +29,13 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     public ObservableCollection<string> CategoryNameOptions { get; } = [];
     public IReadOnlyList<string> WeightUnitOptions { get; } = ["كغ", "غرام", "لتر", "مل", "متر", "سم"];
     public IReadOnlyList<string> DiscountTypeOptions { get; } = ["بدون", "نسبة مئوية", "قيمة ثابتة"];
+    public IReadOnlyList<string> PlateTypeOptions { get; } = ["بدون", "فحص", "رسمي"];
 
     [ObservableProperty] private bool _showPharmacyFields;
     [ObservableProperty] private bool _showWeightFields;
     [ObservableProperty] private bool _showDiscountFields;
     [ObservableProperty] private bool _showPricingFields;
+    [ObservableProperty] private bool _showCarShowroomFields;
 
     [ObservableProperty] private bool _showCustomField1;
     [ObservableProperty] private bool _showCustomField2;
@@ -98,6 +100,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         ShowWeightFields = flags.MenuWeight;
         ShowDiscountFields = flags.ProductDiscountEnabled;
         ShowPricingFields = flags.ProductPricingEnabled;
+        ShowCarShowroomFields = flags.CarShowroom;
     }
 
     private async Task LoadLookupsAsync()
@@ -219,6 +222,9 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         || !string.IsNullOrWhiteSpace(row.CategoryName)
         || !string.IsNullOrWhiteSpace(row.Description)
         || !string.IsNullOrWhiteSpace(row.ScientificName)
+        || !string.IsNullOrWhiteSpace(row.VehicleType)
+        || !string.IsNullOrWhiteSpace(row.ChassisNumber)
+        || !string.IsNullOrWhiteSpace(row.PlateNumber)
         || row.Weight != 0
         || row.SalePrice != 0
         || row.PurchasePrice != 0;
@@ -341,6 +347,22 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                             ? null : row.ScientificName.Trim();
                         product.UsageInstructions = string.IsNullOrWhiteSpace(row.UsageInstructions)
                             ? null : row.UsageInstructions.Trim();
+                    }
+
+                    if (ShowCarShowroomFields)
+                    {
+                        product.VehicleType = string.IsNullOrWhiteSpace(row.VehicleType)
+                            ? null : row.VehicleType.Trim();
+                        product.ChassisNumber = string.IsNullOrWhiteSpace(row.ChassisNumber)
+                            ? null : row.ChassisNumber.Trim();
+                        product.VehicleColor = string.IsNullOrWhiteSpace(row.VehicleColor)
+                            ? null : row.VehicleColor.Trim();
+                        product.PlateNumber = string.IsNullOrWhiteSpace(row.PlateNumber)
+                            ? null : row.PlateNumber.Trim();
+                        product.PlateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(row.PlateTypeText);
+                        product.PassengerCount = int.TryParse(row.PassengerCountText?.Trim(), out var passengers) && passengers >= 0
+                            ? passengers
+                            : null;
                     }
 
                     if (ShowWeightFields)

@@ -7,6 +7,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models.Print;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
@@ -24,6 +25,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IShowroomSaleContractPrintService _showroomContractPrint;
     private readonly IInvoiceDraftService _draftService;
     private readonly IRecentActivityService _recentActivity;
     private readonly IPartyQuickDetailService _partyQuickDetail;
@@ -195,6 +197,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         PrintInvoiceCommand.NotifyCanExecuteChanged();
         SendInvoiceWhatsAppCommand.NotifyCanExecuteChanged();
+        PrintCarContractCommand.NotifyCanExecuteChanged();
     }
 
     // Helpers for payment visibility
@@ -225,6 +228,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         INavigationService navigationService,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
+        IShowroomSaleContractPrintService showroomContractPrint,
         IInvoiceDraftService draftService,
         IRecentActivityService recentActivity,
         IInvoiceTemplateService templateService,
@@ -252,6 +256,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _navigationService = navigationService;
         _exportService = exportService;
         _whatsAppShare = whatsAppShare;
+        _showroomContractPrint = showroomContractPrint;
         _draftService = draftService;
         _recentActivity = recentActivity;
         _partyQuickDetail = partyQuickDetail;
@@ -1387,6 +1392,111 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             BuildSavedInvoicePrintModel(),
             SelectedCustomer?.Phone,
             SelectedCustomer?.Name ?? CustomerSearchText);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPrintCarContract))]
+    private void PrintCarContract()
+    {
+        if (_savedInvoice is null || !ShowCarShowroomContractPrint)
+            return;
+
+        try
+        {
+            var model = BuildShowroomSaleContractPrintModel();
+            _showroomContractPrint.PrintContract(model);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّرت طباعة العقد: {ex.Message}");
+        }
+    }
+
+    private bool CanPrintCarContract() =>
+        CanPrintSavedInvoice && ShowCarShowroomContractPrint;
+
+    private ShowroomSaleContractPrintModel BuildShowroomSaleContractPrintModel()
+    {
+        if (_savedInvoice is null)
+            throw new InvalidOperationException("لا توجد فاتورة محفوظة");
+
+        var branding = PrintBrandingProvider.Current;
+        var customer = SelectedCustomer
+            ?? _savedInvoice.Customer
+            ?? Customers.FirstOrDefault(c => c.Id == _savedInvoice.CustomerId);
+
+        var paidAmount = _savedInvoice.PaymentMethod == PaymentMethod.Cash
+            ? GrandTotal
+            : Math.Clamp(_savedInvoice.PaidAmount, 0m, GrandTotal);
+        var remainingAmount = Math.Max(0m, GrandTotal - paidAmount);
+
+        var product = ResolveContractProduct();
+        var passengers = product?.PassengerCount;
+        var sizeText = passengers is > 0 ? $"{passengers} راكب" : string.Empty;
+
+        return new ShowroomSaleContractPrintModel
+        {
+            ContractNumber = _savedInvoice.InvoiceNumber,
+            ContractDate = _savedInvoice.Date.Kind == DateTimeKind.Utc
+                ? _savedInvoice.Date.ToLocalTime()
+                : _savedInvoice.Date,
+            City = ExtractCityFromAddress(branding.Address),
+            SellerName = branding.CompanyName,
+            SellerPhone = string.IsNullOrWhiteSpace(branding.PhonePrimary)
+                ? branding.PhoneSecondary
+                : branding.PhonePrimary,
+            SellerAddress = branding.Address,
+            SellerIdNumber = string.Empty,
+            SellerIdIssuer = string.Empty,
+            AnnualRegistrationNote = "مطابق",
+            BuyerName = customer?.Name ?? CustomerSearchText,
+            BuyerPhone = customer?.Phone ?? string.Empty,
+            BuyerAddress = customer?.Address ?? string.Empty,
+            BuyerIdNumber = customer?.FileNumber ?? string.Empty,
+            BuyerIdIssuer = string.Empty,
+            PlateNumber = product?.PlateNumber ?? string.Empty,
+            ChassisNumber = product?.ChassisNumber ?? string.Empty,
+            VehicleType = product?.VehicleType ?? product?.Name ?? string.Empty,
+            VehicleColor = product?.VehicleColor ?? string.Empty,
+            VehicleModel = product?.Description ?? string.Empty,
+            VehicleSize = sizeText,
+            PlateType = product is null
+                ? string.Empty
+                : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(product.PlateType),
+            TotalAmount = GrandTotal,
+            TotalAmountInWords = AlMuhasib.Core.Utilities.ArabicAmountToWords.Convert(GrandTotal),
+            PaidAmount = paidAmount,
+            RemainingAmount = remainingAmount,
+            DueDate = _savedInvoice.CreditDueDate
+        };
+    }
+
+    private Product? ResolveContractProduct()
+    {
+        var fromItems = Items
+            .Select(r => r.SelectedProduct)
+            .FirstOrDefault(p => p is not null && (
+                !string.IsNullOrWhiteSpace(p.ChassisNumber)
+                || !string.IsNullOrWhiteSpace(p.PlateNumber)
+                || !string.IsNullOrWhiteSpace(p.VehicleType)));
+
+        if (fromItems is not null)
+            return fromItems;
+
+        var productId = _savedItems.FirstOrDefault(i => i.ProductId is > 0)?.ProductId
+            ?? Items.FirstOrDefault(r => r.ProductId is > 0)?.ProductId;
+        if (productId is null)
+            return Items.FirstOrDefault(r => r.SelectedProduct is not null)?.SelectedProduct;
+
+        return Products.FirstOrDefault(p => p.Id == productId)
+            ?? Items.FirstOrDefault(r => r.ProductId == productId)?.SelectedProduct;
+    }
+
+    private static string ExtractCityFromAddress(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return string.Empty;
+        var parts = address.Split(['،', ',', '-'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length > 0 ? parts[^1] : address.Trim();
     }
 
     private InvoicePrintModel BuildSavedInvoicePrintModel()

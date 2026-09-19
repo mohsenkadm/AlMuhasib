@@ -13,6 +13,12 @@ public partial class BulkProductEntryRow : ObservableObject
     [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private string _scientificName = string.Empty;
     [ObservableProperty] private string _usageInstructions = string.Empty;
+    [ObservableProperty] private string _vehicleType = string.Empty;
+    [ObservableProperty] private string _chassisNumber = string.Empty;
+    [ObservableProperty] private string _vehicleColor = string.Empty;
+    [ObservableProperty] private string _passengerCountText = string.Empty;
+    [ObservableProperty] private string _plateNumber = string.Empty;
+    [ObservableProperty] private string _plateTypeText = "بدون";
     [ObservableProperty] private decimal _weight;
     [ObservableProperty] private string _weightUnit = "كغ";
     [ObservableProperty] private string _discountTypeText = "بدون";

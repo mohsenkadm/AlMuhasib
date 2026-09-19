@@ -416,6 +416,12 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Barcode = dto.Barcode;
         existing.ScientificName = dto.ScientificName;
         existing.UsageInstructions = dto.UsageInstructions;
+        existing.VehicleType = dto.VehicleType;
+        existing.ChassisNumber = dto.ChassisNumber;
+        existing.VehicleColor = dto.VehicleColor;
+        existing.PassengerCount = dto.PassengerCount;
+        existing.PlateNumber = dto.PlateNumber;
+        existing.PlateType = dto.PlateType;
         existing.CategoryId = categoryId;
         existing.Weight = dto.Weight;
         existing.WeightUnit = dto.WeightUnit;
@@ -853,6 +859,8 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode, ScientificName = p.ScientificName,
             UsageInstructions = p.UsageInstructions,
+            VehicleType = p.VehicleType, ChassisNumber = p.ChassisNumber, VehicleColor = p.VehicleColor,
+            PassengerCount = p.PassengerCount, PlateNumber = p.PlateNumber, PlateType = p.PlateType,
             Weight = p.Weight, WeightUnit = p.WeightUnit,
             DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
             CategorySyncId = catMap.GetValueOrDefault(p.CategoryId)

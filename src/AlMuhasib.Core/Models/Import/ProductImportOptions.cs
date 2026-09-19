@@ -7,6 +7,7 @@ public sealed class ProductImportOptions
     public bool IncludeWeightFields { get; set; }
     public bool IncludeDiscountFields { get; set; }
     public bool IncludePricingFields { get; set; }
+    public bool IncludeCarShowroomFields { get; set; }
 
     /// <summary>تسميات الحقول المخصصة الظاهرة (مفتاح cf1..cf8 → التسمية).</summary>
     public IReadOnlyList<ProductImportCustomField> CustomFields { get; set; } = [];

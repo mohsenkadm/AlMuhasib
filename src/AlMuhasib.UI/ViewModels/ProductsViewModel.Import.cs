@@ -17,6 +17,7 @@ public partial class ProductsViewModel
             IncludeWeightFields = flags.MenuWeight,
             IncludeDiscountFields = flags.ProductDiscountEnabled,
             IncludePricingFields = flags.ProductPricingEnabled,
+            IncludeCarShowroomFields = flags.CarShowroom,
             CustomFields = CustomFieldColumns
                 .Select(c => new ProductImportCustomField
                 {

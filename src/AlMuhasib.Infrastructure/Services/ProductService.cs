@@ -53,6 +53,12 @@ public class ProductService : IProductService
             softDeleted.Barcode = barcode;
             softDeleted.ScientificName = product.ScientificName;
             softDeleted.UsageInstructions = product.UsageInstructions;
+            softDeleted.VehicleType = product.VehicleType;
+            softDeleted.ChassisNumber = product.ChassisNumber;
+            softDeleted.VehicleColor = product.VehicleColor;
+            softDeleted.PassengerCount = product.PassengerCount;
+            softDeleted.PlateNumber = product.PlateNumber;
+            softDeleted.PlateType = product.PlateType;
             softDeleted.CategoryId = product.CategoryId;
             softDeleted.Weight = product.Weight;
             softDeleted.WeightUnit = product.WeightUnit;
@@ -101,11 +107,18 @@ public class ProductService : IProductService
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.Trim();
+            var plateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(term);
             query = query.Where(p =>
                 p.Name.Contains(term) ||
                 (p.Barcode != null && p.Barcode.Contains(term)) ||
                 (p.ScientificName != null && p.ScientificName.Contains(term)) ||
-                (p.Description != null && p.Description.Contains(term)));
+                (p.Description != null && p.Description.Contains(term)) ||
+                (p.VehicleType != null && p.VehicleType.Contains(term)) ||
+                (p.ChassisNumber != null && p.ChassisNumber.Contains(term)) ||
+                (p.VehicleColor != null && p.VehicleColor.Contains(term)) ||
+                (p.PlateNumber != null && p.PlateNumber.Contains(term)) ||
+                (p.PassengerCount != null && p.PassengerCount.ToString()!.Contains(term)) ||
+                (plateType != AlMuhasib.Core.Enums.VehiclePlateType.None && p.PlateType == plateType));
         }
 
         if (!string.IsNullOrWhiteSpace(sizeName))
@@ -148,6 +161,7 @@ public class ProductService : IProductService
         existing.Name = product.Name;
         existing.Barcode = product.Barcode;
         existing.ScientificName = product.ScientificName;
+        existing.UsageInstructions = product.UsageInstructions;
         existing.Description = product.Description;
         existing.CategoryId = product.CategoryId;
         existing.Weight = product.Weight;
@@ -156,6 +170,12 @@ public class ProductService : IProductService
         existing.DiscountValue = product.DiscountValue;
         existing.DiscountExpiresAt = product.DiscountExpiresAt;
         existing.CustomFieldsJson = product.CustomFieldsJson;
+        existing.VehicleType = product.VehicleType;
+        existing.ChassisNumber = product.ChassisNumber;
+        existing.VehicleColor = product.VehicleColor;
+        existing.PassengerCount = product.PassengerCount;
+        existing.PlateNumber = product.PlateNumber;
+        existing.PlateType = product.PlateType;
         existing.UpdatedBy = _currentUserService.Username;
         existing.UpdatedAt = DateTime.UtcNow;
 
@@ -209,11 +229,19 @@ public class ProductService : IProductService
     public async Task<IEnumerable<Product>> SearchByNameAsync(string name)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var term = name.Trim();
+        var plateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(term);
         return await context.Products
             .Include(p => p.Category)
-            .Where(p => p.Name.Contains(name)
-                        || (p.ScientificName != null && p.ScientificName.Contains(name))
-                        || (p.Barcode != null && p.Barcode.Contains(name)))
+            .Where(p => p.Name.Contains(term)
+                        || (p.ScientificName != null && p.ScientificName.Contains(term))
+                        || (p.Barcode != null && p.Barcode.Contains(term))
+                        || (p.VehicleType != null && p.VehicleType.Contains(term))
+                        || (p.ChassisNumber != null && p.ChassisNumber.Contains(term))
+                        || (p.VehicleColor != null && p.VehicleColor.Contains(term))
+                        || (p.PlateNumber != null && p.PlateNumber.Contains(term))
+                        || (p.PassengerCount != null && p.PassengerCount.ToString()!.Contains(term))
+                        || (plateType != AlMuhasib.Core.Enums.VehiclePlateType.None && p.PlateType == plateType))
             .Take(20)
             .ToListAsync();
     }

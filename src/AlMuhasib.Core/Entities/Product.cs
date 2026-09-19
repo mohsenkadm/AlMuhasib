@@ -35,6 +35,24 @@ public class Product : BaseEntity
     /// <summary>قيم الحقول المخصصة JSON — مفاتيح cf1..cf8.</summary>
     public string? CustomFieldsJson { get; set; }
 
+    /// <summary>نوع السيارة (معرض سيارات).</summary>
+    public string? VehicleType { get; set; }
+
+    /// <summary>رقم الشاصي (معرض سيارات).</summary>
+    public string? ChassisNumber { get; set; }
+
+    /// <summary>لون السيارة (معرض سيارات).</summary>
+    public string? VehicleColor { get; set; }
+
+    /// <summary>عدد الركاب (معرض سيارات).</summary>
+    public int? PassengerCount { get; set; }
+
+    /// <summary>رقم اللوحة (معرض سيارات).</summary>
+    public string? PlateNumber { get; set; }
+
+    /// <summary>نوع اللوحة: فحص أو رسمي (معرض سيارات).</summary>
+    public VehiclePlateType PlateType { get; set; } = VehiclePlateType.None;
+
     // Navigation
     public Category Category { get; set; } = null!;
     public ICollection<WarehouseStock> WarehouseStocks { get; set; } = [];

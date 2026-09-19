@@ -41,6 +41,7 @@
                     <RowDefinition Height="12" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="16" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
@@ -174,17 +175,18 @@
                               Style="{StaticResource FilledComboBox}"
                               FontSize="13"
                               Visibility="{Binding ShowBankField, Converter={StaticResource BoolToVis}}" />
+                </Grid>
 
-                    <!-- Notes -->
-                    <TextBox Grid.Column="2"
+                    <!-- Notes — صف مستقل حتى لا يغطي حقل المورد في سند الصرف -->
+                    <TextBox Grid.Row="7"
+                             Margin="0,12,0,0"
                              Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="ملاحظات (اختياري)"
                              Style="{StaticResource FilledTextBox}"
                              FontSize="13" />
-                </Grid>
 
                 <!-- Row 4: optional invoice / installment link -->
-                <Grid Grid.Row="7" Margin="0,12,0,0"
+                <Grid Grid.Row="8" Margin="0,12,0,0"
                       Visibility="{Binding ShowDocumentLinkFields, Converter={StaticResource BoolToVis}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -219,7 +221,7 @@
                 </Grid>
 
                 <!-- Create button -->
-                <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Left">
+                <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button Command="{Binding CreateVoucherCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
                             Background="{DynamicResource PrimaryHueMidBrush}"

@@ -39,6 +39,12 @@ public partial class BulkProductsEntryView
 
         SetColumn("ColPharmacyScientific", vm.ShowPharmacyFields);
         SetColumn("ColPharmacyUsage", vm.ShowPharmacyFields);
+        SetColumn("ColVehicleType", vm.ShowCarShowroomFields);
+        SetColumn("ColChassisNumber", vm.ShowCarShowroomFields);
+        SetColumn("ColVehicleColor", vm.ShowCarShowroomFields);
+        SetColumn("ColPassengerCount", vm.ShowCarShowroomFields);
+        SetColumn("ColPlateNumber", vm.ShowCarShowroomFields);
+        SetColumn("ColPlateType", vm.ShowCarShowroomFields);
         SetColumn("ColWeight", vm.ShowWeightFields);
         SetColumn("ColWeightUnit", vm.ShowWeightFields);
         SetColumn("ColDiscountType", vm.ShowDiscountFields);

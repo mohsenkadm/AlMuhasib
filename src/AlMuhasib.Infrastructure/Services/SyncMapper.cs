@@ -285,6 +285,12 @@ internal static class SyncMapper
         d.Barcode = p.Barcode;
         d.ScientificName = p.ScientificName;
         d.UsageInstructions = p.UsageInstructions;
+        d.VehicleType = p.VehicleType;
+        d.ChassisNumber = p.ChassisNumber;
+        d.VehicleColor = p.VehicleColor;
+        d.PassengerCount = p.PassengerCount;
+        d.PlateNumber = p.PlateNumber;
+        d.PlateType = p.PlateType;
         d.CategorySyncId = cats[p.CategoryId];
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
@@ -303,6 +309,12 @@ internal static class SyncMapper
         d.Barcode = p.Barcode;
         d.ScientificName = p.ScientificName;
         d.UsageInstructions = p.UsageInstructions;
+        d.VehicleType = p.VehicleType;
+        d.ChassisNumber = p.ChassisNumber;
+        d.VehicleColor = p.VehicleColor;
+        d.PassengerCount = p.PassengerCount;
+        d.PlateNumber = p.PlateNumber;
+        d.PlateType = p.PlateType;
         d.CategorySyncId = catSyncId;
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
@@ -501,6 +513,12 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Products.Add(entity);
             ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.ScientificName = dto.ScientificName; entity.UsageInstructions = dto.UsageInstructions; entity.CategoryId = catId;
+            entity.VehicleType = dto.VehicleType;
+            entity.ChassisNumber = dto.ChassisNumber;
+            entity.VehicleColor = dto.VehicleColor;
+            entity.PassengerCount = dto.PassengerCount;
+            entity.PlateNumber = dto.PlateNumber;
+            entity.PlateType = dto.PlateType;
             entity.Weight = dto.Weight;
             entity.WeightUnit = dto.WeightUnit;
             entity.DiscountType = dto.DiscountType;

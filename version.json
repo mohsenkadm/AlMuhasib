@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.24",
-  "releaseDate": "2026-09-09",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.24/AlMuhasib-1.14.24.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.24/Qayd-Setup-1.14.24.exe",
-  "sha256": "E8C0B0F81937BE67CE87CD4D41D76C4B7FE6F81B95AF148C3AD22C6A89641F22",
-  "sizeBytes": 149937200,
-  "releaseNotes": "فلتر أرصدة المندوب وتفاصيل الأرباح واسترجاع الفواتير المحذوفة — تحديث اختياري آمن للعملاء الحاليين",
+  "version": "1.14.25",
+  "releaseDate": "2026-09-19",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.25/AlMuhasib-1.14.25.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.25/Qayd-Setup-1.14.25.exe",
+  "sha256": "1A2A0D29251A78FF1B2DE2BDFB07285D4F30E89BA03BED3179AAEAA173E3CCFB",
+  "sizeBytes": 150064332,
+  "releaseNotes": "حقول معرض السيارات للمنتجات وعقد البيع والطباعة — تحديث اختياري آمن يضيف أعمدة اختيارية دون التأثير على البيانات الحالية",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

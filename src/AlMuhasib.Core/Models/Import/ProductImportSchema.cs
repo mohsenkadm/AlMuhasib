@@ -17,6 +17,12 @@ public static class ProductImportSchema
     public const string SalePrice = "سعر البيع";
     public const string PurchasePrice = "سعر الشراء";
     public const string MinQuantity = "الحد الأدنى";
+    public const string VehicleType = "نوع السيارة";
+    public const string ChassisNumber = "رقم الشاصي";
+    public const string VehicleColor = "اللون";
+    public const string PassengerCount = "عدد الركاب";
+    public const string PlateNumber = "رقم اللوحة";
+    public const string PlateType = "نوع اللوحة";
 
     public static IReadOnlyList<string> BuildHeaders(ProductImportOptions? options = null)
     {
@@ -46,6 +52,16 @@ public static class ProductImportSchema
         {
             headers.Add(SalePrice);
             headers.Add(PurchasePrice);
+        }
+
+        if (options.IncludeCarShowroomFields)
+        {
+            headers.Add(VehicleType);
+            headers.Add(ChassisNumber);
+            headers.Add(VehicleColor);
+            headers.Add(PassengerCount);
+            headers.Add(PlateNumber);
+            headers.Add(PlateType);
         }
 
         foreach (var field in options.CustomFields.OrderBy(f => f.Slot))
@@ -81,6 +97,12 @@ public static class ProductImportSchema
                 SalePrice => "1000",
                 PurchasePrice => "800",
                 MinQuantity => "5",
+                VehicleType => "سيدان",
+                ChassisNumber => "",
+                VehicleColor => "أبيض",
+                PassengerCount => "5",
+                PlateNumber => "",
+                PlateType => "رسمي",
                 _ => ""
             };
         }

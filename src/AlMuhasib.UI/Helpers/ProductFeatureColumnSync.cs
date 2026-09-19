@@ -6,11 +6,20 @@ using AlMuhasib.UI.ViewModels;
 namespace AlMuhasib.UI.Helpers;
 
 /// <summary>
-/// يزامن ظهور أعمدة الصيدلية — ربط Visibility على DataGridColumn غير موثوق في WPF.
+/// يزامن ظهور أعمدة الصيدلية ومعرض السيارات — ربط Visibility على DataGridColumn غير موثوق في WPF.
 /// </summary>
 public static class ProductFeatureColumnSync
 {
-    public static void Attach(FrameworkElement host, DataGridColumn? scientificName, DataGridColumn? usageInstructions = null)
+    public static void Attach(
+        FrameworkElement host,
+        DataGridColumn? scientificName,
+        DataGridColumn? usageInstructions = null,
+        DataGridColumn? vehicleType = null,
+        DataGridColumn? chassisNumber = null,
+        DataGridColumn? vehicleColor = null,
+        DataGridColumn? passengerCount = null,
+        DataGridColumn? plateNumber = null,
+        DataGridColumn? plateType = null)
     {
         void SyncFromContext()
         {
@@ -18,6 +27,13 @@ public static class ProductFeatureColumnSync
             {
                 Set(scientificName, products.ShowScientificName);
                 Set(usageInstructions, products.ShowUsageInstructions);
+                var showCar = products.ShowCarShowroomFields;
+                Set(vehicleType, showCar);
+                Set(chassisNumber, showCar);
+                Set(vehicleColor, showCar);
+                Set(passengerCount, showCar);
+                Set(plateNumber, showCar);
+                Set(plateType, showCar);
             }
         }
 
@@ -34,6 +50,7 @@ public static class ProductFeatureColumnSync
         {
             if (e.PropertyName is nameof(ProductsViewModel.ShowScientificName)
                 or nameof(ProductsViewModel.ShowUsageInstructions)
+                or nameof(ProductsViewModel.ShowCarShowroomFields)
                 or null)
                 SyncFromContext();
         }

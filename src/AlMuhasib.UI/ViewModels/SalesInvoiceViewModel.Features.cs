@@ -50,6 +50,7 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showDriverSelection;
     [ObservableProperty] private bool _showSalesRepSelection;
     [ObservableProperty] private bool _showPharmacyUsage;
+    [ObservableProperty] private bool _showCarShowroomContractPrint;
     [ObservableProperty] private decimal _transportFeeAmount;
     [ObservableProperty] private PricingType? _selectedBulkPricingType;
 
@@ -133,6 +134,8 @@ public partial class SalesInvoiceViewModel
         ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
         ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
         ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
+        ShowCarShowroomContractPrint = _featureFlags.CarShowroom;
+        PrintCarContractCommand.NotifyCanExecuteChanged();
         RefreshLoyaltyFeatureVisibility();
         RefreshProductOffersFeatureVisibility();
 

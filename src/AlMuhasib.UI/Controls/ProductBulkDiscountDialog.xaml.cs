@@ -136,3 +136,8 @@ public sealed record DiscountTypeOption(DiscountType Type, string Label)
 {
     public override string ToString() => Label;
 }
+
+public sealed record VehiclePlateTypeOption(VehiclePlateType Type, string Label)
+{
+    public override string ToString() => Label;
+}

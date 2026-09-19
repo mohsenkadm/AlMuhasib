@@ -18,6 +18,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:ProductDiscountDisplayConverter x:Key="ProductDiscountDisplayConverter"/>
+        <converters:VehiclePlateTypeDisplayConverter x:Key="PlateTypeDisplay"/>
         <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
     </UserControl.Resources>
 
@@ -52,7 +53,7 @@
                     <TextBox Grid.Column="0"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource SearchBox}"
-                             materialDesign:HintAssist.Hint="ابحث بالاسم أو الاسم العلمي أو الباركود..."
+                             materialDesign:HintAssist.Hint="ابحث بالاسم أو العلمي أو الباركود أو الشاصي أو اللوحة..."
                              Margin="0,0,12,0"
                              MaxWidth="400"
                              HorizontalAlignment="Stretch"
@@ -306,6 +307,44 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
+
+                        <!-- Car showroom columns -->
+                        <DataGridTextColumn x:Name="ColVehicleType"
+                                            Header="نوع السيارة"
+                                            Binding="{Binding VehicleType}"
+                                            Width="*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehicleType"/>
+                        <DataGridTextColumn x:Name="ColChassisNumber"
+                                            Header="رقم الشاصي"
+                                            Binding="{Binding ChassisNumber}"
+                                            Width="*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ChassisNumber"/>
+                        <DataGridTextColumn x:Name="ColVehicleColor"
+                                            Header="اللون"
+                                            Binding="{Binding VehicleColor}"
+                                            Width="80"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehicleColor"/>
+                        <DataGridTextColumn x:Name="ColPassengerCount"
+                                            Header="عدد الركاب"
+                                            Binding="{Binding PassengerCount}"
+                                            Width="90"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PassengerCount"/>
+                        <DataGridTextColumn x:Name="ColPlateNumber"
+                                            Header="رقم اللوحة"
+                                            Binding="{Binding PlateNumber}"
+                                            Width="*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlateNumber"/>
+                        <DataGridTextColumn x:Name="ColPlateType"
+                                            Header="نوع اللوحة"
+                                            Binding="{Binding PlateType, Converter={StaticResource PlateTypeDisplay}}"
+                                            Width="90"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlateType"/>
 
                         <!-- Category -->
                         <DataGridTextColumn Header="التصنيف"
@@ -682,6 +721,65 @@
                                      MaxHeight="200"
                                      Margin="0,0,0,14"
                                      Visibility="{Binding ShowUsageInstructions, Converter={StaticResource BoolToVis}}" />
+
+                            <!-- Car showroom fields -->
+                            <StackPanel Visibility="{Binding ShowCarShowroomFields, Converter={StaticResource BoolToVis}}">
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding EditVehicleType, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="نوع السيارة"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"/>
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding EditChassisNumber, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="رقم الشاصي"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"
+                                             FontFamily="Consolas"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding EditVehicleColor, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="اللون"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"/>
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding EditPassengerCountText, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="عدد الركاب"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource NumericTextBox}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding EditPlateNumber, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="رقم اللوحة"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"
+                                             FontFamily="Consolas"/>
+                                    <ComboBox Grid.Column="2"
+                                              ItemsSource="{Binding PlateTypeOptions}"
+                                              SelectedItem="{Binding EditPlateTypeOption}"
+                                              materialDesign:HintAssist.Hint="نوع اللوحة"
+                                              materialDesign:HintAssist.IsFloating="True"
+                                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                              Style="{StaticResource FilledComboBox}"/>
+                                </Grid>
+                            </StackPanel>
 
                             <!-- Category + Barcode -->
                             <Grid Margin="0,0,0,14">
