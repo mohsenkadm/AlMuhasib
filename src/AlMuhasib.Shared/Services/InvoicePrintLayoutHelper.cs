@@ -26,6 +26,21 @@ internal static class InvoicePrintLayoutHelper
             name += $"\nالمخزن: {item.WarehouseName}";
         if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
             name += $"\nطريقة الاستخدام: {item.UsageInstructions}";
+        if (model.ShowCarShowroomFields)
+        {
+            if (!string.IsNullOrWhiteSpace(item.VehicleType))
+                name += $"\nنوع السيارة: {item.VehicleType}";
+            if (!string.IsNullOrWhiteSpace(item.ChassisNumber))
+                name += $"\nرقم الشاصي: {item.ChassisNumber}";
+            if (!string.IsNullOrWhiteSpace(item.VehicleColor))
+                name += $"\nاللون: {item.VehicleColor}";
+            if (item.PassengerCount is > 0)
+                name += $"\nعدد الركاب: {item.PassengerCount}";
+            if (!string.IsNullOrWhiteSpace(item.PlateNumber))
+                name += $"\nرقم اللوحة: {item.PlateNumber}";
+            if (!string.IsNullOrWhiteSpace(item.PlateTypeDisplay))
+                name += $"\nنوع اللوحة: {item.PlateTypeDisplay}";
+        }
         return name;
     }
 

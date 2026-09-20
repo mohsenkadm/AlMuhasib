@@ -869,11 +869,15 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             NumberOfInstallments = NumberOfInstallments,
             InstallmentAmount = _savedPlan?.InstallmentAmount,
             ShowLineDiscount = ShowProductDiscount,
+            ShowCarShowroomFields = _featureFlags.CarShowroom,
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
                     ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
                     : SelectedWarehouse?.Name;
+                var product = item.ProductId is int pid
+                    ? Products.FirstOrDefault(p => p.Id == pid)
+                    : null;
                 return new InvoicePrintItem
                 {
                     Number = i + 1,
@@ -885,7 +889,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                     TotalPrice = item.TotalPrice,
                     DiscountPercent = item.DiscountPercent,
                     DiscountAmount = item.DiscountAmount,
-                    WarehouseName = warehouseName
+                    WarehouseName = warehouseName,
+                    VehicleType = product?.VehicleType,
+                    ChassisNumber = product?.ChassisNumber,
+                    VehicleColor = product?.VehicleColor,
+                    PassengerCount = product?.PassengerCount,
+                    PlateNumber = product?.PlateNumber,
+                    PlateTypeDisplay = product is null
+                        || product.PlateType == AlMuhasib.Core.Enums.VehiclePlateType.None
+                        ? null
+                        : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(product.PlateType)
                 };
             }).ToList(),
             Schedule = _savedPlan?.Installments?.Count > 0

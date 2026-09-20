@@ -90,7 +90,9 @@ internal static class SyncMapper
             .Concat(changedVouchers.Where(v => v.CustomerId.HasValue).Select(v => v.CustomerId!.Value))
             .Concat(customerAttachments.Where(ShouldSync).Select(a => a.CustomerId))
             .ToHashSet();
-        var referencedSupplierIds = changedInvoices.Where(i => i.SupplierId.HasValue).Select(i => i.SupplierId!.Value).ToHashSet();
+        var referencedSupplierIds = changedInvoices.Where(i => i.SupplierId.HasValue).Select(i => i.SupplierId!.Value)
+            .Concat(changedVouchers.Where(v => v.SupplierId.HasValue).Select(v => v.SupplierId!.Value))
+            .ToHashSet();
         var referencedCashBoxIds = changedInvoices.Where(i => i.CashBoxId.HasValue).Select(i => i.CashBoxId!.Value)
             .Concat(changedVouchers.Select(v => v.CashBoxId))
             .Concat(changedExpenses.Select(e => e.CashBoxId))
@@ -171,7 +173,7 @@ internal static class SyncMapper
         var installmentSyncMap = installments.ToDictionary(i => i.Id, i => i.SyncId);
         bundle.Vouchers = changedVouchers
             .Where(v => cbMap.ContainsKey(v.CashBoxId))
-            .Select(v => MapVoucherSafe(v, custMap, investorMap, cbMap, bankMap, invMap, installmentSyncMap))
+            .Select(v => MapVoucherSafe(v, custMap, supMap, investorMap, cbMap, bankMap, invMap, installmentSyncMap))
             .Where(v => v is not null).Cast<VoucherSyncDto>().ToList();
 
         var etMap = expenseTypes.ToDictionary(e => e.Id, e => e.SyncId);
@@ -239,7 +241,7 @@ internal static class SyncMapper
         await UpsertInvoiceItemsAsync(db, data.InvoiceItems, invMap, prBySync, pricingTypeBySync, whBySync, ct);
         var planMap = await UpsertInstallmentPlansAsync(db, data.InstallmentPlans, invMap, custBySync, ct);
         await UpsertInstallmentsAsync(db, data.Installments, planMap, cbBySync, ct);
-        await UpsertVouchersAsync(db, data.Vouchers, custBySync, invBySync, cbBySync, bankBySync, ct);
+        await UpsertVouchersAsync(db, data.Vouchers, custBySync, supBySync, invBySync, cbBySync, bankBySync, ct);
         await UpsertExpensesAsync(db, data.Expenses, etBySync, cbBySync, ct);
         await UpsertTransfersAsync(db, data.Transfers, cbBySync, bankBySync, ct);
         await UpsertInvestorTransactionsAsync(db, data.InvestorTransactions, invBySync, ct);
@@ -411,7 +413,7 @@ internal static class SyncMapper
     }
     private static InstallmentPlanSyncDto MapInstallmentPlan(InstallmentPlan p, Dictionary<int, Guid> inv, Dictionary<int, Guid> cust) { var d = new InstallmentPlanSyncDto(); CopyBase(p, d); d.InvoiceSyncId = inv[p.InvoiceId]; d.CustomerSyncId = cust[p.CustomerId]; d.FileNumber = p.FileNumber; d.TotalAmount = p.TotalAmount; d.NumberOfInstallments = p.NumberOfInstallments; d.InstallmentAmount = p.InstallmentAmount; d.StartDate = p.StartDate; d.InstallmentType = p.InstallmentType; d.CompanyFeePercentage = p.CompanyFeePercentage; d.CompanyFeeAmount = p.CompanyFeeAmount; return d; }
     private static InstallmentSyncDto MapInstallment(Installment i, Dictionary<int, Guid> plans, Dictionary<int, Guid> cb) { var d = new InstallmentSyncDto(); CopyBase(i, d); d.InstallmentPlanSyncId = plans[i.InstallmentPlanId]; d.DueDate = i.DueDate; d.Amount = i.Amount; d.PaidAmount = i.PaidAmount; d.RemainingAmount = i.RemainingAmount; d.Status = i.Status; d.PaymentDate = i.PaymentDate; d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null; return d; }
-    private static VoucherSyncDto MapVoucher(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
+    private static VoucherSyncDto MapVoucher(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
     {
         var d = new VoucherSyncDto();
         CopyBase(v, d);
@@ -420,6 +422,7 @@ internal static class SyncMapper
         d.Amount = v.Amount;
         d.BankFees = v.BankFees;
         d.CustomerSyncId = v.CustomerId.HasValue ? cust.GetValueOrDefault(v.CustomerId.Value) : null;
+        d.SupplierSyncId = v.SupplierId.HasValue ? sup.GetValueOrDefault(v.SupplierId.Value) : null;
         d.InvestorSyncId = v.InvestorId.HasValue ? inv.GetValueOrDefault(v.InvestorId.Value) : null;
         d.CashBoxSyncId = cb[v.CashBoxId];
         d.BankAccountSyncId = v.BankAccountId.HasValue ? bank.GetValueOrDefault(v.BankAccountId.Value) : null;
@@ -432,11 +435,12 @@ internal static class SyncMapper
         d.Notes = v.Notes;
         return d;
     }
-    private static VoucherSyncDto? MapVoucherSafe(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
+    private static VoucherSyncDto? MapVoucherSafe(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
     {
         if (!cb.TryGetValue(v.CashBoxId, out var cashBoxSyncId)) return null;
         var d = new VoucherSyncDto(); CopyBase(v, d); d.VoucherNumber = v.VoucherNumber; d.VoucherType = v.VoucherType; d.Amount = v.Amount; d.BankFees = v.BankFees;
         d.CustomerSyncId = v.CustomerId.HasValue ? cust.GetValueOrDefault(v.CustomerId.Value) : null;
+        d.SupplierSyncId = v.SupplierId.HasValue ? sup.GetValueOrDefault(v.SupplierId.Value) : null;
         d.InvestorSyncId = v.InvestorId.HasValue ? inv.GetValueOrDefault(v.InvestorId.Value) : null;
         d.CashBoxSyncId = cashBoxSyncId;
         d.BankAccountSyncId = v.BankAccountId.HasValue ? bank.GetValueOrDefault(v.BankAccountId.Value) : null;
@@ -781,7 +785,7 @@ internal static class SyncMapper
         await db.SaveChangesAsync(ct);
     }
 
-    private static async Task UpsertVouchersAsync(AppDbContext db, List<VoucherSyncDto> items, Dictionary<Guid, int> cust, Dictionary<Guid, int> inv, Dictionary<Guid, int> cb, Dictionary<Guid, int> bank, CancellationToken ct)
+    private static async Task UpsertVouchersAsync(AppDbContext db, List<VoucherSyncDto> items, Dictionary<Guid, int> cust, Dictionary<Guid, int> sup, Dictionary<Guid, int> inv, Dictionary<Guid, int> cb, Dictionary<Guid, int> bank, CancellationToken ct)
     {
         var invoiceMap = await db.Invoices.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
         var installmentMap = await db.Installments.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
@@ -794,6 +798,7 @@ internal static class SyncMapper
             ApplyBase(entity, dto);
             entity.VoucherNumber = dto.VoucherNumber; entity.VoucherType = dto.VoucherType; entity.Amount = dto.Amount; entity.BankFees = dto.BankFees;
             entity.CustomerId = dto.CustomerSyncId.HasValue && cust.TryGetValue(dto.CustomerSyncId.Value, out var cId) ? cId : null;
+            entity.SupplierId = dto.SupplierSyncId.HasValue && sup.TryGetValue(dto.SupplierSyncId.Value, out var sId) ? sId : null;
             entity.InvestorId = dto.InvestorSyncId.HasValue && inv.TryGetValue(dto.InvestorSyncId.Value, out var iId) ? iId : null;
             entity.CashBoxId = cbId;
             entity.BankAccountId = dto.BankAccountSyncId.HasValue && bank.TryGetValue(dto.BankAccountSyncId.Value, out var bId) ? bId : null;

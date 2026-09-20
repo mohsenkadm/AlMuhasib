@@ -226,6 +226,7 @@ public class CloudVoucher : CloudBaseEntity
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public int? CustomerId { get; set; }
+    public int? SupplierId { get; set; }
     public int? InvestorId { get; set; }
     public int CashBoxId { get; set; }
     public int? BankAccountId { get; set; }
@@ -237,6 +238,7 @@ public class CloudVoucher : CloudBaseEntity
     public DateTime Date { get; set; }
     public string? Notes { get; set; }
     public CloudCustomer? Customer { get; set; }
+    public CloudSupplier? Supplier { get; set; }
     public CloudInvestor? Investor { get; set; }
     public CloudCashBox CashBox { get; set; } = null!;
     public CloudBankAccount? BankAccount { get; set; }

@@ -177,12 +177,13 @@ public sealed partial class SyncEngine : ISyncEngine
                 var cashBoxId = await resolver.ResolveCashBoxAsync(dto.CashBoxSyncId, ct);
                 if (cashBoxId is null) { AddConflict(response, "Voucher", dto.SyncId, "CashBox not found"); continue; }
                 var customerId = await resolver.ResolveCustomerAsync(dto.CustomerSyncId, ct);
+                var supplierId = await resolver.ResolveSupplierAsync(dto.SupplierSyncId, ct);
                 var investorId = await resolver.ResolveInvestorAsync(dto.InvestorSyncId, ct);
                 var bankId = await resolver.ResolveBankAccountAsync(dto.BankAccountSyncId, ct);
                 var linkedInvoiceId = await resolver.ResolveInvoiceAsync(dto.InvoiceSyncId, ct);
                 var linkedInstallmentId = await resolver.ResolveInstallmentAsync(dto.InstallmentSyncId, ct);
                 accepted += await UpsertVoucherAsync(
-                    tenantId, dto, cashBoxId.Value, customerId, investorId, bankId,
+                    tenantId, dto, cashBoxId.Value, customerId, supplierId, investorId, bankId,
                     linkedInvoiceId, linkedInstallmentId, response, ct);
             }
 
@@ -708,6 +709,7 @@ public sealed partial class SyncEngine : ISyncEngine
         VoucherSyncDto dto,
         int cashBoxId,
         int? customerId,
+        int? supplierId,
         int? investorId,
         int? bankId,
         int? invoiceId,
@@ -724,6 +726,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Amount = dto.Amount;
         existing.BankFees = dto.BankFees;
         existing.CustomerId = customerId;
+        existing.SupplierId = supplierId;
         existing.InvestorId = investorId;
         existing.CashBoxId = cashBoxId;
         existing.BankAccountId = bankId;
@@ -1014,6 +1017,7 @@ public sealed partial class SyncEngine : ISyncEngine
     private async Task<List<VoucherSyncDto>> PullVouchersAsync(int tenantId, DateTime since, CancellationToken ct)
     {
         var customers = await _db.Customers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var suppliers = await _db.Suppliers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var investors = await _db.Investors.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         var banks = await _db.BankAccounts.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
@@ -1027,6 +1031,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = v.IsDeleted, DeletedAt = v.DeletedAt, DeletedBy = v.DeletedBy, RowVersion = v.RowVersion,
             VoucherNumber = v.VoucherNumber, VoucherType = v.VoucherType, Amount = v.Amount, BankFees = v.BankFees,
             CustomerSyncId = v.CustomerId.HasValue ? customers.GetValueOrDefault(v.CustomerId.Value) : null,
+            SupplierSyncId = v.SupplierId.HasValue ? suppliers.GetValueOrDefault(v.SupplierId.Value) : null,
             InvestorSyncId = v.InvestorId.HasValue ? investors.GetValueOrDefault(v.InvestorId.Value) : null,
             CashBoxSyncId = cashBoxes.GetValueOrDefault(v.CashBoxId),
             BankAccountSyncId = v.BankAccountId.HasValue ? banks.GetValueOrDefault(v.BankAccountId.Value) : null,

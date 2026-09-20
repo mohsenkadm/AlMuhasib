@@ -3952,6 +3952,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<Guid>("SyncId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -3990,6 +3993,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("IsReconciled");
 
                     b.HasIndex("SyncId");
+
+                    b.HasIndex("SupplierId");
 
                     b.HasIndex("VoucherNumber")
                         .IsUnique();
@@ -4841,6 +4846,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("AlMuhasib.Core.Entities.Supplier", "Supplier")
+                        .WithMany("Vouchers")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("BankAccount");
 
                     b.Navigation("CashBox");
@@ -4852,6 +4862,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Investor");
 
                     b.Navigation("Invoice");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.WarehouseStock", b =>
@@ -5005,6 +5017,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
             modelBuilder.Entity("AlMuhasib.Core.Entities.Supplier", b =>
                 {
                     b.Navigation("Invoices");
+
+                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.User", b =>

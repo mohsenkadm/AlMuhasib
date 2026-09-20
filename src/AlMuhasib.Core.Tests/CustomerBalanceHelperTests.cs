@@ -81,6 +81,56 @@ public class CustomerBalanceHelperTests
     }
 
     [Fact]
+    public void BuildCustomerStatementLedger_DoesNotDoubleCountAppliedReceipt()
+    {
+        var invoices = new[]
+        {
+            new CustomerBalanceInvoiceRow
+            {
+                Id = 1,
+                Date = new DateTime(2026, 1, 10),
+                InvoiceNumber = "S-1",
+                InvoiceType = InvoiceType.Sale,
+                PaymentMethod = PaymentMethod.Credit,
+                NetAmount = 1000,
+                PaidAmount = 300,
+                RemainingAmount = 700
+            }
+        };
+
+        var vouchers = new[]
+        {
+            new CustomerBalanceVoucherRow
+            {
+                Id = 11,
+                Date = new DateTime(2026, 1, 20),
+                VoucherNumber = "RCV1",
+                VoucherType = VoucherType.Receipt,
+                Amount = 300,
+                Notes = CustomerBalanceHelper.DebtReceiptAppliedMarker
+            },
+            new CustomerBalanceVoucherRow
+            {
+                Id = 12,
+                Date = new DateTime(2026, 1, 25),
+                VoucherNumber = "RCV2",
+                VoucherType = VoucherType.Receipt,
+                Amount = 100,
+                Notes = null
+            }
+        };
+
+        var (rows, balance) = CustomerBalanceHelper.BuildCustomerStatementLedger(
+            invoices, vouchers, Array.Empty<CustomerBalanceInstallmentPaymentRow>(), 0);
+
+        // Remaining 700 − unapplied receipt 100 = 600 (applied receipt already in PaidAmount)
+        Assert.Equal(600, balance);
+        Assert.Contains(rows, r => r.Credit == 300 && r.Description.Contains("تسديد"));
+        Assert.Contains(rows, r => r.Credit == 100 && r.Description.Contains("سند قبض RCV2"));
+        Assert.DoesNotContain(rows, r => r.Description.Contains("سند قبض RCV1"));
+    }
+
+    [Fact]
     public void MarkDebtReceiptApplied_IsIdempotent()
     {
         var once = CustomerBalanceHelper.MarkDebtReceiptApplied("test");

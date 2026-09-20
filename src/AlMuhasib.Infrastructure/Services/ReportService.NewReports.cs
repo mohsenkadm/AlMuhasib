@@ -774,17 +774,14 @@ public partial class ReportService
         DateTime? from, DateTime? to, int? supplierId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var supplierIds = await context.Suppliers.Select(s => s.Id).ToListAsync();
         var supplierNames = await context.Suppliers.ToDictionaryAsync(s => s.Id, s => s.Name);
         var rows = new List<SupplierPaymentRow>();
 
         var vouchQ = context.Vouchers.Include(v => v.CashBox)
-            .Where(v => v.VoucherType == VoucherType.Payment
-                        && v.CustomerId != null
-                        && supplierIds.Contains(v.CustomerId.Value));
+            .Where(v => v.VoucherType == VoucherType.Payment && v.SupplierId != null);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
-        if (supplierId.HasValue) vouchQ = vouchQ.Where(v => v.CustomerId == supplierId.Value);
+        if (supplierId.HasValue) vouchQ = vouchQ.Where(v => v.SupplierId == supplierId.Value);
 
         foreach (var v in await vouchQ.ToListAsync())
         {
@@ -793,7 +790,7 @@ public partial class ReportService
                 Date = v.Date,
                 SourceType = "سند صرف",
                 Reference = v.VoucherNumber,
-                SupplierName = supplierNames.GetValueOrDefault(v.CustomerId ?? 0, "—"),
+                SupplierName = supplierNames.GetValueOrDefault(v.SupplierId ?? 0, "—"),
                 Amount = v.Amount,
                 AccountName = v.CashBox?.Name ?? "—",
                 Notes = v.Notes ?? "—"

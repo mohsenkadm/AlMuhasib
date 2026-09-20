@@ -25,8 +25,14 @@ public class DashboardData
 
     // Additional statistics
     public decimal InvestorBalance { get; set; }
+    public decimal InvestorOpeningTotal { get; set; }
+    public decimal InvestorDepositsTotal { get; set; }
+    public decimal InvestorWithdrawalsTotal { get; set; }
     public decimal UnpaidInstallmentsBalance { get; set; }
     public decimal CustomerCreditBalance { get; set; }
+    public decimal CustomerCreditInvoiceRemaining { get; set; }
+    public decimal CustomerCreditUnappliedDebt { get; set; }
+    public decimal CustomerCreditUnappliedReceipts { get; set; }
 
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];

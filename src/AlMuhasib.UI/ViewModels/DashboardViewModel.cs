@@ -85,10 +85,28 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _investorBalance;
 
     [ObservableProperty]
+    private decimal _investorOpeningTotal;
+
+    [ObservableProperty]
+    private decimal _investorDepositsTotal;
+
+    [ObservableProperty]
+    private decimal _investorWithdrawalsTotal;
+
+    [ObservableProperty]
     private decimal _unpaidInstallmentsBalance;
 
     [ObservableProperty]
     private decimal _customerCreditBalance;
+
+    [ObservableProperty]
+    private decimal _customerCreditInvoiceRemaining;
+
+    [ObservableProperty]
+    private decimal _customerCreditUnappliedDebt;
+
+    [ObservableProperty]
+    private decimal _customerCreditUnappliedReceipts;
 
     [ObservableProperty]
     private decimal _totalCashBalance;
@@ -221,6 +239,93 @@ public partial class DashboardViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ShowCustomerCreditDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل رصيد الآجل للعملاء",
+            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
+            Formula = "الرصيد = متبقي فواتير الآجل − سندات دين غير مطبّقة − سندات قبض غير مطبّقة",
+            ResultLabel = "رصيد الآجل للعملاء",
+            ResultAmount = CustomerCreditBalance,
+            Lines =
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "متبقي فواتير الآجل",
+                    Amount = CustomerCreditInvoiceRemaining,
+                    Description = "مجموع RemainingAmount لفواتير الآجل غير المسددة"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات قبض دين غير مطبّقة",
+                    Amount = CustomerCreditUnappliedDebt,
+                    Description = "سندات تسديد دين لم تُطبَّق بعد على الفواتير"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات قبض غير مطبّقة",
+                    Amount = CustomerCreditUnappliedReceipts,
+                    Description = "سندات قبض عامة (بدون فاتورة/قسط) لم تُطبَّق على فواتير الآجل"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "رصيد الآجل للعملاء",
+                    Amount = CustomerCreditBalance,
+                    IsResult = true
+                }
+            ],
+            Note = "سند القبض المرتبط بعميل يُطبَّق تلقائياً على فواتير الآجل الأقدم أولاً. الأقساط غير المسددة تظهر في بطاقة منفصلة."
+        });
+    }
+
+    [RelayCommand]
+    private void ShowInvestorBalanceDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل رصيد المستثمرين",
+            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
+            Formula = "الرصيد = أرصدة افتتاحية + إيداعات − سحوبات",
+            ResultLabel = "رصيد المستثمرين",
+            ResultAmount = InvestorBalance,
+            Lines =
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "أرصدة افتتاحية",
+                    Amount = InvestorOpeningTotal
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "إجمالي الإيداعات",
+                    Amount = InvestorDepositsTotal
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "إجمالي السحوبات",
+                    Amount = InvestorWithdrawalsTotal
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "رصيد المستثمرين",
+                    Amount = InvestorBalance,
+                    IsResult = true
+                }
+            ],
+            Note = "الرصيد المعروض هو مجموع TotalDeposit لكل مستثمر. توزيعات الأرباح لا تغيّر رصيد الإيداع."
+        });
+    }
+
+    [RelayCommand]
     private async Task OpenPurchaseInvoiceAsync() =>
         await _mainWindow.OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown);
 
@@ -274,8 +379,14 @@ public partial class DashboardViewModel : ViewModelBase
                 NetProfitOpening = data.NetProfitOpening;
                 OverdueInstallmentsCount = data.OverdueInstallmentsCount;
                 InvestorBalance = data.InvestorBalance;
+                InvestorOpeningTotal = data.InvestorOpeningTotal;
+                InvestorDepositsTotal = data.InvestorDepositsTotal;
+                InvestorWithdrawalsTotal = data.InvestorWithdrawalsTotal;
                 UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
                 CustomerCreditBalance = data.CustomerCreditBalance;
+                CustomerCreditInvoiceRemaining = data.CustomerCreditInvoiceRemaining;
+                CustomerCreditUnappliedDebt = data.CustomerCreditUnappliedDebt;
+                CustomerCreditUnappliedReceipts = data.CustomerCreditUnappliedReceipts;
 
                 _cachedSalesPoints = data.SalesLast30Days;
                 _cachedExpenseShares = data.ExpenseDistribution;

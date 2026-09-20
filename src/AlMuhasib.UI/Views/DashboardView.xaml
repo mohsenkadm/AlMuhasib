@@ -931,7 +931,9 @@
                                                Icon="TrendingUp"
                                                AccentBrush="{DynamicResource DashboardKpiIndigoBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiIndigoLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}"
+                                               ShowDetailButton="True"
+                                               DetailCommand="{Binding ShowInvestorBalanceDetailsCommand}" />
 
                     <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
                                                HorizontalAlignment="Stretch"
@@ -949,7 +951,9 @@
                                                Icon="AccountCash"
                                                AccentBrush="{DynamicResource DashboardKpiPinkBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiPinkLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiPinkBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiPinkBrush}"
+                                               ShowDetailButton="True"
+                                               DetailCommand="{Binding ShowCustomerCreditDetailsCommand}" />
                 </Grid>
 
                 <!-- ═══════════════════════════════════════════ -->

@@ -9,9 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <NoWarn>NU1701</NoWarn>
-    <Version>1.14.26</Version>
-    <AssemblyVersion>1.14.26.0</AssemblyVersion>
-    <FileVersion>1.14.26.0</FileVersion>
+     <Version>1.14.27</Version>
+    <AssemblyVersion>1.14.27.0</AssemblyVersion>
+    <FileVersion>1.14.27.0</FileVersion>
     <ApplicationIcon>Assets\Brand\qayd-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -78,16 +78,20 @@
     <Copy SourceFiles="@(UpdaterFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- dotnet publish uses PublishDir — the Build OutputPath copy above does not always land in the release zip -->
+  <!-- Publish updater as self-contained single-file so TEMP launcher works without machine-wide .NET. -->
   <Target Name="IncludeUpdaterInPublish" AfterTargets="Publish">
     <PropertyGroup>
-      <UpdaterOutputPath>$(MSBuildProjectDirectory)\..\AlMuhasib.Updater\bin\$(Configuration)\net10.0\</UpdaterOutputPath>
+      <UpdaterPublishOut>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\AlMuhasib.Updater\bin\$(Configuration)\net10.0\win-x64\publish-sc\'))</UpdaterPublishOut>
     </PropertyGroup>
-    <MSBuild Projects="..\AlMuhasib.Updater\AlMuhasib.Updater.csproj" Properties="Configuration=$(Configuration)" Targets="Build" Condition="!Exists('$(UpdaterOutputPath)AlMuhasib.Updater.dll')" />
     <ItemGroup>
-      <UpdaterPublishFiles Include="$(UpdaterOutputPath)AlMuhasib.Updater.*" />
+      <_StaleUpdaterFiles Include="$(PublishDir)AlMuhasib.Updater.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(UpdaterPublishFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
+    <Delete Files="@(_StaleUpdaterFiles)" Condition="'@(_StaleUpdaterFiles)' != ''" />
+    <MSBuild Projects="..\AlMuhasib.Updater\AlMuhasib.Updater.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;IncludeNativeLibrariesForSelfExtract=true;EnableCompressionInSingleFile=true;PublishDir=$(UpdaterPublishOut)" />
+    <Error Condition="!Exists('$(UpdaterPublishOut)AlMuhasib.Updater.exe')" Text="Self-contained AlMuhasib.Updater.exe was not produced." />
+    <Copy SourceFiles="$(UpdaterPublishOut)AlMuhasib.Updater.exe" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
   </Target>
 
 </Project>

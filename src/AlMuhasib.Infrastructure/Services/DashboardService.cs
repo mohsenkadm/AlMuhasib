@@ -91,6 +91,14 @@ public class DashboardService : IDashboardService
         {
             data.InvestorBalance = await context.Investors
                 .SumAsync(i => (decimal?)i.TotalDeposit) ?? 0;
+            data.InvestorOpeningTotal = await context.Investors
+                .SumAsync(i => (decimal?)i.OpeningBalance) ?? 0;
+            data.InvestorDepositsTotal = await context.InvestorTransactions
+                .Where(t => t.Type == InvestorTransactionType.Deposit)
+                .SumAsync(t => (decimal?)t.Amount) ?? 0;
+            data.InvestorWithdrawalsTotal = await context.InvestorTransactions
+                .Where(t => t.Type == InvestorTransactionType.Withdrawal)
+                .SumAsync(t => (decimal?)t.Amount) ?? 0;
         }
         catch (Exception ex)
         {
@@ -119,7 +127,16 @@ public class DashboardService : IDashboardService
                 .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
                 .SumAsync(v => (decimal?)v.Amount) ?? 0;
-            data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt);
+            var unappliedReceipts = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.Receipt &&
+                            !v.InvoiceId.HasValue &&
+                            !v.InstallmentId.HasValue &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            data.CustomerCreditInvoiceRemaining = creditRemaining;
+            data.CustomerCreditUnappliedDebt = unappliedDebt;
+            data.CustomerCreditUnappliedReceipts = unappliedReceipts;
+            data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts);
         }
         catch (Exception ex)
         {

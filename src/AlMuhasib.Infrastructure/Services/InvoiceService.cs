@@ -32,7 +32,8 @@ public class InvoiceService : IInvoiceService
         IEnumerable<InvoiceItem> items,
         bool skipStockUpdate = false,
         int loyaltyRedeemPoints = 0,
-        bool applyLoyalty = false)
+        bool applyLoyalty = false,
+        bool preserveProvidedNumber = false)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -111,8 +112,20 @@ public class InvoiceService : IInvoiceService
                 invoice.IsCreditPaid = true;
             }
 
-            if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            if (!preserveProvidedNumber || string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            {
+                // Always assign server-side for new invoices to avoid stale UI numbers
+                // colliding after soft-delete renames (…-D{id}).
                 invoice.InvoiceNumber = await GenerateInvoiceNumberAsync(context, invoice.InvoiceType);
+            }
+            else
+            {
+                var requested = invoice.InvoiceNumber.Trim();
+                var taken = await context.Invoices.AnyAsync(i => i.InvoiceNumber == requested);
+                invoice.InvoiceNumber = taken
+                    ? await GenerateInvoiceNumberAsync(context, invoice.InvoiceType)
+                    : requested;
+            }
 
             await context.Invoices.AddAsync(invoice);
             await context.SaveChangesAsync();
@@ -388,7 +401,8 @@ public class InvoiceService : IInvoiceService
 
         invoice.InvoiceNumber = preservedNumber;
         invoice.Id = 0;
-        var created = await CreateInvoiceAsync(invoice, itemsList, skipStockUpdate);
+        var created = await CreateInvoiceAsync(
+            invoice, itemsList, skipStockUpdate, preserveProvidedNumber: true);
 
         if (preserveCreditState)
         {

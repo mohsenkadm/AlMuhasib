@@ -10,7 +10,8 @@ public interface IInvoiceService
         IEnumerable<InvoiceItem> items,
         bool skipStockUpdate = false,
         int loyaltyRedeemPoints = 0,
-        bool applyLoyalty = false);
+        bool applyLoyalty = false,
+        bool preserveProvidedNumber = false);
     Task<Invoice?> GetByIdAsync(int id);
     Task<Invoice?> GetByIdWithDetailsAsync(int id);
     Task<(IEnumerable<Invoice> Items, int TotalCount)> GetPagedAsync(

@@ -437,9 +437,8 @@ public class PersonProfileService : IPersonProfileService
             }).ToList()
         });
 
-        // Payment vouchers for suppliers are stored with CustomerId = supplierId (existing convention).
         var vouchers = await context.Vouchers.AsNoTracking()
-            .Where(v => v.CustomerId == id && v.VoucherType == VoucherType.Payment)
+            .Where(v => v.SupplierId == id && v.VoucherType == VoucherType.Payment)
             .Where(v => !from.HasValue || v.Date >= from.Value)
             .Where(v => !to.HasValue || v.Date < EndOfDay(to))
             .OrderByDescending(v => v.Date)

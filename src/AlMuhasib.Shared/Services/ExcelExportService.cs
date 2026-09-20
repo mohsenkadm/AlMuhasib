@@ -994,7 +994,11 @@ public class ExcelExportService : IExportService
         foreach (var i in m.Items)
         {
             var row = new TableRow();
-            foreach (var val in new[] { i.ItemName, i.Quantity.ToString("N0"), "قطعة", i.UnitPrice.ToString("N0"), i.TotalPrice.ToString("N0") })
+            var itemName = InvoicePrintLayoutHelper.FormatItemName(i, m, includeWarehouseInDescription: false);
+            // FormatItemName prefixes "{n}. " — strip for this layout which already has separate columns.
+            if (itemName.StartsWith($"{i.Number}. ", StringComparison.Ordinal))
+                itemName = itemName[($"{i.Number}. ").Length..];
+            foreach (var val in new[] { itemName, i.Quantity.ToString("N0"), "قطعة", i.UnitPrice.ToString("N0"), i.TotalPrice.ToString("N0") })
             {
                 row.Cells.Add(new TableCell(new Paragraph(new Run(val))
                 {

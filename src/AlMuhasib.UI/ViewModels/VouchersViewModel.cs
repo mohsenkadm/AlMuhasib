@@ -485,9 +485,10 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 CustomerId = SelectedVoucherType switch
                 {
                     VoucherType.Receipt or VoucherType.DebtReceipt => SelectedCustomer?.Id,
-                    VoucherType.Payment => SelectedCustomer?.Id ?? SelectedSupplier?.Id,
+                    VoucherType.Payment => SelectedCustomer?.Id,
                     _ => null
                 },
+                SupplierId = SelectedVoucherType == VoucherType.Payment ? SelectedSupplier?.Id : null,
                 InvestorId = SelectedInvestor?.Id,
                 InvoiceId = ShowDocumentLinkFields ? SelectedLinkedInvoice?.Id : null,
                 InstallmentId = ShowDocumentLinkFields ? SelectedLinkedInstallment?.Id : null,
@@ -617,6 +618,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         }
         if (voucher.Customer is not null)
             rows.Add(new object[] { "العميل", voucher.Customer.Name });
+        if (voucher.Supplier is not null)
+            rows.Add(new object[] { "المورد", voucher.Supplier.Name });
         if (voucher.Investor is not null)
             rows.Add(new object[] { "المستثمر", voucher.Investor.Name });
         if (voucher.BankAccount is not null)
@@ -633,8 +636,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         if (voucher is null) return;
 
         var model = BuildVoucherPrintModel(voucher);
-        var phone = voucher.Customer?.Phone ?? voucher.Investor?.Phone;
-        var name = voucher.Customer?.Name ?? voucher.Investor?.Name ?? model.PartyName ?? "الطرف";
+        var phone = voucher.Customer?.Phone ?? voucher.Supplier?.Phone ?? voucher.Investor?.Phone;
+        var name = voucher.Customer?.Name ?? voucher.Supplier?.Name ?? voucher.Investor?.Name ?? model.PartyName ?? "الطرف";
         _whatsAppShare.ShareVoucher(model, phone, name);
     }
 
@@ -650,6 +653,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             partyLabel = "العميل";
             partyName = CustomerDisplayHelper.FormatDisplayName(voucher.Customer.Name, voucher.Customer.FileNumber);
             partyPhone = voucher.Customer.Phone;
+        }
+        else if (voucher.Supplier is not null)
+        {
+            partyLabel = "المورد";
+            partyName = voucher.Supplier.Name;
+            partyPhone = voucher.Supplier.Phone;
         }
         else if (voucher.Investor is not null)
         {
@@ -681,7 +690,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [RelayCommand]
     private void ExportVouchers()
     {
-        var columns = new[] { "رقم السند", "النوع", "المبلغ", "العمولة", "التاريخ", "القاصة", "العميل", "المستثمر", "ملاحظات" };
+        var columns = new[] { "رقم السند", "النوع", "المبلغ", "العمولة", "التاريخ", "القاصة", "الطرف", "ملاحظات" };
         var rows = Vouchers.Select(v => new object[]
         {
             v.VoucherNumber,
@@ -690,8 +699,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             v.BankFees > 0 ? v.BankFees.ToString("N0") : "",
             v.Date.ToString("yyyy/MM/dd"),
             v.CashBox?.Name ?? "",
-            v.Customer?.Name ?? "",
-            v.Investor?.Name ?? "",
+            v.PartyDisplayName,
             v.Notes ?? ""
         }).ToList();
 
@@ -710,7 +718,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [RelayCommand]
     private void PrintTable()
     {
-        var columns = new[] { "رقم السند", "النوع", "المبلغ", "العمولة", "التاريخ", "القاصة", "العميل", "المستثمر", "ملاحظات" };
+        var columns = new[] { "رقم السند", "النوع", "المبلغ", "العمولة", "التاريخ", "القاصة", "الطرف", "ملاحظات" };
         IList<object[]> rows = Vouchers.Select(v => new object[]
         {
             v.VoucherNumber,
@@ -719,8 +727,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             v.BankFees > 0 ? v.BankFees.ToString("N0") : "",
             v.Date.ToString("yyyy/MM/dd"),
             v.CashBox?.Name ?? "",
-            v.Customer?.Name ?? "",
-            v.Investor?.Name ?? "",
+            v.PartyDisplayName,
             v.Notes ?? ""
         }).ToList();
 

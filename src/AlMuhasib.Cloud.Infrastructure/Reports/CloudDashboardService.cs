@@ -62,19 +62,35 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate < today, ct);
 
         data.InvestorBalance = await _db.Investors.ForTenant(tenantId).SumAsync(i => (decimal?)i.TotalDeposit, ct) ?? 0;
+        data.InvestorOpeningTotal = await _db.Investors.ForTenant(tenantId).SumAsync(i => (decimal?)i.OpeningBalance, ct) ?? 0;
+        data.InvestorDepositsTotal = await _db.InvestorTransactions.ForTenant(tenantId)
+            .Where(t => t.Type == InvestorTransactionType.Deposit)
+            .SumAsync(t => (decimal?)t.Amount, ct) ?? 0;
+        data.InvestorWithdrawalsTotal = await _db.InvestorTransactions.ForTenant(tenantId)
+            .Where(t => t.Type == InvestorTransactionType.Withdrawal)
+            .SumAsync(t => (decimal?)t.Amount, ct) ?? 0;
 
         data.UnpaidInstallmentsBalance = await _db.Installments.ForTenant(tenantId)
             .Where(i => i.Status != InstallmentStatus.Paid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
 
-        data.CustomerCreditBalance = await _db.Invoices.ForTenant(tenantId)
+        var creditRemaining = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
         var unappliedDebt = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
-        data.CustomerCreditBalance = Math.Max(0, data.CustomerCreditBalance - unappliedDebt);
+        var unappliedReceipts = await _db.Vouchers.ForTenant(tenantId)
+            .Where(v => v.VoucherType == VoucherType.Receipt &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
+        data.CustomerCreditInvoiceRemaining = creditRemaining;
+        data.CustomerCreditUnappliedDebt = unappliedDebt;
+        data.CustomerCreditUnappliedReceipts = unappliedReceipts;
+        data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts);
 
         var salesRaw = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)
@@ -139,6 +155,8 @@ public sealed class CloudDashboardService : ICloudDashboardService
                 Number = v.VoucherNumber,
                 Party = v.CustomerId != null
                     ? (v.Customer != null ? v.Customer.Name : "-")
+                    : v.SupplierId != null
+                        ? (v.Supplier != null ? v.Supplier.Name : "-")
                     : v.InvestorId != null
                         ? (v.Investor != null ? v.Investor.Name : "-")
                         : "-",

@@ -13,4 +13,5 @@ public class Supplier : BaseEntity
 
     // Navigation
     public ICollection<Invoice> Invoices { get; set; } = [];
+    public ICollection<Voucher> Vouchers { get; set; } = [];
 }

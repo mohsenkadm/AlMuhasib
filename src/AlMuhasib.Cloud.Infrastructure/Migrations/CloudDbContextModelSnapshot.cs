@@ -6287,6 +6287,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<Guid>("SyncId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
@@ -6316,6 +6319,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.HasIndex("InvestorId");
 
                     b.HasIndex("InvoiceId");
+
+                    b.HasIndex("SupplierId");
 
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
@@ -7322,6 +7327,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("InvoiceId");
 
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudSupplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId");
+
                     b.Navigation("BankAccount");
 
                     b.Navigation("CashBox");
@@ -7333,6 +7342,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Navigation("Investor");
 
                     b.Navigation("Invoice");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudWarehouseStock", b =>

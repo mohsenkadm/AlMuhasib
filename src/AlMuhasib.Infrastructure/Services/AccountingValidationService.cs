@@ -129,7 +129,9 @@ public class AccountingValidationService : IAccountingValidationService
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var receipts = await context.Vouchers
-            .Where(v => v.CustomerId == customerId && v.VoucherType == VoucherType.Receipt)
+            .Where(v => v.CustomerId == customerId &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var expectedBalance = CustomerBalanceHelper.ComputeOutstandingBalance(

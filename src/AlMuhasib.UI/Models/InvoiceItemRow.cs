@@ -334,17 +334,39 @@ public partial class InvoiceItemRow : ObservableObject
             ProductWeight = value.Weight;
             ProductWeightUnit = value.WeightUnit ?? string.Empty;
             UsageInstructions = value.UsageInstructions ?? string.Empty;
+            ApplyCarShowroomFieldsFromProduct(value);
         }
         else
         {
             ProductWeight = 0m;
             ProductWeightUnit = string.Empty;
             UsageInstructions = string.Empty;
+            ClearCarShowroomFields();
             DiscountAmount = 0m;
         }
 
         RefreshProductDiscount();
         ProductChanged?.Invoke(this);
+    }
+
+    private void ApplyCarShowroomFieldsFromProduct(Product product)
+    {
+        VehicleType = product.VehicleType ?? string.Empty;
+        ChassisNumber = product.ChassisNumber ?? string.Empty;
+        VehicleColor = product.VehicleColor ?? string.Empty;
+        PassengerCountText = product.PassengerCount?.ToString() ?? string.Empty;
+        PlateNumber = product.PlateNumber ?? string.Empty;
+        PlateTypeText = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(product.PlateType);
+    }
+
+    private void ClearCarShowroomFields()
+    {
+        VehicleType = string.Empty;
+        ChassisNumber = string.Empty;
+        VehicleColor = string.Empty;
+        PassengerCountText = string.Empty;
+        PlateNumber = string.Empty;
+        PlateTypeText = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.NoneLabel;
     }
 
     partial void OnQuantityChanged(decimal value)

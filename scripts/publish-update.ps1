@@ -39,17 +39,27 @@ dotnet publish $uiProject -c Release -r win-x64 --self-contained true -o $publis
 
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
-$requiredUpdaterFiles = @(
-    "AlMuhasib.Updater.exe",
-    "AlMuhasib.Updater.dll",
-    "AlMuhasib.Updater.runtimeconfig.json"
-)
-foreach ($file in $requiredUpdaterFiles) {
-    $path = Join-Path $publishDir $file
-    if (-not (Test-Path $path)) {
-        throw "Publish output is missing required updater file: $file"
-    }
+# Force self-contained single-file updater into the publish folder (must not need machine-wide .NET).
+$updaterProject = Join-Path $root "src\AlMuhasib.Updater\AlMuhasib.Updater.csproj"
+$updaterOut = Join-Path $root "publish\updater-sc"
+if (Test-Path $updaterOut) { Remove-Item $updaterOut -Recurse -Force }
+New-Item -ItemType Directory -Path $updaterOut | Out-Null
+Write-Host "Publishing self-contained AlMuhasib.Updater ..." -ForegroundColor Cyan
+dotnet publish $updaterProject -c Release -r win-x64 --self-contained true -o $updaterOut `
+    /p:PublishSingleFile=true `
+    /p:IncludeNativeLibrariesForSelfExtract=true `
+    /p:EnableCompressionInSingleFile=true
+if ($LASTEXITCODE -ne 0) { throw "updater publish failed" }
+
+Get-ChildItem -Path $publishDir -Filter "AlMuhasib.Updater.*" | Remove-Item -Force
+$updaterExeSrc = Join-Path $updaterOut "AlMuhasib.Updater.exe"
+if (-not (Test-Path $updaterExeSrc)) { throw "Self-contained AlMuhasib.Updater.exe missing" }
+Copy-Item $updaterExeSrc (Join-Path $publishDir "AlMuhasib.Updater.exe") -Force
+$updaterInfo = Get-Item (Join-Path $publishDir "AlMuhasib.Updater.exe")
+if ($updaterInfo.Length -lt 5MB) {
+    throw "AlMuhasib.Updater.exe looks framework-dependent ($([math]::Round($updaterInfo.Length/1KB)) KB)."
 }
+Write-Host "Updater OK: $([math]::Round($updaterInfo.Length/1MB,1)) MB" -ForegroundColor Green
 
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath -CompressionLevel Optimal

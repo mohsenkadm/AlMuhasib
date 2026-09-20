@@ -4,7 +4,7 @@ namespace AlMuhasib.Core;
 
 /// <summary>
 /// معادلة موحّدة لرصيد الزبون بين سطح المكتب والسحابة والتطبيق.
-/// الرصيد المستحق = متبقي الفواتير الآجلة + متبقي الأقساط غير المسددة − سندات القبض العامة − سندات دين غير المطبّقة.
+/// الرصيد المستحق = متبقي الفواتير الآجلة + متبقي الأقساط غير المسددة − سندات القبض غير المطبّقة − سندات دين غير المطبّقة.
 /// </summary>
 public static class CustomerBalanceHelper
 {
@@ -65,7 +65,7 @@ public static class CustomerBalanceHelper
            - Math.Max(0, receiptAdvances);
 
     /// <summary>
-    /// يبني بنود كشف الحساب. سندات قبض الدين المطبّقة تظهر عبر PaidAmount على الفاتورة لتجنب الازدواج.
+    /// يبني بنود كشف الحساب. سندات القبض/الدين المطبّقة تظهر عبر PaidAmount على الفاتورة لتجنب الازدواج.
     /// </summary>
     public static (List<CustomerBalanceLedgerRow> Rows, decimal Balance) BuildCustomerStatementLedger(
         IEnumerable<CustomerBalanceInvoiceRow> invoices,
@@ -106,7 +106,7 @@ public static class CustomerBalanceHelper
         }
 
         foreach (var v in voucherList
-                     .Where(v => v.VoucherType == VoucherType.Receipt)
+                     .Where(v => v.VoucherType == VoucherType.Receipt && !IsDebtReceiptApplied(v.Notes))
                      .OrderBy(v => v.Date)
                      .ThenBy(v => v.Id))
         {
@@ -164,7 +164,7 @@ public static class CustomerBalanceHelper
             .Sum(v => v.Amount);
 
         var receiptAdvances = voucherList
-            .Where(v => v.VoucherType == VoucherType.Receipt)
+            .Where(v => v.VoucherType == VoucherType.Receipt && !IsDebtReceiptApplied(v.Notes))
             .Sum(v => v.Amount);
 
         var balance = ComputeOutstandingBalance(

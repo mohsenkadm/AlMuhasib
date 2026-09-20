@@ -129,6 +129,7 @@ public sealed class CreateVoucherRequest
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public Guid? CustomerSyncId { get; set; }
+    public Guid? SupplierSyncId { get; set; }
     public Guid? InvestorSyncId { get; set; }
     public Guid CashBoxSyncId { get; set; }
     public Guid? BankAccountSyncId { get; set; }

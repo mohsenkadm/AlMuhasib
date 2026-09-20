@@ -54,6 +54,11 @@ public static class InvoiceNumberHelper
             return false;
 
         var suffix = invoiceNumber[numberPrefix.Length..];
+        // Soft-deleted numbers are renamed to "{original}-D{id}" — strip that suffix for sequencing.
+        var dIdx = suffix.LastIndexOf("-D", StringComparison.Ordinal);
+        if (dIdx > 0 && int.TryParse(suffix[(dIdx + 2)..], out _))
+            suffix = suffix[..dIdx];
+
         return int.TryParse(suffix, out sequence) && sequence > 0;
     }
 }

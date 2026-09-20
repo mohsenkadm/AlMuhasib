@@ -1552,6 +1552,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             RemainingAmount = remainingAmount,
             GrandTotal = GrandTotal,
             ShowLineDiscount = ShowProductDiscount,
+            PharmacyUsageReceipt = ShowPharmacyUsage,
+            ShowCarShowroomFields = ShowCarShowroomContractPrint,
             Items = _savedItems.Select((item, i) =>
             {
                 var usage = ShowPharmacyUsage
@@ -1567,6 +1569,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
                     : SelectedWarehouse?.Name;
 
+                var product = item.ProductId is int pid
+                    ? Products.FirstOrDefault(p => p.Id == pid)
+                    : null;
+
                 return new InvoicePrintItem
                 {
                     Number = i + 1,
@@ -1577,7 +1583,16 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     TotalPrice = item.TotalPrice,
                     DiscountPercent = item.DiscountPercent,
                     DiscountAmount = item.DiscountAmount,
-                    WarehouseName = warehouseName
+                    WarehouseName = warehouseName,
+                    VehicleType = product?.VehicleType,
+                    ChassisNumber = product?.ChassisNumber,
+                    VehicleColor = product?.VehicleColor,
+                    PassengerCount = product?.PassengerCount,
+                    PlateNumber = product?.PlateNumber,
+                    PlateTypeDisplay = product is null
+                        || product.PlateType == AlMuhasib.Core.Enums.VehiclePlateType.None
+                        ? null
+                        : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(product.PlateType)
                 };
             }).ToList()
         };

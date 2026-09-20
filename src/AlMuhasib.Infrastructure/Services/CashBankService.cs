@@ -318,6 +318,8 @@ public class CashBankService : ICashBankService
                         await ApplyAmountToInstallmentAsync(context, voucher, username, adjustCash: false);
                     else if (voucher.InvoiceId.HasValue)
                         await ApplyAmountToCreditInvoiceAsync(context, voucher, username);
+                    else if (voucher.CustomerId.HasValue)
+                        await ApplyDebtReceiptToCreditInvoicesAsync(context, voucher, username);
                     break;
 
                 case VoucherType.DebtReceipt:
@@ -554,6 +556,7 @@ public class CashBankService : ICashBankService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Vouchers
             .Include(v => v.Customer)
+            .Include(v => v.Supplier)
             .Include(v => v.Investor)
             .Include(v => v.CashBox)
             .Include(v => v.BankAccount)
@@ -567,6 +570,7 @@ public class CashBankService : ICashBankService
             query = query.Where(v =>
                 v.VoucherNumber.Contains(searchTerm) ||
                 (v.Customer != null && v.Customer.Name.Contains(searchTerm)) ||
+                (v.Supplier != null && v.Supplier.Name.Contains(searchTerm)) ||
                 (v.Investor != null && v.Investor.Name.Contains(searchTerm)) ||
                 (v.Notes != null && v.Notes.Contains(searchTerm)));
 
@@ -585,7 +589,7 @@ public class CashBankService : ICashBankService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Vouchers
-            .Include(v => v.Customer).Include(v => v.Investor)
+            .Include(v => v.Customer).Include(v => v.Supplier).Include(v => v.Investor)
             .Where(v => v.CashBoxId == cashBoxId)
             .OrderByDescending(v => v.Date).ThenByDescending(v => v.Id)
             .ToListAsync();
@@ -605,7 +609,7 @@ public class CashBankService : ICashBankService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Vouchers
-            .Include(v => v.Customer).Include(v => v.Investor)
+            .Include(v => v.Customer).Include(v => v.Supplier).Include(v => v.Investor)
             .Where(v => v.BankAccountId == bankAccountId)
             .OrderByDescending(v => v.Date).ThenByDescending(v => v.Id)
             .ToListAsync();

@@ -975,11 +975,16 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             GrandTotal = GrandTotal,
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
+            ShowCarShowroomFields = _featureFlags?.CarShowroom == true,
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
                     ? Warehouses.FirstOrDefault(w => w.Id == wid)?.Name
                     : SelectedWarehouse?.Name;
+                var product = item.ProductId is int pid
+                    ? Products.FirstOrDefault(p => p.Id == pid)
+                    : null;
+                var row = Items.FirstOrDefault(r => r.ProductId == item.ProductId);
                 return new InvoicePrintItem
                 {
                     Number = i + 1,
@@ -989,11 +994,32 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
                     TotalPrice = item.TotalPrice,
-                    WarehouseName = warehouseName
+                    WarehouseName = warehouseName,
+                    VehicleType = product?.VehicleType ?? NullIfWhiteSpace(row?.VehicleType),
+                    ChassisNumber = product?.ChassisNumber ?? NullIfWhiteSpace(row?.ChassisNumber),
+                    VehicleColor = product?.VehicleColor ?? NullIfWhiteSpace(row?.VehicleColor),
+                    PassengerCount = product?.PassengerCount
+                        ?? (int.TryParse(row?.PassengerCountText?.Trim(), out var passengers) && passengers > 0
+                            ? passengers
+                            : null),
+                    PlateNumber = product?.PlateNumber ?? NullIfWhiteSpace(row?.PlateNumber),
+                    PlateTypeDisplay = FormatPlateTypeDisplay(
+                        product?.PlateType
+                        ?? (row is null
+                            ? AlMuhasib.Core.Enums.VehiclePlateType.None
+                            : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(row.PlateTypeText)))
                 };
             }).ToList()
         };
     }
+
+    private static string? NullIfWhiteSpace(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? FormatPlateTypeDisplay(AlMuhasib.Core.Enums.VehiclePlateType type) =>
+        type is AlMuhasib.Core.Enums.VehiclePlateType.None
+            ? null
+            : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(type);
 
     // ── New invoice (reset) ────────────────────────────────
     [RelayCommand]

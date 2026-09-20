@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.26",
-  "releaseDate": "2026-09-19",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.26/AlMuhasib-1.14.26.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.26/Qayd-Setup-1.14.26.exe",
-  "sha256": "4A75B9E8219EB538379D7BD0D580CBBCCDDEB5512CBBFB263BC8E9514DDE8425",
-  "sizeBytes": 150067039,
-  "releaseNotes": "تحسين مسودات وبحث فاتورة الشراء — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.27",
+  "releaseDate": "2026-09-20",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.27/AlMuhasib-1.14.27.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.27/Qayd-Setup-1.14.27.exe",
+  "sha256": "2855D6987AC424BF3A8BB679EF74CD1296853C382527B0BB936420742A5C67EB",
+  "sizeBytes": 182078555,
+  "releaseNotes": "إصلاح المحدث الذاتي الاكتفاء وسندات الصرف للموردين — تحديث اختياري آمن مع ترحيل قاعدة بيانات إضافي",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

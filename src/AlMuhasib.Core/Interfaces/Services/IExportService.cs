@@ -86,6 +86,9 @@ public class InvoicePrintModel
     /// <summary>طباعة إيصال صيدلية يتضمن طريقة الاستخدام تحت كل صنف.</summary>
     public bool PharmacyUsageReceipt { get; set; }
 
+    /// <summary>إظهار حقول معرض السيارات تحت اسم الصنف في جدول الطباعة.</summary>
+    public bool ShowCarShowroomFields { get; set; }
+
     /// <summary>When true, A4/thermal printers render gold-specific columns and totals.</summary>
     public bool IsGoldInvoice { get; set; }
     public decimal FxRate { get; set; }
@@ -118,6 +121,13 @@ public class InvoicePrintItem
     public decimal TotalPrice { get; set; }
     /// <summary>طريقة استخدام الدواء — تُطبع في إيصال الصيدلية.</summary>
     public string? UsageInstructions { get; set; }
+
+    public string? VehicleType { get; set; }
+    public string? ChassisNumber { get; set; }
+    public string? VehicleColor { get; set; }
+    public int? PassengerCount { get; set; }
+    public string? PlateNumber { get; set; }
+    public string? PlateTypeDisplay { get; set; }
 
     public decimal DiscountPercent { get; set; }
     public decimal DiscountAmount { get; set; }

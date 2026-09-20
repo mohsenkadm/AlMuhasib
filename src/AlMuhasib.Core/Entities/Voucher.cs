@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.Core.Entities;
@@ -10,6 +11,7 @@ public class Voucher : BaseEntity
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public int? CustomerId { get; set; }
+    public int? SupplierId { get; set; }
     public int? InvestorId { get; set; }
     public int CashBoxId { get; set; }
     public int? BankAccountId { get; set; }
@@ -30,9 +32,14 @@ public class Voucher : BaseEntity
 
     // Navigation
     public Customer? Customer { get; set; }
+    public Supplier? Supplier { get; set; }
     public Investor? Investor { get; set; }
     public CashBox CashBox { get; set; } = null!;
     public BankAccount? BankAccount { get; set; }
     public Invoice? Invoice { get; set; }
     public Installment? Installment { get; set; }
+
+    [NotMapped]
+    public string PartyDisplayName =>
+        Customer?.Name ?? Supplier?.Name ?? Investor?.Name ?? string.Empty;
 }

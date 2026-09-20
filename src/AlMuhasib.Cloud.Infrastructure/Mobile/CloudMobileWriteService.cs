@@ -503,6 +503,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Amount = request.Amount,
             BankFees = request.BankFees,
             CustomerSyncId = request.CustomerSyncId,
+            SupplierSyncId = request.SupplierSyncId,
             InvestorSyncId = request.InvestorSyncId,
             CashBoxSyncId = request.CashBoxSyncId,
             BankAccountSyncId = request.BankAccountSyncId,
@@ -891,6 +892,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         {
             case VoucherType.Receipt:
                 cashBox.Balance += voucher.Amount;
+                if (voucher.CustomerId.HasValue)
+                    await ApplyDebtReceiptToCreditInvoicesAsync(tenantId, voucher, username, ct);
                 break;
             case VoucherType.DebtReceipt:
                 cashBox.Balance += voucher.Amount;

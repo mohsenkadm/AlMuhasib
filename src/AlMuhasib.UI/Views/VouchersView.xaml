@@ -322,12 +322,10 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date" />
                         <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBox.Name}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CashBox.Name" />
-                        <DataGridTextColumn Header="العميل" Binding="{Binding Customer.Name}" Width="120"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Customer.Name" />
+                        <DataGridTextColumn Header="الطرف" Binding="{Binding PartyDisplayName}" Width="140"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyDisplayName" />
                         <DataGridTextColumn Header="فاتورة مرتبطة" Binding="{Binding Invoice.InvoiceNumber}" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber" />
-                        <DataGridTextColumn Header="المستثمر" Binding="{Binding Investor.Name}" Width="120"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Investor.Name" />
                         <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes" />
                         <DataGridTemplateColumn Header="إرسال" Width="120"

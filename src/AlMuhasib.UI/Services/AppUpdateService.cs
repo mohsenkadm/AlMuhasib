@@ -178,12 +178,11 @@ public sealed class AppUpdateService : IAppUpdateService
             throw new FileNotFoundException("ملفات برنامج التحديث غير مكتملة في مجلد التثبيت.", updaterExe);
 
         var launcherExe = Path.Combine(tempDir, "AlMuhasib.Updater.exe");
-        var launcherDll = Path.Combine(tempDir, "AlMuhasib.Updater.dll");
         if (!File.Exists(launcherExe))
             throw new FileNotFoundException("لم يتم العثور على AlMuhasib.Updater.exe.", launcherExe);
-        if (!File.Exists(launcherDll))
-            throw new FileNotFoundException("ملف AlMuhasib.Updater.dll مفقود — أعد تثبيت البرنامج أو حدّث يدوياً.", launcherDll);
 
+        // Single-file self-contained builds ship only the .exe; older framework-dependent
+        // installs may still include companion .dll / .runtimeconfig.json (copied above).
         return launcherExe;
     }
 

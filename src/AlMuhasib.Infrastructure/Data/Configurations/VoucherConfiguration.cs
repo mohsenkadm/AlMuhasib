@@ -27,6 +27,11 @@ public class VoucherConfiguration : IEntityTypeConfiguration<Voucher>
             .HasForeignKey(v => v.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(v => v.Supplier)
+            .WithMany(s => s.Vouchers)
+            .HasForeignKey(v => v.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(v => v.Investor)
             .WithMany(i => i.Vouchers)
             .HasForeignKey(v => v.InvestorId)
