@@ -1648,4 +1648,439 @@ public partial class ReportService
             HourRows = hourRows
         };
     }
+
+    public async Task<ExecutiveBusinessSummaryResult> GetExecutiveBusinessSummaryAsync(DateTime? from, DateTime? to)
+    {
+        var asOf = to?.Date ?? DateTime.Today;
+        var endExclusive = EndOfDay(to);
+        var asOfEndOfDay = asOf.Date.AddDays(1).AddTicks(-1);
+
+        var bsTask = GetStatementOfFinancialPositionReportAsync(asOf);
+        var profitTask = GetProfitReportAsync(from, to);
+        var stockTask = GetWarehouseProductProfitReportAsync(null, includeZero: false);
+        var cashTask = GetCashBalancesSummaryReportAsync();
+        await Task.WhenAll(bsTask, profitTask, stockTask, cashTask);
+
+        var bs = await bsTask;
+        var profit = await profitTask;
+        var stock = await stockTask;
+        var cash = await cashTask;
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var salesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
+        if (from.HasValue) salesQ = salesQ.Where(i => i.Date >= from.Value);
+        if (endExclusive.HasValue) salesQ = salesQ.Where(i => i.Date < endExclusive.Value);
+
+        var salesByMethod = await salesQ
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+            .ToListAsync();
+
+        var cashSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
+        var creditSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
+        var installmentSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Installment)?.Amount ?? 0;
+        var salesCount = salesByMethod.Sum(x => x.Count);
+        var totalSales = salesByMethod.Sum(x => x.Amount);
+
+        var purchaseQ = context.Invoices.AsNoTracking().Where(i => i.InvoiceType == InvoiceType.Purchase);
+        if (from.HasValue) purchaseQ = purchaseQ.Where(i => i.Date >= from.Value);
+        if (endExclusive.HasValue) purchaseQ = purchaseQ.Where(i => i.Date < endExclusive.Value);
+
+        var purchasesByMethod = await purchaseQ
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+            .ToListAsync();
+
+        var cashPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
+        var creditPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
+        var purchaseCount = purchasesByMethod.Sum(x => x.Count);
+        var totalPurchases = purchasesByMethod.Sum(x => x.Amount);
+
+        var activeCustomers = await salesQ
+            .Where(i => i.CustomerId != null)
+            .Select(i => i.CustomerId!.Value)
+            .Distinct()
+            .CountAsync();
+
+        var activeSuppliers = await purchaseQ
+            .Where(i => i.SupplierId != null)
+            .Select(i => i.SupplierId!.Value)
+            .Distinct()
+            .CountAsync();
+
+        var receiptQ = context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
+        if (from.HasValue) receiptQ = receiptQ.Where(v => v.Date >= from.Value);
+        if (endExclusive.HasValue) receiptQ = receiptQ.Where(v => v.Date < endExclusive.Value);
+        var receiptAmount = await receiptQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var paymentQ = context.Vouchers.AsNoTracking().Where(v => v.VoucherType == VoucherType.Payment);
+        if (from.HasValue) paymentQ = paymentQ.Where(v => v.Date >= from.Value);
+        if (endExclusive.HasValue) paymentQ = paymentQ.Where(v => v.Date < endExclusive.Value);
+        var paymentAmount = await paymentQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var instPaidQ = context.Installments.AsNoTracking().Where(i => i.PaidAmount > 0);
+        if (from.HasValue) instPaidQ = instPaidQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
+        if (endExclusive.HasValue) instPaidQ = instPaidQ.Where(i => (i.PaymentDate ?? i.DueDate) < endExclusive.Value);
+        var collectedInstallments = await instPaidQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0;
+
+        var overdueQ = context.Installments.AsNoTracking()
+            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate < asOf && i.RemainingAmount > 0);
+        var overdueCount = await overdueQ.CountAsync();
+        var overdueAmount = await overdueQ.SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var transferQ = context.Transfers.AsNoTracking().AsQueryable();
+        if (from.HasValue) transferQ = transferQ.Where(t => t.Date >= from.Value);
+        if (endExclusive.HasValue) transferQ = transferQ.Where(t => t.Date < endExclusive.Value);
+        var transfersCount = await transferQ.CountAsync();
+        var transfersAmount = await transferQ.SumAsync(t => (decimal?)t.Amount) ?? 0;
+
+        // رصيد الآجل للعملاء = متبقي فواتير الآجل − سندات قبض/دين غير مطبّقة (نفس لوحة التحكم)
+        var customerCreditRemaining = await context.Invoices.AsNoTracking()
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var unappliedDebt = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.DebtReceipt
+                        && v.Date <= asOfEndOfDay
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var unappliedReceipts = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Receipt
+                        && v.Date <= asOfEndOfDay
+                        && !v.InvoiceId.HasValue
+                        && !v.InstallmentId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var customerReceivables = Math.Max(0, customerCreditRemaining - unappliedDebt - unappliedReceipts);
+
+        // رصيد الآجل للموردين = متبقي مشتريات الآجل − سندات صرف غير مطبّقة
+        var supplierCreditRemaining = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var unappliedSupplierPayments = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Payment
+                        && v.SupplierId != null
+                        && v.Date <= asOfEndOfDay
+                        && !v.InvoiceId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var supplierPayables = Math.Max(0, supplierCreditRemaining - unappliedSupplierPayments);
+
+        var installmentReceivables = await context.Installments.AsNoTracking()
+            .Where(i => i.RemainingAmount > 0)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var customerBalanceMap = new Dictionary<int, decimal>();
+        var creditByCustomer = await context.Invoices.AsNoTracking()
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay
+                        && i.CustomerId != null
+                        && i.RemainingAmount > 0)
+            .GroupBy(i => i.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(x => x.RemainingAmount) })
+            .ToListAsync();
+
+        var unappliedDebtByCustomer = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.DebtReceipt
+                        && v.CustomerId != null
+                        && v.Date <= asOfEndOfDay
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .GroupBy(v => v.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        var unappliedReceiptByCustomer = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Receipt
+                        && v.CustomerId != null
+                        && v.Date <= asOfEndOfDay
+                        && !v.InvoiceId.HasValue
+                        && !v.InstallmentId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .GroupBy(v => v.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        var installmentByCustomer = await (
+            from inst in context.Installments.AsNoTracking()
+            join plan in context.InstallmentPlans.AsNoTracking() on inst.InstallmentPlanId equals plan.Id
+            where inst.RemainingAmount > 0
+            group inst.RemainingAmount by plan.CustomerId into g
+            select new { CustomerId = g.Key, Amount = g.Sum() }
+        ).ToListAsync();
+
+        foreach (var row in creditByCustomer)
+            customerBalanceMap[row.CustomerId] = row.Amount;
+        foreach (var row in installmentByCustomer)
+            customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) + row.Amount;
+        foreach (var row in unappliedDebtByCustomer)
+            customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) - row.Amount;
+        foreach (var row in unappliedReceiptByCustomer)
+            customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) - row.Amount;
+
+        foreach (var key in customerBalanceMap.Keys.ToList())
+            customerBalanceMap[key] = Math.Max(0, customerBalanceMap[key]);
+
+        var customersWithBalance = customerBalanceMap.Count(kv => kv.Value > 0);
+        var highestCustomerBalance = customerBalanceMap.Count > 0 ? customerBalanceMap.Values.Max() : 0;
+
+        var supplierBalanceMap = new Dictionary<int, decimal>();
+        var creditBySupplier = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay
+                        && i.SupplierId != null
+                        && i.RemainingAmount > 0)
+            .GroupBy(i => i.SupplierId!.Value)
+            .Select(g => new { SupplierId = g.Key, Amount = g.Sum(x => x.RemainingAmount) })
+            .ToListAsync();
+
+        var unappliedPayBySupplier = await context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Payment
+                        && v.SupplierId != null
+                        && v.Date <= asOfEndOfDay
+                        && !v.InvoiceId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .GroupBy(v => v.SupplierId!.Value)
+            .Select(g => new { SupplierId = g.Key, Amount = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        foreach (var row in creditBySupplier)
+            supplierBalanceMap[row.SupplierId] = row.Amount;
+        foreach (var row in unappliedPayBySupplier)
+            supplierBalanceMap[row.SupplierId] = supplierBalanceMap.GetValueOrDefault(row.SupplierId) - row.Amount;
+        foreach (var key in supplierBalanceMap.Keys.ToList())
+            supplierBalanceMap[key] = Math.Max(0, supplierBalanceMap[key]);
+
+        var suppliersWithBalance = supplierBalanceMap.Count(kv => kv.Value > 0);
+        var highestSupplierBalance = supplierBalanceMap.Count > 0 ? supplierBalanceMap.Values.Max() : 0;
+
+        var belowMinimum = await context.WarehouseStocks.AsNoTracking()
+            .CountAsync(ws => ws.MinQuantity > 0 && ws.Quantity < ws.MinQuantity);
+
+        var operating = profit.GrossProfit - profit.TotalExpenses - profit.TotalBankFees;
+        var netMargin = profit.TotalSales > 0
+            ? Math.Round(profit.NetProfit / profit.TotalSales * 100, 1)
+            : 0;
+
+        var netWorkingCapital = cash.CashBoxesTotal + cash.BanksTotal
+                                + customerReceivables + installmentReceivables
+                                - supplierPayables;
+
+        const int detailLimit = 40;
+
+        var activeCustomersDetail = await salesQ
+            .Where(i => i.CustomerId != null)
+            .GroupBy(i => new { i.CustomerId, Name = i.Customer != null ? i.Customer.Name : "—" })
+            .Select(g => new NameAmountPoint { Name = g.Key.Name, Amount = g.Sum(x => x.NetAmount) })
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .ToListAsync();
+
+        var activeSuppliersDetail = await purchaseQ
+            .Where(i => i.SupplierId != null)
+            .GroupBy(i => new { i.SupplierId, Name = i.Supplier != null ? i.Supplier.Name : "—" })
+            .Select(g => new NameAmountPoint { Name = g.Key.Name, Amount = g.Sum(x => x.NetAmount) })
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .ToListAsync();
+
+        var customerIdsWithBalance = customerBalanceMap.Where(kv => kv.Value > 0)
+            .OrderByDescending(kv => kv.Value).Take(detailLimit).Select(kv => kv.Key).ToList();
+        var customerNames = customerIdsWithBalance.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.Customers.AsNoTracking()
+                .Where(c => customerIdsWithBalance.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => c.Name);
+        var customersWithBalanceDetail = customerIdsWithBalance
+            .Select(id => new NameAmountPoint
+            {
+                Name = customerNames.GetValueOrDefault(id, $"عميل #{id}"),
+                Amount = customerBalanceMap[id]
+            }).ToList();
+
+        var supplierIdsWithBalance = supplierBalanceMap.Where(kv => kv.Value > 0)
+            .OrderByDescending(kv => kv.Value).Take(detailLimit).Select(kv => kv.Key).ToList();
+        var supplierNames = supplierIdsWithBalance.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.Suppliers.AsNoTracking()
+                .Where(s => supplierIdsWithBalance.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id, s => s.Name);
+        var suppliersWithBalanceDetail = supplierIdsWithBalance
+            .Select(id => new NameAmountPoint
+            {
+                Name = supplierNames.GetValueOrDefault(id, $"مورد #{id}"),
+                Amount = supplierBalanceMap[id]
+            }).ToList();
+
+        var creditCustomerIds = creditByCustomer.OrderByDescending(x => x.Amount).Take(detailLimit).Select(x => x.CustomerId).ToList();
+        var creditNames = creditCustomerIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.Customers.AsNoTracking()
+                .Where(c => creditCustomerIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => c.Name);
+        var customerCreditDetail = creditByCustomer
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .Select(x => new NameAmountPoint
+            {
+                Name = creditNames.GetValueOrDefault(x.CustomerId, $"عميل #{x.CustomerId}"),
+                Amount = x.Amount
+            }).ToList();
+
+        var creditSupplierIds = creditBySupplier.OrderByDescending(x => x.Amount).Take(detailLimit).Select(x => x.SupplierId).ToList();
+        var creditSupplierNames = creditSupplierIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.Suppliers.AsNoTracking()
+                .Where(s => creditSupplierIds.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id, s => s.Name);
+        var supplierCreditDetail = creditBySupplier
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .Select(x => new NameAmountPoint
+            {
+                Name = creditSupplierNames.GetValueOrDefault(x.SupplierId, $"مورد #{x.SupplierId}"),
+                Amount = x.Amount
+            }).ToList();
+
+        var overdueInstallmentsDetail = await (
+            from inst in context.Installments.AsNoTracking()
+            join plan in context.InstallmentPlans.AsNoTracking() on inst.InstallmentPlanId equals plan.Id
+            join cust in context.Customers.AsNoTracking() on plan.CustomerId equals cust.Id
+            where inst.Status != InstallmentStatus.Paid && inst.DueDate < asOf && inst.RemainingAmount > 0
+            group inst.RemainingAmount by cust.Name into g
+            select new NameAmountPoint { Name = g.Key, Amount = g.Sum() }
+        ).OrderByDescending(x => x.Amount).Take(detailLimit).ToListAsync();
+
+        var belowMinimumDetail = await context.WarehouseStocks.AsNoTracking()
+            .Where(ws => ws.MinQuantity > 0 && ws.Quantity < ws.MinQuantity)
+            .OrderBy(ws => ws.Quantity - ws.MinQuantity)
+            .Take(detailLimit)
+            .Select(ws => new NameAmountPoint
+            {
+                Name = (ws.Product != null ? ws.Product.Name : "—") +
+                       (ws.Warehouse != null ? " · " + ws.Warehouse.Name : ""),
+                Amount = ws.Quantity
+            })
+            .ToListAsync();
+
+        var cashBoxesDetail = cash.Rows
+            .Where(r => r.AccountType == "قاصة")
+            .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .ToList();
+        var banksDetail = cash.Rows
+            .Where(r => r.AccountType == "مصرف")
+            .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
+            .OrderByDescending(x => x.Amount)
+            .Take(detailLimit)
+            .ToList();
+
+        var topStockByValue = stock.Rows
+            .OrderByDescending(r => Math.Round(r.Quantity * r.AverageCost, 0))
+            .Take(detailLimit)
+            .Select(r => new NameAmountPoint
+            {
+                Name = $"{r.ProductName} · {r.WarehouseName}",
+                Amount = Math.Round(r.Quantity * r.AverageCost, 0)
+            })
+            .ToList();
+
+        return new ExecutiveBusinessSummaryResult
+        {
+            DateFrom = from,
+            DateTo = to ?? asOf,
+
+            CustomerReceivables = customerReceivables,
+            CustomerCreditInvoiceRemaining = customerCreditRemaining,
+            CustomerUnappliedDebt = unappliedDebt,
+            CustomerUnappliedReceipts = unappliedReceipts,
+            InstallmentReceivables = installmentReceivables,
+            SupplierPayables = supplierPayables,
+            SupplierCreditInvoiceRemaining = supplierCreditRemaining,
+            SupplierUnappliedPayments = unappliedSupplierPayments,
+            InventoryCostValue = stock.TotalCostValue > 0 ? stock.TotalCostValue : bs.Inventory,
+            InventoryQuantity = stock.TotalQuantity,
+            CashBoxesBalance = cash.CashBoxesTotal,
+            BankBalance = cash.BanksTotal,
+            NetWorkingCapital = netWorkingCapital,
+            TotalAssets = bs.TotalAssets,
+            TotalLiabilities = bs.TotalLiabilities,
+            TotalEquity = bs.TotalEquity,
+            AccumulatedProfits = bs.AccumulatedProfits,
+
+            TotalSales = totalSales > 0 ? totalSales : profit.TotalSales,
+            CashSales = cashSales,
+            CreditSales = creditSales,
+            InstallmentSales = installmentSales,
+            SalesInvoiceCount = salesCount,
+            AverageSaleInvoice = salesCount > 0 ? Math.Round((totalSales > 0 ? totalSales : profit.TotalSales) / salesCount, 0) : 0,
+
+            TotalPurchases = totalPurchases,
+            CashPurchases = cashPurchases,
+            CreditPurchases = creditPurchases,
+            PurchaseInvoiceCount = purchaseCount,
+            CostOfGoodsSold = profit.TotalPurchases,
+
+            GrossProfit = profit.GrossProfit,
+            GrossMarginPercent = profit.ProfitMargin,
+            TotalExpenses = profit.TotalExpenses,
+            TotalBankFees = profit.TotalBankFees,
+            OperatingProfit = operating,
+            DistributedProfits = profit.DistributedProfits,
+            ProfitOpeningBalance = profit.ProfitOpeningBalance,
+            NetProfit = profit.NetProfit,
+            NetMarginPercent = netMargin,
+
+            ActiveCustomersCount = activeCustomers,
+            CustomerCollections = receiptAmount + collectedInstallments,
+            CustomersWithBalanceCount = customersWithBalance,
+            HighestCustomerBalance = highestCustomerBalance,
+
+            ActiveSuppliersCount = activeSuppliers,
+            SupplierPayments = paymentAmount + cashPurchases,
+            SuppliersWithBalanceCount = suppliersWithBalance,
+            HighestSupplierBalance = highestSupplierBalance,
+
+            StockedProductCount = stock.ProductCount,
+            InventorySaleValue = stock.TotalSaleValue,
+            InventoryPotentialProfit = stock.TotalPotentialProfit,
+            BelowMinimumStockCount = belowMinimum,
+
+            OverdueInstallmentsCount = overdueCount,
+            OverdueInstallmentsAmount = overdueAmount,
+            CollectedInstallments = collectedInstallments,
+            ReceiptVouchersAmount = receiptAmount,
+            PaymentVouchersAmount = paymentAmount,
+            TransfersAmount = transfersAmount,
+            TransfersCount = transfersCount,
+
+            ActiveCustomersDetail = activeCustomersDetail,
+            ActiveSuppliersDetail = activeSuppliersDetail,
+            CustomersWithBalanceDetail = customersWithBalanceDetail,
+            SuppliersWithBalanceDetail = suppliersWithBalanceDetail,
+            CustomerCreditDetail = customerCreditDetail,
+            SupplierCreditDetail = supplierCreditDetail,
+            OverdueInstallmentsDetail = overdueInstallmentsDetail,
+            BelowMinimumStockDetail = belowMinimumDetail,
+            CashBoxesDetail = cashBoxesDetail,
+            BanksDetail = banksDetail,
+            TopStockByValueDetail = topStockByValue
+        };
+    }
 }

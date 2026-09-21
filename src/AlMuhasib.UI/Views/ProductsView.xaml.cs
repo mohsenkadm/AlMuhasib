@@ -24,6 +24,7 @@ public partial class ProductsView : UserControl
             ColUsageInstructions,
             ColVehicleType,
             ColChassisNumber,
+            ColCarModel,
             ColVehicleColor,
             ColPassengerCount,
             ColPlateNumber,

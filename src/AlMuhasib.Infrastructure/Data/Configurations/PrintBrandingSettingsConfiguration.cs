@@ -18,6 +18,8 @@ public class PrintBrandingSettingsConfiguration : IEntityTypeConfiguration<Print
         builder.Property(x => x.PhoneSecondary).HasMaxLength(50);
         builder.Property(x => x.Email).HasMaxLength(120);
         builder.Property(x => x.Details).HasMaxLength(1000);
+        builder.Property(x => x.CompanyIdNumber).HasMaxLength(100);
+        builder.Property(x => x.CompanyIdIssuer).HasMaxLength(200);
         builder.Property(x => x.FooterText).HasMaxLength(1000);
         builder.Property(x => x.HeaderImageContentType).HasMaxLength(50);
         builder.Property(x => x.FooterImageContentType).HasMaxLength(50);

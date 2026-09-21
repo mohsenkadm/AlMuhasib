@@ -169,7 +169,7 @@
                                 <TextBox Text="{Binding CarColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
                             </StackPanel>
                             <StackPanel Margin="4,0,4,12">
-                                <TextBlock Text="رقم الشاصي" Style="{StaticResource FormFieldLabel}"/>
+                                <TextBlock Text="صنف السيارة" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"/>
                             </StackPanel>
                         </UniformGrid>

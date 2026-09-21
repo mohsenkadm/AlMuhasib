@@ -1729,6 +1729,9 @@
                         <DataTemplate DataType="{x:Type vm:FinancialPositionSummaryReportViewModel}">
                             <views:FinancialPositionSummaryReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExecutiveSummaryReportViewModel}">
+                            <views:ExecutiveSummaryReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProfitAndLossReportViewModel}">
                             <views:ProfitAndLossReportView />
                         </DataTemplate>

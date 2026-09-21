@@ -109,6 +109,15 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _customerCreditUnappliedReceipts;
 
     [ObservableProperty]
+    private decimal _supplierCreditBalance;
+
+    [ObservableProperty]
+    private decimal _supplierCreditInvoiceRemaining;
+
+    [ObservableProperty]
+    private decimal _supplierCreditUnappliedPayments;
+
+    [ObservableProperty]
     private decimal _totalCashBalance;
 
     // ── Charts ─────────────────────────────────────────────
@@ -253,9 +262,9 @@ public partial class DashboardViewModel : ViewModelBase
                 new AmountBreakdownLine
                 {
                     Operator = "+",
-                    Label = "متبقي فواتير الآجل",
+                    Label = "متبقي فواتير آجل العملاء",
                     Amount = CustomerCreditInvoiceRemaining,
-                    Description = "مجموع RemainingAmount لفواتير الآجل غير المسددة"
+                    Description = "فواتير المبيعات والأقساط الآجلة غير المسددة"
                 },
                 new AmountBreakdownLine
                 {
@@ -279,7 +288,45 @@ public partial class DashboardViewModel : ViewModelBase
                     IsResult = true
                 }
             ],
-            Note = "سند القبض المرتبط بعميل يُطبَّق تلقائياً على فواتير الآجل الأقدم أولاً. الأقساط غير المسددة تظهر في بطاقة منفصلة."
+            Note = "يشمل فواتير المبيعات والأقساط فقط — فواتير مشتريات الموردين تظهر في بطاقة آجل الموردين."
+        });
+    }
+
+    [RelayCommand]
+    private void ShowSupplierCreditDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل رصيد الآجل للموردين",
+            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
+            Formula = "الرصيد = متبقي فواتير مشتريات الآجل − سندات صرف غير مطبّقة",
+            ResultLabel = "رصيد الآجل للموردين",
+            ResultAmount = SupplierCreditBalance,
+            Lines =
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "متبقي فواتير مشتريات الآجل",
+                    Amount = SupplierCreditInvoiceRemaining,
+                    Description = "مجموع RemainingAmount لفواتير الشراء الآجلة غير المسددة"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات صرف غير مطبّقة",
+                    Amount = SupplierCreditUnappliedPayments,
+                    Description = "سندات صرف لموردين لم تُطبَّق بعد على فواتير الشراء"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "رصيد الآجل للموردين",
+                    Amount = SupplierCreditBalance,
+                    IsResult = true
+                }
+            ],
+            Note = "سند الصرف المرتبط بمورد يُطبَّق تلقائياً على فواتير الشراء الآجلة الأقدم أولاً."
         });
     }
 
@@ -348,6 +395,15 @@ public partial class DashboardViewModel : ViewModelBase
     private async Task OpenCollectionDashboardAsync() =>
         await _mainWindow.OpenTabAsync(typeof(CollectionDashboardViewModel), "لوحة التحصيل", PackIconKind.CashMultiple);
 
+    [RelayCommand]
+    private async Task RefreshDashboardAsync()
+    {
+        if (IsBusy) return;
+        _initialized = false;
+        RefreshWelcomeHeader();
+        await InitializeAsync();
+    }
+
     public override async Task InitializeAsync()
     {
         if (_initialized) return;
@@ -387,6 +443,9 @@ public partial class DashboardViewModel : ViewModelBase
                 CustomerCreditInvoiceRemaining = data.CustomerCreditInvoiceRemaining;
                 CustomerCreditUnappliedDebt = data.CustomerCreditUnappliedDebt;
                 CustomerCreditUnappliedReceipts = data.CustomerCreditUnappliedReceipts;
+                SupplierCreditBalance = data.SupplierCreditBalance;
+                SupplierCreditInvoiceRemaining = data.SupplierCreditInvoiceRemaining;
+                SupplierCreditUnappliedPayments = data.SupplierCreditUnappliedPayments;
 
                 _cachedSalesPoints = data.SalesLast30Days;
                 _cachedExpenseShares = data.ExpenseDistribution;

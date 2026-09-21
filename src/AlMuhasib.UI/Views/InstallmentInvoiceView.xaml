@@ -965,6 +965,15 @@
                              Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
+                    <StackPanel Visibility="{Binding ShowCarShowroomIdFields, Converter={StaticResource BoolToVis}}">
+                        <TextBox materialDesign:HintAssist.Hint="رقم الهوية"
+                                 Text="{Binding QuickCustomerIdNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox materialDesign:HintAssist.Hint="جهة الإصدار"
+                                 Text="{Binding QuickCustomerIdIssuer, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    </StackPanel>
+
                     <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Margin="0,0,0,8"
                                Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
 

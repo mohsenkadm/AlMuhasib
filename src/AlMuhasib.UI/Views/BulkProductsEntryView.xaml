@@ -120,9 +120,12 @@
                     <DataGridTextColumn x:Name="ColVehicleType" Header="نوع السيارة"
                                         Binding="{Binding VehicleType, UpdateSourceTrigger=PropertyChanged}"
                                         Width="110" Visibility="Collapsed"/>
-                    <DataGridTextColumn x:Name="ColChassisNumber" Header="رقم الشاصي"
+                    <DataGridTextColumn x:Name="ColChassisNumber" Header="صنف السيارة"
                                         Binding="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}"
                                         Width="120" Visibility="Collapsed"/>
+                    <DataGridTextColumn x:Name="ColCarModel" Header="موديل السيارة"
+                                        Binding="{Binding CarModel, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="110" Visibility="Collapsed"/>
                     <DataGridTextColumn x:Name="ColVehicleColor" Header="اللون"
                                         Binding="{Binding VehicleColor, UpdateSourceTrigger=PropertyChanged}"
                                         Width="80" Visibility="Collapsed"/>

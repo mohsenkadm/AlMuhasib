@@ -124,6 +124,7 @@ public class InvoicePrintItem
 
     public string? VehicleType { get; set; }
     public string? ChassisNumber { get; set; }
+    public string? CarModel { get; set; }
     public string? VehicleColor { get; set; }
     public int? PassengerCount { get; set; }
     public string? PlateNumber { get; set; }

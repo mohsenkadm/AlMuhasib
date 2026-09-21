@@ -75,6 +75,13 @@
                             <TextBox Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="تفاصيل إضافية" Style="{StaticResource FilledTextBox}"
                                      AcceptsReturn="True" MinHeight="60" TextWrapping="Wrap"/>
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding ShowCarShowroomIdFields, Converter={StaticResource BoolVis}}">
+                                <TextBox Text="{Binding CompanyIdNumber, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="رقم الهوية (صاحب الشركة)" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding CompanyIdIssuer, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="جهة الإصدار" Style="{StaticResource FilledTextBox}"/>
+                            </StackPanel>
                             <CheckBox Content="إظهار النص في الهيدر" IsChecked="{Binding ShowHeaderText}" Margin="0,12,0,0"/>
                         </StackPanel>
                     </materialDesign:Card>

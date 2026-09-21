@@ -97,6 +97,9 @@ public partial class ProductsViewModel : ViewModelBase
     private string _editChassisNumber = string.Empty;
 
     [ObservableProperty]
+    private string _editCarModel = string.Empty;
+
+    [ObservableProperty]
     private string _editVehicleColor = string.Empty;
 
     [ObservableProperty]
@@ -504,6 +507,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditUsageInstructions = string.Empty;
         EditVehicleType = string.Empty;
         EditChassisNumber = string.Empty;
+        EditCarModel = string.Empty;
         EditVehicleColor = string.Empty;
         EditPassengerCountText = string.Empty;
         EditPlateNumber = string.Empty;
@@ -539,6 +543,7 @@ public partial class ProductsViewModel : ViewModelBase
         EditUsageInstructions = product.UsageInstructions ?? string.Empty;
         EditVehicleType = product.VehicleType ?? string.Empty;
         EditChassisNumber = product.ChassisNumber ?? string.Empty;
+        EditCarModel = product.CarModel ?? string.Empty;
         EditVehicleColor = product.VehicleColor ?? string.Empty;
         EditPassengerCountText = product.PassengerCount?.ToString() ?? string.Empty;
         EditPlateNumber = product.PlateNumber ?? string.Empty;
@@ -681,6 +686,7 @@ public partial class ProductsViewModel : ViewModelBase
 
         product.VehicleType = string.IsNullOrWhiteSpace(EditVehicleType) ? null : EditVehicleType.Trim();
         product.ChassisNumber = string.IsNullOrWhiteSpace(EditChassisNumber) ? null : EditChassisNumber.Trim();
+        product.CarModel = string.IsNullOrWhiteSpace(EditCarModel) ? null : EditCarModel.Trim();
         product.VehicleColor = string.IsNullOrWhiteSpace(EditVehicleColor) ? null : EditVehicleColor.Trim();
         product.PlateNumber = string.IsNullOrWhiteSpace(EditPlateNumber) ? null : EditPlateNumber.Trim();
         product.PlateType = EditPlateType;

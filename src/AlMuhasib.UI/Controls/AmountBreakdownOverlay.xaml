@@ -18,7 +18,7 @@
         <Border x:Name="Backdrop" Background="#99000000" MouseDown="Backdrop_MouseDown"/>
 
         <materialDesign:Card x:Name="DialogCard"
-                             MaxWidth="640" MinWidth="320"
+                             MaxWidth="720" MinWidth="320"
                              HorizontalAlignment="Center" VerticalAlignment="Center"
                              UniformCornerRadius="18" Padding="0"
                              materialDesign:ElevationAssist.Elevation="Dp16"
@@ -113,6 +113,38 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <StackPanel Margin="0,12,0,0"
+                                    Visibility="{Binding EntitiesTitle, Converter={StaticResource NullToCollapsed}}">
+                            <TextBlock Text="{Binding EntitiesTitle}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#455A64" Margin="0,0,0,10"/>
+                            <ItemsControl ItemsSource="{Binding Entities}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,6" CornerRadius="10" Padding="12,10"
+                                                Background="#F7FBFB" BorderBrush="#E0F2F1" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                                    <TextBlock Text="{Binding Name}" FontSize="13.5" FontWeight="SemiBold"
+                                                               Foreground="#263238" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Subtitle}" FontSize="11.5" Foreground="#78909C"
+                                                               Margin="0,2,0,0" TextWrapping="Wrap"
+                                                               Visibility="{Binding Subtitle, Converter={StaticResource NullToCollapsed}}"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                           FontSize="14" FontWeight="Bold" Foreground="#00695C"
+                                                           Text="{Binding Amount, Converter={StaticResource CurrencyFormat}}"
+                                                           Visibility="{Binding ShowAmount, Converter={StaticResource BoolVis}}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
 
                         <Border Background="#FFF8E1" CornerRadius="12" Padding="14,12" Margin="0,8,0,0"
                                 BorderBrush="#FFE082" BorderThickness="1"

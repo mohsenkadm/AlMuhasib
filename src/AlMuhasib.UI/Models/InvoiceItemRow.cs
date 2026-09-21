@@ -68,6 +68,9 @@ public partial class InvoiceItemRow : ObservableObject
     private string _chassisNumber = string.Empty;
 
     [ObservableProperty]
+    private string _carModel = string.Empty;
+
+    [ObservableProperty]
     private string _vehicleColor = string.Empty;
 
     [ObservableProperty]
@@ -353,6 +356,7 @@ public partial class InvoiceItemRow : ObservableObject
     {
         VehicleType = product.VehicleType ?? string.Empty;
         ChassisNumber = product.ChassisNumber ?? string.Empty;
+        CarModel = product.CarModel ?? string.Empty;
         VehicleColor = product.VehicleColor ?? string.Empty;
         PassengerCountText = product.PassengerCount?.ToString() ?? string.Empty;
         PlateNumber = product.PlateNumber ?? string.Empty;
@@ -363,6 +367,7 @@ public partial class InvoiceItemRow : ObservableObject
     {
         VehicleType = string.Empty;
         ChassisNumber = string.Empty;
+        CarModel = string.Empty;
         VehicleColor = string.Empty;
         PassengerCountText = string.Empty;
         PlateNumber = string.Empty;

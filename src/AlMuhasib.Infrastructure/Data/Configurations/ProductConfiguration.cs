@@ -44,6 +44,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.ChassisNumber)
             .HasMaxLength(100);
 
+        builder.Property(p => p.CarModel)
+            .HasMaxLength(100);
+
         builder.Property(p => p.VehicleColor)
             .HasMaxLength(50);
 

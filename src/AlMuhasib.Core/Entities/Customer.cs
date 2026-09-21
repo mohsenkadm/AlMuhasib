@@ -30,6 +30,12 @@ public class Customer : BaseEntity
     /// <summary>المندوب المسؤول عن العميل — عند تفعيل ميزة المندوبين</summary>
     public int? SalesRepresentativeId { get; set; }
 
+    /// <summary>رقم الهوية (معرض سيارات).</summary>
+    public string? IdNumber { get; set; }
+
+    /// <summary>جهة إصدار الهوية (معرض سيارات).</summary>
+    public string? IdIssuer { get; set; }
+
     // Navigation
     public SalesRepresentative? SalesRepresentative { get; set; }
     public ICollection<Invoice> Invoices { get; set; } = [];

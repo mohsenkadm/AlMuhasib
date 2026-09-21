@@ -522,6 +522,14 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("GuarantorPhone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("IdIssuer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("IdNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2111,6 +2119,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("CompanyIdIssuer")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyIdNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2221,6 +2239,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ChassisNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CarModel")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 

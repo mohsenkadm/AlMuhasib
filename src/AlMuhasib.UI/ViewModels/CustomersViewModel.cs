@@ -71,6 +71,12 @@ public partial class CustomersViewModel : ViewModelBase
     private string _editFileNumber = string.Empty;
 
     [ObservableProperty]
+    private string _editIdNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _editIdIssuer = string.Empty;
+
+    [ObservableProperty]
     private string _editNotes = string.Empty;
 
     [ObservableProperty]
@@ -81,6 +87,9 @@ public partial class CustomersViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showSalesRepSelection;
+
+    [ObservableProperty]
+    private bool _showCarShowroomIdFields;
 
     [ObservableProperty]
     private string _dialogError = string.Empty;
@@ -111,8 +120,12 @@ public partial class CustomersViewModel : ViewModelBase
         _userPreferences = userPreferences;
         _featureFlags = featureFlags;
         ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
+        ShowCarShowroomIdFields = _featureFlags.CarShowroom;
         _featureFlags.FlagsChanged += (_, _) =>
+        {
             ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
+            ShowCarShowroomIdFields = _featureFlags.CarShowroom;
+        };
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Customers);
         PageTitle = "العملاء";
         ConfigureCustomFields(customFieldSettings);
@@ -238,6 +251,8 @@ public partial class CustomersViewModel : ViewModelBase
         EditPhone = string.Empty;
         EditAddress = string.Empty;
         EditFileNumber = string.Empty;
+        EditIdNumber = string.Empty;
+        EditIdIssuer = string.Empty;
         EditNotes = string.Empty;
         EditMaxCreditLimit = string.Empty;
         EditSalesRepresentative = null;
@@ -257,6 +272,8 @@ public partial class CustomersViewModel : ViewModelBase
         EditPhone = customer.Phone ?? string.Empty;
         EditAddress = customer.Address ?? string.Empty;
         EditFileNumber = customer.FileNumber ?? string.Empty;
+        EditIdNumber = customer.IdNumber ?? string.Empty;
+        EditIdIssuer = customer.IdIssuer ?? string.Empty;
         EditNotes = customer.Notes ?? string.Empty;
         EditMaxCreditLimit = customer.MaxCreditLimit.HasValue
             ? customer.MaxCreditLimit.Value.ToString("N0")
@@ -304,6 +321,8 @@ public partial class CustomersViewModel : ViewModelBase
                 customer.Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
                 customer.Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 customer.FileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
+                customer.IdNumber = string.IsNullOrWhiteSpace(EditIdNumber) ? null : EditIdNumber.Trim();
+                customer.IdIssuer = string.IsNullOrWhiteSpace(EditIdIssuer) ? null : EditIdIssuer.Trim();
                 customer.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
                 customer.MaxCreditLimit = maxCreditLimit;
                 customer.SalesRepresentativeId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null;
@@ -320,6 +339,8 @@ public partial class CustomersViewModel : ViewModelBase
                 var phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
                 var address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress.Trim();
                 var fileNumber = string.IsNullOrWhiteSpace(EditFileNumber) ? null : EditFileNumber.Trim();
+                var idNumber = string.IsNullOrWhiteSpace(EditIdNumber) ? null : EditIdNumber.Trim();
+                var idIssuer = string.IsNullOrWhiteSpace(EditIdIssuer) ? null : EditIdIssuer.Trim();
                 var notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
                 var salesRepId = ShowSalesRepSelection ? EditSalesRepresentative?.Id : null;
                 var customFields = SerializeCustomFieldsFromEditors();
@@ -343,6 +364,8 @@ public partial class CustomersViewModel : ViewModelBase
                     softDeleted.Phone = phone;
                     softDeleted.Address = address;
                     softDeleted.FileNumber = fileNumber;
+                    softDeleted.IdNumber = idNumber;
+                    softDeleted.IdIssuer = idIssuer;
                     softDeleted.Notes = notes;
                     softDeleted.MaxCreditLimit = maxCreditLimit;
                     softDeleted.SalesRepresentativeId = salesRepId;
@@ -358,6 +381,8 @@ public partial class CustomersViewModel : ViewModelBase
                         Phone = phone,
                         Address = address,
                         FileNumber = fileNumber,
+                        IdNumber = idNumber,
+                        IdIssuer = idIssuer,
                         Notes = notes,
                         MaxCreditLimit = maxCreditLimit,
                         SalesRepresentativeId = salesRepId,

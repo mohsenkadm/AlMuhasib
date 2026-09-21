@@ -75,7 +75,8 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
 
         var creditRemaining = await _db.Invoices.ForTenant(tenantId)
-            .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
         var unappliedDebt = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
@@ -91,6 +92,20 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.CustomerCreditUnappliedDebt = unappliedDebt;
         data.CustomerCreditUnappliedReceipts = unappliedReceipts;
         data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts);
+
+        var supplierRemaining = await _db.Invoices.ForTenant(tenantId)
+            .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+            .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
+        var unappliedPayments = await _db.Vouchers.ForTenant(tenantId)
+            .Where(v => v.VoucherType == VoucherType.Payment &&
+                        v.SupplierId != null &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
+        data.SupplierCreditInvoiceRemaining = supplierRemaining;
+        data.SupplierCreditUnappliedPayments = unappliedPayments;
+        data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments);
 
         var salesRaw = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)

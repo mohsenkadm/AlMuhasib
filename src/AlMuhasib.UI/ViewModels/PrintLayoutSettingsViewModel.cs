@@ -22,6 +22,7 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
 {
     private readonly IPrintBrandingService _brandingService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFeatureFlagService _featureFlags;
     private int _settingsId;
 
     public ObservableCollection<string> AvailablePrinters { get; } = [];
@@ -32,7 +33,11 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     [ObservableProperty] private string _phoneSecondary = string.Empty;
     [ObservableProperty] private string _email = string.Empty;
     [ObservableProperty] private string _details = string.Empty;
+    [ObservableProperty] private string _companyIdNumber = string.Empty;
+    [ObservableProperty] private string _companyIdIssuer = string.Empty;
     [ObservableProperty] private string _footerText = string.Empty;
+
+    public bool ShowCarShowroomIdFields => _featureFlags.CarShowroom;
 
     [ObservableProperty] private bool _showHeaderText = true;
     [ObservableProperty] private bool _showHeaderImage;
@@ -65,10 +70,12 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isSaved;
 
-    public PrintLayoutSettingsViewModel(IPrintBrandingService brandingService, ICurrentUserService currentUserService)
+    public PrintLayoutSettingsViewModel(IPrintBrandingService brandingService, ICurrentUserService currentUserService,
+        IFeatureFlagService featureFlags)
     {
         _brandingService = brandingService;
         _currentUserService = currentUserService;
+        _featureFlags = featureFlags;
         PageTitle = "إعدادات الطباعة";
         LoadPermissions(currentUserService, "PrintSettings");
     }
@@ -92,6 +99,8 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
             PhoneSecondary = settings.PhoneSecondary;
             Email = settings.Email;
             Details = settings.Details;
+            CompanyIdNumber = settings.CompanyIdNumber;
+            CompanyIdIssuer = settings.CompanyIdIssuer;
             FooterText = settings.FooterText;
             ShowHeaderText = settings.ShowHeaderText;
             ShowHeaderImage = settings.ShowHeaderImage;
@@ -137,6 +146,8 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
                 PhoneSecondary = PhoneSecondary.Trim(),
                 Email = Email.Trim(),
                 Details = Details.Trim(),
+                CompanyIdNumber = CompanyIdNumber.Trim(),
+                CompanyIdIssuer = CompanyIdIssuer.Trim(),
                 FooterText = FooterText.Trim(),
                 ShowHeaderText = ShowHeaderText,
                 ShowHeaderImage = ShowHeaderImage && HeaderImageData is { Length: > 0 },
@@ -228,6 +239,8 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         PhoneSecondary = PhoneSecondary,
         Email = Email,
         Details = Details,
+        CompanyIdNumber = CompanyIdNumber,
+        CompanyIdIssuer = CompanyIdIssuer,
         FooterText = FooterText,
         ShowHeaderText = ShowHeaderText,
         ShowHeaderImage = ShowHeaderImage && HeaderImageData is { Length: > 0 },

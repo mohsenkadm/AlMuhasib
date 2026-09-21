@@ -41,6 +41,7 @@ public partial class BulkProductsEntryView
         SetColumn("ColPharmacyUsage", vm.ShowPharmacyFields);
         SetColumn("ColVehicleType", vm.ShowCarShowroomFields);
         SetColumn("ColChassisNumber", vm.ShowCarShowroomFields);
+        SetColumn("ColCarModel", vm.ShowCarShowroomFields);
         SetColumn("ColVehicleColor", vm.ShowCarShowroomFields);
         SetColumn("ColPassengerCount", vm.ShowCarShowroomFields);
         SetColumn("ColPlateNumber", vm.ShowCarShowroomFields);

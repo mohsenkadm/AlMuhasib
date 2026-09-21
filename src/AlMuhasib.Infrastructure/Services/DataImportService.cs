@@ -150,6 +150,7 @@ public class DataImportService : IDataImportService
                 {
                     product.VehicleType = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.VehicleType));
                     product.ChassisNumber = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.ChassisNumber));
+                    product.CarModel = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.CarModel));
                     product.VehicleColor = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.VehicleColor));
                     product.PassengerCount = ParseNullableInt(GetCell(row, headerMap, ProductImportSchema.PassengerCount));
                     product.PlateNumber = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.PlateNumber));

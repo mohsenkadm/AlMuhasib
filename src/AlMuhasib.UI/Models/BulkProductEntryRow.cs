@@ -15,6 +15,7 @@ public partial class BulkProductEntryRow : ObservableObject
     [ObservableProperty] private string _usageInstructions = string.Empty;
     [ObservableProperty] private string _vehicleType = string.Empty;
     [ObservableProperty] private string _chassisNumber = string.Empty;
+    [ObservableProperty] private string _carModel = string.Empty;
     [ObservableProperty] private string _vehicleColor = string.Empty;
     [ObservableProperty] private string _passengerCountText = string.Empty;
     [ObservableProperty] private string _plateNumber = string.Empty;

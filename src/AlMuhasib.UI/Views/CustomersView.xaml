@@ -217,6 +217,15 @@
                                  Text="{Binding EditFileNumber, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
 
+                        <StackPanel Visibility="{Binding ShowCarShowroomIdFields, Converter={StaticResource BoolVis}}">
+                            <TextBox md:HintAssist.Hint="رقم الهوية"
+                                     Text="{Binding EditIdNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <TextBox md:HintAssist.Hint="جهة الإصدار"
+                                     Text="{Binding EditIdIssuer, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        </StackPanel>
+
                         <TextBox md:HintAssist.Hint="حد الدين الآجل (د.ع) — اتركه فارغاً لعدم التحديد"
                                  Text="{Binding EditMaxCreditLimit, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>

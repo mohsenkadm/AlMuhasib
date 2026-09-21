@@ -211,7 +211,7 @@ public sealed class CarTradePrintService : ICarTradePrintService
             FieldLine("النوع", transaction.CarType),
             FieldLine("اللون", transaction.CarColor),
             FieldLine("رقم اللوحة", transaction.PlateNumber),
-            FieldLine("رقم الشاصي", transaction.ChassisNumber)
+            FieldLine("صنف السيارة", transaction.ChassisNumber)
         ]);
 
         var cell = new TableCell(block)

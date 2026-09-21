@@ -21,6 +21,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis" />
+        <converters:InverseBooleanConverter x:Key="InverseBool" />
         <converters:CurrencyFormatConverter x:Key="CurrencyFormat" />
         <converters:TaskPriorityToBrushConverter x:Key="TaskPriorityBrush" />
         <converters:TaskPriorityToLightBrushConverter x:Key="TaskPriorityLightBrush" />
@@ -610,6 +611,14 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="20,0,0,0">
+                                    <Button Command="{Binding RefreshDashboardCommand}"
+                                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                            ToolTip="تحديث الإحصائيات"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="White" Width="40" Height="40"
+                                            HorizontalAlignment="Left" Margin="0,0,0,10">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22" />
+                                    </Button>
                                     <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="16"
                                             Padding="16,12" Margin="0,0,0,10" BorderBrush="#33FFFFFF" BorderThickness="1">
                                         <StackPanel>
@@ -922,9 +931,10 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <controls:DashboardKpiCard Grid.Column="0" Margin="0,0,8,0"
+                    <controls:DashboardKpiCard Grid.Column="0" Margin="0,0,6,0"
                                                HorizontalAlignment="Stretch"
                                                Title="رصيد المستثمرين"
                                                Value="{Binding InvestorBalance, Converter={StaticResource CurrencyFormat}}"
@@ -935,7 +945,7 @@
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowInvestorBalanceDetailsCommand}" />
 
-                    <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
+                    <controls:DashboardKpiCard Grid.Column="1" Margin="3,0,3,0"
                                                HorizontalAlignment="Stretch"
                                                Title="رصيد الأقساط غير المسددة"
                                                Value="{Binding UnpaidInstallmentsBalance, Converter={StaticResource CurrencyFormat}}"
@@ -944,7 +954,7 @@
                                                AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiOrangeBrush}" />
 
-                    <controls:DashboardKpiCard Grid.Column="2" Margin="8,0,0,0"
+                    <controls:DashboardKpiCard Grid.Column="2" Margin="3,0,3,0"
                                                HorizontalAlignment="Stretch"
                                                Title="رصيد الآجل للعملاء"
                                                Value="{Binding CustomerCreditBalance, Converter={StaticResource CurrencyFormat}}"
@@ -954,6 +964,17 @@
                                                ValueBrush="{DynamicResource DashboardKpiPinkBrush}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowCustomerCreditDetailsCommand}" />
+
+                    <controls:DashboardKpiCard Grid.Column="3" Margin="6,0,0,0"
+                                               HorizontalAlignment="Stretch"
+                                               Title="رصيد الآجل للموردين"
+                                               Value="{Binding SupplierCreditBalance, Converter={StaticResource CurrencyFormat}}"
+                                               Icon="TruckDelivery"
+                                               AccentBrush="{DynamicResource DashboardKpiTealBrush}"
+                                               AccentLightBrush="{DynamicResource DashboardKpiTealLightBrush}"
+                                               ValueBrush="{DynamicResource DashboardKpiTealBrush}"
+                                               ShowDetailButton="True"
+                                               DetailCommand="{Binding ShowSupplierCreditDetailsCommand}" />
                 </Grid>
 
                 <!-- ═══════════════════════════════════════════ -->

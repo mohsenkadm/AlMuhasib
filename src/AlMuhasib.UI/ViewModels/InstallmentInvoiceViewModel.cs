@@ -892,6 +892,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                     WarehouseName = warehouseName,
                     VehicleType = product?.VehicleType,
                     ChassisNumber = product?.ChassisNumber,
+                    CarModel = product?.CarModel,
                     VehicleColor = product?.VehicleColor,
                     PassengerCount = product?.PassengerCount,
                     PlateNumber = product?.PlateNumber,
@@ -993,6 +994,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     [ObservableProperty]
     private bool _isQuickAddCustomerOpen;
 
+    public bool ShowCarShowroomIdFields => _featureFlags.CarShowroom;
+
     [ObservableProperty]
     private string _quickCustomerName = string.Empty;
 
@@ -1003,6 +1006,12 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private string _quickCustomerAddress = string.Empty;
 
     [ObservableProperty]
+    private string _quickCustomerIdNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _quickCustomerIdIssuer = string.Empty;
+
+    [ObservableProperty]
     private string _quickCustomerError = string.Empty;
 
     [RelayCommand]
@@ -1011,6 +1020,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         QuickCustomerName = string.Empty;
         QuickCustomerPhone = string.Empty;
         QuickCustomerAddress = string.Empty;
+        QuickCustomerIdNumber = string.Empty;
+        QuickCustomerIdIssuer = string.Empty;
         QuickCustomerError = string.Empty;
         IsQuickAddCustomerOpen = true;
     }
@@ -1058,6 +1069,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                 Name = QuickCustomerName.Trim(),
                 Phone = string.IsNullOrWhiteSpace(QuickCustomerPhone) ? null : QuickCustomerPhone.Trim(),
                 Address = string.IsNullOrWhiteSpace(QuickCustomerAddress) ? null : QuickCustomerAddress.Trim(),
+                IdNumber = string.IsNullOrWhiteSpace(QuickCustomerIdNumber) ? null : QuickCustomerIdNumber.Trim(),
+                IdIssuer = string.IsNullOrWhiteSpace(QuickCustomerIdIssuer) ? null : QuickCustomerIdIssuer.Trim(),
                 CreatedBy = _currentUserService.Username,
                 CreatedAt = DateTime.UtcNow
             };

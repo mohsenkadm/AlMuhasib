@@ -224,6 +224,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         || !string.IsNullOrWhiteSpace(row.ScientificName)
         || !string.IsNullOrWhiteSpace(row.VehicleType)
         || !string.IsNullOrWhiteSpace(row.ChassisNumber)
+        || !string.IsNullOrWhiteSpace(row.CarModel)
         || !string.IsNullOrWhiteSpace(row.PlateNumber)
         || row.Weight != 0
         || row.SalePrice != 0
@@ -355,6 +356,8 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                             ? null : row.VehicleType.Trim();
                         product.ChassisNumber = string.IsNullOrWhiteSpace(row.ChassisNumber)
                             ? null : row.ChassisNumber.Trim();
+                        product.CarModel = string.IsNullOrWhiteSpace(row.CarModel)
+                            ? null : row.CarModel.Trim();
                         product.VehicleColor = string.IsNullOrWhiteSpace(row.VehicleColor)
                             ? null : row.VehicleColor.Trim();
                         product.PlateNumber = string.IsNullOrWhiteSpace(row.PlateNumber)

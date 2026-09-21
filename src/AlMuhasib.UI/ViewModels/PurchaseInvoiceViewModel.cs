@@ -895,6 +895,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     ? null : sourceRow.VehicleType.Trim();
                 product.ChassisNumber = string.IsNullOrWhiteSpace(sourceRow.ChassisNumber)
                     ? null : sourceRow.ChassisNumber.Trim();
+                product.CarModel = string.IsNullOrWhiteSpace(sourceRow.CarModel)
+                    ? null : sourceRow.CarModel.Trim();
                 product.VehicleColor = string.IsNullOrWhiteSpace(sourceRow.VehicleColor)
                     ? null : sourceRow.VehicleColor.Trim();
                 product.PlateNumber = string.IsNullOrWhiteSpace(sourceRow.PlateNumber)
@@ -997,6 +999,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     WarehouseName = warehouseName,
                     VehicleType = product?.VehicleType ?? NullIfWhiteSpace(row?.VehicleType),
                     ChassisNumber = product?.ChassisNumber ?? NullIfWhiteSpace(row?.ChassisNumber),
+                    CarModel = product?.CarModel ?? NullIfWhiteSpace(row?.CarModel),
                     VehicleColor = product?.VehicleColor ?? NullIfWhiteSpace(row?.VehicleColor),
                     PassengerCount = product?.PassengerCount
                         ?? (int.TryParse(row?.PassengerCountText?.Trim(), out var passengers) && passengers > 0

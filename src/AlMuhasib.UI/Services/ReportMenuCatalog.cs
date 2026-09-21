@@ -80,6 +80,7 @@ public static class ReportMenuCatalog
         ("financial", "التقارير المالية", PackIconKind.Bank, "#00695C", "#E0F2F1", ScreenPermissionRegistry.Reports,
         [
             ("ملخص المركز المالي", PackIconKind.ChartPie, typeof(FinancialPositionSummaryReportViewModel), ScreenPermissionRegistry.Reports),
+            ("الملخص التنفيذي للأعمال", PackIconKind.ViewDashboardVariant, typeof(ExecutiveSummaryReportViewModel), ScreenPermissionRegistry.Reports),
             ("أرباح وخسائر", PackIconKind.ChartLine, typeof(ProfitAndLossReportViewModel), ScreenPermissionRegistry.Reports),
             ("الميزانية العمومية", PackIconKind.ScaleBalance, typeof(StatementOfFinancialPositionReportViewModel), ScreenPermissionRegistry.Reports),
         ]),

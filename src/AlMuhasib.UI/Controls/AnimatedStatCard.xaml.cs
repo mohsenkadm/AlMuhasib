@@ -2,24 +2,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.Controls;
 
 public partial class AnimatedStatCard : UserControl
 {
-    private DispatcherTimer? _animTimer;
-    private decimal _animCurrent;
+    private EventHandler? _renderHandler;
+    private long _animStartTicks;
     private decimal _animTarget;
-    private int _animStep;
-    private const int AnimSteps = 20;
-    private const int AnimIntervalMs = 40; // 20 steps × 40ms = 800ms total
+    private const double AnimDurationMs = 300; // سريع جداً مثل عدّادات الويب
 
     public AnimatedStatCard()
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -27,6 +25,8 @@ public partial class AnimatedStatCard : UserControl
         UpdateComparison();
         AnimateValue();
     }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e) => StopAnimation();
 
     // ── Title ──
     public static readonly DependencyProperty TitleProperty =
@@ -54,6 +54,11 @@ public partial class AnimatedStatCard : UserControl
     public static readonly DependencyProperty SuffixProperty =
         DependencyProperty.Register(nameof(Suffix), typeof(string), typeof(AnimatedStatCard), new PropertyMetadata(null));
     public string? Suffix { get => (string?)GetValue(SuffixProperty); set => SetValue(SuffixProperty, value); }
+
+    // ── Hint (short explanation under the title) ──
+    public static readonly DependencyProperty HintProperty =
+        DependencyProperty.Register(nameof(Hint), typeof(string), typeof(AnimatedStatCard), new PropertyMetadata(null));
+    public string? Hint { get => (string?)GetValue(HintProperty); set => SetValue(HintProperty, value); }
 
     // ── Icon ──
     public static readonly DependencyProperty IconProperty =
@@ -131,36 +136,47 @@ public partial class AnimatedStatCard : UserControl
         // If TextValue is set, skip numeric animation
         if (TextValue is not null) return;
 
-        _animTimer?.Stop();
+        StopAnimation();
         _animTarget = Value;
-        _animCurrent = 0;
-        _animStep = 0;
 
         if (_animTarget == 0)
         {
-            DisplayValue = "0";
+            DisplayValue = FormatAnimated(0);
             return;
         }
 
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(AnimIntervalMs) };
-        _animTimer.Tick += (_, _) =>
-        {
-            _animStep++;
-            // Ease-out: decelerate towards target
-            double t = (double)_animStep / AnimSteps;
-            t = 1 - Math.Pow(1 - t, 3); // cubic ease out
-            _animCurrent = _animTarget * (decimal)t;
-
-            if (_animStep >= AnimSteps)
-            {
-                _animCurrent = _animTarget;
-                _animTimer.Stop();
-            }
-
-            DisplayValue = _animCurrent.ToString("N0");
-        };
-        _animTimer.Start();
+        DisplayValue = FormatAnimated(0);
+        _animStartTicks = Environment.TickCount64;
+        _renderHandler = OnRenderingFrame;
+        CompositionTarget.Rendering += _renderHandler;
     }
+
+    private void OnRenderingFrame(object? sender, EventArgs e)
+    {
+        var elapsed = Environment.TickCount64 - _animStartTicks;
+        var t = Math.Clamp(elapsed / AnimDurationMs, 0.0, 1.0);
+        // تخفيف خفيف فقط — بدون بطء ملحوظ قرب النهاية (أفضل من cubic للأرصدة الكبيرة)
+        var eased = 1.0 - Math.Pow(1.0 - t, 1.5);
+        DisplayValue = FormatAnimated(_animTarget * (decimal)eased);
+
+        if (t >= 1.0)
+        {
+            DisplayValue = FormatAnimated(_animTarget);
+            StopAnimation();
+        }
+    }
+
+    private void StopAnimation()
+    {
+        if (_renderHandler is null) return;
+        CompositionTarget.Rendering -= _renderHandler;
+        _renderHandler = null;
+    }
+
+    private string FormatAnimated(decimal value)
+        => string.Equals(Suffix?.Trim(), "%", StringComparison.Ordinal)
+            ? value.ToString("N1")
+            : value.ToString("N0");
 
     private void UpdateComparison()
     {

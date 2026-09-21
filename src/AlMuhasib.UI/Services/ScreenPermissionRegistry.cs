@@ -358,6 +358,7 @@ public static class ScreenPermissionRegistry
         [typeof(StockTakingReportViewModel)] = "Reports",
         [typeof(CogsReportViewModel)] = "Reports",
         [typeof(FinancialPositionSummaryReportViewModel)] = "Reports",
+        [typeof(ExecutiveSummaryReportViewModel)] = "Reports",
         [typeof(ProfitAndLossReportViewModel)] = "Reports",
         [typeof(StatementOfFinancialPositionReportViewModel)] = "Reports",
         [typeof(CapitalAdjustmentViewModel)] = "Capital",

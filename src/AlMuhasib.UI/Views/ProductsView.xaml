@@ -316,11 +316,17 @@
                                             Visibility="Collapsed"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehicleType"/>
                         <DataGridTextColumn x:Name="ColChassisNumber"
-                                            Header="رقم الشاصي"
+                                            Header="صنف السيارة"
                                             Binding="{Binding ChassisNumber}"
                                             Width="*"
                                             Visibility="Collapsed"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ChassisNumber"/>
+                        <DataGridTextColumn x:Name="ColCarModel"
+                                            Header="موديل السيارة"
+                                            Binding="{Binding CarModel}"
+                                            Width="*"
+                                            Visibility="Collapsed"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CarModel"/>
                         <DataGridTextColumn x:Name="ColVehicleColor"
                                             Header="اللون"
                                             Binding="{Binding VehicleColor}"
@@ -737,10 +743,22 @@
                                              Style="{StaticResource FilledTextBox}"/>
                                     <TextBox Grid.Column="2"
                                              Text="{Binding EditChassisNumber, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="رقم الشاصي"
+                                             materialDesign:HintAssist.Hint="صنف السيارة"
                                              materialDesign:HintAssist.IsFloating="True"
                                              Style="{StaticResource FilledTextBox}"
                                              FontFamily="Consolas"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding EditCarModel, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="موديل السيارة"
+                                             materialDesign:HintAssist.IsFloating="True"
+                                             Style="{StaticResource FilledTextBox}"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>

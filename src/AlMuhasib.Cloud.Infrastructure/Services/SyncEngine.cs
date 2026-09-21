@@ -419,6 +419,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.UsageInstructions = dto.UsageInstructions;
         existing.VehicleType = dto.VehicleType;
         existing.ChassisNumber = dto.ChassisNumber;
+        existing.CarModel = dto.CarModel;
         existing.VehicleColor = dto.VehicleColor;
         existing.PassengerCount = dto.PassengerCount;
         existing.PlateNumber = dto.PlateNumber;
@@ -492,6 +493,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Address = dto.Address;
         existing.FileNumber = dto.FileNumber;
         existing.Notes = dto.Notes;
+        existing.IdNumber = dto.IdNumber;
+        existing.IdIssuer = dto.IdIssuer;
         return 1;
     }
 
@@ -567,6 +570,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.PhoneSecondary = dto.PhoneSecondary;
         existing.Email = dto.Email;
         existing.Details = dto.Details;
+        existing.CompanyIdNumber = dto.CompanyIdNumber;
+        existing.CompanyIdIssuer = dto.CompanyIdIssuer;
         existing.ShowHeaderText = dto.ShowHeaderText;
         existing.ShowHeaderImage = dto.ShowHeaderImage;
         existing.HeaderImageData = dto.HeaderImageData;
@@ -862,7 +867,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode, ScientificName = p.ScientificName,
             UsageInstructions = p.UsageInstructions,
-            VehicleType = p.VehicleType, ChassisNumber = p.ChassisNumber, VehicleColor = p.VehicleColor,
+            VehicleType = p.VehicleType, ChassisNumber = p.ChassisNumber, CarModel = p.CarModel, VehicleColor = p.VehicleColor,
             PassengerCount = p.PassengerCount, PlateNumber = p.PlateNumber, PlateType = p.PlateType,
             Weight = p.Weight, WeightUnit = p.WeightUnit,
             DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
@@ -1160,7 +1165,8 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
-        Name = e.Name, Phone = e.Phone, Address = e.Address, FileNumber = e.FileNumber, Notes = e.Notes
+        Name = e.Name, Phone = e.Phone, Address = e.Address, FileNumber = e.FileNumber, Notes = e.Notes,
+        IdNumber = e.IdNumber, IdIssuer = e.IdIssuer
     };
 
     private static SupplierSyncDto MapSupplier(CloudSupplier e, Dictionary<int, Guid> _) => new()
@@ -1202,7 +1208,8 @@ public sealed partial class SyncEngine : ISyncEngine
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         CompanyName = e.CompanyName, Address = e.Address, PhonePrimary = e.PhonePrimary, PhoneSecondary = e.PhoneSecondary,
-        Email = e.Email, Details = e.Details, ShowHeaderText = e.ShowHeaderText, ShowHeaderImage = e.ShowHeaderImage,
+        Email = e.Email, Details = e.Details, CompanyIdNumber = e.CompanyIdNumber, CompanyIdIssuer = e.CompanyIdIssuer,
+        ShowHeaderText = e.ShowHeaderText, ShowHeaderImage = e.ShowHeaderImage,
         HeaderImageData = e.HeaderImageData, HeaderImageContentType = e.HeaderImageContentType,
         ShowFooterText = e.ShowFooterText, FooterText = e.FooterText, ShowFooterImage = e.ShowFooterImage,
         FooterImageData = e.FooterImageData, FooterImageContentType = e.FooterImageContentType

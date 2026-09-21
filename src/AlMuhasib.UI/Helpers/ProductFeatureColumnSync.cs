@@ -16,6 +16,7 @@ public static class ProductFeatureColumnSync
         DataGridColumn? usageInstructions = null,
         DataGridColumn? vehicleType = null,
         DataGridColumn? chassisNumber = null,
+        DataGridColumn? carModel = null,
         DataGridColumn? vehicleColor = null,
         DataGridColumn? passengerCount = null,
         DataGridColumn? plateNumber = null,
@@ -30,6 +31,7 @@ public static class ProductFeatureColumnSync
                 var showCar = products.ShowCarShowroomFields;
                 Set(vehicleType, showCar);
                 Set(chassisNumber, showCar);
+                Set(carModel, showCar);
                 Set(vehicleColor, showCar);
                 Set(passengerCount, showCar);
                 Set(plateNumber, showCar);

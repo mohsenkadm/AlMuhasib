@@ -409,7 +409,7 @@
                                             </StackPanel>
                                         </Grid>
                                         <StackPanel Style="{StaticResource DetailFieldPanel}">
-                                            <TextBlock Text="رقم الشاصي" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="صنف السيارة" Style="{StaticResource DetailLabel}"/>
                                             <TextBlock Text="{Binding ChassisNumber}" Style="{StaticResource DetailValue}"/>
                                         </StackPanel>
                                         <StackPanel Style="{StaticResource DetailFieldPanel}">

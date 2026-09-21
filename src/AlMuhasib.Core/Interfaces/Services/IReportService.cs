@@ -124,6 +124,7 @@ public interface IReportService
     Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(DateTime? from, DateTime? to);
     Task<StatementOfFinancialPositionReportResult> GetStatementOfFinancialPositionReportAsync(DateTime date);
     Task<WorkSummaryReportResult> GetWorkSummaryAsync(DateTime? from, DateTime? to);
+    Task<ExecutiveBusinessSummaryResult> GetExecutiveBusinessSummaryAsync(DateTime? from, DateTime? to);
 
 }
 
@@ -1640,6 +1641,100 @@ public class WorkSummaryHourRow
     public string HourLabel { get; set; } = string.Empty;
     public int ActivityCount { get; set; }
     public decimal SalesAmount { get; set; }
+}
+
+/// <summary>
+/// ملخص تنفيذي شامل: أرصدة حتى تاريخ «إلى» ونشاط الفترة من→إلى.
+/// </summary>
+public class ExecutiveBusinessSummaryResult
+{
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
+
+    // المركز المالي (حتى DateTo)
+    public decimal CustomerReceivables { get; set; }
+    public decimal CustomerCreditInvoiceRemaining { get; set; }
+    public decimal CustomerUnappliedDebt { get; set; }
+    public decimal CustomerUnappliedReceipts { get; set; }
+    public decimal InstallmentReceivables { get; set; }
+    public decimal SupplierPayables { get; set; }
+    public decimal SupplierCreditInvoiceRemaining { get; set; }
+    public decimal SupplierUnappliedPayments { get; set; }
+    public decimal InventoryCostValue { get; set; }
+    public decimal InventoryQuantity { get; set; }
+    public decimal CashBoxesBalance { get; set; }
+    public decimal BankBalance { get; set; }
+    public decimal NetWorkingCapital { get; set; }
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal TotalEquity { get; set; }
+    public decimal AccumulatedProfits { get; set; }
+
+    // المبيعات (الفترة)
+    public decimal TotalSales { get; set; }
+    public decimal CashSales { get; set; }
+    public decimal CreditSales { get; set; }
+    public decimal InstallmentSales { get; set; }
+    public int SalesInvoiceCount { get; set; }
+    public decimal AverageSaleInvoice { get; set; }
+
+    // المشتريات والتكاليف (الفترة)
+    public decimal TotalPurchases { get; set; }
+    public decimal CashPurchases { get; set; }
+    public decimal CreditPurchases { get; set; }
+    public int PurchaseInvoiceCount { get; set; }
+    public decimal CostOfGoodsSold { get; set; }
+
+    // الأرباح (الفترة)
+    public decimal GrossProfit { get; set; }
+    public decimal GrossMarginPercent { get; set; }
+    public decimal TotalExpenses { get; set; }
+    public decimal TotalBankFees { get; set; }
+    public decimal OperatingProfit { get; set; }
+    public decimal DistributedProfits { get; set; }
+    public decimal ProfitOpeningBalance { get; set; }
+    public decimal NetProfit { get; set; }
+    public decimal NetMarginPercent { get; set; }
+
+    // العملاء
+    public int ActiveCustomersCount { get; set; }
+    public decimal CustomerCollections { get; set; }
+    public int CustomersWithBalanceCount { get; set; }
+    public decimal HighestCustomerBalance { get; set; }
+
+    // الموردين
+    public int ActiveSuppliersCount { get; set; }
+    public decimal SupplierPayments { get; set; }
+    public int SuppliersWithBalanceCount { get; set; }
+    public decimal HighestSupplierBalance { get; set; }
+
+    // المخزون
+    public int StockedProductCount { get; set; }
+    public decimal InventorySaleValue { get; set; }
+    public decimal InventoryPotentialProfit { get; set; }
+    public int BelowMinimumStockCount { get; set; }
+
+    // الأقساط والنقد (أرصدة حتى «إلى» + نشاط الفترة)
+    public int OverdueInstallmentsCount { get; set; }
+    public decimal OverdueInstallmentsAmount { get; set; }
+    public decimal CollectedInstallments { get; set; }
+    public decimal ReceiptVouchersAmount { get; set; }
+    public decimal PaymentVouchersAmount { get; set; }
+    public decimal TransfersAmount { get; set; }
+    public int TransfersCount { get; set; }
+
+    // تفاصيل للعرض في حوار الكروت (محدودة)
+    public List<NameAmountPoint> ActiveCustomersDetail { get; set; } = [];
+    public List<NameAmountPoint> ActiveSuppliersDetail { get; set; } = [];
+    public List<NameAmountPoint> CustomersWithBalanceDetail { get; set; } = [];
+    public List<NameAmountPoint> SuppliersWithBalanceDetail { get; set; } = [];
+    public List<NameAmountPoint> CustomerCreditDetail { get; set; } = [];
+    public List<NameAmountPoint> SupplierCreditDetail { get; set; } = [];
+    public List<NameAmountPoint> OverdueInstallmentsDetail { get; set; } = [];
+    public List<NameAmountPoint> BelowMinimumStockDetail { get; set; } = [];
+    public List<NameAmountPoint> CashBoxesDetail { get; set; } = [];
+    public List<NameAmountPoint> BanksDetail { get; set; } = [];
+    public List<NameAmountPoint> TopStockByValueDetail { get; set; } = [];
 }
 
 public class DamageInvoicesReportResult

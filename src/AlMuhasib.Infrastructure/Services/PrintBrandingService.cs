@@ -80,6 +80,8 @@ public class PrintBrandingService : IPrintBrandingService
         target.PhoneSecondary = source.PhoneSecondary;
         target.Email = source.Email;
         target.Details = source.Details;
+        target.CompanyIdNumber = source.CompanyIdNumber;
+        target.CompanyIdIssuer = source.CompanyIdIssuer;
         target.ShowHeaderText = source.ShowHeaderText;
         target.ShowHeaderImage = source.ShowHeaderImage;
         target.HeaderImageData = source.HeaderImageData;
@@ -99,6 +101,8 @@ public class PrintBrandingService : IPrintBrandingService
         PhoneSecondary = s.PhoneSecondary ?? string.Empty,
         Email = s.Email ?? string.Empty,
         Details = s.Details ?? string.Empty,
+        CompanyIdNumber = s.CompanyIdNumber ?? string.Empty,
+        CompanyIdIssuer = s.CompanyIdIssuer ?? string.Empty,
         ShowHeaderText = s.ShowHeaderText,
         ShowHeaderImage = s.ShowHeaderImage,
         HeaderImageData = s.HeaderImageData,

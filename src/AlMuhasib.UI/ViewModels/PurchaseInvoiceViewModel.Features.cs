@@ -33,6 +33,13 @@ public partial class PurchaseInvoiceViewModel
 
     public ObservableCollection<PricingType> BulkPricingTypes { get; } = [];
 
+    public IReadOnlyList<string> PlateTypeOptions { get; } =
+    [
+        AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.NoneLabel,
+        AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.InspectionLabel,
+        AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.OfficialLabel
+    ];
+
     public bool ShowCustomField1 => ShowClothingSizes;
     public bool ShowCustomField2 => ShowClothingSizes;
 

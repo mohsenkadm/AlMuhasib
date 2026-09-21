@@ -38,8 +38,11 @@ public class Product : BaseEntity
     /// <summary>نوع السيارة (معرض سيارات).</summary>
     public string? VehicleType { get; set; }
 
-    /// <summary>رقم الشاصي (معرض سيارات).</summary>
+    /// <summary>صنف السيارة (معرض سيارات) — كان يُعرض سابقاً كرقم الشاصي.</summary>
     public string? ChassisNumber { get; set; }
+
+    /// <summary>موديل السيارة (معرض سيارات).</summary>
+    public string? CarModel { get; set; }
 
     /// <summary>لون السيارة (معرض سيارات).</summary>
     public string? VehicleColor { get; set; }

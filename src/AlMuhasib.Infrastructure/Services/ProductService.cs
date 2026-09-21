@@ -55,6 +55,7 @@ public class ProductService : IProductService
             softDeleted.UsageInstructions = product.UsageInstructions;
             softDeleted.VehicleType = product.VehicleType;
             softDeleted.ChassisNumber = product.ChassisNumber;
+            softDeleted.CarModel = product.CarModel;
             softDeleted.VehicleColor = product.VehicleColor;
             softDeleted.PassengerCount = product.PassengerCount;
             softDeleted.PlateNumber = product.PlateNumber;
@@ -172,6 +173,7 @@ public class ProductService : IProductService
         existing.CustomFieldsJson = product.CustomFieldsJson;
         existing.VehicleType = product.VehicleType;
         existing.ChassisNumber = product.ChassisNumber;
+        existing.CarModel = product.CarModel;
         existing.VehicleColor = product.VehicleColor;
         existing.PassengerCount = product.PassengerCount;
         existing.PlateNumber = product.PlateNumber;

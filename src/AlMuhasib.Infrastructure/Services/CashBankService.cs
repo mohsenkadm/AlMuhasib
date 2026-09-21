@@ -334,6 +334,10 @@ public class CashBankService : ICashBankService
 
                 case VoucherType.Payment:
                     await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
+                    if (voucher.InvoiceId.HasValue)
+                        await ApplyAmountToPurchaseCreditInvoiceAsync(context, voucher, username);
+                    else if (voucher.SupplierId.HasValue)
+                        await ApplyPaymentToPurchaseInvoicesAsync(context, voucher, username);
                     break;
 
                 case VoucherType.BankReceipt:
@@ -441,6 +445,10 @@ public class CashBankService : ICashBankService
                     await ReverseInstallmentApplicationAsync(context, voucher, username);
                 else if (voucher.InvoiceId.HasValue)
                     await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
+            }
+            else if (voucher.VoucherType == VoucherType.Payment && voucher.InvoiceId.HasValue)
+            {
+                await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
             }
 
             switch (voucher.VoucherType)
@@ -697,6 +705,7 @@ public class CashBankService : ICashBankService
 
         var creditInvoices = await context.Invoices
             .Where(i => i.CustomerId == voucher.CustomerId.Value &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
@@ -717,6 +726,64 @@ public class CashBankService : ICashBankService
             inv.UpdatedBy = username;
         }
 
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    private static async Task ApplyPaymentToPurchaseInvoicesAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.SupplierId.HasValue)
+            return;
+
+        var creditInvoices = await context.Invoices
+            .Where(i => i.SupplierId == voucher.SupplierId.Value &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync();
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .ToList();
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    private static async Task ApplyAmountToPurchaseCreditInvoiceAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == voucher.InvoiceId)
+            ?? throw new InvalidOperationException("الفاتورة المرتبطة غير موجودة");
+
+        if (invoice.InvoiceType != InvoiceType.Purchase || invoice.PaymentMethod != PaymentMethod.Credit)
+            throw new InvalidOperationException("يمكن ربط سند الصرف بفاتورة مشتريات آجلة فقط");
+
+        if (voucher.SupplierId.HasValue && invoice.SupplierId != voucher.SupplierId)
+            throw new InvalidOperationException("الفاتورة لا تخص المورد المحدد");
+
+        if (invoice.RemainingAmount <= 0)
+            throw new InvalidOperationException("الفاتورة مسددة بالكامل");
+
+        var apply = Math.Min(voucher.Amount, invoice.RemainingAmount);
+        invoice.PaidAmount += apply;
+        invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
+        invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
+        invoice.UpdatedAt = DateTime.UtcNow;
+        invoice.UpdatedBy = username;
+
+        voucher.SupplierId ??= invoice.SupplierId;
         voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
     }
 

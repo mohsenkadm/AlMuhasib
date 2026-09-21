@@ -31,7 +31,9 @@ internal static class InvoicePrintLayoutHelper
             if (!string.IsNullOrWhiteSpace(item.VehicleType))
                 name += $"\nنوع السيارة: {item.VehicleType}";
             if (!string.IsNullOrWhiteSpace(item.ChassisNumber))
-                name += $"\nرقم الشاصي: {item.ChassisNumber}";
+                name += $"\nصنف السيارة: {item.ChassisNumber}";
+            if (!string.IsNullOrWhiteSpace(item.CarModel))
+                name += $"\nموديل السيارة: {item.CarModel}";
             if (!string.IsNullOrWhiteSpace(item.VehicleColor))
                 name += $"\nاللون: {item.VehicleColor}";
             if (item.PassengerCount is > 0)

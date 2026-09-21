@@ -74,7 +74,7 @@
                             </StackPanel>
                         </UniformGrid>
                         <StackPanel>
-                            <TextBlock Text="رقم الشاصي" Style="{StaticResource FormFieldLabel}"/>
+                            <TextBlock Text="صنف السيارة" Style="{StaticResource FormFieldLabel}"/>
                             <TextBox Text="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" FontFamily="Consolas" FontSize="14" MinHeight="44"/>
                         </StackPanel>

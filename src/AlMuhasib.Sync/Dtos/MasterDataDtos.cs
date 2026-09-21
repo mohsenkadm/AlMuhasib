@@ -16,6 +16,7 @@ public sealed class ProductSyncDto : SyncDtoBase
     public string? UsageInstructions { get; set; }
     public string? VehicleType { get; set; }
     public string? ChassisNumber { get; set; }
+    public string? CarModel { get; set; }
     public string? VehicleColor { get; set; }
     public int? PassengerCount { get; set; }
     public string? PlateNumber { get; set; }
@@ -64,6 +65,8 @@ public sealed class CustomerSyncDto : SyncDtoBase
     public string? Address { get; set; }
     public string? FileNumber { get; set; }
     public string? Notes { get; set; }
+    public string? IdNumber { get; set; }
+    public string? IdIssuer { get; set; }
 }
 
 public sealed class SupplierSyncDto : SyncDtoBase
@@ -109,6 +112,8 @@ public sealed class PrintBrandingSettingsSyncDto : SyncDtoBase
     public string PhoneSecondary { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
+    public string CompanyIdNumber { get; set; } = string.Empty;
+    public string CompanyIdIssuer { get; set; } = string.Empty;
     public bool ShowHeaderText { get; set; } = true;
     public bool ShowHeaderImage { get; set; }
     public byte[]? HeaderImageData { get; set; }

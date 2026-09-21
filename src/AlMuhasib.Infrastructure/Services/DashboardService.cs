@@ -117,11 +117,12 @@ public class DashboardService : IDashboardService
             System.Diagnostics.Debug.WriteLine($"Dashboard UnpaidInstallmentsBalance error: {ex.Message}");
         }
 
-        // ── Customer credit balance (آجل) ─────────────────────
+        // ── Customer credit balance (آجل مبيعات/أقساط فقط) ────
         try
         {
             var creditRemaining = await context.Invoices
-                .Where(i => i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
             var unappliedDebt = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
@@ -141,6 +142,28 @@ public class DashboardService : IDashboardService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard CustomerCreditBalance error: {ex.Message}");
+        }
+
+        // ── Supplier credit balance (آجل مشتريات) ──────────────
+        try
+        {
+            var supplierRemaining = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var unappliedPayments = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.Payment &&
+                            v.SupplierId != null &&
+                            !v.InvoiceId.HasValue &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            data.SupplierCreditInvoiceRemaining = supplierRemaining;
+            data.SupplierCreditUnappliedPayments = unappliedPayments;
+            data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dashboard SupplierCreditBalance error: {ex.Message}");
         }
 
         // ── Sales last 30 days ─────────────────────────────────

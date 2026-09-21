@@ -313,15 +313,19 @@
                             </Grid>
                         </Border>
 
-                        <DataGrid Grid.Row="1"
+                        <DataGrid x:Name="ItemsGrid"
+                                  Grid.Row="1"
                                   Style="{StaticResource InvoiceItemsDataGrid}"
                                   ItemsSource="{Binding Items}"
+                                  CanUserResizeColumns="True"
+                                  EnableColumnVirtualization="True"
                                   b:InvoiceDataGridBehavior.Enable="True"
                                   b:InvoiceDataGridBehavior.AddRowCommand="{Binding AddRowCommand}">
 
                             <DataGrid.Columns>
                                 <!-- # -->
-                                <DataGridTemplateColumn Header="#" Width="45" IsReadOnly="True">
+                                <DataGridTemplateColumn Header="#" Width="45" MinWidth="40" IsReadOnly="True"
+                                                        CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow},
@@ -333,14 +337,17 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="المنتج" Width="200" MinWidth="160"
+                                <DataGridTemplateColumn Header="المنتج" Width="180" MinWidth="140"
                                                         CellTemplate="{StaticResource InvoiceProductCellTemplate}"/>
 
                                 <DataGridTextColumn x:Name="ColVehicleType" Header="نوع السيارة"
                                                     Binding="{Binding VehicleType, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="100" MinWidth="80" Visibility="Collapsed"/>
-                                <DataGridTextColumn x:Name="ColChassisNumber" Header="رقم الشاصي"
+                                <DataGridTextColumn x:Name="ColChassisNumber" Header="صنف السيارة"
                                                     Binding="{Binding ChassisNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="110" MinWidth="90" Visibility="Collapsed"/>
+                                <DataGridTextColumn x:Name="ColCarModel" Header="موديل السيارة"
+                                                    Binding="{Binding CarModel, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="110" MinWidth="90" Visibility="Collapsed"/>
                                 <DataGridTextColumn x:Name="ColVehicleColor" Header="اللون"
                                                     Binding="{Binding VehicleColor, UpdateSourceTrigger=PropertyChanged}"
@@ -351,9 +358,18 @@
                                 <DataGridTextColumn x:Name="ColPlateNumber" Header="رقم اللوحة"
                                                     Binding="{Binding PlateNumber, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="100" MinWidth="80" Visibility="Collapsed"/>
-                                <DataGridTextColumn x:Name="ColPlateType" Header="نوع اللوحة"
-                                                    Binding="{Binding PlateTypeText, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="90" MinWidth="70" Visibility="Collapsed"/>
+                                <DataGridTemplateColumn x:Name="ColPlateType" Header="نوع اللوحة"
+                                                        Width="110" MinWidth="90" Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.PlateTypeOptions, Source={x:Reference VmProxy}}"
+                                                      SelectedItem="{Binding PlateTypeText, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="False"
+                                                      Style="{StaticResource InvoiceGridComboBox}"
+                                                      ToolTip="فحص أو رسمي"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColSize" Width="90" MinWidth="70"
                                                         Visibility="Collapsed">

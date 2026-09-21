@@ -26,6 +26,12 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(c => c.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(c => c.IdNumber)
+            .HasMaxLength(100);
+
+        builder.Property(c => c.IdIssuer)
+            .HasMaxLength(200);
+
         builder.Property(c => c.CustomFieldsJson)
             .HasMaxLength(4000);
 

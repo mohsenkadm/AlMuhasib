@@ -173,7 +173,9 @@ public sealed class ShowroomSaleContractPrintService : IShowroomSaleContractPrin
             LineHeight = 22,
             Margin = new Thickness(0, 0, 0, 8)
         };
-        saleLine.Inlines.Add(new Run("1- باع الطرف الأول للطرف الثاني السيارة المرقمة ") { FontWeight = FontWeights.SemiBold });
+        saleLine.Inlines.Add(new Run("1- باع الطرف الأول للطرف الثاني السيارة "));
+        saleLine.Inlines.Add(BoldValue(OrDots(model.VehicleName)));
+        saleLine.Inlines.Add(new Run(" المرقمة ") { FontWeight = FontWeights.SemiBold });
         saleLine.Inlines.Add(BoldValue(model.PlateNumber));
         if (!string.IsNullOrWhiteSpace(model.PlateType))
         {
@@ -182,7 +184,7 @@ public sealed class ShowroomSaleContractPrintService : IShowroomSaleContractPrin
             saleLine.Inlines.Add(new Run(")"));
         }
 
-        saleLine.Inlines.Add(new Run(" رقم الشاصي "));
+        saleLine.Inlines.Add(new Run(" صنف السيارة "));
         saleLine.Inlines.Add(BoldValue(model.ChassisNumber));
         saleLine.Inlines.Add(new Run(" الموديل "));
         saleLine.Inlines.Add(BoldValue(model.VehicleModel));

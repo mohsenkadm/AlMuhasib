@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.27",
-  "releaseDate": "2026-09-20",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.27/AlMuhasib-1.14.27.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.27/Qayd-Setup-1.14.27.exe",
-  "sha256": "2855D6987AC424BF3A8BB679EF74CD1296853C382527B0BB936420742A5C67EB",
-  "sizeBytes": 182078555,
-  "releaseNotes": "إصلاح المحدث الذاتي الاكتفاء وسندات الصرف للموردين — تحديث اختياري آمن مع ترحيل قاعدة بيانات إضافي",
+  "version": "1.14.28",
+  "releaseDate": "2026-09-22",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.28/AlMuhasib-1.14.28.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.28/Qayd-Setup-1.14.28.exe",
+  "sha256": "9D74F39B4488ED37769C0B169C8B5EB9580DEFC2DDE02B853F5C3E758D9D4235",
+  "sizeBytes": 182217756,
+  "releaseNotes": "موديل السيارة وحقول الهوية وتقرير الملخص التنفيذي — تحديث اختياري آمن مع ترحيل إضافي",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

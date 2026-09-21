@@ -904,6 +904,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 if (cashBox.Balance < voucher.Amount)
                     throw new ArgumentException($"رصيد الصندوق ({cashBox.Balance:N0}) غير كافٍ");
                 cashBox.Balance -= voucher.Amount;
+                if (voucher.SupplierId.HasValue)
+                    await ApplyPaymentToPurchaseInvoicesAsync(tenantId, voucher, username, ct);
                 break;
             case VoucherType.BankReceipt:
             {
@@ -956,6 +958,42 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         var creditInvoices = await _db.Invoices
             .Where(i => i.TenantId == tenantId &&
                         i.CustomerId == voucher.CustomerId.Value &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0)
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync(ct);
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .ToList();
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        voucher.UpdatedAt = DateTime.UtcNow;
+        voucher.UpdatedBy = username;
+    }
+
+    private async Task ApplyPaymentToPurchaseInvoicesAsync(
+        int tenantId, CloudVoucher voucher, string username, CancellationToken ct)
+    {
+        if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.SupplierId.HasValue)
+            return;
+
+        var creditInvoices = await _db.Invoices
+            .Where(i => i.TenantId == tenantId &&
+                        i.SupplierId == voucher.SupplierId.Value &&
+                        i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)

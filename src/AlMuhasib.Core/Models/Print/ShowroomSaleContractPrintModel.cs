@@ -23,6 +23,7 @@ public sealed class ShowroomSaleContractPrintModel
     public string BuyerIdIssuer { get; init; } = string.Empty;
 
     // السيارة
+    public string VehicleName { get; init; } = string.Empty;
     public string PlateNumber { get; init; } = string.Empty;
     public string ChassisNumber { get; init; } = string.Empty;
     public string VehicleType { get; init; } = string.Empty;

@@ -1,0 +1,140 @@
+<UserControl x:Class="AlMuhasib.UI.Views.ExecutiveSummaryReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:ExecutiveSummaryReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,0,8">
+            <StackPanel Margin="24,24,24,16">
+                <!-- Header -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="الملخص التنفيذي للأعمال"
+                                   FontSize="26" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding PeriodHint}"
+                                   FontSize="13" Margin="0,6,0,0"
+                                   Foreground="#757575"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Margin="0,4,0,0" FontSize="12"
+                                   Foreground="#757575">
+                            <Run Text="عدد المؤشرات:"/>
+                            <Run Text="{Binding CardCount, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Style="{StaticResource FlatButton}"
+                                Command="{Binding ExportToExcelCommand}"
+                                Margin="0,0,8,0"
+                                ToolTip="تصدير Excel">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="MicrosoftExcel" Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="تصدير" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlatButton}"
+                                Command="{Binding PrintCommand}"
+                                ToolTip="طباعة">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="طباعة" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Filter bar -->
+                <Border Style="{StaticResource FilterBar}" Margin="0,0,0,20">
+                    <StackPanel Orientation="Horizontal">
+                        <DatePicker SelectedDate="{Binding DateFrom}"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="من تاريخ"
+                                    Width="150" Margin="0,0,12,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo}"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="إلى تاريخ"
+                                    Width="150" Margin="0,0,12,0"/>
+                        <Button Content="بحث"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding LoadDataCommand}"
+                                Margin="0,0,12,0"
+                                MinWidth="100"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sections + KPI cards -->
+                <ItemsControl ItemsSource="{Binding Sections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExecutiveSummarySectionItem}">
+                            <StackPanel Margin="0,0,0,22">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border Width="4" CornerRadius="2" Margin="0,0,10,0"
+                                            Background="{Binding AccentBrush}"
+                                            VerticalAlignment="Stretch"/>
+                                    <TextBlock Text="{Binding Title}"
+                                               FontSize="18" FontWeight="SemiBold"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding AccentBrush}"/>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding Cards}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ExecutiveSummaryCardItem}">
+                                            <controls:AnimatedStatCard Margin="0,0,12,12"
+                                                                       MinHeight="128"
+                                                                       Title="{Binding Title}"
+                                                                       Hint="{Binding Hint}"
+                                                                       Value="{Binding Amount}"
+                                                                       Suffix="{Binding Suffix}"
+                                                                       Icon="{Binding Icon}"
+                                                                       IconBackground="{Binding AccentLightBrush}"
+                                                                       IconForeground="{Binding AccentBrush}"
+                                                                       ValueForeground="{Binding ValueBrush}"
+                                                                       ShowDetailButton="True"
+                                                                       DetailCommand="{Binding DataContext.ShowCardDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                       DetailCommandParameter="{Binding MetricKey}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Background="#80FFFFFF"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري تحميل الملخص..." Margin="0,12,0,0"
+                           FontSize="14" Foreground="#757575"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

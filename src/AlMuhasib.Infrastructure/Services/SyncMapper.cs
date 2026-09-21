@@ -289,6 +289,7 @@ internal static class SyncMapper
         d.UsageInstructions = p.UsageInstructions;
         d.VehicleType = p.VehicleType;
         d.ChassisNumber = p.ChassisNumber;
+        d.CarModel = p.CarModel;
         d.VehicleColor = p.VehicleColor;
         d.PassengerCount = p.PassengerCount;
         d.PlateNumber = p.PlateNumber;
@@ -313,6 +314,7 @@ internal static class SyncMapper
         d.UsageInstructions = p.UsageInstructions;
         d.VehicleType = p.VehicleType;
         d.ChassisNumber = p.ChassisNumber;
+        d.CarModel = p.CarModel;
         d.VehicleColor = p.VehicleColor;
         d.PassengerCount = p.PassengerCount;
         d.PlateNumber = p.PlateNumber;
@@ -355,7 +357,19 @@ internal static class SyncMapper
         return d;
     }
     private static WarehouseSyncDto MapWarehouse(Warehouse w) { var d = new WarehouseSyncDto(); CopyBase(w, d); d.Name = w.Name; d.Location = w.Location; return d; }
-    private static CustomerSyncDto MapCustomer(Customer c) { var d = new CustomerSyncDto(); CopyBase(c, d); d.Name = c.Name; d.Phone = c.Phone; d.Address = c.Address; d.FileNumber = c.FileNumber; d.Notes = c.Notes; return d; }
+    private static CustomerSyncDto MapCustomer(Customer c)
+    {
+        var d = new CustomerSyncDto();
+        CopyBase(c, d);
+        d.Name = c.Name;
+        d.Phone = c.Phone;
+        d.Address = c.Address;
+        d.FileNumber = c.FileNumber;
+        d.Notes = c.Notes;
+        d.IdNumber = c.IdNumber;
+        d.IdIssuer = c.IdIssuer;
+        return d;
+    }
     private static SupplierSyncDto MapSupplier(Supplier s) { var d = new SupplierSyncDto(); CopyBase(s, d); d.Name = s.Name; d.Phone = s.Phone; d.Address = s.Address; d.Notes = s.Notes; return d; }
     private static CashBoxSyncDto MapCashBox(CashBox c) { var d = new CashBoxSyncDto(); CopyBase(c, d); d.Name = c.Name; d.Balance = c.Balance; return d; }
     private static BankAccountSyncDto MapBankAccount(BankAccount b) { var d = new BankAccountSyncDto(); CopyBase(b, d); d.Name = b.Name; d.AccountNumber = b.AccountNumber; d.Balance = b.Balance; return d; }
@@ -365,7 +379,9 @@ internal static class SyncMapper
     {
         var d = new PrintBrandingSettingsSyncDto(); CopyBase(p, d);
         d.CompanyName = p.CompanyName; d.Address = p.Address; d.PhonePrimary = p.PhonePrimary; d.PhoneSecondary = p.PhoneSecondary;
-        d.Email = p.Email; d.Details = p.Details; d.ShowHeaderText = p.ShowHeaderText; d.ShowHeaderImage = p.ShowHeaderImage;
+        d.Email = p.Email; d.Details = p.Details;
+        d.CompanyIdNumber = p.CompanyIdNumber; d.CompanyIdIssuer = p.CompanyIdIssuer;
+        d.ShowHeaderText = p.ShowHeaderText; d.ShowHeaderImage = p.ShowHeaderImage;
         d.HeaderImageData = p.HeaderImageData; d.HeaderImageContentType = p.HeaderImageContentType;
         d.ShowFooterText = p.ShowFooterText; d.FooterText = p.FooterText; d.ShowFooterImage = p.ShowFooterImage;
         d.FooterImageData = p.FooterImageData; d.FooterImageContentType = p.FooterImageContentType;
@@ -519,6 +535,7 @@ internal static class SyncMapper
             ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.ScientificName = dto.ScientificName; entity.UsageInstructions = dto.UsageInstructions; entity.CategoryId = catId;
             entity.VehicleType = dto.VehicleType;
             entity.ChassisNumber = dto.ChassisNumber;
+            entity.CarModel = dto.CarModel;
             entity.VehicleColor = dto.VehicleColor;
             entity.PassengerCount = dto.PassengerCount;
             entity.PlateNumber = dto.PlateNumber;
@@ -600,7 +617,11 @@ internal static class SyncMapper
         await UpsertSimpleAsync(db, db.Warehouses, items, (e, d) => { e.Name = d.Name; e.Location = d.Location; }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertCustomersAsync(AppDbContext db, List<CustomerSyncDto> items, CancellationToken ct) =>
-        await UpsertSimpleAsync(db, db.Customers, items, (e, d) => { e.Name = d.Name; e.Phone = d.Phone; e.Address = d.Address; e.FileNumber = d.FileNumber; e.Notes = d.Notes; }, ct);
+        await UpsertSimpleAsync(db, db.Customers, items, (e, d) =>
+        {
+            e.Name = d.Name; e.Phone = d.Phone; e.Address = d.Address; e.FileNumber = d.FileNumber; e.Notes = d.Notes;
+            e.IdNumber = d.IdNumber; e.IdIssuer = d.IdIssuer;
+        }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertSuppliersAsync(AppDbContext db, List<SupplierSyncDto> items, CancellationToken ct) =>
         await UpsertSimpleAsync(db, db.Suppliers, items, (e, d) => { e.Name = d.Name; e.Phone = d.Phone; e.Address = d.Address; e.Notes = d.Notes; }, ct);
@@ -629,6 +650,7 @@ internal static class SyncMapper
             ApplyBase(entity, dto);
             entity.CompanyName = dto.CompanyName; entity.Address = dto.Address; entity.PhonePrimary = dto.PhonePrimary;
             entity.PhoneSecondary = dto.PhoneSecondary; entity.Email = dto.Email; entity.Details = dto.Details;
+            entity.CompanyIdNumber = dto.CompanyIdNumber; entity.CompanyIdIssuer = dto.CompanyIdIssuer;
             entity.ShowHeaderText = dto.ShowHeaderText; entity.ShowHeaderImage = dto.ShowHeaderImage;
             entity.HeaderImageData = dto.HeaderImageData; entity.HeaderImageContentType = dto.HeaderImageContentType;
             entity.ShowFooterText = dto.ShowFooterText; entity.FooterText = dto.FooterText;

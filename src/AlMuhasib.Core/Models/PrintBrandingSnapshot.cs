@@ -11,6 +11,8 @@ public sealed class PrintBrandingSnapshot
     public string PhoneSecondary { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string Details { get; init; } = string.Empty;
+    public string CompanyIdNumber { get; init; } = string.Empty;
+    public string CompanyIdIssuer { get; init; } = string.Empty;
 
     public bool ShowHeaderText { get; init; } = true;
     public bool ShowHeaderImage { get; init; }

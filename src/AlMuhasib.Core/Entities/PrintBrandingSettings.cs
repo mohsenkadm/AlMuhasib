@@ -12,6 +12,12 @@ public class PrintBrandingSettings : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
 
+    /// <summary>رقم هوية صاحب الشركة (معرض سيارات — طباعة العقد).</summary>
+    public string CompanyIdNumber { get; set; } = string.Empty;
+
+    /// <summary>جهة إصدار هوية صاحب الشركة (معرض سيارات — طباعة العقد).</summary>
+    public string CompanyIdIssuer { get; set; } = string.Empty;
+
     public bool ShowHeaderText { get; set; } = true;
     public bool ShowHeaderImage { get; set; }
     public byte[]? HeaderImageData { get; set; }

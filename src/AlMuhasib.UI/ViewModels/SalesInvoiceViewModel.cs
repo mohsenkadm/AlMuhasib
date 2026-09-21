@@ -1445,19 +1445,20 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 ? branding.PhoneSecondary
                 : branding.PhonePrimary,
             SellerAddress = branding.Address,
-            SellerIdNumber = string.Empty,
-            SellerIdIssuer = string.Empty,
+            SellerIdNumber = branding.CompanyIdNumber,
+            SellerIdIssuer = branding.CompanyIdIssuer,
             AnnualRegistrationNote = "مطابق",
             BuyerName = customer?.Name ?? CustomerSearchText,
             BuyerPhone = customer?.Phone ?? string.Empty,
             BuyerAddress = customer?.Address ?? string.Empty,
-            BuyerIdNumber = customer?.FileNumber ?? string.Empty,
-            BuyerIdIssuer = string.Empty,
+            BuyerIdNumber = customer?.IdNumber ?? string.Empty,
+            BuyerIdIssuer = customer?.IdIssuer ?? string.Empty,
+            VehicleName = product?.Name ?? string.Empty,
             PlateNumber = product?.PlateNumber ?? string.Empty,
             ChassisNumber = product?.ChassisNumber ?? string.Empty,
-            VehicleType = product?.VehicleType ?? product?.Name ?? string.Empty,
+            VehicleType = product?.VehicleType ?? string.Empty,
             VehicleColor = product?.VehicleColor ?? string.Empty,
-            VehicleModel = product?.Description ?? string.Empty,
+            VehicleModel = product?.CarModel ?? string.Empty,
             VehicleSize = sizeText,
             PlateType = product is null
                 ? string.Empty
@@ -1586,6 +1587,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     WarehouseName = warehouseName,
                     VehicleType = product?.VehicleType,
                     ChassisNumber = product?.ChassisNumber,
+                    CarModel = product?.CarModel,
                     VehicleColor = product?.VehicleColor,
                     PassengerCount = product?.PassengerCount,
                     PlateNumber = product?.PlateNumber,
@@ -1709,6 +1711,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private string _quickCustomerAddress = string.Empty;
 
     [ObservableProperty]
+    private string _quickCustomerIdNumber = string.Empty;
+
+    [ObservableProperty]
+    private string _quickCustomerIdIssuer = string.Empty;
+
+    [ObservableProperty]
     private string _quickCustomerError = string.Empty;
 
     [RelayCommand]
@@ -1717,6 +1725,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         QuickCustomerName = string.Empty;
         QuickCustomerPhone = string.Empty;
         QuickCustomerAddress = string.Empty;
+        QuickCustomerIdNumber = string.Empty;
+        QuickCustomerIdIssuer = string.Empty;
         QuickCustomerError = string.Empty;
         IsQuickAddCustomerOpen = true;
     }
@@ -1764,6 +1774,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 Name = QuickCustomerName.Trim(),
                 Phone = string.IsNullOrWhiteSpace(QuickCustomerPhone) ? null : QuickCustomerPhone.Trim(),
                 Address = string.IsNullOrWhiteSpace(QuickCustomerAddress) ? null : QuickCustomerAddress.Trim(),
+                IdNumber = string.IsNullOrWhiteSpace(QuickCustomerIdNumber) ? null : QuickCustomerIdNumber.Trim(),
+                IdIssuer = string.IsNullOrWhiteSpace(QuickCustomerIdIssuer) ? null : QuickCustomerIdIssuer.Trim(),
                 CreatedBy = _currentUserService.Username,
                 CreatedAt = DateTime.UtcNow
             };

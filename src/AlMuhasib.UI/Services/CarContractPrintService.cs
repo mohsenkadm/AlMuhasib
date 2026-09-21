@@ -139,7 +139,7 @@ public sealed class CarContractPrintService : ICarContractPrintService
             FieldLine("نوع السيارة", contract.CarType),
             FieldLine("الموديل", contract.CarModel),
             FieldLine("اللون", contract.CarColor),
-            FieldLine("رقم الشاصي", contract.ChassisNumber)
+            FieldLine("صنف السيارة", contract.ChassisNumber)
         ]);
 
         var moneyBlock = CreateStackedFieldBlock([

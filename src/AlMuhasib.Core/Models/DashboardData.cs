@@ -34,6 +34,10 @@ public class DashboardData
     public decimal CustomerCreditUnappliedDebt { get; set; }
     public decimal CustomerCreditUnappliedReceipts { get; set; }
 
+    public decimal SupplierCreditBalance { get; set; }
+    public decimal SupplierCreditInvoiceRemaining { get; set; }
+    public decimal SupplierCreditUnappliedPayments { get; set; }
+
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
     public decimal BankBalance { get; set; }

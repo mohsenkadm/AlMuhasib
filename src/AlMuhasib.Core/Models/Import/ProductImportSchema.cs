@@ -18,7 +18,8 @@ public static class ProductImportSchema
     public const string PurchasePrice = "سعر الشراء";
     public const string MinQuantity = "الحد الأدنى";
     public const string VehicleType = "نوع السيارة";
-    public const string ChassisNumber = "رقم الشاصي";
+    public const string ChassisNumber = "صنف السيارة";
+    public const string CarModel = "موديل السيارة";
     public const string VehicleColor = "اللون";
     public const string PassengerCount = "عدد الركاب";
     public const string PlateNumber = "رقم اللوحة";
@@ -58,6 +59,7 @@ public static class ProductImportSchema
         {
             headers.Add(VehicleType);
             headers.Add(ChassisNumber);
+            headers.Add(CarModel);
             headers.Add(VehicleColor);
             headers.Add(PassengerCount);
             headers.Add(PlateNumber);
@@ -99,6 +101,7 @@ public static class ProductImportSchema
                 MinQuantity => "5",
                 VehicleType => "سيدان",
                 ChassisNumber => "",
+                CarModel => "2024",
                 VehicleColor => "أبيض",
                 PassengerCount => "5",
                 PlateNumber => "",
