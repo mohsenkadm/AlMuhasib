@@ -1598,19 +1598,32 @@ public partial class ReportService
 
         var rows = new List<StatementOfFinancialPositionLineRow>
         {
-            new() { Section = "الأصول", LineName = "النقدية في القاصات", Amount = cash },
-            new() { Section = "الأصول", LineName = "الأرصدة المصرفية", Amount = banks },
-            new() { Section = "الأصول", LineName = "الذمم المدينة (آجل)", Amount = creditAr },
-            new() { Section = "الأصول", LineName = "ذمم الأقساط", Amount = installmentAr },
-            new() { Section = "الأصول", LineName = "المخزون بالتكلفة", Amount = inventory },
-            new() { Section = "الأصول", LineName = "إجمالي الأصول", Amount = assets, IsTotal = true },
-            new() { Section = "الالتزامات", LineName = "الذمم الدائنة", Amount = payables },
-            new() { Section = "الالتزامات", LineName = "ودائع المستثمرين", Amount = investorCapital },
-            new() { Section = "الالتزامات", LineName = "إجمالي الالتزامات", Amount = liabilities, IsTotal = true },
-            new() { Section = "حقوق الملكية", LineName = "رأس المال", Amount = capital },
-            new() { Section = "حقوق الملكية", LineName = "تعديلات رأس المال", Amount = adjustments },
-            new() { Section = "حقوق الملكية", LineName = "الأرباح المتراكمة", Amount = accumulated },
-            new() { Section = "حقوق الملكية", LineName = "إجمالي حقوق الملكية", Amount = equity, IsTotal = true }
+            new() { Section = "الأصول", LineName = "النقدية في القاصات", Amount = cash,
+                Formula = "مجموع أرصدة القاصات الحالية" },
+            new() { Section = "الأصول", LineName = "الأرصدة المصرفية", Amount = banks,
+                Formula = "مجموع أرصدة الحسابات المصرفية" },
+            new() { Section = "الأصول", LineName = "الذمم المدينة (آجل)", Amount = creditAr,
+                Formula = "متبقي مبيعات الآجل − سندات قبض/دين غير مطبّقة" },
+            new() { Section = "الأصول", LineName = "ذمم الأقساط", Amount = installmentAr,
+                Formula = "مجموع المتبقي من أقساط غير مسددة بالكامل" },
+            new() { Section = "الأصول", LineName = "المخزون بالتكلفة", Amount = inventory,
+                Formula = "الكمية × متوسط تكلفة الشراء (حتى التاريخ)" },
+            new() { Section = "الأصول", LineName = "إجمالي الأصول", Amount = assets, IsTotal = true,
+                Formula = "نقد + مصارف + ذمم آجل + أقساط + مخزون" },
+            new() { Section = "الالتزامات", LineName = "الذمم الدائنة", Amount = payables,
+                Formula = "متبقي مشتريات الآجل − سندات صرف غير مطبّقة" },
+            new() { Section = "الالتزامات", LineName = "ودائع المستثمرين", Amount = investorCapital,
+                Formula = "إيداعات المستثمرين − السحوبات" },
+            new() { Section = "الالتزامات", LineName = "إجمالي الالتزامات", Amount = liabilities, IsTotal = true,
+                Formula = "ذمم دائنة + ودائع المستثمرين" },
+            new() { Section = "حقوق الملكية", LineName = "رأس المال", Amount = capital,
+                Formula = "مجموع قيود رأس المال الافتتاحي حتى التاريخ" },
+            new() { Section = "حقوق الملكية", LineName = "تعديلات رأس المال", Amount = adjustments,
+                Formula = "مجموع تعديلات رأس المال حتى التاريخ" },
+            new() { Section = "حقوق الملكية", LineName = "الأرباح المتراكمة", Amount = accumulated,
+                Formula = "رصيد أرباح افتتاحي + (مبيعات − تكلفة) − مصاريف − توزيعات" },
+            new() { Section = "حقوق الملكية", LineName = "إجمالي حقوق الملكية", Amount = equity, IsTotal = true,
+                Formula = "رأس المال + التعديلات + الأرباح المتراكمة" }
         };
 
         return new StatementOfFinancialPositionReportResult
