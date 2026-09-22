@@ -1273,6 +1273,7 @@ public class ReceivablesAgingRow
 {
     public string SourceType { get; set; } = string.Empty;
     public int ReferenceId { get; set; }
+    public int? CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string? CustomerFileNumber { get; set; }
     public string Phone { get; set; } = string.Empty;
@@ -1296,6 +1297,7 @@ public class PayablesAgingRow
 {
     public int InvoiceId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
+    public int? SupplierId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public DateTime DueDate { get; set; }

@@ -228,6 +228,10 @@
                                                     Description="تسجيل المواد التالفة وإنقاصها من المخزن مع تقرير التلف"
                                                     Icon="DeleteAlert" IconBackground="#FFEBEE" IconForeground="#C62828"
                                                     IsChecked="{Binding DamageInvoices}"/>
+                        <controls:FeatureToggleCard Title="تسديد الفواتير الآجلة من التقارير"
+                                                    Description="إظهار زر تسديد الفواتير الآجلة في جدولي تقرير المبيعات وتقرير المشتريات — مفعّل افتراضياً"
+                                                    Icon="CashCheck" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding SettleCreditInvoicesInReports}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

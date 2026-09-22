@@ -559,22 +559,26 @@ public sealed partial class CloudReportService
     {
         var context = _db;
         var asOf = asOfDate.Date;
-        var rows = new List<ReceivablesAgingRow>();
+        var asOfEnd = asOf.AddDays(1);
+        var creditRows = new List<ReceivablesAgingRow>();
 
         var creditQ = context.Invoices.Include(i => i.Customer)
             .Where(i => i.InvoiceType == InvoiceType.Sale
                         && i.PaymentMethod == PaymentMethod.Credit
-                        && i.RemainingAmount > 0);
+                        && i.RemainingAmount > 0
+                        && i.Date < asOfEnd);
         if (customerId.HasValue) creditQ = creditQ.Where(i => i.CustomerId == customerId.Value);
-        foreach (var i in await creditQ.ToListAsync())
+        foreach (var i in await creditQ.OrderBy(i => i.Date).ThenBy(i => i.Id).ToListAsync())
         {
             var due = i.CreditDueDate?.Date ?? i.Date.Date;
             var days = due < asOf ? (asOf - due).Days : 0;
-            rows.Add(new ReceivablesAgingRow
+            creditRows.Add(new ReceivablesAgingRow
             {
                 SourceType = "آجل",
                 ReferenceId = i.Id,
+                CustomerId = i.CustomerId,
                 CustomerName = i.Customer?.Name ?? "—",
+                CustomerFileNumber = i.Customer?.FileNumber,
                 Phone = i.Customer?.Phone ?? "—",
                 DueDate = due,
                 Amount = i.NetAmount,
@@ -583,6 +587,32 @@ public sealed partial class CloudReportService
                 AgingBucket = ResolveAgingBucket(due, asOf)
             });
         }
+
+        var unappliedQ = context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId != null
+                        && v.Date < asOfEnd
+                        && !v.InvoiceId.HasValue
+                        && !v.InstallmentId.HasValue
+                        && (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt)
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)));
+        if (customerId.HasValue) unappliedQ = unappliedQ.Where(v => v.CustomerId == customerId.Value);
+        var unappliedReceipts = await unappliedQ
+            .Select(v => new { CustomerId = v.CustomerId!.Value, v.Amount })
+            .ToListAsync();
+
+        creditRows = SupplierBalanceHelper.ApplyUnappliedPaymentsToAgingRows(
+            creditRows,
+            unappliedReceipts.Select(v => (v.CustomerId, v.Amount)),
+            r => r.CustomerId,
+            r => r.RemainingAmount,
+            (r, rem) =>
+            {
+                r.RemainingAmount = rem;
+                r.AgingBucket = ResolveAgingBucket(r.DueDate, asOf);
+                return r;
+            });
+
+        var rows = new List<ReceivablesAgingRow>(creditRows);
 
         var instQ = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
@@ -596,7 +626,9 @@ public sealed partial class CloudReportService
             {
                 SourceType = "أقساط",
                 ReferenceId = i.Id,
+                CustomerId = i.InstallmentPlan?.CustomerId,
                 CustomerName = i.InstallmentPlan?.Customer?.Name ?? "—",
+                CustomerFileNumber = i.InstallmentPlan?.Customer?.FileNumber,
                 Phone = i.InstallmentPlan?.Customer?.Phone ?? "—",
                 DueDate = due,
                 Amount = i.Amount,
@@ -621,11 +653,15 @@ public sealed partial class CloudReportService
     {
         var context = _db;
         var asOf = asOfDate.Date;
+        var asOfEnd = asOf.AddDays(1);
         var query = context.Invoices.Include(i => i.Supplier)
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.RemainingAmount > 0);
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.RemainingAmount > 0
+                        && i.Date < asOfEnd);
         if (supplierId.HasValue) query = query.Where(i => i.SupplierId == supplierId.Value);
 
-        var invoices = await query.ToListAsync();
+        var invoices = await query.OrderBy(i => i.Date).ThenBy(i => i.Id).ToListAsync();
         var rows = invoices.Select(i =>
         {
             var due = i.CreditDueDate?.Date ?? i.Date.Date;
@@ -634,6 +670,7 @@ public sealed partial class CloudReportService
             {
                 InvoiceId = i.Id,
                 InvoiceNumber = i.InvoiceNumber,
+                SupplierId = i.SupplierId,
                 SupplierName = i.Supplier?.Name ?? "—",
                 Phone = i.Supplier?.Phone ?? "—",
                 DueDate = due,
@@ -642,7 +679,32 @@ public sealed partial class CloudReportService
                 DaysOverdue = days,
                 AgingBucket = ResolveAgingBucket(due, asOf)
             };
-        }).OrderByDescending(r => r.DaysOverdue).ToList();
+        }).ToList();
+
+        var paymentQ = context.Vouchers.AsNoTracking()
+            .Where(v => v.SupplierId != null
+                        && v.VoucherType == VoucherType.Payment
+                        && v.Date < asOfEnd
+                        && !v.InvoiceId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)));
+        if (supplierId.HasValue) paymentQ = paymentQ.Where(v => v.SupplierId == supplierId.Value);
+        var unappliedPayments = await paymentQ
+            .Select(v => new { SupplierId = v.SupplierId!.Value, v.Amount })
+            .ToListAsync();
+
+        rows = SupplierBalanceHelper.ApplyUnappliedPaymentsToAgingRows(
+            rows,
+            unappliedPayments.Select(v => (v.SupplierId, v.Amount)),
+            r => r.SupplierId,
+            r => r.RemainingAmount,
+            (r, rem) =>
+            {
+                r.RemainingAmount = rem;
+                r.AgingBucket = ResolveAgingBucket(r.DueDate, asOf);
+                return r;
+            });
+
+        rows = rows.OrderByDescending(r => r.DaysOverdue).ThenBy(r => r.DueDate).ToList();
 
         return new PayablesAgingReportResult
         {
@@ -1464,10 +1526,28 @@ public sealed partial class CloudReportService
         var cash = await context.CashBoxes.SumAsync(c => (decimal?)c.Balance) ?? 0;
         var banks = await context.BankAccounts.SumAsync(b => (decimal?)b.Balance) ?? 0;
 
-        // AR via RemainingAmount (corrected)
-        var creditAr = await context.Invoices
+        // AR = متبقي الآجل − سندات قبض/دين غير مطبّقة
+        var creditRemaining = await context.Invoices
             .Where(i => i.InvoiceType == InvoiceType.Sale && i.PaymentMethod == PaymentMethod.Credit && i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedDebt = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var unappliedReceipts = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var creditAr = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemaining, 0, unappliedDebt, unappliedReceipts);
         var installmentAr = await context.Installments
             .Where(i => i.RemainingAmount > 0)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
@@ -1485,10 +1565,21 @@ public sealed partial class CloudReportService
             inventory += Math.Round(s.Quantity * avg, 0);
         }
 
-        // AP via RemainingAmount (corrected)
-        var payables = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date <= endOfDay)
+        // AP = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة
+        var supplierCreditRemaining = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedSupplierPayments = await context.Vouchers
+            .Where(v => v.SupplierId != null
+                        && v.VoucherType == VoucherType.Payment
+                        && v.Date <= endOfDay
+                        && !v.InvoiceId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var payables = SupplierBalanceHelper.ComputeOutstandingPayables(
+            supplierCreditRemaining, unappliedSupplierPayments);
 
         var invDep = await context.InvestorTransactions
             .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
@@ -1765,7 +1856,8 @@ public sealed partial class CloudReportService
                         && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var supplierPayables = Math.Max(0, supplierCreditRemaining - unappliedSupplierPayments);
+        var supplierPayables = SupplierBalanceHelper.ComputeOutstandingPayables(
+            supplierCreditRemaining, unappliedSupplierPayments);
 
         var installmentReceivables = await context.Installments.AsNoTracking()
             .Where(i => i.RemainingAmount > 0)
