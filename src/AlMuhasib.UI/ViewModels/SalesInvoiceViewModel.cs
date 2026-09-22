@@ -175,7 +175,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
     public bool ShowCustomerAndPayment => !IsDamageMode;
 
-    public bool ShowCashBox => IsCashPayment && !IsDamageMode;
+    public bool ShowCashBox =>
+        !IsDamageMode && (IsCashPayment || (IsCreditPayment && CreditPaidAmount > 0m));
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
@@ -219,6 +220,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         }
 
         CreditRemainingAmount = Math.Max(0m, GrandTotal - paid);
+        OnPropertyChanged(nameof(ShowCashBox));
     }
 
     public SalesInvoiceViewModel(
@@ -1045,6 +1047,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             CreditPaidAmount = 0m;
             CreditRemainingAmount = 0m;
         }
+
+        OnPropertyChanged(nameof(ShowCashBox));
     }
 
     partial void OnInvoiceDiscountValueChanged(decimal value) => RecalculateTotals();
@@ -1066,6 +1070,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (IsCashPayment && SelectedCashBox is null && !IsDamageMode)
         {
             InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة");
+            return;
+        }
+
+        if (IsCreditPayment && CreditPaidAmount > 0m && SelectedCashBox is null)
+        {
+            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة للمبلغ المدفوع");
             return;
         }
 
@@ -1243,7 +1253,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 SalesRepresentativeId = ShowSalesRepSelection && !IsDamageMode ? SelectedSalesRepresentative?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsDamageMode ? PaymentMethod.Cash : SelectedPaymentMethod,
-                CashBoxId = !IsDamageMode && IsCashPayment && SelectedCashBox is not null ? SelectedCashBox.Id : null,
+                CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
                 CreditDueDate = !IsDamageMode && IsCreditPayment ? CreditDueDate : null,
                 PaidAmount = !IsDamageMode && IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
@@ -1413,6 +1423,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
     private bool CanPrintCarContract() =>
         CanPrintSavedInvoice && ShowCarShowroomContractPrint;
+
+    private int? ResolveCashBoxIdForSave()
+    {
+        if (IsDamageMode || SelectedCashBox is null)
+            return null;
+        if (IsCashPayment)
+            return SelectedCashBox.Id;
+        if (IsCreditPayment && CreditPaidAmount > 0m)
+            return SelectedCashBox.Id;
+        return null;
+    }
 
     private ShowroomSaleContractPrintModel BuildShowroomSaleContractPrintModel()
     {
