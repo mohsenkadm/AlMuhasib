@@ -851,10 +851,29 @@ public class InvoiceService : IInvoiceService
                     VoucherType = VoucherType.DebtReceipt,
                     Amount = amount,
                     CustomerId = invoice.CustomerId,
+                    InvoiceId = invoice.Id,
                     CashBoxId = cashBoxId,
                     Date = DateTime.Today,
                     Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(
                         $"تسديد فاتورة آجلة {invoice.InvoiceNumber}"),
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else if (invoice.SupplierId.HasValue && invoice.InvoiceType == InvoiceType.Purchase)
+            {
+                var voucherNumber = await GetNextPaymentVoucherNumberAsync(context);
+                await context.Vouchers.AddAsync(new Voucher
+                {
+                    VoucherNumber = voucherNumber,
+                    VoucherType = VoucherType.Payment,
+                    Amount = amount,
+                    SupplierId = invoice.SupplierId,
+                    InvoiceId = invoice.Id,
+                    CashBoxId = cashBoxId,
+                    Date = DateTime.Today,
+                    Notes = SupplierBalanceHelper.MarkPaymentApplied(
+                        $"تسديد فاتورة مشتريات آجلة {invoice.InvoiceNumber}"),
                     CreatedBy = username,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -901,6 +920,22 @@ public class InvoiceService : IInvoiceService
             nextNum = parsed + 1;
 
         return $"DRC{nextNum:D6}";
+    }
+
+    private static async Task<string> GetNextPaymentVoucherNumberAsync(AppDbContext context)
+    {
+        var lastVoucher = await context.Vouchers
+            .IgnoreQueryFilters()
+            .Where(v => v.VoucherType == VoucherType.Payment)
+            .OrderByDescending(v => v.Id)
+            .FirstOrDefaultAsync();
+
+        var nextNum = 1;
+        if (lastVoucher?.VoucherNumber is { Length: > 3 } number &&
+            int.TryParse(number.AsSpan(3), out var parsed))
+            nextNum = parsed + 1;
+
+        return $"PAY{nextNum:D6}";
     }
 
     /// <summary>

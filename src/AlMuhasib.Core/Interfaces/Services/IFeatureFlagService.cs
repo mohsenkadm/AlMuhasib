@@ -30,6 +30,9 @@ public interface IFeatureFlagService
     bool TemplatePharmacy { get; }
     bool CarShowroom { get; }
 
+    /// <summary>تسديد الفواتير الآجلة من تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
+    bool SettleCreditInvoicesInReports { get; }
+
     /// <summary>أي قالب سوق مفعّل</summary>
     bool AnyMarketTemplateEnabled { get; }
 

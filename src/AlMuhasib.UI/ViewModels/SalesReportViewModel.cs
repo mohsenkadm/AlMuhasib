@@ -20,6 +20,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IFeatureFlagService _featureFlags;
 
     // Stats
     [ObservableProperty] private string _totalSales = "0";
@@ -56,17 +57,29 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [ObservableProperty] private SalesReportRow? _paymentTargetRow;
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
 
+    [ObservableProperty] private bool _canSettleCreditInvoices = true;
+
     public SalesReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IInvoiceService invoiceService, IWhatsAppShareService whatsAppShare)
+        IInvoiceService invoiceService, IWhatsAppShareService whatsAppShare,
+        IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _invoiceService = invoiceService;
         _whatsAppShare = whatsAppShare;
+        _featureFlags = featureFlags;
         PageTitle = "تقرير المبيعات";
         InitReportActionServices(invoiceService);
         RegisterThemeChartReload(LoadDataAsync);
+        RefreshSettleFeatureFlag();
+        _featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
+
+    private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
+        Application.Current?.Dispatcher.Invoke(RefreshSettleFeatureFlag);
+
+    private void RefreshSettleFeatureFlag() =>
+        CanSettleCreditInvoices = _featureFlags.SettleCreditInvoicesInReports;
 
     public override async Task InitializeAsync()
     {
@@ -365,7 +378,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void OpenPaymentDialog(SalesReportRow? row)
     {
-        if (row is null || !row.IsCredit || row.IsCreditPaid) return;
+        if (!CanSettleCreditInvoices || row is null || !row.IsCredit || row.IsCreditPaid) return;
         PaymentTargetRow = row;
         PaymentAmount = row.RemainingAmount;
         PaymentCashBox = CashBoxes.FirstOrDefault();

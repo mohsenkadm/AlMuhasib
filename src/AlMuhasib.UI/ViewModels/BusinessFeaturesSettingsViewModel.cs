@@ -52,6 +52,9 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _templatePharmacy;
     [ObservableProperty] private bool _carShowroom;
 
+    /// <summary>تسديد الفواتير الآجلة من تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
+    [ObservableProperty] private bool _settleCreditInvoicesInReports = true;
+
     [ObservableProperty] private int _idleLockMinutes;
     [ObservableProperty] private decimal _posMinInstallmentAmount = 50_000m;
 
@@ -69,7 +72,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
             DamageInvoices,
             TemplateMobileShop, TemplateClothing,
-            TemplateConstruction, TemplatePharmacy, CarShowroom);
+            TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports);
 
     public BusinessFeaturesSettingsViewModel(
         IUserPreferencesService preferences,
@@ -152,6 +155,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         TemplateConstruction = p.FeatureFlags.TemplateConstruction;
         TemplatePharmacy = p.FeatureFlags.TemplatePharmacy;
         CarShowroom = p.FeatureFlags.CarShowroom;
+        SettleCreditInvoicesInReports = p.FeatureFlags.SettleCreditInvoicesInReports;
 
         IdleLockMinutes = p.IdleLockMinutes;
         PosMinInstallmentAmount = p.PosMinInstallmentAmount;
@@ -188,6 +192,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplatePharmacyChanged(bool value) => NotifyFeaturesCount();
     partial void OnCarShowroomChanged(bool value) => NotifyFeaturesCount();
+    partial void OnSettleCreditInvoicesInReportsChanged(bool value) => NotifyFeaturesCount();
 
     [RelayCommand]
     private void BrowseBackupFolder()
@@ -238,6 +243,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.TemplateConstruction = TemplateConstruction;
             p.FeatureFlags.TemplatePharmacy = TemplatePharmacy;
             p.FeatureFlags.CarShowroom = CarShowroom;
+            p.FeatureFlags.SettleCreditInvoicesInReports = SettleCreditInvoicesInReports;
 
             p.IdleLockMinutes = Math.Max(0, IdleLockMinutes);
             p.PosMinInstallmentAmount = Math.Max(0, PosMinInstallmentAmount);

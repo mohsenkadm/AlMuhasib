@@ -53,4 +53,7 @@ public class BusinessFeatureFlags
 
     /// <summary>معرض سيارات — حقول نوع السيارة والشاصي واللون والركاب واللوحة على المنتج — معطّل افتراضياً.</summary>
     public bool CarShowroom { get; set; }
+
+    /// <summary>زر تسديد الفواتير الآجلة في تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
+    public bool SettleCreditInvoicesInReports { get; set; } = true;
 }
