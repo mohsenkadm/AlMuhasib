@@ -112,12 +112,14 @@
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
                           Grid.Row="1">
                     <DataGrid.Columns>
-                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="130"
+                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="110"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Section"/>
-                                <DataGridTextColumn Header="البند" Binding="{Binding LineName}" Width="*"
+                                <DataGridTextColumn Header="البند" Binding="{Binding LineName}" Width="180"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="LineName"/>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                <DataGridTextColumn Header="المعادلة" Binding="{Binding Formula}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Formula"/>
                     </DataGrid.Columns>
                 </DataGrid>
 
