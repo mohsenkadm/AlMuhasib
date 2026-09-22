@@ -11,6 +11,8 @@ public class DashboardData
     /// <summary>مكونات معادلة الأرباح الصافية في لوحة التحكم.</summary>
     public decimal NetProfitSales { get; set; }
     public decimal NetProfitPurchases { get; set; }
+    /// <summary>قيمة أرصدة المنتجات الافتتاحية (كمية افتتاحية × تكلفة الوحدة).</summary>
+    public decimal NetProfitOpeningStock { get; set; }
     public decimal NetProfitExpenses { get; set; }
     public decimal NetProfitDistributions { get; set; }
     public decimal NetProfitOpening { get; set; }
