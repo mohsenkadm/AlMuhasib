@@ -133,24 +133,122 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Customer (Receipt, DebtReceipt, optional Payment) -->
-                    <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding FilteredCustomers}"
-                              SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
-                              Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                              materialDesign:HintAssist.Hint="{Binding CustomerFieldHint}"
-                              Style="{StaticResource CustomerSearchableComboBox}"
-                              FontSize="13"
-                              Visibility="{Binding ShowCustomerPickerField, Converter={StaticResource BoolToVis}}" />
+                    <StackPanel Grid.Column="0"
+                                Visibility="{Binding ShowCustomerPickerField, Converter={StaticResource BoolToVis}}">
+                        <ComboBox ItemsSource="{Binding FilteredCustomers}"
+                                  SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
+                                  Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="{Binding CustomerFieldHint}"
+                                  Style="{StaticResource CustomerSearchableComboBox}"
+                                  FontSize="13" />
+                        <Border Margin="0,6,0,0" CornerRadius="10" Padding="10,6"
+                                Visibility="{Binding ShowCustomerBalance, Converter={StaticResource BoolToVis}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
+                                            <Setter Property="Background" Value="#ECEFF1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="WalletOutline" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                                    <Setter Property="Foreground" Value="#E65100"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding CustomerBalanceText}"/>
+                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
+                                                    <Setter Property="Text" Value="جاري تحميل رصيد العميل..."/>
+                                                    <Setter Property="Foreground" Value="#607D8B"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
+                                                    <Setter Property="Foreground" Value="#E65100"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
                     <!-- Supplier (Payment, optional) -->
-                    <ComboBox Grid.Column="2"
-                              ItemsSource="{Binding FilteredSuppliers}"
-                              SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
-                              Text="{Binding SupplierSearchText, UpdateSourceTrigger=PropertyChanged}"
-                              materialDesign:HintAssist.Hint="المورد (اختياري — ابحث بالاسم أو الهاتف أو المعرف)"
-                              Style="{StaticResource SupplierSearchableComboBox}"
-                              FontSize="13"
-                              Visibility="{Binding ShowSupplierField, Converter={StaticResource BoolToVis}}" />
+                    <StackPanel Grid.Column="2"
+                                Visibility="{Binding ShowSupplierField, Converter={StaticResource BoolToVis}}">
+                        <ComboBox ItemsSource="{Binding FilteredSuppliers}"
+                                  SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
+                                  Text="{Binding SupplierSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="المورد (اختياري — ابحث بالاسم أو الهاتف أو المعرف)"
+                                  Style="{StaticResource SupplierSearchableComboBox}"
+                                  FontSize="13" />
+                        <Border Margin="0,6,0,0" CornerRadius="10" Padding="10,6"
+                                Visibility="{Binding ShowSupplierBalance, Converter={StaticResource BoolToVis}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasSupplierOutstandingBalance}" Value="True">
+                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSupplierBalanceLoading}" Value="True">
+                                            <Setter Property="Background" Value="#ECEFF1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountCashOutline" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSupplierOutstandingBalance}" Value="True">
+                                                    <Setter Property="Foreground" Value="#C62828"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding SupplierBalanceText}"/>
+                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSupplierBalanceLoading}" Value="True">
+                                                    <Setter Property="Text" Value="جاري تحميل رصيد المورد..."/>
+                                                    <Setter Property="Foreground" Value="#607D8B"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding HasSupplierOutstandingBalance}" Value="True">
+                                                    <Setter Property="Foreground" Value="#C62828"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
                     <!-- Investor (InvestorDeposit, InvestorWithdrawal) -->
                     <ComboBox Grid.Column="0"

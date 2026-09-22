@@ -22,19 +22,24 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IReportService _reportService;
+    private CancellationTokenSource? _customerBalanceCts;
+    private CancellationTokenSource? _supplierBalanceCts;
 
     public VouchersViewModel(
         ICashBankService cashBankService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IReportService reportService)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _whatsAppShare = whatsAppShare;
         _currentUserService = currentUserService;
+        _reportService = reportService;
         PageTitle = "السندات";
     }
 
@@ -74,10 +79,48 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private string _customerSearchText = string.Empty;
 
     [ObservableProperty]
+    private decimal? _customerOutstandingBalance;
+
+    [ObservableProperty]
+    private bool _isCustomerBalanceLoading;
+
+    public bool ShowCustomerBalance =>
+        ShowCustomerPickerField && SelectedCustomer is not null;
+
+    public bool HasCustomerOutstandingBalance =>
+        CustomerOutstandingBalance is > 0;
+
+    public string CustomerBalanceText =>
+        CustomerOutstandingBalance is null
+            ? string.Empty
+            : CustomerOutstandingBalance > 0
+                ? $"عليه لنا: {CustomerOutstandingBalance:N0} د.ع"
+                : "لا ذمم عليه";
+
+    [ObservableProperty]
     private Supplier? _selectedSupplier;
 
     [ObservableProperty]
     private string _supplierSearchText = string.Empty;
+
+    [ObservableProperty]
+    private decimal? _supplierOutstandingBalance;
+
+    [ObservableProperty]
+    private bool _isSupplierBalanceLoading;
+
+    public bool ShowSupplierBalance =>
+        ShowSupplierField && SelectedSupplier is not null;
+
+    public bool HasSupplierOutstandingBalance =>
+        SupplierOutstandingBalance is > 0;
+
+    public string SupplierBalanceText =>
+        SupplierOutstandingBalance is null
+            ? string.Empty
+            : SupplierOutstandingBalance > 0
+                ? $"علينا له: {SupplierOutstandingBalance:N0} د.ع"
+                : "لا ذمم علينا";
 
     [ObservableProperty]
     private Investor? _selectedInvestor;
@@ -306,6 +349,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
         RefreshDocumentLinkVisibility();
         _ = LoadDocumentLinksAsync();
+        _ = RefreshCustomerBalanceAsync();
+        OnPropertyChanged(nameof(ShowCustomerBalance));
     }
 
     partial void OnCustomerSearchTextChanged(string value)
@@ -317,6 +362,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         SelectedCustomer = null;
         CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
         RefreshDocumentLinkVisibility();
+        ClearCustomerBalance();
     }
 
     partial void OnSelectedSupplierChanged(Supplier? value)
@@ -330,6 +376,9 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             CustomerSearchText = string.Empty;
             CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
         }
+
+        _ = RefreshSupplierBalanceAsync();
+        OnPropertyChanged(nameof(ShowSupplierBalance));
     }
 
     partial void OnSupplierSearchTextChanged(string value)
@@ -339,6 +388,125 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
         SelectedSupplier = null;
         SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, value);
+        ClearSupplierBalance();
+    }
+
+    partial void OnCustomerOutstandingBalanceChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasCustomerOutstandingBalance));
+        OnPropertyChanged(nameof(CustomerBalanceText));
+    }
+
+    partial void OnIsCustomerBalanceLoadingChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+
+    partial void OnSupplierOutstandingBalanceChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasSupplierOutstandingBalance));
+        OnPropertyChanged(nameof(SupplierBalanceText));
+    }
+
+    partial void OnIsSupplierBalanceLoadingChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowSupplierBalance));
+
+    partial void OnShowCustomerPickerFieldChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+
+    partial void OnShowSupplierFieldChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowSupplierBalance));
+
+    private async Task RefreshCustomerBalanceAsync()
+    {
+        _customerBalanceCts?.Cancel();
+        _customerBalanceCts?.Dispose();
+        _customerBalanceCts = new CancellationTokenSource();
+        var token = _customerBalanceCts.Token;
+
+        if (SelectedCustomer is null)
+        {
+            ClearCustomerBalance();
+            return;
+        }
+
+        IsCustomerBalanceLoading = true;
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+
+        try
+        {
+            var statement = await _reportService.GetCustomerStatementAsync(SelectedCustomer.Id);
+            if (token.IsCancellationRequested)
+                return;
+
+            CustomerOutstandingBalance = statement.Balance;
+        }
+        catch
+        {
+            if (!token.IsCancellationRequested)
+                CustomerOutstandingBalance = null;
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                IsCustomerBalanceLoading = false;
+                OnPropertyChanged(nameof(ShowCustomerBalance));
+            }
+        }
+    }
+
+    private async Task RefreshSupplierBalanceAsync()
+    {
+        _supplierBalanceCts?.Cancel();
+        _supplierBalanceCts?.Dispose();
+        _supplierBalanceCts = new CancellationTokenSource();
+        var token = _supplierBalanceCts.Token;
+
+        if (SelectedSupplier is null)
+        {
+            ClearSupplierBalance();
+            return;
+        }
+
+        IsSupplierBalanceLoading = true;
+        OnPropertyChanged(nameof(ShowSupplierBalance));
+
+        try
+        {
+            var statement = await _reportService.GetSupplierStatementAsync(SelectedSupplier.Id);
+            if (token.IsCancellationRequested)
+                return;
+
+            SupplierOutstandingBalance = statement.Balance;
+        }
+        catch
+        {
+            if (!token.IsCancellationRequested)
+                SupplierOutstandingBalance = null;
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                IsSupplierBalanceLoading = false;
+                OnPropertyChanged(nameof(ShowSupplierBalance));
+            }
+        }
+    }
+
+    private void ClearCustomerBalance()
+    {
+        _customerBalanceCts?.Cancel();
+        CustomerOutstandingBalance = null;
+        IsCustomerBalanceLoading = false;
+        OnPropertyChanged(nameof(ShowCustomerBalance));
+    }
+
+    private void ClearSupplierBalance()
+    {
+        _supplierBalanceCts?.Cancel();
+        SupplierOutstandingBalance = null;
+        IsSupplierBalanceLoading = false;
+        OnPropertyChanged(nameof(ShowSupplierBalance));
     }
 
     partial void OnSelectedInvestorChanged(Investor? value)
