@@ -31,6 +31,7 @@
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
                         Title="إجمالي الأصول"
+                        Hint="نقد + مصارف + ذمم آجل + ذمم أقساط + مخزون بالتكلفة"
                         TextValue="{Binding TotalAssets}"
                         Icon="Warehouse"
                         IconBackground="#E8F5E9"
@@ -38,6 +39,7 @@
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
                         Title="الالتزامات"
+                        Hint="ذمم الموردين الآجلة − سندات الصرف غير المطبّقة + ودائع المستثمرين"
                         TextValue="{Binding TotalLiabilities}"
                         Icon="Bank"
                         IconBackground="#FFEBEE"
@@ -45,6 +47,7 @@
                         ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard
                         Title="حقوق الملكية"
+                        Hint="رأس المال + التعديلات + الأرباح المتراكمة"
                         TextValue="{Binding TotalEquity}"
                         Icon="AccountCash"
                         IconBackground="#E3F2FD"
@@ -52,6 +55,7 @@
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
                         Title="الفرق"
+                        Hint="(حقوق الملكية + الالتزامات) − إجمالي الأصول"
                         TextValue="{Binding Difference}"
                         Icon="Calculator"
                         IconBackground="#FFF3E0"
@@ -108,12 +112,14 @@
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
                           Grid.Row="1">
                     <DataGrid.Columns>
-                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="130"
+                                <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="110"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Section"/>
-                                <DataGridTextColumn Header="البند" Binding="{Binding LineName}" Width="*"
+                                <DataGridTextColumn Header="البند" Binding="{Binding LineName}" Width="180"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="LineName"/>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                <DataGridTextColumn Header="المعادلة" Binding="{Binding Formula}" Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Formula"/>
                     </DataGrid.Columns>
                 </DataGrid>
 

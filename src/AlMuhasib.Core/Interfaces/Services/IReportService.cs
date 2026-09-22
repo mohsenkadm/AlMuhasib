@@ -1621,6 +1621,8 @@ public class StatementOfFinancialPositionLineRow
     public string LineName { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public bool IsTotal { get; set; }
+    /// <summary>شرح مختصر للمعادلة أو مصدر المبلغ.</summary>
+    public string Formula { get; set; } = string.Empty;
 }
 
 public class WorkSummaryReportResult

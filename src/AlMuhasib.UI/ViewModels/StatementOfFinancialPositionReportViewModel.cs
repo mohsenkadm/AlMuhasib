@@ -74,8 +74,8 @@ public partial class StatementOfFinancialPositionReportViewModel : ReportViewMod
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "الميزانية_العمومية.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "القسم", "البند", "المبلغ" };
-        var rows = _allRows.Select(r => new object[] { r.Section, r.LineName, r.Amount }).ToList();
+        var cols = new[] { "القسم", "البند", "المبلغ", "المعادلة" };
+        var rows = _allRows.Select(r => new object[] { r.Section, r.LineName, r.Amount, r.Formula }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "الميزانية العمومية", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -83,8 +83,8 @@ public partial class StatementOfFinancialPositionReportViewModel : ReportViewMod
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "القسم", "البند", "المبلغ" };
-        var rows = _allRows.Select(r => new object[] { r.Section, r.LineName, r.Amount }).ToList();
+        var cols = new[] { "القسم", "البند", "المبلغ", "المعادلة" };
+        var rows = _allRows.Select(r => new object[] { r.Section, r.LineName, r.Amount, r.Formula }).ToList();
         _exportService.PrintTable("الميزانية العمومية", cols, rows);
     }
 }
