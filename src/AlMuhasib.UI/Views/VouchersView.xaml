@@ -97,14 +97,14 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBox Grid.Column="0"
-                             Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
+                             Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                              materialDesign:HintAssist.Hint="المبلغ"
                              Style="{StaticResource NumericTextBox}"
                              FontSize="15" FontWeight="Bold" />
 
                     <!-- Bank Fees (shown for BankReceipt only) -->
                     <TextBox Grid.Column="2"
-                             Text="{Binding BankFees, UpdateSourceTrigger=PropertyChanged}"
+                             Text="{Binding BankFees, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                              materialDesign:HintAssist.Hint="عمولة المصرف"
                              Style="{StaticResource NumericTextBox}"
                              FontSize="13"
