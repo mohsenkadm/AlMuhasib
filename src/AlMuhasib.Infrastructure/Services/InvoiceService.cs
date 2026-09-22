@@ -210,6 +210,14 @@ public class InvoiceService : IInvoiceService
                     cashBox.UpdatedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
+
+                // سند حركة للصندوق عند دفعة مقدمة على فاتورة آجلة (يظهر في تقرير حركة الصندوق)
+                if (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)
+                {
+                    await AddCreditDownPaymentVoucherAsync(
+                        context, invoice, invoice.PaidAmount, invoice.CashBoxId.Value, username);
+                    await context.SaveChangesAsync();
+                }
             }
 
             // سجل كسب/استبدال نقاط الولاء ضمن نفس المعاملة
@@ -595,6 +603,13 @@ public class InvoiceService : IInvoiceService
                 }
             }
 
+            // إخفاء سندات الدفعة/التسديد المرتبطة من حركة الصندوق مع حذف الفاتورة
+            var linkedVouchers = await context.Vouchers
+                .Where(v => v.InvoiceId == invoice.Id)
+                .ToListAsync();
+            foreach (var voucher in linkedVouchers)
+                voucher.MarkSoftDeleted(username);
+
             foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
             {
                 var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
@@ -771,6 +786,13 @@ public class InvoiceService : IInvoiceService
                     installment.RestoreFromSoftDelete(username);
             }
 
+            var linkedVouchers = await context.Vouchers
+                .IgnoreQueryFilters()
+                .Where(v => v.InvoiceId == invoice.Id && v.IsDeleted)
+                .ToListAsync();
+            foreach (var voucher in linkedVouchers)
+                voucher.RestoreFromSoftDelete(username);
+
             await context.SaveChangesAsync();
 
             if (_currentUserService.UserId.HasValue)
@@ -844,39 +866,15 @@ public class InvoiceService : IInvoiceService
             // إنشاء سند قبض دين للمزامنة وكشف الحساب (معلّم كمطبّق لأن الفاتورة حُدّثت أعلاه)
             if (invoice.CustomerId.HasValue && invoice.InvoiceType != InvoiceType.Purchase)
             {
-                var voucherNumber = await GetNextDebtReceiptNumberAsync(context);
-                await context.Vouchers.AddAsync(new Voucher
-                {
-                    VoucherNumber = voucherNumber,
-                    VoucherType = VoucherType.DebtReceipt,
-                    Amount = amount,
-                    CustomerId = invoice.CustomerId,
-                    InvoiceId = invoice.Id,
-                    CashBoxId = cashBoxId,
-                    Date = DateTime.Today,
-                    Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(
-                        $"تسديد فاتورة آجلة {invoice.InvoiceNumber}"),
-                    CreatedBy = username,
-                    CreatedAt = DateTime.UtcNow
-                });
+                await AddCreditDownPaymentVoucherAsync(
+                    context, invoice, amount, cashBoxId, username,
+                    $"تسديد فاتورة آجلة {invoice.InvoiceNumber}");
             }
             else if (invoice.SupplierId.HasValue && invoice.InvoiceType == InvoiceType.Purchase)
             {
-                var voucherNumber = await GetNextPaymentVoucherNumberAsync(context);
-                await context.Vouchers.AddAsync(new Voucher
-                {
-                    VoucherNumber = voucherNumber,
-                    VoucherType = VoucherType.Payment,
-                    Amount = amount,
-                    SupplierId = invoice.SupplierId,
-                    InvoiceId = invoice.Id,
-                    CashBoxId = cashBoxId,
-                    Date = DateTime.Today,
-                    Notes = SupplierBalanceHelper.MarkPaymentApplied(
-                        $"تسديد فاتورة مشتريات آجلة {invoice.InvoiceNumber}"),
-                    CreatedBy = username,
-                    CreatedAt = DateTime.UtcNow
-                });
+                await AddCreditDownPaymentVoucherAsync(
+                    context, invoice, amount, cashBoxId, username,
+                    $"تسديد فاتورة مشتريات آجلة {invoice.InvoiceNumber}");
             }
 
             await context.SaveChangesAsync();
@@ -903,6 +901,65 @@ public class InvoiceService : IInvoiceService
         {
             await transaction.RollbackAsync();
             throw;
+        }
+    }
+
+    private static async Task AddCreditDownPaymentVoucherAsync(
+        AppDbContext context,
+        Invoice invoice,
+        decimal amount,
+        int cashBoxId,
+        string username,
+        string? notesOverride = null,
+        DateTime? voucherDate = null)
+    {
+        if (amount <= 0)
+            return;
+
+        var date = (voucherDate ?? invoice.Date).Date;
+        if (date == default)
+            date = DateTime.Today;
+
+        if (invoice.InvoiceType == InvoiceType.Purchase && invoice.SupplierId.HasValue)
+        {
+            var voucherNumber = await GetNextPaymentVoucherNumberAsync(context);
+            await context.Vouchers.AddAsync(new Voucher
+            {
+                VoucherNumber = voucherNumber,
+                VoucherType = VoucherType.Payment,
+                Amount = amount,
+                SupplierId = invoice.SupplierId,
+                InvoiceId = invoice.Id,
+                CashBoxId = cashBoxId,
+                Date = date,
+                Notes = SupplierBalanceHelper.MarkPaymentApplied(
+                    notesOverride ?? $"دفعة مقدمة فاتورة مشتريات آجلة {invoice.InvoiceNumber}"),
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
+            return;
+        }
+
+        if (invoice.CustomerId.HasValue &&
+            invoice.InvoiceType is InvoiceType.Sale or InvoiceType.Installment or InvoiceType.SaleReturn)
+        {
+            var voucherNumber = await GetNextDebtReceiptNumberAsync(context);
+            var defaultNote = invoice.InvoiceType == InvoiceType.SaleReturn
+                ? $"استرداد دفعة فاتورة مرتجع {invoice.InvoiceNumber}"
+                : $"دفعة مقدمة فاتورة آجلة {invoice.InvoiceNumber}";
+            await context.Vouchers.AddAsync(new Voucher
+            {
+                VoucherNumber = voucherNumber,
+                VoucherType = VoucherType.DebtReceipt,
+                Amount = amount,
+                CustomerId = invoice.CustomerId,
+                InvoiceId = invoice.Id,
+                CashBoxId = cashBoxId,
+                Date = date,
+                Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(notesOverride ?? defaultNote),
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
         }
     }
 
