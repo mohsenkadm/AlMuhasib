@@ -47,16 +47,23 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
         var totalPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
             .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
+        var openingStockRows = await _db.WarehouseStocks.ForTenant(tenantId).AsNoTracking()
+            .Where(s => s.OpeningQuantity > 0)
+            .Select(s => new { s.OpeningQuantity, s.UnitCost })
+            .ToListAsync(ct);
+        var openingStockValue = Math.Round(
+            openingStockRows.Sum(s => s.OpeningQuantity * s.UnitCost), 0);
         var totalExpenses = await _db.Expenses.ForTenant(tenantId).SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
         var distributedProfits = await _db.ProfitDistributions.ForTenant(tenantId)
             .SumAsync(pd => (decimal?)pd.DistributedAmount, ct) ?? 0;
         var profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(_db);
         data.NetProfitSales = totalSales;
         data.NetProfitPurchases = totalPurchases;
+        data.NetProfitOpeningStock = openingStockValue;
         data.NetProfitExpenses = totalExpenses;
         data.NetProfitDistributions = distributedProfits;
         data.NetProfitOpening = profitOpening;
-        data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
+        data.NetProfit = totalSales - totalPurchases - openingStockValue - totalExpenses - distributedProfits + profitOpening;
 
         data.OverdueInstallmentsCount = await _db.Installments.ForTenant(tenantId)
             .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate < today, ct);

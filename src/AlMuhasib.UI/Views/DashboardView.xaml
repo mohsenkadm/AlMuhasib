@@ -899,7 +899,20 @@
                                                Icon="CartArrowDown"
                                                AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               ShowDetailButton="True"
+                                               DetailCommand="{Binding ShowPurchasesSourceDetailsCommand}">
+                        <Border Background="#FFF3E0" CornerRadius="10" Padding="8,6"
+                                Visibility="{Binding ShowOpeningStockPurchasesHint, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Warehouse" Width="14" Height="14"
+                                                         Foreground="#E65100" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding OpeningStockPurchasesHint}"
+                                           FontSize="11" FontWeight="SemiBold" Foreground="#E65100"
+                                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </controls:DashboardKpiCard>
 
                     <controls:DashboardKpiCard Grid.Column="2" Margin="4,0,4,0"
                                                HorizontalAlignment="Stretch"

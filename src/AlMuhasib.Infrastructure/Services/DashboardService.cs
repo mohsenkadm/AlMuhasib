@@ -52,13 +52,19 @@ public class DashboardService : IDashboardService
             System.Diagnostics.Debug.WriteLine($"Dashboard TodayPurchases error: {ex.Message}");
         }
 
-        // Net profit = total sales - total purchases - total expenses - distributed profits (all-time)
+        // Net profit = sales − purchase invoices − opening stock − expenses − distributions + profit opening
         try
         {
             var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
             var totalPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
                 .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+            var openingStockRows = await context.WarehouseStocks.AsNoTracking()
+                .Where(s => s.OpeningQuantity > 0)
+                .Select(s => new { s.OpeningQuantity, s.UnitCost })
+                .ToListAsync();
+            var openingStockValue = Math.Round(
+                openingStockRows.Sum(s => s.OpeningQuantity * s.UnitCost), 0);
             var totalExpenses = await context.Expenses
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
             var distributedProfits = await context.ProfitDistributions
@@ -66,10 +72,11 @@ public class DashboardService : IDashboardService
             var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
             data.NetProfitSales = totalSales;
             data.NetProfitPurchases = totalPurchases;
+            data.NetProfitOpeningStock = openingStockValue;
             data.NetProfitExpenses = totalExpenses;
             data.NetProfitDistributions = distributedProfits;
             data.NetProfitOpening = profitOpening;
-            data.NetProfit = totalSales - totalPurchases - totalExpenses - distributedProfits + profitOpening;
+            data.NetProfit = totalSales - totalPurchases - openingStockValue - totalExpenses - distributedProfits + profitOpening;
         }
         catch (Exception ex)
         {

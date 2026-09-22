@@ -70,6 +70,9 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _netProfitPurchases;
 
     [ObservableProperty]
+    private decimal _netProfitOpeningStock;
+
+    [ObservableProperty]
     private decimal _netProfitExpenses;
 
     [ObservableProperty]
@@ -77,6 +80,17 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _netProfitOpening;
+
+    /// <summary>فواتير المشتريات + الرصيد الافتتاحي للمخزون (للعرض في تفاصيل المصدر).</summary>
+    public decimal NetProfitPurchasesWithOpeningStock =>
+        NetProfitPurchases + NetProfitOpeningStock;
+
+    public bool ShowOpeningStockPurchasesHint => NetProfitOpeningStock > 0;
+
+    public string OpeningStockPurchasesHint =>
+        NetProfitOpeningStock > 0
+            ? $"رصيد افتتاحي للمخزون: {NetProfitOpeningStock:N0} د.ع (يُخصم في الأرباح)"
+            : string.Empty;
 
     [ObservableProperty]
     private int _overdueInstallmentsCount;
@@ -196,7 +210,7 @@ public partial class DashboardViewModel : ViewModelBase
         {
             Title = "تفاصيل الأرباح الصافية",
             Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
-            Formula = "الصافي = المبيعات − المشتريات − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
+            Formula = "الصافي = المبيعات − فواتير المشتريات − الرصيد الافتتاحي للمخزون − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
             ResultLabel = "الأرباح الصافية",
             ResultAmount = NetProfit,
             Lines =
@@ -206,14 +220,21 @@ public partial class DashboardViewModel : ViewModelBase
                     Operator = "+",
                     Label = "إجمالي المبيعات",
                     Amount = NetProfitSales,
-                    Description = "فواتير البيع والأقساط (بدون أرصدة افتتاحية)"
+                    Description = "فواتير البيع والأقساط"
                 },
                 new AmountBreakdownLine
                 {
                     Operator = "−",
-                    Label = "إجمالي المشتريات",
+                    Label = "فواتير المشتريات",
                     Amount = NetProfitPurchases,
-                    Description = "مجموع فواتير المشتريات (وليس كلفة البضاعة المباعة)"
+                    Description = "مجموع فواتير المشتريات المسجّلة"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "رصيد افتتاحي للمخزون",
+                    Amount = NetProfitOpeningStock,
+                    Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
                 },
                 new AmountBreakdownLine
                 {
@@ -241,9 +262,45 @@ public partial class DashboardViewModel : ViewModelBase
                     IsResult = true
                 }
             ],
-            Note = NetProfit < 0
-                ? "الرقم السالب يعني أن المشتريات والمصاريف والتوزيعات تجاوزت المبيعات. ملاحظة: لوحة التحكم تخصم فواتير المشتريات وليس تكلفة المبيعات (COGS) كما في تقرير الأرباح."
-                : "ملاحظة: لوحة التحكم تخصم فواتير المشتريات وليس تكلفة المبيعات (COGS) كما في تقرير الأرباح — لذلك قد يختلف الرقم."
+            Note = "فواتير المشتريات والرصيد الافتتاحي للمخزون يُخصمان معاً في الأرباح. اضغط أيقونة التفاصيل على بطاقة المشتريات لمعرفة مصدر المبلغ."
+        });
+    }
+
+    [RelayCommand]
+    private void ShowPurchasesSourceDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل مصدر المشتريات",
+            Subtitle = "من أين جاء المبلغ المستخدم في معادلة الأرباح",
+            Formula = "إجمالي تكلفة التوريد = فواتير المشتريات + الرصيد الافتتاحي للمخزون",
+            ResultLabel = "إجمالي تكلفة التوريد",
+            ResultAmount = NetProfitPurchasesWithOpeningStock,
+            Lines =
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "فواتير المشتريات",
+                    Amount = NetProfitPurchases,
+                    Description = "مجموع فواتير المشتريات من بداية النشاط"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "رصيد افتتاحي للمخزون",
+                    Amount = NetProfitOpeningStock,
+                    Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "إجمالي تكلفة التوريد",
+                    Amount = NetProfitPurchasesWithOpeningStock,
+                    IsResult = true
+                }
+            ],
+            Note = "بطاقة «المشتريات اليوم» تعرض فواتير اليوم فقط. الرصيد الافتتاحي يُحسب ضمن الأرباح الصافية وليس ضمن مشتريات اليوم."
         });
     }
 
@@ -430,9 +487,13 @@ public partial class DashboardViewModel : ViewModelBase
                 NetProfit = data.NetProfit;
                 NetProfitSales = data.NetProfitSales;
                 NetProfitPurchases = data.NetProfitPurchases;
+                NetProfitOpeningStock = data.NetProfitOpeningStock;
                 NetProfitExpenses = data.NetProfitExpenses;
                 NetProfitDistributions = data.NetProfitDistributions;
                 NetProfitOpening = data.NetProfitOpening;
+                OnPropertyChanged(nameof(NetProfitPurchasesWithOpeningStock));
+                OnPropertyChanged(nameof(ShowOpeningStockPurchasesHint));
+                OnPropertyChanged(nameof(OpeningStockPurchasesHint));
                 OverdueInstallmentsCount = data.OverdueInstallmentsCount;
                 InvestorBalance = data.InvestorBalance;
                 InvestorOpeningTotal = data.InvestorOpeningTotal;
