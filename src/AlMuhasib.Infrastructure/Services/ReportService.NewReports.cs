@@ -877,9 +877,29 @@ public partial class ReportService
             });
         }
 
+        var purchaseReturnQ = context.Invoices.Include(i => i.Supplier).Include(i => i.CashBox)
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn && i.PaymentMethod == PaymentMethod.Cash);
+        if (from.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date < EndOfDay(to));
+        if (supplierId.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.SupplierId == supplierId.Value);
+
+        foreach (var i in await purchaseReturnQ.ToListAsync())
+        {
+            rows.Add(new SupplierPaymentRow
+            {
+                Date = i.Date,
+                SourceType = "مرتجع مشتريات",
+                Reference = i.InvoiceNumber,
+                SupplierName = i.Supplier?.Name ?? "—",
+                Amount = -Math.Abs(i.NetAmount),
+                AccountName = i.CashBox?.Name ?? "—",
+                Notes = "استرداد نقد من المورد"
+            });
+        }
+
         rows = rows.OrderByDescending(r => r.Date).ToList();
         var vouchTotal = rows.Where(r => r.SourceType == "سند صرف").Sum(r => r.Amount);
-        var cashTotal = rows.Where(r => r.SourceType == "مشتريات نقدية").Sum(r => r.Amount);
+        var cashTotal = rows.Where(r => r.SourceType is "مشتريات نقدية" or "مرتجع مشتريات").Sum(r => r.Amount);
 
         return new SupplierPaymentsReportResult
         {
@@ -1181,13 +1201,12 @@ public partial class ReportService
         if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity > 0);
 
         var stocks = await stockQ.ToListAsync();
+        var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         var rows = new List<InventoryValuationRow>();
         foreach (var s in stocks)
         {
-            var purchaseItems = await context.InvoiceItems
-                .Include(ii => ii.Invoice)
-                .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase)
-                .ToListAsync();
+            var purchaseItems = purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [];
             var avg = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
             rows.Add(new InventoryValuationRow
             {
@@ -1332,16 +1351,13 @@ public partial class ReportService
         var soldItems = await soldQ.ToListAsync();
         var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
         var stocks = await context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId)).ToListAsync();
-        var purchaseItems = await context.InvoiceItems
-            .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null
-                         && productIds.Contains(ii.ProductId.Value)
-                         && ii.Invoice != null
-                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
-                         && (!to.HasValue || ii.Invoice.Date < EndOfDay(to)))
-            .ToListAsync();
-        var purchasesByProduct = purchaseItems.GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToList());
+        var allPurchases = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+        var endExclusive = EndOfDay(to);
+        var purchasesByProduct = allPurchases.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value
+                .Where(ii => !endExclusive.HasValue || ii.Invoice == null || ii.Invoice.Date < endExclusive.Value)
+                .ToList());
 
         var rows = soldItems.GroupBy(ii => ii.ProductId!.Value).Select(g =>
         {
@@ -1554,14 +1570,14 @@ public partial class ReportService
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
         var stocks = await context.WarehouseStocks.Include(ws => ws.Product).ToListAsync();
+        var inventoryProductIds = stocks.Where(s => s.Quantity > 0).Select(s => s.ProductId).Distinct().ToList();
+        var inventoryPurchases = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, inventoryProductIds);
         decimal inventory = 0;
         foreach (var s in stocks.Where(s => s.Quantity > 0))
         {
-            var purchaseItems = await context.InvoiceItems
-                .Include(ii => ii.Invoice)
-                .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase
-                             && ii.Invoice.Date <= endOfDay)
-                .ToListAsync();
+            var purchaseItems = (inventoryPurchases.GetValueOrDefault(s.ProductId) ?? [])
+                .Where(ii => ii.Invoice == null || ii.Invoice.Date <= endOfDay)
+                .ToList();
             var avg = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
             inventory += Math.Round(s.Quantity * avg, 0);
         }
@@ -1774,10 +1790,18 @@ public partial class ReportService
         if (from.HasValue) salesQ = salesQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) salesQ = salesQ.Where(i => i.Date < endExclusive.Value);
 
-        var salesByMethod = await salesQ
-            .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+        var salesInvoices = await salesQ
+            .Select(i => new { i.PaymentMethod, i.InvoiceType, i.NetAmount, i.CustomerId })
             .ToListAsync();
+        var salesByMethod = salesInvoices
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new
+            {
+                Method = g.Key,
+                Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)),
+                Count = g.Count()
+            })
+            .ToList();
 
         var cashSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
         var creditSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
@@ -1785,31 +1809,39 @@ public partial class ReportService
         var salesCount = salesByMethod.Sum(x => x.Count);
         var totalSales = salesByMethod.Sum(x => x.Amount);
 
-        var purchaseQ = context.Invoices.AsNoTracking().Where(i => i.InvoiceType == InvoiceType.Purchase);
+        var purchaseQ = InvoiceFilters.ForPurchasesTotals(context.Invoices.AsNoTracking());
         if (from.HasValue) purchaseQ = purchaseQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) purchaseQ = purchaseQ.Where(i => i.Date < endExclusive.Value);
 
-        var purchasesByMethod = await purchaseQ
-            .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+        var purchaseInvoices = await purchaseQ
+            .Select(i => new { i.PaymentMethod, i.InvoiceType, i.NetAmount, i.SupplierId })
             .ToListAsync();
+        var purchasesByMethod = purchaseInvoices
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new
+            {
+                Method = g.Key,
+                Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)),
+                Count = g.Count()
+            })
+            .ToList();
 
         var cashPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
         var creditPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
         var purchaseCount = purchasesByMethod.Sum(x => x.Count);
         var totalPurchases = purchasesByMethod.Sum(x => x.Amount);
 
-        var activeCustomers = await salesQ
+        var activeCustomers = salesInvoices
             .Where(i => i.CustomerId != null)
             .Select(i => i.CustomerId!.Value)
             .Distinct()
-            .CountAsync();
+            .Count();
 
-        var activeSuppliers = await purchaseQ
+        var activeSuppliers = purchaseInvoices
             .Where(i => i.SupplierId != null)
             .Select(i => i.SupplierId!.Value)
             .Distinct()
-            .CountAsync();
+            .Count();
 
         var receiptQ = context.Vouchers.AsNoTracking()
             .Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
