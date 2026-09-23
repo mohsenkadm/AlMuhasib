@@ -54,8 +54,8 @@
             <SolidColorBrush x:Key="HighlightBrush" Color="#1565C0" />
             <SolidColorBrush x:Key="HighlightBorderBrush" Color="#90CAF9" />
 
-            <!-- Arabic Font -->
-            <FontFamily x:Key="ArabicFont">Segoe UI, Tahoma, Arial</FontFamily>
+            <!-- Arabic Font — overridden at startup by AppFontBootstrap (bundled Cairo). -->
+            <FontFamily x:Key="ArabicFont">pack://siteoforigin:,,,/Assets/Fonts/#Cairo, Segoe UI, Tahoma, Arial</FontFamily>
 
         </ResourceDictionary>
     </Application.Resources>

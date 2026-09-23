@@ -176,7 +176,8 @@
          FONT RESOURCES
     ══════════════════════════════════════════════════════════════ -->
 
-    <FontFamily x:Key="AppFont">Segoe UI</FontFamily>
+    <!-- Overridden at startup by AppFontBootstrap to the bundled Cairo files. -->
+    <FontFamily x:Key="AppFont">pack://siteoforigin:,,,/Assets/Fonts/#Cairo, Segoe UI, Tahoma, Arial</FontFamily>
     <sys:Double x:Key="TinyFontSize">11</sys:Double>
     <sys:Double x:Key="SmallFontSize">12</sys:Double>
     <sys:Double x:Key="NormalFontSize">14</sys:Double>
