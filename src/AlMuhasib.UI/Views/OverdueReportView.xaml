@@ -36,7 +36,7 @@
                         Title="عملاء متأخرون"
                         TextValue="{Binding OverdueCustomerCount}"
                         Icon="AccountAlert"
-                        IconBackground="#FFEBEE"
+                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard
@@ -50,7 +50,7 @@
                         Title="أكثر عميل تأخراً"
                         TextValue="{Binding TopOverdueCustomer}"
                         Icon="AccountStar"
-                        IconBackground="#E3F2FD"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
@@ -150,7 +150,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -78,9 +78,9 @@
         <!-- KPI strip -->
         <UniformGrid Grid.Row="1" Columns="2" Margin="0,0,0,12">
             <controls:AnimatedStatCard Title="عدد المصاريف" TextValue="{Binding PeriodCount, StringFormat={}{0}}"
-                                        Icon="Counter" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                        Icon="Counter" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
             <controls:AnimatedStatCard Title="إجمالي المصاريف" TextValue="{Binding PeriodTotal, StringFormat=N0}"
-                                        Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"/>
+                                        Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B" ValueForeground="#C2185B"/>
         </UniformGrid>
 
         <!-- Expense types -->

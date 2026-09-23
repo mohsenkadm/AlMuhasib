@@ -120,7 +120,7 @@
                                         <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Margin="0,0,10,0">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                                    <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Critical}">
                                                             <Setter Property="Background" Value="#FFEBEE"/>
@@ -197,7 +197,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
-                                                Background="#ECEFF1" Margin="0,0,10,0">
+                                                Background="{DynamicResource MutedIconBackgroundBrush}" Margin="0,0,10,0">
                                             <materialDesign:PackIcon Kind="Check" Width="18" Height="18"
                                                                      Foreground="#78909C"
                                                                      HorizontalAlignment="Center"

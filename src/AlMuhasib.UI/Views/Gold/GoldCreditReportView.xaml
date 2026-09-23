@@ -25,11 +25,11 @@
             <controls:AnimatedStatCard Title="عدد الزبائن" TextValue="{Binding CustomerCount}"
                                        Icon="AccountGroup" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
             <controls:AnimatedStatCard Title="آجل د.ع" TextValue="{Binding TotalCreditIqd, StringFormat=N0}"
-                                       Icon="Cash" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                       Icon="Cash" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
             <controls:AnimatedStatCard Title="آجل $" TextValue="{Binding TotalCreditUsd, StringFormat=N2}"
-                                       Icon="CurrencyUsd" IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                                       Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
             <controls:AnimatedStatCard Title="فواتير مفتوحة" TextValue="{Binding OpenInvoiceCount}"
-                                       Icon="FileDocumentAlert" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                       Icon="FileDocumentAlert" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
         </UniformGrid>
 
         <TextBlock Grid.Row="2" Text="{Binding ErrorMessage}" Foreground="#C62828" Margin="0,0,0,8"/>

@@ -45,7 +45,7 @@
 
     <Border x:Name="DialogCard"
             Width="700" MaxHeight="600"
-            Background="White"
+            Background="{DynamicResource CardBrush}"
             CornerRadius="18"
             Margin="16"
             Opacity="0"
@@ -136,24 +136,24 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="{Binding ItemName}" FontWeight="SemiBold" FontSize="13"
-                                                   Foreground="#263238" TextWrapping="Wrap"/>
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                                         <WrapPanel Margin="0,6,0,0">
-                                            <Border Background="#FFFFFF" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
-                                                    BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
+                                                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                                 <TextBlock FontSize="11" Foreground="#546E7A">
                                                     <Run Text="كمية:"/>
                                                     <Run Text="{Binding QuantityLabel, Mode=OneWay}" FontWeight="Bold"/>
                                                 </TextBlock>
                                             </Border>
-                                            <Border Background="#FFFFFF" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
-                                                    BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
+                                                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                                 <TextBlock FontSize="11" Foreground="#546E7A">
                                                     <Run Text="شراء:"/>
                                                     <Run Text="{Binding PurchasePriceLabel, Mode=OneWay}" FontWeight="Bold"/>
                                                 </TextBlock>
                                             </Border>
-                                            <Border Background="#FFFFFF" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
-                                                    BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
+                                                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                                 <TextBlock FontSize="11" Foreground="#546E7A">
                                                     <Run Text="بيع:"/>
                                                     <Run Text="{Binding SalePriceLabel, Mode=OneWay}" FontWeight="Bold"/>
@@ -277,7 +277,7 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="3" Background="#FAFBFD" BorderBrush="#E8EEF5" BorderThickness="0,1,0,0"
+            <Border Grid.Row="3" Background="#FAFBFD" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
                     CornerRadius="0,0,18,18" Padding="16,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button Content="إغلاق" Click="Close_Click"

@@ -21,7 +21,7 @@
             <!-- Initial Capital -->
             <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,12,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
                 <StackPanel>
-                    <TextBlock Text="رأس المال الأولي" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="رأس المال الأولي" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBlock Text="{Binding InitialCapital, StringFormat=N0}" FontSize="22" FontWeight="Bold"
                                Foreground="#1565C0" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -30,7 +30,7 @@
             <!-- Adjustments -->
             <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,12,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
                 <StackPanel>
-                    <TextBlock Text="إجمالي التسويات" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="إجمالي التسويات" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBlock Text="{Binding TotalAdjustments, StringFormat=N0}" FontSize="22" FontWeight="Bold"
                                Foreground="{DynamicResource HighlightBrush}" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -39,7 +39,7 @@
             <!-- Current Capital -->
             <md:Card Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,0" md:ElevationAssist.Elevation="Dp2" MinWidth="200">
                 <StackPanel>
-                    <TextBlock Text="رأس المال الحالي" FontSize="12" Foreground="#757575"/>
+                    <TextBlock Text="رأس المال الحالي" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBlock Text="{Binding CurrentCapital, StringFormat=N0}" FontSize="22" FontWeight="Bold"
                                Foreground="#2E7D32" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -73,7 +73,7 @@
                 <Border Grid.Row="1" Margin="0,12,0,0"
                         Visibility="{Binding IsFormVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Background="#FAFAFA" CornerRadius="8" Padding="16"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
@@ -169,7 +169,7 @@
                                 <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding TypeDisplay}" Value="رأس مال جديد">
                                                     <Setter Property="Background" Value="#E8F5E9"/>

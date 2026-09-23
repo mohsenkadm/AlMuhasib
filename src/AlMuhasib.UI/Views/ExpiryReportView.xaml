@@ -26,13 +26,13 @@
 
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="منتهي" TextValue="{Binding ExpiredCount}" Icon="CloseCircle"
-                                               IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                               IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="قريب (30 يوم)" TextValue="{Binding CriticalCount}" Icon="Alert"
-                                               IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                                               IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="تحذير (90 يوم)" TextValue="{Binding WarningCount}" Icon="ClockAlert"
                                                IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
                     <controls:AnimatedStatCard Title="كمية متأثرة" TextValue="{Binding AffectedQuantity}" Icon="PackageVariant"
-                                               IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                                               IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

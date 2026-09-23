@@ -18,8 +18,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="Bd" CornerRadius="12" Padding="14,10" Background="#F5F7FA"
-                                BorderBrush="#E0E6ED" BorderThickness="1">
+                        <Border x:Name="Bd" CornerRadius="12" Padding="14,10" Background="{DynamicResource BackgroundBrush}"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -52,7 +52,7 @@
 
     <md:DialogHost IsOpen="{Binding IsChoicesDialogOpen}" CloseOnClickAway="False" DialogTheme="Inherit">
         <md:DialogHost.DialogContent>
-            <Border MinWidth="420" MaxWidth="520" MaxHeight="560" Background="White" CornerRadius="18" Padding="22">
+            <Border MinWidth="420" MaxWidth="520" MaxHeight="560" Background="{DynamicResource CardBrush}" CornerRadius="18" Padding="22">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -70,7 +70,7 @@
                         <ItemsControl ItemsSource="{Binding EditingChoices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,0,8" Padding="10,8" Background="#F5F7FA" CornerRadius="10">
+                                    <Border Margin="0,0,0,8" Padding="10,8" Background="{DynamicResource BackgroundBrush}" CornerRadius="10">
                                         <DockPanel>
                                             <Button DockPanel.Dock="Left" Content="حذف"
                                                     Command="{Binding DataContext.RemoveChoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -152,7 +152,7 @@
             </Border>
 
             <!-- Entity tabs -->
-            <Border x:Name="TabsBar" Grid.Row="1" Background="White" CornerRadius="16" Padding="12" Margin="0,0,0,16"
+            <Border x:Name="TabsBar" Grid.Row="1" Background="{DynamicResource CardBrush}" CornerRadius="16" Padding="12" Margin="0,0,0,16"
                     BorderBrush="#E8EEF4" BorderThickness="1" Opacity="0">
                 <Border.RenderTransform>
                     <TranslateTransform Y="14"/>
@@ -211,7 +211,7 @@
                             </TextBlock>
                         </Border>
                         <StackPanel>
-                            <TextBlock Text="الحقول الثمانية" FontSize="16" FontWeight="Bold" Foreground="#263238"/>
+                            <TextBlock Text="الحقول الثمانية" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="البيان · التفعيل · المسمى الظاهر · نوع الحقل · الخيارات"
                                        FontSize="12" Foreground="#78909C" Margin="0,2,0,0"/>
                         </StackPanel>
@@ -256,7 +256,7 @@
                                                 <ColumnDefinition Width="120"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Border Grid.Column="0" Background="#ECEFF1" CornerRadius="8"
+                                            <Border Grid.Column="0" Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="8"
                                                     Width="36" Height="36" HorizontalAlignment="Left" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Slot}" FontWeight="Bold" HorizontalAlignment="Center"
                                                            VerticalAlignment="Center" Foreground="#546E7A"/>

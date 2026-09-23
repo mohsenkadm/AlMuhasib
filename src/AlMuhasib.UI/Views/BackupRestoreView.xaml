@@ -162,7 +162,7 @@
                                     Padding="0" Height="Auto">
                                 <StackPanel HorizontalAlignment="Center">
                                     <Border Width="52" Height="52" CornerRadius="26"
-                                            Background="#E3F2FD" HorizontalAlignment="Center">
+                                            Background="{DynamicResource PrimaryHueLightBrush}" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="CloudUpload" Width="26" Height="26"
                                                                  Foreground="#0277BD"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>

@@ -263,7 +263,7 @@
                             </Border.Style>
                             <StackPanel>
                                 <TextBlock Text="{Binding StepDescription}" FontSize="13.5"
-                                           TextWrapping="Wrap" Foreground="#424242" LineHeight="22"/>
+                                           TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" LineHeight="22"/>
                             </StackPanel>
                         </Border>
 
@@ -326,7 +326,7 @@
                                                Foreground="#E65100" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#E3F2FD" CornerRadius="10" Padding="12,10" Margin="6,0,0,0">
+                            <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="12,10" Margin="6,0,0,0">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="الحالة" FontSize="11" Foreground="#1565C0" HorizontalAlignment="Center"/>
                                     <md:PackIcon Kind="Check" Width="22" Height="22" Foreground="#1565C0" HorizontalAlignment="Center"/>
@@ -337,7 +337,7 @@
                         <!-- Preview for steps 0-2 -->
                         <StackPanel Visibility="{Binding HasPreviewRows, Converter={StaticResource BoolVis}}">
                             <TextBlock Text="معاينة العينة" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                            <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="12" MaxHeight="120">
+                            <Border BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" MaxHeight="120">
                                 <ItemsControl ItemsSource="{Binding PreviewSampleRows}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

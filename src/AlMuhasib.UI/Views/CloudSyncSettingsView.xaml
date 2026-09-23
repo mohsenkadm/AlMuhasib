@@ -83,7 +83,7 @@
                 <Border Style="{StaticResource SyncStatCard}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Background="#E3F2FD" CornerRadius="8" Padding="6" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8" Padding="6" Margin="0,0,8,0">
                                 <materialDesign:PackIcon Kind="ClockOutline" Width="18" Height="18" Foreground="#1565C0"/>
                             </Border>
                             <TextBlock Text="آخر مزامنة" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
@@ -149,7 +149,7 @@
                                  Value="{Binding SyncProgressPercent}"
                                  IsIndeterminate="False"
                                  Foreground="#1565C0"
-                                 Background="#E3F2FD"/>
+                                 Background="{DynamicResource PrimaryHueLightBrush}"/>
                     <TextBlock Text="{Binding SyncProgressPercent, StringFormat={}{0:0}%}"
                                FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                HorizontalAlignment="Left" Margin="0,8,0,0"/>

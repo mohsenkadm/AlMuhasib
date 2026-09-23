@@ -289,7 +289,10 @@ public partial class BeautifulMessageDialog : Window
             Cursor = Cursors.Hand,
             FontSize = 14,
             FontWeight = FontWeights.DemiBold,
-            Foreground = isPrimary ? Brushes.White : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#424242")),
+            Foreground = isPrimary
+                ? Brushes.White
+                : (Application.Current?.TryFindResource("TextPrimaryBrush") as Brush
+                   ?? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E8EEF5")!)),
             Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor)),
             BorderThickness = new Thickness(0),
             RenderTransformOrigin = new Point(0.5, 0.5),

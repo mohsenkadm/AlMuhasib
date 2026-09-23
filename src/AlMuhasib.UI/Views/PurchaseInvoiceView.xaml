@@ -200,7 +200,7 @@
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="10"
                                      Padding="14,10"
                                      Margin="0,0,0,16"
-                                     Background="#E3F2FD"
+                                     Background="{DynamicResource PrimaryHueLightBrush}"
                                      materialDesign:ElevationAssist.Elevation="Dp0"
                                      Visibility="{Binding IsCreditPayment, Converter={StaticResource BoolToVis}}">
                     <Grid>
@@ -224,7 +224,7 @@
                                  materialDesign:HintAssist.IsFloating="True"
                                  Style="{StaticResource FilledTextBox}"
                                  FontSize="13"
-                                 Background="White"/>
+                                 Background="{DynamicResource CardBrush}"/>
                         <TextBox Grid.Column="2" Width="150"
                                  Text="{Binding CreditRemainingAmount, StringFormat=N0, Mode=OneWay}"
                                  materialDesign:HintAssist.Hint="المتبقي"
@@ -232,7 +232,7 @@
                                  Style="{StaticResource FilledTextBox}"
                                  FontSize="13"
                                  IsReadOnly="True"
-                                 Background="White"
+                                 Background="{DynamicResource CardBrush}"
                                  Foreground="#E65100"/>
                     </Grid>
                 </materialDesign:Card>
@@ -266,7 +266,7 @@
                                            Foreground="#1565C0"
                                            VerticalAlignment="Center" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <Border Width="240" Background="#E3F2FD" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <Border Width="240" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
@@ -332,7 +332,7 @@
                                                        Path=(ItemsControl.AlternationIndex),
                                                        StringFormat='{}{0}'}"
                                                        HorizontalAlignment="Center"
-                                                       Foreground="#9E9E9E" />
+                                                       Foreground="{DynamicResource HintForegroundBrush}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -571,7 +571,7 @@
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}"
                                                FontSize="11"
-                                               Foreground="#424242"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                VerticalAlignment="Center" />
                                 </Grid>
 
@@ -766,7 +766,7 @@
                              Value="0" />
                 <TextBlock Text="جارٍ الحفظ..."
                            FontSize="13"
-                           Foreground="#757575"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
             </StackPanel>

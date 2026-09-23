@@ -5,17 +5,16 @@ using System.Windows.Media;
 
 namespace AlMuhasib.UI.Helpers;
 
-/// <summary>يبني مقاطع نص مع تمييز أصفر للكلمات المطابقة لعبارة البحث.</summary>
+/// <summary>يبني مقاطع نص مع تمييز للكلمات المطابقة لعبارة البحث (متوافق مع الوضع الداكن).</summary>
 public static class HighlightTextHelper
 {
-    public static readonly Brush HighlightBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xF5, 0x9D));
-    public static readonly Brush HighlightForeground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33));
+    public static Brush HighlightBrush =>
+        Application.Current?.TryFindResource("HighlightLightBrush") as Brush
+        ?? new SolidColorBrush(Color.FromRgb(0x16, 0x3A, 0x5C));
 
-    static HighlightTextHelper()
-    {
-        HighlightBrush.Freeze();
-        HighlightForeground.Freeze();
-    }
+    public static Brush HighlightForeground =>
+        Application.Current?.TryFindResource("TextPrimaryBrush") as Brush
+        ?? new SolidColorBrush(Color.FromRgb(0xE8, 0xEE, 0xF5));
 
     public static IReadOnlyList<string> SplitTerms(string? searchText)
     {

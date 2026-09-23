@@ -16,7 +16,7 @@
             <md:PackIcon Kind="Gold" Width="48" Height="48" HorizontalAlignment="Center"
                          Foreground="{DynamicResource PrimaryHueMidBrush}"/>
             <TextBlock Text="معالج إعداد نظام الذهب" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="#757575" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
         </StackPanel>
 
         <ProgressBar Grid.Row="1" Maximum="{Binding TotalSteps}" Value="{Binding CurrentStep}" Height="6" Margin="0,0,0,20"/>
@@ -30,7 +30,7 @@
                     <StackPanel>
                         <TextBlock Text="إعدادات المثقال والعيارات" Style="{StaticResource SectionSubHeader}"/>
                         <TextBlock Text="قيمة الذهب = الوزن × (سعر المثقال ÷ وزن المثقال). سعر المثقال لكل عيار جاهز دون ضرب النقاوة مرة ثانية."
-                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"/>
                         <TextBox md:HintAssist.Hint="وزن المثقال (غرام)" Text="{Binding MithqalGrams}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
                         <TextBlock Text="العيارات المفعّلة" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -97,7 +97,7 @@
                     <StackPanel>
                         <TextBlock Text="أرصدة المخزون الافتتاحية (اختياري)" Style="{StaticResource SectionSubHeader}"/>
                         <TextBlock Text="أدخل وزن الذهب الموجود لكل عيار ومتوسط تكلفته للغرام إن وُجد."
-                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"/>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -143,7 +143,7 @@
                     <StackPanel>
                         <TextBlock Text="أسعار المثقال وسعر الصرف" Style="{StaticResource SectionSubHeader}"/>
                         <TextBlock Text="أدخل أسعار اليوم للعيارات المستخدمة. يمكن ترك السعر صفراً وتحديثه لاحقاً."
-                                   TextWrapping="Wrap" Foreground="#757575" Margin="0,0,0,12"/>
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"/>
                         <ComboBox ItemsSource="{Binding Currencies}" SelectedValue="{Binding PriceCurrency}"
                                   SelectedValuePath="Value" DisplayMemberPath="Label"
                                   md:HintAssist.Hint="عملة التسعير" Margin="0,0,0,12"/>

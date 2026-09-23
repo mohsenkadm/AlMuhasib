@@ -294,7 +294,7 @@
                                 </Button>
                             </WrapPanel>
                             <TextBlock Text="{Binding ImportStatusMessage}" Margin="0,12,0,0"
-                                       FontSize="13" Foreground="#455A64" TextWrapping="Wrap"/>
+                                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </materialDesign:Card>
 
@@ -450,7 +450,7 @@
                             <Run Text=" د.ع؟"/>
                         </TextBlock>
                         <TextBlock Text="لا يمكن التراجع عن هذا الإجراء إذا لم تكن هناك نسخ احتياطي."
-                                   Foreground="#757575" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
@@ -494,7 +494,7 @@
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                              IsIndeterminate="True" Width="40" Height="40" Value="0"/>
                 <TextBlock Text="جارٍ المعالجة..." Margin="0,16,0,0"
-                           FontSize="13" Foreground="#757575" HorizontalAlignment="Center"/>
+                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -144,7 +144,7 @@
                                             <Style TargetType="Button" BasedOn="{StaticResource TypeFilterChip}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                                        <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                         <Setter Property="BorderBrush" Value="#1565C0"/>
                                                         <Setter Property="Foreground" Value="#1565C0"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -187,7 +187,7 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" Margin="0,2">
                                             <Border CornerRadius="10" Padding="8,2" Margin="0,0,10,0"
-                                                    Background="#E3F2FD" VerticalAlignment="Center">
+                                                    Background="{DynamicResource PrimaryHueLightBrush}" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding TypeLabel}" FontSize="11"
                                                            Foreground="#1565C0" FontWeight="SemiBold"/>
                                             </Border>
@@ -233,7 +233,7 @@
                     <StackPanel HorizontalAlignment="Center" MaxWidth="420">
                         <Border Width="88" Height="88" CornerRadius="44"
                                 HorizontalAlignment="Center" Margin="0,0,0,18"
-                                Background="#E3F2FD">
+                                Background="{DynamicResource PrimaryHueLightBrush}">
                             <Border.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1" CenterX="44" CenterY="44"/>
                             </Border.RenderTransform>
@@ -365,7 +365,7 @@
                             Title="إجمالي المدين"
                             TextValue="{Binding TotalDebit}"
                             Icon="CashPlus"
-                            IconBackground="#FFEBEE"
+                            IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                             IconForeground="#C62828"
                             ValueForeground="#C62828"
                             Margin="0,0,10,0"/>
@@ -373,7 +373,7 @@
                             Title="إجمالي الدائن"
                             TextValue="{Binding TotalCredit}"
                             Icon="CashMinus"
-                            IconBackground="#E8F5E9"
+                            IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                             IconForeground="#2E7D32"
                             ValueForeground="#2E7D32"
                             Margin="0,0,10,0"/>
@@ -389,7 +389,7 @@
                             Title="عدد الحركات"
                             TextValue="{Binding TransactionCount}"
                             Icon="SwapHorizontal"
-                            IconBackground="#E3F2FD"
+                            IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                             IconForeground="#1565C0"
                             ValueForeground="#1565C0"/>
                     </UniformGrid>
@@ -492,11 +492,11 @@
                                     <StackPanel Margin="0,12,0,0">
                                         <UniformGrid Columns="4" Margin="0,0,0,12">
                                             <controls:AnimatedStatCard Title="المبيعات" TextValue="{Binding ProfitSales}" Icon="CashRegister"
-                                                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
                                             <controls:AnimatedStatCard Title="التكلفة" TextValue="{Binding ProfitCost}" Icon="PackageVariant"
-                                                                       IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+                                                                       IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
                                             <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding ProfitNet}" Icon="ChartLine"
-                                                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                                                                       IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
                                             <controls:AnimatedStatCard Title="هامش الربح" TextValue="{Binding ProfitMargin}" Icon="Percent"
                                                                        IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                                         </UniformGrid>
@@ -741,17 +741,17 @@
                                                 CommandParameter="{Binding}">
                                             <DockPanel LastChildFill="False">
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                                                    <Border Width="34" Height="34" CornerRadius="17" Background="#F5F7FA" Margin="0,0,10,0">
+                                                    <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource BackgroundBrush}" Margin="0,0,10,0">
                                                         <materialDesign:PackIcon Kind="{Binding Icon}" Width="16" Height="16"
-                                                                                 Foreground="#455A64"
+                                                                                 Foreground="{DynamicResource TextSecondaryBrush}"
                                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold"
                                                                VerticalAlignment="Center"/>
                                                     <Border CornerRadius="10" Padding="8,2" Margin="10,0,0,0"
-                                                            Background="#ECEFF1" VerticalAlignment="Center">
+                                                            Background="{DynamicResource MutedIconBackgroundBrush}" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding Count}" FontSize="11" FontWeight="Bold"
-                                                                   Foreground="#455A64"/>
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
                                                     </Border>
                                                 </StackPanel>
                                                 <materialDesign:PackIcon DockPanel.Dock="Left"
@@ -777,7 +777,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border Padding="12,10" Margin="0,0,0,6" CornerRadius="12"
-                                                            Background="#F8FAFC" BorderBrush="#E8EEF2" BorderThickness="1">
+                                                            Background="#F8FAFC" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*"/>

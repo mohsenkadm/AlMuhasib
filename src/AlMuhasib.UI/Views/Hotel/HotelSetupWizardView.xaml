@@ -15,7 +15,7 @@
         <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
             <md:PackIcon Kind="Hotel" Width="48" Height="48" HorizontalAlignment="Center" Foreground="#6A1B9A"/>
             <TextBlock Text="معالج إعداد الفندق" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="#757575" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
         </StackPanel>
 
         <ProgressBar Grid.Row="1" Maximum="{Binding TotalSteps}" Value="{Binding CurrentStep}" Height="6" Margin="0,0,0,20"/>

@@ -25,7 +25,7 @@
                          HorizontalAlignment="Center" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
             <TextBlock Text="معالج إعداد النظام" FontSize="24" FontWeight="Bold"
                        HorizontalAlignment="Center" Margin="0,8,0,4"/>
-            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="#757575"
+            <TextBlock Text="{Binding StepTitle}" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>
 
@@ -265,7 +265,7 @@
                              Text="{Binding ProfitOpeningBalance, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                              Width="350" HorizontalAlignment="Center"/>
                     <TextBlock Text="يُضاف إلى صافي الأرباح كرصيد تراكمي من الفترة السابقة"
-                               FontSize="11" Foreground="#9E9E9E"
+                               FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"
                                HorizontalAlignment="Center" Margin="0,8,0,0" TextWrapping="Wrap"
                                Width="350" TextAlignment="Center"/>
                 </StackPanel>

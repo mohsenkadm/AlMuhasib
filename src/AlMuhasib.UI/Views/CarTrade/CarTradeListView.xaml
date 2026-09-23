@@ -423,7 +423,7 @@
                                 <StackPanel Margin="8,0,0,12">
                                     <TextBlock Text="المتبقي على المشتري" Style="{StaticResource FormFieldLabel}"/>
                                     <TextBox Text="{Binding SellRemainingAmount, StringFormat=N0}" IsReadOnly="True"
-                                             Style="{StaticResource FilledTextBox}" Background="#E3F2FD" Foreground="#1565C0"
+                                             Style="{StaticResource FilledTextBox}" Background="{DynamicResource PrimaryHueLightBrush}" Foreground="#1565C0"
                                              FontSize="16" FontWeight="Bold" MinHeight="48"/>
                                 </StackPanel>
                             </UniformGrid>

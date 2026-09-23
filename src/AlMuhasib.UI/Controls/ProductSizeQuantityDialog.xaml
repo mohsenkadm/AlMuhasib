@@ -17,7 +17,7 @@
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
     </Window.Resources>
 
-    <Border Background="White" CornerRadius="16" BorderBrush="#E0E0E0" BorderThickness="1"
+    <Border Background="{DynamicResource CardBrush}" CornerRadius="16" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
             Margin="8">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.25" Color="#000000"/>
@@ -63,8 +63,8 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding SizeName}" FontSize="16" FontWeight="SemiBold" Foreground="#212121"/>
-                                            <TextBlock FontSize="12" Foreground="#757575" Margin="0,4,0,0"
+                                            <TextBlock Text="{Binding SizeName}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"
                                                        Visibility="{Binding DataContext.ShowStock, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolVis}}">
                                                 <Run Text="المتاح:"/>
                                                 <Run Text="{Binding AvailableStock, StringFormat=N0}" FontWeight="SemiBold"/>

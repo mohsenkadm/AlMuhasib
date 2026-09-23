@@ -149,7 +149,7 @@
                                     <Border CornerRadius="10" Padding="8,4" HorizontalAlignment="Center">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#E3F2FD"/>
+                                                <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="إضافة">
                                                         <Setter Property="Background" Value="#E8F5E9"/>

@@ -36,14 +36,14 @@
                         Title="عدد المواد"
                         TextValue="{Binding TotalItems}"
                         Icon="Package"
-                        IconBackground="#E3F2FD"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
                         Title="القيمة الإجمالية"
                         TextValue="{Binding TotalValue}"
                         Icon="Cash"
-                        IconBackground="#E8F5E9"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
@@ -57,7 +57,7 @@
                         Title="متوسط التكلفة"
                         TextValue="{Binding AverageCost}"
                         Icon="Calculator"
-                        IconBackground="#E0F2F1"
+                        IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
                         IconForeground="#00796B"
                         ValueForeground="#00796B"/>
                 </UniformGrid>
@@ -138,7 +138,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -41,25 +41,25 @@
                 <!-- P&L KPIs -->
                 <UniformGrid Columns="3" Margin="0,0,0,12">
                     <controls:AnimatedStatCard Title="إيراد عقود البيع" TextValue="{Binding SaleRevenueText}"
-                                                Icon="HomeExportOutline" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                                Icon="HomeExportOutline" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="تكلفة عقود الشراء" TextValue="{Binding PurchaseCostText}"
-                                                Icon="HomeImportOutline" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
+                                                Icon="HomeImportOutline" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100" ValueForeground="#E65100"/>
                     <controls:AnimatedStatCard Title="مجمل الربح" TextValue="{Binding GrossProfitText}"
-                                                Icon="TrendingUp" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                                Icon="TrendingUp" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                 </UniformGrid>
                 <UniformGrid Columns="3" Margin="0,0,0,12">
                     <controls:AnimatedStatCard Title="المصاريف التشغيلية" TextValue="{Binding TotalExpensesText}"
-                                                Icon="CashMinus" IconBackground="#FCE4EC" IconForeground="#C2185B" ValueForeground="#C2185B"/>
+                                                Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B" ValueForeground="#C2185B"/>
                     <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding NetProfitText}"
-                                                Icon="Finance" IconBackground="#E0F2F1" IconForeground="#00695C" ValueForeground="#00695C"/>
+                                                Icon="Finance" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00695C" ValueForeground="#00695C"/>
                     <controls:AnimatedStatCard Title="هامش مجمل الربح" TextValue="{Binding MarginText}"
                                                 Icon="Percent" IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                 </UniformGrid>
                 <UniformGrid Columns="3" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="صافي التدفق النقدي" TextValue="{Binding NetCashText}"
-                                                Icon="CashSync" IconBackground="#E8EAF6" IconForeground="#3949AB" ValueForeground="#3949AB"/>
+                                                Icon="CashSync" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB" ValueForeground="#3949AB"/>
                     <controls:AnimatedStatCard Title="ذمم مدينة (بيع)" TextValue="{Binding ReceivablesText}"
-                                                Icon="AccountArrowLeft" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                                Icon="AccountArrowLeft" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="ذمم دائنة (شراء)" TextValue="{Binding PayablesText}"
                                                 Icon="AccountArrowRight" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
                 </UniformGrid>
@@ -219,7 +219,7 @@
         <Border Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري إعداد تقرير الأرباح..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري إعداد تقرير الأرباح..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -17,7 +17,7 @@
         <UniformGrid Grid.Row="0" Columns="1" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="متوسط نسبة التحقق"
                                        TextValue="{Binding AverageAchievement}"
-                                       Icon="Target" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                       Icon="Target" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
         </UniformGrid>
 
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">

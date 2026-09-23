@@ -241,7 +241,7 @@
                             <Run Text="؟"/>
                         </TextBlock>
                         <TextBlock Text="سيتم ضبط ذمم الدينار والدولار وغرامات الذهب إلى صفر."
-                                   Foreground="#757575" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12.5" Margin="0,0,0,16" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Button Content="تصفير" Command="{Binding ExecuteClearCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"

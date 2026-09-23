@@ -612,13 +612,13 @@
                                    Style="{StaticResource ModernDialogHost}"
                                    Grid.RowSpan="2">
             <materialDesign:DialogHost.DialogContent>
-                <Border MinWidth="420" MaxWidth="480" Padding="28,24" Background="White" CornerRadius="18">
+                <Border MinWidth="420" MaxWidth="480" Padding="28,24" Background="{DynamicResource CardBrush}" CornerRadius="18">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.18" Color="#0D47A1"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                            <Border Width="44" Height="44" CornerRadius="12" Background="#E3F2FD" Margin="0,0,12,0">
+                            <Border Width="44" Height="44" CornerRadius="12" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,12,0">
                                 <materialDesign:PackIcon Kind="CashRegister" Width="24" Height="24"
                                                          Foreground="#1565C0"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>

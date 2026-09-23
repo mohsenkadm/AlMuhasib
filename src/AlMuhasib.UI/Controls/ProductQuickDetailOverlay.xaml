@@ -88,14 +88,14 @@
                                         Visibility="{Binding Barcode, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
                                         <TextBlock Text="الباركود" FontSize="11" Foreground="#90A4AE"/>
-                                        <TextBlock Text="{Binding Barcode}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                        <TextBlock Text="{Binding Barcode}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding CategoryName, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
                                         <TextBlock Text="التصنيف" FontSize="11" Foreground="#90A4AE"/>
-                                        <TextBlock Text="{Binding CategoryName}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                        <TextBlock Text="{Binding CategoryName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
@@ -110,7 +110,7 @@
                                         <TextBlock Text="{Binding TotalStockText}" FontSize="20" FontWeight="Bold" Foreground="#1B5E20"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource StatPill}" Background="#E3F2FD">
+                                <Border Style="{StaticResource StatPill}" Background="{DynamicResource PrimaryHueLightBrush}">
                                     <StackPanel>
                                         <TextBlock Text="سعر البيع الحالي" FontSize="11" Foreground="#1565C0"/>
                                         <TextBlock Text="{Binding CurrentSalePriceText}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
@@ -140,16 +140,16 @@
                             </UniformGrid>
 
                             <UniformGrid Columns="2" Margin="0,0,0,14">
-                                <Border Background="#F5F7FA" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
+                                <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
                                     <StackPanel>
                                         <TextBlock Text="ملخص المبيعات" FontSize="11" Foreground="#78909C"/>
-                                        <TextBlock Text="{Binding SaleSummaryText}" FontWeight="SemiBold" Foreground="#37474F" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding SaleSummaryText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Background="#F5F7FA" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
+                                <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
                                     <StackPanel>
                                         <TextBlock Text="ملخص المشتريات" FontSize="11" Foreground="#78909C"/>
-                                        <TextBlock Text="{Binding PurchaseSummaryText}" FontWeight="SemiBold" Foreground="#37474F" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding PurchaseSummaryText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </UniformGrid>
@@ -169,7 +169,7 @@
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding WarehouseName}"
                                                            FontWeight="SemiBold"
-                                                           Foreground="#455A64"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                                            TextWrapping="Wrap"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,12,0"/>

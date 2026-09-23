@@ -16,11 +16,11 @@
 
         <UniformGrid Grid.Row="0" Columns="3" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="فعالون" Value="{Binding ActiveCount}"
-                                       Icon="AccountCheck" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                       Icon="AccountCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
             <controls:AnimatedStatCard Title="غير فعالين" Value="{Binding InactiveCount}"
-                                       Icon="AccountOff" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                       Icon="AccountOff" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
             <controls:AnimatedStatCard Title="عملاء مرتبطون" Value="{Binding CustomersLinkedCount}"
-                                       Icon="AccountMultiple" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                       Icon="AccountMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
         </UniformGrid>
 
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">

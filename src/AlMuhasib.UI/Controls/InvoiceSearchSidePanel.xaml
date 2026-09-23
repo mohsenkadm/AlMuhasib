@@ -97,7 +97,7 @@
                 </Border>
 
                 <!-- Search + Sort -->
-                <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#E8EEF5" BorderThickness="0,0,0,1" Padding="16,14,16,10">
+                <Border Grid.Row="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="16,14,16,10">
                     <StackPanel>
                         <TextBox Text="{Binding InvoiceSearchText, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="رقم الفاتورة، اسم العميل أو المورد..."
@@ -161,7 +161,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type models:InvoiceSearchListItem}">
                                     <Border Padding="14,12" Margin="0,0,0,8" CornerRadius="12"
-                                            Background="#FFFFFF"
+                                            Background="{DynamicResource CardBrush}"
                                             BorderBrush="#DDE5EE" BorderThickness="1"
                                             Cursor="Hand"
                                             MouseLeftButtonUp="InvoiceItem_Click">
@@ -181,7 +181,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <TextBlock Text="{Binding InvoiceNumber}" FontWeight="Bold" FontSize="14" Foreground="#263238"/>
+                                                <TextBlock Text="{Binding InvoiceNumber}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 <TextBlock Text="{Binding Subtitle}" FontSize="11" Margin="0,4,0,0" Foreground="#78909C"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
@@ -230,8 +230,8 @@
                 </Grid>
 
                 <!-- Footer hint -->
-                <Border Grid.Row="3" Background="#FFFFFF"
-                        BorderBrush="#E8EEF5" BorderThickness="0,1,0,0" Padding="16,10">
+                <Border Grid.Row="3" Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="16,10">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <materialDesign:PackIcon Kind="GestureTap" Width="16" Height="16"
                                                  Foreground="#78909C" VerticalAlignment="Center"/>

@@ -76,19 +76,19 @@
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
                                     <TextBlock Text="التاريخ" FontSize="11" Foreground="#90A4AE"/>
-                                    <TextBlock Text="{Binding DateText}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                    <TextBlock Text="{Binding DateText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding PartyLabel}" FontSize="11" Foreground="#90A4AE"/>
-                                    <TextBlock Text="{Binding PartyName}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                    <TextBlock Text="{Binding PartyName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
                                     <TextBlock Text="المخزن" FontSize="11" Foreground="#90A4AE"/>
-                                    <TextBlock Text="{Binding WarehouseName}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                    <TextBlock Text="{Binding WarehouseName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
@@ -101,7 +101,7 @@
                                     Visibility="{Binding CreditDueDateText, Converter={StaticResource NullToCollapsedConverter}}">
                                 <StackPanel>
                                     <TextBlock Text="تاريخ الاستحقاق" FontSize="11" Foreground="#90A4AE"/>
-                                    <TextBlock Text="{Binding CreditDueDateText}" FontWeight="SemiBold" Foreground="#37474F"/>
+                                    <TextBlock Text="{Binding CreditDueDateText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                         </WrapPanel>
@@ -185,7 +185,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Border Background="#F5F7FA" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
+                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -223,11 +223,11 @@
                             </Grid>
                         </Border>
 
-                        <Border Background="#ECEFF1" CornerRadius="10" Padding="12,10"
+                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="10" Padding="12,10"
                                 Visibility="{Binding HasNotes, Converter={StaticResource BoolVis}}">
                             <StackPanel>
                                 <TextBlock Text="ملاحظات" FontSize="11" Foreground="#78909C"/>
-                                <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#455A64"/>
+                                <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

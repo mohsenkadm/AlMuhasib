@@ -83,7 +83,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,8" CornerRadius="12" Padding="14,12"
-                                            BorderThickness="1" BorderBrush="#E0E0E0" Background="White">
+                                            BorderThickness="1" BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource CardBrush}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
@@ -95,11 +95,11 @@
                                                     VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Operator}" FontWeight="Bold" FontSize="16"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                           Foreground="#455A64"/>
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="14"
-                                                           Foreground="#263238"/>
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#78909C"
                                                            TextWrapping="Wrap" Margin="0,2,0,0"
                                                            Visibility="{Binding Description, Converter={StaticResource NullToCollapsed}}"/>
@@ -117,7 +117,7 @@
                         <StackPanel Margin="0,12,0,0"
                                     Visibility="{Binding EntitiesTitle, Converter={StaticResource NullToCollapsed}}">
                             <TextBlock Text="{Binding EntitiesTitle}" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="#455A64" Margin="0,0,0,10"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10"/>
                             <ItemsControl ItemsSource="{Binding Entities}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -130,7 +130,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                                     <TextBlock Text="{Binding Name}" FontSize="13.5" FontWeight="SemiBold"
-                                                               Foreground="#263238" TextWrapping="Wrap"/>
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                                                     <TextBlock Text="{Binding Subtitle}" FontSize="11.5" Foreground="#78909C"
                                                                Margin="0,2,0,0" TextWrapping="Wrap"
                                                                Visibility="{Binding Subtitle, Converter={StaticResource NullToCollapsed}}"/>

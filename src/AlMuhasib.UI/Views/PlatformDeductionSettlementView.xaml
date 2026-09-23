@@ -60,15 +60,15 @@
 
         <UniformGrid x:Name="StatsPanel" Grid.Row="1" Columns="6" Margin="0,0,0,12">
             <controls:AnimatedStatCard Title="إجمالي الصفوف" TextValue="{Binding TotalRows, StringFormat={}{0}}" Icon="FileTable"
-                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
             <controls:AnimatedStatCard Title="مطابق" TextValue="{Binding MatchedCount, StringFormat={}{0}}" Icon="CheckCircle"
-                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                                       IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
             <controls:AnimatedStatCard Title="اقتراحات" TextValue="{Binding SuggestedCount, StringFormat={}{0}}" Icon="AccountQuestion"
                                        IconBackground="#FFF8E1" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
             <controls:AnimatedStatCard Title="غير موجود" TextValue="{Binding NotFoundCount, StringFormat={}{0}}" Icon="AccountOff"
-                                       IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
+                                       IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
             <controls:AnimatedStatCard Title="محدد للتسديد" TextValue="{Binding SelectedCount, StringFormat={}{0}}" Icon="CheckboxMarked"
-                                       IconBackground="#E0F2F1" IconForeground="#00796B" ValueForeground="#00796B" Margin="0,0,8,0"/>
+                                       IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B" Margin="0,0,8,0"/>
             <controls:AnimatedStatCard Title="مجموع المحدد" TextValue="{Binding SelectedAmount, StringFormat=N0}" Icon="CashMultiple"
                                        IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
         </UniformGrid>

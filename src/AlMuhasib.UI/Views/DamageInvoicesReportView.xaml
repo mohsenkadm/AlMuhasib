@@ -20,10 +20,10 @@
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="تقرير فواتير التلف" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
                 <UniformGrid Columns="4" Margin="0,0,0,20">
-                    <controls:AnimatedStatCard Title="الكمية التالفة" TextValue="{Binding TotalDamagedQuantity}" Icon="DeleteAlert" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
-                    <controls:AnimatedStatCard Title="تكلفة التلف" TextValue="{Binding TotalDamagedCost}" Icon="CashMinus" IconBackground="#FFF3E0" IconForeground="#E65100" ValueForeground="#E65100"/>
-                    <controls:AnimatedStatCard Title="عدد الفواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
-                    <controls:AnimatedStatCard Title="عدد البنود" TextValue="{Binding LineCount}" Icon="FormatListBulleted" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="الكمية التالفة" TextValue="{Binding TotalDamagedQuantity}" Icon="DeleteAlert" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="تكلفة التلف" TextValue="{Binding TotalDamagedCost}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100" ValueForeground="#E65100"/>
+                    <controls:AnimatedStatCard Title="عدد الفواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard Title="عدد البنود" TextValue="{Binding LineCount}" Icon="FormatListBulleted" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
                 <Border Style="{StaticResource FilterBar}">
                     <StackPanel Orientation="Horizontal">

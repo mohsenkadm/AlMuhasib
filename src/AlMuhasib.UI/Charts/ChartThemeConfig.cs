@@ -46,10 +46,11 @@ public static class ChartThemeConfig
     public static void ApplyTheme(bool isDark)
     {
         _isDark = isDark;
-        GridLineColor = SKColor.Parse(isDark ? "#2D3544" : "#F0F0F0");
-        LabelColor = SKColor.Parse(isDark ? "#B0BEC5" : "#757575");
-        ChartSurfaceColor = SKColor.Parse(isDark ? "#171D28" : "#F8FAFC");
-        TooltipBg = SKColor.Parse(isDark ? "#1E2430" : "#FFFFFF");
+        // Classic blue-dark chrome (matches ThemeService navy surfaces)
+        GridLineColor = SKColor.Parse(isDark ? "#2A3F5A" : "#F0F0F0");
+        LabelColor = SKColor.Parse(isDark ? "#9BB0C7" : "#757575");
+        ChartSurfaceColor = SKColor.Parse(isDark ? "#0E1A2C" : "#F8FAFC");
+        TooltipBg = SKColor.Parse(isDark ? "#132338" : "#FFFFFF");
         GeometryFillColor = SKColor.Parse(isDark ? "#64B5F6" : "#FFFFFF");
         EnsurePaints();
     }
@@ -63,7 +64,7 @@ public static class ChartThemeConfig
     public static void EnsurePaints()
     {
         TooltipBackgroundPaint = new SolidColorPaint(TooltipBg);
-        TooltipTextPaint = new SolidColorPaint(SKColor.Parse(_isDark ? "#ECEFF1" : "#212121"))
+        TooltipTextPaint = new SolidColorPaint(SKColor.Parse(_isDark ? "#E8EEF5" : "#212121"))
         {
             SKTypeface = ArabicTypeface
         };

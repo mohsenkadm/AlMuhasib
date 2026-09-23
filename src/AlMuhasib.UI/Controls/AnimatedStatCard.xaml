@@ -9,8 +9,8 @@
         <CubicEase x:Key="CubicEaseOut" EasingMode="EaseOut" />
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="AmountDetailButton" TargetType="Button">
-            <Setter Property="Background" Value="#E0F2F1"/>
-            <Setter Property="Foreground" Value="#00695C"/>
+            <Setter Property="Background" Value="{DynamicResource DashboardKpiTealLightBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DashboardKpiTealBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Width" Value="28"/>
@@ -26,10 +26,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#B2DFDB"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#80CBC4"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -97,7 +97,7 @@
                             Visibility="{Binding ShowDetailButton, ElementName=Root, Converter={StaticResource BoolToVis}}"
                             ToolTip="من أين جاء هذا المبلغ؟">
                         <materialDesign:PackIcon Kind="MagnifyScan" Width="15" Height="15"
-                                                 Foreground="#00695C"
+                                                 Foreground="{DynamicResource DashboardKpiTealBrush}"
                                                  VerticalAlignment="Center" HorizontalAlignment="Center"/>
                     </Button>
                 </Grid>

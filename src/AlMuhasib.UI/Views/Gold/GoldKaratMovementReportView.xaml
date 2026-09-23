@@ -29,11 +29,11 @@
                     <controls:AnimatedStatCard Title="صافي الحركة" TextValue="{Binding NetMovement}"
                                                Icon="SwapHorizontal" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
                     <controls:AnimatedStatCard Title="مبيعات (غ)" TextValue="{Binding SoldGrams}"
-                                               Icon="CashMinus" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                               Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="مشتريات (غ)" TextValue="{Binding PurchasedGrams}"
-                                               Icon="CashPlus" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                               Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="الرصيد (غ)" TextValue="{Binding ClosingGrams}"
-                                               Icon="Warehouse" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                               Icon="Warehouse" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">
@@ -108,7 +108,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

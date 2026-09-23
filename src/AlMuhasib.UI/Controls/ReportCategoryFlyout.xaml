@@ -24,7 +24,7 @@
                         <Border x:Name="Card"
                                 Background="#FAFBFC"
                                 CornerRadius="11"
-                                BorderBrush="#E8EDF2"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="1"
                                 Padding="6,7">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -43,7 +43,7 @@
                                            TextAlignment="Center"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
-                                           Foreground="#455A64"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="NoWrap"
                                            MaxWidth="120"/>

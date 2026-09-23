@@ -34,28 +34,28 @@
                         Title="عملاء جدد"
                         TextValue="{Binding NewCustomersCount}"
                         Icon="AccountPlus"
-                        IconBackground="#E0F2F1"
+                        IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
                         IconForeground="#00695C"
                         ValueForeground="#00695C"/>
                     <controls:AnimatedStatCard
                         Title="قيمة المبيعات"
                         TextValue="{Binding TotalSalesAmount}"
                         Icon="CashRegister"
-                        IconBackground="#E8F5E9"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
                         Title="عدد التعاملات"
                         TextValue="{Binding DealCount}"
                         Icon="SwapHorizontal"
-                        IconBackground="#E3F2FD"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
                         Title="عدد الأصناف"
                         TextValue="{Binding DistinctProductCount}"
                         Icon="PackageVariant"
-                        IconBackground="#FFF3E0"
+                        IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
                         IconForeground="#EF6C00"
                         ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard

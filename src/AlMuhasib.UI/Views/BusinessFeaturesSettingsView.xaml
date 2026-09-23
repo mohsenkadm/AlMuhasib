@@ -84,15 +84,15 @@
                     <UniformGrid Columns="1">
                         <controls:FeatureToggleCard Title="تذكيرات الأقساط (أوفلاين)"
                                                     Description="تنبيهات محلية للأقساط المستحقة دون إنترنت"
-                                                    Icon="Bell" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    Icon="Bell" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding InstallmentRemindersEnabled}"/>
                         <controls:FeatureToggleCard Title="تشغيل صوت عند التذكير"
                                                     Description="تنبيه صوتي عند حلول موعد القسط"
-                                                    Icon="VolumeHigh" IconBackground="#FFF3E0" IconForeground="#EF6C00"
+                                                    Icon="VolumeHigh" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00"
                                                     IsChecked="{Binding ReminderPlaySound}"/>
                         <controls:FeatureToggleCard Title="عرض تنبيه داخل التطبيق"
                                                     Description="بانر تنبيه في لوحة الإشعارات"
-                                                    Icon="MessageAlert" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    Icon="MessageAlert" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding ReminderShowBanner}"/>
                     </UniformGrid>
                 </StackPanel>
@@ -162,15 +162,15 @@
                     <UniformGrid Columns="2">
                         <controls:FeatureToggleCard Title="مرتجع مشتريات"
                                                     Description="إرجاع فواتير المشتريات للموردين"
-                                                    Icon="KeyboardReturn" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    Icon="KeyboardReturn" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"
                                                     IsChecked="{Binding PurchaseReturns}"/>
                         <controls:FeatureToggleCard Title="مرتجع مبيعات"
                                                     Description="إرجاع فواتير المبيعات للعملاء واستعادة المخزون"
-                                                    Icon="BackupRestore" IconBackground="#FFF3E0" IconForeground="#EF6C00"
+                                                    Icon="BackupRestore" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00"
                                                     IsChecked="{Binding SalesReturns}"/>
                         <controls:FeatureToggleCard Title="نقل بين مخازن"
                                                     Description="تحويل المخزون بين المخازن"
-                                                    Icon="TruckDelivery" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    Icon="TruckDelivery" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding WarehouseTransfers}"/>
                         <controls:FeatureToggleCard Title="بيع المواد بالتعبئة"
                                                     Description="أنواع تعبئة عامة (قطعة/كارتون/متر) وكميات لكل منتج واختيارها في الفواتير"
@@ -178,7 +178,7 @@
                                                     IsChecked="{Binding UnitsOfMeasure}"/>
                         <controls:FeatureToggleCard Title="أجور النقل"
                                                     Description="حقل أجور النقل في فواتير البيع والشراء والأقساط مع الظهور في الطباعة"
-                                                    Icon="TruckFast" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    Icon="TruckFast" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding TransportFees}"/>
                         <controls:FeatureToggleCard Title="نسخة المخزن والسائق"
                                                     Description="طباعة نسخة فاتورة للمخزن بدون مبالغ واختيار سائق للتوصيل من فاتورة البيع والأقساط"
@@ -186,11 +186,11 @@
                                                     IsChecked="{Binding WarehouseInvoiceAndDriver}"/>
                         <controls:FeatureToggleCard Title="وزن القائمة"
                                                     Description="حقل وزن المادة على المنتج وكارد حساب وزن فاتورة البيع"
-                                                    Icon="ScaleBalance" IconBackground="#E0F7FA" IconForeground="#00838F"
+                                                    Icon="ScaleBalance" IconBackground="{DynamicResource DashboardIconBadgeCyanBrush}" IconForeground="#00838F"
                                                     IsChecked="{Binding MenuWeight}"/>
                         <controls:FeatureToggleCard Title="صلاحية / تاريخ انتهاء"
                                                     Description="تتبع تواريخ انتهاء المنتجات"
-                                                    Icon="CalendarClock" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    Icon="CalendarClock" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding ExpiryTracking}"/>
                         <controls:FeatureToggleCard Title="سيريال نمبر"
                                                     Description="تتبع الأرقام التسلسلية"
@@ -198,23 +198,23 @@
                                                     IsChecked="{Binding SerialNumbers}"/>
                         <controls:FeatureToggleCard Title="عرض سعر المنتجات"
                                                     Description="تفعيل أنواع التسعير وأسعار البيع والشراء للمنتجات في الفواتير"
-                                                    Icon="CashMultiple" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    Icon="CashMultiple" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding ProductPricingEnabled}"/>
                         <controls:FeatureToggleCard Title="تحديث سعر المنتج في فاتورة مشتريات"
                                                     Description="عند إنشاء فاتورة مشتريات فقط: حفظ آخر سعر شراء لنوع التسعير المختار"
-                                                    Icon="PlaylistEdit" IconBackground="#FFF3E0" IconForeground="#E65100"
+                                                    Icon="PlaylistEdit" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100"
                                                     IsChecked="{Binding UpdateProductPriceOnPurchase}"/>
                         <controls:FeatureToggleCard Title="إضافة المنتجات الناقصة من فاتورة مشتريات"
                                                     Description="قبل حفظ فاتورة المشتريات: إن وُجد اسم غير موجود في المنتجات يُطلب تأكيد إضافته ثم يُنشأ ويُربط بالبند"
-                                                    Icon="PackageVariantClosedPlus" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    Icon="PackageVariantClosedPlus" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding AddMissingProductsOnPurchase}"/>
                         <controls:FeatureToggleCard Title="تفعيل الخصم"
                                                     Description="خصم على المنتجات والفواتير (نسبة أو قيمة) في البيع والأقساط ونقطة البيع"
-                                                    Icon="Percent" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    Icon="Percent" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding ProductDiscountEnabled}"/>
                         <controls:FeatureToggleCard Title="نظام الولاء"
                                                     Description="نقاط للزبائن تُكسب من فواتير البيع وتُستبدل خصماً — مع تقارير وحسابات في قائمة الولاء"
-                                                    Icon="GiftOutline" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    Icon="GiftOutline" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"
                                                     IsChecked="{Binding LoyaltySystem}"/>
                         <controls:FeatureToggleCard Title="عروض المنتجات"
                                                     Description="اشترِ كمية معيّنة من منتج واحصل على منتج آخر مجاناً — تُطبَّق تلقائياً في فاتورة البيع"
@@ -222,15 +222,15 @@
                                                     IsChecked="{Binding ProductOffers}"/>
                         <controls:FeatureToggleCard Title="المندوبين"
                                                     Description="إدارة مندوبي المبيعات وعمولاتهم وأهدافهم وتحصيلاتهم وربطهم بالعملاء والفواتير مع تقارير الأداء"
-                                                    Icon="AccountTie" IconBackground="#E3F2FD" IconForeground="#1565C0"
+                                                    Icon="AccountTie" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding SalesRepresentatives}"/>
                         <controls:FeatureToggleCard Title="فاتورة التلف"
                                                     Description="تسجيل المواد التالفة وإنقاصها من المخزن مع تقرير التلف"
-                                                    Icon="DeleteAlert" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                    Icon="DeleteAlert" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"
                                                     IsChecked="{Binding DamageInvoices}"/>
                         <controls:FeatureToggleCard Title="تسديد الفواتير الآجلة من التقارير"
                                                     Description="إظهار زر تسديد الفواتير الآجلة في جدولي تقرير المبيعات وتقرير المشتريات — مفعّل افتراضياً"
-                                                    Icon="CashCheck" IconBackground="#E8F5E9" IconForeground="#2E7D32"
+                                                    Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding SettleCreditInvoicesInReports}"/>
                     </UniformGrid>
                 </StackPanel>
@@ -249,19 +249,19 @@
                     <UniformGrid Columns="2">
                         <controls:FeatureToggleCard Title="قالب موبايلات"
                                                     Description="حقول IMEI وضمان"
-                                                    Icon="Cellphone" IconBackground="#E8EAF6" IconForeground="#3949AB"
+                                                    Icon="Cellphone" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB"
                                                     IsChecked="{Binding TemplateMobileShop}"/>
                         <controls:FeatureToggleCard Title="قالب ألبسة"
                                                     Description="قياسات المنتج ومخزون لكل قياس + ألوان"
-                                                    Icon="TshirtCrew" IconBackground="#FCE4EC" IconForeground="#C2185B"
+                                                    Icon="TshirtCrew" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B"
                                                     IsChecked="{Binding TemplateClothing}"/>
                         <controls:FeatureToggleCard Title="قالب مواد بناء"
                                                     Description="وحدات وزن وحجم"
-                                                    Icon="Hammer" IconBackground="#FFF3E0" IconForeground="#E65100"
+                                                    Icon="Hammer" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100"
                                                     IsChecked="{Binding TemplateConstruction}"/>
                         <controls:FeatureToggleCard Title="قالب صيدلية"
                                                     Description="صلاحية ودفعات"
-                                                    Icon="Pill" IconBackground="#E0F7FA" IconForeground="#00838F"
+                                                    Icon="Pill" IconBackground="{DynamicResource DashboardIconBadgeCyanBrush}" IconForeground="#00838F"
                                                     IsChecked="{Binding TemplatePharmacy}"/>
                         <controls:FeatureToggleCard Title="معرض سيارات"
                                                     Description="حقول نوع السيارة وصنف السيارة وموديل السيارة واللون وعدد الركاب ورقم اللوحة ونوعها على المنتجات"
@@ -278,7 +278,7 @@
                 </Border.RenderTransform>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                        <materialDesign:PackIcon Kind="ShieldLock" Width="22" Height="22" Foreground="#455A64" VerticalAlignment="Center"/>
+                        <materialDesign:PackIcon Kind="ShieldLock" Width="22" Height="22" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="الأمان ونقطة البيع" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                     <Grid>
@@ -288,12 +288,12 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,12,0">
                             <TextBlock Text="قفل الشاشة بعد الخمول (دقائق)" FontSize="13" Margin="0,0,0,8"/>
-                            <TextBlock Text="0 = معطّل" FontSize="11" Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                            <TextBlock Text="0 = معطّل" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"/>
                             <TextBox Text="{Binding IdleLockMinutes}" Style="{StaticResource NumericTextBox}" Width="120" HorizontalAlignment="Right"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="الحد الأدنى للتقسيط من POS" FontSize="13" Margin="0,0,0,8"/>
-                            <TextBlock Text="بالدينار العراقي" FontSize="11" Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                            <TextBlock Text="بالدينار العراقي" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"/>
                             <TextBox Text="{Binding PosMinInstallmentAmount, StringFormat=N0}" Style="{StaticResource NumericTextBox}" Width="160" HorizontalAlignment="Right"/>
                         </StackPanel>
                     </Grid>
@@ -304,7 +304,7 @@
                     </StackPanel>
                     <controls:FeatureToggleCard Title="تفعيل قفل الفترة"
                                                 Description="منع حفظ مستندات بتاريخ ضمن الفترة المقفلة أو قبلها"
-                                                Icon="Lock" IconBackground="#FFEBEE" IconForeground="#C62828"
+                                                Icon="Lock" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"
                                                 IsChecked="{Binding PeriodLockEnabled}"/>
                     <StackPanel Margin="0,10,0,0"
                                 Visibility="{Binding PeriodLockEnabled, Converter={StaticResource BoolVis}}">
