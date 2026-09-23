@@ -202,9 +202,10 @@ public class InvestorService : IInvestorService
     public async Task<decimal> GetDistributableProfitsAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-            .SumAsync(i => (decimal?)i.NetAmount ?? 0);
-        var totalPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices).SumAsync(i => (decimal?)i.NetAmount ?? 0);
+        var totalSales = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans));
+        var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForPurchasesTotals(context.Invoices));
         var totalExpenses = await context.Expenses.SumAsync(e => (decimal?)e.Amount ?? 0);
         var alreadyDistributed = await context.ProfitDistributions.SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
         var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);

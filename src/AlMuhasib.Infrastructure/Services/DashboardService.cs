@@ -32,9 +32,9 @@ public class DashboardService : IDashboardService
         // ── Summary cards ──────────────────────────────────────
         try
         {
-            data.TodaySales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-                .Where(i => i.Date >= today && i.Date < tomorrow)
-                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+            data.TodaySales = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                    .Where(i => i.Date >= today && i.Date < tomorrow));
         }
         catch (Exception ex)
         {
@@ -43,22 +43,22 @@ public class DashboardService : IDashboardService
 
         try
         {
-            data.TodayPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
-                .Where(i => i.Date >= today && i.Date < tomorrow)
-                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+            data.TodayPurchases = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForPurchasesTotals(context.Invoices)
+                    .Where(i => i.Date >= today && i.Date < tomorrow));
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard TodayPurchases error: {ex.Message}");
         }
 
-        // Net profit = sales − purchase invoices − opening stock − expenses − distributions + profit opening
+        // Net profit = net sales − net purchases − opening stock − expenses − distributions + profit opening
         try
         {
-            var totalSales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-            var totalPurchases = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
-                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+            var totalSales = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans));
+            var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForPurchasesTotals(context.Invoices));
             var openingStockRows = await context.WarehouseStocks.AsNoTracking()
                 .Where(s => s.OpeningQuantity > 0)
                 .Select(s => new { s.OpeningQuantity, s.UnitCost })
@@ -176,14 +176,18 @@ public class DashboardService : IDashboardService
         // ── Sales last 30 days ─────────────────────────────────
         try
         {
-            var salesRaw = await context.Invoices
-                .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)
-                .Select(i => new { i.Date, i.NetAmount })
+            var salesRaw = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date >= thirtyDaysAgo && i.Date < tomorrow)
+                .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
                 .ToListAsync();
 
             var salesByDay = salesRaw
                 .GroupBy(i => i.Date.Date)
-                .Select(g => new { Date = g.Key, Amount = g.Sum(i => i.NetAmount) })
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Amount = g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount))
+                })
                 .ToList();
 
             data.SalesLast30Days = Enumerable.Range(0, 30)
@@ -235,14 +239,19 @@ public class DashboardService : IDashboardService
                 {
                     Type = i.InvoiceType == InvoiceType.Sale ? "مبيعات"
                          : i.InvoiceType == InvoiceType.Purchase ? "مشتريات"
-                         : "أقساط",
+                         : i.InvoiceType == InvoiceType.SaleReturn ? "مرتجع مبيعات"
+                         : i.InvoiceType == InvoiceType.PurchaseReturn ? "مرتجع مشتريات"
+                         : i.InvoiceType == InvoiceType.Installment ? "أقساط"
+                         : "فاتورة",
                     Number = i.InvoiceNumber,
                     Party = i.CustomerId != null
                         ? (i.Customer != null ? i.Customer.Name : "-")
                         : i.SupplierId != null
                             ? (i.Supplier != null ? i.Supplier.Name : "-")
                             : "-",
-                    Amount = i.NetAmount,
+                    Amount = i.InvoiceType == InvoiceType.SaleReturn || i.InvoiceType == InvoiceType.PurchaseReturn
+                        ? -i.NetAmount
+                        : i.NetAmount,
                     Date = i.Date
                 })
                 .ToListAsync();

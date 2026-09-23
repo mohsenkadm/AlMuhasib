@@ -35,18 +35,18 @@ public sealed class CloudDashboardService : ICloudDashboardService
         var thirtyDaysAgo = today.AddDays(-30);
         var data = new DashboardData();
 
-        data.TodaySales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
-            .Where(i => i.Date >= today && i.Date < tomorrow)
-            .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
+        data.TodaySales = await CloudInvoiceFilters.SumSignedNetAsync(
+            CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
+                .Where(i => i.Date >= today && i.Date < tomorrow));
 
-        data.TodayPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
-            .Where(i => i.Date >= today && i.Date < tomorrow)
-            .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
+        data.TodayPurchases = await CloudInvoiceFilters.SumSignedNetAsync(
+            CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
+                .Where(i => i.Date >= today && i.Date < tomorrow));
 
-        var totalSales = await CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
-            .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
-        var totalPurchases = await CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId))
-            .SumAsync(i => (decimal?)i.NetAmount, ct) ?? 0;
+        var totalSales = await CloudInvoiceFilters.SumSignedNetAsync(
+            CloudInvoiceFilters.ForProfitAndSalesTotals(_db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId)));
+        var totalPurchases = await CloudInvoiceFilters.SumSignedNetAsync(
+            CloudInvoiceFilters.ForPurchasesTotals(_db.Invoices.ForTenant(tenantId)));
         var openingStockRows = await _db.WarehouseStocks.ForTenant(tenantId).AsNoTracking()
             .Where(s => s.OpeningQuantity > 0)
             .Select(s => new { s.OpeningQuantity, s.UnitCost })
@@ -114,14 +114,19 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.SupplierCreditUnappliedPayments = unappliedPayments;
         data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments);
 
-        var salesRaw = await _db.Invoices.ForTenant(tenantId)
-            .Where(i => i.InvoiceType == InvoiceType.Sale && i.Date >= thirtyDaysAgo && i.Date < tomorrow)
-            .Select(i => new { i.Date, i.NetAmount })
+        var salesRaw = await CloudInvoiceFilters.ForProfitAndSalesTotals(
+                _db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
+            .Where(i => i.Date >= thirtyDaysAgo && i.Date < tomorrow)
+            .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
             .ToListAsync(ct);
 
         var salesByDay = salesRaw
             .GroupBy(i => i.Date.Date)
-            .Select(g => new { Date = g.Key, Amount = g.Sum(i => i.NetAmount) })
+            .Select(g => new
+            {
+                Date = g.Key,
+                Amount = g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount))
+            })
             .ToList();
 
         data.SalesLast30Days = Enumerable.Range(0, 30)
@@ -153,14 +158,19 @@ public sealed class CloudDashboardService : ICloudDashboardService
             {
                 Type = i.InvoiceType == InvoiceType.Sale ? "مبيعات"
                      : i.InvoiceType == InvoiceType.Purchase ? "مشتريات"
-                     : "أقساط",
+                     : i.InvoiceType == InvoiceType.SaleReturn ? "مرتجع مبيعات"
+                     : i.InvoiceType == InvoiceType.PurchaseReturn ? "مرتجع مشتريات"
+                     : i.InvoiceType == InvoiceType.Installment ? "أقساط"
+                     : "فاتورة",
                 Number = i.InvoiceNumber,
                 Party = i.CustomerId != null
                     ? (i.Customer != null ? i.Customer.Name : "-")
                     : i.SupplierId != null
                         ? (i.Supplier != null ? i.Supplier.Name : "-")
                         : "-",
-                Amount = i.NetAmount,
+                Amount = i.InvoiceType == InvoiceType.SaleReturn || i.InvoiceType == InvoiceType.PurchaseReturn
+                    ? -i.NetAmount
+                    : i.NetAmount,
                 Date = i.Date
             })
             .ToListAsync(ct);

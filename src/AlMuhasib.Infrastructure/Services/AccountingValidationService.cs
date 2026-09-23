@@ -309,12 +309,12 @@ public class AccountingValidationService : IAccountingValidationService
                         (c.Type == CapitalEntryType.Initial || c.Type == CapitalEntryType.Adjustment))
             .SumAsync(c => (decimal?)c.Amount) ?? 0;
 
-        var totalSales = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.Date <= date)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-        var totalPurchases = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.Date <= date)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var totalSales = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date <= date));
+        var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForPurchasesTotals(context.Invoices)
+                .Where(i => i.Date <= date));
         var totalExpenses = await context.Expenses
             .Where(e => e.Date <= date)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;

@@ -281,7 +281,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private async Task ReturnInvoice(SalesReportRow? row)
     {
-        if (row is null) return;
+        if (row is null || row.IsReturn) return;
         if (!BeautifulMessageDialog.ShowConfirm(
                 $"إنشاء فاتورة مرتجع من الفاتورة {row.InvoiceNumber}؟\nستُعاد الكميات إلى المخزن بكميات سالبة."))
             return;
@@ -412,13 +412,13 @@ public partial class SalesReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المبيعات.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
+        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
             r.TotalAmount, r.Discount, r.NetAmount, r.CompanyFeeAmount, r.PaidAmount, r.RemainingAmount
         }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.CompanyFeeAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.CompanyFeeAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
         _exportService.ExportToExcel(dlg.FileName, "المبيعات", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -426,14 +426,14 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
+        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
             r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
             r.CompanyFeeAmount.ToString("N0"), r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0")
         }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.CompanyFeeAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.CompanyFeeAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
         _exportService.PrintTable("تقرير المبيعات", cols, rows);
     }
 }

@@ -76,7 +76,9 @@ public static class ProductCostHelper
     {
         var query = context.InvoiceItems
             .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null && ii.Invoice!.InvoiceType == InvoiceType.Purchase);
+            .Where(ii => ii.ProductId != null
+                         && (ii.Invoice!.InvoiceType == InvoiceType.Purchase
+                             || ii.Invoice.InvoiceType == InvoiceType.PurchaseReturn));
 
         if (productIds is not null)
         {
@@ -87,8 +89,26 @@ public static class ProductCostHelper
         }
 
         var items = await query.ToListAsync();
+        // مرتجع المشتريات يُحسب بكمية وقيمة سالبة في متوسط التكلفة
         return items
             .GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToList());
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(ToSignedPurchaseItem).ToList());
+    }
+
+    private static InvoiceItem ToSignedPurchaseItem(InvoiceItem item)
+    {
+        if (item.Invoice?.InvoiceType != InvoiceType.PurchaseReturn)
+            return item;
+
+        return new InvoiceItem
+        {
+            ProductId = item.ProductId,
+            Quantity = -Math.Abs(item.Quantity),
+            TotalPrice = -Math.Abs(item.TotalPrice),
+            UnitPrice = item.UnitPrice,
+            Invoice = item.Invoice
+        };
     }
 }
