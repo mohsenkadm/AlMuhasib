@@ -151,7 +151,7 @@
                                             <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
-                                            <Setter Property="Background" Value="#ECEFF1"/>
+                                            <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -210,7 +210,7 @@
                                             <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsSupplierBalanceLoading}" Value="True">
-                                            <Setter Property="Background" Value="#ECEFF1"/>
+                                            <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

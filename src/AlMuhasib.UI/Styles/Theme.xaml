@@ -1636,7 +1636,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#FFCDD2"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="#C62828"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -2329,7 +2329,7 @@
 
     <Style x:Key="PrimaryCheckBox" TargetType="CheckBox"
            BasedOn="{StaticResource MaterialDesignCheckBox}">
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
     </Style>
 
@@ -2549,7 +2549,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#ECEFF1"/>
+                <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                 <Setter Property="BorderBrush" Value="#78909C"/>
             </Trigger>
         </Style.Triggers>
@@ -2695,7 +2695,7 @@
     </Style>
 
     <Style x:Key="TableWhatsAppIconButton" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
-        <Setter Property="Background" Value="#E8F8EF"/>
+        <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
         <Setter Property="BorderBrush" Value="#A5D6A7"/>
         <Setter Property="Foreground" Value="#25D366"/>
         <Setter Property="ToolTip" Value="إرسال عبر واتساب"/>
@@ -2842,7 +2842,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#FFCDD2"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                             <Setter Property="Foreground" Value="#C62828"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
@@ -3782,7 +3782,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="#90CAF9"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                 <Setter Property="Background" Value="#F5FAFF"/>
             </Trigger>
         </Style.Triggers>

@@ -170,12 +170,38 @@ public sealed class ThemeService
         SetBrush(res, "HighlightBorderBrush", isDark ? DarkHighlightBorder : "#90CAF9");
         SetBrush(res, "HighlightBrush", isDark ? DarkHighlight : "#1565C0");
 
+        ApplyMaterialDesignCompatBrushes(res, isDark);
+
         res["NormalFontSize"] = 14.0 * fontScale;
         res["SmallFontSize"] = 12.0 * fontScale;
         res["LargeFontSize"] = 16.0 * fontScale;
 
         Charts.ChartThemeConfig.ApplyTheme(isDark);
         ThemeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Force MaterialDesign legacy/compat brushes to follow classic blue-dark so
+    /// cards, paper surfaces, and body text never stay white/black after toggle.
+    /// </summary>
+    private static void ApplyMaterialDesignCompatBrushes(ResourceDictionary res, bool isDark)
+    {
+        SetBrush(res, "MaterialDesignPaper", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "MaterialDesignBody", isDark ? DarkText : "#212121");
+        SetBrush(res, "MaterialDesignBodyLight", isDark ? DarkTextSecondary : "#757575");
+        SetBrush(res, "MaterialDesignDivider", isDark ? DarkBorder : "#E0E0E0");
+        SetBrush(res, "MaterialDesignToolBarBackground", isDark ? DarkTopBar : "#FFFFFF");
+
+        // MaterialDesignThemes 5 resource keys
+        SetBrush(res, "MaterialDesign.Brush.Background", isDark ? DarkBg : "#F5F7FA");
+        SetBrush(res, "MaterialDesign.Brush.CardBackground", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "MaterialDesign.Brush.Foreground", isDark ? DarkText : "#212121");
+        SetBrush(res, "MaterialDesign.Brush.Foreground.Light", isDark ? DarkTextSecondary : "#757575");
+        SetBrush(res, "MaterialDesign.Brush.Chip.Background", isDark ? DarkMutedIcon : "#ECEFF1");
+        SetBrush(res, "MaterialDesign.Brush.Chip.Background.Outline", isDark ? DarkMutedIcon : "#FFFFFF");
+        SetBrush(res, "MaterialDesign.Brush.TextBox.HoverBackground", isDark ? DarkHover : "#EEEEEE");
+        SetBrush(res, "MaterialDesign.Brush.TextBox.OutlineInactive", isDark ? DarkBorder : "#89000000");
+        SetBrush(res, "MaterialDesign.Brush.CheckBox", isDark ? DarkHighlight : "#89000000");
     }
 
     private static void SetBrush(ResourceDictionary res, string key, string colorHex)

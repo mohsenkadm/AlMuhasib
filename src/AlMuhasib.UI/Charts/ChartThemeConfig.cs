@@ -51,6 +51,7 @@ public static class ChartThemeConfig
         LabelColor = SKColor.Parse(isDark ? "#A8B0C4" : "#757575");
         ChartSurfaceColor = SKColor.Parse(isDark ? "#0C1234" : "#F8FAFC");
         TooltipBg = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
+        // Line marker fill — blue accent (readable on dark well, not white flash)
         GeometryFillColor = SKColor.Parse(isDark ? "#5BA3D9" : "#FFFFFF");
         EnsurePaints();
     }

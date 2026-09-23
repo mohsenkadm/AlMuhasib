@@ -144,7 +144,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="#EEF4FC" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
+                            <Border Grid.Column="0" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="BasketOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
                                     <TextBlock FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center">
@@ -287,7 +287,7 @@
                                                     <Style TargetType="Border">
                                                         <Style.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="BorderBrush" Value="#90CAF9"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                                                                 <Setter Property="Background" Value="#F8FBFF"/>
                                                             </Trigger>
                                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">

@@ -110,7 +110,7 @@
                     <Separator Grid.Column="5"
                                Width="1"
                                Margin="8,4"
-                               Background="#E0E0E0" />
+                               Background="{DynamicResource SubtleBorderBrush}" />
 
                     <!-- Action Buttons -->
                     <StackPanel Grid.Column="6"
@@ -536,7 +536,7 @@
                                                           Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border Background="#F1F8E9" CornerRadius="8" Padding="8,6" Margin="0,0,0,6">
+                                                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="8,6" Margin="0,0,0,6">
                                                             <Grid>
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="*"/>
@@ -1096,7 +1096,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
-                                                        BorderBrush="#BBDEFB" BorderThickness="1">
+                                                        BorderBrush="{DynamicResource HighlightBorderBrush}" BorderThickness="1">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
@@ -1369,7 +1369,7 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <Border Grid.Row="2" Background="#F1F8E9" CornerRadius="14" Padding="16,14" Margin="0,0,0,14"
+                        <Border Grid.Row="2" Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="14" Padding="16,14" Margin="0,0,0,14"
                                 BorderBrush="#C5E1A5" BorderThickness="1"
                                 Visibility="{Binding IsPricingDialogEditMode, Converter={StaticResource BoolToVis}}">
                             <StackPanel>

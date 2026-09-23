@@ -43,7 +43,7 @@
             <UniformGrid Columns="3">
                 <controls:AnimatedStatCard Title="صافي الربح (الحالي)" TextValue="{Binding CurrentNetProfit}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#1B5E20" ValueForeground="#1B5E20"/>
                 <controls:AnimatedStatCard Title="صافي الربح (السابق)" TextValue="{Binding PreviousNetProfit}" Icon="CurrencyUsd" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
-                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding NetProfitChange}" Icon="ArrowUpDown" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding NetProfitChange}" Icon="ArrowUpDown" IconBackground="{DynamicResource DashboardIconBadgeCyanBrush}" IconForeground="#0277BD" ValueForeground="#0277BD"/>
             </UniformGrid>
         </StackPanel>
     </ScrollViewer>

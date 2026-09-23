@@ -29,7 +29,7 @@
                     <controls:AnimatedStatCard Title="عدد المحذوف" TextValue="{Binding DeletedCount}"
                                                Icon="Delete" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="إجمالي المبالغ" TextValue="{Binding TotalAmount}"
-                                               Icon="Cash" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                                               Icon="Cash" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#B8860B" ValueForeground="#B8860B"/>
                     <controls:AnimatedStatCard Title="المستخدمون" TextValue="{Binding UserCount}"
                                                Icon="AccountMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="أنواع الفواتير" TextValue="{Binding TypeCount}"

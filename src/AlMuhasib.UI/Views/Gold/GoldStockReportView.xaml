@@ -19,7 +19,7 @@
 
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="إجمالي الغرامات" TextValue="{Binding TotalGrams, StringFormat=N3}"
-                                       Icon="ScaleBalance" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                                       Icon="ScaleBalance" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#B8860B" ValueForeground="#B8860B"/>
             <controls:AnimatedStatCard Title="قيمة المخزون" TextValue="{Binding TotalValue, StringFormat=N0}"
                                        Icon="Gold" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
             <controls:AnimatedStatCard Title="عدد القطع" TextValue="{Binding PieceCount}"

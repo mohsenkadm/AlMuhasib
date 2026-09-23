@@ -195,7 +195,7 @@
                                             <Style TargetType="DataGridRow">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsPaid}" Value="True">
-                                                        <Setter Property="Background" Value="#F1F8E9"/>
+                                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

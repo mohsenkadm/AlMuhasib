@@ -160,7 +160,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid ClipToBounds="True">
-                            <Border Background="#F0E6C8" CornerRadius="8"/>
+                            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8"/>
                             <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
                                        VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
                                 <Rectangle.Fill>
@@ -192,7 +192,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid ClipToBounds="True">
-                            <Ellipse Fill="#F0E6C8"/>
+                            <Ellipse Fill="{DynamicResource NotepadPaperBrush}"/>
                             <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
                                        VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
                                 <Rectangle.Fill>
@@ -549,11 +549,11 @@
                         </Border>
 
                         <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="White"/>
+                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="{DynamicResource CardBrush}"/>
                         <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                  Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#FFF8E1"/>
                         <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="White"/>
+                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="{DynamicResource CardBrush}"/>
 
                         <Grid Margin="28,26">
                             <Grid.RowDefinitions>
@@ -728,7 +728,7 @@
                                 BorderBrush="#E8D5A3" BorderThickness="1">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <Border Style="{StaticResource DashboardIconBadge}" Background="#FFF3CD">
+                                    <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardKpiOrangeLightBrush}">
                                         <materialDesign:PackIcon Kind="ClipboardList" Width="22" Height="22"
                                                                  Foreground="{StaticResource GoldPrimaryBrush}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -771,7 +771,7 @@
                                                             <TextBlock Text="{Binding Description}" FontSize="12"
                                                                        Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                                                         </StackPanel>
-                                                        <Border Grid.Column="2" Background="#FFF3CD"
+                                                        <Border Grid.Column="2" Background="{DynamicResource DashboardKpiOrangeLightBrush}"
                                                                 CornerRadius="10" Padding="8,6" VerticalAlignment="Center">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="تنفيذ" FontSize="11" FontWeight="SemiBold"
@@ -1003,7 +1003,7 @@
                                 <RowDefinition Height="300"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
-                                <Border Style="{StaticResource DashboardIconBadge}" Background="#FFF3CD">
+                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardKpiOrangeLightBrush}">
                                     <materialDesign:PackIcon Kind="ChartAreaspline" Width="22" Height="22"
                                                              Foreground="{StaticResource GoldPrimaryBrush}"
                                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>

@@ -62,7 +62,7 @@
                         Title="إجمالي العجز"
                         TextValue="{Binding TotalShortage}"
                         Icon="TrendingDown"
-                        IconBackground="#FBE9E7"
+                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#D84315"
                         ValueForeground="#D84315"/>
                 </UniformGrid>

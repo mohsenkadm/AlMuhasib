@@ -267,7 +267,7 @@
                     <materialDesign:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" UniformCornerRadius="12"
                                          Padding="20" Margin="0,0,0,16">
                         <StackPanel>
-                            <Border Background="#E1F5FE" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                            <Border Background="{DynamicResource DashboardIconBadgeCyanBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="InformationOutline" Foreground="#0277BD"
                                                              Width="20" Height="20" VerticalAlignment="Top" Margin="0,2,8,0"/>
@@ -352,7 +352,7 @@
                 <materialDesign:Card Padding="24" MinWidth="520" MaxWidth="600" UniformCornerRadius="14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <Border Width="40" Height="40" CornerRadius="10" Background="#E1F5FE" Margin="0,0,12,0">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource DashboardIconBadgeCyanBrush}" Margin="0,0,12,0">
                                 <materialDesign:PackIcon Kind="AccountCash" Width="22" Height="22"
                                                          Foreground="#0277BD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>

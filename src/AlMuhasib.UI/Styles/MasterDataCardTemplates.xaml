@@ -93,7 +93,7 @@
         <Setter Property="Padding" Value="14,12"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="#90CAF9"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                 <Setter Property="Background" Value="#F8FBFF"/>
             </Trigger>
         </Style.Triggers>
@@ -264,7 +264,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#EFEBE9" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource MutedIconBackgroundBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="AccountHardHat" Width="20" Height="20" Foreground="#5D4037"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -416,7 +416,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#EDE7F6" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="AccountGroup" Width="20" Height="20" Foreground="#5E35B1"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>

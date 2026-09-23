@@ -25,7 +25,7 @@
                        Text="انتهت مدة تجربة برنامج قيد. أدخل مفتاح التفعيل مدى الحياة الذي يزوّدك به المطوّر للمتابعة."/>
 
             <TextBlock Text="معرّف التنصيب" FontWeight="SemiBold" Margin="0,0,0,6"/>
-            <Border Background="#F0F3F7" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
+            <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
                 <DockPanel>
                     <Button DockPanel.Dock="Left" Content="نسخ"
                             Click="CopyId_Click"

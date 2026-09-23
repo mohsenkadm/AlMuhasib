@@ -28,7 +28,7 @@
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="{Binding Title, ElementName=Root}"
                                FontSize="16" FontWeight="Bold"
-                               Foreground="{DynamicResource MaterialDesignBody}" />
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="{Binding Subtitle, ElementName=Root}"
                                FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"
                                Margin="0,2,0,0"
@@ -60,7 +60,15 @@
             </Grid>
 
             <!-- ═══ Chart Content (LTR canvas — avoids mirrored labels in RTL pages) ═══ -->
-            <Border Grid.Row="1" FlowDirection="LeftToRight" MinHeight="250">
+            <Border Grid.Row="1"
+                    Background="{DynamicResource DashboardChartWellBrush}"
+                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="10,8"
+                    MinHeight="250"
+                    FlowDirection="LeftToRight"
+                    ClipToBounds="True">
                 <ContentPresenter Content="{Binding ChartContent, ElementName=Root}" />
             </Border>
 

@@ -9,7 +9,7 @@
     <UserControl.Resources>
         <Style x:Key="DetailLabel" TargetType="TextBlock" BasedOn="{StaticResource FormFieldLabel}">
             <Setter Property="Margin" Value="0,0,0,6"/>
-            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         </Style>
         <Style x:Key="DetailValue" TargetType="TextBlock">
             <Setter Property="FontSize" Value="15"/>
@@ -24,7 +24,7 @@
         </Style>
         <Style x:Key="DetailSectionCard" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="16,14"/>

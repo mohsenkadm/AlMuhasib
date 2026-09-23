@@ -92,12 +92,12 @@
                 <Border x:Name="Step1Indicator" Width="36" Height="36" CornerRadius="18" Background="#1565C0">
                     <TextBlock Text="1" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <Rectangle Width="40" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="8,0"/>
-                <Border x:Name="Step2Indicator" Width="36" Height="36" CornerRadius="18" Background="#E0E0E0">
+                <Rectangle Width="40" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="8,0"/>
+                <Border x:Name="Step2Indicator" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource SubtleBorderBrush}">
                     <TextBlock Text="2" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <Rectangle x:Name="Step3Connector" Width="40" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="8,0" Visibility="Collapsed"/>
-                <Border x:Name="Step3Indicator" Width="36" Height="36" CornerRadius="18" Background="#E0E0E0" Visibility="Collapsed">
+                <Rectangle x:Name="Step3Connector" Width="40" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="8,0" Visibility="Collapsed"/>
+                <Border x:Name="Step3Indicator" Width="36" Height="36" CornerRadius="18" Background="{DynamicResource SubtleBorderBrush}" Visibility="Collapsed">
                     <TextBlock Text="3" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
             </StackPanel>

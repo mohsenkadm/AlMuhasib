@@ -25,7 +25,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F1F8E9"/>
+                    <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                     <Setter Property="BorderBrush" Value="#81C784"/>
                     <Setter Property="BorderThickness" Value="1.5"/>
                     <Trigger.EnterActions>

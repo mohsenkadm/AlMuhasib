@@ -28,7 +28,7 @@
                     <controls:AnimatedStatCard Title="إجمالي المبيعات" TextValue="{Binding TotalSales}" Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="المدفوع" TextValue="{Binding TotalPaid}" Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding TotalRemaining}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
-                    <controls:AnimatedStatCard Title="عدد العملاء" TextValue="{Binding CustomerCount}" Icon="AccountMultiple" IconBackground="#EFEBE9" IconForeground="#5D4037" ValueForeground="#5D4037"/>
+                    <controls:AnimatedStatCard Title="عدد العملاء" TextValue="{Binding CustomerCount}" Icon="AccountMultiple" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="#5D4037" ValueForeground="#5D4037"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

@@ -40,7 +40,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#ECEFF1"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Icon" Property="Kind" Value="Eye"/>
@@ -120,7 +120,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="KeyBd" Property="Background" Value="#F5FAFF"/>
-                                <Setter TargetName="KeyBd" Property="BorderBrush" Value="#90CAF9"/>
+                                <Setter TargetName="KeyBd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="KeyBd" Property="Background" Value="#E3F2FD"/>
@@ -235,7 +235,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="BorderBrush" Value="#90CAF9"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                                 <Setter TargetName="Card" Property="Background" Value="#F5FAFF"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
@@ -556,7 +556,7 @@
 
                                     <Border x:Name="NumericPadPanel"
                                             Visibility="Collapsed" Opacity="0"
-                                            Background="#F0F7FF" CornerRadius="16"
+                                            Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="16"
                                             BorderBrush="#D6E9FB" BorderThickness="1"
                                             Padding="10,12" Margin="0,0,0,8"
                                             FlowDirection="LeftToRight">

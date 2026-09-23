@@ -41,7 +41,7 @@
                     MaxHeight="360"
                     Background="{DynamicResource CardBrush}"
                     CornerRadius="14"
-                    BorderBrush="#D6E3F0"
+                    BorderBrush="{DynamicResource SearchPanelBorderBrush}"
                     BorderThickness="1"
                     Padding="0"
                     Opacity="0"
@@ -161,7 +161,7 @@
                                     <DataTemplate.Triggers>
                                         <Trigger SourceName="ItemBd" Property="IsMouseOver" Value="True">
                                             <Setter TargetName="ItemBd" Property="Background" Value="#EEF5FF"/>
-                                            <Setter TargetName="ItemBd" Property="BorderBrush" Value="#90CAF9"/>
+                                            <Setter TargetName="ItemBd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                                         </Trigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>

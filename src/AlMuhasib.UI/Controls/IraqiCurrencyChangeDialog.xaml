@@ -244,10 +244,10 @@
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                             </Border>
-                                            <Ellipse Width="70" Height="70" Opacity="0.18" Fill="White"
+                                            <Ellipse Width="70" Height="70" Opacity="0.18" Fill="{DynamicResource CardBrush}"
                                                      HorizontalAlignment="Left" VerticalAlignment="Top"
                                                      Margin="-20,-20,0,0"/>
-                                            <Ellipse Width="40" Height="40" Opacity="0.12" Fill="White"
+                                            <Ellipse Width="40" Height="40" Opacity="0.12" Fill="{DynamicResource CardBrush}"
                                                      HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                                      Margin="0,0,-8,-8"/>
                                             <Border Width="28" Height="28" CornerRadius="14"
@@ -293,7 +293,7 @@
                             </Border.RenderTransform>
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#ECEFF1"/>
+                                    <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding ShowChangeDue}" Value="True">
                                             <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
