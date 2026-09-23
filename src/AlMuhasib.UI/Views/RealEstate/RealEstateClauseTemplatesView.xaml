@@ -15,13 +15,13 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="بنود العقد الجاهزة" FontSize="24" FontWeight="Bold"
-                   Foreground="#455A64" Margin="0,0,0,16"/>
+                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
 
         <UniformGrid Grid.Row="1" Columns="2" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="إجمالي البنود" TextValue="{Binding TotalCountText}"
-                                        Icon="FormatListNumbered" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                                        Icon="FormatListNumbered" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
             <controls:AnimatedStatCard Title="المفعّلة" TextValue="{Binding ActiveCountText}"
-                                        Icon="CheckCircle" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                        Icon="CheckCircle" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
         </UniformGrid>
 
         <Border Grid.Row="2" Style="{StaticResource FilterBar}" Margin="0,0,0,16">

@@ -208,7 +208,7 @@
                                 </Button>
                                 <Button Style="{StaticResource HotelQuickAction}"
                                         Command="{Binding OpenReservationsCommand}"
-                                        Background="#E3F2FD" Margin="4,0,4,0">
+                                        Background="{DynamicResource PrimaryHueLightBrush}" Margin="4,0,4,0">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Width="44" Height="44" CornerRadius="12" Background="#1565C0" Margin="0,0,12,0">
                                             <materialDesign:PackIcon Kind="CalendarClock" Width="24" Height="24"
@@ -363,7 +363,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#E3F2FD">
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="{DynamicResource PrimaryHueLightBrush}">
                                 <materialDesign:PackIcon Kind="AirplaneLanding" Width="28" Height="28"
                                                          Foreground="#1565C0"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />

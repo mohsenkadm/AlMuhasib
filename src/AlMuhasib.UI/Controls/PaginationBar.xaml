@@ -43,7 +43,7 @@
             </TextBlock>
 
             <Border Grid.Column="1"
-                    Background="White"
+                    Background="{DynamicResource CardBrush}"
                     BorderBrush="#E2E8F0"
                     BorderThickness="1"
                     CornerRadius="10"
@@ -67,7 +67,7 @@
                             Padding="10,4"
                             Margin="4,0"
                             VerticalAlignment="Center">
-                        <TextBlock FontSize="12" Foreground="#37474F">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}">
                             <Run Text="صفحة" />
                             <Run Text="{Binding CurrentPage, Mode=OneWay}" FontWeight="SemiBold" Foreground="#1565C0"/>
                             <Run Text="من" />

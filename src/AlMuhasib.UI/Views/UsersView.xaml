@@ -246,7 +246,7 @@
                 <StackPanel>
                     <TextBlock Text="إعادة تعيين كلمة المرور" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
 
-                    <TextBlock Margin="0,0,0,8" Foreground="#757575">
+                    <TextBlock Margin="0,0,0,8" Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="المستخدم: "/>
                         <Run Text="{Binding SelectedUser.FullName, Mode=OneWay}"/>
                     </TextBlock>

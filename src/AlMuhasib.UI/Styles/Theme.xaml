@@ -32,12 +32,22 @@
     <!-- Additional custom brushes -->
     <SolidColorBrush x:Key="SuccessBrush" Color="#2E7D32"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#C62828"/>
-    <SolidColorBrush x:Key="HighlightLightBrush" Color="#EDE7F6"/>
-    <SolidColorBrush x:Key="HighlightBrush" Color="#7E57C2"/>
-    <SolidColorBrush x:Key="HighlightBorderBrush" Color="#D1C4E9"/>
-    <SolidColorBrush x:Key="WarningBrush" Color="#7E57C2"/>
+    <!-- Classic blue highlight (replaces purple) -->
+    <SolidColorBrush x:Key="HighlightLightBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="HighlightBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="HighlightBorderBrush" Color="#90CAF9"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="BackgroundBrush" Color="#F5F7FA"/>
     <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+    <!-- Theme-swappable badge / glass / chrome helpers (overridden by ThemeService) -->
+    <SolidColorBrush x:Key="BadgePaidBackgroundBrush" Color="#E8F5E9"/>
+    <SolidColorBrush x:Key="BadgePaidForegroundBrush" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="BadgeOverdueBackgroundBrush" Color="#FFEBEE"/>
+    <SolidColorBrush x:Key="BadgeOverdueForegroundBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="BadgePendingBackgroundBrush" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="BadgePendingForegroundBrush" Color="#616161"/>
+    <SolidColorBrush x:Key="GlassCardBrush" Color="#EEFFFFFF"/>
+    <SolidColorBrush x:Key="TitleBarButtonHoverBrush" Color="#ECEFF1"/>
     <SolidColorBrush x:Key="SidebarBrush" Color="#0D1B2A"/>
     <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#1B2A3D"/>
@@ -1563,7 +1573,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" CornerRadius="14" Background="#ECEFF1">
+                    <Border x:Name="Bd" CornerRadius="14" Background="{DynamicResource MutedIconBackgroundBrush}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -1642,7 +1652,7 @@
                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                          Style="{StaticResource NumericCellTextBox}"
                          VerticalContentAlignment="Center"
-                         FontWeight="SemiBold" Foreground="#263238" Padding="4,4"
+                         FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Padding="4,4"
                          IsReadOnly="{Binding IsOfferGift}"/>
             </Border>
             <Button Grid.Column="2" Content="+" Style="{StaticResource InvoiceQtyPlusButton}"
@@ -1672,7 +1682,7 @@
                     MaxWidth="320"/>
                 <TextBlock Text="{Binding StockInfo}"
                            FontSize="10"
-                           Foreground="#757575"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            Margin="2,0,0,0"
                            TextTrimming="CharacterEllipsis">
                     <TextBlock.Style>
@@ -1913,19 +1923,19 @@
     </Style>
 
     <Style x:Key="PaidBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
-        <Setter Property="Background" Value="#E8F5E9"/>
+        <Setter Property="Background" Value="{DynamicResource BadgePaidBackgroundBrush}"/>
     </Style>
 
     <Style x:Key="PartialBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
-        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource AccentLightBrush}"/>
     </Style>
 
     <Style x:Key="OverdueBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
-        <Setter Property="Background" Value="#FFEBEE"/>
+        <Setter Property="Background" Value="{DynamicResource BadgeOverdueBackgroundBrush}"/>
     </Style>
 
     <Style x:Key="PendingBadge" TargetType="Border" BasedOn="{StaticResource BadgeBase}">
-        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="Background" Value="{DynamicResource BadgePendingBackgroundBrush}"/>
     </Style>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -1937,7 +1947,7 @@
         <Setter Property="CornerRadius" Value="12"/>
         <Setter Property="Padding" Value="16"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
-        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
 
@@ -1976,17 +1986,17 @@
 
     <Style x:Key="ErrorSnackbar" TargetType="materialDesign:Snackbar"
            BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
-        <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
         <Setter Property="Foreground" Value="White"/>
-        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="FontSize" Value="{DynamicResource NormalFontSize}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="WarningSnackbar" TargetType="materialDesign:Snackbar"
            BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
-        <Setter Property="Background" Value="{StaticResource WarningBrush}"/>
-        <Setter Property="Foreground" Value="#212121"/>
-        <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
+        <Setter Property="Background" Value="{DynamicResource WarningBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="{DynamicResource NormalFontSize}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
@@ -1995,7 +2005,8 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="PageLoading" TargetType="Border">
-        <Setter Property="Background" Value="#CCFFFFFF"/>
+        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+        <Setter Property="Opacity" Value="0.92"/>
         <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -2004,7 +2015,7 @@
                 <BeginStoryboard>
                     <Storyboard>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                         From="0" To="1" Duration="0:0:0.3">
+                                         From="0" To="0.92" Duration="0:0:0.3">
                             <DoubleAnimation.EasingFunction>
                                 <QuadraticEase EasingMode="EaseOut"/>
                             </DoubleAnimation.EasingFunction>
@@ -2856,11 +2867,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                            <Setter Property="Foreground" Value="#1565C0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2942,11 +2953,11 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="GlassCard" TargetType="Border">
-        <Setter Property="Background" Value="#EEFFFFFF"/>
+        <Setter Property="Background" Value="{DynamicResource GlassCardBrush}"/>
         <Setter Property="CornerRadius" Value="16"/>
         <Setter Property="Padding" Value="24"/>
         <Setter Property="Margin" Value="8"/>
-        <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Effect">
             <Setter.Value>
@@ -3325,7 +3336,7 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="ModernTopBar" TargetType="Border">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource TopBarBackground}"/>
         <Setter Property="Padding" Value="16,0"/>
         <Setter Property="Height" Value="64"/>
         <Setter Property="Effect">
@@ -3361,7 +3372,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="#546E7A"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -3370,10 +3381,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#ECEFF1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TitleBarButtonHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#CFD8DC"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -3394,8 +3405,8 @@
         <Setter Property="CornerRadius" Value="10"/>
         <Setter Property="Padding" Value="10,6"/>
         <Setter Property="Margin" Value="4,0"/>
-        <Setter Property="Background" Value="#F5F9FD"/>
-        <Setter Property="BorderBrush" Value="#DDE8F2"/>
+        <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="RenderTransform">
@@ -3635,8 +3646,8 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#90CAF9"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -3649,8 +3660,8 @@
         <Setter Property="Padding" Value="12,5"/>
         <Setter Property="FontSize" Value="11.5"/>
         <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="16"/>
-        <Setter Property="BorderBrush" Value="#CFD8DC"/>
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
     </Style>
 
     <!-- Personal workspace: notepad paper -->
@@ -3671,8 +3682,8 @@
     </DrawingBrush>
 
     <Style x:Key="NotepadPaperBorder" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource NotepadPaperBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource NotepadPaperBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource NotepadPaperBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="10"/>
         <Setter Property="Effect">

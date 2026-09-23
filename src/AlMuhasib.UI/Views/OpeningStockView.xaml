@@ -169,7 +169,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding RowNumber}"
-                                                       HorizontalAlignment="Center" Foreground="#9E9E9E"/>
+                                                       HorizontalAlignment="Center" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -284,7 +284,7 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                              IsIndeterminate="True" Width="40" Height="40" Value="0"/>
-                <TextBlock Text="جارٍ التحميل..." FontSize="13" Foreground="#757575"
+                <TextBlock Text="جارٍ التحميل..." FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
                            HorizontalAlignment="Center" Margin="0,12,0,0"/>
             </StackPanel>
         </Border>

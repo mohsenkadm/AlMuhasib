@@ -57,7 +57,7 @@
             <UniformGrid Rows="1" Columns="6">
                 <!-- Total Plans -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Margin="0,0,10,0">
@@ -71,13 +71,13 @@
                             </Border>
                             <TextBlock Text="إجمالي الخطط" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding SummaryTotalPlans}" FontSize="22" FontWeight="Bold" Foreground="#424242"/>
+                        <TextBlock Text="{Binding SummaryTotalPlans}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Total Amount -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Margin="0,0,10,0">
@@ -97,7 +97,7 @@
 
                 <!-- Paid Amount -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
@@ -111,7 +111,7 @@
 
                 <!-- Remaining Amount -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource HighlightLightBrush}" Margin="0,0,10,0">
@@ -125,7 +125,7 @@
 
                 <!-- Paid Count -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
@@ -139,7 +139,7 @@
 
                 <!-- Overdue Count -->
                 <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Margin="4" Padding="16,12"
-                        BorderBrush="#E0E0E0" BorderThickness="1">
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#FFEBEE" Margin="0,0,10,0">
@@ -158,7 +158,7 @@
         <Border Margin="0,12,0,0"
                 Padding="16,12"
                 CornerRadius="12"
-                Background="#E3F2FD"
+                Background="{DynamicResource PrimaryHueLightBrush}"
                 BorderBrush="#90CAF9"
                 BorderThickness="1"
                 Visibility="{Binding HasBulkSelection, Converter={StaticResource BoolToVis}}">

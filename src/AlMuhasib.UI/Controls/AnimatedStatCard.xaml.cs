@@ -16,6 +16,12 @@ public partial class AnimatedStatCard : UserControl
     public AnimatedStatCard()
     {
         InitializeComponent();
+        if (ReadLocalValue(IconBackgroundProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(IconBackgroundProperty, "PrimaryHueLightBrush");
+        if (ReadLocalValue(IconForegroundProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(IconForegroundProperty, "PrimaryHueMidBrush");
+        if (ReadLocalValue(ValueForegroundProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(ValueForegroundProperty, "TextPrimaryBrush");
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }

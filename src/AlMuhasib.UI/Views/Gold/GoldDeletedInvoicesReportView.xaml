@@ -27,11 +27,11 @@
 
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="عدد المحذوف" TextValue="{Binding DeletedCount}"
-                                               Icon="Delete" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                               Icon="Delete" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="إجمالي المبالغ" TextValue="{Binding TotalAmount}"
                                                Icon="Cash" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
                     <controls:AnimatedStatCard Title="المستخدمون" TextValue="{Binding UserCount}"
-                                               Icon="AccountMultiple" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                               Icon="AccountMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="أنواع الفواتير" TextValue="{Binding TypeCount}"
                                                Icon="FileDocument" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
@@ -114,7 +114,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

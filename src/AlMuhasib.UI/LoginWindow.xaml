@@ -164,7 +164,7 @@
         </Style>
 
         <Style x:Key="NumPadActionButton" TargetType="Button" BasedOn="{StaticResource NumPadKeyButton}">
-            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
             <Setter Property="Foreground" Value="#1565C0"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -222,7 +222,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Card" CornerRadius="18" Padding="16,18"
-                                Background="White"
+                                Background="{DynamicResource CardBrush}"
                                 BorderBrush="#E3EDF7" BorderThickness="1.5"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
@@ -343,7 +343,7 @@
                 <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
             </Grid.RenderTransform>
 
-            <Border CornerRadius="24" ClipToBounds="True" Background="White">
+            <Border CornerRadius="24" ClipToBounds="True" Background="{DynamicResource CardBrush}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="340"/>
@@ -405,7 +405,7 @@
                                 Margin="16,16,0,0" Style="{StaticResource IconButton}"
                                 Foreground="#78909C" Width="36" Height="36"
                                 Click="CloseButton_Click" ToolTip="إغلاق">
-                            <Border Background="#ECEFF1" CornerRadius="18" Width="36" Height="36">
+                            <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="18" Width="36" Height="36">
                                 <materialDesign:PackIcon Kind="Close" Width="18" Height="18"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
@@ -442,8 +442,8 @@
                                     <TextBlock Text="اختر المستخدم للمتابعة"
                                                FontSize="13" Foreground="#78909C" Margin="0,6,0,24"/>
 
-                                    <Border CornerRadius="16" Background="White" Padding="16,20"
-                                            BorderBrush="#E8EEF5" BorderThickness="1" MinHeight="220">
+                                    <Border CornerRadius="16" Background="{DynamicResource CardBrush}" Padding="16,20"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" MinHeight="220">
                                         <Grid>
                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                                                         Visibility="{Binding IsLoadingAdmins, Converter={StaticResource BoolToVis}}">

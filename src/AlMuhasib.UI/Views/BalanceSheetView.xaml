@@ -148,7 +148,7 @@
                             <TextBlock Grid.Column="1" Text="{Binding Adjustments, StringFormat=N0}" Style="{StaticResource LineValue}"/>
                         </Grid>
 
-                        <Border Background="#E3F2FD" CornerRadius="10" Padding="16,14" Margin="0,4,0,12">
+                        <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="16,14" Margin="0,4,0,12">
                             <StackPanel>
                                 <TextBlock Text="الأرباح المتراكمة" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,12"/>
 

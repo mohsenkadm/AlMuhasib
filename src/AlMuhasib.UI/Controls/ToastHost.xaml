@@ -103,7 +103,7 @@
                                         Visibility="{Binding IsLoading, Converter={StaticResource BoolVis}}">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Warning}">
                                                     <Setter Property="Background" Value="#FFF3E0"/>
@@ -141,7 +141,7 @@
                                                     <Setter Property="Background" Value="#FFF3E0"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Info}">
-                                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                                    <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -176,7 +176,7 @@
                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Title}"
                                            FontSize="13" FontWeight="Bold"
-                                           Foreground="#263238"/>
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding Message}"
                                            FontSize="12.5"
                                            Foreground="#546E7A"
@@ -188,7 +188,7 @@
 
                         <!-- Dismiss progress bar -->
                         <Grid Grid.Row="1" Height="4" ClipToBounds="True">
-                            <Border Background="#ECEFF1" CornerRadius="0,0,14,14"/>
+                            <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="0,0,14,14"/>
                             <Border x:Name="ProgressBarFill" Height="4"
                                     CornerRadius="0,0,14,14"
                                     RenderTransformOrigin="0,0.5"

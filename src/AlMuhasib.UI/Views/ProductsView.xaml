@@ -634,7 +634,7 @@
                                              Foreground="#BDBDBD" />
                     <TextBlock Text="لا توجد منتجات"
                                FontSize="16"
-                               Foreground="#9E9E9E"
+                               Foreground="{DynamicResource HintForegroundBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0" />
                     <TextBlock Text="لم يُضاف أي منتج بعد أو نتائج البحث فارغة"
@@ -665,7 +665,7 @@
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="40" ShadowDepth="8" Opacity="0.35" Color="#0D47A1"/>
                     </Border.Effect>
-                    <Border CornerRadius="20" Background="White" ClipToBounds="True">
+                    <Border CornerRadius="20" Background="{DynamicResource CardBrush}" ClipToBounds="True">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -946,7 +946,7 @@
                             </Border>
 
                             <!-- Clothing colors (feature-gated: TemplateClothing) -->
-                            <Border Margin="0,12,0,0" Padding="12" Background="#E3F2FD" CornerRadius="8"
+                            <Border Margin="0,12,0,0" Padding="12" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8"
                                     Visibility="{Binding ShowColorsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel>
                                     <TextBlock Text="الألوان" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -1062,7 +1062,7 @@
                                             <DataTemplate>
                                                 <TextBlock FontSize="12" Margin="0,0,0,2">
                                                     <Run Text="{Binding SerialNumber}" FontFamily="Consolas"/>
-                                                    <Run Text="{Binding IsSold, StringFormat=' — {0}'}" Foreground="#9E9E9E"/>
+                                                    <Run Text="{Binding IsSold, StringFormat=' — {0}'}" Foreground="{DynamicResource HintForegroundBrush}"/>
                                                 </TextBlock>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -1082,7 +1082,7 @@
                             </Border>
 
                             <!-- Minimum quantities per warehouse -->
-                            <Border Margin="0,12,0,0" Padding="12" Background="#E3F2FD" CornerRadius="8">
+                            <Border Margin="0,12,0,0" Padding="12" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                         <materialDesign:PackIcon Kind="AlertDecagramOutline" Width="18" Height="18"
@@ -1095,7 +1095,7 @@
                                     <ItemsControl ItemsSource="{Binding EditMinQuantities}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Background="White" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
+                                                <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
                                                         BorderBrush="#BBDEFB" BorderThickness="1">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
@@ -1119,7 +1119,7 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                     <TextBlock Text="لا توجد مخازن معرفة بعد."
-                                               FontSize="12" Foreground="#9E9E9E" HorizontalAlignment="Center"
+                                               FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"
                                                Margin="0,4,0,0">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
@@ -1193,7 +1193,7 @@
                 <Border MinWidth="380"
                         MaxWidth="420"
                         Padding="24"
-                        Background="White"
+                        Background="{DynamicResource CardBrush}"
                         CornerRadius="16">
                     <StackPanel>
                         <!-- Icon -->
@@ -1221,7 +1221,7 @@
                             <Run Text="؟" />
                             <LineBreak />
                             <Run Text="لا يمكن التراجع عن هذا الإجراء."
-                                 FontSize="12" Foreground="#9E9E9E" />
+                                 FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
                         </TextBlock>
 
                         <!-- Buttons -->
@@ -1248,7 +1248,7 @@
                                    DialogTheme="Inherit"
                                    OverlayBackground="#80000000">
             <materialDesign:DialogHost.DialogContent>
-                <Border MinWidth="420" Padding="24" Background="White" CornerRadius="16">
+                <Border MinWidth="420" Padding="24" Background="{DynamicResource CardBrush}" CornerRadius="16">
                     <StackPanel>
                         <TextBlock Text="تعديل سعر المنتج" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
                         <TextBlock Text="{Binding PriceEditProductName}" FontSize="14" Foreground="#546E7A" Margin="0,0,0,16"/>
@@ -1284,7 +1284,7 @@
                                    DialogTheme="Inherit"
                                    OverlayBackground="#80000000">
             <materialDesign:DialogHost.DialogContent>
-                <Border MinWidth="520" MaxWidth="620" MaxHeight="640" Padding="28,24" Background="White" CornerRadius="18">
+                <Border MinWidth="520" MaxWidth="620" MaxHeight="640" Padding="28,24" Background="{DynamicResource CardBrush}" CornerRadius="18">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" Color="#2E7D32"/>
                     </Border.Effect>
@@ -1323,7 +1323,7 @@
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel Grid.Column="0">
                                                         <TextBlock Text="{Binding PricingTypeName}" FontWeight="SemiBold"
-                                                                   FontSize="14" Foreground="#263238"/>
+                                                                   FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                                             <TextBlock Text="بيع:" Foreground="#78909C" FontSize="12" Margin="0,0,4,0"/>
                                                             <TextBlock Text="{Binding SalePriceText}" Foreground="#1565C0"
@@ -1441,7 +1441,7 @@
                                    DialogTheme="Inherit"
                                    OverlayBackground="#80000000">
             <materialDesign:DialogHost.DialogContent>
-                <Border MinWidth="440" MaxWidth="520" Padding="28,24" Background="White" CornerRadius="18">
+                <Border MinWidth="440" MaxWidth="520" Padding="28,24" Background="{DynamicResource CardBrush}" CornerRadius="18">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" Color="#1565C0"/>
                     </Border.Effect>
@@ -1462,7 +1462,7 @@
                                 BorderBrush="#E3EAF0" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="{Binding BarcodePrintProductName}" FontSize="16" FontWeight="Bold"
-                                           Foreground="#263238" TextWrapping="Wrap" HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center"
                                            Margin="0,0,0,10"/>
                                 <Image Source="{Binding BarcodePreviewImage}" Height="100" Stretch="Uniform"
                                        HorizontalAlignment="Center" Margin="0,0,0,8"/>
@@ -1508,7 +1508,7 @@
                                    Identifier="ProductClothingDialog">
             <materialDesign:DialogHost.DialogContent>
                 <Border MinWidth="480" MaxWidth="580" MaxHeight="680" Padding="24"
-                        Background="White" CornerRadius="16">
+                        Background="{DynamicResource CardBrush}" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1552,7 +1552,7 @@
                                         </Grid>
                                     </StackPanel>
                                 </Border>
-                                <Border Padding="12" Background="#E3F2FD" CornerRadius="8"
+                                <Border Padding="12" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8"
                                         Visibility="{Binding ShowColorsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <StackPanel>
                                         <TextBlock Text="الألوان" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -1599,7 +1599,7 @@
                                    Identifier="ProductPackagingDialog">
             <materialDesign:DialogHost.DialogContent>
                 <Border MinWidth="480" MaxWidth="560" MaxHeight="620" Padding="24"
-                        Background="White" CornerRadius="16">
+                        Background="{DynamicResource CardBrush}" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1682,7 +1682,7 @@
                              Value="0" />
                 <TextBlock Text="جاري التحميل..."
                            FontSize="13"
-                           Foreground="#757575"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
             </StackPanel>

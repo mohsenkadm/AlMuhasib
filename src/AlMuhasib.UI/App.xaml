@@ -40,19 +40,19 @@
 
             <!-- Legacy aliases (kept for backward compatibility with existing views) -->
             <SolidColorBrush x:Key="SidebarBackground" Color="#0D1B2A" />
-            <SolidColorBrush x:Key="SidebarForeground" Color="#ECEFF1" />
+            <SolidColorBrush x:Key="SidebarForeground" Color="#E8EEF5" />
             <SolidColorBrush x:Key="SidebarHover" Color="#1A2F4A" />
             <SolidColorBrush x:Key="SidebarSelected" Color="#1A4D82" />
-            <SolidColorBrush x:Key="TopBarBackground" Color="White" />
+            <SolidColorBrush x:Key="TopBarBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="ContentBackground" Color="#F5F7FA" />
             <Color x:Key="AccentColor">#00ACC1</Color>
             <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
             <SolidColorBrush x:Key="AccentLightBrush" Color="#E0F7FA" />
             <SolidColorBrush x:Key="AccentDarkBrush" Color="#00838F" />
-            <!-- بديل الأصفر/البرتقالي — بنفسجي ناعم -->
-            <SolidColorBrush x:Key="HighlightLightBrush" Color="#EDE7F6" />
-            <SolidColorBrush x:Key="HighlightBrush" Color="#7E57C2" />
-            <SolidColorBrush x:Key="HighlightBorderBrush" Color="#D1C4E9" />
+            <!-- Classic blue highlight (ThemeService overrides in dark) -->
+            <SolidColorBrush x:Key="HighlightLightBrush" Color="#E3F2FD" />
+            <SolidColorBrush x:Key="HighlightBrush" Color="#1565C0" />
+            <SolidColorBrush x:Key="HighlightBorderBrush" Color="#90CAF9" />
 
             <!-- Arabic Font -->
             <FontFamily x:Key="ArabicFont">Segoe UI, Tahoma, Arial</FontFamily>

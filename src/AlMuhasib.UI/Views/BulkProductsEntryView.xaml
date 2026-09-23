@@ -69,12 +69,12 @@
                                        Title="صفوف باسم"
                                        Value="{Binding TotalRows}"
                                        Icon="FormatListNumbered"
-                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
             <controls:AnimatedStatCard Margin="0,0,8,0"
                                        Title="جاهزة للحفظ"
                                        Value="{Binding ReadyRows}"
                                        Icon="CheckCircleOutline"
-                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                                       IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
             <controls:AnimatedStatCard Margin="0,0,8,0"
                                        Title="ناقصة"
                                        Value="{Binding IncompleteRows}"
@@ -83,7 +83,7 @@
             <controls:AnimatedStatCard Title="مكررة"
                                        Value="{Binding DuplicateRows}"
                                        Icon="ContentDuplicate"
-                                       IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
+                                       IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
         </UniformGrid>
 
         <!-- Excel-like grid -->

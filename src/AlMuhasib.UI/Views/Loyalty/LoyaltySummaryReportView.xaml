@@ -28,10 +28,10 @@
             </Border>
 
             <UniformGrid Columns="3">
-                <controls:AnimatedStatCard Title="نقاط مكتسبة" TextValue="{Binding EarnedPoints}" Icon="Gift" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
-                <controls:AnimatedStatCard Title="نقاط مستبدلة" TextValue="{Binding RedeemedPoints}" Icon="TicketPercent" IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
-                <controls:AnimatedStatCard Title="قيمة خصم الولاء" TextValue="{Binding RedeemValue}" Icon="CashMinus" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
-                <controls:AnimatedStatCard Title="زبائن نشطون" TextValue="{Binding ActiveCustomers}" Icon="AccountStar" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                <controls:AnimatedStatCard Title="نقاط مكتسبة" TextValue="{Binding EarnedPoints}" Icon="Gift" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                <controls:AnimatedStatCard Title="نقاط مستبدلة" TextValue="{Binding RedeemedPoints}" Icon="TicketPercent" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                <controls:AnimatedStatCard Title="قيمة خصم الولاء" TextValue="{Binding RedeemValue}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                <controls:AnimatedStatCard Title="زبائن نشطون" TextValue="{Binding ActiveCustomers}" Icon="AccountStar" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                 <controls:AnimatedStatCard Title="عدد الحركات" TextValue="{Binding TransactionsCount}" Icon="SwapVertical" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 <controls:AnimatedStatCard Title="تعديلات يدوية" TextValue="{Binding AdjustedPoints}" Icon="Pencil" IconBackground="#EFEBE9" IconForeground="#5D4037" ValueForeground="#5D4037"/>
             </UniformGrid>

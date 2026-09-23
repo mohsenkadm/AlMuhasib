@@ -18,7 +18,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Width="48" Height="48" CornerRadius="12" Background="#E3F2FD" Margin="0,0,14,0">
+                    <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,14,0">
                         <md:PackIcon Kind="HomeCityOutline" Width="26" Height="26"
                                      Foreground="#1565C0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -226,7 +226,7 @@
                         <ItemsControl ItemsSource="{Binding Clauses}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="0,0,0,14" Margin="0,0,0,14">
+                                    <Border BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,14" Margin="0,0,0,14">
                                         <StackPanel>
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
                                             <TextBlock Text="نص البند" Style="{StaticResource FormFieldLabel}"/>
@@ -245,7 +245,7 @@
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="24" Margin="0,0,0,8" md:ElevationAssist.Elevation="Dp2">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <md:PackIcon Kind="Pen" Width="22" Height="22" Foreground="#455A64" VerticalAlignment="Center"/>
+                            <md:PackIcon Kind="Pen" Width="22" Height="22" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="الشهود والملاحظات" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
                         </StackPanel>
                         <UniformGrid Columns="3">

@@ -27,7 +27,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="15" Background="#ECEFF1">
+                        <Border x:Name="Bd" CornerRadius="15" Background="{DynamicResource MutedIconBackgroundBrush}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -137,7 +137,7 @@
                     </Border>
 
                     <!-- Footer -->
-                    <Border DockPanel.Dock="Bottom" Background="#FAFBFD" BorderBrush="#E8EEF5" BorderThickness="0,1,0,0"
+                    <Border DockPanel.Dock="Bottom" Background="#FAFBFD" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
                             CornerRadius="0,0,16,16" Padding="12,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -147,7 +147,7 @@
                             <Border Grid.Column="0" Background="#EEF4FC" CornerRadius="10" Padding="12,8" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="BasketOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
-                                    <TextBlock FontSize="12" Foreground="#37474F" VerticalAlignment="Center">
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center">
                                         <Run Text="منتجات:" FontWeight="SemiBold"/>
                                         <Run Text="{Binding SelectedProductCount, Mode=OneWay}"/>
                                         <Run Text="   كمية:" FontWeight="SemiBold"/>
@@ -178,14 +178,14 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Background="#F4F7FB" BorderBrush="#E2EAF3" BorderThickness="0,0,1,0">
+                        <Border Grid.Column="0" Background="#F4F7FB" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
                             <DockPanel Margin="10,10,8,10">
                                 <TextBlock DockPanel.Dock="Top" Text="الأصناف" FontWeight="SemiBold" Foreground="#546E7A" Margin="0,0,0,8"/>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel>
                                         <Button Content="الكل" Command="{Binding SelectAllCategoriesCommand}"
                                                 Margin="0,0,0,6" Padding="10,8" Cursor="Hand"
-                                                Background="White" BorderBrush="#E0E7EF" BorderThickness="1">
+                                                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Template">
@@ -218,7 +218,7 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="ListBoxItem">
                                                                 <Border x:Name="Bd" CornerRadius="8" Padding="10,8"
-                                                                        Background="White" BorderBrush="#E0E7EF" BorderThickness="1" Cursor="Hand">
+                                                                        Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" Cursor="Hand">
                                                                     <ContentPresenter/>
                                                                 </Border>
                                                                 <ControlTemplate.Triggers>
@@ -234,7 +234,7 @@
                                             </ListBox.ItemContainerStyle>
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type entities:Category}">
-                                                    <TextBlock Text="{Binding Name}" FontSize="12" Foreground="#37474F"/>
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
@@ -281,7 +281,7 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:ProductPickerDisplayItem}">
                                             <Border Width="178" Margin="0,0,8,8" CornerRadius="10"
-                                                    BorderBrush="#E2EAF3" BorderThickness="1" Background="White" Padding="10,8"
+                                                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" Background="{DynamicResource CardBrush}" Padding="10,8"
                                                     Cursor="Hand" MouseLeftButtonUp="ProductCard_MouseLeftButtonUp">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -307,7 +307,7 @@
                                                         <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
                                                     <TextBlock FontWeight="SemiBold" FontSize="12"
-                                                               Foreground="#263238" TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"
                                                                behaviors:HighlightingTextBlockBehavior.HighlightText="{Binding Name}"
                                                                behaviors:HighlightingTextBlockBehavior.SearchTerm="{Binding SearchTerm}"/>
                                                     <TextBlock Grid.Row="1" FontSize="10" Foreground="#607D8B" Margin="0,2,0,0"
@@ -325,7 +325,7 @@
                                                         </ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate DataType="{x:Type models:WarehouseStockChip}">
-                                                                <Border Background="#E3F2FD" CornerRadius="7" Padding="6,2" Margin="0,0,4,3">
+                                                                <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="7" Padding="6,2" Margin="0,0,4,3">
                                                                     <TextBlock FontSize="9" Foreground="#1565C0">
                                                                         <Run Text="{Binding WarehouseName, Mode=OneWay}"/>
                                                                         <Run Text=":"/>
@@ -350,7 +350,7 @@
                                                         <Button Grid.Column="0" Content="−" Style="{StaticResource QtyCircleButton}"
                                                                 Command="{Binding DataContext.RemoveProductCommand, ElementName=Root}"
                                                                 CommandParameter="{Binding}"/>
-                                                        <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="8"
+                                                        <Border Grid.Column="1" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8"
                                                                 Margin="4,0" MinWidth="32" Padding="6,2"
                                                                 HorizontalAlignment="Center">
                                                             <TextBlock Text="{Binding Quantity, StringFormat=N0}"

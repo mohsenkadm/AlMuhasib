@@ -166,7 +166,7 @@
                             </materialDesign:PackIcon>
                             <TextBlock Text="{Binding CurrentHijriDate, Mode=OneWay}"
                                        FontSize="12" FontWeight="SemiBold"
-                                       Foreground="#37474F"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
@@ -179,7 +179,7 @@
                                                      Margin="0,0,6,0" />
                             <TextBlock Text="{Binding CurrentGregorianDate, Mode=OneWay}"
                                        FontSize="12" FontWeight="Medium"
-                                       Foreground="#37474F"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
@@ -300,7 +300,7 @@
                         <Grid Width="24" Height="24">
                             <materialDesign:PackIcon Kind="BellOutline" Width="20" Height="20"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="#37474F"/>
+                                                     Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <Border Width="18" Height="18" CornerRadius="9"
                                     Background="#E53935" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -1850,7 +1850,7 @@
                             Panel.ZIndex="1">
                     <!-- Action buttons panel -->
                     <Border x:Name="QuickAssistPanel"
-                            Background="White"
+                            Background="{DynamicResource CardBrush}"
                             CornerRadius="16"
                             Padding="10"
                             Margin="0,0,0,12"
@@ -1893,7 +1893,7 @@
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding OpenPrintSettingsCommand}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="PrinterSettings" Width="18" Height="18"
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1938,9 +1938,9 @@
                                     Command="{Binding GoToBackupCommand}"
                                     Margin="0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#ECEFF1" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource MutedIconBackgroundBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="DatabaseExport" Width="18" Height="18"
-                                                                 Foreground="#455A64"
+                                                                 Foreground="{DynamicResource TextSecondaryBrush}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium"/>
@@ -1951,7 +1951,7 @@
                                     Margin="0,8,0,0"
                                     IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="CloudDownload" Width="18" Height="18"
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1988,7 +1988,7 @@
                                     Command="{Binding OpenHelpVideosCommand}"
                                     Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E3F2FD" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2010,7 +2010,7 @@
                             </Button>
                             <TextBlock Text="ملف العمل"
                                        FontSize="12" FontWeight="SemiBold"
-                                       Foreground="#455A64"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="4,12,4,6"/>
                             <TextBlock Text="{Binding WorkspaceProfileDisplay, StringFormat='الحالي: {0}'}"
                                        FontSize="11" Foreground="#78909C" Margin="4,0,4,8"/>
@@ -2099,7 +2099,7 @@
             <!-- Dialog Card -->
             <Border HorizontalAlignment="Center" VerticalAlignment="Center"
                     MinWidth="480" MaxWidth="520"
-                    Background="White" CornerRadius="20"
+                    Background="{DynamicResource CardBrush}" CornerRadius="20"
                     Padding="0"
                     RenderTransformOrigin="0.5,0.5">
                 <Border.Effect>
@@ -2475,7 +2475,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="F1" FontWeight="Bold" Foreground="#1565C0"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="عرض / إخفاء هذه القائمة" VerticalAlignment="Center"/>
@@ -2485,7 +2485,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="F2" FontWeight="Bold" Foreground="#1565C0"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="فاتورة مبيعات جديدة" VerticalAlignment="Center"/>
@@ -2495,7 +2495,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#E3F2FD" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="F3" FontWeight="Bold" Foreground="#1565C0"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="بحث شامل" VerticalAlignment="Center"/>
@@ -2928,8 +2928,8 @@
                 MaxWidth="560"
                 MinWidth="320"
                 CornerRadius="14"
-                Background="White"
-                BorderBrush="#E2EAF3"
+                Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource SubtleBorderBrush}"
                 BorderThickness="1"
                 Visibility="{Binding IsNotificationReminderVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                 RenderTransformOrigin="0.5,1">
@@ -2980,7 +2980,7 @@
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="{Binding NotificationReminderTitle}"
-                               FontWeight="Bold" FontSize="13" Foreground="#263238"/>
+                               FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="{Binding NotificationReminderMessage}"
                                FontSize="12" Foreground="#546E7A" TextWrapping="Wrap"
                                Margin="0,3,0,0" MaxWidth="360"/>

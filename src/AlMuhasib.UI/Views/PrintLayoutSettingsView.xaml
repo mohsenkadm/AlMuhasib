@@ -89,7 +89,7 @@
                     <materialDesign:Card Style="{StaticResource SettingsCard}">
                         <StackPanel>
                             <TextBlock Text="صورة الهيدر" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,0,10"/>
-                            <Border Background="#F5F7FA" CornerRadius="10" MinHeight="100" Margin="0,0,0,10" ClipToBounds="True">
+                            <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" MinHeight="100" Margin="0,0,0,10" ClipToBounds="True">
                                 <Image Source="{Binding HeaderImagePreview}" Stretch="UniformToFill"
                                        Height="175" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                             </Border>
@@ -127,7 +127,7 @@
                                          materialDesign:HintAssist.Hint="هاتف 2 (يظهر في الفوتر)" Style="{StaticResource FilledTextBox}"/>
                             </Grid>
                             <CheckBox Content="إظهار نص الفوتر" IsChecked="{Binding ShowFooterText}" Margin="0,0,0,12"/>
-                            <Border Background="#F5F7FA" CornerRadius="10" MinHeight="80" Margin="0,0,0,10">
+                            <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" MinHeight="80" Margin="0,0,0,10">
                                 <Image Source="{Binding FooterImagePreview}" Stretch="Uniform" MaxHeight="90" Margin="8"/>
                             </Border>
                             <StackPanel Orientation="Horizontal">
@@ -183,7 +183,7 @@
                                 <ComboBoxItem Content="58mm"/>
                                 <ComboBoxItem Content="50mm"/>
                             </ComboBox>
-                            <Border Background="#E3F2FD" CornerRadius="8" Padding="12,10">
+                            <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8" Padding="12,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Receipt" Width="18" Height="18" Foreground="#1565C0"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -226,15 +226,15 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Background="#ECEFF1" Padding="14,10" CornerRadius="14,14,0,0">
+                    <Border Background="{DynamicResource MutedIconBackgroundBrush}" Padding="14,10" CornerRadius="14,14,0,0">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
-                            <TextBlock Text="معاينة الطباعة" FontWeight="SemiBold" Foreground="#37474F" VerticalAlignment="Center"/>
+                            <TextBlock Text="معاينة الطباعة" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="— مثال تقرير" FontSize="11" Foreground="#90A4AE" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     <Border Grid.Row="1" Background="#B0BEC5" Padding="16">
-                        <Border Background="White" CornerRadius="4" Padding="0" ClipToBounds="True"
+                        <Border Background="{DynamicResource CardBrush}" CornerRadius="4" Padding="0" ClipToBounds="True"
                                 materialDesign:ElevationAssist.Elevation="Dp8" Width="420" HorizontalAlignment="Center">
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.25"/>
@@ -242,7 +242,7 @@
                             <FlowDocumentScrollViewer Document="{Binding PreviewDocument}"
                                                       VerticalScrollBarVisibility="Auto"
                                                       HorizontalScrollBarVisibility="Disabled"
-                                                      Background="White"
+                                                      Background="{DynamicResource CardBrush}"
                                                       MinHeight="480"
                                                       MaxHeight="640"/>
                         </Border>
@@ -251,8 +251,8 @@
             </materialDesign:Card>
         </Grid>
 
-        <Border Grid.Row="2" Margin="0,12,0,0" Padding="16,12" Background="White" CornerRadius="12"
-                BorderBrush="#E0E7EF" BorderThickness="1">
+        <Border Grid.Row="2" Margin="0,12,0,0" Padding="16,12" Background="{DynamicResource CardBrush}" CornerRadius="12"
+                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
             <Grid>
                 <Button Command="{Binding SaveCommand}" Style="{StaticResource AccentButton}"
                         HorizontalAlignment="Right" VerticalAlignment="Center" Height="42" Padding="24,0"

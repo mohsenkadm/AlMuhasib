@@ -68,7 +68,7 @@
         </Style>
     </Window.Resources>
 
-    <Border CornerRadius="16" Background="White" Margin="12">
+    <Border CornerRadius="16" Background="{DynamicResource CardBrush}" Margin="12">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.25"/>
         </Border.Effect>
@@ -120,73 +120,73 @@
                     </Grid.ColumnDefinitions>
 
                     <Border x:Name="AccountingCard" Grid.Column="0" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnAccountingSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-                            <Border Width="80" Height="80" CornerRadius="40" Background="#E3F2FD" Margin="0,0,0,14">
+                            <Border Width="80" Height="80" CornerRadius="40" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,0,14">
                                 <md:PackIcon Kind="CalculatorVariant" Width="40" Height="40" Foreground="#1565C0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="النظام المحاسبي" FontSize="18" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="النظام المحاسبي" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="إدارة المبيعات والمشتريات والمخزون والأقساط" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="260"/>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="CarCard" Grid.Column="2" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnCarSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
                             <Border Width="80" Height="80" CornerRadius="40" Background="#E8F5E9" Margin="0,0,0,14">
                                 <md:PackIcon Kind="CarSide" Width="40" Height="40" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="عقود السيارات" FontSize="18" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="عقود السيارات" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="إدارة عقود البيع والشراء للمعارض" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="260"/>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="CarTradeCard" Grid.Column="4" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnCarTradeSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
                             <Border Width="80" Height="80" CornerRadius="40" Background="#FFF3E0" Margin="0,0,0,14">
                                 <md:PackIcon Kind="SwapHorizontal" Width="40" Height="40" Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="بيع وشراء السيارات" FontSize="18" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="بيع وشراء السيارات" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="إدارة عمليات الشراء والبيع مع التسديد" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="240"/>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="HotelCard" Grid.Column="6" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnHotelSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
                             <Border Width="80" Height="80" CornerRadius="40" Background="#F3E5F5" Margin="0,0,0,14">
                                 <md:PackIcon Kind="Hotel" Width="40" Height="40" Foreground="#6A1B9A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="إدارة الفنادق" FontSize="18" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="إدارة الفنادق" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="حجوزات الغرف وتسجيل الدخول والخروج" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="240"/>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="RealEstateCard" Grid.Column="8" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnRealEstateSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16">
                             <Border Width="72" Height="72" CornerRadius="36" Background="#E0F2F1" Margin="0,0,0,12">
                                 <md:PackIcon Kind="HomeCity" Width="36" Height="36" Foreground="#00695C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="عقود العقارات" FontSize="16" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="عقود العقارات" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="بيع وشراء الدور والأراضي مع الآجل والديون" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="220"/>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="GoldCard" Grid.Column="10" CornerRadius="14" BorderThickness="2"
-                            BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                             MouseLeftButtonUp="OnGoldSelected">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16">
                             <Border Width="72" Height="72" CornerRadius="36" Background="#FFF8E1" Margin="0,0,0,12">
                                 <md:PackIcon Kind="DiamondStone" Width="36" Height="36" Foreground="#B8860B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="نظام الذهب" FontSize="16" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                            <TextBlock Text="نظام الذهب" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="أسعار المثقال والمخزون والبيع والشراء لمحلات الذهب العراقية" TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,8,0,0" MaxWidth="220"/>
                         </StackPanel>
                     </Border>
@@ -204,39 +204,39 @@
                 </Grid.ColumnDefinitions>
 
                 <Border x:Name="MainServerCard" Grid.Column="0" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                         MouseLeftButtonUp="OnMainServerSelected">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
                         <Border Width="80" Height="80" CornerRadius="40" Background="#E8F5E9" Margin="0,0,0,14">
                             <md:PackIcon Kind="Server" Width="40" Height="40" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="حاسبة رئيسية" FontSize="20" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                        <TextBlock Text="حاسبة رئيسية" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="تخزين قاعدة البيانات على هذا الجهاز واستقبال الحاسبات الفرعية"
                                    TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,10,0,0" MaxWidth="280"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="BranchClientCard" Grid.Column="2" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                         MouseLeftButtonUp="OnBranchClientSelected">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                        <Border Width="80" Height="80" CornerRadius="40" Background="#E3F2FD" Margin="0,0,0,14">
+                        <Border Width="80" Height="80" CornerRadius="40" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,0,14">
                             <md:PackIcon Kind="LanConnect" Width="40" Height="40" Foreground="#1565C0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="حاسبة فرعية" FontSize="20" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                        <TextBlock Text="حاسبة فرعية" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="الاتصال بحاسبة رئيسية عبر الشبكة بدون مزامنة"
                                    TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,10,0,0" MaxWidth="280"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="StandaloneCard" Grid.Column="4" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="#E0E0E0" Background="#FAFAFA" Cursor="Hand"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="#FAFAFA" Cursor="Hand"
                         MouseLeftButtonUp="OnStandaloneSelected">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
                         <Border Width="80" Height="80" CornerRadius="40" Background="#FFF3E0" Margin="0,0,0,14">
                             <md:PackIcon Kind="DesktopClassic" Width="40" Height="40" Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="حاسبة مستقلة" FontSize="20" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                        <TextBlock Text="حاسبة مستقلة" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="قاعدة بيانات محلية على هذا الجهاز فقط (الوضع التقليدي)"
                                    TextWrapping="Wrap" TextAlignment="Center" Foreground="#78909C" Margin="0,10,0,0" MaxWidth="280"/>
                     </StackPanel>
@@ -246,7 +246,7 @@
             <!-- Step 3: Branch Connection -->
             <ScrollViewer x:Name="Step3BranchPanel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <StackPanel MaxWidth="760" HorizontalAlignment="Center">
-                    <Border Background="#E3F2FD" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+                    <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,16">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="LanConnect" Width="24" Height="24" Foreground="#1565C0" VerticalAlignment="Center"/>

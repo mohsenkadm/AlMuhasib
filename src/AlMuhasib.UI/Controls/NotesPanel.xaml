@@ -99,7 +99,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models:UserNoteItem}">
                                         <Border Margin="0,0,0,6" CornerRadius="10" Padding="10,8" Cursor="Hand"
-                                                Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                                                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick"
                                                               Command="{Binding DataContext.SelectNoteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

@@ -43,7 +43,7 @@
     </Window.Triggers>
 
     <Border x:Name="DialogCard"
-            Background="White"
+            Background="{DynamicResource CardBrush}"
             CornerRadius="18"
             Margin="16"
             RenderTransformOrigin="0.5,0.5"
@@ -95,7 +95,7 @@
                            TextWrapping="Wrap"
                            FontSize="14"
                            LineHeight="22"
-                           Foreground="#424242"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
                            MaxWidth="380"/>
             </Border>

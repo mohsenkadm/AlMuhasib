@@ -182,11 +182,11 @@
                             </Grid>
                         </Border>
 
-                        <Border Background="#ECEFF1" CornerRadius="10" Padding="12,10"
+                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="10" Padding="12,10"
                                 Visibility="{Binding HasNotes, Converter={StaticResource BoolVis}}">
                             <StackPanel>
                                 <TextBlock Text="ملاحظات" FontSize="11" Foreground="#78909C"/>
-                                <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#455A64"/>
+                                <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

@@ -9,7 +9,7 @@
         <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
     </UserControl.Resources>
 
-    <Border Background="#E3F2FD" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+    <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
             Visibility="{Binding HasBulkInstallmentSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
         <Grid>
             <Grid.ColumnDefinitions>

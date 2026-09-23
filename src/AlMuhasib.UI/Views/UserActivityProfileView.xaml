@@ -77,13 +77,13 @@
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,14">
                     <controls:AnimatedStatCard Title="إجمالي النشاط" Value="{Binding TotalActivityCount}"
                                        Icon="ChartTimelineVariant" Margin="0,0,10,0"
-                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#0D47A1"/>
+                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#0D47A1"/>
             <controls:AnimatedStatCard Title="تعديلات الفواتير" Value="{Binding ModificationsCount}"
                                        Icon="FileEditOutline" Margin="0,0,10,0"
-                                       IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#E65100"/>
+                                       IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#E65100"/>
             <controls:AnimatedStatCard Title="سجلات محذوفة" Value="{Binding DeletedCount}"
                                        Icon="DeleteSweep" Margin="0,0,10,0"
-                                       IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#B71C1C"/>
+                                       IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#B71C1C"/>
             <controls:AnimatedStatCard Title="فواتير محذوفة" Value="{Binding DeletedInvoicesCount}"
                                        Icon="FileCancel"
                                        IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#6A1B9A"/>
@@ -250,13 +250,13 @@
 
                         <UniformGrid Grid.Row="0" Columns="5" Margin="0,0,0,12">
                             <controls:AnimatedStatCard Title="إضافات" Value="{Binding PerfAddCount}" Icon="PlusCircle"
-                                                       IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                                                       IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
                             <controls:AnimatedStatCard Title="تعديلات" Value="{Binding PerfEditCount}" Icon="Pencil"
-                                                       IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+                                                       IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
                             <controls:AnimatedStatCard Title="حذف" Value="{Binding PerfDeleteCount}" Icon="Delete"
-                                                       IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
+                                                       IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
                             <controls:AnimatedStatCard Title="إجمالي العمليات" Value="{Binding PerfTotalOps}" Icon="ChartBar"
-                                                       IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
                             <controls:AnimatedStatCard Title="مرات الدخول" Value="{Binding PerfLoginCount}" Icon="Login"
                                                        IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                         </UniformGrid>
@@ -280,8 +280,8 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#ECEFF1" CornerRadius="10" Padding="10,4" Margin="0,0,6,4">
-                                            <TextBlock FontSize="11" Foreground="#455A64">
+                                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="10" Padding="10,4" Margin="0,0,6,4">
+                                            <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                                 <Run Text="{Binding EntityDisplay}" FontWeight="SemiBold"/>
                                                 <Run Text=" · "/>
                                                 <Run Text="{Binding Count}"/>
@@ -347,9 +347,9 @@
         <!-- Details overlay -->
         <Border Grid.RowSpan="4" Background="#80000000"
                 Visibility="{Binding IsDetailsOpen, Converter={StaticResource BoolToVis}}">
-            <Border Width="520" MaxHeight="560" Background="White" CornerRadius="16" Padding="20"
+            <Border Width="520" MaxHeight="560" Background="{DynamicResource CardBrush}" CornerRadius="16" Padding="20"
                     VerticalAlignment="Center" HorizontalAlignment="Center"
-                    BorderBrush="#E0E0E0" BorderThickness="1">
+                    BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.28"/>
                 </Border.Effect>
@@ -361,7 +361,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="{Binding DetailsTitle}" FontSize="16" FontWeight="Bold" Foreground="#1565C0" TextWrapping="Wrap"/>
                     <ScrollViewer Grid.Row="1" Margin="0,14,0,14" VerticalScrollBarVisibility="Auto">
-                        <TextBlock Text="{Binding DetailsBody}" TextWrapping="Wrap" FontSize="13" LineHeight="22" Foreground="#37474F"/>
+                        <TextBlock Text="{Binding DetailsBody}" TextWrapping="Wrap" FontSize="13" LineHeight="22" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </ScrollViewer>
                     <Button Grid.Row="2" Content="إغلاق" Command="{Binding CloseDetailsCommand}"
                             Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" Height="38" Padding="20,0"/>

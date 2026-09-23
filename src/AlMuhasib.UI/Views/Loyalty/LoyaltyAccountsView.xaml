@@ -50,10 +50,10 @@
         </md:Card>
 
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
-            <controls:AnimatedStatCard Title="إجمالي الأرصدة" TextValue="{Binding TotalBalanceText}" Icon="StarCircle" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
-            <controls:AnimatedStatCard Title="مكتسب" TextValue="{Binding TotalEarnedText}" Icon="ArrowUpBold" IconBackground="#E8F5E9" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
-            <controls:AnimatedStatCard Title="مستبدل" TextValue="{Binding TotalRedeemedText}" Icon="ArrowDownBold" IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
-            <controls:AnimatedStatCard Title="عدد الحسابات" TextValue="{Binding AccountsCountText}" Icon="AccountGroup" IconBackground="#E3F2FD" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+            <controls:AnimatedStatCard Title="إجمالي الأرصدة" TextValue="{Binding TotalBalanceText}" Icon="StarCircle" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+            <controls:AnimatedStatCard Title="مكتسب" TextValue="{Binding TotalEarnedText}" Icon="ArrowUpBold" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+            <controls:AnimatedStatCard Title="مستبدل" TextValue="{Binding TotalRedeemedText}" Icon="ArrowDownBold" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+            <controls:AnimatedStatCard Title="عدد الحسابات" TextValue="{Binding AccountsCountText}" Icon="AccountGroup" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
         </UniformGrid>
 
         <md:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0">

@@ -27,21 +27,21 @@
 
                 <TextBlock Text="كميات الحد الأدنى" FontSize="24" FontWeight="Bold" Margin="0,0,0,8"/>
                 <TextBlock Text="مقارنة الكمية الحالية مع الحد الأدنى لكل منتج في كل مخزن"
-                           FontSize="13" Foreground="#757575" Margin="0,0,0,20"/>
+                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
 
                 <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
                         Title="إجمالي الأصناف"
                         TextValue="{Binding TotalItems}"
                         Icon="PackageVariant"
-                        IconBackground="#E3F2FD"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
                         Title="تحت الحد"
                         TextValue="{Binding BelowMinimumCount}"
                         Icon="AlertCircleOutline"
-                        IconBackground="#FFEBEE"
+                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard
@@ -55,7 +55,7 @@
                         Title="فوق الحد"
                         TextValue="{Binding AboveMinimumCount}"
                         Icon="CheckCircleOutline"
-                        IconBackground="#E8F5E9"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
@@ -235,7 +235,7 @@
                         </Button>
                     </Grid>
 
-                    <Border Grid.Row="1" Background="#E3F2FD" CornerRadius="10" Padding="12" Margin="0,0,0,12">
+                    <Border Grid.Row="1" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="{Binding DetailsProductName}" FontSize="15" FontWeight="Bold" TextWrapping="Wrap"/>
                             <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="#546E7A"
@@ -245,7 +245,7 @@
                             <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="#546E7A" TextWrapping="Wrap"
                                        Text="{Binding DetailsDescription, StringFormat=الوصف: {0}}"/>
                             <Separator Margin="0,10,0,10" Background="#BBDEFB"/>
-                            <TextBlock FontSize="12" Foreground="#37474F"
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"
                                        Text="{Binding DetailsSelectedWarehouse, StringFormat=المخزن المحدد: {0}}"/>
                             <UniformGrid Columns="3" Margin="0,8,0,0">
                                 <StackPanel>
@@ -291,7 +291,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

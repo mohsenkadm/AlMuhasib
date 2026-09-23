@@ -25,9 +25,9 @@
                            FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
 
                 <UniformGrid Columns="3" Margin="0,0,0,20">
-                    <controls:AnimatedStatCard Title="منخفض المخزون" TextValue="{Binding LowStockCount}" Icon="Alert" IconBackground="#FFF3E0" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
-                    <controls:AnimatedStatCard Title="مخزون راكد" TextValue="{Binding DeadStockCount}" Icon="PackageVariantClosed" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
-                    <controls:AnimatedStatCard Title="قيمة الراكد" TextValue="{Binding TotalDeadValue}" Icon="Cash" IconBackground="#ECEFF1" IconForeground="#455A64" ValueForeground="#455A64"/>
+                    <controls:AnimatedStatCard Title="منخفض المخزون" TextValue="{Binding LowStockCount}" Icon="Alert" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                    <controls:AnimatedStatCard Title="مخزون راكد" TextValue="{Binding DeadStockCount}" Icon="PackageVariantClosed" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="قيمة الراكد" TextValue="{Binding TotalDeadValue}" Icon="Cash" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

@@ -11,6 +11,29 @@ public sealed class ThemeService
     /// <summary>Fired after palette, brushes, and chart theme are updated.</summary>
     public static event EventHandler? ThemeChanged;
 
+    // Classic blue-dark — matched to SmarterASP V5 navy (#0A1136 family)
+    private const string DarkBg = "#0A1136";
+    private const string DarkCard = "#121B42";
+    private const string DarkTopBar = "#0E1538";
+    private const string DarkBorder = "#2A3558";
+    private const string DarkText = "#FFFFFF";
+    private const string DarkTextSecondary = "#A8B0C4";
+    private const string DarkHint = "#8890A8";
+    private const string DarkMutedIcon = "#1A2448";
+    private const string DarkAlt = "#161F46";
+    private const string DarkHover = "#1E2A52";
+    private const string DarkSelected = "#1A3A6C";
+    private const string DarkHighlight = "#5BA3D9";
+    private const string DarkHighlightLight = "#163A6C";
+    private const string DarkHighlightBorder = "#337AB7";
+    private const string DarkAccent = "#337AB7";
+    private const string DarkAccentLight = "#143A5C";
+    private const string DarkAccentDark = "#286090";
+    private const string DarkChromeInactive = "#1A2448";
+    private const string DarkChromeHover = "#1E2A52";
+    private const string DarkSearchBorder = "#3A4570";
+    private const string DarkChartWell = "#0C1234";
+
     private readonly IUserPreferencesService _preferences;
     private readonly ISystemProfileService _systemProfile;
 
@@ -55,25 +78,44 @@ public sealed class ThemeService
 
         var res = Application.Current.Resources;
 
-        SetBrush(res, "BackgroundBrush", isDark ? "#12151C" : "#F5F7FA");
-        SetBrush(res, "CardBrush", isDark ? "#1E2430" : "#FFFFFF");
-        SetBrush(res, "ContentBackground", isDark ? "#12151C" : "#F5F7FA");
-        SetBrush(res, "TopBarBackground", isDark ? "#1A2030" : "#FFFFFF");
-        SetBrush(res, "AppTitleBarBackground", isDark ? "#1A2030" : "#FAFCFF");
-        SetBrush(res, "SubtleBorderBrush", isDark ? "#2D3544" : "#E8EDF2");
-        SetBrush(res, "TextSecondaryBrush", isDark ? "#B0BEC5" : "#757575");
-        SetBrush(res, "TextPrimaryBrush", isDark ? "#ECEFF1" : "#212121");
-        SetBrush(res, "HintForegroundBrush", isDark ? "#90A4AE" : "#9E9E9E");
-        SetBrush(res, "CardBorderBrush", isDark ? "#2D3544" : "#E8EEF5");
-        SetBrush(res, "MutedIconBackgroundBrush", isDark ? "#2A3344" : "#ECEFF1");
-        SetBrush(res, "ChartEmptyIconBrush", isDark ? "#546E7A" : "#BDBDBD");
+        SetBrush(res, "BackgroundBrush", isDark ? DarkBg : "#F5F7FA");
+        SetBrush(res, "CardBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "ContentBackground", isDark ? DarkBg : "#F5F7FA");
+        SetBrush(res, "TopBarBackground", isDark ? DarkTopBar : "#FFFFFF");
+        SetBrush(res, "AppTitleBarBackground", isDark ? DarkTopBar : "#FAFCFF");
+        SetBrush(res, "SubtleBorderBrush", isDark ? DarkBorder : "#E8EDF2");
+        SetBrush(res, "TextSecondaryBrush", isDark ? DarkTextSecondary : "#757575");
+        SetBrush(res, "TextPrimaryBrush", isDark ? DarkText : "#212121");
+        SetBrush(res, "HintForegroundBrush", isDark ? DarkHint : "#9E9E9E");
+        SetBrush(res, "CardBorderBrush", isDark ? DarkBorder : "#E8EEF5");
+        SetBrush(res, "MutedIconBackgroundBrush", isDark ? DarkMutedIcon : "#ECEFF1");
+        SetBrush(res, "ChartEmptyIconBrush", isDark ? "#5A7390" : "#BDBDBD");
+
+        // Accent / warning — classic blue in dark (replace cyan/purple)
+        SetBrush(res, "AccentBrush", isDark ? DarkAccent : "#00ACC1");
+        SetBrush(res, "AccentLightBrush", isDark ? DarkAccentLight : "#E0F7FA");
+        SetBrush(res, "AccentDarkBrush", isDark ? DarkAccentDark : "#00838F");
+        SetBrush(res, "WarningBrush", isDark ? DarkHighlight : "#7E57C2");
+
+        // Semantic badge surfaces (Paid / Overdue / Pending)
+        SetBrush(res, "BadgePaidBackgroundBrush", isDark ? "#1A3328" : "#E8F5E9");
+        SetBrush(res, "BadgePaidForegroundBrush", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "BadgeOverdueBackgroundBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "BadgeOverdueForegroundBrush", isDark ? "#EF9A9A" : "#C62828");
+        SetBrush(res, "BadgePendingBackgroundBrush", isDark ? DarkMutedIcon : "#F5F5F5");
+        SetBrush(res, "BadgePendingForegroundBrush", isDark ? DarkTextSecondary : "#616161");
+
+        // Glass / notepad paper
+        SetBrush(res, "GlassCardBrush", isDark ? "#33132338" : "#EEFFFFFF");
+        SetBrush(res, "NotepadPaperBrush", isDark ? "#1A2A3C" : "#FFF8E1");
+        SetBrush(res, "TitleBarButtonHoverBrush", isDark ? DarkHover : "#ECEFF1");
 
         if (isGold)
         {
             SetBrush(res, "PrimaryHueMidBrush", isDark ? "#D4AF37" : "#B8860B");
             SetBrush(res, "PrimaryHueMidForegroundBrush", "#FFFFFF");
             SetBrush(res, "PrimaryHueLightBrush", isDark ? "#3D2E14" : "#FFF8E1");
-            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? "#ECEFF1" : "#212121");
+            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? DarkText : "#212121");
             SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#FFF8E1" : "#6D4C00");
             SetBrush(res, "PrimaryHueDarkForegroundBrush", isDark ? "#212121" : "#FFFFFF");
             SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#D4AF37" : "#C9A227");
@@ -82,50 +124,51 @@ public sealed class ThemeService
         }
         else
         {
-            SetBrush(res, "PrimaryHueLightBrush", isDark ? "#1A2744" : "#E3F2FD");
-            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? "#ECEFF1" : "#212121");
-            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
-            SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? "#42A5F5" : "#90CAF9");
-            SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#E3F2FD" : "#1565C0");
+            SetBrush(res, "PrimaryHueLightBrush", isDark ? DarkHighlightLight : "#E3F2FD");
+            SetBrush(res, "PrimaryHueLightForegroundBrush", isDark ? DarkText : "#212121");
+            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#BBDEFB" : "#0D47A1");
+            SetBrush(res, "ChromeTabSelectedBorderBrush", isDark ? DarkHighlight : "#90CAF9");
+            SetBrush(res, "ChromeTabSelectedForegroundBrush", isDark ? "#BBDEFB" : "#1565C0");
         }
 
-        SetBrush(res, "SearchPanelBackgroundBrush", isDark ? "#1E2430" : "#FAFCFE");
-        SetBrush(res, "SearchPanelBorderBrush", isDark ? "#3D4A5C" : "#D5E3F0");
-        SetBrush(res, "SearchResultHoverBrush", isDark ? "#263045" : "#E8F4FD");
-        SetBrush(res, "SearchResultTitleBrush", isDark ? "#ECEFF1" : "#263238");
-        SetBrush(res, "SearchResultSubtitleBrush", isDark ? "#90A4AE" : "#757575");
+        SetBrush(res, "SearchPanelBackgroundBrush", isDark ? DarkCard : "#FAFCFE");
+        SetBrush(res, "SearchPanelBorderBrush", isDark ? DarkSearchBorder : "#D5E3F0");
+        SetBrush(res, "SearchResultHoverBrush", isDark ? DarkHover : "#E8F4FD");
+        SetBrush(res, "SearchResultTitleBrush", isDark ? DarkText : "#263238");
+        SetBrush(res, "SearchResultSubtitleBrush", isDark ? DarkHint : "#757575");
 
         res["ChromeTabStripBackground"] = CreateChromeTabStripBrush(isDark);
 
         // Chrome tabs
-        SetBrush(res, "ChromeTabInactiveBrush", isDark ? "#2A3344" : "#D5E0EC");
-        SetBrush(res, "ChromeTabInactiveBorderBrush", isDark ? "#3D4A5C" : "#B8C9DB");
-        SetBrush(res, "ChromeTabHoverBrush", isDark ? "#323D52" : "#EBF4FC");
-        SetBrush(res, "ChromeTabSelectedBrush", isDark ? "#1E2430" : "#FFFFFF");
-        SetBrush(res, "ChromeTabForegroundBrush", isDark ? "#CFD8DC" : "#37474F");
+        SetBrush(res, "ChromeTabInactiveBrush", isDark ? DarkChromeInactive : "#D5E0EC");
+        SetBrush(res, "ChromeTabInactiveBorderBrush", isDark ? DarkSearchBorder : "#B8C9DB");
+        SetBrush(res, "ChromeTabHoverBrush", isDark ? DarkChromeHover : "#EBF4FC");
+        SetBrush(res, "ChromeTabSelectedBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "ChromeTabForegroundBrush", isDark ? "#C5D4E4" : "#37474F");
 
         // DataGrids
-        SetBrush(res, "DataGridBackgroundBrush", isDark ? "#1E2430" : "#FFFFFF");
-        SetBrush(res, "DataGridRowBrush", isDark ? "#1E2430" : "#FFFFFF");
-        SetBrush(res, "DataGridRowAltBrush", isDark ? "#252D3D" : "#F7F9FC");
-        SetBrush(res, "DataGridRowHoverBrush", isDark ? "#2A3A52" : "#E8F4FD");
-        SetBrush(res, "DataGridRowSelectedBrush", isDark ? "#1A3A5C" : "#D6EBFC");
-        SetBrush(res, "DataGridHeaderBackgroundBrush", isDark ? "#252D3D" : "#EEF3F8");
-        SetBrush(res, "DataGridHeaderHoverBrush", isDark ? "#2A3A52" : "#E3F2FD");
-        SetBrush(res, "DataGridHeaderForegroundBrush", isDark ? "#B0BEC5" : "#37474F");
-        SetBrush(res, "DataGridCellForegroundBrush", isDark ? "#ECEFF1" : "#263238");
-        SetBrush(res, "DataGridGridLineBrush", isDark ? "#2D3544" : "#ECEFF1");
+        SetBrush(res, "DataGridBackgroundBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "DataGridRowBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "DataGridRowAltBrush", isDark ? DarkAlt : "#F7F9FC");
+        SetBrush(res, "DataGridRowHoverBrush", isDark ? DarkHover : "#E8F4FD");
+        SetBrush(res, "DataGridRowSelectedBrush", isDark ? DarkSelected : "#D6EBFC");
+        SetBrush(res, "DataGridHeaderBackgroundBrush", isDark ? DarkAlt : "#EEF3F8");
+        SetBrush(res, "DataGridHeaderHoverBrush", isDark ? DarkHover : "#E3F2FD");
+        SetBrush(res, "DataGridHeaderForegroundBrush", isDark ? DarkTextSecondary : "#37474F");
+        SetBrush(res, "DataGridCellForegroundBrush", isDark ? DarkText : "#263238");
+        SetBrush(res, "DataGridGridLineBrush", isDark ? DarkBorder : "#ECEFF1");
 
         ApplyTableActionBrushes(res, isDark);
         ApplyPanelChromeBrushes(res, isDark);
         ApplyDashboardBrushes(res, isDark);
 
         if (!isGold)
-            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#E3F2FD" : "#0D47A1");
+            SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#BBDEFB" : "#0D47A1");
 
-        SetBrush(res, "HighlightLightBrush", isDark ? "#2A2540" : "#EDE7F6");
-        SetBrush(res, "HighlightBorderBrush", isDark ? "#5E35B1" : "#D1C4E9");
-        SetBrush(res, "HighlightBrush", isDark ? "#B39DDB" : "#7E57C2");
+        // Highlight — classic blue (not purple)
+        SetBrush(res, "HighlightLightBrush", isDark ? DarkHighlightLight : "#E3F2FD");
+        SetBrush(res, "HighlightBorderBrush", isDark ? DarkHighlightBorder : "#90CAF9");
+        SetBrush(res, "HighlightBrush", isDark ? DarkHighlight : "#1565C0");
 
         res["NormalFontSize"] = 14.0 * fontScale;
         res["SmallFontSize"] = 12.0 * fontScale;
@@ -143,7 +186,7 @@ public sealed class ThemeService
     private static void ApplyGoldInvoiceTotalsBrushes(ResourceDictionary res, bool isDark)
     {
         res["GoldInvoiceTotalsBackgroundBrush"] = CreateGoldInvoiceTotalsBrush(isDark);
-        SetBrush(res, "GoldInvoiceTotalsTextBrush", isDark ? "#ECEFF1" : "#5D4037");
+        SetBrush(res, "GoldInvoiceTotalsTextBrush", isDark ? DarkText : "#5D4037");
         SetBrush(res, "GoldInvoiceTotalsAccentBrush", isDark ? "#D4AF37" : "#8B6914");
         SetBrush(res, "GoldInvoiceTotalsMutedBrush", isDark ? "#BCAAA4" : "#8D6E63");
     }
@@ -170,8 +213,8 @@ public sealed class ThemeService
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1E2430")!, 0));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#171C26")!, 1));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkCard)!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkTopBar)!, 1));
         }
         else
         {
@@ -205,15 +248,15 @@ public sealed class ThemeService
             SetBrush(res, "TablePrintIconForegroundBrush", "#FFCC80");
             SetBrush(res, "TablePrintIconHoverBackgroundBrush", "#4A3820");
 
-            SetBrush(res, "TableSecondaryIconBackgroundBrush", "#2A3344");
+            SetBrush(res, "TableSecondaryIconBackgroundBrush", DarkMutedIcon);
             SetBrush(res, "TableSecondaryIconBorderBrush", "#78909C");
-            SetBrush(res, "TableSecondaryIconForegroundBrush", "#B0BEC5");
-            SetBrush(res, "TableSecondaryIconHoverBackgroundBrush", "#323D52");
+            SetBrush(res, "TableSecondaryIconForegroundBrush", DarkTextSecondary);
+            SetBrush(res, "TableSecondaryIconHoverBackgroundBrush", DarkHover);
 
-            SetBrush(res, "TableAttachIconBackgroundBrush", "#2E1A3D");
-            SetBrush(res, "TableAttachIconBorderBrush", "#BA68C8");
-            SetBrush(res, "TableAttachIconForegroundBrush", "#CE93D8");
-            SetBrush(res, "TableAttachIconHoverBackgroundBrush", "#3A224D");
+            SetBrush(res, "TableAttachIconBackgroundBrush", "#1A3048");
+            SetBrush(res, "TableAttachIconBorderBrush", "#64B5F6");
+            SetBrush(res, "TableAttachIconForegroundBrush", "#90CAF9");
+            SetBrush(res, "TableAttachIconHoverBackgroundBrush", DarkHover);
         }
         else
         {
@@ -242,17 +285,17 @@ public sealed class ThemeService
             SetBrush(res, "TableSecondaryIconForegroundBrush", "#455A64");
             SetBrush(res, "TableSecondaryIconHoverBackgroundBrush", "#CFD8DC");
 
-            SetBrush(res, "TableAttachIconBackgroundBrush", "#F3E5F5");
-            SetBrush(res, "TableAttachIconBorderBrush", "#CE93D8");
-            SetBrush(res, "TableAttachIconForegroundBrush", "#7B1FA2");
-            SetBrush(res, "TableAttachIconHoverBackgroundBrush", "#E1BEE7");
+            SetBrush(res, "TableAttachIconBackgroundBrush", "#E3F2FD");
+            SetBrush(res, "TableAttachIconBorderBrush", "#90CAF9");
+            SetBrush(res, "TableAttachIconForegroundBrush", "#1565C0");
+            SetBrush(res, "TableAttachIconHoverBackgroundBrush", "#BBDEFB");
         }
     }
 
     private static void ApplyPanelChromeBrushes(ResourceDictionary res, bool isDark)
     {
-        SetBrush(res, "PanelCloseForegroundBrush", "#90A4AE");
-        SetBrush(res, "PanelCloseBorderBrush", isDark ? "#3D4A5C" : "#E0E0E0");
+        SetBrush(res, "PanelCloseForegroundBrush", isDark ? DarkTextSecondary : "#90A4AE");
+        SetBrush(res, "PanelCloseBorderBrush", isDark ? DarkSearchBorder : "#E0E0E0");
         SetBrush(res, "PanelCloseHoverBackgroundBrush", isDark ? "#3D2226" : "#FFEBEE");
         SetBrush(res, "PanelCloseHoverBorderBrush", isDark ? "#EF5350" : "#EF9A9A");
         SetBrush(res, "PanelCloseHoverForegroundBrush", "#C62828");
@@ -265,15 +308,15 @@ public sealed class ThemeService
         res["DashboardHeroBrush"] = CreateDashboardHeroBrush(isDark);
         res["DashboardGlassChipBrush"] = CreateDashboardGlassChipBrush(isDark);
 
-        SetBrush(res, "DashboardTasksPanelBrush", isDark ? "#1A2438" : "#F8FAFC");
-        SetBrush(res, "DashboardTasksPanelBorderBrush", isDark ? "#2D3A52" : "#E2E8F0");
+        SetBrush(res, "DashboardTasksPanelBrush", isDark ? "#152A40" : "#F8FAFC");
+        SetBrush(res, "DashboardTasksPanelBorderBrush", isDark ? DarkBorder : "#E2E8F0");
         SetBrush(res, "DashboardAlertsPanelBrush", isDark ? "#2A2218" : "#FFFBF0");
         SetBrush(res, "DashboardAlertsPanelBorderBrush", isDark ? "#4A3A22" : "#FFE0B2");
-        SetBrush(res, "DashboardItemBrush", isDark ? "#232B3A" : "#FFFFFF");
-        SetBrush(res, "DashboardItemBorderBrush", isDark ? "#354155" : "#E2E8F0");
-        SetBrush(res, "DashboardItemHoverBrush", isDark ? "#2A3548" : "#F1F5F9");
-        SetBrush(res, "DashboardChartWellBrush", isDark ? "#171D28" : "#F8FAFC");
-        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? "#2D3544" : "#EEF2F7");
+        SetBrush(res, "DashboardItemBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "DashboardItemBorderBrush", isDark ? DarkBorder : "#E2E8F0");
+        SetBrush(res, "DashboardItemHoverBrush", isDark ? DarkHover : "#F1F5F9");
+        SetBrush(res, "DashboardChartWellBrush", isDark ? DarkChartWell : "#F8FAFC");
+        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? DarkBorder : "#EEF2F7");
         SetBrush(res, "DashboardSuccessPanelBrush", isDark ? "#1A2E22" : "#E8F5E9");
         SetBrush(res, "DashboardSuccessPanelBorderBrush", isDark ? "#2E4D38" : "#C8E6C9");
         SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");
@@ -287,11 +330,11 @@ public sealed class ThemeService
         SetBrush(res, "DashboardKpiOrangeBrush", isDark ? "#FFB74D" : "#EF6C00");
         SetBrush(res, "DashboardKpiOrangeLightBrush", isDark ? "#3D2A14" : "#FFF3E0");
         SetBrush(res, "DashboardKpiBlueBrush", isDark ? "#64B5F6" : "#1565C0");
-        SetBrush(res, "DashboardKpiBlueLightBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+        SetBrush(res, "DashboardKpiBlueLightBrush", isDark ? DarkHighlightLight : "#E3F2FD");
         SetBrush(res, "DashboardKpiRedBrush", isDark ? "#EF5350" : "#C62828");
         SetBrush(res, "DashboardKpiRedLightBrush", isDark ? "#3D2226" : "#FFEBEE");
-        SetBrush(res, "DashboardKpiIndigoBrush", isDark ? "#9FA8DA" : "#283593");
-        SetBrush(res, "DashboardKpiIndigoLightBrush", isDark ? "#252A45" : "#E8EAF6");
+        SetBrush(res, "DashboardKpiIndigoBrush", isDark ? "#90CAF9" : "#1565C0");
+        SetBrush(res, "DashboardKpiIndigoLightBrush", isDark ? "#1A3048" : "#E3F2FD");
         SetBrush(res, "DashboardKpiPinkBrush", isDark ? "#F48FB1" : "#AD1457");
         SetBrush(res, "DashboardKpiPinkLightBrush", isDark ? "#3D2230" : "#FCE4EC");
         SetBrush(res, "DashboardKpiTealBrush", isDark ? "#4DB6AC" : "#00695C");
@@ -302,12 +345,12 @@ public sealed class ThemeService
         SetBrush(res, "DashboardPriorityMediumBrush", isDark ? "#FFB74D" : "#EF6C00");
         SetBrush(res, "DashboardPriorityMediumLightBrush", isDark ? "#3D2A14" : "#FFF3E0");
         SetBrush(res, "DashboardPriorityLowBrush", isDark ? "#64B5F6" : "#1565C0");
-        SetBrush(res, "DashboardPriorityLowLightBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+        SetBrush(res, "DashboardPriorityLowLightBrush", isDark ? DarkHighlightLight : "#E3F2FD");
 
-        SetBrush(res, "DashboardIconBadgeBlueBrush", isDark ? "#1A2F4A" : "#E3F2FD");
+        SetBrush(res, "DashboardIconBadgeBlueBrush", isDark ? DarkHighlightLight : "#E3F2FD");
         SetBrush(res, "DashboardIconBadgeRedBrush", isDark ? "#3D2226" : "#FFEBEE");
-        SetBrush(res, "DashboardIconBadgeCyanBrush", isDark ? "#1A3338" : "#E0F7FA");
-        SetBrush(res, "DashboardIconBadgeAccentBrush", isDark ? "#1A3338" : "#E0F7FA");
+        SetBrush(res, "DashboardIconBadgeCyanBrush", isDark ? "#143A5C" : "#E0F7FA");
+        SetBrush(res, "DashboardIconBadgeAccentBrush", isDark ? "#143A5C" : "#E0F7FA");
     }
 
     private static LinearGradientBrush CreateDashboardAmbientBrush(bool isDark)
@@ -315,9 +358,9 @@ public sealed class ThemeService
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#12151C")!, 0));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#151B26")!, 0.55));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#121820")!, 1));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A1136")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0C1234")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0E1538")!, 1));
         }
         else
         {
@@ -334,10 +377,11 @@ public sealed class ThemeService
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A2540")!, 0));
+            // Classic navy → SmarterASP blue accent
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A1136")!, 0));
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#123A5C")!, 0.45));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A4A72")!, 0.82));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1F5C5A")!, 1));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#286090")!, 0.82));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#337AB7")!, 1));
         }
         else
         {

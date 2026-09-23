@@ -34,7 +34,7 @@
                         Hint="نقد + مصارف + ذمم آجل + ذمم أقساط + مخزون بالتكلفة"
                         TextValue="{Binding TotalAssets}"
                         Icon="Warehouse"
-                        IconBackground="#E8F5E9"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
@@ -42,7 +42,7 @@
                         Hint="ذمم الموردين الآجلة − سندات الصرف غير المطبّقة + ودائع المستثمرين"
                         TextValue="{Binding TotalLiabilities}"
                         Icon="Bank"
-                        IconBackground="#FFEBEE"
+                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard
@@ -50,7 +50,7 @@
                         Hint="رأس المال + التعديلات + الأرباح المتراكمة"
                         TextValue="{Binding TotalEquity}"
                         Icon="AccountCash"
-                        IconBackground="#E3F2FD"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
@@ -58,7 +58,7 @@
                         Hint="(حقوق الملكية + الالتزامات) − إجمالي الأصول"
                         TextValue="{Binding Difference}"
                         Icon="Calculator"
-                        IconBackground="#FFF3E0"
+                        IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
                         IconForeground="#EF6C00"
                         ValueForeground="#EF6C00"/>
                 </UniformGrid>
@@ -130,7 +130,7 @@
         <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
-                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="#757575"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
     </Grid>

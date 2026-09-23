@@ -32,10 +32,10 @@
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <TextBlock Text="{Binding PeriodHint}"
                                    FontSize="13" Margin="0,6,0,0"
-                                   Foreground="#757575"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"/>
                         <TextBlock Margin="0,4,0,0" FontSize="12"
-                                   Foreground="#757575">
+                                   Foreground="{DynamicResource TextSecondaryBrush}">
                             <Run Text="عدد المؤشرات:"/>
                             <Run Text="{Binding CardCount, Mode=OneWay}" FontWeight="SemiBold"/>
                         </TextBlock>
@@ -132,7 +132,7 @@
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                              IsIndeterminate="True" Width="48" Height="48"/>
                 <TextBlock Text="جاري تحميل الملخص..." Margin="0,12,0,0"
-                           FontSize="14" Foreground="#757575"
+                           FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>

@@ -13,6 +13,12 @@ public partial class DashboardKpiCard : UserControl
     public DashboardKpiCard()
     {
         InitializeComponent();
+        if (ReadLocalValue(AccentBrushProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(AccentBrushProperty, "PrimaryHueMidBrush");
+        if (ReadLocalValue(AccentLightBrushProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(AccentLightBrushProperty, "PrimaryHueLightBrush");
+        if (ReadLocalValue(ValueBrushProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(ValueBrushProperty, "TextPrimaryBrush");
     }
 
     public static readonly DependencyProperty TitleProperty =
