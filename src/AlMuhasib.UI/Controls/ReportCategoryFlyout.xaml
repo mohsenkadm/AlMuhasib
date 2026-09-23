@@ -12,8 +12,8 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Height" Value="80"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Height" Value="88"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -22,42 +22,41 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Card"
-                                Background="{DynamicResource BackgroundBrush}"
-                                CornerRadius="11"
+                                Background="{DynamicResource FlyoutCardBrush}"
+                                CornerRadius="14"
                                 BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="1"
-                                Padding="6,7">
+                                Padding="8,10">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <Border x:Name="IconHost"
-                                        Width="44" Height="44"
-                                        CornerRadius="11"
+                                        Width="46" Height="46"
+                                        CornerRadius="12"
+                                        Background="{DynamicResource PrimaryHueLightBrush}"
                                         HorizontalAlignment="Center"
-                                        Margin="0,0,0,4">
+                                        Margin="0,0,0,6">
                                     <materialDesign:PackIcon x:Name="IconGlyph"
                                                              Kind="{Binding Icon}"
                                                              Width="24" Height="24"
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"
                                                              HorizontalAlignment="Center"
                                                              VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="{Binding Title}"
+                                <TextBlock x:Name="TitleText"
+                                           Text="{Binding Title}"
                                            TextAlignment="Center"
-                                           FontSize="11.5"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="NoWrap"
-                                           MaxWidth="120"/>
+                                           MaxWidth="124"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource FlyoutCardHoverBrush}"/>
                                 <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
-                                <Setter TargetName="Card" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.18" Color="#0A1136"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="TitleText" Property="Foreground" Value="{DynamicResource ChromeTabSelectedForegroundBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Card" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
@@ -71,11 +70,11 @@
     </UserControl.Resources>
 
     <Border x:Name="FlyoutRoot"
-            Background="{DynamicResource CardBrush}"
+            Background="{DynamicResource FlyoutPanelBrush}"
             BorderBrush="{DynamicResource SubtleBorderBrush}"
             BorderThickness="1,0,0,0">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="-2" Opacity="0.18" Color="#0A1136" Direction="0"/>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="-3" Opacity="0.28" Color="#050814" Direction="0"/>
         </Border.Effect>
         <Grid VerticalAlignment="Top">
             <Grid.RowDefinitions>
@@ -83,24 +82,24 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border x:Name="HeaderBar" Grid.Row="0" Padding="12,10">
+            <Border x:Name="HeaderBar" Grid.Row="0" Padding="14,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Width="34" Height="34" CornerRadius="9"
-                            Background="#33FFFFFF" Margin="0,0,8,0">
+                    <Border Grid.Column="0" Width="38" Height="38" CornerRadius="11"
+                            Background="#33FFFFFF" Margin="0,0,10,0">
                         <materialDesign:PackIcon Kind="{Binding ActiveReportCategoryIcon}"
-                                                 Width="19" Height="19"
+                                                 Width="20" Height="20"
                                                  Foreground="White"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="{Binding ActiveReportCategoryTitle}"
-                                   FontSize="14" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock FontSize="10.5" Foreground="#E3F2FD" Margin="0,1,0,0">
+                                   FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock FontSize="11" Foreground="#E8EEF5" Opacity="0.9" Margin="0,2,0,0">
                             <Run Text="{Binding ReportFlyoutItems.Count, Mode=OneWay}"/>
                             <Run Text=" "/>
                             <Run Text="{Binding ActiveFlyoutItemLabel, Mode=OneWay}"/>
@@ -112,14 +111,14 @@
             <ScrollViewer x:Name="CardsScroller"
                           Grid.Row="1"
                           Style="{StaticResource ThinScrollViewer}"
-                          Background="{DynamicResource CardBrush}"
-                          Padding="4,2,4,6"
+                          Background="{DynamicResource FlyoutPanelBrush}"
+                          Padding="6,8,6,10"
                           VerticalAlignment="Top"
                           VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding ReportFlyoutItems}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel ItemWidth="144" ItemHeight="84"/>
+                            <WrapPanel ItemWidth="142" ItemHeight="94"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>

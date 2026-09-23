@@ -48,6 +48,10 @@
     <SolidColorBrush x:Key="BadgePendingForegroundBrush" Color="#616161"/>
     <SolidColorBrush x:Key="GlassCardBrush" Color="#EEFFFFFF"/>
     <SolidColorBrush x:Key="TitleBarButtonHoverBrush" Color="#ECEFF1"/>
+    <!-- Secondary menu (report/category flyout) -->
+    <SolidColorBrush x:Key="FlyoutPanelBrush" Color="#F5F7FA"/>
+    <SolidColorBrush x:Key="FlyoutCardBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="FlyoutCardHoverBrush" Color="#E3F2FD"/>
     <SolidColorBrush x:Key="SidebarBrush" Color="#0D1B2A"/>
     <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#1B2A3D"/>

@@ -110,6 +110,11 @@ public sealed class ThemeService
         SetBrush(res, "NotepadPaperBrush", isDark ? "#1A2A3C" : "#FFF8E1");
         SetBrush(res, "TitleBarButtonHoverBrush", isDark ? DarkHover : "#ECEFF1");
 
+        // Secondary flyout menu surfaces
+        SetBrush(res, "FlyoutPanelBrush", isDark ? DarkTopBar : "#F5F7FA");
+        SetBrush(res, "FlyoutCardBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "FlyoutCardHoverBrush", isDark ? DarkHover : "#E3F2FD");
+
         if (isGold)
         {
             SetBrush(res, "PrimaryHueMidBrush", isDark ? "#D4AF37" : "#B8860B");
