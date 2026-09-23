@@ -24,7 +24,7 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="{Binding PageTitle}" FontSize="22" FontWeight="Bold" Foreground="#E65100"/>
                         <TextBlock Text="سجّل شراء سيارة من بائع خارجي إلى المعرض مع بيانات البائع وطريقة الدفع"
-                                   FontSize="13" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,4,0,0"/>
+                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
 
@@ -126,7 +126,7 @@
                             </StackPanel>
                         </UniformGrid>
                         <TextBlock Text="نقدي: دفع كامل المبلغ للبائع الآن. آجل: يمكن دفع جزء الآن والباقي لاحقاً من جدول العمليات. يمكنك تعديل المبلغ المدفوع يدوياً في الحالتين."
-                                   FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,0,0,16" TextWrapping="Wrap"/>
+                                   FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16" TextWrapping="Wrap"/>
                         <UniformGrid Columns="2" Margin="0,0,0,12">
                             <StackPanel Margin="0,0,8,12">
                                 <TextBlock Text="المبلغ المدفوع للبائع" Style="{StaticResource FormFieldLabel}"/>

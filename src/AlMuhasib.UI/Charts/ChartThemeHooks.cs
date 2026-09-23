@@ -7,7 +7,7 @@ using LiveChartsCore.SkiaSharpView.WPF;
 namespace AlMuhasib.UI.Charts;
 
 /// <summary>
-/// Applies LiveCharts tooltip/legend paints on load and when the app theme toggles.
+/// Applies LiveCharts tooltip/legend paints and themed chrome on load and theme toggle.
 /// </summary>
 public static class ChartThemeHooks
 {
@@ -44,6 +44,12 @@ public static class ChartThemeHooks
     private static void Apply(Control chart)
     {
         ChartThemeConfig.EnsurePaints();
+
+        // Kill default white LiveCharts surface — bind to themed chart well
+        chart.SetResourceReference(Control.BackgroundProperty, "DashboardChartWellBrush");
+        chart.SetResourceReference(Control.BorderBrushProperty, "DashboardChartWellBorderBrush");
+        chart.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
+        chart.BorderThickness = new Thickness(0);
 
         switch (chart)
         {

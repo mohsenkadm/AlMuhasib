@@ -115,7 +115,7 @@
                 <Border Style="{StaticResource SyncStatCard}" Margin="0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Background="#EDE7F6" CornerRadius="8" Padding="6" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="8" Padding="6" Margin="0,0,8,0">
                                 <materialDesign:PackIcon Kind="TimerSync" Width="18" Height="18" Foreground="#7E57C2"/>
                             </Border>
                             <TextBlock Text="المزامنة التلقائية" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"

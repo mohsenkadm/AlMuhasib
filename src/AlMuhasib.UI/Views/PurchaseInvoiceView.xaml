@@ -614,7 +614,7 @@
                                              materialDesign:HintAssist.Hint="0"/>
                                 </Grid>
 
-                                <Separator Margin="0,4,0,12" Background="#E0E0E0" />
+                                <Separator Margin="0,4,0,12" Background="{DynamicResource SubtleBorderBrush}" />
 
                                 <!-- Grand Total -->
                                 <Grid>

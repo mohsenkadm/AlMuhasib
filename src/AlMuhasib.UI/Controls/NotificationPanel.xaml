@@ -21,7 +21,7 @@
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#F5F9FF"/>
-                    <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>

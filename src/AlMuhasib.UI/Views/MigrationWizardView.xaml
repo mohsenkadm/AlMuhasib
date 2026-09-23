@@ -84,7 +84,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -113,7 +113,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -142,7 +142,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -170,7 +170,7 @@
             </StackPanel>
 
             <Grid Style="{StaticResource StepCircle}">
-                <Ellipse Fill="#E0E0E0">
+                <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Style.Triggers>

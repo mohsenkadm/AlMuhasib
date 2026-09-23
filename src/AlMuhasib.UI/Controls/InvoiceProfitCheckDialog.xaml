@@ -116,7 +116,7 @@
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
-                                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsLoss}" Value="True">
                                                 <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
@@ -164,7 +164,7 @@
                                     <Border Grid.Column="1" VerticalAlignment="Center" CornerRadius="10" Padding="12,8" MinWidth="110">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#ECEFF1"/>
+                                                <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsLoss}" Value="True">
                                                         <Setter Property="Background" Value="#C62828"/>
@@ -243,7 +243,7 @@
                     <Border Grid.Column="1" CornerRadius="12" Padding="16,10" MinWidth="160" VerticalAlignment="Center">
                         <Border.Style>
                             <Style TargetType="Border">
-                                <Setter Property="Background" Value="#ECEFF1"/>
+                                <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsOverallLoss}" Value="True">
                                         <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>

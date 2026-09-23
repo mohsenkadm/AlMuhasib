@@ -33,7 +33,7 @@
                     <controls:AnimatedStatCard Title="التكلفة التقديرية" TextValue="{Binding EstimatedCost}"
                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="إجمالي الربح" TextValue="{Binding GrossProfit}"
-                                               Icon="ChartLine" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                                               Icon="ChartLine" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#B8860B" ValueForeground="#B8860B"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

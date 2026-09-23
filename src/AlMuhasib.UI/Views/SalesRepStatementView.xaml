@@ -32,7 +32,7 @@
                 <UniformGrid Columns="3" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="عمولات مدفوعة" TextValue="{Binding PaidCommissions}" Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B"/>
                     <controls:AnimatedStatCard Title="عمولات غير مدفوعة" TextValue="{Binding UnpaidCommissions}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
-                    <controls:AnimatedStatCard Title="متبقي تسليم" TextValue="{Binding PendingHandover}" Icon="Handshake" IconBackground="#EFEBE9" IconForeground="#5D4037" ValueForeground="#5D4037"/>
+                    <controls:AnimatedStatCard Title="متبقي تسليم" TextValue="{Binding PendingHandover}" Icon="Handshake" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="#5D4037" ValueForeground="#5D4037"/>
                 </UniformGrid>
 
                 <controls:ChartCard Title="المبيعات مقابل العمولات">

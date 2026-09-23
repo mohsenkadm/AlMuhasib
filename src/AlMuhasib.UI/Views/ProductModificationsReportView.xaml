@@ -190,7 +190,7 @@
                     </Grid>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Border Background="#FFF8F8" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                            <Border Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,12"
                                     BorderBrush="#FFCDD2" BorderThickness="1">
                                 <TextBlock Text="{Binding DetailsBody}" TextWrapping="Wrap" FontSize="13" LineHeight="22"/>
                             </Border>

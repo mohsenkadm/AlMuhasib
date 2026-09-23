@@ -52,8 +52,8 @@
                 <Border CornerRadius="12" Padding="16,12">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="Background" Value="#EBF4FF"/>
-                            <Setter Property="BorderBrush" Value="#90CAF9"/>
+                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsSuccess}" Value="True">
@@ -120,7 +120,7 @@
                                     Padding="0" Height="Auto">
                                 <StackPanel HorizontalAlignment="Center">
                                     <Border Width="52" Height="52" CornerRadius="26"
-                                            Background="#EBF4FF" HorizontalAlignment="Center">
+                                            Background="{DynamicResource PrimaryHueLightBrush}" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="FolderOpen" Width="26" Height="26"
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>

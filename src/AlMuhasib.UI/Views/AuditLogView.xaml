@@ -278,7 +278,7 @@
                             <!-- Old Values -->
                             <TextBlock Text="القيم القديمة" FontWeight="Bold" FontSize="13"
                                        Foreground="#C62828" Margin="0,0,0,4"/>
-                            <Border Background="#FFF8F8" CornerRadius="6" Padding="10" Margin="0,0,0,12"
+                            <Border Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="6" Padding="10" Margin="0,0,0,12"
                                     BorderBrush="#FFCDD2" BorderThickness="1">
                                 <TextBlock Text="{Binding DetailsOldValues}"
                                            FontFamily="Consolas" FontSize="12"
@@ -289,7 +289,7 @@
                             <!-- New Values -->
                             <TextBlock Text="القيم الجديدة" FontWeight="Bold" FontSize="13"
                                        Foreground="#2E7D32" Margin="0,0,0,4"/>
-                            <Border Background="#F8FFF8" CornerRadius="6" Padding="10"
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="6" Padding="10"
                                     BorderBrush="#C8E6C9" BorderThickness="1">
                                 <TextBlock Text="{Binding DetailsNewValues}"
                                            FontFamily="Consolas" FontSize="12"

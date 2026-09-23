@@ -169,7 +169,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid ClipToBounds="True">
-                            <Border Background="#E4EAF2" CornerRadius="8" />
+                            <Border Background="{DynamicResource SubtleBorderBrush}" CornerRadius="8" />
                             <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
                                        VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
                                 <Rectangle.Fill>
@@ -201,7 +201,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid ClipToBounds="True">
-                            <Ellipse Fill="#E4EAF2" />
+                            <Ellipse Fill="{DynamicResource SubtleBorderBrush}" />
                             <Rectangle x:Name="ShimmerWave" Width="120" IsHitTestVisible="False"
                                        VerticalAlignment="Stretch" RadiusX="8" RadiusY="8">
                                 <Rectangle.Fill>
@@ -565,11 +565,11 @@
                         </Border>
 
                         <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="White" />
+                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="{DynamicResource CardBrush}" />
                         <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                  Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#80DEEA" />
                         <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="White" />
+                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="{DynamicResource CardBrush}" />
 
                         <Grid Margin="28,26">
                             <Grid.RowDefinitions>

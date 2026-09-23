@@ -26,7 +26,7 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="{Binding PageTitle}" FontSize="22" FontWeight="Bold" Foreground="#1565C0"/>
                         <TextBlock Text="أدخل بيانات عقد بيع السيارة — الحقول المطلوبة مميزة بعلامة *"
-                                   FontSize="13" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,4,0,0"/>
+                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
 
@@ -231,7 +231,7 @@
                             <TextBlock Text="التوقيعات" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
                         </StackPanel>
                         <TextBlock Text="أسماء البائع والمشتري تُؤخذ من بياناتهما أعلاه. أدخل أسماء الشاهدين للظهور في الطباعة."
-                                   FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                   FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

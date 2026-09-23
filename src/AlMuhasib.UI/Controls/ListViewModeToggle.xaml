@@ -62,7 +62,7 @@
                                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
                                     <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="False"/>
                                 </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Segment" Property="Background" Value="#ECEFF1"/>
+                                <Setter TargetName="Segment" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                             </MultiDataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -111,7 +111,7 @@
                                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
                                     <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="False"/>
                                 </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Segment" Property="Background" Value="#ECEFF1"/>
+                                <Setter TargetName="Segment" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                             </MultiDataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

@@ -285,7 +285,7 @@
                                         Margin="0,16,0,0">
                                 <Ellipse x:Name="Dot1" Width="8" Height="8" Fill="#4DD0E1" Opacity="0.35" Margin="4,0"/>
                                 <Ellipse x:Name="Dot2" Width="8" Height="8" Fill="#81D4FA" Opacity="0.35" Margin="4,0"/>
-                                <Ellipse x:Name="Dot3" Width="8" Height="8" Fill="#FFFFFF" Opacity="0.35" Margin="4,0"/>
+                                <Ellipse x:Name="Dot3" Width="8" Height="8" Fill="{DynamicResource CardBrush}" Opacity="0.35" Margin="4,0"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>

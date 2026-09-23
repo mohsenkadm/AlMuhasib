@@ -182,7 +182,7 @@
                                                     IsChecked="{Binding TransportFees}"/>
                         <controls:FeatureToggleCard Title="نسخة المخزن والسائق"
                                                     Description="طباعة نسخة فاتورة للمخزن بدون مبالغ واختيار سائق للتوصيل من فاتورة البيع والأقساط"
-                                                    Icon="AccountHardHat" IconBackground="#EFEBE9" IconForeground="#5D4037"
+                                                    Icon="AccountHardHat" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="#5D4037"
                                                     IsChecked="{Binding WarehouseInvoiceAndDriver}"/>
                         <controls:FeatureToggleCard Title="وزن القائمة"
                                                     Description="حقل وزن المادة على المنتج وكارد حساب وزن فاتورة البيع"
@@ -265,7 +265,7 @@
                                                     IsChecked="{Binding TemplatePharmacy}"/>
                         <controls:FeatureToggleCard Title="معرض سيارات"
                                                     Description="حقول نوع السيارة وصنف السيارة وموديل السيارة واللون وعدد الركاب ورقم اللوحة ونوعها على المنتجات"
-                                                    Icon="Car" IconBackground="#EFEBE9" IconForeground="#5D4037"
+                                                    Icon="Car" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="#5D4037"
                                                     IsChecked="{Binding CarShowroom}"/>
                     </UniformGrid>
                 </StackPanel>

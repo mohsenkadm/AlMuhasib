@@ -39,7 +39,7 @@
 
         <UniformGrid Grid.Row="2" Columns="5" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="إجمالي الفواتير" TextValue="{Binding TotalAmount, StringFormat=N0}"
-                                       Icon="FileDocument" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                                       Icon="FileDocument" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#B8860B" ValueForeground="#B8860B"/>
             <controls:AnimatedStatCard Title="المدفوع" TextValue="{Binding TotalPaid, StringFormat=N0}"
                                        Icon="Cash" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
             <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding TotalRemaining, StringFormat=N0}"

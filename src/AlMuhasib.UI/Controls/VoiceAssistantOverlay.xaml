@@ -272,11 +272,11 @@
                 <StackPanel x:Name="OrbInnerWaves" Orientation="Horizontal"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
                             Opacity="0" IsHitTestVisible="False">
-                    <Rectangle x:Name="InnerWave1" Width="4" Height="10" RadiusX="2" RadiusY="2" Fill="#F8FAFC" Margin="3,0" Opacity="0.92"/>
-                    <Rectangle x:Name="InnerWave2" Width="4" Height="18" RadiusX="2" RadiusY="2" Fill="#F8FAFC" Margin="3,0" Opacity="0.92"/>
-                    <Rectangle x:Name="InnerWave3" Width="4" Height="26" RadiusX="2" RadiusY="2" Fill="#FFFFFF" Margin="3,0"/>
-                    <Rectangle x:Name="InnerWave4" Width="4" Height="18" RadiusX="2" RadiusY="2" Fill="#F8FAFC" Margin="3,0" Opacity="0.92"/>
-                    <Rectangle x:Name="InnerWave5" Width="4" Height="10" RadiusX="2" RadiusY="2" Fill="#F8FAFC" Margin="3,0" Opacity="0.92"/>
+                    <Rectangle x:Name="InnerWave1" Width="4" Height="10" RadiusX="2" RadiusY="2" Fill="{DynamicResource BackgroundBrush}" Margin="3,0" Opacity="0.92"/>
+                    <Rectangle x:Name="InnerWave2" Width="4" Height="18" RadiusX="2" RadiusY="2" Fill="{DynamicResource BackgroundBrush}" Margin="3,0" Opacity="0.92"/>
+                    <Rectangle x:Name="InnerWave3" Width="4" Height="26" RadiusX="2" RadiusY="2" Fill="{DynamicResource CardBrush}" Margin="3,0"/>
+                    <Rectangle x:Name="InnerWave4" Width="4" Height="18" RadiusX="2" RadiusY="2" Fill="{DynamicResource BackgroundBrush}" Margin="3,0" Opacity="0.92"/>
+                    <Rectangle x:Name="InnerWave5" Width="4" Height="10" RadiusX="2" RadiusY="2" Fill="{DynamicResource BackgroundBrush}" Margin="3,0" Opacity="0.92"/>
                 </StackPanel>
             </Grid>
 

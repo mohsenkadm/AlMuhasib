@@ -37,7 +37,7 @@
             <!-- Step 1 -->
             <StackPanel Orientation="Horizontal">
                 <Grid Width="34" Height="34" Margin="0,0,4,0">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -62,13 +62,13 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-                <Rectangle Width="44" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="44" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="4,0"/>
             </StackPanel>
 
             <!-- Step 2 -->
             <StackPanel Orientation="Horizontal">
                 <Grid Width="34" Height="34" Margin="0,0,4,0">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -93,13 +93,13 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-                <Rectangle Width="44" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="44" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="4,0"/>
             </StackPanel>
 
             <!-- Step 3: Investors -->
             <StackPanel Orientation="Horizontal">
                 <Grid Width="34" Height="34" Margin="0,0,4,0">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -124,13 +124,13 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-                <Rectangle Width="44" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="44" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="4,0"/>
             </StackPanel>
 
             <!-- Step 4 -->
             <StackPanel Orientation="Horizontal">
                 <Grid Width="34" Height="34" Margin="0,0,4,0">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -155,13 +155,13 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-                <Rectangle Width="44" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="44" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="4,0"/>
             </StackPanel>
 
             <!-- Step 5 -->
             <StackPanel Orientation="Horizontal">
                 <Grid Width="34" Height="34" Margin="0,0,4,0">
-                    <Ellipse Fill="#E0E0E0">
+                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Style.Triggers>
@@ -186,12 +186,12 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-                <Rectangle Width="44" Height="2" Fill="#E0E0E0" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="44" Height="2" Fill="{DynamicResource SubtleBorderBrush}" VerticalAlignment="Center" Margin="4,0"/>
             </StackPanel>
 
             <!-- Step 6 -->
             <Grid Width="34" Height="34">
-                <Ellipse Fill="#E0E0E0">
+                <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Style.Triggers>

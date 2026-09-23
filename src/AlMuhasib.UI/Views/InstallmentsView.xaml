@@ -159,7 +159,7 @@
                 Padding="16,12"
                 CornerRadius="12"
                 Background="{DynamicResource PrimaryHueLightBrush}"
-                BorderBrush="#90CAF9"
+                BorderBrush="{DynamicResource HighlightBorderBrush}"
                 BorderThickness="1"
                 Visibility="{Binding HasBulkSelection, Converter={StaticResource BoolToVis}}">
             <Grid>

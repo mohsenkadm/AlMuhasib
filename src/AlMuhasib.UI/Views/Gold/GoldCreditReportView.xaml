@@ -23,7 +23,7 @@
 
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
             <controls:AnimatedStatCard Title="عدد الزبائن" TextValue="{Binding CustomerCount}"
-                                       Icon="AccountGroup" IconBackground="#FFF8E7" IconForeground="#B8860B" ValueForeground="#B8860B"/>
+                                       Icon="AccountGroup" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#B8860B" ValueForeground="#B8860B"/>
             <controls:AnimatedStatCard Title="آجل د.ع" TextValue="{Binding TotalCreditIqd, StringFormat=N0}"
                                        Icon="Cash" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
             <controls:AnimatedStatCard Title="آجل $" TextValue="{Binding TotalCreditUsd, StringFormat=N2}"
