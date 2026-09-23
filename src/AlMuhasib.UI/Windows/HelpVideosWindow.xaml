@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         FlowDirection="RightToLeft"
-        Background="#F0F4F8"
+        Background="{DynamicResource MutedIconBackgroundBrush}"
         FontFamily="{DynamicResource AppFont}">
 
     <Window.Resources>
@@ -124,11 +124,11 @@
                             <DataTemplate>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <Border Background="#E8F5E9" CornerRadius="6" Padding="6,2" Margin="0,0,8,0">
+                                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="6" Padding="6,2" Margin="0,0,8,0">
                                             <TextBlock Text="{Binding CategoryTitle}" FontSize="11"
                                                        Foreground="#2E7D32" FontWeight="SemiBold"/>
                                         </Border>
-                                        <TextBlock Text="{Binding Duration}" FontSize="11" Foreground="#78909C"
+                                        <TextBlock Text="{Binding Duration}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Visibility="{Binding Duration, Converter={StaticResource NullToCollapsed}}"/>
                                     </StackPanel>
@@ -144,7 +144,7 @@
 
                     <TextBlock Grid.Row="1" Text="لا توجد فيديوهات مطابقة."
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="#78909C" FontSize="14"
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14"
                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"/>
                 </Grid>
             </materialDesign:Card>
@@ -195,7 +195,7 @@
                                 <TextBlock x:Name="VideoTitleText" Text="{Binding SelectedVideo.Title}"
                                            FontSize="18" FontWeight="Bold" Foreground="#1A237E"/>
                                 <TextBlock x:Name="VideoDescriptionText" Text="{Binding SelectedVideo.Description}"
-                                           FontSize="13" Foreground="#546E7A" TextWrapping="Wrap"
+                                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                                            Margin="0,6,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="1" Click="OpenInBrowser_Click"

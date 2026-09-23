@@ -75,38 +75,38 @@
                         <WrapPanel Margin="0,0,0,8">
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
-                                    <TextBlock Text="التاريخ" FontSize="11" Foreground="#90A4AE"/>
+                                    <TextBlock Text="التاريخ" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                     <TextBlock Text="{Binding DateText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding PartyLabel}" FontSize="11" Foreground="#90A4AE"/>
+                                    <TextBlock Text="{Binding PartyLabel}" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                     <TextBlock Text="{Binding PartyName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
-                                    <TextBlock Text="المخزن" FontSize="11" Foreground="#90A4AE"/>
+                                    <TextBlock Text="المخزن" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                     <TextBlock Text="{Binding WarehouseName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
-                                    <TextBlock Text="طريقة الدفع" FontSize="11" Foreground="#90A4AE"/>
+                                    <TextBlock Text="طريقة الدفع" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                     <TextBlock Text="{Binding PaymentMethod}" FontWeight="SemiBold" Foreground="#1565C0"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}"
                                     Visibility="{Binding CreditDueDateText, Converter={StaticResource NullToCollapsedConverter}}">
                                 <StackPanel>
-                                    <TextBlock Text="تاريخ الاستحقاق" FontSize="11" Foreground="#90A4AE"/>
+                                    <TextBlock Text="تاريخ الاستحقاق" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                     <TextBlock Text="{Binding CreditDueDateText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
                         </WrapPanel>
 
-                        <Border Background="#FFF8E1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
                                 Visibility="{Binding HasCreditInfo, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CreditCardClockOutline" Foreground="#F57C00" VerticalAlignment="Center"/>
@@ -118,7 +118,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Background="#E8F5E9" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
                                 Visibility="{Binding HasInstallments, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CalendarClock" Foreground="#2E7D32" VerticalAlignment="Center"/>
@@ -193,30 +193,30 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="المجموع:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="المجموع:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding SubtotalText}" FontWeight="SemiBold"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="الخصم:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="الخصم:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding DiscountText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="التقريب:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="التقريب:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding RoundingText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
                                                 Visibility="{Binding TransportFeeText, Converter={StaticResource NullToCollapsedConverter}}">
-                                        <TextBlock Text="أجور النقل:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="أجور النقل:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding TransportFeeText}" Foreground="#1565C0" FontWeight="SemiBold"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
                                                 Visibility="{Binding CompanyFeeText, Converter={StaticResource NullToCollapsedConverter}}">
-                                        <TextBlock Text="نسبة الشركة:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="نسبة الشركة:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding CompanyFeeText}" Foreground="#6A1B9A" FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                    <TextBlock Text="الصافي" FontSize="12" Foreground="#78909C" HorizontalAlignment="Left"/>
+                                    <TextBlock Text="الصافي" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left"/>
                                     <TextBlock Text="{Binding GrandTotalText}" FontSize="24" FontWeight="Bold"
                                                Foreground="#1565C0" HorizontalAlignment="Left"/>
                                 </StackPanel>
@@ -226,7 +226,7 @@
                         <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="10" Padding="12,10"
                                 Visibility="{Binding HasNotes, Converter={StaticResource BoolVis}}">
                             <StackPanel>
-                                <TextBlock Text="ملاحظات" FontSize="11" Foreground="#78909C"/>
+                                <TextBlock Text="ملاحظات" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
@@ -234,7 +234,7 @@
                 </ScrollViewer>
 
                 <!-- Footer -->
-                <Border Grid.Row="2" Background="#FAFBFC" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
                         Padding="22,14" CornerRadius="0,0,18,18">
                     <Button Click="CloseButton_Click" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Left" Height="40" Padding="28,0"

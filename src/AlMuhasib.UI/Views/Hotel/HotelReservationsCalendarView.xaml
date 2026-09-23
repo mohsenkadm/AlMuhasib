@@ -53,13 +53,13 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <UniformGrid Columns="7" Margin="0,0,0,8">
-                        <TextBlock Text="السبت" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الأحد" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الاثنين" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الثلاثاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الأربعاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الخميس" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
-                        <TextBlock Text="الجمعة" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#616161"/>
+                        <TextBlock Text="السبت" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الأحد" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الاثنين" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الثلاثاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الأربعاء" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الخميس" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="الجمعة" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     </UniformGrid>
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding CalendarDays}">
                         <ItemsControl.ItemsPanel>
@@ -76,7 +76,7 @@
                                         MinHeight="72">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
-                                            <Setter Property="Background" Value="#F5F5F5"/>
+                                            <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                             <Setter Property="BorderBrush" Value="#E0E0E0"/>
                                             <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>

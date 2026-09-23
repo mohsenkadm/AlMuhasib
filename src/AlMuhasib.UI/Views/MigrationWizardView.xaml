@@ -98,7 +98,7 @@
                     <md:PackIcon Kind="AccountGroup" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <md:PackIcon.Style>
                             <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep0}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -127,7 +127,7 @@
                     <md:PackIcon Kind="TruckDelivery" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <md:PackIcon.Style>
                             <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep1}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -156,7 +156,7 @@
                     <md:PackIcon Kind="PackageVariant" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <md:PackIcon.Style>
                             <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep2}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -184,7 +184,7 @@
                 <md:PackIcon Kind="CashClock" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <md:PackIcon.Style>
                         <Style TargetType="md:PackIcon">
-                            <Setter Property="Foreground" Value="#616161"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsStep3}" Value="True">
                                     <Setter Property="Foreground" Value="White"/>
@@ -241,22 +241,22 @@
                         </StackPanel.Style>
 
                         <!-- Instructions -->
-                        <Border Background="#F5F5F5" CornerRadius="12" Padding="16,14" Margin="0,0,0,20">
+                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,20">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                    <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsStep0}" Value="True">
-                                            <Setter Property="Background" Value="#E8EAF6"/>
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiIndigoLightBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsStep3}" Value="True">
-                                            <Setter Property="Background" Value="#F3E5F5"/>
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -295,13 +295,13 @@
 
                         <!-- File path drop zone -->
                         <Border BorderBrush="#BDBDBD" BorderThickness="2" CornerRadius="12"
-                                Padding="20,16" Margin="0,0,0,16" Background="#FAFAFA">
+                                Padding="20,16" Margin="0,0,0,16" Background="{DynamicResource BackgroundBrush}">
                             <StackPanel>
                                 <md:PackIcon Kind="FileExcel" Width="36" Height="36"
                                              Foreground="#2E7D32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                                 <TextBlock Text="{Binding SelectedFilePath, TargetNullValue='لم يُختر ملف بعد — اضغط استعراض ملف'}"
                                            TextWrapping="Wrap" HorizontalAlignment="Center"
-                                           FontSize="13" Foreground="#616161" TextAlignment="Center"/>
+                                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
@@ -312,14 +312,14 @@
                         <!-- Result stats -->
                         <UniformGrid Columns="3" Margin="0,0,0,12"
                                      Visibility="{Binding HasLastResult, Converter={StaticResource BoolVis}}">
-                            <Border Background="#E8F5E9" CornerRadius="10" Padding="12,10" Margin="0,0,6,0">
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,6,0">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="مستورد" FontSize="11" Foreground="#2E7D32" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding LastImportedCount}" FontSize="22" FontWeight="Bold"
                                                Foreground="#1B5E20" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#FFF3E0" CornerRadius="10" Padding="12,10" Margin="3,0">
+                            <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="12,10" Margin="3,0">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="متخطى" FontSize="11" Foreground="#EF6C00" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding LastSkippedCount}" FontSize="22" FontWeight="Bold"
@@ -341,7 +341,7 @@
                                 <ItemsControl ItemsSource="{Binding PreviewSampleRows}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" FontSize="12" Foreground="#616161"
+                                            <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                                        TextWrapping="Wrap" Margin="0,2"/>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

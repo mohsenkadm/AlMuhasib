@@ -498,9 +498,9 @@
                                             <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding ProfitNet}" Icon="ChartLine"
                                                                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
                                             <controls:AnimatedStatCard Title="هامش الربح" TextValue="{Binding ProfitMargin}" Icon="Percent"
-                                                                       IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                                                       IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                                         </UniformGrid>
-                                        <Border Background="#F8FAFC" CornerRadius="12" Padding="8" MinHeight="220">
+                                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="8" MinHeight="220">
                                             <lvc:CartesianChart Series="{Binding ProfitChartSeries}"
                                                                 XAxes="{Binding ProfitChartXAxes}"
                                                                 YAxes="{Binding ProfitChartYAxes}"
@@ -543,7 +543,7 @@
                                                 <TextBlock Text="تذكير دين عبر واتساب" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
-                                        <Border Background="#F8FAFC" CornerRadius="12" Padding="8" MinHeight="200" Margin="0,0,0,12">
+                                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="8" MinHeight="200" Margin="0,0,0,12">
                                             <lvc:CartesianChart Series="{Binding AgingChartSeries}"
                                                                 XAxes="{Binding AgingChartXAxes}"
                                                                 YAxes="{Binding AgingChartYAxes}"
@@ -611,7 +611,7 @@
                         <StackPanel>
                             <DockPanel Margin="0,0,0,16">
                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                                    <Border Width="36" Height="36" CornerRadius="18" Background="#E0F7FA" Margin="0,0,10,0">
+                                    <Border Width="36" Height="36" CornerRadius="18" Background="{DynamicResource DashboardIconBadgeCyanBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="TimelineClock" Width="18" Height="18"
                                                                  Foreground="#00838F"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -777,7 +777,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border Padding="12,10" Margin="0,0,0,6" CornerRadius="12"
-                                                            Background="#F8FAFC" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                                                            Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*"/>

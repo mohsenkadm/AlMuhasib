@@ -13,7 +13,7 @@
             <Setter Property="Width" Value="360"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
             <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="BorderBrush" Value="#E2EAF3"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="0"/>
@@ -106,7 +106,7 @@
                                             <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Warning}">
-                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -132,13 +132,13 @@
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Success}">
-                                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Error}">
-                                                    <Setter Property="Background" Value="#FFEBEE"/>
+                                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Warning}">
-                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding State}" Value="{x:Static models:ToastDisplayState.Info}">
                                                     <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
@@ -179,7 +179,7 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding Message}"
                                            FontSize="12.5"
-                                           Foreground="#546E7A"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,4,0,0"
                                            MaxWidth="270"/>

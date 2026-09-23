@@ -87,14 +87,14 @@
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding Barcode, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="الباركود" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="الباركود" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         <TextBlock Text="{Binding Barcode}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding CategoryName, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="التصنيف" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="التصنيف" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         <TextBlock Text="{Binding CategoryName}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
@@ -104,7 +104,7 @@
                                        Visibility="{Binding Description, Converter={StaticResource NullToCollapsedConverter}}"/>
 
                             <WrapPanel Margin="0,0,0,12">
-                                <Border Style="{StaticResource StatPill}" Background="#E8F5E9">
+                                <Border Style="{StaticResource StatPill}" Background="{DynamicResource DashboardKpiGreenLightBrush}">
                                     <StackPanel>
                                         <TextBlock Text="الكمية المتوفرة" FontSize="11" Foreground="#2E7D32"/>
                                         <TextBlock Text="{Binding TotalStockText}" FontSize="20" FontWeight="Bold" Foreground="#1B5E20"/>
@@ -116,7 +116,7 @@
                                         <TextBlock Text="{Binding CurrentSalePriceText}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource StatPill}" Background="#F3E5F5">
+                                <Border Style="{StaticResource StatPill}" Background="{DynamicResource PrimaryHueLightBrush}">
                                     <StackPanel>
                                         <TextBlock Text="سعر الشراء الحالي" FontSize="11" Foreground="#6A1B9A"/>
                                         <TextBlock Text="{Binding CurrentPurchasePriceText}" FontSize="18" FontWeight="Bold" Foreground="#4A148C"/>
@@ -125,13 +125,13 @@
                             </WrapPanel>
 
                             <UniformGrid Columns="2" Margin="0,0,0,14">
-                                <Border Background="#FFF3E0" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
+                                <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
                                     <StackPanel>
                                         <TextBlock Text="آخر سعر شراء" FontSize="11" Foreground="#EF6C00"/>
                                         <TextBlock Text="{Binding LastPurchaseText}" FontWeight="SemiBold" Foreground="#E65100" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Background="#E0F7FA" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
+                                <Border Background="{DynamicResource DashboardIconBadgeCyanBrush}" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
                                     <StackPanel>
                                         <TextBlock Text="آخر سعر بيع" FontSize="11" Foreground="#00838F"/>
                                         <TextBlock Text="{Binding LastSaleText}" FontWeight="SemiBold" Foreground="#006064" TextWrapping="Wrap" Margin="0,4,0,0"/>
@@ -142,13 +142,13 @@
                             <UniformGrid Columns="2" Margin="0,0,0,14">
                                 <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
                                     <StackPanel>
-                                        <TextBlock Text="ملخص المبيعات" FontSize="11" Foreground="#78909C"/>
+                                        <TextBlock Text="ملخص المبيعات" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding SaleSummaryText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="ملخص المشتريات" FontSize="11" Foreground="#78909C"/>
+                                        <TextBlock Text="ملخص المشتريات" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding PurchaseSummaryText}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -159,7 +159,7 @@
                             <ItemsControl ItemsSource="{Binding StocksByWarehouse}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#FAFBFC" BorderBrush="#ECEFF1" BorderThickness="1"
+                                        <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="1"
                                                 CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -174,7 +174,7 @@
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,12,0"/>
                                                 <Border Grid.Column="1"
-                                                        Background="#E8F5E9"
+                                                        Background="{DynamicResource DashboardKpiGreenLightBrush}"
                                                         CornerRadius="8"
                                                         Padding="10,4"
                                                         MinWidth="72"
@@ -199,13 +199,13 @@
                         <TextBlock Text="جاري تحميل تفاصيل المنتج…" Margin="0,14,0,0" Foreground="#607D8B"/>
                     </StackPanel>
 
-                    <Border Margin="24" Padding="16" Background="#FFEBEE" CornerRadius="12" VerticalAlignment="Center"
+                    <Border Margin="24" Padding="16" Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="12" VerticalAlignment="Center"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}">
                         <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" TextWrapping="Wrap" TextAlignment="Center"/>
                     </Border>
                 </Grid>
 
-                <Border Grid.Row="2" Background="#FAFBFC" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
                         Padding="22,14" CornerRadius="0,0,18,18">
                     <Button Click="CloseButton_Click" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Left" Height="40" Padding="28,0"

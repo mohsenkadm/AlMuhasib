@@ -131,10 +131,10 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <UniformGrid Columns="4" Margin="0,0,0,12">
-                        <StackPanel><TextBlock Text="الغرف" Foreground="#78909C"/><TextBlock Text="{Binding AuditTotalRooms}" FontWeight="Bold"/></StackPanel>
-                        <StackPanel><TextBlock Text="المشغولة" Foreground="#78909C"/><TextBlock Text="{Binding AuditOccupiedRooms}" FontWeight="Bold"/></StackPanel>
-                        <StackPanel><TextBlock Text="إيراد الغرف" Foreground="#78909C"/><TextBlock Text="{Binding AuditRoomRevenue, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
-                        <StackPanel><TextBlock Text="التحصيل" Foreground="#78909C"/><TextBlock Text="{Binding AuditPaymentsCollected, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
+                        <StackPanel><TextBlock Text="الغرف" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding AuditTotalRooms}" FontWeight="Bold"/></StackPanel>
+                        <StackPanel><TextBlock Text="المشغولة" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding AuditOccupiedRooms}" FontWeight="Bold"/></StackPanel>
+                        <StackPanel><TextBlock Text="إيراد الغرف" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding AuditRoomRevenue, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
+                        <StackPanel><TextBlock Text="التحصيل" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding AuditPaymentsCollected, StringFormat=N0}" FontWeight="Bold"/></StackPanel>
                     </UniformGrid>
                     <controls:ListTableHeaderBar Grid.Row="1"
                                                  Title="المراجعة الليلية"

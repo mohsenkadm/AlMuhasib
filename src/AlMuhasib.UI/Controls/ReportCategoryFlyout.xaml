@@ -22,7 +22,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Card"
-                                Background="#FAFBFC"
+                                Background="{DynamicResource BackgroundBrush}"
                                 CornerRadius="11"
                                 BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="1"
@@ -51,17 +51,17 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="White"/>
-                                <Setter TargetName="Card" Property="BorderBrush" Value="#BBDEFB"/>
+                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                                 <Setter TargetName="Card" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1" Color="#1565C0"/>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.18" Color="#0A1136"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="#F1F8FF"/>
-                                <Setter TargetName="Card" Property="BorderBrush" Value="#90CAF9"/>
+                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource ChromeTabSelectedBorderBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -72,10 +72,10 @@
 
     <Border x:Name="FlyoutRoot"
             Background="{DynamicResource CardBrush}"
-            BorderBrush="#E2E8F0"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
             BorderThickness="1,0,0,0">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="-2" Opacity="0.08" Color="#0D1B2A" Direction="0"/>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="-2" Opacity="0.18" Color="#0A1136" Direction="0"/>
         </Border.Effect>
         <Grid VerticalAlignment="Top">
             <Grid.RowDefinitions>
@@ -112,6 +112,7 @@
             <ScrollViewer x:Name="CardsScroller"
                           Grid.Row="1"
                           Style="{StaticResource ThinScrollViewer}"
+                          Background="{DynamicResource CardBrush}"
                           Padding="4,2,4,6"
                           VerticalAlignment="Top"
                           VerticalScrollBarVisibility="Auto">

@@ -10,7 +10,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
         <Style x:Key="GoldMetaPill" TargetType="Border">
-            <Setter Property="Background" Value="#FFF8E1"/>
+            <Setter Property="Background" Value="{DynamicResource NotepadPaperBrush}"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
@@ -107,7 +107,7 @@
                             </Border>
                         </WrapPanel>
 
-                        <Border Background="#FFF8E1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
                                 Visibility="{Binding HasCreditInfo, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CreditCardClockOutline" Foreground="#B8860B" VerticalAlignment="Center"/>
@@ -150,7 +150,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Border Background="#FAFAFA" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
+                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -158,24 +158,24 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="قيمة الذهب:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="قيمة الذهب:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding GoldValueText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="أجور الصياغة:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="أجور الصياغة:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding MakingChargeText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="الخصم:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="الخصم:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding DiscountText}"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="الوزن:" Width="120" Foreground="#78909C"/>
+                                        <TextBlock Text="الوزن:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Text="{Binding WeightText}"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                    <TextBlock Text="الإجمالي" FontSize="12" Foreground="#78909C" HorizontalAlignment="Left"/>
+                                    <TextBlock Text="الإجمالي" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left"/>
                                     <TextBlock Text="{Binding GrandTotalText}" FontSize="24" FontWeight="Bold"
                                                Foreground="#B8860B" HorizontalAlignment="Left"/>
                                 </StackPanel>
@@ -185,14 +185,14 @@
                         <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="10" Padding="12,10"
                                 Visibility="{Binding HasNotes, Converter={StaticResource BoolVis}}">
                             <StackPanel>
-                                <TextBlock Text="ملاحظات" FontSize="11" Foreground="#78909C"/>
+                                <TextBlock Text="ملاحظات" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <Border Grid.Row="2" Background="#FAFBFC" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
                         Padding="22,14" CornerRadius="0,0,18,18">
                     <Button Click="CloseButton_Click" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Left" Height="40" Padding="28,0"

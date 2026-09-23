@@ -190,7 +190,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <Border Grid.Row="2" Padding="16,8" Background="#FFF8E1" BorderBrush="#E8D5A3" BorderThickness="0,1,0,0">
+                <Border Grid.Row="2" Padding="16,8" Background="{DynamicResource NotepadPaperBrush}" BorderBrush="#E8D5A3" BorderThickness="0,1,0,0">
                     <TextBlock FontWeight="SemiBold" Foreground="#8B6914">
                         <Run Text="مجموع الصفحة:"/>
                         <Run Text="{Binding TotalFiltered, StringFormat=N0, Mode=OneWay}"/>

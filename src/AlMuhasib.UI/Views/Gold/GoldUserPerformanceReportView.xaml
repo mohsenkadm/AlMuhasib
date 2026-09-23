@@ -33,7 +33,7 @@
                     <controls:AnimatedStatCard Title="مشتريات د.ع" TextValue="{Binding TotalPurchases}"
                                                Icon="Cart" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="الإجراءات" TextValue="{Binding TotalActions}"
-                                               Icon="ShieldKey" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                                               Icon="ShieldKey" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

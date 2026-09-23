@@ -56,7 +56,7 @@
                 </Border>
 
                 <!-- Scale connection status -->
-                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="8" Background="#FFF8E1"
+                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="8" Background="{DynamicResource NotepadPaperBrush}"
                         BorderBrush="#E8D5A3" BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -212,7 +212,7 @@
                 <!-- Lines toolbar -->
                 <DockPanel Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                        <Border Width="220" Background="#FFF8E1" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <Border Width="220" Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>

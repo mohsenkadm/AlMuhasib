@@ -902,7 +902,7 @@
                                                ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowPurchasesSourceDetailsCommand}">
-                        <Border Background="#FFF3E0" CornerRadius="10" Padding="8,6"
+                        <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="8,6"
                                 Visibility="{Binding ShowOpeningStockPurchasesHint, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Warehouse" Width="14" Height="14"
@@ -1183,7 +1183,7 @@
                                                 <Border CornerRadius="12" Padding="8,4" HorizontalAlignment="Center">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#E8F5E9" />
+                                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding DaysRemaining, Converter={x:Static converters:LessThanConverter.Instance}}" Value="True">
                                                                     <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}" />

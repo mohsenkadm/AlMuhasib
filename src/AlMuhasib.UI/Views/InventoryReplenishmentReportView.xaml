@@ -185,13 +185,13 @@
                                     <Border CornerRadius="8" Padding="8,4" HorizontalAlignment="Center" MinWidth="72">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#E8F5E9"/>
+                                                <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Status}" Value="{x:Static services:InventoryReplenishmentStatus.NeedsReorder}">
-                                                        <Setter Property="Background" Value="#FFF3E0"/>
+                                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Status}" Value="{x:Static services:InventoryReplenishmentStatus.Critical}">
-                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

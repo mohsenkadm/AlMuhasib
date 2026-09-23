@@ -30,7 +30,7 @@
                      md:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
                     <TextBlock Text="{Binding CurrentBalanceText}" FontSize="13" Foreground="#8B6914"
-                               Background="#FFF8E1" Padding="12,8" Margin="0,0,0,16"/>
+                               Background="{DynamicResource NotepadPaperBrush}" Padding="12,8" Margin="0,0,0,16"/>
 
                     <ComboBox ItemsSource="{Binding Warehouses}"
                               SelectedItem="{Binding SelectedWarehouse}"

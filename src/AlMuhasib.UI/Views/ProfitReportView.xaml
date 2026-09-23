@@ -129,11 +129,11 @@
                         <TextBlock Text="تفاصيل المنتجات" FontSize="15" FontWeight="SemiBold" Foreground="#7B1FA2" Margin="0,0,0,10"/>
                         <UniformGrid Columns="3" Margin="0,0,0,16">
                             <controls:AnimatedStatCard Title="عدد المنتجات" TextValue="{Binding DetailProductCount}"
-                                                        Icon="PackageVariant" IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                                        Icon="PackageVariant" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                             <controls:AnimatedStatCard Title="إجمالي الكميات المباعة" TextValue="{Binding DetailTotalQuantity}"
                                                         Icon="Counter" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB" ValueForeground="#3949AB"/>
                             <controls:AnimatedStatCard Title="أعلى منتج ربحاً" TextValue="{Binding DetailTopProduct}"
-                                                        Icon="Trophy" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                                                        Icon="Trophy" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825" ValueForeground="#F9A825"/>
                         </UniformGrid>
 
                         <Border BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="8">

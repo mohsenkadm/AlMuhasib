@@ -152,13 +152,13 @@
                                                 <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="إضافة">
-                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="تعديل">
                                                         <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding ActionDisplay}" Value="حذف">
-                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

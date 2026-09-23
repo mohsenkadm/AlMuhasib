@@ -13,12 +13,12 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Margin" Value="1,0"/>
-            <Setter Property="Foreground" Value="#546E7A"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         </Style>
     </UserControl.Resources>
 
-    <Border Background="#FAFBFC"
-            BorderBrush="{StaticResource SubtleBorderBrush}"
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
             BorderThickness="0,1,0,0"
             Padding="14,10">
         <Grid>
@@ -44,7 +44,7 @@
 
             <Border Grid.Column="1"
                     Background="{DynamicResource CardBrush}"
-                    BorderBrush="#E2E8F0"
+                    BorderBrush="{DynamicResource SubtleBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="4,3">
@@ -62,7 +62,7 @@
                         <md:PackIcon Kind="ChevronRight" Width="18" Height="18"/>
                     </Button>
 
-                    <Border Background="#F1F5F9"
+                    <Border Background="{DynamicResource MutedIconBackgroundBrush}"
                             CornerRadius="6"
                             Padding="10,4"
                             Margin="4,0"
