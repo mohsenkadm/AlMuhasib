@@ -874,9 +874,29 @@ public sealed partial class CloudReportService
             });
         }
 
+        var purchaseReturnQ = context.Invoices.Include(i => i.Supplier).Include(i => i.CashBox)
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn && i.PaymentMethod == PaymentMethod.Cash);
+        if (from.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date < EndOfDay(to));
+        if (supplierId.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.SupplierId == supplierId.Value);
+
+        foreach (var i in await purchaseReturnQ.ToListAsync())
+        {
+            rows.Add(new SupplierPaymentRow
+            {
+                Date = i.Date,
+                SourceType = "مرتجع مشتريات",
+                Reference = i.InvoiceNumber,
+                SupplierName = i.Supplier?.Name ?? "—",
+                Amount = -Math.Abs(i.NetAmount),
+                AccountName = i.CashBox?.Name ?? "—",
+                Notes = "استرداد نقد من المورد"
+            });
+        }
+
         rows = rows.OrderByDescending(r => r.Date).ToList();
         var vouchTotal = rows.Where(r => r.SourceType == "سند صرف").Sum(r => r.Amount);
-        var cashTotal = rows.Where(r => r.SourceType == "مشتريات نقدية").Sum(r => r.Amount);
+        var cashTotal = rows.Where(r => r.SourceType is "مشتريات نقدية" or "مرتجع مشتريات").Sum(r => r.Amount);
 
         return new SupplierPaymentsReportResult
         {
@@ -1178,13 +1198,12 @@ public sealed partial class CloudReportService
         if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity > 0);
 
         var stocks = await stockQ.ToListAsync();
+        var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
+        var purchasesByProduct = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         var rows = new List<InventoryValuationRow>();
         foreach (var s in stocks)
         {
-            var purchaseItems = await context.InvoiceItems
-                .Include(ii => ii.Invoice)
-                .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase)
-                .ToListAsync();
+            var purchaseItems = purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [];
             var avg = CloudProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
             rows.Add(new InventoryValuationRow
             {
@@ -1329,16 +1348,13 @@ public sealed partial class CloudReportService
         var soldItems = await soldQ.ToListAsync();
         var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
         var stocks = await context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId)).ToListAsync();
-        var purchaseItems = await context.InvoiceItems
-            .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null
-                         && productIds.Contains(ii.ProductId.Value)
-                         && ii.Invoice != null
-                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
-                         && (!to.HasValue || ii.Invoice.Date < EndOfDay(to)))
-            .ToListAsync();
-        var purchasesByProduct = purchaseItems.GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToList());
+        var allPurchases = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+        var endExclusive = EndOfDay(to);
+        var purchasesByProduct = allPurchases.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value
+                .Where(ii => !endExclusive.HasValue || ii.Invoice == null || ii.Invoice.Date < endExclusive.Value)
+                .ToList());
 
         var rows = soldItems.GroupBy(ii => ii.ProductId!.Value).Select(g =>
         {
@@ -1551,14 +1567,14 @@ public sealed partial class CloudReportService
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
         var stocks = await context.WarehouseStocks.Include(ws => ws.Product).ToListAsync();
+        var inventoryProductIds = stocks.Where(s => s.Quantity > 0).Select(s => s.ProductId).Distinct().ToList();
+        var inventoryPurchases = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(context, inventoryProductIds);
         decimal inventory = 0;
         foreach (var s in stocks.Where(s => s.Quantity > 0))
         {
-            var purchaseItems = await context.InvoiceItems
-                .Include(ii => ii.Invoice)
-                .Where(ii => ii.ProductId == s.ProductId && ii.Invoice!.InvoiceType == InvoiceType.Purchase
-                             && ii.Invoice.Date <= endOfDay)
-                .ToListAsync();
+            var purchaseItems = (inventoryPurchases.GetValueOrDefault(s.ProductId) ?? [])
+                .Where(ii => ii.Invoice == null || ii.Invoice.Date <= endOfDay)
+                .ToList();
             var avg = CloudProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
             inventory += Math.Round(s.Quantity * avg, 0);
         }
@@ -1662,13 +1678,13 @@ public sealed partial class CloudReportService
         if (endExclusive.HasValue) customersQ = customersQ.Where(c => c.CreatedAt < endExclusive.Value);
         var newCustomersCount = await customersQ.CountAsync();
 
-        var salesInvoicesQ = context.Invoices.AsNoTracking()
-            .Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
+        var salesInvoicesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .AsNoTracking();
         if (from.HasValue) salesInvoicesQ = salesInvoicesQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) salesInvoicesQ = salesInvoicesQ.Where(i => i.Date < endExclusive.Value);
 
         var salesInvoices = await salesInvoicesQ
-            .Select(i => new { i.Id, i.Date, i.NetAmount, i.CustomerId, CustomerName = i.Customer != null ? i.Customer.Name : "—" })
+            .Select(i => new { i.Id, i.Date, i.InvoiceType, i.NetAmount, i.CustomerId, CustomerName = i.Customer != null ? i.Customer.Name : "—" })
             .ToListAsync();
 
         var salesInvoiceIds = salesInvoices.Select(i => i.Id).ToList();
@@ -1676,15 +1692,17 @@ public sealed partial class CloudReportService
             ? new List<(int? ProductId, decimal Quantity)>()
             : (await context.InvoiceItems.AsNoTracking()
                 .Where(ii => salesInvoiceIds.Contains(ii.InvoiceId))
-                .Select(ii => new { ii.ProductId, ii.Quantity })
+                .Select(ii => new { ii.ProductId, ii.Quantity, InvoiceType = ii.Invoice!.InvoiceType })
                 .ToListAsync())
-              .Select(ii => (ii.ProductId, ii.Quantity))
+              .Select(ii => (ProductId: ii.ProductId, Quantity: InvoiceFilters.SignedSaleLineQuantity(ii.InvoiceType, ii.Quantity)))
               .ToList();
 
         var allActivityQ = context.Invoices.AsNoTracking()
             .Where(i => i.InvoiceType == InvoiceType.Sale
                         || i.InvoiceType == InvoiceType.Installment
-                        || i.InvoiceType == InvoiceType.Purchase);
+                        || i.InvoiceType == InvoiceType.SaleReturn
+                        || i.InvoiceType == InvoiceType.Purchase
+                        || i.InvoiceType == InvoiceType.PurchaseReturn);
         if (from.HasValue) allActivityQ = allActivityQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) allActivityQ = allActivityQ.Where(i => i.Date < endExclusive.Value);
 
@@ -1695,13 +1713,13 @@ public sealed partial class CloudReportService
         var salesByYear = salesInvoices
             .GroupBy(i => i.Date.Year)
             .OrderBy(g => g.Key)
-            .Select(g => new NameAmountPoint { Name = g.Key.ToString(), Amount = g.Sum(x => x.NetAmount) })
+            .Select(g => new NameAmountPoint { Name = g.Key.ToString(), Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)) })
             .ToList();
 
         var topCustomers = salesInvoices
             .Where(i => i.CustomerId.HasValue)
             .GroupBy(i => new { i.CustomerId, i.CustomerName })
-            .Select(g => new NameAmountPoint { Name = g.Key.CustomerName, Amount = g.Sum(x => x.NetAmount) })
+            .Select(g => new NameAmountPoint { Name = g.Key.CustomerName, Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)) })
             .OrderByDescending(x => x.Amount)
             .Take(10)
             .ToList();
@@ -1716,8 +1734,8 @@ public sealed partial class CloudReportService
                 hourGroups.TryGetValue(h, out var list);
                 list ??= [];
                 var salesAmount = list
-                    .Where(x => x.InvoiceType is InvoiceType.Sale or InvoiceType.Installment)
-                    .Sum(x => x.NetAmount);
+                    .Where(x => x.InvoiceType is InvoiceType.Sale or InvoiceType.Installment or InvoiceType.SaleReturn)
+                    .Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount));
                 return new WorkSummaryHourRow
                 {
                     Hour = h,
@@ -1735,7 +1753,7 @@ public sealed partial class CloudReportService
         return new WorkSummaryReportResult
         {
             NewCustomersCount = newCustomersCount,
-            TotalSalesAmount = salesInvoices.Sum(i => i.NetAmount),
+            TotalSalesAmount = salesInvoices.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount)),
             DealCount = salesInvoices.Count,
             DistinctProductCount = salesItems.Where(i => i.ProductId.HasValue).Select(i => i.ProductId!.Value).Distinct().Count(),
             TotalProductQuantity = salesItems.Sum(i => i.Quantity),
@@ -1763,10 +1781,18 @@ public sealed partial class CloudReportService
         if (from.HasValue) salesQ = salesQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) salesQ = salesQ.Where(i => i.Date < endExclusive.Value);
 
-        var salesByMethod = await salesQ
-            .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+        var salesInvoices = await salesQ
+            .Select(i => new { i.PaymentMethod, i.InvoiceType, i.NetAmount, i.CustomerId })
             .ToListAsync();
+        var salesByMethod = salesInvoices
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new
+            {
+                Method = g.Key,
+                Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)),
+                Count = g.Count()
+            })
+            .ToList();
 
         var cashSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
         var creditSales = salesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
@@ -1774,31 +1800,39 @@ public sealed partial class CloudReportService
         var salesCount = salesByMethod.Sum(x => x.Count);
         var totalSales = salesByMethod.Sum(x => x.Amount);
 
-        var purchaseQ = context.Invoices.AsNoTracking().Where(i => i.InvoiceType == InvoiceType.Purchase);
+        var purchaseQ = CloudInvoiceFilters.ForPurchasesTotals(context.Invoices.AsNoTracking());
         if (from.HasValue) purchaseQ = purchaseQ.Where(i => i.Date >= from.Value);
         if (endExclusive.HasValue) purchaseQ = purchaseQ.Where(i => i.Date < endExclusive.Value);
 
-        var purchasesByMethod = await purchaseQ
-            .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Amount = g.Sum(x => x.NetAmount), Count = g.Count() })
+        var purchaseInvoices = await purchaseQ
+            .Select(i => new { i.PaymentMethod, i.InvoiceType, i.NetAmount, i.SupplierId })
             .ToListAsync();
+        var purchasesByMethod = purchaseInvoices
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g => new
+            {
+                Method = g.Key,
+                Amount = g.Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount)),
+                Count = g.Count()
+            })
+            .ToList();
 
         var cashPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Cash)?.Amount ?? 0;
         var creditPurchases = purchasesByMethod.FirstOrDefault(x => x.Method == PaymentMethod.Credit)?.Amount ?? 0;
         var purchaseCount = purchasesByMethod.Sum(x => x.Count);
         var totalPurchases = purchasesByMethod.Sum(x => x.Amount);
 
-        var activeCustomers = await salesQ
+        var activeCustomers = salesInvoices
             .Where(i => i.CustomerId != null)
             .Select(i => i.CustomerId!.Value)
             .Distinct()
-            .CountAsync();
+            .Count();
 
-        var activeSuppliers = await purchaseQ
+        var activeSuppliers = purchaseInvoices
             .Where(i => i.SupplierId != null)
             .Select(i => i.SupplierId!.Value)
             .Distinct()
-            .CountAsync();
+            .Count();
 
         var receiptQ = context.Vouchers.AsNoTracking()
             .Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);

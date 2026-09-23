@@ -174,39 +174,39 @@ public partial class ExecutiveSummaryReportViewModel : ReportViewModelBase
 
         Sections.Add(MakeSection("المبيعات", "#2E7D32",
         [
-            MoneyCard("totalSales", "إجمالي المبيعات",
-                "صافي فواتير البيع والأقساط خلال الفترة",
+            MoneyCard("totalSales", "صافي المبيعات",
+                "بيع/أقساط − مرتجعات المبيعات خلال الفترة",
                 r.TotalSales, PackIconKind.PointOfSale, "#2E7D32", "#E8F5E9"),
-            MoneyCard("cashSales", "مبيعات نقدية",
-                "فواتير بيع بطريقة الدفع نقدي",
+            MoneyCard("cashSales", "مبيعات نقدية (صافي)",
+                "مبيعات نقدية − مرتجعات نقدية",
                 r.CashSales, PackIconKind.Cash, "#00838F", "#E0F7FA"),
-            MoneyCard("creditSales", "مبيعات آجل",
-                "فواتير بيع بطريقة الدفع آجل",
+            MoneyCard("creditSales", "مبيعات آجل (صافي)",
+                "مبيعات آجل − مرتجعات آجل",
                 r.CreditSales, PackIconKind.CreditCardOutline, "#AD1457", "#FCE4EC"),
             MoneyCard("installmentSales", "مبيعات أقساط",
                 "فواتير بيع بطريقة الدفع أقساط",
                 r.InstallmentSales, PackIconKind.CalendarMonth, "#EF6C00", "#FFF3E0"),
             CountCard("salesCount", "عدد فواتير البيع",
-                "عدد فواتير البيع/الأقساط في الفترة",
+                "يشمل فواتير البيع/الأقساط والمرتجعات في الفترة",
                 r.SalesInvoiceCount, PackIconKind.FileDocumentOutline, "#1565C0", "#E3F2FD"),
             MoneyCard("avgSale", "متوسط قيمة الفاتورة",
-                "إجمالي المبيعات ÷ عدد فواتير البيع",
+                "صافي المبيعات ÷ عدد الفواتير",
                 r.AverageSaleInvoice, PackIconKind.ChartBar, "#283593", "#E8EAF6"),
         ]));
 
         Sections.Add(MakeSection("المشتريات والتكاليف", "#EF6C00",
         [
-            MoneyCard("totalPurchases", "إجمالي المشتريات",
-                "صافي فواتير الشراء خلال الفترة",
+            MoneyCard("totalPurchases", "صافي المشتريات",
+                "مشتريات − مرتجعات المشتريات خلال الفترة",
                 r.TotalPurchases, PackIconKind.CartArrowDown, "#EF6C00", "#FFF3E0"),
-            MoneyCard("cashPurchases", "مشتريات نقدية",
-                "فواتير شراء نقدية",
+            MoneyCard("cashPurchases", "مشتريات نقدية (صافي)",
+                "مشتريات نقدية − مرتجعات نقدية",
                 r.CashPurchases, PackIconKind.CashMinus, "#00838F", "#E0F7FA"),
-            MoneyCard("creditPurchases", "مشتريات آجل",
-                "فواتير شراء آجلة",
+            MoneyCard("creditPurchases", "مشتريات آجل (صافي)",
+                "مشتريات آجل − مرتجعات آجل",
                 r.CreditPurchases, PackIconKind.TruckCheck, "#00695C", "#E0F2F1"),
             CountCard("purchaseCount", "عدد فواتير الشراء",
-                "عدد فواتير الشراء في الفترة",
+                "يشمل فواتير الشراء والمرتجعات في الفترة",
                 r.PurchaseInvoiceCount, PackIconKind.FileDocumentMultiple, "#1565C0", "#E3F2FD"),
             MoneyCard("cogs", "تكلفة البضاعة المباعة",
                 "تكلفة الكميات المباعة (متوسط التكلفة × الكمية)",
@@ -389,54 +389,54 @@ public partial class ExecutiveSummaryReportViewModel : ReportViewModelBase
             "accumulatedProfits" => Single("الأرباح المتراكمة", "من الميزانية العمومية حتى تاريخ النهاية", r.AccumulatedProfits, period),
             "totalSales" => new AmountBreakdownModel
             {
-                Title = "تفاصيل إجمالي المبيعات",
+                Title = "تفاصيل صافي المبيعات",
                 Subtitle = period,
-                Formula = "نقدي + آجل + أقساط",
-                ResultLabel = "إجمالي المبيعات",
+                Formula = "نقدي + آجل + أقساط − مرتجعات المبيعات",
+                ResultLabel = "صافي المبيعات",
                 ResultAmount = r.TotalSales,
                 Lines =
                 [
-                    Line("+", "مبيعات نقدية", r.CashSales),
-                    Line("+", "مبيعات آجل", r.CreditSales),
+                    Line("+", "مبيعات نقدية (صافي)", r.CashSales),
+                    Line("+", "مبيعات آجل (صافي)", r.CreditSales),
                     Line("+", "مبيعات أقساط", r.InstallmentSales),
-                    Line("=", "إجمالي المبيعات", r.TotalSales, isResult: true)
+                    Line("=", "صافي المبيعات", r.TotalSales, isResult: true)
                 ]
             },
-            "cashSales" => Single("مبيعات نقدية", "فواتير بيع نقدي في الفترة", r.CashSales, period),
-            "creditSales" => Single("مبيعات آجل", "فواتير بيع آجل في الفترة", r.CreditSales, period),
+            "cashSales" => Single("مبيعات نقدية (صافي)", "مبيعات نقدية − مرتجعات نقدية", r.CashSales, period),
+            "creditSales" => Single("مبيعات آجل (صافي)", "مبيعات آجل − مرتجعات آجل", r.CreditSales, period),
             "installmentSales" => Single("مبيعات أقساط", "فواتير بيع أقساط في الفترة", r.InstallmentSales, period),
-            "salesCount" => Single("عدد فواتير البيع", "عدد فواتير البيع/الأقساط", r.SalesInvoiceCount, period, isMoney: false),
+            "salesCount" => Single("عدد فواتير البيع", "يشمل البيع/الأقساط والمرتجعات", r.SalesInvoiceCount, period, isMoney: false),
             "avgSale" => new AmountBreakdownModel
             {
                 Title = "تفاصيل متوسط قيمة الفاتورة",
                 Subtitle = period,
-                Formula = "المتوسط = إجمالي المبيعات ÷ عدد الفواتير",
+                Formula = "المتوسط = صافي المبيعات ÷ عدد الفواتير",
                 ResultLabel = "متوسط قيمة الفاتورة",
                 ResultAmount = r.AverageSaleInvoice,
                 Lines =
                 [
-                    Line("+", "إجمالي المبيعات", r.TotalSales),
+                    Line("+", "صافي المبيعات", r.TotalSales),
                     Line("÷", "عدد الفواتير", r.SalesInvoiceCount, isMoney: false),
                     Line("=", "المتوسط", r.AverageSaleInvoice, isResult: true)
                 ]
             },
             "totalPurchases" => new AmountBreakdownModel
             {
-                Title = "تفاصيل إجمالي المشتريات",
+                Title = "تفاصيل صافي المشتريات",
                 Subtitle = period,
-                Formula = "نقدي + آجل (+ طرق أخرى إن وجدت)",
-                ResultLabel = "إجمالي المشتريات",
+                Formula = "نقدي + آجل − مرتجعات المشتريات",
+                ResultLabel = "صافي المشتريات",
                 ResultAmount = r.TotalPurchases,
                 Lines =
                 [
-                    Line("+", "مشتريات نقدية", r.CashPurchases),
-                    Line("+", "مشتريات آجل", r.CreditPurchases),
-                    Line("=", "إجمالي المشتريات", r.TotalPurchases, isResult: true)
+                    Line("+", "مشتريات نقدية (صافي)", r.CashPurchases),
+                    Line("+", "مشتريات آجل (صافي)", r.CreditPurchases),
+                    Line("=", "صافي المشتريات", r.TotalPurchases, isResult: true)
                 ]
             },
-            "cashPurchases" => Single("مشتريات نقدية", "فواتير شراء نقدي", r.CashPurchases, period),
-            "creditPurchases" => Single("مشتريات آجل", "فواتير شراء آجل", r.CreditPurchases, period),
-            "purchaseCount" => Single("عدد فواتير الشراء", "عدد فواتير الشراء في الفترة", r.PurchaseInvoiceCount, period, isMoney: false),
+            "cashPurchases" => Single("مشتريات نقدية (صافي)", "مشتريات نقدية − مرتجعات نقدية", r.CashPurchases, period),
+            "creditPurchases" => Single("مشتريات آجل (صافي)", "مشتريات آجل − مرتجعات آجل", r.CreditPurchases, period),
+            "purchaseCount" => Single("عدد فواتير الشراء", "يشمل الشراء والمرتجعات", r.PurchaseInvoiceCount, period, isMoney: false),
             "cogs" => Single("تكلفة البضاعة المباعة", "متوسط التكلفة × الكميات المباعة", r.CostOfGoodsSold, period),
             "grossProfit" => new AmountBreakdownModel
             {
