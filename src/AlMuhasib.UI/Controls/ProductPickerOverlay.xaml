@@ -288,7 +288,7 @@
                                                         <Style.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
-                                                                <Setter Property="Background" Value="#F8FBFF"/>
+                                                                <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                             </Trigger>
                                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                                 <Setter Property="BorderBrush" Value="#1565C0"/>
