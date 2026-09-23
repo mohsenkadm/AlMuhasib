@@ -33,7 +33,7 @@
                     <controls:AnimatedStatCard Title="الكيانات" TextValue="{Binding EntityCount}"
                                                Icon="Database" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="أنواع الإجراءات" TextValue="{Binding ActionCount}"
-                                               Icon="ShieldKey" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                                               Icon="ShieldKey" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

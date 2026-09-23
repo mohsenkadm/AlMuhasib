@@ -95,7 +95,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="غير مقروءة" FontWeight="Bold" FontSize="13"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <Border Grid.Column="1" Background="#FFEBEE" CornerRadius="10"
+                        <Border Grid.Column="1" Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="10"
                                 Padding="8,2" VerticalAlignment="Center">
                             <TextBlock Text="{Binding UnreadNotificationCount}"
                                        FontSize="11" FontWeight="Bold" Foreground="#C62828"/>
@@ -123,10 +123,10 @@
                                                     <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Critical}">
-                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Severity}" Value="{x:Static ux:SmartAlertSeverity.Warning}">
-                                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -156,7 +156,7 @@
                                             <TextBlock Text="{Binding Message}" FontSize="12" Margin="0,3,0,0"
                                                        Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding TimeAgoText}" FontSize="10.5" Margin="0,4,0,0"
-                                                       Foreground="#90A4AE"/>
+                                                       Foreground="{DynamicResource HintForegroundBrush}"/>
                                         </StackPanel>
                                         <Ellipse Grid.Column="2" Width="8" Height="8" Fill="#E53935"
                                                  VerticalAlignment="Top" Margin="6,4,0,0"/>
@@ -199,7 +199,7 @@
                                         <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
                                                 Background="{DynamicResource MutedIconBackgroundBrush}" Margin="0,0,10,0">
                                             <materialDesign:PackIcon Kind="Check" Width="18" Height="18"
-                                                                     Foreground="#78909C"
+                                                                     Foreground="{DynamicResource TextSecondaryBrush}"
                                                                      HorizontalAlignment="Center"
                                                                      VerticalAlignment="Center"/>
                                         </Border>
@@ -207,7 +207,7 @@
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             <TextBlock Text="{Binding Message}" FontSize="11.5" Margin="0,2,0,0"
-                                                       Foreground="#90A4AE" TextWrapping="Wrap"/>
+                                                       Foreground="{DynamicResource HintForegroundBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

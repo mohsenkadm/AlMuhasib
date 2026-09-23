@@ -57,7 +57,7 @@
                         Title="صافي الربح"
                         TextValue="{Binding NetProfit}"
                         Icon="CashPlus"
-                        IconBackground="#F3E5F5"
+                        IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
                         ValueForeground="#6A1B9A"
                         ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="net"/>

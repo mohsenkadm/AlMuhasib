@@ -28,7 +28,7 @@
                 <TextBlock Text="{Binding EmptyMessage, ElementName=Root}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
-                           Foreground="#78909C"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="13"
                            MaxWidth="260"/>
             </StackPanel>

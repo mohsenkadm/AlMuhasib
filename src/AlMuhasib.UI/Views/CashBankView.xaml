@@ -216,7 +216,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <Border Grid.Row="3" Background="#F8FAFC" Padding="10,10,10,12"
+                            <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" Padding="10,10,10,12"
                                     BorderBrush="#E3EDF7" BorderThickness="0,1,0,0"
                                     CornerRadius="0,0,12,12" Margin="0,8,0,0">
                                 <UniformGrid Columns="4">
@@ -244,7 +244,7 @@
                                     <controls:AnimatedStatCard Title="الصافي"
                                                                  Value="{Binding CashBoxFilteredNet}"
                                                                  Icon="ScaleBalance"
-                                                                 IconBackground="#FFF8E1"
+                                                                 IconBackground="{DynamicResource NotepadPaperBrush}"
                                                                  IconForeground="#F9A825"
                                                                  ValueForeground="#F57F17"
                                                                  Margin="4,0"/>
@@ -455,7 +455,7 @@
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="—"/>
-                                                                <Setter Property="Foreground" Value="#9E9E9E"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsVoucher}" Value="True">
                                                                         <Setter Property="Text" Value="غير مسوّى"/>
@@ -489,7 +489,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <Border Grid.Row="3" Background="#F8FAFC" Padding="10,10,10,12"
+                            <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" Padding="10,10,10,12"
                                     BorderBrush="#E3EDF7" BorderThickness="0,1,0,0"
                                     CornerRadius="0,0,12,12" Margin="0,8,0,0">
                                 <UniformGrid Columns="4">
@@ -517,7 +517,7 @@
                                     <controls:AnimatedStatCard Title="الصافي"
                                                                  Value="{Binding BankFilteredNet}"
                                                                  Icon="ScaleBalance"
-                                                                 IconBackground="#FFF8E1"
+                                                                 IconBackground="{DynamicResource NotepadPaperBrush}"
                                                                  IconForeground="#F9A825"
                                                                  ValueForeground="#F57F17"
                                                                  Margin="4,0"/>

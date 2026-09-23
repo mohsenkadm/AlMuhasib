@@ -23,7 +23,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="#FFEBEE" CornerRadius="10" Padding="10,6" Margin="0,0,12,0">
+                        <Border Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="10" Padding="10,6" Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="ShieldSearch" Width="18" Height="18" Foreground="#C62828" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="التقارير الرقابية" FontWeight="SemiBold" Foreground="#C62828" VerticalAlignment="Center"/>

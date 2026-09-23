@@ -184,7 +184,7 @@
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource TitleBarDatePill}"
-                            Background="#E8F5E9"
+                            Background="{DynamicResource DashboardKpiGreenLightBrush}"
                             BorderBrush="#C8E6C9">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="ClockOutline"
@@ -380,7 +380,7 @@
 
         <!-- Trial banner (new installs only while trial is active) -->
         <Border Grid.Row="1"
-                Background="#FFF8E1"
+                Background="{DynamicResource NotepadPaperBrush}"
                 BorderBrush="#FFE082"
                 BorderThickness="0,0,0,1"
                 Padding="16,8"
@@ -459,7 +459,7 @@
                                        Foreground="White" />
                             <TextBlock Text="{x:Static helpers:AppInfo.TaglineAr}"
                                        FontSize="10.5"
-                                       Foreground="#90A4AE"
+                                       Foreground="{DynamicResource HintForegroundBrush}"
                                        Margin="0,3,0,0" />
                         </StackPanel>
 
@@ -753,7 +753,7 @@
                                                    TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Text="اضغط لعرض الملف"
                                                    FontSize="10"
-                                                   Foreground="#78909C"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                                    Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Grid>
@@ -1904,7 +1904,7 @@
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding OpenCalculatorCommand}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#FFF3E0" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="Calculator" Width="18" Height="18"
                                                                  Foreground="#EF6C00"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1915,7 +1915,7 @@
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding OpenOnScreenKeyboardCommand}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#F3E5F5" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="Keyboard" Width="18" Height="18"
                                                                  Foreground="#7B1FA2"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1926,7 +1926,7 @@
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding GoToDashboardCommand}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="ViewDashboard" Width="18" Height="18"
                                                                  Foreground="#2E7D32"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1964,7 +1964,7 @@
                                     Margin="0,8,0,0"
                                     IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="CloudSync" Width="18" Height="18"
                                                                  Foreground="#2E7D32"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1976,7 +1976,7 @@
                                     Command="{Binding RestartFeatureTourCommand}"
                                     Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E0F7FA" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardIconBadgeCyanBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="MapMarkerPath" Width="18" Height="18"
                                                                  Foreground="#00838F"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2000,7 +2000,7 @@
                                     Command="{Binding OpenHelpWhatsAppCommand}"
                                     Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8F5E9" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"
                                                                  Foreground="#25D366"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2013,12 +2013,12 @@
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="4,12,4,6"/>
                             <TextBlock Text="{Binding WorkspaceProfileDisplay, StringFormat='الحالي: {0}'}"
-                                       FontSize="11" Foreground="#78909C" Margin="4,0,4,8"/>
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="4,0,4,8"/>
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding SeedDemoDataCommand}"
                                     Margin="0,0,0,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#FFFDE7" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="DatabasePlus" Width="18" Height="18"
                                                                  Foreground="#F9A825"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2044,7 +2044,7 @@
                                     Command="{Binding ToggleMenuCustomizerCommand}"
                                     Margin="0,4,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E8EAF6" Margin="0,0,10,0">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource DashboardKpiIndigoLightBrush}" Margin="0,0,10,0">
                                         <materialDesign:PackIcon Kind="Tune" Width="18" Height="18"
                                                                  Foreground="#3949AB"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2266,8 +2266,8 @@
                                 Cursor="Hand">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource ExitDialogButton}">
-                                    <Setter Property="Background" Value="#F5F5F5"/>
-                                    <Setter Property="Foreground" Value="#616161"/>
+                                    <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 </Style>
                             </Button.Style>
                             <TextBlock Text="إلغاء" FontSize="14" FontWeight="Medium"
@@ -2505,7 +2505,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#E8F5E9" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="F4" FontWeight="Bold" Foreground="#2E7D32"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="إضافة منتج (فاتورة البيع)" VerticalAlignment="Center"/>
@@ -2515,7 +2515,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#E8F5E9" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="F5" FontWeight="Bold" Foreground="#2E7D32"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="فحص الربح (فاتورة البيع)" VerticalAlignment="Center"/>
@@ -2525,7 +2525,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="Ctrl+S" FontWeight="Bold" Foreground="#EF6C00"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="حفظ الفاتورة / النموذج الحالي" VerticalAlignment="Center"/>
@@ -2535,7 +2535,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="Ctrl+K" FontWeight="Bold" Foreground="#EF6C00"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="بحث شامل" VerticalAlignment="Center"/>
@@ -2545,7 +2545,7 @@
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="#F3E5F5" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
                                     <TextBlock Text="Ctrl+Space" FontWeight="Bold" Foreground="#6A1B9A"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="المساعد الصوتي" VerticalAlignment="Center"/>
@@ -2973,7 +2973,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Width="44" Height="44" CornerRadius="22"
-                        Background="#FFF3E0" Margin="0,0,12,0">
+                        Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,12,0">
                     <materialDesign:PackIcon Kind="BellRing" Width="24" Height="24"
                                              Foreground="#EF6C00"
                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -2982,7 +2982,7 @@
                     <TextBlock Text="{Binding NotificationReminderTitle}"
                                FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="{Binding NotificationReminderMessage}"
-                               FontSize="12" Foreground="#546E7A" TextWrapping="Wrap"
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                                Margin="0,3,0,0" MaxWidth="360"/>
                 </StackPanel>
                 <Button Grid.Column="2"

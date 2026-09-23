@@ -35,9 +35,9 @@
             </UniformGrid>
 
             <UniformGrid Columns="3" Margin="0,0,0,12">
-                <controls:AnimatedStatCard Title="إجمالي الربح (الحالي)" TextValue="{Binding CurrentGrossProfit}" Icon="ChartLine" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                <controls:AnimatedStatCard Title="إجمالي الربح (الحالي)" TextValue="{Binding CurrentGrossProfit}" Icon="ChartLine" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 <controls:AnimatedStatCard Title="إجمالي الربح (السابق)" TextValue="{Binding PreviousGrossProfit}" Icon="ChartLineVariant" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
-                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding GrossProfitChange}" Icon="Percent" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                <controls:AnimatedStatCard Title="التغيّر" TextValue="{Binding GrossProfitChange}" Icon="Percent" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825" ValueForeground="#F9A825"/>
             </UniformGrid>
 
             <UniformGrid Columns="3">

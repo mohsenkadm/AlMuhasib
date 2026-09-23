@@ -737,7 +737,7 @@
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource SidebarNavSelectedBrush}"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="#42A5F533"/>
                             <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="AccentBar" Property="Background" Value="White"/>
+                            <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource CardBrush}"/>
                             <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF28"/>
                             <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
                             <Setter TargetName="NavText" Property="Foreground" Value="White"/>
@@ -770,17 +770,17 @@
                                     CornerRadius="10" Background="Transparent"
                                     HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="{Binding Icon}" Width="21" Height="21"
-                                                         Foreground="#90A4AE"
+                                                         Foreground="{DynamicResource HintForegroundBrush}"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Grid.Column="1" Text="{Binding Title}"
                                        VerticalAlignment="Center" Margin="10,0,0,0"
-                                       FontSize="13" FontWeight="SemiBold" Foreground="#90A4AE"
+                                       FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource HintForegroundBrush}"
                                        Visibility="{Binding DataContext.IsSidebarExpanded,
                                            RelativeSource={RelativeSource AncestorType=Window},
                                            Converter={StaticResource SidebarBoolToVis}}"/>
                             <materialDesign:PackIcon Grid.Column="2" Width="18" Height="18"
-                                                     VerticalAlignment="Center" Foreground="#78909C" Opacity="0.85"
+                                                     VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Opacity="0.85"
                                                      Visibility="{Binding DataContext.IsSidebarExpanded,
                                                          RelativeSource={RelativeSource AncestorType=Window},
                                                          Converter={StaticResource SidebarBoolToVis}}">
@@ -827,7 +827,7 @@
                                     CornerRadius="10" Background="Transparent"
                                     HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="{Binding Icon}" Width="21" Height="21"
-                                                         Foreground="#90A4AE"
+                                                         Foreground="{DynamicResource HintForegroundBrush}"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Grid.Column="1" Text="{Binding Title}"
@@ -838,7 +838,7 @@
                                            Converter={StaticResource SidebarBoolToVis}}"/>
                             <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft"
                                                      Width="18" Height="18"
-                                                     VerticalAlignment="Center" Foreground="#78909C" Opacity="0.85"
+                                                     VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Opacity="0.85"
                                                      Visibility="{Binding DataContext.IsSidebarExpanded,
                                                          RelativeSource={RelativeSource AncestorType=Window},
                                                          Converter={StaticResource SidebarBoolToVis}}"/>
@@ -883,7 +883,7 @@
                                              RelativeSource={RelativeSource AncestorType=Window},
                                              Converter={StaticResource SidebarBoolToVis}}"/>
                                 <materialDesign:PackIcon x:Name="ChildIcon" Kind="{Binding Icon}"
-                                                         Width="17" Height="17" Foreground="#90A4AE"
+                                                         Width="17" Height="17" Foreground="{DynamicResource HintForegroundBrush}"
                                                          VerticalAlignment="Center"/>
                                 <TextBlock x:Name="ChildText" Text="{Binding Title}"
                                            Margin="10,0,0,0" FontSize="12.5" Foreground="#B0BEC5"
@@ -898,7 +898,7 @@
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#1A3D62"/>
                             <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="AccentBar" Property="Background" Value="White"/>
+                            <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource CardBrush}"/>
                             <Setter TargetName="ChildIcon" Property="Foreground" Value="White"/>
                             <Setter TargetName="ChildText" Property="Foreground" Value="White"/>
                             <Setter TargetName="ChildText" Property="FontWeight" Value="SemiBold"/>
@@ -1079,7 +1079,7 @@
         <Setter Property="Padding" Value="24"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
         <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
     </Style>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -1190,7 +1190,7 @@
                                                      Width="14" Height="14"
                                                      Margin="0,0,6,0"
                                                      VerticalAlignment="Center"
-                                                     Foreground="#90A4AE"/>
+                                                     Foreground="{DynamicResource HintForegroundBrush}"/>
                             <ScrollViewer Grid.Column="1"
                                           x:Name="PART_ContentHost"
                                           VerticalAlignment="Center"/>
@@ -1366,6 +1366,7 @@
         <Setter Property="Cursor" Value="Arrow"/>
         <Setter Property="Margin" Value="8,0"/>
         <Setter Property="Background" Value="{DynamicResource DataGridRowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -1398,6 +1399,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="8,0"/>
         <Setter Property="Background" Value="{DynamicResource DataGridRowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -1433,6 +1435,8 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Cursor" Value="IBeam"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource DataGridCellForegroundBrush}"/>
     </Style>
 
     <!-- Cell style -->
@@ -1444,10 +1448,12 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{DynamicResource ChromeTabSelectedForegroundBrush}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource ChromeTabSelectedForegroundBrush}"/>
                 <Setter Property="FontWeight" Value="Medium"/>
             </Trigger>
         </Style.Triggers>
@@ -1457,6 +1463,7 @@
     <Style x:Key="ModernDataGrid" TargetType="DataGrid"
            BasedOn="{StaticResource MaterialDesignDataGrid}">
         <Setter Property="Background" Value="{DynamicResource DataGridBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="RowBackground" Value="{DynamicResource DataGridRowBrush}"/>
         <Setter Property="AlternatingRowBackground" Value="{DynamicResource DataGridRowAltBrush}"/>
@@ -1486,6 +1493,7 @@
     <Style x:Key="HotelDataGridTextElement" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
     </Style>
 
@@ -1605,7 +1613,7 @@
     </Style>
 
     <Style x:Key="InvoiceQtyMinusButton" TargetType="Button" BasedOn="{StaticResource InvoiceQtyStepButton}">
-        <Setter Property="Foreground" Value="#546E7A"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
     </Style>
 
     <Style x:Key="InvoiceDeleteRowButton" TargetType="Button">
@@ -1616,7 +1624,7 @@
         <Setter Property="Foreground" Value="#C62828"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush" Value="#EF9A9A"/>
-        <Setter Property="Background" Value="#FFEBEE"/>
+        <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1648,7 +1656,7 @@
                     Command="{Binding DataContext.DecreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     CommandParameter="{Binding}" ToolTip="نقصان"
                     IsEnabled="{Binding IsPriceEditable}"/>
-            <Border Grid.Column="1" MinWidth="52" Margin="6,0" CornerRadius="8" Background="#F0F4F8" Padding="2,0" VerticalAlignment="Center">
+            <Border Grid.Column="1" MinWidth="52" Margin="6,0" CornerRadius="8" Background="{DynamicResource MutedIconBackgroundBrush}" Padding="2,0" VerticalAlignment="Center">
                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                          Style="{StaticResource NumericCellTextBox}"
                          VerticalContentAlignment="Center"
@@ -1697,7 +1705,7 @@
                     </TextBlock.Style>
                 </TextBlock>
             </StackPanel>
-            <Border Background="#FFF8E1" CornerRadius="8" Padding="8,6"
+            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="8,6"
                     BorderBrush="#F9A825" BorderThickness="1">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -1800,7 +1808,7 @@
         <Setter Property="MinWidth" Value="400"/>
         <Setter Property="MaxWidth" Value="600"/>
         <Setter Property="Padding" Value="24"/>
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="CornerRadius" Value="16"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="RenderTransform">
@@ -1854,7 +1862,7 @@
         <Setter Property="Height" Value="44"/>
         <Setter Property="Margin" Value="8,2"/>
         <Setter Property="Padding" Value="12,0"/>
-        <Setter Property="Foreground" Value="#90A4AE"/>
+        <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
         <Setter Property="FontSize" Value="{StaticResource NormalFontSize}"/>
         <Setter Property="materialDesign:ListBoxItemAssist.CornerRadius" Value="8"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -2290,7 +2298,7 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="SubtleSeparator" TargetType="Separator">
-        <Setter Property="Background" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="Margin" Value="0,12"/>
         <Setter Property="Height" Value="1"/>
     </Style>
@@ -2536,9 +2544,9 @@
     </Style>
 
     <Style x:Key="TableSecondaryButton" TargetType="Button" BasedOn="{StaticResource TableActionBase}">
-        <Setter Property="Background" Value="#FAFAFA"/>
+        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="#CFD8DC"/>
-        <Setter Property="Foreground" Value="#546E7A"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#ECEFF1"/>
@@ -2822,7 +2830,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="#90A4AE"/>
+        <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -2857,7 +2865,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="#90A4AE"/>
+        <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -3087,7 +3095,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="#00897B"/>
-                            <Setter TargetName="Bd" Property="Background" Value="#E0F2F1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashboardKpiTealLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
@@ -3183,7 +3191,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Chip" CornerRadius="8" Padding="10,8" Background="#E0F2F1">
+                    <Border x:Name="Chip" CornerRadius="8" Padding="10,8" Background="{DynamicResource DashboardKpiTealLightBrush}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -3265,11 +3273,11 @@
     ══════════════════════════════════════════════════════════════ -->
 
     <Style x:Key="BackupOptionCard" TargetType="Border">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="CornerRadius" Value="14"/>
         <Setter Property="Padding" Value="20"/>
         <Setter Property="Margin" Value="8"/>
-        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
@@ -3630,7 +3638,7 @@
         <Setter Property="MinWidth" Value="200"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="BorderBrush" Value="#E3EDF7"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,8"/>
@@ -3766,7 +3774,7 @@
     </Style>
 
     <Style x:Key="PosProductCard" TargetType="Border">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         <Setter Property="BorderBrush" Value="#E3E8EF"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="12"/>

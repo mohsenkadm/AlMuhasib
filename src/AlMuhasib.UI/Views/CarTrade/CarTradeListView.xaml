@@ -21,7 +21,7 @@
             <Setter Property="Margin" Value="0,0,0,14"/>
         </Style>
         <Style x:Key="DetailSectionCard" TargetType="Border">
-            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="#E0E0E0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -31,7 +31,7 @@
         <Style x:Key="AvailableRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsSold}" Value="False">
-                    <Setter Property="Background" Value="#E8F5E9"/>
+                    <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -47,10 +47,10 @@
                         <Border Grid.Column="1" CornerRadius="8" Padding="8,4" Margin="8,0,0,0">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsSold}" Value="True">
-                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -70,24 +70,24 @@
                         </Border>
                     </Grid>
                     <TextBlock Margin="0,0,0,4">
-                        <Run Text="رقم العملية: " Foreground="#78909C"/>
+                        <Run Text="رقم العملية: " Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <Run Text="{Binding TransactionNumber}" FontWeight="SemiBold"/>
                     </TextBlock>
                     <TextBlock Margin="0,0,0,4">
-                        <Run Text="البائع: " Foreground="#78909C"/>
+                        <Run Text="البائع: " Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <Run Text="{Binding SellerName}"/>
                     </TextBlock>
                     <TextBlock Margin="0,0,0,4" Visibility="{Binding IsSold, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Run Text="المشتري: " Foreground="#78909C"/>
+                        <Run Text="المشتري: " Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <Run Text="{Binding BuyerName}"/>
                     </TextBlock>
                     <UniformGrid Columns="2" Margin="0,8,0,12">
                         <StackPanel Margin="0,0,4,0">
-                            <TextBlock Text="متبقي بائع" FontSize="11" Foreground="#78909C"/>
+                            <TextBlock Text="متبقي بائع" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <TextBlock Text="{Binding RemainingAmount, StringFormat=N0}" FontWeight="Bold" Foreground="#C62828"/>
                         </StackPanel>
                         <StackPanel Margin="4,0,0,0">
-                            <TextBlock Text="متبقي مشتري" FontSize="11" Foreground="#78909C"/>
+                            <TextBlock Text="متبقي مشتري" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <TextBlock Text="{Binding SaleRemainingAmount, StringFormat=N0}" FontWeight="Bold" Foreground="#1565C0"/>
                         </StackPanel>
                     </UniformGrid>
@@ -177,12 +177,12 @@
         </md:Card>
 
         <UniformGrid Grid.Row="1" Columns="6" Margin="0,0,0,12">
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="العدد" Foreground="#78909C" FontSize="12"/><TextBlock Text="{Binding SummaryTotalCount}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="متوفرة" Foreground="#78909C" FontSize="12"/><TextBlock Text="{Binding SummaryAvailableCount}" FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="مباعة" Foreground="#78909C" FontSize="12"/><TextBlock Text="{Binding SummarySoldCount}" FontSize="20" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="قيمة الشراء" Foreground="#78909C" FontSize="12"/><TextBlock Text="{Binding SummaryTotalAmount, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="المدفوع" Foreground="#78909C" FontSize="12"/><TextBlock Text="{Binding SummaryTotalPaid, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
-            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="ديون" Foreground="#78909C" FontSize="12"/><TextBlock FontSize="18" FontWeight="Bold" Foreground="#C62828"><Run Text="{Binding SummaryTotalRemaining, StringFormat=N0}"/><Run Text=" / "/><Run Text="{Binding SummarySaleRemaining, StringFormat=N0}"/></TextBlock></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="العدد" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock Text="{Binding SummaryTotalCount}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="متوفرة" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock Text="{Binding SummaryAvailableCount}" FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="مباعة" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock Text="{Binding SummarySoldCount}" FontSize="20" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="قيمة الشراء" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock Text="{Binding SummaryTotalAmount, StringFormat=N0}" FontSize="20" FontWeight="Bold"/></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="المدفوع" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock Text="{Binding SummaryTotalPaid, StringFormat=N0}" FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
+            <md:Card Padding="12" Margin="4"><StackPanel><TextBlock Text="ديون" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/><TextBlock FontSize="18" FontWeight="Bold" Foreground="#C62828"><Run Text="{Binding SummaryTotalRemaining, StringFormat=N0}"/><Run Text=" / "/><Run Text="{Binding SummarySaleRemaining, StringFormat=N0}"/></TextBlock></StackPanel></md:Card>
         </UniformGrid>
 
         <md:Card Grid.Row="2" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp2">

@@ -57,9 +57,9 @@
                         Title="متوسط التأخير"
                         TextValue="{Binding AverageOverdueDays}"
                         Icon="CalendarClock"
-                        IconBackground="#FAFAFA"
-                        IconForeground="#616161"
-                        ValueForeground="#616161"/>
+                        IconBackground="{DynamicResource BackgroundBrush}"
+                        IconForeground="{DynamicResource TextSecondaryBrush}"
+                        ValueForeground="{DynamicResource TextSecondaryBrush}"/>
                 </UniformGrid>
 
                 <!-- ═══ Charts ═══ -->

@@ -46,7 +46,7 @@
             <controls:AnimatedStatCard Title="رصيد آجل $" TextValue="{Binding CreditBalanceUsd, StringFormat=N2}"
                                        Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB" ValueForeground="#3949AB"/>
             <controls:AnimatedStatCard Title="ذهب آجل (غ)" TextValue="{Binding GoldCreditGrams, StringFormat=N3}"
-                                       Icon="Gold" IconBackground="#FFF8E1" IconForeground="#8B6914" ValueForeground="#8B6914"/>
+                                       Icon="Gold" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#8B6914" ValueForeground="#8B6914"/>
         </UniformGrid>
 
         <materialDesign:Card Grid.Row="3" Style="{StaticResource ElevatedCard}" Padding="0">

@@ -41,7 +41,7 @@
             </Setter>
         </Style>
         <Style x:Key="FieldRowCard" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="BorderBrush" Value="#E8EEF4"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
@@ -178,7 +178,7 @@
                                     </Border>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"/>
-                                        <TextBlock FontSize="11" Foreground="#78909C">
+                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                             <Run Text="{Binding EnabledCount, Mode=OneWay}"/>
                                             <Run Text=" / 8 مفعّل"/>
                                         </TextBlock>
@@ -191,7 +191,7 @@
             </Border>
 
             <!-- Fields panel -->
-            <Border x:Name="FieldsPanel" Grid.Row="2" Background="#F4F7FB" CornerRadius="18" Padding="16"
+            <Border x:Name="FieldsPanel" Grid.Row="2" Background="{DynamicResource BackgroundBrush}" CornerRadius="18" Padding="16"
                     BorderBrush="#E3EAF2" BorderThickness="1" Opacity="0">
                 <Border.RenderTransform>
                     <TranslateTransform X="24"/>
@@ -213,7 +213,7 @@
                         <StackPanel>
                             <TextBlock Text="الحقول الثمانية" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="البيان · التفعيل · المسمى الظاهر · نوع الحقل · الخيارات"
-                                       FontSize="12" Foreground="#78909C" Margin="0,2,0,0"/>
+                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
 
@@ -259,7 +259,7 @@
                                             <Border Grid.Column="0" Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="8"
                                                     Width="36" Height="36" HorizontalAlignment="Left" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Slot}" FontWeight="Bold" HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" Foreground="#546E7A"/>
+                                                           VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </Border>
 
                                             <TextBox Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"

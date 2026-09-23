@@ -1033,7 +1033,7 @@
                                 <RowDefinition Height="300"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
-                                <Border Style="{StaticResource DashboardIconBadge}" Background="#FFFDE7">
+                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource NotepadPaperBrush}">
                                     <materialDesign:PackIcon Kind="ChartPie" Width="22" Height="22"
                                                              Foreground="{StaticResource GoldAccentBrush}"
                                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>

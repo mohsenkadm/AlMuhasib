@@ -70,7 +70,7 @@
         </Border>
 
         <!-- Read-only banner -->
-        <Border Grid.Row="1" Background="#FFF3E0" BorderBrush="#FFE082" BorderThickness="1" CornerRadius="8"
+        <Border Grid.Row="1" Background="{DynamicResource DashboardKpiOrangeLightBrush}" BorderBrush="#FFE082" BorderThickness="1" CornerRadius="8"
                 Padding="12,8" Margin="0,0,0,8" VerticalAlignment="Top" Panel.ZIndex="5"
                 Visibility="{Binding ShowReadOnlyBanner, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel Orientation="Horizontal">
@@ -400,7 +400,7 @@
                             <Run Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontWeight="Bold"/>
                         </TextBlock>
 
-                        <Border Background="#E8F5E9" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,12"
                                 Visibility="{Binding IsRoomService, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="يُحاسَب على الغرفة — لا حاجة لدفع نقدي" TextWrapping="Wrap" Foreground="#2E7D32"/>
                         </Border>
@@ -420,7 +420,7 @@
                             <TextBox md:HintAssist.Hint="المبلغ المستلم" Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" Margin="0,0,0,8"
                                      IsEnabled="{Binding IsCashPayment}"/>
-                            <Border Background="#E8F5E9" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,12"
                                     Visibility="{Binding ShowChangeDue, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock>
                                     <Run Text="الباقي للعميل:"/>

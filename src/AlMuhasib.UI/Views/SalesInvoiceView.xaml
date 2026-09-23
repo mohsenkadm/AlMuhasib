@@ -79,7 +79,7 @@
                     </Grid>
                 </Border>
 
-                <Border Margin="0,0,0,12" Padding="14,10" CornerRadius="10" Background="#FFF8E1"
+                <Border Margin="0,0,0,12" Padding="14,10" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}"
                         BorderBrush="#FFB300" BorderThickness="1"
                         Visibility="{Binding HasInvoiceWarnings, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
@@ -177,10 +177,10 @@
                                 <Border CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding HasCustomerOutstandingBalance}" Value="True">
-                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsCustomerBalanceLoading}" Value="True">
                                                     <Setter Property="Background" Value="#ECEFF1"/>
@@ -245,7 +245,7 @@
                                     Visibility="{Binding ShowCustomerAndPayment, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="طريقة الدفع:"
                                        FontSize="13"
-                                       Foreground="#616161"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,12,0" />
 
@@ -331,7 +331,7 @@
                 <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="10"
                                      Padding="14,10"
                                      Margin="0,0,0,16"
-                                     Background="#FFEBEE"
+                                     Background="{DynamicResource DashboardKpiRedLightBrush}"
                                      materialDesign:ElevationAssist.Elevation="Dp0"
                                      Visibility="{Binding IsCreditPayment, Converter={StaticResource BoolToVis}}">
                     <Grid>
@@ -400,7 +400,7 @@
                                            Foreground="#2E7D32"
                                            VerticalAlignment="Center" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <Border Width="240" Background="#E8F5E9" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <Border Width="240" Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
@@ -539,7 +539,7 @@
                                                        MaxHeight="48"
                                                        VerticalAlignment="Center"
                                                        ToolTip="{Binding UsageInstructions}"
-                                                       Foreground="#546E7A"/>
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -667,11 +667,11 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- ITEMS SUMMARY                                  -->
                 <!-- ═══════════════════════════════════════════ -->
-                <Border CornerRadius="8" Background="#F5F5F5" Padding="16,8" Margin="0,0,0,16">
+                <Border CornerRadius="8" Background="{DynamicResource MutedIconBackgroundBrush}" Padding="16,8" Margin="0,0,0,16">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalItemCount}" FontSize="14" FontWeight="Bold" Foreground="#1B5E20" VerticalAlignment="Center" Margin="0,0,20,0"/>
-                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalQuantity, StringFormat=N0}" FontSize="14" FontWeight="Bold" Foreground="#1B5E20" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -757,7 +757,7 @@
                                     <TextBlock Grid.Column="0"
                                                Text="المجموع:"
                                                FontSize="11"
-                                               Foreground="#616161"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}"

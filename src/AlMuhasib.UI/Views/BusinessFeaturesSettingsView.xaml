@@ -110,11 +110,11 @@
                     </StackPanel>
                     <controls:FeatureToggleCard Title="تفعيل النسخ الاحتياطي التلقائي"
                                                 Description="نسخ قاعدة البيانات تلقائياً حسب الجدولة"
-                                                Icon="ClockCheck" IconBackground="#F3E5F5" IconForeground="#6A1B9A"
+                                                Icon="ClockCheck" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A"
                                                 IsChecked="{Binding AutoBackupEnabled}"/>
                     <Expander IsExpanded="{Binding AutoBackupEnabled}" Margin="0,8,0,0">
                         <Expander.Header>
-                            <TextBlock Text="خيارات الجدولة والمجلد" FontSize="13" FontWeight="SemiBold" Foreground="#616161"/>
+                            <TextBlock Text="خيارات الجدولة والمجلد" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </Expander.Header>
                         <StackPanel Margin="0,12,0,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -174,7 +174,7 @@
                                                     IsChecked="{Binding WarehouseTransfers}"/>
                         <controls:FeatureToggleCard Title="بيع المواد بالتعبئة"
                                                     Description="أنواع تعبئة عامة (قطعة/كارتون/متر) وكميات لكل منتج واختيارها في الفواتير"
-                                                    Icon="PackageVariant" IconBackground="#FFF8E1" IconForeground="#F9A825"
+                                                    Icon="PackageVariant" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825"
                                                     IsChecked="{Binding UnitsOfMeasure}"/>
                         <controls:FeatureToggleCard Title="أجور النقل"
                                                     Description="حقل أجور النقل في فواتير البيع والشراء والأقساط مع الظهور في الطباعة"
@@ -194,7 +194,7 @@
                                                     IsChecked="{Binding ExpiryTracking}"/>
                         <controls:FeatureToggleCard Title="سيريال نمبر"
                                                     Description="تتبع الأرقام التسلسلية"
-                                                    Icon="Barcode" IconBackground="#F3E5F5" IconForeground="#6A1B9A"
+                                                    Icon="Barcode" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A"
                                                     IsChecked="{Binding SerialNumbers}"/>
                         <controls:FeatureToggleCard Title="عرض سعر المنتجات"
                                                     Description="تفعيل أنواع التسعير وأسعار البيع والشراء للمنتجات في الفواتير"
@@ -218,7 +218,7 @@
                                                     IsChecked="{Binding LoyaltySystem}"/>
                         <controls:FeatureToggleCard Title="عروض المنتجات"
                                                     Description="اشترِ كمية معيّنة من منتج واحصل على منتج آخر مجاناً — تُطبَّق تلقائياً في فاتورة البيع"
-                                                    Icon="Sale" IconBackground="#FFF8E1" IconForeground="#F9A825"
+                                                    Icon="Sale" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825"
                                                     IsChecked="{Binding ProductOffers}"/>
                         <controls:FeatureToggleCard Title="المندوبين"
                                                     Description="إدارة مندوبي المبيعات وعمولاتهم وأهدافهم وتحصيلاتهم وربطهم بالعملاء والفواتير مع تقارير الأداء"

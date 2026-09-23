@@ -164,7 +164,7 @@
                                     Margin="0,0,12,0">
                             <TextBlock Text="طريقة الدفع:"
                                        FontSize="13"
-                                       Foreground="#616161"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,12,0" />
 
@@ -507,11 +507,11 @@
                 </materialDesign:Card>
 
                 <!-- ITEMS SUMMARY -->
-                <Border CornerRadius="8" Background="#F5F5F5" Padding="16,8" Margin="0,0,0,16">
+                <Border CornerRadius="8" Background="{DynamicResource MutedIconBackgroundBrush}" Padding="16,8" Margin="0,0,0,16">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalItemCount}" FontSize="14" FontWeight="Bold" Foreground="#1A237E" VerticalAlignment="Center" Margin="0,0,20,0"/>
-                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalQuantity, StringFormat=N0}" FontSize="14" FontWeight="Bold" Foreground="#1A237E" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -566,7 +566,7 @@
                                     <TextBlock Grid.Column="0"
                                                Text="المجموع:"
                                                FontSize="11"
-                                               Foreground="#616161"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}"

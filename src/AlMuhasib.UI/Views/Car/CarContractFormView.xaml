@@ -207,12 +207,12 @@
                             <StackPanel Margin="0,0,8,12">
                                 <TextBlock Text="المبلغ المتبقي (دولار)" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding RemainingAmount, StringFormat=N0}" IsReadOnly="True"
-                                         Style="{StaticResource FilledTextBox}" Background="#F5F5F5"/>
+                                         Style="{StaticResource FilledTextBox}" Background="{DynamicResource MutedIconBackgroundBrush}"/>
                             </StackPanel>
                             <StackPanel Margin="8,0,0,12">
                                 <TextBlock Text="السعر كتابة" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding CarPriceInWords}" IsReadOnly="True"
-                                         Style="{StaticResource FilledTextBox}" Background="#F5F5F5" TextWrapping="Wrap"/>
+                                         Style="{StaticResource FilledTextBox}" Background="{DynamicResource MutedIconBackgroundBrush}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </UniformGrid>
                         <StackPanel>

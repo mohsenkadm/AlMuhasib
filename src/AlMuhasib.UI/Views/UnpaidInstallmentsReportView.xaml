@@ -57,9 +57,9 @@
                         Title="أقدم تأخير"
                         TextValue="{Binding OldestOverdueDays}"
                         Icon="Clock"
-                        IconBackground="#FAFAFA"
-                        IconForeground="#616161"
-                        ValueForeground="#616161"/>
+                        IconBackground="{DynamicResource BackgroundBrush}"
+                        IconForeground="{DynamicResource TextSecondaryBrush}"
+                        ValueForeground="{DynamicResource TextSecondaryBrush}"/>
                 </UniformGrid>
 
                 <!-- ═══ Chart ═══ -->

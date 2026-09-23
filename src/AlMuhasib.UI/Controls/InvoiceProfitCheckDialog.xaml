@@ -115,15 +115,15 @@
                             <Border Margin="0,0,0,8" CornerRadius="12" Padding="12,10" BorderThickness="1">
                                 <Border.Style>
                                     <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#FAFAFA"/>
+                                        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
                                         <Setter Property="BorderBrush" Value="#E0E0E0"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsLoss}" Value="True">
-                                                <Setter Property="Background" Value="#FFEBEE"/>
+                                                <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                                 <Setter Property="BorderBrush" Value="#EF9A9A"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsProfit}" Value="True">
-                                                <Setter Property="Background" Value="#E8F5E9"/>
+                                                <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                                 <Setter Property="BorderBrush" Value="#A5D6A7"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -140,21 +140,21 @@
                                         <WrapPanel Margin="0,6,0,0">
                                             <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
                                                     BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
-                                                <TextBlock FontSize="11" Foreground="#546E7A">
+                                                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                                     <Run Text="كمية:"/>
                                                     <Run Text="{Binding QuantityLabel, Mode=OneWay}" FontWeight="Bold"/>
                                                 </TextBlock>
                                             </Border>
                                             <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
                                                     BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
-                                                <TextBlock FontSize="11" Foreground="#546E7A">
+                                                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                                     <Run Text="شراء:"/>
                                                     <Run Text="{Binding PurchasePriceLabel, Mode=OneWay}" FontWeight="Bold"/>
                                                 </TextBlock>
                                             </Border>
                                             <Border Background="{DynamicResource CardBrush}" CornerRadius="8" Padding="8,3" Margin="0,0,6,4"
                                                     BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
-                                                <TextBlock FontSize="11" Foreground="#546E7A">
+                                                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                                     <Run Text="بيع:"/>
                                                     <Run Text="{Binding SalePriceLabel, Mode=OneWay}" FontWeight="Bold"/>
                                                 </TextBlock>
@@ -179,7 +179,7 @@
                                             <TextBlock Text="الربح" FontSize="10" HorizontalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#546E7A"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsLoss}" Value="True">
                                                                 <Setter Property="Foreground" Value="#FFCDD2"/>
@@ -195,7 +195,7 @@
                                                        HorizontalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#37474F"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsLoss}" Value="True">
                                                                 <Setter Property="Foreground" Value="White"/>
@@ -216,7 +216,7 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <Border Grid.Row="2" Background="#F5F9F6" BorderBrush="#E0E8E2" BorderThickness="0,1,0,0" Padding="16,12">
+            <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#E0E8E2" BorderThickness="0,1,0,0" Padding="16,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -246,20 +246,20 @@
                                 <Setter Property="Background" Value="#ECEFF1"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsOverallLoss}" Value="True">
-                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsOverallProfit}" Value="True">
-                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                        <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
                         <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="إجمالي ربح الفاتورة" FontSize="11" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                            <TextBlock Text="إجمالي ربح الفاتورة" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#37474F"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                         <Setter Property="Text" Value="{Binding TotalProfit, StringFormat='{}{0:N0} د.ع'}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsOverallLoss}" Value="True">
@@ -277,7 +277,7 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="3" Background="#FAFBFD" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
+            <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
                     CornerRadius="0,0,18,18" Padding="16,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button Content="إغلاق" Click="Close_Click"

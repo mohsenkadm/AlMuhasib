@@ -137,7 +137,7 @@
 
                         <!-- Installment Type -->
                         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,12,12,0" VerticalAlignment="Center">
-                            <TextBlock Text="نوع القسط:" FontSize="14" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#616161"/>
+                            <TextBlock Text="نوع القسط:" FontSize="14" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <RadioButton Content="يدوي" FontSize="13"
                                          IsChecked="{Binding SelectedInstallmentType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Manual}"
                                          Style="{StaticResource MaterialDesignChoiceChipRadioButton}"
@@ -477,9 +477,9 @@
                 <!-- ITEMS SUMMARY -->
                 <Border CornerRadius="8" Background="{DynamicResource AccentLightBrush}" Padding="16,8" Margin="0,0,0,16">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="عدد الأصناف:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalItemCount}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}" VerticalAlignment="Center" Margin="0,0,20,0"/>
-                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="إجمالي الكميات:" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding TotalQuantity, StringFormat=N0}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -553,7 +553,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="المجموع:" FontSize="11" Foreground="#616161" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="0" Text="المجموع:" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
                                 </Grid>
 
@@ -810,7 +810,7 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
                                                 <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
-                                                        Background="#E8F5E9" VerticalAlignment="Center">
+                                                        Background="{DynamicResource DashboardKpiGreenLightBrush}" VerticalAlignment="Center">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Visibility" Value="Collapsed"/>

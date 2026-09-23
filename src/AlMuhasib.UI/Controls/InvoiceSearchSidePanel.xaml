@@ -112,7 +112,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="#546E7A">
+                            <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
                                 <Run Text="النتائج:" FontWeight="SemiBold"/>
                                 <Run Text="{Binding InvoiceSearchResults.Count, Mode=OneWay}"/>
                             </TextBlock>
@@ -155,7 +155,7 @@
                 </Border>
 
                 <!-- Results -->
-                <Grid Grid.Row="2" Margin="16,10,16,8" Background="#F5F8FB">
+                <Grid Grid.Row="2" Margin="16,10,16,8" Background="{DynamicResource BackgroundBrush}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <ItemsControl ItemsSource="{Binding InvoiceSearchResults}">
                             <ItemsControl.ItemTemplate>
@@ -182,14 +182,14 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding InvoiceNumber}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                                <TextBlock Text="{Binding Subtitle}" FontSize="11" Margin="0,4,0,0" Foreground="#78909C"/>
+                                                <TextBlock Text="{Binding Subtitle}" FontSize="11" Margin="0,4,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
                                                 <TextBlock Text="{Binding AmountText}" FontWeight="SemiBold" FontSize="13"
                                                            Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                                                 <materialDesign:PackIcon Kind="ChevronLeft" Width="18" Height="18"
                                                                          HorizontalAlignment="Right" Margin="0,4,0,0"
-                                                                         Foreground="#78909C"/>
+                                                                         Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -202,7 +202,7 @@
                                 Visibility="{Binding IsInvoiceSearchLoading, Converter={StaticResource BoolVis}}">
                         <ProgressBar IsIndeterminate="True" Width="120" Height="4"/>
                         <TextBlock Text="جاري البحث..." FontSize="12" Margin="0,10,0,0"
-                                   Foreground="#78909C" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
@@ -221,11 +221,11 @@
                             </Style>
                         </StackPanel.Style>
                         <materialDesign:PackIcon Kind="FileSearchOutline" Width="48" Height="48"
-                                                 Foreground="#78909C" HorizontalAlignment="Center" Opacity="0.5"/>
+                                                 Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Opacity="0.5"/>
                         <TextBlock Text="لا توجد نتائج" FontSize="14" FontWeight="SemiBold" Margin="0,12,0,4"
-                                   Foreground="#78909C" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="جرّب البحث برقم الفاتورة أو اسم الطرف" FontSize="11"
-                                   Foreground="#78909C" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" TextAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
@@ -234,9 +234,9 @@
                         BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="16,10">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <materialDesign:PackIcon Kind="GestureTap" Width="16" Height="16"
-                                                 Foreground="#78909C" VerticalAlignment="Center"/>
+                                                 Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="اضغط على الفاتورة لتحميلها للتعديل" FontSize="11" Margin="6,0,0,0"
-                                   Foreground="#78909C" VerticalAlignment="Center"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </Grid>

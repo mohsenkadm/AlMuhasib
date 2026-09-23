@@ -31,17 +31,17 @@
             </Grid>
 
             <UniformGrid Columns="4" Margin="0,0,0,12">
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات اليوم" Foreground="#78909C"/><TextBlock Text="{Binding TodayTransactions}" FontSize="24" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات الشهر" Foreground="#78909C"/><TextBlock Text="{Binding MonthTransactions}" FontSize="24" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="غير مسددة" Foreground="#78909C"/><TextBlock Text="{Binding UnpaidTransactions}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="المتبقي الكلي" Foreground="#78909C"/><TextBlock Text="{Binding TotalRemaining, StringFormat=N0}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات اليوم" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding TodayTransactions}" FontSize="24" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات الشهر" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding MonthTransactions}" FontSize="24" FontWeight="Bold"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="غير مسددة" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding UnpaidTransactions}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="المتبقي الكلي" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding TotalRemaining, StringFormat=N0}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/></StackPanel></md:Card>
             </UniformGrid>
 
             <UniformGrid Columns="4" Margin="0,0,0,16">
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات شراء" Foreground="#78909C"/><TextBlock Text="{Binding BuyCount}" FontSize="22" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات بيع" Foreground="#78909C"/><TextBlock Text="{Binding SellCount}" FontSize="22" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="قيمة الشراء" Foreground="#78909C"/><TextBlock Text="{Binding TotalBuyValue, StringFormat=N0}" FontSize="22" FontWeight="Bold"/></StackPanel></md:Card>
-                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="قيمة البيع" Foreground="#78909C"/><TextBlock Text="{Binding TotalSellValue, StringFormat=N0}" FontSize="22" FontWeight="Bold"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات شراء" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding BuyCount}" FontSize="22" FontWeight="Bold" Foreground="#2E7D32"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="عمليات بيع" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding SellCount}" FontSize="22" FontWeight="Bold" Foreground="#E65100"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="قيمة الشراء" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding TotalBuyValue, StringFormat=N0}" FontSize="22" FontWeight="Bold"/></StackPanel></md:Card>
+                <md:Card Padding="16" Margin="4"><StackPanel><TextBlock Text="قيمة البيع" Foreground="{DynamicResource TextSecondaryBrush}"/><TextBlock Text="{Binding TotalSellValue, StringFormat=N0}" FontSize="22" FontWeight="Bold"/></StackPanel></md:Card>
             </UniformGrid>
 
             <Grid Margin="0,0,0,16">

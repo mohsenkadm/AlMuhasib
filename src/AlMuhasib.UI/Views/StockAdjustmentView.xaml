@@ -79,7 +79,7 @@
                                   FontSize="14" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal"
                                     HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0">
-                            <Border Background="#FFF3E0" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
                                 <TextBlock FontSize="13" Foreground="#E65100">
                                     <Run Text="عدد التسويات:" FontWeight="SemiBold"/>
                                     <Run Text="{Binding ChangedCount, Mode=OneWay}" FontWeight="Bold"/>
@@ -148,7 +148,7 @@
                                             <TextBlock Text="{Binding CurrentQuantity, StringFormat=N0}"
                                                        HorizontalAlignment="Center"
                                                        FontWeight="SemiBold"
-                                                       Foreground="#616161"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        VerticalAlignment="Center"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -176,7 +176,7 @@
                                                        VerticalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#9E9E9E"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsPositiveDifference}" Value="True">
                                                                 <Setter Property="Foreground" Value="#2E7D32"/>

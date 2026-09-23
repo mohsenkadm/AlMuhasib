@@ -29,7 +29,7 @@
                     <controls:AnimatedStatCard Title="قيمة المخزون" TextValue="{Binding TotalStockValue}" Icon="Warehouse" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="stock"/>
                     <controls:AnimatedStatCard Title="عدد الأصناف" TextValue="{Binding ProductCount}" Icon="PackageVariant" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100" ValueForeground="#E65100"/>
-                    <controls:AnimatedStatCard Title="متوسط الهامش" TextValue="{Binding AverageMarginPercent}" Icon="Percent" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                    <controls:AnimatedStatCard Title="متوسط الهامش" TextValue="{Binding AverageMarginPercent}" Icon="Percent" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <controls:ChartCard Title="{Binding ChartTitle}">
