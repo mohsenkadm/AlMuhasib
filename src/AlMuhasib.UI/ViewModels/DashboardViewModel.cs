@@ -210,7 +210,7 @@ public partial class DashboardViewModel : ViewModelBase
         {
             Title = "تفاصيل الأرباح الصافية",
             Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
-            Formula = "الصافي = المبيعات − فواتير المشتريات − الرصيد الافتتاحي للمخزون − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
+            Formula = "الصافي = صافي المبيعات − صافي المشتريات − الرصيد الافتتاحي للمخزون − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
             ResultLabel = "الأرباح الصافية",
             ResultAmount = NetProfit,
             Lines =
@@ -218,16 +218,16 @@ public partial class DashboardViewModel : ViewModelBase
                 new AmountBreakdownLine
                 {
                     Operator = "+",
-                    Label = "إجمالي المبيعات",
+                    Label = "صافي المبيعات",
                     Amount = NetProfitSales,
-                    Description = "فواتير البيع والأقساط"
+                    Description = "فواتير البيع والأقساط − مرتجعات المبيعات"
                 },
                 new AmountBreakdownLine
                 {
                     Operator = "−",
-                    Label = "فواتير المشتريات",
+                    Label = "صافي المشتريات",
                     Amount = NetProfitPurchases,
-                    Description = "مجموع فواتير المشتريات المسجّلة"
+                    Description = "فواتير المشتريات − مرتجعات المشتريات"
                 },
                 new AmountBreakdownLine
                 {

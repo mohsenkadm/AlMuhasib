@@ -275,7 +275,7 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private async Task ReturnInvoice(PurchasesReportRow? row)
     {
-        if (row is null) return;
+        if (row is null || row.IsReturn) return;
         if (!BeautifulMessageDialog.ShowConfirm(
                 $"إنشاء مرتجع مشتريات من الفاتورة {row.InvoiceNumber}؟\nستُخصم الكميات من المخزن."))
             return;
@@ -333,13 +333,13 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المشتريات.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
+        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
+            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
             r.TotalAmount, r.Discount, r.NetAmount, r.PaidAmount, r.RemainingAmount
         }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
         _exportService.ExportToExcel(dlg.FileName, "المشتريات", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -347,14 +347,14 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "رقم الفاتورة", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
+        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "المورد", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "المدفوع", "المتبقي" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.InvoiceNumber, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
+            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.SupplierName, r.WarehouseName, r.PaymentMethod,
             r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
             r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0")
         }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
+        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
         _exportService.PrintTable("تقرير المشتريات", cols, rows);
     }
 }

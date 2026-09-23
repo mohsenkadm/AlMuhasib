@@ -72,7 +72,9 @@ public static class CloudProductCostHelper
     {
         var query = context.InvoiceItems
             .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null && ii.Invoice!.InvoiceType == InvoiceType.Purchase);
+            .Where(ii => ii.ProductId != null
+                         && (ii.Invoice!.InvoiceType == InvoiceType.Purchase
+                             || ii.Invoice.InvoiceType == InvoiceType.PurchaseReturn));
 
         if (productIds is not null)
         {
@@ -83,6 +85,23 @@ public static class CloudProductCostHelper
         }
 
         var items = await query.ToListAsync();
-        return items.GroupBy(ii => ii.ProductId!.Value).ToDictionary(g => g.Key, g => g.ToList());
+        return items
+            .GroupBy(ii => ii.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(ToSignedPurchaseItem).ToList());
+    }
+
+    private static CloudInvoiceItem ToSignedPurchaseItem(CloudInvoiceItem item)
+    {
+        if (item.Invoice?.InvoiceType != InvoiceType.PurchaseReturn)
+            return item;
+
+        return new CloudInvoiceItem
+        {
+            ProductId = item.ProductId,
+            Quantity = -Math.Abs(item.Quantity),
+            TotalPrice = -Math.Abs(item.TotalPrice),
+            UnitPrice = item.UnitPrice,
+            Invoice = item.Invoice
+        };
     }
 }

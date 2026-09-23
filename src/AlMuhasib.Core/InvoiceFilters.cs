@@ -4,9 +4,30 @@ using AlMuhasib.Core.Models;
 
 namespace AlMuhasib.Core;
 
-/// <summary>استعلامات الفواتير — استبعاد الأرصدة الافتتاحية من المبيعات والأرباح والمشتريات التشغيلية</summary>
+/// <summary>
+/// استعلامات الفواتير — استبعاد الأرصدة الافتتاحية من المبيعات والأرباح والمشتريات التشغيلية،
+/// وخصم مرتجعات المبيعات/المشتريات من الصافي (ممارسة محاسبية تجارية عراقية).
+/// </summary>
 public static class InvoiceFilters
 {
+    public static bool IsReturnType(InvoiceType type) =>
+        type is InvoiceType.SaleReturn or InvoiceType.PurchaseReturn;
+
+    /// <summary>مبلغ موقّع: المرتجع سالب، غير ذلك موجب.</summary>
+    public static decimal SignedNetAmount(InvoiceType type, decimal netAmount) =>
+        IsReturnType(type) ? -netAmount : netAmount;
+
+    public static decimal SignedNetAmount(Invoice invoice) =>
+        SignedNetAmount(invoice.InvoiceType, invoice.NetAmount);
+
+    /// <summary>كمية بند موقّعة لمرتجع المبيعات (سالب).</summary>
+    public static decimal SignedSaleLineQuantity(InvoiceType type, decimal quantity) =>
+        type == InvoiceType.SaleReturn ? -Math.Abs(quantity) : quantity;
+
+    /// <summary>قيمة بند موقّعة لمرتجع المبيعات (سالب).</summary>
+    public static decimal SignedSaleLineAmount(InvoiceType type, decimal amount) =>
+        type == InvoiceType.SaleReturn ? -Math.Abs(amount) : amount;
+
     public static IQueryable<Invoice> ForProfitAndSalesTotals(
         IQueryable<Invoice> invoices,
         IQueryable<InstallmentPlan> plans)
@@ -14,10 +35,19 @@ public static class InvoiceFilters
             (i.InvoiceType == InvoiceType.Sale
              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
             || (i.InvoiceType == InvoiceType.Installment
-                && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance)));
+                && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
+            || i.InvoiceType == InvoiceType.SaleReturn);
 
     public static IQueryable<Invoice> ForPurchasesTotals(IQueryable<Invoice> invoices)
         => invoices.Where(i =>
-            i.InvoiceType == InvoiceType.Purchase
-            && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)));
+            (i.InvoiceType == InvoiceType.Purchase
+             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+            || i.InvoiceType == InvoiceType.PurchaseReturn);
+
+    public static decimal SumSignedNet(IEnumerable<Invoice> invoices)
+        => invoices.Sum(SignedNetAmount);
+
+    public static decimal SumSignedNet(
+        IEnumerable<(InvoiceType Type, decimal NetAmount)> items)
+        => items.Sum(x => SignedNetAmount(x.Type, x.NetAmount));
 }

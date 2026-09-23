@@ -328,28 +328,28 @@ public sealed partial class CloudReportService
         if (warehouseId.HasValue) query = query.Where(i => i.WarehouseId == warehouseId.Value);
 
         var invoices = await query.ToListAsync();
-        var total = invoices.Sum(i => i.NetAmount);
+        var total = CloudInvoiceFilters.SumSignedNet(invoices);
         var rows = invoices.GroupBy(i => i.PaymentMethod)
             .Select(g => new SalesByPaymentMethodRow
             {
                 PaymentMethod = PaymentMethodLabel(g.Key),
                 InvoiceCount = g.Count(),
-                Amount = g.Sum(x => x.NetAmount),
-                SharePercent = total > 0 ? Math.Round(g.Sum(x => x.NetAmount) / total * 100, 1) : 0
+                Amount = g.Sum(CloudInvoiceFilters.SignedNetAmount),
+                SharePercent = total > 0 ? Math.Round(g.Sum(CloudInvoiceFilters.SignedNetAmount) / total * 100, 1) : 0
             })
             .OrderByDescending(r => r.Amount).ToList();
 
         return new SalesByPaymentMethodReportResult
         {
             TotalSales = total,
-            CashSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(i => i.NetAmount),
-            CreditSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Credit).Sum(i => i.NetAmount),
-            InstallmentSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Installment).Sum(i => i.NetAmount),
+            CashSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(CloudInvoiceFilters.SignedNetAmount),
+            CreditSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Credit).Sum(CloudInvoiceFilters.SignedNetAmount),
+            InstallmentSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Installment).Sum(CloudInvoiceFilters.SignedNetAmount),
             InvoiceCount = invoices.Count,
             Rows = rows,
             MethodChart = rows.Select(r => new NameAmountPoint { Name = r.PaymentMethod, Amount = r.Amount }).ToList(),
             DailyChart = invoices.GroupBy(i => i.Date.Date)
-                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(x => x.NetAmount) })
+                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(CloudInvoiceFilters.SignedNetAmount) })
                 .OrderBy(x => x.Date).ToList()
         };
     }
@@ -380,10 +380,10 @@ public sealed partial class CloudReportService
             {
                 Date = g.Key,
                 InvoiceCount = g.Count(),
-                CashSales = g.Where(x => x.PaymentMethod == PaymentMethod.Cash).Sum(x => x.NetAmount),
-                CreditSales = g.Where(x => x.PaymentMethod == PaymentMethod.Credit).Sum(x => x.NetAmount),
-                InstallmentSales = g.Where(x => x.PaymentMethod == PaymentMethod.Installment).Sum(x => x.NetAmount),
-                TotalSales = g.Sum(x => x.NetAmount),
+                CashSales = g.Where(x => x.PaymentMethod == PaymentMethod.Cash).Sum(CloudInvoiceFilters.SignedNetAmount),
+                CreditSales = g.Where(x => x.PaymentMethod == PaymentMethod.Credit).Sum(CloudInvoiceFilters.SignedNetAmount),
+                InstallmentSales = g.Where(x => x.PaymentMethod == PaymentMethod.Installment).Sum(CloudInvoiceFilters.SignedNetAmount),
+                TotalSales = g.Sum(CloudInvoiceFilters.SignedNetAmount),
                 DiscountAmount = g.Sum(x => x.DiscountAmount),
                 CompanyFees = fees
             };
@@ -413,7 +413,7 @@ public sealed partial class CloudReportService
         if (warehouseId.HasValue) query = query.Where(i => i.WarehouseId == warehouseId.Value);
 
         var invoices = await query.ToListAsync();
-        var total = invoices.Sum(i => i.NetAmount);
+        var total = CloudInvoiceFilters.SumSignedNet(invoices);
 
         var warehouseRows = invoices.GroupBy(i => i.Warehouse?.Name ?? "—")
             .Select(g => new SalesByWarehouseUserRow
@@ -421,8 +421,8 @@ public sealed partial class CloudReportService
                 GroupType = "مخزن",
                 Name = g.Key,
                 InvoiceCount = g.Count(),
-                Amount = g.Sum(x => x.NetAmount),
-                SharePercent = total > 0 ? Math.Round(g.Sum(x => x.NetAmount) / total * 100, 1) : 0
+                Amount = g.Sum(CloudInvoiceFilters.SignedNetAmount),
+                SharePercent = total > 0 ? Math.Round(g.Sum(CloudInvoiceFilters.SignedNetAmount) / total * 100, 1) : 0
             }).OrderByDescending(r => r.Amount).ToList();
 
         var userRows = invoices.GroupBy(i => string.IsNullOrWhiteSpace(i.CreatedBy) ? "—" : i.CreatedBy!)
@@ -431,8 +431,8 @@ public sealed partial class CloudReportService
                 GroupType = "مستخدم",
                 Name = g.Key,
                 InvoiceCount = g.Count(),
-                Amount = g.Sum(x => x.NetAmount),
-                SharePercent = total > 0 ? Math.Round(g.Sum(x => x.NetAmount) / total * 100, 1) : 0
+                Amount = g.Sum(CloudInvoiceFilters.SignedNetAmount),
+                SharePercent = total > 0 ? Math.Round(g.Sum(CloudInvoiceFilters.SignedNetAmount) / total * 100, 1) : 0
             }).OrderByDescending(r => r.Amount).ToList();
 
         return new SalesByWarehouseUserReportResult
@@ -508,7 +508,7 @@ public sealed partial class CloudReportService
             bankQ = bankQ.Where(v => v.Date < EndOfDay(to));
         }
 
-        var sales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var sales = await CloudInvoiceFilters.SumSignedNetAsync(salesQ);
         var cogs = await CalculateCogsAsync(context, from, EndOfDay(to));
         var expenses = await expQ.SumAsync(e => (decimal?)e.Amount) ?? 0;
         var bankFees = await bankQ.SumAsync(v => (decimal?)v.BankFees) ?? 0;
@@ -1321,7 +1321,7 @@ public sealed partial class CloudReportService
             .Include(ii => ii.Product)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
         if (from.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date < EndOfDay(to));
         if (warehouseId.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
@@ -1344,8 +1344,8 @@ public sealed partial class CloudReportService
         {
             var avg = CloudProductCostHelper.ComputeAverageUnitCostForProduct(
                 purchasesByProduct.GetValueOrDefault(g.Key) ?? [], stocks, g.Key);
-            var qty = g.Sum(x => x.Quantity);
-            var revenue = g.Sum(x => x.TotalPrice);
+            var qty = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity));
+            var revenue = g.Sum(x => InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice));
             var cogs = Math.Round(qty * avg, 0);
             return new CogsReportRow
             {
@@ -1379,7 +1379,7 @@ public sealed partial class CloudReportService
                     {
                         var avg = CloudProductCostHelper.ComputeAverageUnitCostForProduct(
                             purchasesByProduct.GetValueOrDefault(item.ProductId!.Value) ?? [], stocks, item.ProductId!.Value);
-                        dayCogs += Math.Round(item.Quantity * avg, 0);
+                        dayCogs += Math.Round(InvoiceFilters.SignedSaleLineQuantity(item.Invoice!.InvoiceType, item.Quantity) * avg, 0);
                     }
                     return new DailyAmountPoint { Date = g.Key, Amount = dayCogs };
                 }).OrderBy(x => x.Date).ToList()
@@ -1445,7 +1445,7 @@ public sealed partial class CloudReportService
             distQ = distQ.Where(d => d.Date < EndOfDay(to));
         }
 
-        var sales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var sales = await CloudInvoiceFilters.SumSignedNetAsync(salesQ);
         var cogs = await CalculateCogsAsync(context, from, EndOfDay(to));
         var expenses = await expQ.SumAsync(e => (decimal?)e.Amount) ?? 0;
         var bankFees = await bankQ.SumAsync(v => (decimal?)v.BankFees) ?? 0;
@@ -1513,9 +1513,7 @@ public sealed partial class CloudReportService
             .SumAsync(c => c.Amount);
         var profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
 
-        var sales = await CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-            .Where(i => i.Date <= endOfDay)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var sales = await CloudInvoiceFilters.SumSignedNetAsync(CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans).Where(i => i.Date <= endOfDay));
         var cogs = await CalculateCogsAsync(context, null, endOfDay.AddTicks(1));
         var expenses = await context.Expenses.Where(e => e.Date <= endOfDay).SumAsync(e => (decimal?)e.Amount) ?? 0;
         var distributed = await context.ProfitDistributions

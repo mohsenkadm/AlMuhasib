@@ -199,6 +199,9 @@ public class SalesReportRow
     public string? CustomerFileNumber { get; set; }
     public string WarehouseName { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
+    public InvoiceType InvoiceType { get; set; }
+    public string InvoiceTypeLabel { get; set; } = string.Empty;
+    public bool IsReturn { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal NetAmount { get; set; }
@@ -208,7 +211,7 @@ public class SalesReportRow
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
-    public bool IsCredit => PaymentMethod == "آجل";
+    public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
 public class DailyAmountPoint
@@ -240,13 +243,16 @@ public class PurchasesReportRow
     public string SupplierName { get; set; } = string.Empty;
     public string WarehouseName { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
+    public InvoiceType InvoiceType { get; set; }
+    public string InvoiceTypeLabel { get; set; } = string.Empty;
+    public bool IsReturn { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal NetAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
-    public bool IsCredit => PaymentMethod == "آجل";
+    public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
 public class NameAmountPoint

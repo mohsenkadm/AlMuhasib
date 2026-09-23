@@ -24,11 +24,12 @@ public partial class ReportService : IReportService
     public async Task<SalesReportResult> GetSalesReportAsync(DateTime? from, DateTime? to, int? customerId, PaymentMethod? method, int? warehouseId = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Invoices
-            .Include(i => i.Customer)
-            .Include(i => i.Warehouse)
-            .Include(i => i.InstallmentPlans)
-            .Where(i => i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment);
+        var query = InvoiceFilters.ForProfitAndSalesTotals(
+                context.Invoices
+                    .Include(i => i.Customer)
+                    .Include(i => i.Warehouse)
+                    .Include(i => i.InstallmentPlans),
+                context.InstallmentPlans);
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
         if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
@@ -38,7 +39,8 @@ public partial class ReportService : IReportService
 
         var invoices = await query.OrderByDescending(i => i.Date).ToListAsync();
 
-        var todaySales = invoices.Where(i => i.Date.Date == DateTime.Today).Sum(i => i.NetAmount);
+        decimal Signed(Invoice i) => InvoiceFilters.SignedNetAmount(i);
+        var todaySales = invoices.Where(i => i.Date.Date == DateTime.Today).Sum(Signed);
         decimal ResolveCompanyFee(Invoice i)
         {
             if (i.InvoiceType != InvoiceType.Installment)
@@ -53,42 +55,56 @@ public partial class ReportService : IReportService
                 : CompanyFeeHelper.CalculateAmount(i.NetAmount);
         }
 
+        var totalSales = invoices.Sum(Signed);
         return new SalesReportResult
         {
-            TotalSales = invoices.Sum(i => i.NetAmount),
+            TotalSales = totalSales,
             TotalCompanyFees = invoices.Sum(ResolveCompanyFee),
-            CashSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(i => i.NetAmount),
-            CreditSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Credit).Sum(i => i.NetAmount),
-            InstallmentSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Installment).Sum(i => i.NetAmount),
+            CashSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Cash).Sum(Signed),
+            CreditSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Credit).Sum(Signed),
+            InstallmentSales = invoices.Where(i => i.PaymentMethod == PaymentMethod.Installment).Sum(Signed),
             InvoiceCount = invoices.Count,
-            AverageInvoice = invoices.Count > 0 ? invoices.Sum(i => i.NetAmount) / invoices.Count : 0,
+            AverageInvoice = invoices.Count > 0 ? totalSales / invoices.Count : 0,
             TodaySales = todaySales,
             DailyChart = invoices.GroupBy(i => i.Date.Date)
-                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(i => i.NetAmount) })
+                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(Signed) })
                 .OrderBy(d => d.Date).ToList(),
-            Rows = invoices.Select(i => new SalesReportRow
+            Rows = invoices.Select(i =>
             {
-                InvoiceId = i.Id,
-                InvoiceNumber = i.InvoiceNumber,
-                Date = i.Date,
-                CustomerName = i.Customer?.Name ?? "\u2014",
-                CustomerFileNumber = i.Customer?.FileNumber,
-                WarehouseName = i.Warehouse?.Name ?? "\u2014",
-                PaymentMethod = i.PaymentMethod switch
+                var isReturn = i.InvoiceType == InvoiceType.SaleReturn;
+                var signed = Signed(i);
+                return new SalesReportRow
                 {
-                    Core.Enums.PaymentMethod.Cash => "\u0646\u0642\u062f\u064a",
-                    Core.Enums.PaymentMethod.Credit => "\u0622\u062c\u0644",
-                    Core.Enums.PaymentMethod.Installment => "\u0623\u0642\u0633\u0627\u0637",
-                    _ => "\u2014"
-                },
-                TotalAmount = i.TotalAmount,
-                Discount = i.DiscountAmount,
-                NetAmount = i.NetAmount,
-                CompanyFeeAmount = ResolveCompanyFee(i),
-                CreditDueDate = i.CreditDueDate,
-                PaidAmount = i.PaidAmount,
-                RemainingAmount = i.RemainingAmount,
-                IsCreditPaid = i.IsCreditPaid
+                    InvoiceId = i.Id,
+                    InvoiceNumber = i.InvoiceNumber,
+                    Date = i.Date,
+                    CustomerName = i.Customer?.Name ?? "\u2014",
+                    CustomerFileNumber = i.Customer?.FileNumber,
+                    WarehouseName = i.Warehouse?.Name ?? "\u2014",
+                    PaymentMethod = i.PaymentMethod switch
+                    {
+                        Core.Enums.PaymentMethod.Cash => "\u0646\u0642\u062f\u064a",
+                        Core.Enums.PaymentMethod.Credit => "\u0622\u062c\u0644",
+                        Core.Enums.PaymentMethod.Installment => "\u0623\u0642\u0633\u0627\u0637",
+                        _ => "\u2014"
+                    },
+                    InvoiceType = i.InvoiceType,
+                    InvoiceTypeLabel = i.InvoiceType switch
+                    {
+                        InvoiceType.Installment => "أقساط",
+                        InvoiceType.SaleReturn => "مرتجع مبيعات",
+                        _ => "مبيعات"
+                    },
+                    IsReturn = isReturn,
+                    TotalAmount = isReturn ? -Math.Abs(i.TotalAmount) : i.TotalAmount,
+                    Discount = i.DiscountAmount,
+                    NetAmount = signed,
+                    CompanyFeeAmount = ResolveCompanyFee(i),
+                    CreditDueDate = i.CreditDueDate,
+                    PaidAmount = isReturn ? -Math.Abs(i.PaidAmount) : i.PaidAmount,
+                    RemainingAmount = isReturn ? 0 : i.RemainingAmount,
+                    IsCreditPaid = i.IsCreditPaid
+                };
             }).ToList()
         };
     }
@@ -112,39 +128,49 @@ public partial class ReportService : IReportService
         if (method.HasValue) query = query.Where(i => i.PaymentMethod == method.Value);
 
         var invoices = await query.OrderByDescending(i => i.Date).ToListAsync();
-        var todayPurchases = invoices.Where(i => i.Date.Date == DateTime.Today).Sum(i => i.NetAmount);
+        decimal Signed(Invoice i) => InvoiceFilters.SignedNetAmount(i);
+        var todayPurchases = invoices.Where(i => i.Date.Date == DateTime.Today).Sum(Signed);
+        var totalPurchases = invoices.Sum(Signed);
 
         return new PurchasesReportResult
         {
-            TotalPurchases = invoices.Sum(i => i.NetAmount),
+            TotalPurchases = totalPurchases,
             InvoiceCount = invoices.Count,
-            AverageInvoice = invoices.Count > 0 ? invoices.Sum(i => i.NetAmount) / invoices.Count : 0,
+            AverageInvoice = invoices.Count > 0 ? totalPurchases / invoices.Count : 0,
             TodayPurchases = todayPurchases,
             DailyChart = invoices.GroupBy(i => i.Date.Date)
-                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(i => i.NetAmount) })
+                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(Signed) })
                 .OrderBy(d => d.Date).ToList(),
             BySupplierChart = invoices.GroupBy(i => i.Supplier?.Name ?? "\u0623\u062e\u0631\u0649")
-                .Select(g => new NameAmountPoint { Name = g.Key, Amount = g.Sum(i => i.NetAmount) })
+                .Select(g => new NameAmountPoint { Name = g.Key, Amount = g.Sum(Signed) })
                 .OrderByDescending(x => x.Amount).Take(6).ToList(),
-            Rows = invoices.Select(i => new PurchasesReportRow
+            Rows = invoices.Select(i =>
             {
-                InvoiceId = i.Id,
-                InvoiceNumber = i.InvoiceNumber,
-                Date = i.Date,
-                SupplierName = i.Supplier?.Name ?? "\u2014",
-                WarehouseName = i.Warehouse?.Name ?? "\u2014",
-                PaymentMethod = i.PaymentMethod switch
+                var isReturn = i.InvoiceType == InvoiceType.PurchaseReturn;
+                var signed = Signed(i);
+                return new PurchasesReportRow
                 {
-                    Core.Enums.PaymentMethod.Cash => "\u0646\u0642\u062f\u064a",
-                    Core.Enums.PaymentMethod.Credit => "\u0622\u062c\u0644",
-                    _ => "\u2014"
-                },
-                TotalAmount = i.TotalAmount,
-                Discount = i.DiscountAmount,
-                NetAmount = i.NetAmount,
-                PaidAmount = i.PaidAmount,
-                RemainingAmount = i.RemainingAmount,
-                IsCreditPaid = i.IsCreditPaid
+                    InvoiceId = i.Id,
+                    InvoiceNumber = i.InvoiceNumber,
+                    Date = i.Date,
+                    SupplierName = i.Supplier?.Name ?? "\u2014",
+                    WarehouseName = i.Warehouse?.Name ?? "\u2014",
+                    PaymentMethod = i.PaymentMethod switch
+                    {
+                        Core.Enums.PaymentMethod.Cash => "\u0646\u0642\u062f\u064a",
+                        Core.Enums.PaymentMethod.Credit => "\u0622\u062c\u0644",
+                        _ => "\u2014"
+                    },
+                    InvoiceType = i.InvoiceType,
+                    InvoiceTypeLabel = isReturn ? "مرتجع مشتريات" : "مشتريات",
+                    IsReturn = isReturn,
+                    TotalAmount = isReturn ? -Math.Abs(i.TotalAmount) : i.TotalAmount,
+                    Discount = i.DiscountAmount,
+                    NetAmount = signed,
+                    PaidAmount = isReturn ? -Math.Abs(i.PaidAmount) : i.PaidAmount,
+                    RemainingAmount = isReturn ? 0 : i.RemainingAmount,
+                    IsCreditPaid = i.IsCreditPaid
+                };
             }).ToList()
         };
     }
@@ -164,7 +190,7 @@ public partial class ReportService : IReportService
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); bankQ = bankQ.Where(v => v.Date >= from.Value); distQ = distQ.Where(p => p.Date >= from.Value); }
         if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); bankQ = bankQ.Where(v => v.Date < EndOfDay(to)); distQ = distQ.Where(p => p.Date < EndOfDay(to)); }
 
-        var totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var totalSales = await InvoiceSignedSums.SumSignedNetAsync(salesQ);
         var cogs = await CalculateCogsAsync(context, from, EndOfDay(to));
         var totalExpenses = await expQ.SumAsync(e => (decimal?)e.Amount) ?? 0;
         var totalBankFees = await bankQ.SumAsync(v => (decimal?)v.BankFees) ?? 0;
@@ -211,9 +237,9 @@ public partial class ReportService : IReportService
             if (effectiveFrom >= effectiveToExclusive)
                 continue;
 
-            var sales = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-                .Where(i => i.Date >= effectiveFrom && i.Date < effectiveToExclusive)
-                .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+            var sales = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                    .Where(i => i.Date >= effectiveFrom && i.Date < effectiveToExclusive));
 
             var purchases = await CalculateCogsAsync(context, effectiveFrom, effectiveToExclusive);
             var expenses = await context.Expenses
@@ -243,7 +269,9 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale
+                             || ii.Invoice.InvoiceType == InvoiceType.Installment
+                             || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (fromInclusive.HasValue)
             soldItemsQuery = soldItemsQuery.Where(ii => ii.Invoice!.Date >= fromInclusive.Value);
@@ -259,20 +287,15 @@ public partial class ReportService : IReportService
             .Where(ws => productIds.Contains(ws.ProductId))
             .ToListAsync();
 
-        var purchaseItemsQuery = context.InvoiceItems
-            .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null
-                         && productIds.Contains(ii.ProductId.Value)
-                         && ii.Invoice != null
-                         && ii.Invoice.InvoiceType == InvoiceType.Purchase);
-
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         if (toExclusive.HasValue)
-            purchaseItemsQuery = purchaseItemsQuery.Where(ii => ii.Invoice!.Date < toExclusive.Value);
-
-        var purchaseItems = await purchaseItemsQuery.ToListAsync();
-        var purchasesByProduct = purchaseItems
-            .GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToList());
+        {
+            purchasesByProduct = purchasesByProduct.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value
+                    .Where(ii => ii.Invoice == null || ii.Invoice.Date < toExclusive.Value)
+                    .ToList());
+        }
 
         decimal cogs = 0;
         foreach (var sold in soldItems)
@@ -280,7 +303,10 @@ public partial class ReportService : IReportService
             var productId = sold.ProductId!.Value;
             var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
             var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
-            cogs += Math.Round(sold.Quantity * avgCost, 0);
+            var qty = sold.Invoice!.InvoiceType == InvoiceType.SaleReturn
+                ? -Math.Abs(sold.Quantity)
+                : sold.Quantity;
+            cogs += Math.Round(qty * avgCost, 0);
         }
 
         return cogs;
@@ -315,33 +341,33 @@ public partial class ReportService : IReportService
             .Where(ws => productIds.Contains(ws.ProductId))
             .ToListAsync();
 
-        var purchaseItems = await context.InvoiceItems
-            .Include(ii => ii.Invoice)
-            .Where(ii => ii.ProductId != null
-                         && productIds.Contains(ii.ProductId.Value)
-                         && ii.Invoice != null
-                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
-                         && (!to.HasValue || ii.Invoice.Date < EndOfDay(to)))
-            .ToListAsync();
-
-        var purchasesByProduct = purchaseItems
-            .GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToList());
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+        if (to.HasValue)
+        {
+            var end = EndOfDay(to);
+            purchasesByProduct = purchasesByProduct.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value
+                    .Where(ii => ii.Invoice == null || !end.HasValue || ii.Invoice.Date < end.Value)
+                    .ToList());
+        }
 
         var rows = new List<ProfitInvoiceDetailRow>();
         foreach (var invoice in invoices)
         {
             decimal cost = 0;
             var lineItems = invoice.Items.Where(ii => ii.ProductId != null).ToList();
+            var isReturn = invoice.InvoiceType == InvoiceType.SaleReturn;
             foreach (var item in lineItems)
             {
                 var productId = item.ProductId!.Value;
                 var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
                 var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
-                cost += Math.Round(item.Quantity * avgCost, 0);
+                var qty = isReturn ? -Math.Abs(item.Quantity) : item.Quantity;
+                cost += Math.Round(qty * avgCost, 0);
             }
 
-            var revenue = invoice.NetAmount;
+            var revenue = InvoiceFilters.SignedNetAmount(invoice);
             var profit = revenue - cost;
             rows.Add(new ProfitInvoiceDetailRow
             {
@@ -350,12 +376,17 @@ public partial class ReportService : IReportService
                 Date = invoice.Date,
                 CustomerName = invoice.Customer?.Name ?? "—",
                 CustomerFileNumber = invoice.Customer?.FileNumber,
-                InvoiceTypeLabel = invoice.InvoiceType == InvoiceType.Installment ? "أقساط" : "مبيعات",
+                InvoiceTypeLabel = invoice.InvoiceType switch
+                {
+                    InvoiceType.Installment => "أقساط",
+                    InvoiceType.SaleReturn => "مرتجع مبيعات",
+                    _ => "مبيعات"
+                },
                 ItemCount = lineItems.Count,
                 Revenue = revenue,
                 Cost = cost,
                 GrossProfit = profit,
-                MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 1) : 0
+                MarginPercent = revenue != 0 ? Math.Round(profit / revenue * 100, 1) : 0
             });
         }
 
@@ -1024,7 +1055,7 @@ public partial class ReportService : IReportService
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); }
         if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); }
 
-        var totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var totalSales = await InvoiceSignedSums.SumSignedNetAsync(salesQ);
 
         var instQ = context.Installments.Where(i => i.PaidAmount > 0);
         if (from.HasValue) instQ = instQ.Where(i => i.PaymentDate >= from.Value);
@@ -1051,10 +1082,14 @@ public partial class ReportService : IReportService
 
         var f = from ?? DateTime.Today.AddMonths(-12);
         var t = to ?? DateTime.Today;
-        var monthlyIncome = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.Date >= f && i.Date <= t)
+        var monthlyIncomeRaw = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+            .Where(i => i.Date >= f && i.Date <= t)
+            .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
+            .ToListAsync();
+        var monthlyIncome = monthlyIncomeRaw
             .GroupBy(i => new { i.Date.Year, i.Date.Month })
-            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => i.NetAmount) }).ToListAsync();
+            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount)) })
+            .ToList();
         var monthlyExp = await context.Expenses
             .Where(e => e.Date >= f && e.Date <= t)
             .GroupBy(e => new { e.Date.Year, e.Date.Month })
@@ -1380,7 +1415,7 @@ public partial class ReportService : IReportService
 
         var salesQ = InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
             .Where(i => i.Date <= endOfDay);
-        decimal totalSales = await salesQ.SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        decimal totalSales = await InvoiceSignedSums.SumSignedNetAsync(salesQ);
         decimal costOfSales = await CalculateCogsAsync(context, null, endOfDay.AddTicks(1));
         decimal totalExpenses = await context.Expenses
             .Where(e => e.Date <= endOfDay)
@@ -1521,7 +1556,7 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1534,8 +1569,8 @@ public partial class ReportService : IReportService
             {
                 ProductId = g.Key,
                 ProductName = g.First().Product!.Name,
-                QuantitySold = g.Sum(x => x.Quantity),
-                Revenue = g.Sum(x => x.TotalPrice)
+                QuantitySold = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity)),
+                Revenue = g.Sum(x => InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice))
             })
             .ToList();
 
@@ -1572,7 +1607,7 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1593,8 +1628,8 @@ public partial class ReportService : IReportService
         var rows = new List<ProductProfitMarginRow>();
         foreach (var g in soldItems.GroupBy(ii => ii.ProductId!.Value))
         {
-            var revenue = g.Sum(x => x.TotalPrice);
-            var qty = g.Sum(x => x.Quantity);
+            var revenue = g.Sum(x => InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice));
+            var qty = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity));
             var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(
                 purchasesByProduct.GetValueOrDefault(g.Key) ?? [], stocks, g.Key);
             var cost = Math.Round(qty * avgCost, 0);
@@ -1636,7 +1671,7 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1662,7 +1697,8 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && ii.Invoice.InvoiceType == InvoiceType.Purchase
+                         && (ii.Invoice.InvoiceType == InvoiceType.Purchase
+                             || ii.Invoice.InvoiceType == InvoiceType.PurchaseReturn)
                          && productIds.Contains(ii.ProductId!.Value));
         if (from.HasValue) purchaseQtyQuery = purchaseQtyQuery.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) purchaseQtyQuery = purchaseQtyQuery.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1670,7 +1706,8 @@ public partial class ReportService : IReportService
         var purchaseItems = await purchaseQtyQuery.ToListAsync();
         var purchaseQtyByProduct = purchaseItems
             .GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+            .ToDictionary(g => g.Key, g => g.Sum(x =>
+                x.Invoice!.InvoiceType == InvoiceType.PurchaseReturn ? -Math.Abs(x.Quantity) : x.Quantity));
 
         var damageQtyQuery = context.InvoiceItems
             .Include(ii => ii.Invoice)
@@ -1690,8 +1727,8 @@ public partial class ReportService : IReportService
         var rows = new List<MaterialNetProfitRow>();
         foreach (var g in soldItems.GroupBy(ii => ii.ProductId!.Value))
         {
-            var revenue = g.Sum(x => x.TotalPrice);
-            var qty = g.Sum(x => x.Quantity);
+            var revenue = g.Sum(x => InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice));
+            var qty = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity));
             var avgCost = ProductCostHelper.ComputeAverageUnitCostForProduct(
                 purchasesByProduct.GetValueOrDefault(g.Key) ?? [], allStocksForCost, g.Key);
             var cost = Math.Round(qty * avgCost, 0);
@@ -1756,7 +1793,7 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Invoice!).ThenInclude(i => i.Customer)
             .Where(ii => ii.Invoice != null
                          && ii.Invoice.CustomerId != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1793,12 +1830,12 @@ public partial class ReportService : IReportService
         foreach (var g in soldItems.GroupBy(ii => ii.Invoice!.CustomerId!.Value))
         {
             var invoiceIds = g.Select(x => x.InvoiceId).Distinct().Count();
-            var sales = g.Sum(x => x.TotalPrice);
+            var sales = g.Sum(x => InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice));
             var cost = Math.Round(g.Sum(x =>
             {
                 if (x.ProductId is null) return 0m;
                 var avg = avgCostByProduct.GetValueOrDefault(x.ProductId.Value);
-                return x.Quantity * avg;
+                return InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity) * avg;
             }), 0);
             var profit = sales - cost;
             var customer = g.First().Invoice!.Customer;
