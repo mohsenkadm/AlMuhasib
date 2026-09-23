@@ -66,6 +66,13 @@ Source: "prerequisites\{#VcRedistX64File}"; DestDir: "{tmp}"; Flags: dontcopy no
 Source: "prerequisites\{#VcRedistX86File}"; DestDir: "{tmp}"; Flags: dontcopy nocompression
 Source: "prerequisites\{#LocalDbMsiFile}"; DestDir: "{tmp}"; Flags: dontcopy nocompression
 
+; System-wide Cairo Arabic font (also bundled under {app}\Assets\Fonts for the app / updates).
+[Fonts]
+Source: "{#SourcePath}\Assets\Fonts\Cairo-Regular.ttf"; FontInstall: "Cairo"; Flags: ignoreversion uninsneveruninstall
+Source: "{#SourcePath}\Assets\Fonts\Cairo-Medium.ttf"; FontInstall: "Cairo Medium"; Flags: ignoreversion uninsneveruninstall
+Source: "{#SourcePath}\Assets\Fonts\Cairo-SemiBold.ttf"; FontInstall: "Cairo SemiBold"; Flags: ignoreversion uninsneveruninstall
+Source: "{#SourcePath}\Assets\Fonts\Cairo-Bold.ttf"; FontInstall: "Cairo Bold"; Flags: ignoreversion uninsneveruninstall
+
 [Icons]
 Name: "{group}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qayd-icon.ico"
 Name: "{autodesktop}\قيد"; Filename: "{app}\AlMuhasib.exe"; IconFilename: "{app}\qayd-icon.ico"; Tasks: desktopicon

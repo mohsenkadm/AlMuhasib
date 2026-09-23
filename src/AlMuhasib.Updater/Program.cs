@@ -56,6 +56,8 @@ internal static class Program
 
             CopyDirectory(payloadRoot, options.InstallDirectory);
             RestorePreservedFiles(options.InstallDirectory, preserved);
+            if (OperatingSystem.IsWindows())
+                InstallBundledFonts(options.InstallDirectory, logPath);
 
             try
             {
@@ -302,6 +304,55 @@ internal static class Program
         }
 
         File.Copy(source, dest, overwrite: true);
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static void InstallBundledFonts(string installDir, string logPath)
+    {
+        try
+        {
+            var fontsDir = Path.Combine(installDir, "Assets", "Fonts");
+            if (!Directory.Exists(fontsDir))
+            {
+                Log(logPath, "No Assets\\Fonts folder in update package; skipping font install.");
+                return;
+            }
+
+            var userFontsDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Microsoft", "Windows", "Fonts");
+            Directory.CreateDirectory(userFontsDir);
+
+            var fontFiles = new (string FileName, string RegistryValue)[]
+            {
+                ("Cairo-Regular.ttf", "Cairo (TrueType)"),
+                ("Cairo-Medium.ttf", "Cairo Medium (TrueType)"),
+                ("Cairo-SemiBold.ttf", "Cairo SemiBold (TrueType)"),
+                ("Cairo-Bold.ttf", "Cairo Bold (TrueType)")
+            };
+
+            using var fontsKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(
+                @"Software\Microsoft\Windows NT\CurrentVersion\Fonts", writable: true);
+
+            var installed = 0;
+            foreach (var (fileName, registryValue) in fontFiles)
+            {
+                var source = Path.Combine(fontsDir, fileName);
+                if (!File.Exists(source))
+                    continue;
+
+                var dest = Path.Combine(userFontsDir, fileName);
+                File.Copy(source, dest, overwrite: true);
+                fontsKey?.SetValue(registryValue, dest);
+                installed++;
+            }
+
+            Log(logPath, $"Installed {installed} Cairo font file(s) for current user.");
+        }
+        catch (Exception ex)
+        {
+            Log(logPath, $"Font install warning: {ex.Message}");
+        }
     }
 
     private static void Log(string logPath, string message)

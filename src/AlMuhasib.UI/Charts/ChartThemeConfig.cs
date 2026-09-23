@@ -1,4 +1,6 @@
+using System.IO;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -71,14 +73,45 @@ public static class ChartThemeConfig
         };
         LegendTextPaint = CreateLabelPaint();
     }
-    public const string FontFamily = "Segoe UI, Tahoma, Arial";
+    public const string FontFamily = "Cairo, Segoe UI, Tahoma, Arial";
     public const float LabelSize   = 11f;
     public const float LegendSize  = 12f;
 
-    public static SKTypeface ArabicTypeface { get; } =
-        SKTypeface.FromFamilyName("Segoe UI")
-        ?? SKTypeface.FromFamilyName("Tahoma")
-        ?? SKTypeface.Default;
+    public static SKTypeface ArabicTypeface { get; private set; } = ResolveArabicTypeface();
+
+    private static SKTypeface ResolveArabicTypeface()
+    {
+        try
+        {
+            var fontsDir = AppFontBootstrap.FontsDirectory ?? AppFontBootstrap.ResolveFontsDirectory();
+            if (!string.IsNullOrEmpty(fontsDir))
+            {
+                var regular = Path.Combine(fontsDir, "Cairo-Regular.ttf");
+                if (File.Exists(regular))
+                {
+                    var fromFile = SKTypeface.FromFile(regular);
+                    if (fromFile is not null)
+                        return fromFile;
+                }
+            }
+        }
+        catch
+        {
+            // fall through
+        }
+
+        return SKTypeface.FromFamilyName("Cairo")
+            ?? SKTypeface.FromFamilyName("Segoe UI")
+            ?? SKTypeface.FromFamilyName("Tahoma")
+            ?? SKTypeface.Default;
+    }
+
+    /// <summary>Reload typeface after <see cref="AppFontBootstrap.Apply"/> so charts use Cairo.</summary>
+    public static void RefreshArabicTypeface()
+    {
+        ArabicTypeface = ResolveArabicTypeface();
+        EnsurePaints();
+    }
 
     public static SolidColorPaint CreateLabelPaint(SKColor? color = null) => new(color ?? LabelColor)
     {
@@ -90,6 +123,8 @@ public static class ChartThemeConfig
 
     public static void Apply()
     {
+        RefreshArabicTypeface();
+
         LiveCharts.Configure(settings =>
         {
             settings

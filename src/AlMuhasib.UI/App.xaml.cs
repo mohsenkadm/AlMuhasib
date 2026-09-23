@@ -463,6 +463,9 @@ public partial class App : Application
         {
             base.OnStartup(e);
 
+            // Register bundled Cairo Arabic font (in-process + per-user) before any window paints.
+            AppFontBootstrap.Apply();
+
             // Apply saved dark/light immediately after WPF resources exist,
             // before splash / login / main window (avoids light-mode flash).
             ApplyPersistedTheme();
