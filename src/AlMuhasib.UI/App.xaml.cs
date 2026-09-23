@@ -56,6 +56,34 @@ public partial class App : Application
         ConfigureServices(services);
         _serviceProvider = services.BuildServiceProvider();
         ScreenPermissionRegistry.Initialize(_serviceProvider.GetRequiredService<SystemModuleRegistry>());
+
+        // Apply as soon as DI exists so Login/Main never flash light-then-dark.
+        ApplyPersistedTheme();
+    }
+
+    /// <summary>
+    /// Restores dark/light from user-preferences.json before any window paints.
+    /// Safe to call multiple times (pre-DI and post-DI).
+    /// </summary>
+    private void ApplyPersistedTheme()
+    {
+        try
+        {
+            if (_serviceProvider is not null)
+            {
+                _serviceProvider.GetRequiredService<ThemeService>().ApplyFromPreferences();
+                return;
+            }
+
+            // Pre-DI path (setup wizard / activation windows)
+            var prefs = new UserPreferencesService();
+            var theme = new ThemeService(prefs, _systemProfile);
+            theme.ApplyFromPreferences();
+        }
+        catch (Exception ex)
+        {
+            LogException("ApplyPersistedTheme", ex);
+        }
     }
 
     private static void LogException(string context, Exception ex)
@@ -435,6 +463,10 @@ public partial class App : Application
         {
             base.OnStartup(e);
 
+            // Apply saved dark/light immediately after WPF resources exist,
+            // before splash / login / main window (avoids light-mode flash).
+            ApplyPersistedTheme();
+
             if (_systemProfile.IsFirstRun)
             {
                 var wizard = new SetupWizardHostWindow();
@@ -472,6 +504,9 @@ public partial class App : Application
             EnsureServiceProvider();
 
             PrintPreferences.Load();
+
+            // Re-apply via DI singleton (same prefs file) before splash paints.
+            ApplyPersistedTheme();
 
             splash = new SplashWindow();
             splash.Show();
@@ -543,6 +578,8 @@ public partial class App : Application
 
             try
             {
+                // Theme must already be applied; keep chart hooks in sync with current palette.
+                ApplyPersistedTheme();
                 ChartThemeConfig.Apply();
                 ChartThemeHooks.Initialize();
             }
@@ -695,8 +732,11 @@ public partial class App : Application
     /// </summary>
     private async Task ShowLoginAndMainWindowAsync()
     {
+        // Ensure dark preference is active before Login / Main paint.
+        ApplyPersistedTheme();
+
         // Show login window
-        var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
+        var loginWindow = _serviceProvider!.GetRequiredService<LoginWindow>();
         var result = loginWindow.ShowDialog();
 
         if (result != true)
