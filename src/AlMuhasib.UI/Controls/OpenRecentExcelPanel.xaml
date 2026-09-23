@@ -13,7 +13,7 @@
             <Setter Property="Padding" Value="14,12"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
             <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="BorderBrush" Value="#E8F5E9"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -185,7 +185,7 @@
                                                            VerticalAlignment="Center"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding FolderPath}" FontSize="10.5" Margin="0,5,0,0"
-                                                       Foreground="#78909C" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"
                                                        ToolTip="{Binding FilePath}"/>
                                             <TextBlock Text="الملف غير موجود في المسار المحفوظ"
                                                        FontSize="10.5" Foreground="#C62828" Margin="0,4,0,0"
@@ -258,7 +258,7 @@
                         </Style>
                     </Border.Style>
                     <StackPanel HorizontalAlignment="Center">
-                        <Border Width="72" Height="72" CornerRadius="20" Background="#E8F5E9" Margin="0,0,0,16">
+                        <Border Width="72" Height="72" CornerRadius="20" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,0,16">
                             <materialDesign:PackIcon Kind="FileExcelOutline" Width="38" Height="38"
                                                      Foreground="#43A047"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -277,7 +277,7 @@
 
             <!-- Footer -->
             <Border Grid.Row="3" Padding="16,12" BorderBrush="#E8F5E9" BorderThickness="0,1,0,0"
-                    CornerRadius="0,0,18,18" Background="#FAFAFA">
+                    CornerRadius="0,0,18,18" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

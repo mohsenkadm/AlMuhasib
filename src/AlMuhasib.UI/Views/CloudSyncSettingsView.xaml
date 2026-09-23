@@ -99,7 +99,7 @@
                 <Border Style="{StaticResource SyncStatCard}" Margin="0,0,10,0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Background="#E0F7FA" CornerRadius="8" Padding="6" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource DashboardIconBadgeCyanBrush}" CornerRadius="8" Padding="6" Margin="0,0,8,0">
                                 <materialDesign:PackIcon Kind="DatabaseSync" Width="18" Height="18" Foreground="#00838F"/>
                             </Border>
                             <TextBlock Text="آخر عملية رفع" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
@@ -161,7 +161,7 @@
                     Visibility="{Binding HasSyncError, Converter={StaticResource BoolVis}}">
                 <Border.Style>
                     <Style TargetType="Border">
-                        <Setter Property="Background" Value="#FFEBEE"/>
+                        <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                         <Setter Property="BorderBrush" Value="#FFCDD2"/>
                         <Setter Property="BorderThickness" Value="1"/>
                     </Style>
@@ -174,7 +174,7 @@
             </Border>
 
             <Border Grid.Row="3" CornerRadius="12" Padding="14,12" Margin="0,0,0,16"
-                    Background="#E8F5E9" BorderBrush="#C8E6C9" BorderThickness="1"
+                    Background="{DynamicResource DashboardKpiGreenLightBrush}" BorderBrush="#C8E6C9" BorderThickness="1"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolVis}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="InformationOutline" Width="20" Height="20"
@@ -229,7 +229,7 @@
                         </ItemsControl.Template>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#FFF8E1" BorderBrush="#FFE082" BorderThickness="1"
+                                <Border Background="{DynamicResource NotepadPaperBrush}" BorderBrush="#FFE082" BorderThickness="1"
                                         CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
                                     <StackPanel>
                                         <TextBlock FontWeight="SemiBold" FontSize="13"

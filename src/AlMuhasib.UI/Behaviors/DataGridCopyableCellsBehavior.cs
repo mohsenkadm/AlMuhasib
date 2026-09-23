@@ -223,9 +223,32 @@ public static class DataGridCopyableCellsBehavior
             : new Style(typeof(TextBox));
 
         foreach (var setter in elementStyle.Setters)
+        {
+            if (setter is Setter s
+                && s.Property == TextBox.ForegroundProperty
+                && IsFrozenDarkBodyBrush(s.Value))
+            {
+                // Skip hardcoded dark body colors — keep theme CopyableDataGridTextBox foreground
+                continue;
+            }
+
             merged.Setters.Add(setter);
+        }
 
         return merged;
+    }
+
+    /// <summary>Detects light-theme body text colors that become invisible on dark rows.</summary>
+    private static bool IsFrozenDarkBodyBrush(object? value)
+    {
+        if (value is not SolidColorBrush brush)
+            return false;
+
+        var c = brush.Color;
+        // Near-black / charcoal body text used in light mode ElementStyles
+        return c.R < 0x80 && c.G < 0x80 && c.B < 0x80
+               && Math.Abs(c.R - c.G) < 40
+               && Math.Abs(c.G - c.B) < 40;
     }
 
     private static void CopyFilterProperties(DataGridColumn from, DataGridColumn to)

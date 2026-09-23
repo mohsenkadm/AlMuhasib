@@ -27,7 +27,7 @@
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="ملخص العمل" FontSize="24" FontWeight="Bold" Margin="0,0,0,6"/>
                 <TextBlock Text="نظرة شاملة على المبيعات والعملاء ونشاط ساعات العمل"
-                           FontSize="13" Foreground="#78909C" Margin="0,0,0,18"/>
+                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,18"/>
 
                 <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
@@ -62,7 +62,7 @@
                         Title="كمية الأصناف"
                         TextValue="{Binding TotalProductQuantity}"
                         Icon="Counter"
-                        IconBackground="#F3E5F5"
+                        IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
                         ValueForeground="#6A1B9A"/>
                 </UniformGrid>

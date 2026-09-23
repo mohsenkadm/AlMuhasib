@@ -106,14 +106,14 @@
                                         BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="10">
                                     <StackPanel>
                                         <DockPanel>
-                                            <Border DockPanel.Dock="Left" Background="#FFEBEE" CornerRadius="6" Padding="8,3" Margin="0,0,8,0"
+                                            <Border DockPanel.Dock="Left" Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="6" Padding="8,3" Margin="0,0,8,0"
                                                     Visibility="{Binding IsOverdue, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                 <TextBlock Text="متأخر" FontSize="11" FontWeight="SemiBold" Foreground="#C62828"/>
                                             </Border>
                                             <TextBlock Text="{Binding ContractNumber}" FontWeight="Bold" VerticalAlignment="Center"/>
                                         </DockPanel>
                                         <TextBlock Text="{Binding DebtorName}" FontSize="15" Margin="0,8,0,0"/>
-                                        <TextBlock Text="{Binding DebtorPhone}" Foreground="#78909C" Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding DebtorPhone}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                                         <TextBlock FontWeight="Bold" Foreground="#C62828" Margin="0,10,0,0">
                                             <Run Text="المتبقي: "/><Run Text="{Binding RemainingAmount, StringFormat=N0}"/>
                                         </TextBlock>

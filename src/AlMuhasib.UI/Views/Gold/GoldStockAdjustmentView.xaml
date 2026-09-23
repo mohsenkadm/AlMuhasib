@@ -30,7 +30,7 @@
                      md:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
                     <TextBlock Text="{Binding CurrentBalanceText}" FontSize="13" Foreground="#8B6914"
-                               Background="#FFF8E1" Padding="12,8" Margin="0,0,0,16"/>
+                               Background="{DynamicResource NotepadPaperBrush}" Padding="12,8" Margin="0,0,0,16"/>
 
                     <ComboBox ItemsSource="{Binding Warehouses}"
                               SelectedItem="{Binding SelectedWarehouse}"
@@ -60,7 +60,7 @@
                                 ToolTip="قراءة الوزن من الميزان الإلكتروني"/>
                     </Grid>
 
-                    <Border Padding="10,6" CornerRadius="8" Background="#FFF8E1" Margin="0,0,0,14">
+                    <Border Padding="10,6" CornerRadius="8" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,14">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
                                 <Ellipse.Style>

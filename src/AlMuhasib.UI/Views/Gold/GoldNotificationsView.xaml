@@ -23,7 +23,7 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,12">
                     <TextBlock Text="التنبيهات" FontSize="16" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
-                    <Border Background="#FFF3E0" CornerRadius="10" Padding="12,6" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="12,6" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <TextBlock>
                             <Run Text="غير مقروء:"/><Run Text=" "/><Run Text="{Binding UnreadCount}" FontWeight="Bold"/>
                         </TextBlock>

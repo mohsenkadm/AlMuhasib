@@ -22,7 +22,7 @@
                 </DockPanel>
                 <TextBlock Text="{Binding SummaryLine}" FontSize="13" Opacity="0.75" Margin="0,0,0,16"/>
                 <TextBlock Text="صافي الربح = (إيراد البيع − تكلفة الشراء) − المصاريف التشغيلية"
-                           FontSize="12" FontStyle="Italic" Foreground="#546E7A" Margin="0,0,0,16"/>
+                           FontSize="12" FontStyle="Italic" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
 
                 <!-- Filters -->
                 <Border Style="{StaticResource FilterBar}" Margin="0,0,0,20">
@@ -53,7 +53,7 @@
                     <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding NetProfitText}"
                                                 Icon="Finance" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00695C" ValueForeground="#00695C"/>
                     <controls:AnimatedStatCard Title="هامش مجمل الربح" TextValue="{Binding MarginText}"
-                                                Icon="Percent" IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                                Icon="Percent" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                 </UniformGrid>
                 <UniformGrid Columns="3" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="صافي التدفق النقدي" TextValue="{Binding NetCashText}"
@@ -61,7 +61,7 @@
                     <controls:AnimatedStatCard Title="ذمم مدينة (بيع)" TextValue="{Binding ReceivablesText}"
                                                 Icon="AccountArrowLeft" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard Title="ذمم دائنة (شراء)" TextValue="{Binding PayablesText}"
-                                                Icon="AccountArrowRight" IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                                                Icon="AccountArrowRight" IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825" ValueForeground="#F9A825"/>
                 </UniformGrid>
 
                 <!-- Charts -->

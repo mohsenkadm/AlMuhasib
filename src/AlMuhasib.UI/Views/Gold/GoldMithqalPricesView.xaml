@@ -63,7 +63,7 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Border Width="160" Margin="0,0,10,10" Padding="14,12" CornerRadius="12"
-                            Background="#FFF8E1" BorderBrush="#D4AF37" BorderThickness="1">
+                            Background="{DynamicResource NotepadPaperBrush}" BorderBrush="#D4AF37" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="{Binding KaratName}" FontWeight="Bold" Foreground="#8B6914"/>
                             <TextBlock FontSize="18" FontWeight="Bold" Foreground="#B8860B" Margin="0,4,0,0">

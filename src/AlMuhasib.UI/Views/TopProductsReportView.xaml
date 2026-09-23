@@ -26,7 +26,7 @@
                 <UniformGrid Columns="3" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="إجمالي الإيراد" TextValue="{Binding TotalRevenue}" Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="الكمية المباعة" TextValue="{Binding TotalQuantity}" Icon="PackageVariant" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
-                    <controls:AnimatedStatCard Title="عدد الأصناف" TextValue="{Binding ProductCount}" Icon="FormatListNumbered" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                    <controls:AnimatedStatCard Title="عدد الأصناف" TextValue="{Binding ProductCount}" Icon="FormatListNumbered" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <controls:ChartCard Title="أعلى 10 منتجات">

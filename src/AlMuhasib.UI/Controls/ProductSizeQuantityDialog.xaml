@@ -55,7 +55,7 @@
                     <ItemsControl ItemsSource="{Binding Sizes}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,0,0,10" Padding="12" Background="#FAFAFA" CornerRadius="10"
+                                <Border Margin="0,0,0,10" Padding="12" Background="{DynamicResource BackgroundBrush}" CornerRadius="10"
                                         BorderBrush="#EEEEEE" BorderThickness="1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -88,7 +88,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <Border Background="#FCE4EC" CornerRadius="8" Padding="12,10" Margin="0,4,0,0">
+                    <Border Background="{DynamicResource DashboardKpiPinkLightBrush}" CornerRadius="8" Padding="12,10" Margin="0,4,0,0">
                         <TextBlock FontWeight="SemiBold" Foreground="#880E4F">
                             <Run Text="إجمالي الكمية:"/>
                             <Run Text="{Binding TotalQuantity, StringFormat=N0, Mode=OneWay}"/>

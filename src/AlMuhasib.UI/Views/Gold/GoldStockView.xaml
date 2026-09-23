@@ -70,7 +70,7 @@
                 </StackPanel>
             </md:Card>
             <md:Card Style="{StaticResource ElevatedCard}" Padding="16" md:ElevationAssist.Elevation="Dp2"
-                     BorderBrush="#FFCDD2" BorderThickness="1" Background="#FFEBEE">
+                     BorderBrush="#FFCDD2" BorderThickness="1" Background="{DynamicResource DashboardKpiRedLightBrush}">
                 <StackPanel>
                     <TextBlock Text="عيارات منخفضة" Foreground="#C62828" FontSize="12"/>
                     <TextBlock Text="{Binding LowStockCount}" FontSize="22" FontWeight="Bold" Foreground="#C62828"/>
@@ -113,7 +113,7 @@
                         <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsLowStock}" Value="True">
-                                    <Setter Property="Background" Value="#FFEBEE"/>
+                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                     <Setter Property="Foreground" Value="#B71C1C"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                 </DataTrigger>

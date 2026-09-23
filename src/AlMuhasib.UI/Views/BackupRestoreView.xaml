@@ -57,11 +57,11 @@
                             <Setter Property="BorderThickness" Value="1"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsSuccess}" Value="True">
-                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
                                     <Setter Property="BorderBrush" Value="#A5D6A7"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding IsError}" Value="True">
-                                    <Setter Property="Background" Value="#FFEBEE"/>
+                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
                                     <Setter Property="BorderBrush" Value="#EF9A9A"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -141,7 +141,7 @@
                                     Padding="0" Height="Auto">
                                 <StackPanel HorizontalAlignment="Center">
                                     <Border Width="52" Height="52" CornerRadius="26"
-                                            Background="#E8F5E9" HorizontalAlignment="Center">
+                                            Background="{DynamicResource DashboardKpiGreenLightBrush}" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="LightningBolt" Width="26" Height="26"
                                                                  Foreground="#2E7D32"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -183,7 +183,7 @@
                                     Padding="0" Height="Auto">
                                 <StackPanel HorizontalAlignment="Center">
                                     <Border Width="52" Height="52" CornerRadius="26"
-                                            Background="#FFF3E0" HorizontalAlignment="Center">
+                                            Background="{DynamicResource DashboardKpiOrangeLightBrush}" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="ShareVariant" Width="26" Height="26"
                                                                  Foreground="#E65100"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -205,7 +205,7 @@
                                  materialDesign:ElevationAssist.Elevation="Dp2">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                        <Border Width="48" Height="48" CornerRadius="24" Background="#E8EAF6" Margin="0,0,14,0">
+                        <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource DashboardKpiIndigoLightBrush}" Margin="0,0,14,0">
                             <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24"
                                                      Foreground="#3949AB"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -276,7 +276,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                                    Background="#FFF3E0" Margin="0,0,14,0" VerticalAlignment="Top">
+                                    Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,14,0" VerticalAlignment="Top">
                                 <materialDesign:PackIcon Kind="DatabaseImport" Width="24" Height="24"
                                                          Foreground="#E65100"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -291,13 +291,13 @@
                                            Margin="0,4,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Grid>
-                        <Separator Background="{StaticResource SubtleBorderBrush}" Margin="0,16"/>
+                        <Separator Background="{DynamicResource SubtleBorderBrush}" Margin="0,16"/>
 
                         <TextBlock Text="النسخ الاحتياطية الأخيرة" FontWeight="SemiBold" Margin="0,0,0,8"/>
                         <ListBox ItemsSource="{Binding RecentBackups}"
                                  SelectedItem="{Binding SelectedRestoreFile}"
                                  MaxHeight="140" Margin="0,0,0,16"
-                                 BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="1">
+                                 BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
@@ -334,7 +334,7 @@
                             </Button>
                         </Grid>
 
-                        <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
+                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,16"
                                 BorderBrush="#FFE082" BorderThickness="1">
                             <Grid>
                                 <Grid.ColumnDefinitions>

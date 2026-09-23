@@ -23,7 +23,7 @@
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
         <Style x:Key="DetailSectionCard" TargetType="Border">
-            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="#E0E0E0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>

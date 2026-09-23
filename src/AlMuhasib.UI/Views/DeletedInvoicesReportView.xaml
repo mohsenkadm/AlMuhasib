@@ -23,7 +23,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="#FFEBEE" CornerRadius="10" Padding="10,6" Margin="0,0,12,0">
+                        <Border Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="10" Padding="10,6" Margin="0,0,12,0">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="ShieldSearch" Width="18" Height="18" Foreground="#C62828" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="التقارير الرقابية" FontWeight="SemiBold" Foreground="#C62828" VerticalAlignment="Center"/>
@@ -215,7 +215,7 @@
                                                 Style="{StaticResource IconButton}"
                                                 ToolTip="استرجاع الفاتورة"
                                                 Width="36" Height="32"
-                                                Background="#E8F5E9"
+                                                Background="{DynamicResource DashboardKpiGreenLightBrush}"
                                                 Foreground="#2E7D32">
                                             <md:PackIcon Kind="Restore" Width="18" Height="18" Foreground="#2E7D32"/>
                                         </Button>

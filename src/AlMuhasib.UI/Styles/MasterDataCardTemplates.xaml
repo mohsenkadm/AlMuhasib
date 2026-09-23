@@ -24,7 +24,7 @@
                            FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
             <Border Grid.Column="1"
-                    Background="{DynamicResource MaterialDesignPaper}"
+                    Background="{DynamicResource MutedIconBackgroundBrush}"
                     CornerRadius="8" Padding="7,3" Margin="10,0,0,0"
                     VerticalAlignment="Center">
                 <TextBlock Foreground="{DynamicResource HintForegroundBrush}" FontSize="11">
@@ -32,7 +32,7 @@
                 </TextBlock>
             </Border>
             <Border Grid.Column="2"
-                    Background="{DynamicResource MaterialDesignPaper}"
+                    Background="{DynamicResource MutedIconBackgroundBrush}"
                     CornerRadius="8" Padding="7,3" Margin="6,0,0,0"
                     VerticalAlignment="Center">
                 <TextBlock Text="{Binding FileNumber, TargetNullValue=—}"
@@ -55,7 +55,7 @@
                            FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
             <Border Grid.Column="1"
-                    Background="{DynamicResource MaterialDesignPaper}"
+                    Background="{DynamicResource MutedIconBackgroundBrush}"
                     CornerRadius="8" Padding="7,3" Margin="10,0,0,0"
                     VerticalAlignment="Center">
                 <TextBlock Foreground="{DynamicResource HintForegroundBrush}" FontSize="11">
@@ -87,7 +87,7 @@
         <Setter Property="Width" Value="228"/>
         <Setter Property="Margin" Value="0,0,12,12"/>
         <Setter Property="CornerRadius" Value="12"/>
-        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Background" Value="{StaticResource CardBrush}"/>
         <Setter Property="Padding" Value="14,12"/>
@@ -102,13 +102,13 @@
     <Style x:Key="MasterDataCardTitle" TargetType="TextBlock">
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Foreground" Value="#263238"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
 
     <Style x:Key="MasterDataCardMeta" TargetType="TextBlock">
         <Setter Property="FontSize" Value="11"/>
-        <Setter Property="Foreground" Value="#78909C"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         <Setter Property="Margin" Value="0,3,0,0"/>
     </Style>
@@ -165,7 +165,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="PackageVariant" Width="20" Height="20" Foreground="#388E3C"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -207,7 +207,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF3E0" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Account" Width="20" Height="20" Foreground="#F57C00"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -367,7 +367,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource MutedIconBackgroundBrush}" Margin="0,0,0,8">
-                    <md:PackIcon Kind="TruckDelivery" Width="20" Height="20" Foreground="#546E7A"
+                    <md:PackIcon Kind="TruckDelivery" Width="20" Height="20" Foreground="{DynamicResource TextSecondaryBrush}"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <TextBlock Grid.Row="1" Text="{Binding Name}" Style="{StaticResource MasterDataCardTitle}"
@@ -462,7 +462,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#E8EAF6" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiIndigoLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Stairs" Width="20" Height="20" Foreground="#3949AB"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -539,7 +539,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Door" Width="20" Height="20" Foreground="#2E7D32"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -585,7 +585,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF3E0" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Account" Width="20" Height="20" Foreground="#F57C00"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -630,7 +630,7 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="BorderBrush" Value="#B8860B"/>
-                <Setter Property="Background" Value="#FFF8E1"/>
+                <Setter Property="Background" Value="{DynamicResource NotepadPaperBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -644,7 +644,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Account" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -689,7 +689,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="TruckDelivery" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -734,7 +734,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Gold" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -771,7 +771,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="ShapeOutline" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -801,7 +801,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="Warehouse" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
@@ -839,7 +839,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Width="36" Height="36" CornerRadius="10" Background="#FFF8E1" Margin="0,0,0,8">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,0,8">
                     <md:PackIcon Kind="CashRegister" Width="20" Height="20" Foreground="#B8860B"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>

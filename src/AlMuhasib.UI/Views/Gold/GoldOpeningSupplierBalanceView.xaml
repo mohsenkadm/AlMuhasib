@@ -163,7 +163,7 @@
                 <md:Card Padding="24" MinWidth="460" MaxWidth="540" UniformCornerRadius="14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <Border Width="40" Height="40" CornerRadius="10" Background="#FFF8E1" Margin="0,0,12,0">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource NotepadPaperBrush}" Margin="0,0,12,0">
                                 <md:PackIcon Kind="CashRefund" Width="22" Height="22"
                                              Foreground="#A67C00" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>

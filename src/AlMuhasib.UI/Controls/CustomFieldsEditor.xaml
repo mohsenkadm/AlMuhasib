@@ -8,8 +8,8 @@
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
     </UserControl.Resources>
 
-    <Border Background="#F7FAFC"
-            BorderBrush="#E2E8F0"
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
             BorderThickness="1"
             CornerRadius="14"
             Padding="14">
@@ -21,7 +21,7 @@
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="حقول إضافية" FontWeight="SemiBold" FontSize="14" Foreground="#1A237E"/>
                     <TextBlock Text="الحقول المخصصة المفعّلة من الإعدادات"
-                               FontSize="11" Foreground="#78909C"/>
+                               FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
             </StackPanel>
 

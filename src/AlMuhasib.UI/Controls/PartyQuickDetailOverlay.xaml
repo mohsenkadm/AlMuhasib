@@ -82,28 +82,28 @@
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding Phone, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="الهاتف" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="الهاتف" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         <TextBlock Text="{Binding Phone}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding Address, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="العنوان" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="العنوان" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         <TextBlock Text="{Binding Address}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" MaxWidth="280"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource MetaPill}"
                                         Visibility="{Binding FileNumber, Converter={StaticResource NullToCollapsedConverter}}">
                                     <StackPanel>
-                                        <TextBlock Text="رقم العميل" FontSize="11" Foreground="#90A4AE"/>
+                                        <TextBlock Text="رقم العميل" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         <TextBlock Text="{Binding FileNumber}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
 
                             <WrapPanel Margin="0,4,0,12">
-                                <Border Style="{StaticResource StatPill}" Background="#FFEBEE">
+                                <Border Style="{StaticResource StatPill}" Background="{DynamicResource DashboardKpiRedLightBrush}">
                                     <StackPanel>
                                         <TextBlock Text="المطلوب / الرصيد" FontSize="11" Foreground="#C62828"/>
                                         <TextBlock Text="{Binding BalanceText}" FontSize="18" FontWeight="Bold" Foreground="#B71C1C"/>
@@ -115,7 +115,7 @@
                                         <TextBlock Text="{Binding DealCountText}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource StatPill}" Background="#E8F5E9">
+                                <Border Style="{StaticResource StatPill}" Background="{DynamicResource DashboardKpiGreenLightBrush}">
                                     <StackPanel>
                                         <TextBlock Text="إجمالي التعاملات" FontSize="11" Foreground="#2E7D32"/>
                                         <TextBlock Text="{Binding TotalDealAmountText}" FontSize="18" FontWeight="Bold" Foreground="#1B5E20"/>
@@ -123,7 +123,7 @@
                                 </Border>
                             </WrapPanel>
 
-                            <Border Background="#FFF8E1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
+                            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="History" Foreground="#F57C00" Width="22" Height="22" VerticalAlignment="Center"/>
                                     <StackPanel Margin="10,0,0,0">
@@ -162,13 +162,13 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Description}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                                                    <TextBlock Text="{Binding Date, StringFormat=\{0:yyyy/MM/dd\}}" FontSize="11" Foreground="#90A4AE" Margin="0,3,0,0"/>
+                                                    <TextBlock Text="{Binding Date, StringFormat=\{0:yyyy/MM/dd\}}" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,3,0,0"/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" HorizontalAlignment="Left">
-                                                    <TextBlock FontSize="12" Foreground="#78909C" HorizontalAlignment="Left">
+                                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left">
                                                         <Run Text="مدين "/><Run Text="{Binding Debit, Mode=OneWay, StringFormat=N0}"/>
                                                     </TextBlock>
-                                                    <TextBlock FontSize="12" Foreground="#78909C" HorizontalAlignment="Left">
+                                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left">
                                                         <Run Text="دائن "/><Run Text="{Binding Credit, Mode=OneWay, StringFormat=N0}"/>
                                                     </TextBlock>
                                                 </StackPanel>
@@ -187,13 +187,13 @@
                         <TextBlock Text="جاري تحميل التفاصيل…" Margin="0,14,0,0" Foreground="#607D8B"/>
                     </StackPanel>
 
-                    <Border Margin="24" Padding="16" Background="#FFEBEE" CornerRadius="12" VerticalAlignment="Center"
+                    <Border Margin="24" Padding="16" Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="12" VerticalAlignment="Center"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}">
                         <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" TextWrapping="Wrap" TextAlignment="Center"/>
                     </Border>
                 </Grid>
 
-                <Border Grid.Row="2" Background="#FAFBFC" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
                         Padding="22,14" CornerRadius="0,0,18,18">
                     <Button Click="CloseButton_Click" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Left" Height="40" Padding="28,0"

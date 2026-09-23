@@ -54,7 +54,7 @@
                         Title="الشرائح"
                         TextValue="{Binding BucketCount}"
                         Icon="CalendarClock"
-                        IconBackground="#F3E5F5"
+                        IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
                         ValueForeground="#6A1B9A"/>
                 </UniformGrid>

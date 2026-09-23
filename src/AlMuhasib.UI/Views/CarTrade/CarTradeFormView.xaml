@@ -17,7 +17,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Width="48" Height="48" CornerRadius="12" Background="#FFF3E0" Margin="0,0,14,0">
+                    <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,14,0">
                         <md:PackIcon Kind="CarArrowRight" Width="26" Height="26"
                                      Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -137,7 +137,7 @@
                             <StackPanel Margin="8,0,0,12">
                                 <TextBlock Text="المبلغ المتبقي للبائع" Style="{StaticResource FormFieldLabel}"/>
                                 <TextBox Text="{Binding RemainingAmount, StringFormat=N0}" IsReadOnly="True"
-                                         Style="{StaticResource FilledTextBox}" Background="#FFF3E0" Foreground="#C62828"
+                                         Style="{StaticResource FilledTextBox}" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Foreground="#C62828"
                                          FontSize="16" FontWeight="Bold" MinHeight="48"/>
                             </StackPanel>
                         </UniformGrid>

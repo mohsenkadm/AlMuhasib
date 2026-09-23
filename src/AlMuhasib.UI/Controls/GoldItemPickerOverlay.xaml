@@ -99,7 +99,7 @@
                                             <Style TargetType="Border">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Background" Value="#FFF8E1"/>
+                                                        <Setter Property="Background" Value="{DynamicResource NotepadPaperBrush}"/>
                                                         <Setter Property="BorderBrush" Value="#B8860B"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>

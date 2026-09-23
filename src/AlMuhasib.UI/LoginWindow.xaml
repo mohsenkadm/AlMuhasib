@@ -35,7 +35,7 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="18">
                             <materialDesign:PackIcon x:Name="Icon" Kind="EyeOff" Width="20" Height="20"
-                                                     Foreground="#90A4AE"
+                                                     Foreground="{DynamicResource HintForegroundBrush}"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -64,7 +64,7 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="18">
                             <materialDesign:PackIcon x:Name="Icon" Kind="Dialpad" Width="20" Height="20"
-                                                     Foreground="#90A4AE"
+                                                     Foreground="{DynamicResource HintForegroundBrush}"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -86,7 +86,7 @@
         </Style>
 
         <Style x:Key="NumPadKeyButton" TargetType="Button">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="BorderBrush" Value="#E3EDF7"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Foreground" Value="#1A237E"/>
@@ -303,7 +303,7 @@
                     </Grid>
                     <TextBlock Text="{Binding FullName}" FontSize="14" FontWeight="SemiBold"
                                Foreground="#1A237E" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="120"/>
-                    <TextBlock Text="{Binding RoleDisplay}" FontSize="11" Foreground="#78909C"
+                    <TextBlock Text="{Binding RoleDisplay}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Button>
@@ -400,10 +400,10 @@
                     </Grid>
 
                     <!-- ═══ Login content ═══ -->
-                    <Grid Grid.Column="1" Background="#FAFBFD">
+                    <Grid Grid.Column="1" Background="{DynamicResource BackgroundBrush}">
                         <Button x:Name="CloseButton" HorizontalAlignment="Left" VerticalAlignment="Top"
                                 Margin="16,16,0,0" Style="{StaticResource IconButton}"
-                                Foreground="#78909C" Width="36" Height="36"
+                                Foreground="{DynamicResource TextSecondaryBrush}" Width="36" Height="36"
                                 Click="CloseButton_Click" ToolTip="إغلاق">
                             <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="18" Width="36" Height="36">
                                 <materialDesign:PackIcon Kind="Close" Width="18" Height="18"
@@ -414,7 +414,7 @@
                         <Grid Margin="40,36,40,32">
                             <!-- Error banner -->
                             <Border VerticalAlignment="Top" CornerRadius="10"
-                                    Background="#FFEBEE" BorderBrush="#FFCDD2" BorderThickness="1"
+                                    Background="{DynamicResource DashboardKpiRedLightBrush}" BorderBrush="#FFCDD2" BorderThickness="1"
                                     Padding="12,10" Panel.ZIndex="10"
                                     Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
                                 <Grid>
@@ -440,7 +440,7 @@
                                     <TextBlock Text="من يقوم بتسجيل الدخول؟"
                                                FontSize="24" FontWeight="Bold" Foreground="#1A237E"/>
                                     <TextBlock Text="اختر المستخدم للمتابعة"
-                                               FontSize="13" Foreground="#78909C" Margin="0,6,0,24"/>
+                                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,24"/>
 
                                     <Border CornerRadius="16" Background="{DynamicResource CardBrush}" Padding="16,20"
                                             BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" MinHeight="220">
@@ -450,7 +450,7 @@
                                                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                                                              IsIndeterminate="True" Width="36" Height="36"/>
                                                 <TextBlock Text="جاري تحميل المستخدمين..."
-                                                           Foreground="#78909C" FontSize="13"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"
                                                            HorizontalAlignment="Center" Margin="0,12,0,0"/>
                                             </StackPanel>
 
@@ -470,7 +470,7 @@
                                     </Border>
 
                                     <TextBlock Text="اضغط على بطاقة المستخدم للمتابعة"
-                                               FontSize="12" Foreground="#90A4AE"
+                                               FontSize="12" Foreground="{DynamicResource HintForegroundBrush}"
                                                HorizontalAlignment="Center" Margin="0,16,0,0"/>
                                 </StackPanel>
                             </Grid>
@@ -511,7 +511,7 @@
                                                    FontSize="18" FontWeight="Bold" Foreground="#1A237E"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="أدخل كلمة المرور للمتابعة"
-                                                   FontSize="13" Foreground="#78909C"
+                                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                     </StackPanel>
 
@@ -597,7 +597,7 @@
                                     </Border>
 
                                     <CheckBox Content="تذكرني" IsChecked="{Binding RememberMe}"
-                                              FontSize="13" Margin="0,4,0,16" Foreground="#546E7A"/>
+                                              FontSize="13" Margin="0,4,0,16" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                                     <Button Command="{Binding LoginCommand}"
                                             Style="{StaticResource LoginPrimaryButton}" IsDefault="True">
@@ -624,8 +624,8 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                     VerticalAlignment="Bottom" Margin="0,0,0,16" Opacity="0.85">
                             <materialDesign:PackIcon Kind="ShieldCheck" Width="14" Height="14"
-                                                     Foreground="#90A4AE" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock FontSize="10" Foreground="#90A4AE">
+                                                     Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock FontSize="10" Foreground="{DynamicResource HintForegroundBrush}">
                                 <Run Text="© 2026 "/>
                                 <Run Text="{x:Static helpers:AppInfo.AppNameAr}"/>
                                 <Run Text=" — جميع الحقوق محفوظة"/>

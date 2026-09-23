@@ -52,7 +52,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep0}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -83,7 +83,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep1}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -114,7 +114,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep2}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -145,7 +145,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep3}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -176,7 +176,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#616161"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsStep4}" Value="True">
                                         <Setter Property="Foreground" Value="White"/>
@@ -206,7 +206,7 @@
                            HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="#616161"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsStep5}" Value="True">
                                     <Setter Property="Foreground" Value="White"/>
@@ -238,7 +238,7 @@
                     <md:PackIcon Kind="Cash" Width="36" Height="36" Foreground="#388E3C"
                                  HorizontalAlignment="Center" Margin="0,0,0,12"/>
                     <TextBlock Text="أدخل رأس المال الأساسي للنظام" FontSize="15"
-                               HorizontalAlignment="Center" Margin="0,0,0,24" Foreground="#616161"/>
+                               HorizontalAlignment="Center" Margin="0,0,0,24" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                     <TextBox md:HintAssist.Hint="مبلغ رأس المال"
                              Style="{StaticResource NumericTextBox}"
@@ -258,7 +258,7 @@
                              TextWrapping="Wrap"/>
 
                     <TextBlock Text="الرصيد الافتتاحي للأرباح (اختياري)"
-                               FontSize="13" Foreground="#616161"
+                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
                                HorizontalAlignment="Center" Margin="0,8,0,8"/>
                     <TextBox md:HintAssist.Hint="رصيد الأرباح الافتتاحي"
                              Style="{StaticResource NumericTextBox}"
@@ -279,7 +279,7 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="أدخل الصناديق (الافتتاحية) أو الأرصدة الابتدائية"
-                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="#616161"/>
+                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                     <!-- Add row -->
                     <Grid Grid.Row="1" Margin="0,0,0,12">
@@ -348,7 +348,7 @@
                     <TextBlock Grid.Row="0"
                                Text="أضف المستثمرين وأرصدتهم الافتتاحية (اختياري — لا يُضاف الرصيد إلى القاصة)"
                                FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,16"
-                               Foreground="#616161" TextWrapping="Wrap" TextAlignment="Center"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
 
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
@@ -426,7 +426,7 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="أدخل المخازن التي ستُحمَّل في النظام"
-                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="#616161"/>
+                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
@@ -493,7 +493,7 @@
                     <TextBlock Grid.Row="0"
                                Text="أدخل الكمية مع سعر الوحدة (يُحسب الإجمالي) أو الكمية مع الإجمالي الكلي (يُحسب سعر الوحدة) — اختياري"
                                FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,16"
-                               Foreground="#616161" TextWrapping="Wrap" TextAlignment="Center"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
 
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
@@ -572,7 +572,7 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="أدخل أنواع المصروفات (من أجهزة وكهرباء ونحو ذلك)"
-                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="#616161"/>
+                               FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,16" Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>

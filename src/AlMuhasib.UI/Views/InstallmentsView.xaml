@@ -32,7 +32,7 @@
                                FontSize="11" Margin="0,2,0,0"/>
                 </StackPanel>
                 <Border Grid.Column="1"
-                        Background="{DynamicResource MaterialDesignPaper}"
+                        Background="{DynamicResource MutedIconBackgroundBrush}"
                         CornerRadius="8" Padding="7,3" Margin="10,0,0,0"
                         VerticalAlignment="Center">
                     <TextBlock Text="{Binding FileNumber, TargetNullValue=—}"
@@ -100,7 +100,7 @@
                         BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="CheckCircle" Width="20" Height="20" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="المبلغ المسدد" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
@@ -128,7 +128,7 @@
                         BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Width="36" Height="36" CornerRadius="10" Background="#E8F5E9" Margin="0,0,10,0">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="CashCheck" Width="20" Height="20" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="أقساط مسددة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
@@ -142,7 +142,7 @@
                         BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Width="36" Height="36" CornerRadius="10" Background="#FFEBEE" Margin="0,0,10,0">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource DashboardKpiRedLightBrush}" Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="AlertCircle" Width="20" Height="20" Foreground="#C62828" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="أقساط متأخرة" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
@@ -222,7 +222,7 @@
         <Border Margin="0,8,0,0"
                 Padding="12,10"
                 CornerRadius="10"
-                Background="#E8F5E9"
+                Background="{DynamicResource DashboardKpiGreenLightBrush}"
                 BorderBrush="#A5D6A7"
                 BorderThickness="1"
                 Visibility="{Binding CanSendWhatsAppReceipt, Converter={StaticResource BoolToVis}}">
@@ -477,7 +477,7 @@
 
                     <!-- Header -->
                     <materialDesign:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" UniformCornerRadius="10" Padding="16,10" Margin="0,0,0,12"
-                                         Background="#FFEBEE" materialDesign:ElevationAssist.Elevation="Dp0">
+                                         Background="{DynamicResource DashboardKpiRedLightBrush}" materialDesign:ElevationAssist.Elevation="Dp0">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="AlertCircle" Width="22" Height="22" Foreground="#C62828" VerticalAlignment="Center" Margin="0,0,10,0" />
                             <TextBlock FontSize="14" Foreground="#B71C1C" VerticalAlignment="Center">
@@ -791,7 +791,7 @@
 
                         <!-- Payment Form -->
                         <materialDesign:Card Style="{StaticResource ElevatedCard}" UniformCornerRadius="12" Padding="20,16" Margin="0,0,0,16"
-                                             Background="#E8F5E9" materialDesign:ElevationAssist.Elevation="Dp1">
+                                             Background="{DynamicResource DashboardKpiGreenLightBrush}" materialDesign:ElevationAssist.Elevation="Dp1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -1109,7 +1109,7 @@
                                                         CommandParameter="{Binding}"
                                                         Height="26" Padding="10,0"
                                                         materialDesign:ButtonAssist.CornerRadius="6"
-                                                        FontSize="11" Background="#FFEBEE" Foreground="#C62828"
+                                                        FontSize="11" Background="{DynamicResource DashboardKpiRedLightBrush}" Foreground="#C62828"
                                                         BorderThickness="0">
                                                     <TextBlock Text="إلغاء التسديد"/>
                                                 </Button>
@@ -1262,7 +1262,7 @@
                                                     CommandParameter="{Binding}"
                                                     Height="26" Padding="10,0"
                                                     materialDesign:ButtonAssist.CornerRadius="6"
-                                                    FontSize="11" Background="#FFEBEE" Foreground="#C62828"
+                                                    FontSize="11" Background="{DynamicResource DashboardKpiRedLightBrush}" Foreground="#C62828"
                                                     BorderThickness="0">
                                                 <TextBlock Text="إلغاء التسديد"/>
                                             </Button>

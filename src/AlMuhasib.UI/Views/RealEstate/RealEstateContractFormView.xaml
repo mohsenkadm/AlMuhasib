@@ -180,13 +180,13 @@
                             </StackPanel>
                             <StackPanel Margin="8,0,0,12">
                                 <TextBlock Text="المبلغ المتبقي" Style="{StaticResource FormFieldLabel}"/>
-                                <TextBox Text="{Binding RemainingAmount}" IsReadOnly="True" Style="{StaticResource FilledTextBox}" Background="#F5F5F5"/>
+                                <TextBox Text="{Binding RemainingAmount}" IsReadOnly="True" Style="{StaticResource FilledTextBox}" Background="{DynamicResource MutedIconBackgroundBrush}"/>
                             </StackPanel>
                         </UniformGrid>
                         <StackPanel Margin="0,0,0,12">
                             <TextBlock Text="المبلغ كتابةً" Style="{StaticResource FormFieldLabel}"/>
                             <TextBox Text="{Binding TotalPriceInWords}" IsReadOnly="True"
-                                     Style="{StaticResource FilledTextBox}" Background="#F5F5F5" TextWrapping="Wrap"/>
+                                     Style="{StaticResource FilledTextBox}" Background="{DynamicResource MutedIconBackgroundBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                         <UniformGrid Columns="3">
                             <StackPanel Margin="0,0,8,0">
