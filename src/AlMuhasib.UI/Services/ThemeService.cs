@@ -11,28 +11,28 @@ public sealed class ThemeService
     /// <summary>Fired after palette, brushes, and chart theme are updated.</summary>
     public static event EventHandler? ThemeChanged;
 
-    // Classic blue-dark surfaces (aligned with sidebar navy family)
-    private const string DarkBg = "#0B1524";
-    private const string DarkCard = "#132338";
-    private const string DarkTopBar = "#0F1C2E";
-    private const string DarkBorder = "#2A3F5A";
-    private const string DarkText = "#E8EEF5";
-    private const string DarkTextSecondary = "#9BB0C7";
-    private const string DarkHint = "#7A93AD";
-    private const string DarkMutedIcon = "#1A3048";
-    private const string DarkAlt = "#182B42";
-    private const string DarkHover = "#243F5C";
-    private const string DarkSelected = "#1A3A5C";
-    private const string DarkHighlight = "#42A5F5";
-    private const string DarkHighlightLight = "#163A5C";
-    private const string DarkHighlightBorder = "#1E88E5";
-    private const string DarkAccent = "#1E88E5";
+    // Classic blue-dark — matched to SmarterASP V5 navy (#0A1136 family)
+    private const string DarkBg = "#0A1136";
+    private const string DarkCard = "#121B42";
+    private const string DarkTopBar = "#0E1538";
+    private const string DarkBorder = "#2A3558";
+    private const string DarkText = "#FFFFFF";
+    private const string DarkTextSecondary = "#A8B0C4";
+    private const string DarkHint = "#8890A8";
+    private const string DarkMutedIcon = "#1A2448";
+    private const string DarkAlt = "#161F46";
+    private const string DarkHover = "#1E2A52";
+    private const string DarkSelected = "#1A3A6C";
+    private const string DarkHighlight = "#5BA3D9";
+    private const string DarkHighlightLight = "#163A6C";
+    private const string DarkHighlightBorder = "#337AB7";
+    private const string DarkAccent = "#337AB7";
     private const string DarkAccentLight = "#143A5C";
-    private const string DarkAccentDark = "#1565C0";
-    private const string DarkChromeInactive = "#1A3048";
-    private const string DarkChromeHover = "#243F5C";
-    private const string DarkSearchBorder = "#3A5572";
-    private const string DarkChartWell = "#0E1A2C";
+    private const string DarkAccentDark = "#286090";
+    private const string DarkChromeInactive = "#1A2448";
+    private const string DarkChromeHover = "#1E2A52";
+    private const string DarkSearchBorder = "#3A4570";
+    private const string DarkChartWell = "#0C1234";
 
     private readonly IUserPreferencesService _preferences;
     private readonly ISystemProfileService _systemProfile;
@@ -358,9 +358,9 @@ public sealed class ThemeService
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkBg)!, 0));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0E1A2C")!, 0.55));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0C1828")!, 1));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A1136")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0C1234")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0E1538")!, 1));
         }
         else
         {
@@ -377,11 +377,11 @@ public sealed class ThemeService
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
         if (isDark)
         {
-            // Classic navy → blue only (no teal)
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A2540")!, 0));
+            // Classic navy → SmarterASP blue accent
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0A1136")!, 0));
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#123A5C")!, 0.45));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1565C0")!, 0.82));
-            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1E88E5")!, 1));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#286090")!, 0.82));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#337AB7")!, 1));
         }
         else
         {
