@@ -128,7 +128,7 @@
                                             BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="10">
                                         <StackPanel>
                                             <TextBlock Text="{Binding ContractNumber}" FontWeight="Bold" FontSize="15"/>
-                                            <TextBlock Text="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Foreground="#78909C" Margin="0,4,0,0"/>
+                                            <TextBlock Text="{Binding ContractDate, StringFormat=yyyy/MM/dd}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                                             <TextBlock Margin="0,8,0,0"><Run Text="بائع: "/><Run Text="{Binding SellerName}"/></TextBlock>
                                             <TextBlock><Run Text="مشتري: "/><Run Text="{Binding BuyerName}"/></TextBlock>
                                             <TextBlock FontWeight="SemiBold" Margin="0,8,0,0" Foreground="#2E7D32">

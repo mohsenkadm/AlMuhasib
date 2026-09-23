@@ -29,7 +29,7 @@
                     <controls:AnimatedStatCard Title="إجمالي الديون" TextValue="{Binding TotalOutstanding}" Icon="AccountAlert" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="outstanding"/>
                     <controls:AnimatedStatCard Title="عدد العملاء" TextValue="{Binding CustomerCount}" Icon="AccountMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
-                    <controls:AnimatedStatCard Title="متوسط الهامش" TextValue="{Binding AverageMarginPercent}" Icon="Percent" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                    <controls:AnimatedStatCard Title="متوسط الهامش" TextValue="{Binding AverageMarginPercent}" Icon="Percent" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <controls:ChartCard Title="{Binding ChartTitle}">

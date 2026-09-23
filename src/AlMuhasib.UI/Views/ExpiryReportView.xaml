@@ -30,7 +30,7 @@
                     <controls:AnimatedStatCard Title="قريب (30 يوم)" TextValue="{Binding CriticalCount}" Icon="Alert"
                                                IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="تحذير (90 يوم)" TextValue="{Binding WarningCount}" Icon="ClockAlert"
-                                               IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                                               IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825" ValueForeground="#F9A825"/>
                     <controls:AnimatedStatCard Title="كمية متأثرة" TextValue="{Binding AffectedQuantity}" Icon="PackageVariant"
                                                IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}" ValueForeground="{DynamicResource TextSecondaryBrush}"/>
                 </UniformGrid>

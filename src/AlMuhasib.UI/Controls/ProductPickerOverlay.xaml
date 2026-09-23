@@ -137,7 +137,7 @@
                     </Border>
 
                     <!-- Footer -->
-                    <Border DockPanel.Dock="Bottom" Background="#FAFBFD" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
+                    <Border DockPanel.Dock="Bottom" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0"
                             CornerRadius="0,0,16,16" Padding="12,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -178,9 +178,9 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Background="#F4F7FB" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
+                        <Border Grid.Column="0" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
                             <DockPanel Margin="10,10,8,10">
-                                <TextBlock DockPanel.Dock="Top" Text="الأصناف" FontWeight="SemiBold" Foreground="#546E7A" Margin="0,0,0,8"/>
+                                <TextBlock DockPanel.Dock="Top" Text="الأصناف" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel>
                                         <Button Content="الكل" Command="{Binding SelectAllCategoriesCommand}"
@@ -315,7 +315,7 @@
                                                                Visibility="{Binding HasScientificName, Converter={StaticResource BoolVis}}"
                                                                behaviors:HighlightingTextBlockBehavior.HighlightText="{Binding ScientificName}"
                                                                behaviors:HighlightingTextBlockBehavior.SearchTerm="{Binding SearchTerm}"/>
-                                                    <TextBlock Grid.Row="2" FontSize="10" Foreground="#90A4AE" Margin="0,2,0,2"
+                                                    <TextBlock Grid.Row="2" FontSize="10" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,2"
                                                                Text="{Binding CategoryName}"/>
                                                     <ItemsControl Grid.Row="3" ItemsSource="{Binding WarehouseStocks}" Margin="0,0,0,4">
                                                         <ItemsControl.ItemsPanel>

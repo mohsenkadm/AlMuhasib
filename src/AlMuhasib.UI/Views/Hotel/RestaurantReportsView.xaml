@@ -55,7 +55,7 @@
                     <controls:AnimatedStatCard Title="مشتريات المطبخ" TextValue="{Binding OverviewKitchenPurchases}"
                                                Icon="CartOutline" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="صافي التشغيل" TextValue="{Binding OverviewNetOperating}"
-                                               Icon="ScaleBalance" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                                               Icon="ScaleBalance" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
             </StackPanel>
         </ScrollViewer>

@@ -74,7 +74,7 @@
                     <DockPanel Margin="0,0,0,14">
                         <TextBlock Text="الميزان الإلكتروني" FontWeight="Bold" Foreground="#B8860B" FontSize="15"
                                    VerticalAlignment="Center"/>
-                        <Border DockPanel.Dock="Right" Padding="10,4" CornerRadius="8" Background="#FFF8E1"
+                        <Border DockPanel.Dock="Right" Padding="10,4" CornerRadius="8" Background="{DynamicResource NotepadPaperBrush}"
                                 HorizontalAlignment="Left" Margin="12,0,0,0">
                             <TextBlock Text="{Binding ScaleStatusText}" Foreground="#8B6914" FontSize="12"/>
                         </Border>

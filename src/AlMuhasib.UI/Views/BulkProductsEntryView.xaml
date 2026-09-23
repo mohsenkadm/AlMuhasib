@@ -79,7 +79,7 @@
                                        Title="ناقصة"
                                        Value="{Binding IncompleteRows}"
                                        Icon="AlertCircleOutline"
-                                       IconBackground="#FFF8E1" IconForeground="#F9A825" ValueForeground="#F9A825"/>
+                                       IconBackground="{DynamicResource NotepadPaperBrush}" IconForeground="#F9A825" ValueForeground="#F9A825"/>
             <controls:AnimatedStatCard Title="مكررة"
                                        Value="{Binding DuplicateRows}"
                                        Icon="ContentDuplicate"
@@ -101,7 +101,7 @@
                       EnableRowVirtualization="True"
                       EnableColumnVirtualization="True"
                       GridLinesVisibility="All"
-                      AlternatingRowBackground="#FAFAFA"
+                      AlternatingRowBackground="{DynamicResource BackgroundBrush}"
                       BorderThickness="0"
                       FontSize="13">
                 <DataGrid.Columns>

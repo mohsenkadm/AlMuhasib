@@ -93,14 +93,14 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button Command="{Binding SelectAllCommand}" Style="{StaticResource PermChipButton}"
-                            Background="#E8F5E9" Foreground="#2E7D32">
+                            Background="{DynamicResource DashboardKpiGreenLightBrush}" Foreground="#2E7D32">
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="CheckAll" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="تحديد الكل" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding DeselectAllCommand}" Style="{StaticResource PermChipButton}"
-                            Background="#FFEBEE" Foreground="#C62828">
+                            Background="{DynamicResource DashboardKpiRedLightBrush}" Foreground="#C62828">
                         <StackPanel Orientation="Horizontal">
                             <md:PackIcon Kind="CloseCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="إلغاء الكل" VerticalAlignment="Center"/>
@@ -138,13 +138,13 @@
                 <Border Background="{DynamicResource BackgroundBrush}" Padding="16,12" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,0,0,1">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Border Width="34" Height="34" CornerRadius="10" Background="#E8EAF6" Margin="0,0,10,0">
+                            <Border Width="34" Height="34" CornerRadius="10" Background="{DynamicResource DashboardKpiIndigoLightBrush}" Margin="0,0,10,0">
                                 <md:PackIcon Kind="ViewDashboardOutline" Width="18" Height="18" Foreground="#3949AB"
                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="صلاحيات الشاشات" FontSize="15" FontWeight="Bold" Foreground="#1A237E"/>
-                                <TextBlock Text="فعّل العرض أولاً ثم حدّد العمليات المسموحة" FontSize="11" Foreground="#78909C"/>
+                                <TextBlock Text="فعّل العرض أولاً ثم حدّد العمليات المسموحة" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
                         <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" FontSize="12" Foreground="#607D8B"
@@ -160,7 +160,7 @@
                           HeadersVisibility="Column"
                           Style="{StaticResource ModernDataGrid}"
                           SelectionMode="Single"
-                          AlternatingRowBackground="#FAFBFC"
+                          AlternatingRowBackground="{DynamicResource BackgroundBrush}"
                           GridLinesVisibility="Horizontal"
                           HorizontalGridLinesBrush="#ECEFF1"
                           RowHeight="44">
@@ -171,7 +171,7 @@
                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                     <Setter Property="Padding" Value="14,0"/>
-                                    <Setter Property="Foreground" Value="#263238"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource DataGridCellForegroundBrush}"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
@@ -262,7 +262,7 @@
 
         <Border Grid.Row="3" Margin="0,12,0,0" Padding="14,10" Background="{DynamicResource CardBrush}" CornerRadius="12"
                 BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
-            <TextBlock FontSize="12" Foreground="#78909C" TextWrapping="Wrap"
+            <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                        Text="نصيحة: صلاحية «عرض» هي المدخل لكل العمليات. لوحة التحكم تبقى متاحة دائماً. احفظ بعد كل تعديل مهم."/>
         </Border>
 

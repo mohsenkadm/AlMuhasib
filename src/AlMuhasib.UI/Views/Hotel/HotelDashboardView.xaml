@@ -178,7 +178,7 @@
                             <UniformGrid Grid.Row="1" Columns="4" Margin="0,18,0,0">
                                 <Button Style="{StaticResource HotelQuickAction}"
                                         Command="{Binding OpenCheckInOutCommand}"
-                                        Background="#F3E5F5" Margin="0,0,8,0">
+                                        Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,8,0">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Width="44" Height="44" CornerRadius="12" Background="#6A1B9A" Margin="0,0,12,0">
                                             <materialDesign:PackIcon Kind="Login" Width="24" Height="24"
@@ -193,7 +193,7 @@
                                 </Button>
                                 <Button Style="{StaticResource HotelQuickAction}"
                                         Command="{Binding OpenNewReservationCommand}"
-                                        Background="#E8F5E9" Margin="4,0,4,0">
+                                        Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="4,0,4,0">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Width="44" Height="44" CornerRadius="12" Background="#2E7D32" Margin="0,0,12,0">
                                             <materialDesign:PackIcon Kind="CalendarPlus" Width="24" Height="24"
@@ -223,7 +223,7 @@
                                 </Button>
                                 <Button Style="{StaticResource HotelQuickAction}"
                                         Command="{Binding OpenRoomsCommand}"
-                                        Background="#FFF3E0" Margin="8,0,0,0">
+                                        Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="8,0,0,0">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Width="44" Height="44" CornerRadius="12" Background="#EF6C00" Margin="0,0,12,0">
                                             <materialDesign:PackIcon Kind="Door" Width="24" Height="24"
@@ -264,7 +264,7 @@
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource FlatButton}"
                                                 HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,6">
-                                            <Border Background="#FFF8E1" CornerRadius="8" Padding="10,8"
+                                            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="10,8"
                                                     BorderBrush="#FFE082" BorderThickness="1" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Button}}">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -275,7 +275,7 @@
                                                         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#E65100" />
                                                         <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#6D4C41" TextWrapping="Wrap" Margin="0,4,0,0" />
                                                     </StackPanel>
-                                                    <materialDesign:PackIcon Grid.Column="1" Kind="ChevronLeft" Foreground="#90A4AE" VerticalAlignment="Center" />
+                                                    <materialDesign:PackIcon Grid.Column="1" Kind="ChevronLeft" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center" />
                                                 </Grid>
                                             </Border>
                                         </Button>
@@ -329,7 +329,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#E8F5E9">
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="{DynamicResource DashboardKpiGreenLightBrush}">
                                 <materialDesign:PackIcon Kind="DoorOpen" Width="28" Height="28"
                                                          Foreground="#2E7D32"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -346,7 +346,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#F3E5F5">
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="{DynamicResource PrimaryHueLightBrush}">
                                 <materialDesign:PackIcon Kind="Bed" Width="28" Height="28"
                                                          Foreground="#6A1B9A"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -384,7 +384,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="#FFF3E0">
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="14" Background="{DynamicResource DashboardKpiOrangeLightBrush}">
                                 <materialDesign:PackIcon Kind="ChartPie" Width="28" Height="28"
                                                          Foreground="#EF6C00"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -475,8 +475,8 @@
                             <Button Grid.Column="1" Command="{Binding OpenHousekeepingCommand}"
                                     Style="{StaticResource FlatButton}" Padding="8,4">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Broom" Width="18" Height="18" Foreground="#78909C" />
-                                    <TextBlock Text="النظافة" Margin="6,0,0,0" Foreground="#78909C" FontSize="12" />
+                                    <materialDesign:PackIcon Kind="Broom" Width="18" Height="18" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    <TextBlock Text="النظافة" Margin="6,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" />
                                 </StackPanel>
                             </Button>
                         </Grid>

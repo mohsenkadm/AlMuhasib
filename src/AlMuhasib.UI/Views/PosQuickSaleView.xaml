@@ -453,7 +453,7 @@
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
                                             <Border MinWidth="48" Margin="4,0" CornerRadius="6"
-                                                    Background="#F0F4F8" Padding="2,0" VerticalAlignment="Center">
+                                                    Background="{DynamicResource MutedIconBackgroundBrush}" Padding="2,0" VerticalAlignment="Center">
                                                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                          Style="{StaticResource NumericCellTextBox}"
                                                          MinWidth="40"
@@ -477,7 +477,7 @@
                     </DataGrid>
 
                     <!-- Summary (always visible above pay buttons) -->
-                    <Border Grid.Row="3" Background="#F5F9FC" CornerRadius="12" Padding="12,10" Margin="0,8,0,0">
+                    <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="12,10" Margin="0,8,0,0">
                         <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -625,17 +625,17 @@
                             </Border>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="إتمام الدفع" FontSize="20" FontWeight="Bold" Foreground="#0D47A1"/>
-                                <TextBlock Text="راجع المبلغ ثم أكّد الدفع" FontSize="12" Foreground="#78909C" Margin="0,2,0,0"/>
+                                <TextBlock Text="راجع المبلغ ثم أكّد الدفع" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </StackPanel>
 
-                        <Border Background="#F5F9FC" CornerRadius="12" Padding="16,14" Margin="0,0,0,16">
+                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,16">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="المبلغ الكامل" VerticalAlignment="Center" Foreground="#546E7A" FontSize="14"/>
+                                <TextBlock Text="المبلغ الكامل" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14"/>
                                 <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
                                            FontSize="26" FontWeight="Bold" Foreground="#1565C0"/>
                             </Grid>
@@ -669,7 +669,7 @@
                             </StackPanel>
                         </Button>
 
-                        <Border Background="#E8F5E9" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
                                 Visibility="{Binding ShowChangeDue, Converter={StaticResource BoolVis}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -682,7 +682,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Background="#FFF8E1" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
                                 Visibility="{Binding ShowCreditRemaining, Converter={StaticResource BoolVis}}">
                             <StackPanel>
                                 <Grid>

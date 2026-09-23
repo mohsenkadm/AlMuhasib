@@ -33,7 +33,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Segment" Property="Background" Value="White"/>
+                                <Setter TargetName="Segment" Property="Background" Value="{DynamicResource CardBrush}"/>
                                 <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
                             </Trigger>
                             <MultiDataTrigger>
@@ -48,7 +48,7 @@
                                     <Condition Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="False"/>
                                     <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="False"/>
                                 </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Icon" Property="Foreground" Value="#78909C"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                             </MultiDataTrigger>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
@@ -82,7 +82,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Segment" Property="Background" Value="White"/>
+                                <Setter TargetName="Segment" Property="Background" Value="{DynamicResource CardBrush}"/>
                                 <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
                             </Trigger>
                             <MultiDataTrigger>
@@ -97,7 +97,7 @@
                                     <Condition Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="False"/>
                                     <Condition Binding="{Binding OnDarkBackground, ElementName=Root}" Value="False"/>
                                 </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Icon" Property="Foreground" Value="#78909C"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                             </MultiDataTrigger>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>

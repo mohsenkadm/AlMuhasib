@@ -26,7 +26,7 @@
                 <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="إجمالي المبيعات" TextValue="{Binding TotalSales}" Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="إجمالي التحصيل" TextValue="{Binding TotalCollections}" Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
-                    <controls:AnimatedStatCard Title="إجمالي العمولات" TextValue="{Binding TotalCommissions}" Icon="Percent" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                    <controls:AnimatedStatCard Title="إجمالي العمولات" TextValue="{Binding TotalCommissions}" Icon="Percent" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                     <controls:AnimatedStatCard Title="عدد المندوبين" TextValue="{Binding RepCount}" Icon="AccountTie" IconBackground="#EFEBE9" IconForeground="#5D4037" ValueForeground="#5D4037"/>
                     <controls:AnimatedStatCard Title="متوسط التحقق" TextValue="{Binding AverageAchievement}" Icon="Target" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                 </UniformGrid>

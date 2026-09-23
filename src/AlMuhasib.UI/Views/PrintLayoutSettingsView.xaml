@@ -146,7 +146,7 @@
 
                     <materialDesign:Card Style="{StaticResource SettingsCard}">
                         <StackPanel>
-                            <TextBlock Text="إعدادات الطابعة (هذا الجهاز)" FontWeight="Bold" FontSize="15" Foreground="#546E7A" Margin="0,0,0,10"/>
+                            <TextBlock Text="إعدادات الطابعة (هذا الجهاز)" FontWeight="Bold" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10"/>
                             <ComboBox ItemsSource="{Binding AvailablePrinters}" SelectedItem="{Binding SelectedPrinter}"
                                       materialDesign:HintAssist.Hint="الطابعة الافتراضية" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10"/>
                             <ComboBox SelectedValue="{Binding PaperSize}" SelectedValuePath="Content"
@@ -158,13 +158,13 @@
 
                             <TextBlock Text="نماذج طباعة الفواتير A4" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
                             <TextBlock Text="اختر أحد النماذج الثلاثة لطباعة فواتير المبيعات والمشتريات والأقساط بحجم A4. التصميم التفصيلي للنموذجين المضغوط والعصري سيُحدَّد لاحقاً."
-                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                             <ComboBox ItemsSource="{Binding A4InvoiceTemplateOptions}"
                                       SelectedItem="{Binding SelectedA4InvoiceTemplate}"
                                       DisplayMemberPath="ArabicName"
                                       materialDesign:HintAssist.Hint="نموذج طباعة الفاتورة A4"
                                       Style="{StaticResource FilledComboBox}" Margin="0,0,0,8"/>
-                            <Border Background="#E8F5E9" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Foreground="#2E7D32"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -175,7 +175,7 @@
 
                             <TextBlock Text="نوع ورق الكاشير" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
                             <TextBlock Text="يُستخدم عند طباعة إيصال البيع السريع (POS)"
-                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                             <ComboBox SelectedValue="{Binding PosReceiptPaperSize}" SelectedValuePath="Content"
                                       materialDesign:HintAssist.Hint="حجم ورق إيصال الكاشير" Style="{StaticResource FilledComboBox}" Margin="0,0,0,8">
                                 <ComboBoxItem Content="A4"/>
@@ -194,7 +194,7 @@
 
                             <TextBlock Text="ورق فواتير الذهب" FontWeight="Bold" FontSize="14" Foreground="#B8860B" Margin="0,16,0,8"/>
                             <TextBlock Text="حجم الورق عند طباعة فواتير بيع/شراء/مبادلة الذهب (A4 أو حراري)"
-                                       FontSize="11" Foreground="#78909C" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                             <ComboBox SelectedValue="{Binding GoldReceiptPaperSize}" SelectedValuePath="Content"
                                       materialDesign:HintAssist.Hint="ورق فواتير الذهب" Style="{StaticResource FilledComboBox}" Margin="0,0,0,8">
                                 <ComboBoxItem Content="A4"/>
@@ -202,7 +202,7 @@
                                 <ComboBoxItem Content="58mm"/>
                                 <ComboBoxItem Content="50mm"/>
                             </ComboBox>
-                            <Border Background="#FFF8E1" CornerRadius="8" Padding="12,10">
+                            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="12,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Gold" Width="18" Height="18" Foreground="#B8860B"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -230,7 +230,7 @@
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="#1565C0" Margin="0,0,8,0"/>
                             <TextBlock Text="معاينة الطباعة" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                            <TextBlock Text="— مثال تقرير" FontSize="11" Foreground="#90A4AE" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="— مثال تقرير" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     <Border Grid.Row="1" Background="#B0BEC5" Padding="16">

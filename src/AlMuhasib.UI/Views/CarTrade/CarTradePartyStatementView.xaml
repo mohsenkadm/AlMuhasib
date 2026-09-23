@@ -247,7 +247,7 @@
                             <TextBlock Text="{Binding PaymentDialogTitle}" FontSize="18" FontWeight="Bold" Foreground="White"/>
                         </Border>
                         <StackPanel Grid.Row="1" Margin="24,20,24,8">
-                            <TextBlock Text="{Binding PaymentSummary}" TextWrapping="Wrap" Margin="0,0,0,16" Foreground="#546E7A"/>
+                            <TextBlock Text="{Binding PaymentSummary}" TextWrapping="Wrap" Margin="0,0,0,16" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <TextBlock Text="المبلغ المسدد *" Style="{StaticResource FormFieldLabel}"/>
                             <TextBox Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource NumericTextBox}" FontSize="18" FontWeight="Bold" MinHeight="48" Margin="0,0,0,12"/>

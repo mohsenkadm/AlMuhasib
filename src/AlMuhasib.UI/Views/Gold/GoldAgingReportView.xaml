@@ -33,7 +33,7 @@
                     <controls:AnimatedStatCard Title="عدد الزبائن" TextValue="{Binding CustomerCount}"
                                                Icon="AccountGroup" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="أكثر من 90 يوم" TextValue="{Binding Over90Total}"
-                                               Icon="CalendarAlert" IconBackground="#F3E5F5" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
+                                               Icon="CalendarAlert" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">

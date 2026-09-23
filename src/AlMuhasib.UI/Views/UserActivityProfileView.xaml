@@ -86,7 +86,7 @@
                                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#B71C1C"/>
             <controls:AnimatedStatCard Title="فواتير محذوفة" Value="{Binding DeletedInvoicesCount}"
                                        Icon="FileCancel"
-                                       IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#6A1B9A"/>
+                                       IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#6A1B9A"/>
         </UniformGrid>
 
         <!-- Filters -->
@@ -152,7 +152,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Border Grid.Row="1" Background="#FAFBFC" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        <Border Grid.Row="1" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="0,1,0,0" Padding="12,8">
                             <Grid>
                                 <TextBlock Text="{Binding ModPaginationInfo}" VerticalAlignment="Center" Foreground="#607D8B" FontSize="12.5"/>
@@ -212,7 +212,7 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Border Grid.Row="1" Background="#FAFBFC" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        <Border Grid.Row="1" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="0,1,0,0" Padding="12,8">
                             <Grid>
                                 <TextBlock Text="{Binding DelPaginationInfo}" VerticalAlignment="Center" Foreground="#607D8B" FontSize="12.5"/>
@@ -258,7 +258,7 @@
                             <controls:AnimatedStatCard Title="إجمالي العمليات" Value="{Binding PerfTotalOps}" Icon="ChartBar"
                                                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
                             <controls:AnimatedStatCard Title="مرات الدخول" Value="{Binding PerfLoginCount}" Icon="Login"
-                                                       IconBackground="#F3E5F5" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                                       IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                         </UniformGrid>
 
                         <WrapPanel Grid.Row="1" Margin="0,0,0,10">
@@ -316,7 +316,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Border Grid.Row="3" Background="#FAFBFC" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}"
                                 BorderThickness="0,1,0,0" Padding="12,8">
                             <Grid>
                                 <TextBlock Text="{Binding PerfPaginationInfo}" VerticalAlignment="Center" Foreground="#607D8B" FontSize="12.5"/>

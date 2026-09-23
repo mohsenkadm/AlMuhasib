@@ -128,7 +128,7 @@
                                                 <materialDesign:PackIcon.Style>
                                                     <Style TargetType="materialDesign:PackIcon">
                                                         <Setter Property="Kind" Value="CheckboxBlankCircleOutline"/>
-                                                        <Setter Property="Foreground" Value="#90A4AE"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                                                                 <Setter Property="Kind" Value="CheckboxMarkedCircle"/>
@@ -154,7 +154,7 @@
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                                                                     <Setter Property="TextDecorations" Value="Strikethrough"/>
-                                                                    <Setter Property="Foreground" Value="#90A4AE"/>
+                                                                    <Setter Property="Foreground" Value="{DynamicResource HintForegroundBrush}"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -185,10 +185,10 @@
                                             </TextBlock>
                                             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                                 <materialDesign:PackIcon Kind="CalendarOutline" Width="14" Height="14"
-                                                                         Foreground="#78909C" VerticalAlignment="Center"/>
+                                                                         Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{Binding DueDateDisplay}" FontSize="11"
-                                                           Foreground="#78909C" Margin="4,0,0,0" VerticalAlignment="Center"/>
-                                                <Border Background="#FFEBEE" CornerRadius="6" Padding="6,2" Margin="8,0,0,0"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                                <Border Background="{DynamicResource DashboardKpiRedLightBrush}" CornerRadius="6" Padding="6,2" Margin="8,0,0,0"
                                                         Visibility="{Binding IsOverdue, Converter={StaticResource BoolVis}}">
                                                     <TextBlock Text="متأخرة" FontSize="10" FontWeight="Bold" Foreground="#C62828"/>
                                                 </Border>
@@ -222,7 +222,7 @@
                             Visibility="{Binding HasFilteredTasks, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center">
                             <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="40" Height="40"
-                                                     Foreground="#90A4AE" HorizontalAlignment="Center"/>
+                                                     Foreground="{DynamicResource HintForegroundBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="لا توجد مهام حالياً"
                                        FontSize="13" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" Margin="0,10,0,0"

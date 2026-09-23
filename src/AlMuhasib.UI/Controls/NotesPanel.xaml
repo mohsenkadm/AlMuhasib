@@ -116,7 +116,7 @@
                                                                 </MultiBinding>
                                                             </DataTrigger.Binding>
                                                             <Setter Property="BorderBrush" Value="#F57F17"/>
-                                                            <Setter Property="Background" Value="#FFF8E1"/>
+                                                            <Setter Property="Background" Value="{DynamicResource NotepadPaperBrush}"/>
                                                             <Setter Property="BorderThickness" Value="2"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -126,7 +126,7 @@
                                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding PreviewText}" FontSize="10.5" Margin="0,3,0,0"
-                                                           Foreground="#78909C" TextTrimming="CharacterEllipsis"/>
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
@@ -172,8 +172,8 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding SelectedNoteLastEditedDisplay, Mode=OneWay, StringFormat='آخر تعديل: {0}'}"
-                                       FontSize="11.5" Foreground="#78909C" VerticalAlignment="Center"/>
-                            <Border Background="#E8F5E9" CornerRadius="8" Padding="8,3" Margin="10,0,0,0"
+                                       FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="8,3" Margin="10,0,0,0"
                                     Visibility="{Binding IsNoteSavedIndicatorVisible, Converter={StaticResource BoolVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Check" Width="14" Height="14" Foreground="#2E7D32" VerticalAlignment="Center"/>
