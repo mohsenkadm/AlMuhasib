@@ -17,10 +17,16 @@ public partial class AccountTransactionRow : ObservableObject
     private string _description = string.Empty;
 
     [ObservableProperty]
-    private decimal _credit; // In
+    private string _partyName = string.Empty;
 
     [ObservableProperty]
-    private decimal _debit;  // Out
+    private decimal _credit;
+
+    [ObservableProperty]
+    private decimal _debit;
+
+    [ObservableProperty]
+    private decimal _runningBalance;
 
     [ObservableProperty]
     private string _reference = string.Empty;
@@ -33,4 +39,13 @@ public partial class AccountTransactionRow : ObservableObject
 
     [ObservableProperty]
     private bool _isVoucher;
+
+    [ObservableProperty]
+    private string _sourceType = string.Empty;
+
+    [ObservableProperty]
+    private int? _sourceId;
+
+    [ObservableProperty]
+    private bool _canReverse;
 }
