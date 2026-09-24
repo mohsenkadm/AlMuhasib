@@ -843,7 +843,34 @@
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type models:DocumentTab}">
-                                <Grid>
+                                <Grid Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="إغلاق التبويب"
+                                                      Command="{Binding PlacementTarget.Tag.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="إغلاق التبويبات الأخرى"
+                                                      Command="{Binding PlacementTarget.Tag.CloseOtherTabsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="إغلاق التبويبات على اليمين"
+                                                      Command="{Binding PlacementTarget.Tag.CloseTabsToTheRightCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="إغلاق الكل"
+                                                      Command="{Binding PlacementTarget.Tag.CloseAllClosableTabsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <MenuItem Header="تكرار الصفحة"
+                                                      Command="{Binding PlacementTarget.Tag.DuplicateTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="فتح في تبويب جديد"
+                                                      Command="{Binding PlacementTarget.Tag.OpenTabInNewTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <MenuItem Header="إعادة فتح التبويب المغلق"
+                                                      InputGestureText="Ctrl+Shift+T"
+                                                      Command="{Binding PlacementTarget.Tag.ReopenClosedTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      IsEnabled="{Binding PlacementTarget.Tag.CanReopenClosedTab, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>

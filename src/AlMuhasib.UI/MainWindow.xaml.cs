@@ -109,6 +109,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key == Key.T && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+        {
+            if (_viewModel.ReopenClosedTabCommand.CanExecute(null))
+                _ = _viewModel.ReopenClosedTabCommand.ExecuteAsync(null);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && _viewModel.IsVoiceAssistantOpen)
         {
             _viewModel.CloseVoiceAssistantCommand.Execute(null);

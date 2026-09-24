@@ -35,6 +35,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool TemplatePharmacy => Current.TemplatePharmacy;
     public bool CarShowroom => Current.CarShowroom;
     public bool SettleCreditInvoicesInReports => Current.SettleCreditInvoicesInReports;
+    public bool InvestorProfitEligibility15Days => Current.InvestorProfitEligibility15Days;
 
     public bool AnyMarketTemplateEnabled =>
         TemplateMobileShop || TemplateClothing || TemplateConstruction || TemplatePharmacy || CarShowroom;

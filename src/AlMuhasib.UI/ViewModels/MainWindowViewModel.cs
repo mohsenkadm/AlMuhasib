@@ -45,6 +45,10 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IHelpSupportService _helpSupport;
     private readonly IDesktopLicenseService _desktopLicense;
     private bool _investorsLookupDirty;
+    private readonly Stack<ClosedTabInfo> _closedTabs = new();
+    private const int MaxClosedTabs = 10;
+
+    public bool CanReopenClosedTab => _closedTabs.Count > 0;
 
     /// <summary>
     /// Raised when the user requests logout. App subscribes to restart the login flow.
@@ -798,13 +802,18 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var viewModel = (ViewModelBase)scope.ServiceProvider.GetRequiredService(viewModelType);
 
+            var screenName = string.IsNullOrWhiteSpace(permissionScreenName)
+                ? ScreenPermissionRegistry.GetScreenName(viewModelType)
+                : permissionScreenName;
+
             tab = new DocumentTab
             {
                 Title = title,
                 Icon = icon,
                 ViewModelType = viewModelType,
                 ViewModel = viewModel,
-                Scope = scope
+                Scope = scope,
+                PermissionScreenName = screenName
             };
 
             OpenTabs.Add(tab);
@@ -812,9 +821,6 @@ public partial class MainWindowViewModel : ObservableObject
             UpdateTabCloseStates();
             UpdateTabPinStates();
 
-            var screenName = string.IsNullOrWhiteSpace(permissionScreenName)
-                ? ScreenPermissionRegistry.GetScreenName(viewModelType)
-                : permissionScreenName;
             _recentActivity.Record($"فتح: {title}", screenName, screenName, viewModelType);
 
             await SafeInitializeTabAsync(viewModel);
@@ -918,6 +924,7 @@ public partial class MainWindowViewModel : ObservableObject
         var index = OpenTabs.IndexOf(tab);
         var wasSelected = SelectedTab == tab;
 
+        PushClosedTab(tab);
         OpenTabs.Remove(tab);
         tab.Dispose();
 
@@ -941,6 +948,77 @@ public partial class MainWindowViewModel : ObservableObject
             _pendingTabOpen = null;
             _ = OpenTabAsync(pending.Type, pending.Title, pending.Icon);
         }
+    }
+
+    private void PushClosedTab(DocumentTab tab)
+    {
+        if (tab.ViewModelType == ActiveDashboardType && OpenTabs.Count <= 1)
+            return;
+
+        _closedTabs.Push(new ClosedTabInfo(tab.ViewModelType, tab.Title, tab.Icon, tab.PermissionScreenName));
+        if (_closedTabs.Count > MaxClosedTabs)
+        {
+            var newest = _closedTabs.Take(MaxClosedTabs).Reverse().ToList();
+            _closedTabs.Clear();
+            foreach (var item in newest)
+                _closedTabs.Push(item);
+        }
+
+        OnPropertyChanged(nameof(CanReopenClosedTab));
+    }
+
+    [RelayCommand]
+    private void CloseOtherTabs(DocumentTab? tab)
+    {
+        if (tab is null) return;
+        ActivateTab(tab);
+        foreach (var other in OpenTabs.Where(t => t != tab && t.CanClose).ToList())
+            CloseTab(other);
+    }
+
+    [RelayCommand]
+    private void CloseTabsToTheRight(DocumentTab? tab)
+    {
+        if (tab is null) return;
+        var index = OpenTabs.IndexOf(tab);
+        if (index < 0) return;
+
+        // RTL: اليمين البصري = فهارس أصغر من التبويب المحدد
+        foreach (var other in OpenTabs.Where((_, i) => i < index).Where(t => t.CanClose).ToList())
+            CloseTab(other);
+    }
+
+    [RelayCommand]
+    private void CloseAllClosableTabs()
+    {
+        foreach (var tab in OpenTabs.Where(t => t.CanClose).ToList())
+            CloseTab(tab);
+
+        if (OpenTabs.Count == 0)
+            _ = OpenTabAsync(ActiveDashboardType, "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+    }
+
+    [RelayCommand]
+    private async Task DuplicateTabAsync(DocumentTab? tab)
+    {
+        if (tab is null) return;
+        await OpenTabAsync(tab.ViewModelType, tab.Title, tab.Icon, activateIfExists: false, tab.PermissionScreenName);
+    }
+
+    [RelayCommand]
+    private async Task OpenTabInNewTabAsync(DocumentTab? tab)
+    {
+        if (tab is null) return;
+        await OpenTabAsync(tab.ViewModelType, tab.Title, tab.Icon, activateIfExists: false, tab.PermissionScreenName);
+    }
+
+    [RelayCommand]
+    private async Task ReopenClosedTabAsync()
+    {
+        if (_closedTabs.Count == 0) return;
+        var info = _closedTabs.Pop();
+        OnPropertyChanged(nameof(CanReopenClosedTab));
+        await OpenTabAsync(info.ViewModelType, info.Title, info.Icon, activateIfExists: false, info.PermissionScreenName);
     }
 
     public void CloseTabForViewModel(ViewModelBase viewModel)
