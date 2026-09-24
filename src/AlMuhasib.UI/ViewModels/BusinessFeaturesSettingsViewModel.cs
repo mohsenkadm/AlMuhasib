@@ -55,6 +55,9 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     /// <summary>تسديد الفواتير الآجلة من تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
     [ObservableProperty] private bool _settleCreditInvoicesInReports = true;
 
+    /// <summary>توزيع أرباح المستثمرين بعد 15 يوماً — مفعّل افتراضياً.</summary>
+    [ObservableProperty] private bool _investorProfitEligibility15Days = true;
+
     [ObservableProperty] private int _idleLockMinutes;
     [ObservableProperty] private decimal _posMinInstallmentAmount = 50_000m;
 
@@ -72,7 +75,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
             DamageInvoices,
             TemplateMobileShop, TemplateClothing,
-            TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports);
+            TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports,
+            InvestorProfitEligibility15Days);
 
     public BusinessFeaturesSettingsViewModel(
         IUserPreferencesService preferences,
@@ -156,6 +160,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         TemplatePharmacy = p.FeatureFlags.TemplatePharmacy;
         CarShowroom = p.FeatureFlags.CarShowroom;
         SettleCreditInvoicesInReports = p.FeatureFlags.SettleCreditInvoicesInReports;
+        InvestorProfitEligibility15Days = p.FeatureFlags.InvestorProfitEligibility15Days;
 
         IdleLockMinutes = p.IdleLockMinutes;
         PosMinInstallmentAmount = p.PosMinInstallmentAmount;
@@ -193,6 +198,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnTemplatePharmacyChanged(bool value) => NotifyFeaturesCount();
     partial void OnCarShowroomChanged(bool value) => NotifyFeaturesCount();
     partial void OnSettleCreditInvoicesInReportsChanged(bool value) => NotifyFeaturesCount();
+    partial void OnInvestorProfitEligibility15DaysChanged(bool value) => NotifyFeaturesCount();
 
     [RelayCommand]
     private void BrowseBackupFolder()
@@ -244,6 +250,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.TemplatePharmacy = TemplatePharmacy;
             p.FeatureFlags.CarShowroom = CarShowroom;
             p.FeatureFlags.SettleCreditInvoicesInReports = SettleCreditInvoicesInReports;
+            p.FeatureFlags.InvestorProfitEligibility15Days = InvestorProfitEligibility15Days;
 
             p.IdleLockMinutes = Math.Max(0, IdleLockMinutes);
             p.PosMinInstallmentAmount = Math.Max(0, PosMinInstallmentAmount);

@@ -128,6 +128,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [ObservableProperty]
     private string _investorSearchText = string.Empty;
 
+    public bool ShowInvestorBalance =>
+        ShowInvestorField && SelectedInvestor is not null;
+
+    public string InvestorBalanceText =>
+        SelectedInvestor is null
+            ? string.Empty
+            : $"رصيد الإيداع: {SelectedInvestor.TotalDeposit:N0} د.ع";
+
     // Collections
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
     public ObservableCollection<BankAccount> BankAccounts { get; } = [];
@@ -188,11 +196,31 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private VoucherType? _filterType;
 
     [ObservableProperty]
+    private DateTime? _dateFrom;
+
+    [ObservableProperty]
+    private DateTime? _dateTo;
+
+    [ObservableProperty]
     private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private VoucherFilterTypeOption? _selectedFilterTypeOption;
 
     // ── Voucher type items for the ComboBox ────────────────
     public List<VoucherTypeItem> VoucherTypes { get; } =
     [
+        new("سند قبض", VoucherType.Receipt),
+        new("سند صرف", VoucherType.Payment),
+        new("سند قبض مصرفي", VoucherType.BankReceipt),
+        new("إيداع مستثمر", VoucherType.InvestorDeposit),
+        new("سحب مستثمر", VoucherType.InvestorWithdrawal),
+        new("سند قبض دين", VoucherType.DebtReceipt),
+    ];
+
+    public List<VoucherFilterTypeOption> FilterTypeOptions { get; } =
+    [
+        new("الكل", null),
         new("سند قبض", VoucherType.Receipt),
         new("سند صرف", VoucherType.Payment),
         new("سند قبض مصرفي", VoucherType.BankReceipt),
@@ -210,6 +238,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         try
         {
             LoadPermissions(_currentUserService, "Vouchers");
+            SelectedFilterTypeOption ??= FilterTypeOptions[0];
 
             await LoadLookupsAsync();
 
@@ -513,6 +542,13 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         if (value is not null)
             InvestorSearchText = value.Name;
+        OnPropertyChanged(nameof(ShowInvestorBalance));
+        OnPropertyChanged(nameof(InvestorBalanceText));
+    }
+
+    partial void OnShowInvestorFieldChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowInvestorBalance));
     }
 
     partial void OnInvestorSearchTextChanged(string value)
@@ -522,6 +558,25 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
         SelectedInvestor = null;
         InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, value);
+    }
+
+    partial void OnDateFromChanged(DateTime? value)
+    {
+        CurrentPage = 1;
+        _ = LoadVouchersAsync();
+    }
+
+    partial void OnDateToChanged(DateTime? value)
+    {
+        CurrentPage = 1;
+        _ = LoadVouchersAsync();
+    }
+
+    partial void OnSelectedFilterTypeOptionChanged(VoucherFilterTypeOption? value)
+    {
+        FilterType = value?.Type;
+        CurrentPage = 1;
+        _ = LoadVouchersAsync();
     }
 
     private async Task LoadDocumentLinksAsync()
@@ -716,6 +771,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         var (items, totalCount) = await _cashBankService.GetPagedVouchersAsync(
             CurrentPage, PageSize, FilterType,
+            fromDate: DateFrom,
+            toDate: DateTo,
             searchTerm: string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim());
 
         Vouchers.Clear();
@@ -916,6 +973,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
 /// <summary>Helper record for voucher type ComboBox items.</summary>
 public record VoucherTypeItem(string Name, VoucherType Type)
+{
+    public override string ToString() => Name;
+}
+
+/// <summary>Filter option for voucher list type ComboBox (includes "الكل").</summary>
+public record VoucherFilterTypeOption(string Name, VoucherType? Type)
 {
     public override string ToString() => Name;
 }

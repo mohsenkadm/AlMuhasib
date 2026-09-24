@@ -232,6 +232,10 @@
                                                     Description="إظهار زر تسديد الفواتير الآجلة في جدولي تقرير المبيعات وتقرير المشتريات — مفعّل افتراضياً"
                                                     Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
                                                     IsChecked="{Binding SettleCreditInvoicesInReports}"/>
+                        <controls:FeatureToggleCard Title="توزيع أرباح المستثمرين بعد 15 يوماً"
+                                                    Description="عند التفعيل لا تُحتسب الإيداعات في توزيع الأرباح إلا بعد مرور 15 يوماً — مفعّل افتراضياً. عند الإلغاء يُوزَّع بدون قيد زمني"
+                                                    Icon="CalendarClock" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00695C"
+                                                    IsChecked="{Binding InvestorProfitEligibility15Days}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>

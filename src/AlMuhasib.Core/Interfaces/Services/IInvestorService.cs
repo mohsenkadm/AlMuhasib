@@ -23,8 +23,8 @@ public interface IInvestorService
 
     // ── Profit Distribution ──
     Task<decimal> GetDistributableProfitsAsync();
-    Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate);
-    Task<IEnumerable<ProfitPreviewItem>> PreviewProfitDistributionAsync(DateTime distributionDate, decimal totalDistributableProfits);
+    Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate, int eligibilityDays = 15);
+    Task<IEnumerable<ProfitPreviewItem>> PreviewProfitDistributionAsync(DateTime distributionDate, decimal totalDistributableProfits, int eligibilityDays = 15);
     Task DistributeProfitsAsync(DateTime distributionDate, int cashBoxId,
         decimal totalDistributableProfits, IEnumerable<ProfitPreviewItem> items);
 

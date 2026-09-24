@@ -250,19 +250,28 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Investor (InvestorDeposit, InvestorWithdrawal) -->
-                    <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding FilteredInvestors}"
-                              SelectedItem="{Binding SelectedInvestor, UpdateSourceTrigger=PropertyChanged}"
-                              DisplayMemberPath="Name"
-                              Text="{Binding InvestorSearchText, UpdateSourceTrigger=PropertyChanged}"
-                              IsEditable="True"
-                              StaysOpenOnEdit="True"
-                              materialDesign:HintAssist.Hint="المستثمر (ابحث بالاسم أو الهاتف)"
-                              materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                              Style="{StaticResource FilledComboBox}"
-                              FontSize="13"
-                              Visibility="{Binding ShowInvestorField, Converter={StaticResource BoolToVis}}" />
+                    <!-- Investor (InvestorDeposit, InvestorWithdrawal) — يخفي العميل/المورد تلقائياً -->
+                    <StackPanel Grid.Column="0"
+                                Visibility="{Binding ShowInvestorField, Converter={StaticResource BoolToVis}}">
+                        <ComboBox ItemsSource="{Binding FilteredInvestors}"
+                                  SelectedItem="{Binding SelectedInvestor, UpdateSourceTrigger=PropertyChanged}"
+                                  Text="{Binding InvestorSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="المستثمر (ابحث بالاسم أو الهاتف)"
+                                  Style="{StaticResource InvestorSearchableComboBox}"
+                                  FontSize="13" />
+                        <Border Margin="0,6,0,0" CornerRadius="10" Padding="10,6"
+                                Background="{DynamicResource DashboardKpiGreenLightBrush}"
+                                Visibility="{Binding ShowInvestorBalance, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashPlus" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0"
+                                                         Foreground="#2E7D32"/>
+                                <TextBlock Text="{Binding InvestorBalanceText}"
+                                           VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="#2E7D32"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
                     <!-- Bank (BankReceipt) -->
                     <ComboBox Grid.Column="0"
@@ -357,9 +366,29 @@
                                              ShowCardToggle="False">
                     <controls:ListTableHeaderBar.ExtraContent>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBox Width="260"
+                            <ComboBox Width="150" Margin="0,0,8,0"
+                                      ItemsSource="{Binding FilterTypeOptions}"
+                                      SelectedItem="{Binding SelectedFilterTypeOption}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="نوع السند"
+                                      Style="{StaticResource FilledComboBox}"
+                                      FontSize="12" Foreground="White"
+                                      materialDesign:HintAssist.Foreground="#B0BEC5"/>
+                            <DatePicker Width="130" Margin="0,0,8,0"
+                                        SelectedDate="{Binding DateFrom}"
+                                        materialDesign:HintAssist.Hint="من تاريخ"
+                                        Style="{StaticResource FilledDatePicker}"
+                                        FontSize="12" Foreground="White"
+                                        materialDesign:HintAssist.Foreground="#B0BEC5"/>
+                            <DatePicker Width="130" Margin="0,0,8,0"
+                                        SelectedDate="{Binding DateTo}"
+                                        materialDesign:HintAssist.Hint="إلى تاريخ"
+                                        Style="{StaticResource FilledDatePicker}"
+                                        FontSize="12" Foreground="White"
+                                        materialDesign:HintAssist.Foreground="#B0BEC5"/>
+                            <TextBox Width="220"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="بحث برقم السند أو اسم العميل..."
+                                     materialDesign:HintAssist.Hint="بحث برقم السند أو الطرف..."
                                      materialDesign:TextFieldAssist.HasClearButton="True"
                                      Style="{StaticResource FilledTextBox}"
                                      FontSize="13" Foreground="White"

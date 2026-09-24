@@ -56,4 +56,7 @@ public class BusinessFeatureFlags
 
     /// <summary>زر تسديد الفواتير الآجلة في تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
     public bool SettleCreditInvoicesInReports { get; set; } = true;
+
+    /// <summary>توزيع أرباح المستثمرين يشترط مرور 15 يوماً على الإيداع — مفعّل افتراضياً.</summary>
+    public bool InvestorProfitEligibility15Days { get; set; } = true;
 }

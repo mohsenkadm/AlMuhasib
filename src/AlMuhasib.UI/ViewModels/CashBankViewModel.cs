@@ -4,10 +4,12 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -17,13 +19,20 @@ public partial class CashBankViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly MainWindowViewModel _mainWindow;
 
-    public CashBankViewModel(ICashBankService cashBankService, IUnitOfWork unitOfWork, IExportService exportService, ICurrentUserService currentUserService)
+    public CashBankViewModel(
+        ICashBankService cashBankService,
+        IUnitOfWork unitOfWork,
+        IExportService exportService,
+        ICurrentUserService currentUserService,
+        MainWindowViewModel mainWindow)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _mainWindow = mainWindow;
         PageTitle = "القاصات والمصرف";
         TransferPager.Bind(LoadTransfersAsync);
     }
@@ -104,6 +113,42 @@ public partial class CashBankViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isAddBankVisible;
 
+    [ObservableProperty]
+    private bool _isEditBankMode;
+
+    [ObservableProperty]
+    private int? _editingBankId;
+
+    [ObservableProperty]
+    private bool _isAdjustBalanceVisible;
+
+    [ObservableProperty]
+    private bool _adjustIsBank;
+
+    [ObservableProperty]
+    private decimal _adjustAmount;
+
+    [ObservableProperty]
+    private string _adjustReason = string.Empty;
+
+    [ObservableProperty]
+    private DateTime _adjustDate = DateTime.Today;
+
+    public bool ShowCashAdjustPanel => IsAdjustBalanceVisible && !AdjustIsBank;
+    public bool ShowBankAdjustPanel => IsAdjustBalanceVisible && AdjustIsBank;
+
+    partial void OnIsAdjustBalanceVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowCashAdjustPanel));
+        OnPropertyChanged(nameof(ShowBankAdjustPanel));
+    }
+
+    partial void OnAdjustIsBankChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowCashAdjustPanel));
+        OnPropertyChanged(nameof(ShowBankAdjustPanel));
+    }
+
     public ObservableCollection<AccountTransactionRow> BankTransactions { get; } = [];
 
     [ObservableProperty]
@@ -139,7 +184,13 @@ public partial class CashBankViewModel : ViewModelBase
     // ══════════════════════════════════════════════════════
     // TAB 2: TRANSFERS (التحويلات)
     // ══════════════════════════════════════════════════════
-    public ObservableCollection<Transfer> Transfers { get; } = [];
+    public ObservableCollection<TransferDisplayItem> Transfers { get; } = [];
+
+    [ObservableProperty]
+    private DateTime? _transferFromDate;
+
+    [ObservableProperty]
+    private DateTime? _transferToDate;
 
     // Source
     [ObservableProperty]
@@ -344,42 +395,10 @@ public partial class CashBankViewModel : ViewModelBase
 
         try
         {
-            var vouchers = await _cashBankService.GetVouchersByCashBoxAsync(cashBoxId);
-            foreach (var v in vouchers)
-            {
-                bool isIncome = v.VoucherType is VoucherType.Receipt or VoucherType.DebtReceipt
-                    or VoucherType.InvestorDeposit or VoucherType.BankReceipt;
+            var entries = await _cashBankService.GetCashBoxStatementAsync(cashBoxId);
+            foreach (var e in entries)
+                _allCashBoxTransactions.Add(MapEntry(e));
 
-                decimal credit = isIncome ? (v.VoucherType == VoucherType.BankReceipt ? v.Amount - v.BankFees : v.Amount) : 0;
-                decimal debit = !isIncome ? v.Amount : 0;
-
-                _allCashBoxTransactions.Add(new AccountTransactionRow
-                {
-                    Date = v.Date,
-                    Type = GetVoucherTypeName(v.VoucherType),
-                    Description = v.Notes ?? string.Empty,
-                    Credit = credit,
-                    Debit = debit,
-                    Reference = v.VoucherNumber
-                });
-            }
-
-            var transfers = await _cashBankService.GetTransfersByCashBoxAsync(cashBoxId);
-            foreach (var t in transfers)
-            {
-                bool isIncoming = t.ToType == TransferAccountType.CashBox && t.ToId == cashBoxId;
-                _allCashBoxTransactions.Add(new AccountTransactionRow
-                {
-                    Date = t.Date,
-                    Type = "تحويل",
-                    Description = t.Notes ?? string.Empty,
-                    Credit = isIncoming ? t.Amount : 0,
-                    Debit = !isIncoming ? t.Amount : 0,
-                    Reference = $"TRF-{t.Id:D4}"
-                });
-            }
-
-            _allCashBoxTransactions.Sort((a, b) => b.Date.CompareTo(a.Date));
             ApplyCashBoxFilters();
         }
         catch (Exception ex)
@@ -387,6 +406,24 @@ public partial class CashBankViewModel : ViewModelBase
             BeautifulMessageDialog.ShowError($"خطأ في تحميل الحركات: {ex.Message}");
         }
     }
+
+    private static AccountTransactionRow MapEntry(AccountStatementEntry e) => new()
+    {
+        Date = e.Date,
+        Type = e.Type,
+        Description = e.Description,
+        PartyName = e.PartyName,
+        Credit = e.Credit,
+        Debit = e.Debit,
+        RunningBalance = e.RunningBalance,
+        Reference = e.Reference,
+        VoucherId = e.VoucherId,
+        IsReconciled = e.IsReconciled,
+        IsVoucher = e.SourceType == "Voucher",
+        SourceType = e.SourceType,
+        SourceId = e.SourceId,
+        CanReverse = e.CanReverse
+    };
 
     private void ApplyCashBoxFilters()
     {
@@ -404,6 +441,7 @@ public partial class CashBankViewModel : ViewModelBase
             query = query.Where(t =>
                 t.Type.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 t.Reference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.PartyName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 (t.Description ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -441,6 +479,8 @@ public partial class CashBankViewModel : ViewModelBase
     [RelayCommand]
     private void ShowAddBank()
     {
+        IsEditBankMode = false;
+        EditingBankId = null;
         NewBankName = string.Empty;
         NewBankAccountNumber = string.Empty;
         NewBankBalance = 0;
@@ -448,9 +488,23 @@ public partial class CashBankViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ShowEditBank()
+    {
+        if (SelectedBankAccount is null || !CanEdit) return;
+        IsEditBankMode = true;
+        EditingBankId = SelectedBankAccount.Id;
+        NewBankName = SelectedBankAccount.Name;
+        NewBankAccountNumber = SelectedBankAccount.AccountNumber ?? string.Empty;
+        NewBankBalance = SelectedBankAccount.Balance;
+        IsAddBankVisible = true;
+    }
+
+    [RelayCommand]
     private void CancelAddBank()
     {
         IsAddBankVisible = false;
+        IsEditBankMode = false;
+        EditingBankId = null;
     }
 
     [RelayCommand]
@@ -465,9 +519,103 @@ public partial class CashBankViewModel : ViewModelBase
         try
         {
             string? accNum = string.IsNullOrWhiteSpace(NewBankAccountNumber) ? null : NewBankAccountNumber.Trim();
-            await _cashBankService.AddBankAccountAsync(NewBankName.Trim(), accNum, NewBankBalance);
+            if (IsEditBankMode && EditingBankId is int id)
+                await _cashBankService.UpdateBankAccountAsync(id, NewBankName.Trim(), accNum);
+            else
+                await _cashBankService.AddBankAccountAsync(NewBankName.Trim(), accNum, NewBankBalance);
+
             IsAddBankVisible = false;
+            IsEditBankMode = false;
+            EditingBankId = null;
             await LoadBankAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteBankAsync()
+    {
+        if (SelectedBankAccount is null || !CanDelete) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"هل تريد حذف المصرف «{SelectedBankAccount.Name}»؟",
+                "حذف مصرف"))
+            return;
+
+        try
+        {
+            await _cashBankService.DeleteBankAccountAsync(SelectedBankAccount.Id);
+            SelectedBankAccount = null;
+            await LoadBankAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private void ShowAdjustCashBox()
+    {
+        if (SelectedCashBox is null) return;
+        AdjustIsBank = false;
+        AdjustAmount = 0;
+        AdjustReason = string.Empty;
+        AdjustDate = DateTime.Today;
+        IsAdjustBalanceVisible = true;
+    }
+
+    [RelayCommand]
+    private void ShowAdjustBank()
+    {
+        if (SelectedBankAccount is null) return;
+        AdjustIsBank = true;
+        AdjustAmount = 0;
+        AdjustReason = string.Empty;
+        AdjustDate = DateTime.Today;
+        IsAdjustBalanceVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelAdjustBalance() => IsAdjustBalanceVisible = false;
+
+    [RelayCommand]
+    private async Task SaveAdjustBalanceAsync()
+    {
+        if (AdjustAmount == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("أدخل مبلغ التسوية (موجب لزيادة / سالب لنقصان)");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(AdjustReason))
+        {
+            BeautifulMessageDialog.ShowWarning("سبب التسوية إلزامي");
+            return;
+        }
+
+        try
+        {
+            if (AdjustIsBank)
+            {
+                if (SelectedBankAccount is null) return;
+                await _cashBankService.AdjustBankBalanceAsync(
+                    SelectedBankAccount.Id, AdjustAmount, AdjustReason.Trim(), AdjustDate);
+                await LoadBankAccountsAsync();
+                await LoadBankTransactionsAsync(SelectedBankAccount.Id);
+            }
+            else
+            {
+                if (SelectedCashBox is null) return;
+                await _cashBankService.AdjustCashBoxBalanceAsync(
+                    SelectedCashBox.Id, AdjustAmount, AdjustReason.Trim(), AdjustDate);
+                await LoadCashBoxesAsync();
+                await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+            }
+
+            IsAdjustBalanceVisible = false;
+            BeautifulMessageDialog.ShowSuccess("تم تسجيل تسوية الرصيد");
         }
         catch (Exception ex)
         {
@@ -530,42 +678,10 @@ public partial class CashBankViewModel : ViewModelBase
 
         try
         {
-            var vouchers = await _cashBankService.GetVouchersByBankAsync(bankAccountId);
-            foreach (var v in vouchers)
-            {
-                _allBankTransactions.Add(new AccountTransactionRow
-                {
-                    Date = v.Date,
-                    Type = GetVoucherTypeName(v.VoucherType),
-                    Description = v.Notes ?? string.Empty,
-                    Credit = 0,
-                    Debit = v.Amount,
-                    Reference = v.VoucherNumber,
-                    VoucherId = v.Id,
-                    IsReconciled = v.IsReconciled,
-                    IsVoucher = true
-                });
-            }
+            var entries = await _cashBankService.GetBankStatementAsync(bankAccountId);
+            foreach (var e in entries)
+                _allBankTransactions.Add(MapEntry(e));
 
-            var transfers = await _cashBankService.GetTransfersByBankAsync(bankAccountId);
-            foreach (var t in transfers)
-            {
-                bool isIncoming = t.ToType == TransferAccountType.Bank && t.ToId == bankAccountId;
-                _allBankTransactions.Add(new AccountTransactionRow
-                {
-                    Date = t.Date,
-                    Type = "تحويل",
-                    Description = t.Notes ?? string.Empty,
-                    Credit = isIncoming ? t.Amount : 0,
-                    Debit = !isIncoming ? t.Amount : 0,
-                    Reference = $"TRF-{t.Id:D4}",
-                    VoucherId = null,
-                    IsReconciled = false,
-                    IsVoucher = false
-                });
-            }
-
-            _allBankTransactions.Sort((a, b) => b.Date.CompareTo(a.Date));
             ApplyBankFilters();
         }
         catch (Exception ex)
@@ -590,6 +706,7 @@ public partial class CashBankViewModel : ViewModelBase
             query = query.Where(t =>
                 t.Type.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 t.Reference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.PartyName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 (t.Description ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -769,13 +886,115 @@ public partial class CashBankViewModel : ViewModelBase
     private async Task LoadTransfersAsync()
     {
         var (items, totalCount) = await _cashBankService.GetPagedTransfersAsync(
-            TransferPager.CurrentPage, TransferPager.PageSize);
+            TransferPager.CurrentPage, TransferPager.PageSize,
+            fromDate: TransferFromDate, toDate: TransferToDate);
 
         Transfers.Clear();
         foreach (var t in items)
             Transfers.Add(t);
 
         TransferPager.ApplyStats(totalCount);
+    }
+
+    partial void OnTransferFromDateChanged(DateTime? value)
+    {
+        TransferPager.CurrentPage = 1;
+        _ = LoadTransfersAsync();
+    }
+
+    partial void OnTransferToDateChanged(DateTime? value)
+    {
+        TransferPager.CurrentPage = 1;
+        _ = LoadTransfersAsync();
+    }
+
+    [RelayCommand]
+    private async Task ReverseTransferAsync(TransferDisplayItem? item)
+    {
+        if (item is null || !CanDelete) return;
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"عكس التحويل بمبلغ {item.Amount:N0} من «{item.FromName}» إلى «{item.ToName}»؟",
+                "عكس تحويل"))
+            return;
+
+        try
+        {
+            await _cashBankService.ReverseTransferAsync(item.Id);
+            await LoadCashBoxesAsync();
+            await LoadBankAccountsAsync();
+            await LoadTransfersAsync();
+            if (SelectedCashBox is not null)
+                await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+            if (SelectedBankAccount is not null)
+                await LoadBankTransactionsAsync(SelectedBankAccount.Id);
+            BeautifulMessageDialog.ShowSuccess("تم عكس التحويل");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ReverseMovementAsync(AccountTransactionRow? row)
+    {
+        if (row is null || !row.CanReverse || !CanDelete) return;
+
+        if (row.SourceType == "Voucher" && row.VoucherId is int voucherId)
+        {
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    $"حذف السند {row.Reference} وعكس أثره المحاسبي؟",
+                    "عكس سند"))
+                return;
+
+            try
+            {
+                await _cashBankService.DeleteVoucherAsync(voucherId);
+                await LoadCashBoxesAsync();
+                await LoadBankAccountsAsync();
+                if (SelectedCashBox is not null)
+                    await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+                if (SelectedBankAccount is not null)
+                    await LoadBankTransactionsAsync(SelectedBankAccount.Id);
+                BeautifulMessageDialog.ShowSuccess("تم عكس السند");
+            }
+            catch (Exception ex)
+            {
+                BeautifulMessageDialog.ShowError(ex.Message);
+            }
+            return;
+        }
+
+        if (row.SourceType == "Transfer" && row.SourceId is int transferId)
+        {
+            await ReverseTransferAsync(Transfers.FirstOrDefault(t => t.Id == transferId)
+                ?? new TransferDisplayItem { Id = transferId, Amount = row.Credit + row.Debit, FromName = "?", ToName = "?" });
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenSourceDocumentAsync(AccountTransactionRow? row)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.SourceType)) return;
+
+        switch (row.SourceType)
+        {
+            case "Voucher":
+                await _mainWindow.OpenTabAsync(typeof(VouchersViewModel), "السندات", PackIconKind.FileDocument);
+                break;
+            case "Invoice":
+                await _mainWindow.OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
+                break;
+            case "Expense":
+                await _mainWindow.OpenTabAsync(typeof(ExpenseViewModel), "المصروفات", PackIconKind.CashMinus);
+                break;
+            case "Installment":
+                await _mainWindow.OpenTabAsync(typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock);
+                break;
+            case "Transfer":
+                SelectedTabIndex = 2;
+                break;
+        }
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch
@@ -799,14 +1018,16 @@ public partial class CashBankViewModel : ViewModelBase
         if (CashBoxTransactions.Count == 0) return;
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "حركات_الصندوق.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "الطرف", "دائن", "مدين", "الرصيد", "الوصف" };
         var rows = CashBoxTransactions.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
             t.Type,
             t.Reference ?? "",
+            t.PartyName ?? "",
             t.Credit,
             t.Debit,
+            t.RunningBalance,
             t.Description ?? ""
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "حركات الصندوق", cols, (IList<object[]>)rows);
@@ -817,14 +1038,16 @@ public partial class CashBankViewModel : ViewModelBase
     private void PrintCashBoxTransactions()
     {
         if (CashBoxTransactions.Count == 0) return;
-        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "الطرف", "دائن", "مدين", "الرصيد", "الوصف" };
         var rows = CashBoxTransactions.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
             t.Type,
             t.Reference ?? "",
+            t.PartyName ?? "",
             t.Credit.ToString("N0"),
             t.Debit.ToString("N0"),
+            t.RunningBalance.ToString("N0"),
             t.Description ?? ""
         }).ToList();
         _exportService.PrintTable("حركات الصندوق", cols, (IList<object[]>)rows);
@@ -836,14 +1059,16 @@ public partial class CashBankViewModel : ViewModelBase
         if (BankTransactions.Count == 0) return;
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "حركات_البنك.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "الطرف", "دائن", "مدين", "الرصيد", "الوصف" };
         var rows = BankTransactions.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
             t.Type,
             t.Reference ?? "",
+            t.PartyName ?? "",
             t.Credit,
             t.Debit,
+            t.RunningBalance,
             t.Description ?? ""
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "حركات البنك", cols, (IList<object[]>)rows);
@@ -854,14 +1079,16 @@ public partial class CashBankViewModel : ViewModelBase
     private void PrintBankTransactions()
     {
         if (BankTransactions.Count == 0) return;
-        var cols = new[] { "التاريخ", "النوع", "المرجع", "دائن", "مدين", "الوصف" };
+        var cols = new[] { "التاريخ", "النوع", "المرجع", "الطرف", "دائن", "مدين", "الرصيد", "الوصف" };
         var rows = BankTransactions.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
             t.Type,
             t.Reference ?? "",
+            t.PartyName ?? "",
             t.Credit.ToString("N0"),
             t.Debit.ToString("N0"),
+            t.RunningBalance.ToString("N0"),
             t.Description ?? ""
         }).ToList();
         _exportService.PrintTable("حركات البنك", cols, (IList<object[]>)rows);
@@ -919,8 +1146,8 @@ public partial class CashBankViewModel : ViewModelBase
         var rows = Transfers.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
-            $"{(t.FromType == TransferAccountType.CashBox ? "قاصة" : "مصرف")} #{t.FromId}",
-            $"{(t.ToType == TransferAccountType.CashBox ? "قاصة" : "مصرف")} #{t.ToId}",
+            $"{t.FromTypeLabel}: {t.FromName}",
+            $"{t.ToTypeLabel}: {t.ToName}",
             t.Amount,
             t.Notes ?? ""
         }).ToList();
@@ -936,8 +1163,8 @@ public partial class CashBankViewModel : ViewModelBase
         var rows = Transfers.Select(t => new object[]
         {
             t.Date.ToString("yyyy/MM/dd"),
-            $"{(t.FromType == TransferAccountType.CashBox ? "قاصة" : "مصرف")} #{t.FromId}",
-            $"{(t.ToType == TransferAccountType.CashBox ? "قاصة" : "مصرف")} #{t.ToId}",
+            $"{t.FromTypeLabel}: {t.FromName}",
+            $"{t.ToTypeLabel}: {t.ToName}",
             t.Amount.ToString("N0"),
             t.Notes ?? ""
         }).ToList();

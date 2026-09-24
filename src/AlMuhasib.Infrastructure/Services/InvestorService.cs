@@ -212,10 +212,11 @@ public class InvestorService : IInvestorService
         return totalSales - totalPurchases - totalExpenses - alreadyDistributed + profitOpening;
     }
 
-    public async Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate)
+    public async Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate, int eligibilityDays = 15)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var cutoffDate = distributionDate.AddDays(-15);
+        var days = Math.Max(0, eligibilityDays);
+        var cutoffDate = distributionDate.AddDays(-days);
         var investor = await context.Investors.FindAsync(investorId);
         if (investor is null) return 0;
 
@@ -229,14 +230,14 @@ public class InvestorService : IInvestorService
         return Math.Max(0, Math.Min(eligible, investor.TotalDeposit));
     }
 
-    public async Task<IEnumerable<ProfitPreviewItem>> PreviewProfitDistributionAsync(DateTime distributionDate, decimal totalDistributableProfits)
+    public async Task<IEnumerable<ProfitPreviewItem>> PreviewProfitDistributionAsync(DateTime distributionDate, decimal totalDistributableProfits, int eligibilityDays = 15)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var investors = await context.Investors.Where(i => i.TotalDeposit > 0 && i.ProfitPercentage > 0).OrderBy(i => i.Name).ToListAsync();
         var previews = new List<ProfitPreviewItem>();
         foreach (var investor in investors)
         {
-            var eligible = await GetEligibleDepositAsync(investor.Id, distributionDate);
+            var eligible = await GetEligibleDepositAsync(investor.Id, distributionDate, eligibilityDays);
             if (eligible <= 0) continue;
             previews.Add(new ProfitPreviewItem
             {

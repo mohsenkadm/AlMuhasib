@@ -33,6 +33,9 @@ public interface IFeatureFlagService
     /// <summary>تسديد الفواتير الآجلة من تقارير المبيعات/المشتريات — مفعّل افتراضياً.</summary>
     bool SettleCreditInvoicesInReports { get; }
 
+    /// <summary>توزيع أرباح المستثمرين بعد 15 يوماً من الإيداع — مفعّل افتراضياً.</summary>
+    bool InvestorProfitEligibility15Days { get; }
+
     /// <summary>أي قالب سوق مفعّل</summary>
     bool AnyMarketTemplateEnabled { get; }
 

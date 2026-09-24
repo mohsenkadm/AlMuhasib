@@ -29,5 +29,11 @@ public partial class DocumentTab : ObservableObject, IDisposable
     public ViewModelBase ViewModel { get; init; } = null!;
     public IServiceScope Scope { get; init; } = null!;
 
+    /// <summary>اسم شاشة الصلاحية إن وُجد — يُستخدم لإعادة الفتح.</summary>
+    public string? PermissionScreenName { get; init; }
+
     public void Dispose() => Scope.Dispose();
 }
+
+/// <summary>سجل خفيف لإعادة فتح تبويب مغلق (بدون حالة النموذج).</summary>
+public sealed record ClosedTabInfo(Type ViewModelType, string Title, PackIconKind Icon, string? PermissionScreenName);

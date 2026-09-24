@@ -19,12 +19,14 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     private readonly ICurrentUserService _currentUserService;
     private readonly IInvestorRefreshService _investorRefresh;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IFeatureFlagService _featureFlags;
 
     public InvestorsViewModel(IInvestorService investorService, IUnitOfWork unitOfWork, IExportService exportService,
         IWhatsAppShareService whatsAppShare,
         ICurrentUserService currentUserService, IInvestorRefreshService investorRefresh,
         IUserPreferencesService userPreferences,
-        ICustomFieldSettingsService customFieldSettings)
+        ICustomFieldSettingsService customFieldSettings,
+        IFeatureFlagService featureFlags)
     {
         _investorService = investorService;
         _unitOfWork = unitOfWork;
@@ -33,6 +35,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         _currentUserService = currentUserService;
         _investorRefresh = investorRefresh;
         _userPreferences = userPreferences;
+        _featureFlags = featureFlags;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Investors);
         PageTitle = "المستثمرون";
         ConfigureCustomFields(customFieldSettings);
@@ -369,7 +372,9 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
                 return;
             }
 
-            var previews = await _investorService.PreviewProfitDistributionAsync(DistributionDate, DistributableProfits);
+            var eligibilityDays = _featureFlags.InvestorProfitEligibility15Days ? 15 : 0;
+            var previews = await _investorService.PreviewProfitDistributionAsync(
+                DistributionDate, DistributableProfits, eligibilityDays);
             ProfitPreviews.Clear();
             foreach (var p in previews)
                 ProfitPreviews.Add(p);
@@ -378,7 +383,12 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
             IsPreviewReady = ProfitPreviews.Count > 0;
 
             if (!IsPreviewReady)
-                BeautifulMessageDialog.ShowWarning("لا يوجد مستثمرون مؤهلون (يجب مرور 15 يوم على الإيداع)");
+            {
+                var hint = _featureFlags.InvestorProfitEligibility15Days
+                    ? "لا يوجد مستثمرون مؤهلون (يجب مرور 15 يوم على الإيداع)"
+                    : "لا يوجد مستثمرون مؤهلون للتوزيع";
+                BeautifulMessageDialog.ShowWarning(hint);
+            }
         }
         catch (Exception ex)
         {

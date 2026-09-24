@@ -3,6 +3,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -180,6 +181,143 @@ public class CashBankService : ICashBankService
         return bank;
     }
 
+    public async Task UpdateBankAccountAsync(int id, string name, string? accountNumber)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidOperationException("يرجى إدخال اسم المصرف");
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == id)
+            ?? throw new InvalidOperationException("المصرف غير موجود");
+
+        var oldName = bank.Name;
+        bank.Name = name.Trim();
+        bank.AccountNumber = string.IsNullOrWhiteSpace(accountNumber) ? null : accountNumber.Trim();
+        bank.UpdatedAt = DateTime.UtcNow;
+        bank.UpdatedBy = _currentUserService.Username;
+        await context.SaveChangesAsync();
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Edit,
+                EntityName = "BankAccount",
+                EntityId = bank.Id,
+                OldValues = $"مصرف: {oldName}",
+                NewValues = $"مصرف: {bank.Name}",
+                Timestamp = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task DeleteBankAccountAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == id)
+            ?? throw new InvalidOperationException("المصرف غير موجود");
+
+        var hasVouchers = await context.Vouchers.AnyAsync(v => v.BankAccountId == id);
+        if (hasVouchers)
+            throw new InvalidOperationException("لا يمكن حذف المصرف لوجود سندات مرتبطة به");
+
+        var hasTransfers = await context.Transfers.AnyAsync(t =>
+            (t.FromType == TransferAccountType.Bank && t.FromId == id)
+            || (t.ToType == TransferAccountType.Bank && t.ToId == id));
+        if (hasTransfers)
+            throw new InvalidOperationException("لا يمكن حذف المصرف لوجود تحويلات مرتبطة به");
+
+        var username = _currentUserService.Username ?? "system";
+        bank.MarkSoftDeleted(username);
+        await context.SaveChangesAsync();
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            await context.AuditLogs.AddAsync(new AuditLog
+            {
+                UserId = _currentUserService.UserId.Value,
+                Action = AuditAction.Delete,
+                EntityName = "BankAccount",
+                EntityId = bank.Id,
+                OldValues = $"مصرف: {bank.Name}, الرصيد: {bank.Balance:N0}",
+                Timestamp = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task AdjustCashBoxBalanceAsync(int cashBoxId, decimal delta, string reason, DateTime date)
+    {
+        if (delta == 0)
+            throw new InvalidOperationException("مبلغ التسوية يجب ألا يكون صفراً");
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new InvalidOperationException("سبب التسوية إلزامي");
+
+        await _periodLockService.EnsureDateAllowedAsync(date);
+
+        var voucher = new Voucher
+        {
+            VoucherType = delta > 0 ? VoucherType.Receipt : VoucherType.Payment,
+            Amount = Math.Abs(delta),
+            CashBoxId = cashBoxId,
+            Date = date,
+            Notes = $"تسوية رصيد: {reason.Trim()}"
+        };
+        voucher.VoucherNumber = await GetNextVoucherNumberAsync(voucher.VoucherType);
+        await CreateVoucherAsync(voucher);
+    }
+
+    public async Task AdjustBankBalanceAsync(int bankAccountId, decimal delta, string reason, DateTime date)
+    {
+        if (delta == 0)
+            throw new InvalidOperationException("مبلغ التسوية يجب ألا يكون صفراً");
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new InvalidOperationException("سبب التسوية إلزامي");
+
+        await _periodLockService.EnsureDateAllowedAsync(date);
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var username = _currentUserService.Username;
+            var bank = await context.BankAccounts.FindAsync(bankAccountId)
+                ?? throw new InvalidOperationException("المصرف غير موجود");
+
+            if (delta < 0 && bank.Balance < Math.Abs(delta))
+                throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ للتسوية");
+
+            bank.Balance += delta;
+            bank.UpdatedBy = username;
+            bank.UpdatedAt = DateTime.UtcNow;
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Edit,
+                    EntityName = "BankBalanceAdjustment",
+                    EntityId = bank.Id,
+                    NewValues = $"ADJ|{delta}|{reason.Trim()}|{date:yyyy-MM-dd}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     // Transfers
     // ══════════════════════════════════════════════════════
@@ -188,6 +326,8 @@ public class CashBankService : ICashBankService
     {
         if (amount <= 0)
             throw new InvalidOperationException("مبلغ التحويل يجب أن يكون أكبر من صفر");
+
+        await _periodLockService.EnsureDateAllowedAsync(DateTime.Today);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -267,7 +407,75 @@ public class CashBankService : ICashBankService
         }
     }
 
-    public async Task<(IEnumerable<Transfer> Items, int TotalCount)> GetPagedTransfersAsync(
+    public async Task ReverseTransferAsync(int transferId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var transfer = await context.Transfers.FirstOrDefaultAsync(t => t.Id == transferId)
+                ?? throw new InvalidOperationException("التحويل غير موجود");
+
+            await _periodLockService.EnsureDateAllowedAsync(transfer.Date);
+            var username = _currentUserService.Username;
+
+            await ApplyTransferLegAsync(context, transfer.ToType, transfer.ToId, -transfer.Amount, username);
+            await ApplyTransferLegAsync(context, transfer.FromType, transfer.FromId, transfer.Amount, username);
+
+            transfer.MarkSoftDeleted(username);
+            await context.SaveChangesAsync();
+
+            if (_currentUserService.UserId.HasValue)
+            {
+                await context.AuditLogs.AddAsync(new AuditLog
+                {
+                    UserId = _currentUserService.UserId.Value,
+                    Action = AuditAction.Delete,
+                    EntityName = "Transfer",
+                    EntityId = transfer.Id,
+                    OldValues = $"عكس تحويل: {transfer.Amount:N0}",
+                    Timestamp = DateTime.UtcNow,
+                    CreatedBy = username,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    private static async Task ApplyTransferLegAsync(
+        AppDbContext context, TransferAccountType type, int id, decimal signedAmount, string username)
+    {
+        if (type == TransferAccountType.CashBox)
+        {
+            var cashBox = await context.CashBoxes.FindAsync(id)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+            if (signedAmount < 0 && cashBox.Balance < Math.Abs(signedAmount))
+                throw new InvalidOperationException($"رصيد القاصة ({cashBox.Balance:N0}) غير كافٍ لعكس التحويل");
+            cashBox.Balance += signedAmount;
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            var bank = await context.BankAccounts.FindAsync(id)
+                ?? throw new InvalidOperationException("المصرف غير موجود");
+            if (signedAmount < 0 && bank.Balance < Math.Abs(signedAmount))
+                throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ لعكس التحويل");
+            bank.Balance += signedAmount;
+            bank.UpdatedBy = username;
+            bank.UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    public async Task<(IEnumerable<TransferDisplayItem> Items, int TotalCount)> GetPagedTransfersAsync(
         int page, int pageSize, DateTime? fromDate = null, DateTime? toDate = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -286,7 +494,41 @@ public class CashBankService : ICashBankService
             .Take(pageSize)
             .ToListAsync();
 
-        return (items, totalCount);
+        var cashIds = items.Where(t => t.FromType == TransferAccountType.CashBox).Select(t => t.FromId)
+            .Concat(items.Where(t => t.ToType == TransferAccountType.CashBox).Select(t => t.ToId))
+            .Distinct().ToList();
+        var bankIds = items.Where(t => t.FromType == TransferAccountType.Bank).Select(t => t.FromId)
+            .Concat(items.Where(t => t.ToType == TransferAccountType.Bank).Select(t => t.ToId))
+            .Distinct().ToList();
+
+        var cashNames = await context.CashBoxes.IgnoreQueryFilters()
+            .Where(c => cashIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, c => c.Name);
+        var bankNames = await context.BankAccounts.IgnoreQueryFilters()
+            .Where(b => bankIds.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id, b => b.Name);
+
+        string Resolve(TransferAccountType type, int id) => type == TransferAccountType.CashBox
+            ? cashNames.GetValueOrDefault(id, $"قاصة #{id}")
+            : bankNames.GetValueOrDefault(id, $"مصرف #{id}");
+
+        var display = items.Select(t => new TransferDisplayItem
+        {
+            Id = t.Id,
+            Date = t.Date,
+            Amount = t.Amount,
+            Notes = t.Notes,
+            FromType = t.FromType,
+            ToType = t.ToType,
+            FromId = t.FromId,
+            ToId = t.ToId,
+            FromTypeLabel = t.FromType == TransferAccountType.CashBox ? "صندوق" : "بنك",
+            ToTypeLabel = t.ToType == TransferAccountType.CashBox ? "صندوق" : "بنك",
+            FromName = Resolve(t.FromType, t.FromId),
+            ToName = Resolve(t.ToType, t.ToId)
+        }).ToList();
+
+        return (display, totalCount);
     }
 
     // ══════════════════════════════════════════════════════
@@ -917,6 +1159,270 @@ public class CashBankService : ICashBankService
             .OrderBy(i => i.DueDate)
             .ThenBy(i => i.Id)
             .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<AccountStatementEntry>> GetCashBoxStatementAsync(
+        int cashBoxId, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var rows = new List<AccountStatementEntry>();
+        DateTime? toExclusive = toDate?.Date.AddDays(1);
+
+        // فواتير نقدية
+        var invoices = await context.Invoices.AsNoTracking()
+            .Include(i => i.Customer).Include(i => i.Supplier)
+            .Where(i => i.CashBoxId == cashBoxId && i.PaymentMethod == PaymentMethod.Cash)
+            .Where(i => !fromDate.HasValue || i.Date >= fromDate.Value)
+            .Where(i => !toExclusive.HasValue || i.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var inv in invoices)
+        {
+            var (credit, debit, type) = ClassifyInvoice(inv);
+            if (credit == 0 && debit == 0) continue;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = inv.Date,
+                Type = type,
+                Description = $"فاتورة {inv.InvoiceNumber}",
+                PartyName = inv.Customer?.Name ?? inv.Supplier?.Name ?? string.Empty,
+                Credit = credit,
+                Debit = debit,
+                Reference = inv.InvoiceNumber,
+                SourceType = "Invoice",
+                SourceId = inv.Id
+            });
+        }
+
+        // سندات
+        var vouchers = await context.Vouchers.AsNoTracking()
+            .Include(v => v.Customer).Include(v => v.Supplier).Include(v => v.Investor)
+            .Where(v => v.CashBoxId == cashBoxId)
+            .Where(v => !fromDate.HasValue || v.Date >= fromDate.Value)
+            .Where(v => !toExclusive.HasValue || v.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var v in vouchers)
+        {
+            bool isIncome = v.VoucherType is VoucherType.Receipt or VoucherType.DebtReceipt
+                or VoucherType.InvestorDeposit or VoucherType.BankReceipt;
+            decimal credit = isIncome
+                ? (v.VoucherType == VoucherType.BankReceipt ? v.Amount - v.BankFees : v.Amount)
+                : 0;
+            decimal debit = !isIncome ? v.Amount : 0;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = v.Date,
+                Type = GetVoucherTypeName(v.VoucherType),
+                Description = v.Notes ?? string.Empty,
+                PartyName = v.Customer?.Name ?? v.Supplier?.Name ?? v.Investor?.Name ?? string.Empty,
+                Credit = credit,
+                Debit = debit,
+                Reference = v.VoucherNumber,
+                SourceType = "Voucher",
+                SourceId = v.Id,
+                VoucherId = v.Id,
+                IsReconciled = v.IsReconciled,
+                CanReverse = true
+            });
+        }
+
+        // مصروفات
+        var expenses = await context.Expenses.AsNoTracking()
+            .Include(e => e.ExpenseType)
+            .Where(e => e.CashBoxId == cashBoxId)
+            .Where(e => !fromDate.HasValue || e.Date >= fromDate.Value)
+            .Where(e => !toExclusive.HasValue || e.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var e in expenses)
+        {
+            rows.Add(new AccountStatementEntry
+            {
+                Date = e.Date,
+                Type = "مصروف",
+                Description = e.Notes ?? e.ExpenseType?.Name ?? "مصروف",
+                Credit = 0,
+                Debit = e.Amount,
+                Reference = $"EXP-{e.Id:D4}",
+                SourceType = "Expense",
+                SourceId = e.Id
+            });
+        }
+
+        // تحويلات
+        var transfers = await context.Transfers.AsNoTracking()
+            .Where(t =>
+                (t.FromType == TransferAccountType.CashBox && t.FromId == cashBoxId) ||
+                (t.ToType == TransferAccountType.CashBox && t.ToId == cashBoxId))
+            .Where(t => !fromDate.HasValue || t.Date >= fromDate.Value)
+            .Where(t => !toExclusive.HasValue || t.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var t in transfers)
+        {
+            bool incoming = t.ToType == TransferAccountType.CashBox && t.ToId == cashBoxId;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = t.Date,
+                Type = "تحويل",
+                Description = t.Notes ?? string.Empty,
+                Credit = incoming ? t.Amount : 0,
+                Debit = incoming ? 0 : t.Amount,
+                Reference = $"TRF-{t.Id:D4}",
+                SourceType = "Transfer",
+                SourceId = t.Id,
+                CanReverse = true
+            });
+        }
+
+        // تسديد أقساط
+        var installments = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
+            .Where(i => i.CashBoxId == cashBoxId && i.PaidAmount > 0 && i.PaymentDate != null)
+            .Where(i => !fromDate.HasValue || i.PaymentDate >= fromDate.Value)
+            .Where(i => !toExclusive.HasValue || i.PaymentDate < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var i in installments)
+        {
+            rows.Add(new AccountStatementEntry
+            {
+                Date = i.PaymentDate ?? i.DueDate,
+                Type = "تسديد قسط",
+                Description = $"قسط مستحق {i.DueDate:yyyy/MM/dd}",
+                PartyName = i.InstallmentPlan?.Customer?.Name ?? string.Empty,
+                Credit = i.PaidAmount,
+                Debit = 0,
+                Reference = $"INS-{i.Id:D4}",
+                SourceType = "Installment",
+                SourceId = i.Id
+            });
+        }
+
+        return FinalizeStatement(rows);
+    }
+
+    public async Task<IReadOnlyList<AccountStatementEntry>> GetBankStatementAsync(
+        int bankAccountId, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var rows = new List<AccountStatementEntry>();
+        DateTime? toExclusive = toDate?.Date.AddDays(1);
+
+        var vouchers = await context.Vouchers.AsNoTracking()
+            .Include(v => v.Customer).Include(v => v.Supplier).Include(v => v.Investor)
+            .Where(v => v.BankAccountId == bankAccountId)
+            .Where(v => !fromDate.HasValue || v.Date >= fromDate.Value)
+            .Where(v => !toExclusive.HasValue || v.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var v in vouchers)
+        {
+            // سند قبض مصرفي يخصم من المصرف
+            bool bankOut = v.VoucherType == VoucherType.BankReceipt;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = v.Date,
+                Type = GetVoucherTypeName(v.VoucherType),
+                Description = v.Notes ?? string.Empty,
+                PartyName = v.Customer?.Name ?? v.Supplier?.Name ?? v.Investor?.Name ?? string.Empty,
+                Credit = bankOut ? 0 : v.Amount,
+                Debit = bankOut ? v.Amount : 0,
+                Reference = v.VoucherNumber,
+                SourceType = "Voucher",
+                SourceId = v.Id,
+                VoucherId = v.Id,
+                IsReconciled = v.IsReconciled,
+                CanReverse = true
+            });
+        }
+
+        var transfers = await context.Transfers.AsNoTracking()
+            .Where(t =>
+                (t.FromType == TransferAccountType.Bank && t.FromId == bankAccountId) ||
+                (t.ToType == TransferAccountType.Bank && t.ToId == bankAccountId))
+            .Where(t => !fromDate.HasValue || t.Date >= fromDate.Value)
+            .Where(t => !toExclusive.HasValue || t.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var t in transfers)
+        {
+            bool incoming = t.ToType == TransferAccountType.Bank && t.ToId == bankAccountId;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = t.Date,
+                Type = "تحويل",
+                Description = t.Notes ?? string.Empty,
+                Credit = incoming ? t.Amount : 0,
+                Debit = incoming ? 0 : t.Amount,
+                Reference = $"TRF-{t.Id:D4}",
+                SourceType = "Transfer",
+                SourceId = t.Id,
+                CanReverse = true
+            });
+        }
+
+        var adjustments = await context.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityName == "BankBalanceAdjustment" && a.EntityId == bankAccountId)
+            .ToListAsync();
+
+        foreach (var a in adjustments)
+        {
+            if (string.IsNullOrWhiteSpace(a.NewValues) || !a.NewValues.StartsWith("ADJ|", StringComparison.Ordinal))
+                continue;
+            var parts = a.NewValues.Split('|');
+            if (parts.Length < 4 || !decimal.TryParse(parts[1], out var delta))
+                continue;
+            if (!DateTime.TryParse(parts[3], out var adjDate))
+                adjDate = a.Timestamp;
+            if (fromDate.HasValue && adjDate < fromDate.Value) continue;
+            if (toExclusive.HasValue && adjDate >= toExclusive.Value) continue;
+
+            rows.Add(new AccountStatementEntry
+            {
+                Date = adjDate,
+                Type = "تسوية رصيد",
+                Description = parts[2],
+                Credit = delta > 0 ? delta : 0,
+                Debit = delta < 0 ? Math.Abs(delta) : 0,
+                Reference = $"BADJ-{a.Id:D4}",
+                SourceType = "Adjustment",
+                SourceId = a.Id
+            });
+        }
+
+        return FinalizeStatement(rows);
+    }
+
+    private static (decimal Credit, decimal Debit, string Type) ClassifyInvoice(Invoice inv)
+    {
+        return inv.InvoiceType switch
+        {
+            InvoiceType.Sale or InvoiceType.Installment => (inv.NetAmount, 0, "مبيعات"),
+            InvoiceType.SaleReturn => (0, inv.NetAmount, "مرتجع مبيعات"),
+            InvoiceType.Purchase => (0, inv.NetAmount, "مشتريات"),
+            InvoiceType.PurchaseReturn => (inv.NetAmount, 0, "مرتجع مشتريات"),
+            _ => (0, 0, "فاتورة")
+        };
+    }
+
+    private static IReadOnlyList<AccountStatementEntry> FinalizeStatement(List<AccountStatementEntry> rows)
+    {
+        var ordered = rows
+            .OrderBy(r => r.Date)
+            .ThenBy(r => r.SourceId ?? 0)
+            .ToList();
+
+        decimal bal = 0;
+        foreach (var r in ordered)
+        {
+            bal += r.Credit - r.Debit;
+            r.RunningBalance = bal;
+        }
+
+        ordered.Reverse();
+        return ordered;
     }
 
     private static string GetVoucherTypeName(VoucherType type) => type switch
