@@ -23,8 +23,13 @@ public sealed class CarDatabaseMigrationService : IDatabaseMigrationService
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
-        if (pending.Count > 0)
-            await db.Database.MigrateAsync(cancellationToken);
+
+        await db.Database.MigrateAsync(cancellationToken);
+
+        await CarSchemaRepair.ApplyAsync(db, cancellationToken);
+        if (!await CarSchemaRepair.IsSchemaReadyAsync(db, cancellationToken))
+            throw new InvalidOperationException(CarSchemaRepair.StandaloneSchemaOutdatedMessage);
+
         return pending;
     }
 }

@@ -23,8 +23,8 @@ public sealed class RealEstateDatabaseMigrationService : IDatabaseMigrationServi
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
-        if (pending.Count > 0)
-            await db.Database.MigrateAsync(cancellationToken);
+        await db.Database.MigrateAsync(cancellationToken);
+        await ModulePrintBrandingSchemaRepair.EnsureCompanyIdColumnsAsync(db, cancellationToken);
         return pending;
     }
 }

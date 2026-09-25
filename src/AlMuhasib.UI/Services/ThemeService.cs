@@ -212,7 +212,10 @@ public sealed class ThemeService
 
     private static void SetBrush(ResourceDictionary res, string key, string colorHex)
     {
-        res[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)!);
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)!);
+        if (brush.CanFreeze)
+            brush.Freeze();
+        res[key] = brush;
     }
 
     private static void ApplyGoldInvoiceTotalsBrushes(ResourceDictionary res, bool isDark)
@@ -221,6 +224,13 @@ public sealed class ThemeService
         SetBrush(res, "GoldInvoiceTotalsTextBrush", isDark ? DarkText : "#5D4037");
         SetBrush(res, "GoldInvoiceTotalsAccentBrush", isDark ? "#D4AF37" : "#8B6914");
         SetBrush(res, "GoldInvoiceTotalsMutedBrush", isDark ? "#BCAAA4" : "#8D6E63");
+    }
+
+    private static T FreezeBrush<T>(T brush) where T : Freezable
+    {
+        if (brush.CanFreeze)
+            brush.Freeze();
+        return brush;
     }
 
     private static LinearGradientBrush CreateGoldInvoiceTotalsBrush(bool isDark)
@@ -237,7 +247,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F5E6C8")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateChromeTabStripBrush(bool isDark)
@@ -253,7 +263,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#EEF3F9")!, 0));
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E3EBF4")!, 1));
         }
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static void ApplyTableActionBrushes(ResourceDictionary res, bool isDark)
@@ -347,10 +357,10 @@ public sealed class ThemeService
         SetBrush(res, "DashboardItemBrush", isDark ? DarkCard : "#FFFFFF");
         SetBrush(res, "DashboardItemBorderBrush", isDark ? DarkBorder : "#E2E8F0");
         SetBrush(res, "DashboardItemHoverBrush", isDark ? DarkHover : "#F1F5F9");
-        SetBrush(res, "DashboardChartWellBrush", isDark ? DarkChartWell : "#F3F6FB");
-        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? "#243056" : "#E6ECF5");
+        SetBrush(res, "DashboardChartWellBrush", isDark ? DarkChartWell : "#F8FAFC");
+        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? "#243056" : "#EEF2F7");
         SetBrush(res, "DashboardChartCardBrush", isDark ? DarkCard : "#FFFFFF");
-        SetBrush(res, "DashboardChartHeaderBrush", isDark ? "#141D48" : "#FAFBFD");
+        SetBrush(res, "DashboardChartHeaderBrush", isDark ? DarkCard : "#FFFFFF");
         SetBrush(res, "DashboardSuccessPanelBrush", isDark ? "#1A2E22" : "#E8F5E9");
         SetBrush(res, "DashboardSuccessPanelBorderBrush", isDark ? "#2E4D38" : "#C8E6C9");
         SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");
@@ -419,7 +429,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F3F6FB")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateDashboardHeroBrush(bool isDark)
@@ -441,7 +451,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#26A69A")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateDashboardGlassChipBrush(bool isDark)
@@ -458,7 +468,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#24FFFFFF")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateInvoiceSalesHeaderBrush(bool isDark)
@@ -475,7 +485,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FFFFFF")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateInvoiceSalesTotalsBrush(bool isDark)
@@ -492,7 +502,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#C8E6C9")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateInvoicePurchaseHeaderBrush(bool isDark)
@@ -509,7 +519,7 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FFFFFF")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateInvoicePurchaseTotalsBrush(bool isDark)
@@ -526,6 +536,6 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#BBDEFB")!, 1));
         }
 
-        return brush;
+        return FreezeBrush(brush);
     }
 }

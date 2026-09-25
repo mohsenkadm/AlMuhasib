@@ -107,29 +107,27 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ─── Chart card: flush content + accent strip ─── -->
+        <!-- ─── Chart card: flush canvas, soft chrome ─── -->
         <Style x:Key="DashboardChartCard" TargetType="materialDesign:Card" BasedOn="{StaticResource SectionCard}">
             <Setter Property="Padding" Value="0" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="Background" Value="{DynamicResource DashboardChartCardBrush}" />
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
         </Style>
 
         <Style x:Key="DashboardChartHost" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource DashboardChartWellBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DashboardChartWellBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Padding" Value="14,10,10,8" />
-            <Setter Property="Margin" Value="16,4,16,16" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,4,16,16" />
+            <Setter Property="Margin" Value="4,0,4,4" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="FlowDirection" Value="LeftToRight" />
         </Style>
 
         <Style x:Key="DashboardChartHeader" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource DashboardChartHeaderBrush}" />
-            <Setter Property="Padding" Value="18,14,18,12" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DashboardChartWellBorderBrush}" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="20,16,20,8" />
+            <Setter Property="BorderThickness" Value="0" />
         </Style>
 
         <Style x:Key="DashboardTaskButton" TargetType="Button">
@@ -1053,7 +1051,7 @@
                     <materialDesign:Card Grid.Column="0" Style="{StaticResource DashboardChartCard}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="4" />
+                                <RowDefinition Height="3" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="300" />
                             </Grid.RowDefinitions>
@@ -1061,16 +1059,26 @@
                             <Border Grid.Row="0">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#1565C0" Offset="0" />
-                                        <GradientStop Color="#42A5F5" Offset="0.55" />
-                                        <GradientStop Color="#81D4FA" Offset="1" />
+                                        <GradientStop Color="#2563EB" Offset="0" />
+                                        <GradientStop Color="#38BDF8" Offset="0.5" />
+                                        <GradientStop Color="#A5F3FC" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <!-- Soft ambient wash behind chart -->
+                            <Border Grid.Row="2" Margin="0,0,0,0" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                        <GradientStop Color="#142563EB" Offset="0" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
 
                             <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
                                 <DockPanel LastChildFill="True">
-                                    <Border Style="{StaticResource DashboardIconBadge}"
+                                    <Border Width="44" Height="44" CornerRadius="14"
                                             Background="{DynamicResource DashboardIconBadgeBlueBrush}"
                                             DockPanel.Dock="Right" Margin="12,0,0,0">
                                         <materialDesign:PackIcon Kind="ChartAreaspline" Width="22" Height="22"
@@ -1092,7 +1100,7 @@
                                                     TooltipPosition="Top"
                                                     LegendPosition="Hidden"
                                                     MinHeight="260"
-                                                    AnimationsSpeed="00:00:00.500" />
+                                                    AnimationsSpeed="00:00:00.550" />
                             </Border>
                         </Grid>
                     </materialDesign:Card>
@@ -1101,7 +1109,7 @@
                     <materialDesign:Card Grid.Column="2" Style="{StaticResource DashboardChartCard}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="4" />
+                                <RowDefinition Height="3" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="300" />
                             </Grid.RowDefinitions>
@@ -1109,16 +1117,25 @@
                             <Border Grid.Row="0">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#00838F" Offset="0" />
-                                        <GradientStop Color="#26C6DA" Offset="0.55" />
-                                        <GradientStop Color="#80DEEA" Offset="1" />
+                                        <GradientStop Color="#0D9488" Offset="0" />
+                                        <GradientStop Color="#2DD4BF" Offset="0.5" />
+                                        <GradientStop Color="#99F6E4" Offset="1" />
                                     </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <Border Grid.Row="2" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <RadialGradientBrush Center="0.5,0.45" GradientOrigin="0.5,0.45" RadiusX="0.7" RadiusY="0.7">
+                                        <GradientStop Color="#180D9488" Offset="0" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </RadialGradientBrush>
                                 </Border.Background>
                             </Border>
 
                             <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
                                 <DockPanel LastChildFill="True">
-                                    <Border Style="{StaticResource DashboardIconBadge}"
+                                    <Border Width="44" Height="44" CornerRadius="14"
                                             Background="{DynamicResource DashboardIconBadgeCyanBrush}"
                                             DockPanel.Dock="Right" Margin="12,0,0,0">
                                         <materialDesign:PackIcon Kind="ChartDonut" Width="22" Height="22"
@@ -1138,7 +1155,7 @@
                                               LegendPosition="Bottom"
                                               MinHeight="260"
                                               InitialRotation="-90"
-                                              AnimationsSpeed="00:00:00.500" />
+                                              AnimationsSpeed="00:00:00.550" />
                             </Border>
                         </Grid>
                     </materialDesign:Card>

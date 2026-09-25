@@ -5,6 +5,7 @@ using AlMuhasib.UI.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.Painting.Effects;
 using SkiaSharp;
 
 namespace AlMuhasib.UI.Charts;
@@ -15,28 +16,28 @@ namespace AlMuhasib.UI.Charts;
 /// </summary>
 public static class ChartThemeConfig
 {
-    // ── Color Palette ───────────────────────────────────────
-    public static readonly SKColor PrimaryBlue   = SKColor.Parse("#1565C0");
-    public static readonly SKColor AccentCyan    = SKColor.Parse("#00ACC1");
-    public static readonly SKColor SuccessGreen  = SKColor.Parse("#2E7D32");
-    public static readonly SKColor DangerRed     = SKColor.Parse("#C62828");
-    public static readonly SKColor Purple        = SKColor.Parse("#6A1B9A");
-    public static readonly SKColor Teal          = SKColor.Parse("#00838F");
-    public static readonly SKColor DeepIndigo     = SKColor.Parse("#7E57C2");
-    public static readonly SKColor Indigo        = SKColor.Parse("#283593");
-    public static readonly SKColor LightGreen    = SKColor.Parse("#558B2F");
-    public static readonly SKColor Pink          = SKColor.Parse("#AD1457");
+    // ── Color Palette (modern, balanced) ────────────────────
+    public static readonly SKColor PrimaryBlue   = SKColor.Parse("#2563EB");
+    public static readonly SKColor AccentCyan    = SKColor.Parse("#06B6D4");
+    public static readonly SKColor SuccessGreen  = SKColor.Parse("#10B981");
+    public static readonly SKColor DangerRed     = SKColor.Parse("#F43F5E");
+    public static readonly SKColor Purple        = SKColor.Parse("#8B5CF6");
+    public static readonly SKColor Teal          = SKColor.Parse("#14B8A6");
+    public static readonly SKColor DeepIndigo    = SKColor.Parse("#6366F1");
+    public static readonly SKColor Indigo        = SKColor.Parse("#4F46E5");
+    public static readonly SKColor LightGreen    = SKColor.Parse("#84CC16");
+    public static readonly SKColor Pink          = SKColor.Parse("#EC4899");
 
     public static readonly SKColor[] Palette =
     [
-        PrimaryBlue, AccentCyan, SuccessGreen, DangerRed, Purple,
-        Teal, DeepIndigo, Indigo, LightGreen, Pink
+        PrimaryBlue, AccentCyan, SuccessGreen, Purple, Teal,
+        DangerRed, DeepIndigo, LightGreen, Pink, Indigo
     ];
 
     // ── Theme-aware chart chrome (updated via ApplyTheme) ───
-    public static SKColor GridLineColor { get; private set; } = SKColor.Parse("#F0F0F0");
-    public static SKColor LabelColor { get; private set; } = SKColor.Parse("#757575");
-    public static SKColor ChartSurfaceColor { get; private set; } = SKColor.Parse("#F8FAFC");
+    public static SKColor GridLineColor { get; private set; } = SKColor.Parse("#E8EEF6");
+    public static SKColor LabelColor { get; private set; } = SKColor.Parse("#64748B");
+    public static SKColor ChartSurfaceColor { get; private set; } = SKColor.Parse("#FFFFFF");
     public static SKColor TooltipBg { get; private set; } = SKColors.White;
     public static SKColor GeometryFillColor { get; private set; } = SKColors.White;
 
@@ -49,15 +50,28 @@ public static class ChartThemeConfig
     public static void ApplyTheme(bool isDark)
     {
         _isDark = isDark;
-        // Classic blue-dark chrome (SmarterASP V5 navy family)
-        GridLineColor = SKColor.Parse(isDark ? "#2A3558" : "#F0F0F0");
-        LabelColor = SKColor.Parse(isDark ? "#A8B0C4" : "#757575");
-        ChartSurfaceColor = SKColor.Parse(isDark ? "#161F46" : "#F3F6FB");
-        TooltipBg = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
-        // Line marker fill — matches card surface for a clean “ring” marker
-        GeometryFillColor = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
+        GridLineColor = SKColor.Parse(isDark ? "#2A3558" : "#E8EEF6");
+        LabelColor = SKColor.Parse(isDark ? "#94A3B8" : "#64748B");
+        // Match card surface so doughnut gaps / markers blend cleanly
+        ChartSurfaceColor = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
+        TooltipBg = SKColor.Parse(isDark ? "#0F172A" : "#FFFFFF");
+        GeometryFillColor = ChartSurfaceColor;
         EnsurePaints();
     }
+
+    /// <summary>Soft vertical fade used under area/line charts.</summary>
+    public static LinearGradientPaint CreateAreaFill(SKColor accent, byte topAlpha, byte bottomAlpha = 8)
+        => new(
+            accent.WithAlpha(topAlpha),
+            accent.WithAlpha(bottomAlpha),
+            new SKPoint(0.5f, 0f),
+            new SKPoint(0.5f, 1f));
+
+    public static SolidColorPaint CreateGridPaint() => new(GridLineColor)
+    {
+        StrokeThickness = 1,
+        PathEffect = new DashEffect([4, 6])
+    };
 
     public static DrawMarginFrame CreateDrawMarginFrame() => new()
     {
@@ -153,10 +167,10 @@ public static class ChartThemeConfig
         Labels = labels,
         TextSize = LabelSize,
         LabelsPaint = CreateLabelPaint(),
-        SeparatorsPaint = new SolidColorPaint { Color = GridLineColor, StrokeThickness = 1 },
+        SeparatorsPaint = null,
         LabelsRotation = rotation,
         IsInverted = false,
-        Padding = new LiveChartsCore.Drawing.Padding(6)
+        Padding = new LiveChartsCore.Drawing.Padding(4, 8, 4, 0)
     };
 
     /// <summary>Creates a styled Y-axis with IQD currency formatter.</summary>
@@ -165,55 +179,64 @@ public static class ChartThemeConfig
         Labeler = v => FormatAmount(v, suffix),
         TextSize = LabelSize,
         LabelsPaint = CreateLabelPaint(),
-        SeparatorsPaint = new SolidColorPaint { Color = GridLineColor, StrokeThickness = 1 },
-        MinLimit = 0
+        SeparatorsPaint = CreateGridPaint(),
+        MinLimit = 0,
+        Padding = new LiveChartsCore.Drawing.Padding(0, 0, 8, 0)
     };
 
     // ── Series factories ────────────────────────────────────
 
-    /// <summary>Styled ColumnSeries (bar chart) with rounded corners and gradient fill.</summary>
-    public static ColumnSeries<decimal> Column(decimal[] values, string name, int colorIndex = 0) => new()
+    /// <summary>Styled ColumnSeries (bar chart) with rounded corners and soft gradient fill.</summary>
+    public static ColumnSeries<decimal> Column(decimal[] values, string name, int colorIndex = 0)
     {
-        Values = values,
-        Name = name,
-        Fill = PalettePaint(colorIndex),
-        Stroke = null,
-        Rx = 4,
-        Ry = 4,
-        MaxBarWidth = 40,
-        Padding = 8,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(800),
-        EasingFunction = LiveChartsCore.EasingFunctions.BounceOut
-    };
+        var color = Palette[colorIndex % Palette.Length];
+        return new ColumnSeries<decimal>
+        {
+            Values = values,
+            Name = name,
+            Fill = CreateAreaFill(color, (byte)(_isDark ? 200 : 230), (byte)(_isDark ? 90 : 120)),
+            Stroke = null,
+            Rx = 8,
+            Ry = 8,
+            MaxBarWidth = 36,
+            Padding = 10,
+            AnimationsSpeed = TimeSpan.FromMilliseconds(700),
+            EasingFunction = LiveChartsCore.EasingFunctions.CubicOut
+        };
+    }
 
-    /// <summary>Styled LineSeries with soft area fill and refined markers.</summary>
-    public static LineSeries<decimal> Line(decimal[] values, string name, int colorIndex = 0) => new()
+    /// <summary>Styled LineSeries with soft gradient area and refined markers.</summary>
+    public static LineSeries<decimal> Line(decimal[] values, string name, int colorIndex = 0)
     {
-        Values = values,
-        Name = name,
-        Stroke = PaletteStrokePaint(colorIndex, 2.6f),
-        GeometryStroke = PaletteStrokePaint(colorIndex, 2.2f),
-        GeometryFill = new SolidColorPaint(GeometryFillColor),
-        GeometrySize = 7,
-        Fill = PalettePaint(colorIndex, (byte)(_isDark ? 70 : 42)),
-        LineSmoothness = 0.72,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(750),
-        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut
-    };
+        var color = Palette[colorIndex % Palette.Length];
+        return new LineSeries<decimal>
+        {
+            Values = values,
+            Name = name,
+            Stroke = new SolidColorPaint(color, 2.8f),
+            GeometryStroke = new SolidColorPaint(color, 2f),
+            GeometryFill = new SolidColorPaint(GeometryFillColor),
+            GeometrySize = 6,
+            Fill = CreateAreaFill(color, (byte)(_isDark ? 95 : 55), 6),
+            LineSmoothness = 0.78,
+            AnimationsSpeed = TimeSpan.FromMilliseconds(700),
+            EasingFunction = LiveChartsCore.EasingFunctions.CubicOut
+        };
+    }
 
-    /// <summary>Compact sparkline for KPI cards (no markers, soft area fill).</summary>
+    /// <summary>Compact sparkline for KPI cards (edge fade, no markers).</summary>
     public static LineSeries<decimal> Sparkline(decimal[] values, SKColor accent) => new()
     {
         Values = values,
         Name = string.Empty,
-        Stroke = new SolidColorPaint(accent, _isDark ? 2.2f : 2f),
+        Stroke = new SolidColorPaint(accent, 2.4f),
         GeometrySize = 0,
         GeometryStroke = null,
         GeometryFill = null,
-        Fill = new SolidColorPaint(accent.WithAlpha((byte)(_isDark ? 70 : 45))),
-        LineSmoothness = 0.7,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(450),
-        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut,
+        Fill = CreateAreaFill(accent, (byte)(_isDark ? 90 : 58), 4),
+        LineSmoothness = 0.82,
+        AnimationsSpeed = TimeSpan.FromMilliseconds(500),
+        EasingFunction = LiveChartsCore.EasingFunctions.CubicOut,
         IsHoverable = false
     };
 
@@ -222,7 +245,8 @@ public static class ChartThemeConfig
     {
         IsVisible = false,
         LabelsPaint = null,
-        SeparatorsPaint = null
+        SeparatorsPaint = null,
+        Padding = new LiveChartsCore.Drawing.Padding(isY ? 2 : 0, isY ? 4 : 2, isY ? 2 : 0, isY ? 2 : 0)
     };
 
     public static SKColor BrushToSkColor(Brush? brush, SKColor fallback)
@@ -236,20 +260,26 @@ public static class ChartThemeConfig
     }
 
     /// <summary>Styled PieSeries slice with soft ring separation.</summary>
-    public static PieSeries<decimal> Pie(decimal value, string name, int colorIndex, bool isDoughnut = true) => new()
+    public static PieSeries<decimal> Pie(decimal value, string name, int colorIndex, bool isDoughnut = true)
     {
-        Values = [value],
-        Name = name,
-        Fill = PalettePaint(colorIndex),
-        Stroke = new SolidColorPaint(ChartSurfaceColor) { StrokeThickness = 2.5f },
-        InnerRadius = isDoughnut ? 68 : 0,
-        MaxRadialColumnWidth = 44,
-        HoverPushout = 8,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(750),
-        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut,
-        DataLabelsSize = 0,
-        DataLabelsPaint = null
-    };
+        var color = Palette[colorIndex % Palette.Length];
+        return new PieSeries<decimal>
+        {
+            Values = [value],
+            Name = name,
+            Fill = new RadialGradientPaint(
+                color.WithAlpha(255),
+                color.WithAlpha((byte)(_isDark ? 180 : 210))),
+            Stroke = new SolidColorPaint(ChartSurfaceColor) { StrokeThickness = 3.5f },
+            InnerRadius = isDoughnut ? 72 : 0,
+            MaxRadialColumnWidth = 40,
+            HoverPushout = 10,
+            AnimationsSpeed = TimeSpan.FromMilliseconds(700),
+            EasingFunction = LiveChartsCore.EasingFunctions.CubicOut,
+            DataLabelsSize = 0,
+            DataLabelsPaint = null
+        };
+    }
 
     /// <summary>
     /// Builds a doughnut pie series from NameAmountPoint list.

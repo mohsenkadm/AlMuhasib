@@ -612,15 +612,13 @@ public partial class DashboardViewModel : ViewModelBase
     private Task RefreshChartsOnlyAsync()
     {
         if (!_initialized) return Task.CompletedTask;
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            if (_cachedSalesPoints is not null)
-                BuildSalesChart(_cachedSalesPoints);
-            if (_cachedExpenseShares is not null)
-                BuildExpenseChart(_cachedExpenseShares);
-            // Sparkline paints are accent-bound; notify collections so cards rebuild.
-            RefreshSparklineCollections();
-        });
+
+        // Already scheduled on the UI dispatcher by ThemeChartRefresh — never nest Dispatcher.Invoke.
+        if (_cachedSalesPoints is not null)
+            BuildSalesChart(_cachedSalesPoints);
+        if (_cachedExpenseShares is not null)
+            BuildExpenseChart(_cachedExpenseShares);
+        RefreshSparklineCollections();
         return Task.CompletedTask;
     }
 

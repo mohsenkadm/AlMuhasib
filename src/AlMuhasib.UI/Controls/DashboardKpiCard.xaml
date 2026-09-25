@@ -15,7 +15,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <materialDesign:Card UniformCornerRadius="20"
+    <materialDesign:Card UniformCornerRadius="22"
                          Padding="0"
                          HorizontalAlignment="Stretch"
                          VerticalAlignment="Stretch"
@@ -24,6 +24,7 @@
                          BorderBrush="{DynamicResource CardBorderBrush}"
                          BorderThickness="1"
                          Cursor="Hand"
+                         ClipToBounds="True"
                          RenderTransformOrigin="0.5,0.5">
         <materialDesign:Card.RenderTransform>
             <ScaleTransform ScaleX="1" ScaleY="1" />
@@ -58,21 +59,27 @@
             </Style>
         </materialDesign:Card.Style>
 
-        <StackPanel VerticalAlignment="Stretch">
-            <Border Height="4" CornerRadius="20,20,0,0"
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Height="3" VerticalAlignment="Top"
                     Background="{Binding AccentBrush, ElementName=Root}" />
 
-            <Grid Margin="20,18,20,8">
+            <Grid Grid.Row="0" Margin="20,16,20,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Width="54" Height="54" CornerRadius="16"
+                <Border Grid.Column="0" Width="50" Height="50" CornerRadius="15"
                         Background="{Binding AccentLightBrush, ElementName=Root}"
                         VerticalAlignment="Top">
                     <materialDesign:PackIcon Kind="{Binding Icon, ElementName=Root}"
-                                             Width="28" Height="28"
+                                             Width="26" Height="26"
                                              Foreground="{Binding AccentBrush, ElementName=Root}"
                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
@@ -80,12 +87,12 @@
                     <TextBlock Text="{Binding Title, ElementName=Root}"
                                FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
                     <TextBlock Text="{Binding Value, ElementName=Root}"
-                               FontSize="24" FontWeight="Bold"
+                               FontSize="23" FontWeight="Bold"
                                Foreground="{Binding ValueBrush, ElementName=Root}"
                                Margin="0,4,0,0" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
                                 Visibility="{Binding ShowTrend, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                        <Border CornerRadius="8" Padding="8,3"
+                        <Border CornerRadius="9" Padding="8,3"
                                 Background="{Binding AccentLightBrush, ElementName=Root}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Width="12" Height="12"
@@ -139,23 +146,26 @@
                 </Button>
             </Grid>
 
-            <Border Margin="12,0,12,10" Height="52" CornerRadius="12"
-                    Background="{Binding AccentLightBrush, ElementName=Root}"
+            <!-- Edge-to-edge sparkline: no nested colored box -->
+            <Border Grid.Row="1" Height="56" Margin="0,4,0,0"
                     Visibility="{Binding ShowMiniChart, ElementName=Root, Converter={StaticResource BoolToVis}}"
                     ClipToBounds="True">
-                <lvc:CartesianChart x:Name="MiniChart"
-                                    Series="{Binding MiniChartSeries, ElementName=Root}"
-                                    XAxes="{Binding MiniChartXAxes, ElementName=Root}"
-                                    YAxes="{Binding MiniChartYAxes, ElementName=Root}"
-                                    TooltipPosition="Hidden"
-                                    LegendPosition="Hidden"
-                                    AnimationsSpeed="00:00:00.350"
-                                    Margin="4,6,4,2" />
+                <Grid>
+                    <Border Background="{Binding AccentLightBrush, ElementName=Root}" Opacity="0.4" />
+                    <lvc:CartesianChart x:Name="MiniChart"
+                                        Series="{Binding MiniChartSeries, ElementName=Root}"
+                                        XAxes="{Binding MiniChartXAxes, ElementName=Root}"
+                                        YAxes="{Binding MiniChartYAxes, ElementName=Root}"
+                                        TooltipPosition="Hidden"
+                                        LegendPosition="Hidden"
+                                        AnimationsSpeed="00:00:00.400"
+                                        Margin="0,8,0,0" />
+                </Grid>
             </Border>
 
-            <ContentPresenter Margin="20,0,20,16"
+            <ContentPresenter Grid.Row="2" Margin="20,4,20,16"
                               Content="{Binding DetailsContent, ElementName=Root}"
                               Visibility="{Binding DetailsContent, ElementName=Root, Converter={StaticResource NullToCollapsed}}" />
-        </StackPanel>
+        </Grid>
     </materialDesign:Card>
 </UserControl>

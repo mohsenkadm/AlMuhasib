@@ -115,63 +115,62 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private void BuildSteps()
     {
         Steps.Clear();
-        void Add(MigrationStepKind kind, string title, string shortTitle, string desc, PackIconKind icon, bool optional = true)
-            => Steps.Add(new MigrationStepInfo
-            {
-                Kind = kind,
-                Title = title,
-                ShortTitle = shortTitle,
-                Description = desc,
-                Icon = icon,
-                IsOptional = optional
-            });
+        var defs = new List<(MigrationStepKind Kind, string ShortTitle, string Desc, PackIconKind Icon, bool Optional)>();
 
         if (_needsCapital)
         {
-            Add(MigrationStepKind.Capital,
-                "١ — رأس المال والأرباح الافتتاحية", "رأس المال",
+            defs.Add((MigrationStepKind.Capital, "رأس المال",
                 "أدخل رأس المال والأرباح الافتتاحية إن لم تكن محفوظة بعد.",
-                PackIconKind.Cash, optional: false);
+                PackIconKind.Cash, false));
         }
 
-        Add(MigrationStepKind.CashAndBank, "القاصات والمصرف", "قاصات",
+        defs.Add((MigrationStepKind.CashAndBank, "قاصات",
             "أدخل القاصات وحسابات المصرف مع أرصدتها الافتتاحية (يدوياً أو من Excel).",
-            PackIconKind.SafeSquareOutline);
-        Add(MigrationStepKind.Investors, "المستثمرون وأرصدتهم", "مستثمرون",
+            PackIconKind.SafeSquareOutline, true));
+        defs.Add((MigrationStepKind.Investors, "مستثمرون",
             "أدخل المستثمرين حتى لو لم يكونوا موجودين مسبقاً مع الرصيد الافتتاحي.",
-            PackIconKind.AccountCash);
-        Add(MigrationStepKind.Warehouses, "المخازن", "مخازن",
+            PackIconKind.AccountCash, true));
+        defs.Add((MigrationStepKind.Warehouses, "مخازن",
             "أنشئ المخازن قبل إدخال المنتجات والأرصدة الافتتاحية.",
-            PackIconKind.Warehouse, optional: false);
-        Add(MigrationStepKind.Categories, "أصناف المنتجات", "أصناف",
+            PackIconKind.Warehouse, false));
+        defs.Add((MigrationStepKind.Categories, "أصناف",
             "أدخل تصنيفات المنتجات قبل إضافة المنتجات.",
-            PackIconKind.Shape);
-        Add(MigrationStepKind.Products, "المنتجات والأرصدة", "منتجات",
+            PackIconKind.Shape, true));
+        defs.Add((MigrationStepKind.Products, "منتجات",
             "أدخل المنتجات مع الصنف والسعر المفرد والرصيد الافتتاحي (كمية × تكلفة).",
-            PackIconKind.PackageVariant);
-        Add(MigrationStepKind.PricingTypes, "أنواع التسعير", "تسعير",
+            PackIconKind.PackageVariant, true));
+        defs.Add((MigrationStepKind.PricingTypes, "تسعير",
             "أدخل أنواع التسعير (مفرد، جملة، وكيل...).",
-            PackIconKind.TagMultiple);
-        Add(MigrationStepKind.ProductPricing, "تسعير المنتجات", "أسعار",
+            PackIconKind.TagMultiple, true));
+        defs.Add((MigrationStepKind.ProductPricing, "أسعار",
             "حدد أسعار البيع/الشراء للمنتجات المضافة حسب نوع التسعير.",
-            PackIconKind.TagOutline);
-        Add(MigrationStepKind.Customers, "العملاء وأرصدتهم", "عملاء",
+            PackIconKind.TagOutline, true));
+        defs.Add((MigrationStepKind.Customers, "عملاء",
             "أدخل العملاء مع أرصدة افتتاحية آجلة — يُنشأ العميل إن لم يكن موجوداً.",
-            PackIconKind.AccountGroup);
-        Add(MigrationStepKind.Suppliers, "الموردون وأرصدتهم", "موردون",
+            PackIconKind.AccountGroup, true));
+        defs.Add((MigrationStepKind.Suppliers, "موردون",
             "أدخل الموردين مع أرصدة افتتاحية آجلة — يُنشأ المورد إن لم يكن موجوداً.",
-            PackIconKind.TruckDelivery);
-        Add(MigrationStepKind.ExpenseTypes, "أنواع المصاريف", "مصاريف",
+            PackIconKind.TruckDelivery, true));
+        defs.Add((MigrationStepKind.ExpenseTypes, "مصاريف",
             "أدخل أنواع المصاريف الافتتاحية للنظام.",
-            PackIconKind.CashMinus);
-        Add(MigrationStepKind.Installments, "الأقساط الافتتاحية", "أقساط",
+            PackIconKind.CashMinus, true));
+        defs.Add((MigrationStepKind.Installments, "أقساط",
             "أدخل أرصدة الأقساط الافتتاحية كما في شاشة أرصدة الأقساط.",
-            PackIconKind.CashClock);
+            PackIconKind.CashClock, true));
 
-        for (var i = 0; i < Steps.Count; i++)
+        for (var i = 0; i < defs.Count; i++)
         {
-            Steps[i].Title = $"{ToArabicNumeral(i + 1)} — {Steps[i].ShortTitle}";
-            Steps[i].IsActive = i == 0;
+            var d = defs[i];
+            Steps.Add(new MigrationStepInfo
+            {
+                Kind = d.Kind,
+                Title = $"{ToArabicNumeral(i + 1)} — {d.ShortTitle}",
+                ShortTitle = d.ShortTitle,
+                Description = d.Desc,
+                Icon = d.Icon,
+                IsOptional = d.Optional,
+                IsActive = i == 0
+            });
         }
     }
 

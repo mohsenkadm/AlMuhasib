@@ -5,17 +5,17 @@
              FlowDirection="RightToLeft"
              x:Name="Root">
 
-    <materialDesign:Card UniformCornerRadius="20"
+    <materialDesign:Card UniformCornerRadius="22"
                          Padding="0"
                          ClipToBounds="True"
                          Margin="0,0,0,16"
-                         materialDesign:ElevationAssist.Elevation="Dp1"
+                         materialDesign:ElevationAssist.Elevation="Dp2"
                          Background="{DynamicResource DashboardChartCardBrush}"
                          BorderBrush="{DynamicResource CardBorderBrush}"
                          BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="4" />
+                <RowDefinition Height="3" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -25,19 +25,27 @@
             <Border Grid.Row="0">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#1565C0" Offset="0" />
-                        <GradientStop Color="#42A5F5" Offset="0.55" />
-                        <GradientStop Color="#81D4FA" Offset="1" />
+                        <GradientStop Color="#2563EB" Offset="0" />
+                        <GradientStop Color="#38BDF8" Offset="0.5" />
+                        <GradientStop Color="#A5F3FC" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- Soft ambient wash -->
+            <Border Grid.Row="2" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#102563EB" Offset="0" />
+                        <GradientStop Color="#00FFFFFF" Offset="1" />
                     </LinearGradientBrush>
                 </Border.Background>
             </Border>
 
             <!-- Header -->
             <Border Grid.Row="1"
-                    Background="{DynamicResource DashboardChartHeaderBrush}"
-                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}"
-                    BorderThickness="0,0,0,1"
-                    Padding="18,14,18,12">
+                    Background="Transparent"
+                    Padding="20,16,20,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -79,14 +87,12 @@
                 </Grid>
             </Border>
 
-            <!-- Chart host -->
+            <!-- Chart host: flush canvas, no nested well -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource DashboardChartWellBrush}"
-                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="16"
-                    Padding="14,10,10,8"
-                    Margin="16,10,16,16"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="12,4,16,16"
+                    Margin="4,0,4,4"
                     MinHeight="250"
                     FlowDirection="LeftToRight"
                     ClipToBounds="True">

@@ -707,6 +707,20 @@ public partial class App : Application
                                 AlMuhasib.Infrastructure.Services.AccountingSchemaRepair.BranchSchemaOutdatedMessage);
                         }
                     }
+                    else if (_systemProfile.ActiveSystem == ApplicationSystemType.CarContracts)
+                    {
+                        splash.SetStatus("جاري التحقق من قاعدة بيانات عقود السيارات...");
+                        var branchFactory = scope.ServiceProvider.GetRequiredService<
+                            Microsoft.EntityFrameworkCore.IDbContextFactory<
+                                AlMuhasib.Infrastructure.Data.Car.CarDbContext>>();
+                        await using var branchDb = await branchFactory.CreateDbContextAsync();
+                        if (!await AlMuhasib.Infrastructure.Services.CarSchemaRepair
+                                .IsSchemaReadyAsync(branchDb))
+                        {
+                            throw new InvalidOperationException(
+                                AlMuhasib.Infrastructure.Services.CarSchemaRepair.BranchSchemaOutdatedMessage);
+                        }
+                    }
                 }
 
                 var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();
