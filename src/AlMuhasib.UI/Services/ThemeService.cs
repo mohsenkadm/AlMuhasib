@@ -32,7 +32,8 @@ public sealed class ThemeService
     private const string DarkChromeInactive = "#1A2448";
     private const string DarkChromeHover = "#1E2A52";
     private const string DarkSearchBorder = "#3A4570";
-    private const string DarkChartWell = "#0C1234";
+    // Soft inset that sits inside cards (not a darker “hole”)
+    private const string DarkChartWell = "#161F46";
 
     private readonly IUserPreferencesService _preferences;
     private readonly ISystemProfileService _systemProfile;
@@ -346,8 +347,10 @@ public sealed class ThemeService
         SetBrush(res, "DashboardItemBrush", isDark ? DarkCard : "#FFFFFF");
         SetBrush(res, "DashboardItemBorderBrush", isDark ? DarkBorder : "#E2E8F0");
         SetBrush(res, "DashboardItemHoverBrush", isDark ? DarkHover : "#F1F5F9");
-        SetBrush(res, "DashboardChartWellBrush", isDark ? DarkChartWell : "#F8FAFC");
-        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? DarkBorder : "#EEF2F7");
+        SetBrush(res, "DashboardChartWellBrush", isDark ? DarkChartWell : "#F3F6FB");
+        SetBrush(res, "DashboardChartWellBorderBrush", isDark ? "#243056" : "#E6ECF5");
+        SetBrush(res, "DashboardChartCardBrush", isDark ? DarkCard : "#FFFFFF");
+        SetBrush(res, "DashboardChartHeaderBrush", isDark ? "#141D48" : "#FAFBFD");
         SetBrush(res, "DashboardSuccessPanelBrush", isDark ? "#1A2E22" : "#E8F5E9");
         SetBrush(res, "DashboardSuccessPanelBorderBrush", isDark ? "#2E4D38" : "#C8E6C9");
         SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");

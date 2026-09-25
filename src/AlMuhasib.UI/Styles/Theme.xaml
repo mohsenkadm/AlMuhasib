@@ -78,8 +78,10 @@
     <SolidColorBrush x:Key="DashboardAlertsPanelBorderBrush" Color="#FFE0B2"/>
     <SolidColorBrush x:Key="DashboardItemBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="DashboardItemBorderBrush" Color="#E2E8F0"/>
-    <SolidColorBrush x:Key="DashboardChartWellBrush" Color="#F8FAFC"/>
-    <SolidColorBrush x:Key="DashboardChartWellBorderBrush" Color="#EEF2F7"/>
+    <SolidColorBrush x:Key="DashboardChartWellBrush" Color="#F3F6FB"/>
+    <SolidColorBrush x:Key="DashboardChartWellBorderBrush" Color="#E6ECF5"/>
+    <SolidColorBrush x:Key="DashboardChartCardBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DashboardChartHeaderBrush" Color="#FAFBFD"/>
     <SolidColorBrush x:Key="DashboardSuccessPanelBrush" Color="#E8F5E9"/>
     <SolidColorBrush x:Key="DashboardSuccessPanelBorderBrush" Color="#C8E6C9"/>
     <SolidColorBrush x:Key="DashboardSuccessForegroundBrush" Color="#2E7D32"/>

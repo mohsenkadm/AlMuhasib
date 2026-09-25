@@ -45,9 +45,9 @@ public static class ChartThemeHooks
     {
         ChartThemeConfig.EnsurePaints();
 
-        // Kill default white LiveCharts surface — bind to themed chart well
-        chart.SetResourceReference(Control.BackgroundProperty, "DashboardChartWellBrush");
-        chart.SetResourceReference(Control.BorderBrushProperty, "DashboardChartWellBorderBrush");
+        // Transparent so the card/host surface shows through (avoids nested boxes)
+        chart.Background = Brushes.Transparent;
+        chart.BorderBrush = Brushes.Transparent;
         chart.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
         chart.BorderThickness = new Thickness(0);
 

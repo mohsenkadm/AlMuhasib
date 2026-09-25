@@ -22,7 +22,7 @@ public enum MigrationStepKind
 public partial class MigrationStepInfo : ObservableObject
 {
     public MigrationStepKind Kind { get; init; }
-    public string Title { get; init; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     public string ShortTitle { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public PackIconKind Icon { get; init; }

@@ -52,10 +52,10 @@ public static class ChartThemeConfig
         // Classic blue-dark chrome (SmarterASP V5 navy family)
         GridLineColor = SKColor.Parse(isDark ? "#2A3558" : "#F0F0F0");
         LabelColor = SKColor.Parse(isDark ? "#A8B0C4" : "#757575");
-        ChartSurfaceColor = SKColor.Parse(isDark ? "#0C1234" : "#F8FAFC");
+        ChartSurfaceColor = SKColor.Parse(isDark ? "#161F46" : "#F3F6FB");
         TooltipBg = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
-        // Line marker fill — blue accent (readable on dark well, not white flash)
-        GeometryFillColor = SKColor.Parse(isDark ? "#5BA3D9" : "#FFFFFF");
+        // Line marker fill — matches card surface for a clean “ring” marker
+        GeometryFillColor = SKColor.Parse(isDark ? "#121B42" : "#FFFFFF");
         EnsurePaints();
     }
 
@@ -186,18 +186,18 @@ public static class ChartThemeConfig
         EasingFunction = LiveChartsCore.EasingFunctions.BounceOut
     };
 
-    /// <summary>Styled LineSeries with dot markers and gradient fill.</summary>
+    /// <summary>Styled LineSeries with soft area fill and refined markers.</summary>
     public static LineSeries<decimal> Line(decimal[] values, string name, int colorIndex = 0) => new()
     {
         Values = values,
         Name = name,
-        Stroke = PaletteStrokePaint(colorIndex, 3f),
-        GeometryStroke = PaletteStrokePaint(colorIndex, 2f),
+        Stroke = PaletteStrokePaint(colorIndex, 2.6f),
+        GeometryStroke = PaletteStrokePaint(colorIndex, 2.2f),
         GeometryFill = new SolidColorPaint(GeometryFillColor),
-        GeometrySize = 8,
-        Fill = PalettePaint(colorIndex, (byte)(_isDark ? 90 : 50)),
-        LineSmoothness = 0.65,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(800),
+        GeometrySize = 7,
+        Fill = PalettePaint(colorIndex, (byte)(_isDark ? 70 : 42)),
+        LineSmoothness = 0.72,
+        AnimationsSpeed = TimeSpan.FromMilliseconds(750),
         EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut
     };
 
@@ -235,16 +235,17 @@ public static class ChartThemeConfig
         return fallback;
     }
 
-    /// <summary>Styled PieSeries slice.</summary>
+    /// <summary>Styled PieSeries slice with soft ring separation.</summary>
     public static PieSeries<decimal> Pie(decimal value, string name, int colorIndex, bool isDoughnut = true) => new()
     {
         Values = [value],
         Name = name,
         Fill = PalettePaint(colorIndex),
-        Stroke = null,
-        InnerRadius = isDoughnut ? 60 : 0,
-        HoverPushout = 3,
-        AnimationsSpeed = TimeSpan.FromMilliseconds(800),
+        Stroke = new SolidColorPaint(ChartSurfaceColor) { StrokeThickness = 2.5f },
+        InnerRadius = isDoughnut ? 68 : 0,
+        MaxRadialColumnWidth = 44,
+        HoverPushout = 8,
+        AnimationsSpeed = TimeSpan.FromMilliseconds(750),
         EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut,
         DataLabelsSize = 0,
         DataLabelsPaint = null

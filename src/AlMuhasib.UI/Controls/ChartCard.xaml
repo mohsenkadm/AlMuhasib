@@ -5,76 +5,97 @@
              FlowDirection="RightToLeft"
              x:Name="Root">
 
-    <materialDesign:Card Style="{StaticResource ElevatedCard}"
-                         Margin="0,0,0,16">
-        <materialDesign:Card.RenderTransform>
-            <ScaleTransform ScaleX="1" ScaleY="1" />
-        </materialDesign:Card.RenderTransform>
-
+    <materialDesign:Card UniformCornerRadius="20"
+                         Padding="0"
+                         ClipToBounds="True"
+                         Margin="0,0,0,16"
+                         materialDesign:ElevationAssist.Elevation="Dp1"
+                         Background="{DynamicResource DashboardChartCardBrush}"
+                         BorderBrush="{DynamicResource CardBorderBrush}"
+                         BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="4" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- ═══ Header ═══ -->
-            <Grid Grid.Row="0" Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <!-- Accent strip -->
+            <Border Grid.Row="0">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#1565C0" Offset="0" />
+                        <GradientStop Color="#42A5F5" Offset="0.55" />
+                        <GradientStop Color="#81D4FA" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="{Binding Title, ElementName=Root}"
-                               FontSize="16" FontWeight="Bold"
-                               Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="{Binding Subtitle, ElementName=Root}"
-                               FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"
-                               Margin="0,2,0,0"
-                               Visibility="{Binding Subtitle, ElementName=Root, 
-                                   Converter={StaticResource NullToCollapsedConverter}}" />
-                </StackPanel>
-
-                <!-- Period selector buttons (optional) -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            Visibility="{Binding ShowPeriodSelector, ElementName=Root,
-                                Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <RadioButton Content="يوم" GroupName="Period" Margin="0,0,4,0"
-                                 Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
-                                 FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
-                                 IsChecked="{Binding IsDaySelected, ElementName=Root}" />
-                    <RadioButton Content="أسبوع" GroupName="Period" Margin="0,0,4,0"
-                                 Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
-                                 FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
-                                 IsChecked="{Binding IsWeekSelected, ElementName=Root}" />
-                    <RadioButton Content="شهر" GroupName="Period" Margin="0,0,4,0"
-                                 Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
-                                 FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
-                                 IsChecked="{Binding IsMonthSelected, ElementName=Root}" />
-                    <RadioButton Content="سنة" GroupName="Period"
-                                 Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
-                                 FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
-                                 IsChecked="{Binding IsYearSelected, ElementName=Root}" />
-                </StackPanel>
-            </Grid>
-
-            <!-- ═══ Chart Content (LTR canvas — avoids mirrored labels in RTL pages) ═══ -->
+            <!-- Header -->
             <Border Grid.Row="1"
+                    Background="{DynamicResource DashboardChartHeaderBrush}"
+                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="18,14,18,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title, ElementName=Root}"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Text="{Binding Subtitle, ElementName=Root}"
+                                   FontSize="11.5" Foreground="{DynamicResource HintForegroundBrush}"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding Subtitle, ElementName=Root,
+                                       Converter={StaticResource NullToCollapsedConverter}}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding ShowPeriodSelector, ElementName=Root,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <RadioButton Content="يوم" GroupName="Period" Margin="0,0,4,0"
+                                     Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
+                                     FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
+                                     IsChecked="{Binding IsDaySelected, ElementName=Root}" />
+                        <RadioButton Content="أسبوع" GroupName="Period" Margin="0,0,4,0"
+                                     Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
+                                     FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
+                                     IsChecked="{Binding IsWeekSelected, ElementName=Root}" />
+                        <RadioButton Content="شهر" GroupName="Period" Margin="0,0,4,0"
+                                     Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
+                                     FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
+                                     IsChecked="{Binding IsMonthSelected, ElementName=Root}" />
+                        <RadioButton Content="سنة" GroupName="Period"
+                                     Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"
+                                     FontSize="11" MinWidth="0" MinHeight="0" Padding="10,4"
+                                     IsChecked="{Binding IsYearSelected, ElementName=Root}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Chart host -->
+            <Border Grid.Row="2"
                     Background="{DynamicResource DashboardChartWellBrush}"
                     BorderBrush="{DynamicResource DashboardChartWellBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="12"
-                    Padding="10,8"
+                    CornerRadius="16"
+                    Padding="14,10,10,8"
+                    Margin="16,10,16,16"
                     MinHeight="250"
                     FlowDirection="LeftToRight"
                     ClipToBounds="True">
                 <ContentPresenter Content="{Binding ChartContent, ElementName=Root}" />
             </Border>
 
-            <!-- ═══ Empty State ═══ -->
-            <StackPanel Grid.Row="2" HorizontalAlignment="Center"
-                        Margin="0,20"
+            <!-- Empty state -->
+            <StackPanel Grid.Row="3" HorizontalAlignment="Center"
+                        Margin="0,0,0,16"
                         Visibility="{Binding IsEmpty, ElementName=Root,
                             Converter={StaticResource BooleanToVisibilityConverter}}">
                 <materialDesign:PackIcon Kind="ChartBoxOutline"
