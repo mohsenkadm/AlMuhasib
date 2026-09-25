@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Sync.Dtos;
@@ -644,10 +645,25 @@ internal static class SyncMapper
         await UpsertSimpleAsync(db, db.Suppliers, items, (e, d) => { e.Name = d.Name; e.Phone = d.Phone; e.Address = d.Address; e.Notes = d.Notes; }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertCashBoxesAsync(AppDbContext db, List<CashBoxSyncDto> items, CancellationToken ct) =>
-        await UpsertSimpleAsync(db, db.CashBoxes, items, (e, d) => { e.Name = d.Name; e.Balance = d.Balance; e.Currency = d.Currency; }, ct);
+        await UpsertSimpleAsync(db, db.CashBoxes, items, (e, d) =>
+        {
+            if (e.Id != 0 && e.Currency != d.Currency)
+                throw new InvalidOperationException("لا يمكن تغيير عملة القاصة بعد إنشائها");
+            e.Name = d.Name;
+            e.Balance = d.Balance;
+            e.Currency = d.Currency;
+        }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertBankAccountsAsync(AppDbContext db, List<BankAccountSyncDto> items, CancellationToken ct) =>
-        await UpsertSimpleAsync(db, db.BankAccounts, items, (e, d) => { e.Name = d.Name; e.AccountNumber = d.AccountNumber; e.Balance = d.Balance; e.Currency = d.Currency; }, ct);
+        await UpsertSimpleAsync(db, db.BankAccounts, items, (e, d) =>
+        {
+            if (e.Id != 0 && e.Currency != d.Currency)
+                throw new InvalidOperationException("لا يمكن تغيير عملة الحساب البنكي بعد إنشائه");
+            e.Name = d.Name;
+            e.AccountNumber = d.AccountNumber;
+            e.Balance = d.Balance;
+            e.Currency = d.Currency;
+        }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertInvestorsAsync(AppDbContext db, List<InvestorSyncDto> items, CancellationToken ct) =>
         await UpsertSimpleAsync(db, db.Investors, items, (e, d) => { e.Name = d.Name; e.Phone = d.Phone; e.TotalDeposit = d.TotalDeposit; e.OpeningBalance = d.OpeningBalance; e.ProfitPercentage = d.ProfitPercentage; }, ct);
@@ -831,9 +847,19 @@ internal static class SyncMapper
     {
         var invoiceMap = await db.Invoices.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
         var installmentMap = await db.Installments.IgnoreQueryFilters().ToDictionaryAsync(e => e.SyncId, e => e.Id, ct);
+        var cashBoxCurrency = await db.CashBoxes.IgnoreQueryFilters()
+            .ToDictionaryAsync(e => e.Id, e => e.Currency, ct);
+        var bankCurrency = await db.BankAccounts.IgnoreQueryFilters()
+            .ToDictionaryAsync(e => e.Id, e => e.Currency, ct);
         foreach (var dto in items)
         {
             if (!cb.TryGetValue(dto.CashBoxSyncId, out var cbId)) continue;
+            if (!cashBoxCurrency.TryGetValue(cbId, out var boxCur) || boxCur != dto.Currency)
+                continue;
+            if (dto.BankAccountSyncId.HasValue && bank.TryGetValue(dto.BankAccountSyncId.Value, out var checkBankId)
+                && bankCurrency.TryGetValue(checkBankId, out var bCur) && bCur != dto.Currency)
+                continue;
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة سند");
             var entity = await FindBySyncIdAsync(db.Vouchers, dto.SyncId, ct) ?? new Voucher();
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Vouchers.Add(entity);
@@ -856,9 +882,14 @@ internal static class SyncMapper
 
     private static async Task UpsertExpensesAsync(AppDbContext db, List<ExpenseSyncDto> items, Dictionary<Guid, int> et, Dictionary<Guid, int> cb, CancellationToken ct)
     {
+        var cashBoxCurrency = await db.CashBoxes.IgnoreQueryFilters()
+            .ToDictionaryAsync(e => e.Id, e => e.Currency, ct);
         foreach (var dto in items)
         {
             if (!et.TryGetValue(dto.ExpenseTypeSyncId, out var tId) || !cb.TryGetValue(dto.CashBoxSyncId, out var cbId)) continue;
+            if (!cashBoxCurrency.TryGetValue(cbId, out var boxCur) || boxCur != dto.Currency)
+                continue;
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة مصروف");
             var entity = await FindBySyncIdAsync(db.Expenses, dto.SyncId, ct) ?? new Expense();
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Expenses.Add(entity);
@@ -870,6 +901,15 @@ internal static class SyncMapper
 
     private static async Task UpsertTransfersAsync(AppDbContext db, List<TransferSyncDto> items, Dictionary<Guid, int> cb, Dictionary<Guid, int> bank, CancellationToken ct)
     {
+        var cashBoxCurrency = await db.CashBoxes.IgnoreQueryFilters()
+            .ToDictionaryAsync(e => e.Id, e => e.Currency, ct);
+        var bankCurrency = await db.BankAccounts.IgnoreQueryFilters()
+            .ToDictionaryAsync(e => e.Id, e => e.Currency, ct);
+        AccountingCurrency ResolveCurrency(Core.Enums.TransferAccountType type, int id) =>
+            type == Core.Enums.TransferAccountType.CashBox
+                ? cashBoxCurrency.GetValueOrDefault(id)
+                : bankCurrency.GetValueOrDefault(id);
+
         foreach (var dto in items)
         {
             int Resolve(Core.Enums.TransferAccountType type, Guid syncId) => type == Core.Enums.TransferAccountType.CashBox
@@ -877,6 +917,10 @@ internal static class SyncMapper
             var fromId = Resolve(dto.FromType, dto.FromSyncId);
             var toId = Resolve(dto.ToType, dto.ToSyncId);
             if (fromId == 0 || toId == 0) continue;
+            var fromCur = ResolveCurrency(dto.FromType, fromId);
+            var toCur = ResolveCurrency(dto.ToType, toId);
+            if (fromCur != toCur || fromCur != dto.Currency) continue;
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة تحويل");
             var entity = await FindBySyncIdAsync(db.Transfers, dto.SyncId, ct) ?? new Transfer();
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Transfers.Add(entity);

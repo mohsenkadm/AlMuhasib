@@ -219,7 +219,7 @@
   "zero_unit_price": "سعر أحد البنود صفر — أدخل سعراً صحيحاً",
   "invalid_installment_count": "عدد الأقساط يجب أن يكون واحداً على الأقل",
   "invalid_discount": "قيمة الخصم غير صحيحة",
-  "fx_rate_required": "سعر الصرف مطلوب وصالح للفواتير بالدولار",
+  "fx_rate_required": "سعر الصرف مطلوب وصالح للمستندات بالدولار",
   "credit_due_date": "تاريخ الاستحقاق",
   "select_credit_due_date": "اختر تاريخ الاستحقاق",
   "hotel_nav_home": "الرئيسية",
@@ -977,5 +977,8 @@
   "partners_modules": "الشركاء",
   "finance_modules": "المالية",
   "catalog_modules": "الكتالوج",
-  "invoice_lines_chart": "توزيع بنود الفاتورة"
+  "invoice_lines_chart": "توزيع بنود الفاتورة",
+  "currency": "العملة",
+  "fx_rate": "سعر الصرف",
+  "currency_mismatch": "عملة الحسابات غير متطابقة"
 }

@@ -13,10 +13,26 @@ class DashboardData {
     required this.customerCreditBalance,
     required this.cashBoxes,
     required this.bankBalance,
+    this.cashBalanceIqd,
+    this.cashBalanceUsd = 0,
+    this.bankBalanceIqd,
+    this.bankBalanceUsd = 0,
     required this.totalInventoryValue,
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
+    final cashBoxes = (json['cashBoxes'] as List<dynamic>? ?? [])
+        .map((e) => CashBoxSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final bankBalance = _toDecimal(json['bankBalance']);
+    final cashBalanceIqd = json.containsKey('cashBalanceIqd')
+        ? _toDecimal(json['cashBalanceIqd'])
+        : cashBoxes
+            .where((c) => c.currency == 0)
+            .fold<double>(0, (s, c) => s + c.balance);
+    final bankBalanceIqd = json.containsKey('bankBalanceIqd')
+        ? _toDecimal(json['bankBalanceIqd'])
+        : bankBalance;
     return DashboardData(
       todaySales: _toDecimal(json['todaySales']),
       todayPurchases: _toDecimal(json['todayPurchases']),
@@ -39,10 +55,12 @@ class DashboardData {
       investorBalance: _toDecimal(json['investorBalance']),
       unpaidInstallmentsBalance: _toDecimal(json['unpaidInstallmentsBalance']),
       customerCreditBalance: _toDecimal(json['customerCreditBalance']),
-      cashBoxes: (json['cashBoxes'] as List<dynamic>? ?? [])
-          .map((e) => CashBoxSummary.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      bankBalance: _toDecimal(json['bankBalance']),
+      cashBoxes: cashBoxes,
+      bankBalance: bankBalanceIqd,
+      cashBalanceIqd: cashBalanceIqd,
+      cashBalanceUsd: _toDecimal(json['cashBalanceUsd']),
+      bankBalanceIqd: bankBalanceIqd,
+      bankBalanceUsd: _toDecimal(json['bankBalanceUsd']),
       totalInventoryValue: _toDecimal(json['totalInventoryValue']),
     );
   }
@@ -60,6 +78,10 @@ class DashboardData {
   final double customerCreditBalance;
   final List<CashBoxSummary> cashBoxes;
   final double bankBalance;
+  final double? cashBalanceIqd;
+  final double cashBalanceUsd;
+  final double? bankBalanceIqd;
+  final double bankBalanceUsd;
   final double totalInventoryValue;
 }
 
@@ -141,17 +163,24 @@ class UpcomingInstallment {
 }
 
 class CashBoxSummary {
-  CashBoxSummary({required this.name, required this.balance});
+  CashBoxSummary({
+    required this.name,
+    required this.balance,
+    this.currency = 0,
+  });
 
   factory CashBoxSummary.fromJson(Map<String, dynamic> json) {
     return CashBoxSummary(
       name: json['name'] as String? ?? '',
       balance: _toDecimal(json['balance']),
+      currency: json['currency'] as int? ?? 0,
     );
   }
 
   final String name;
   final double balance;
+  /// 0 = IQD, 1 = USD
+  final int currency;
 }
 
 double _toDecimal(dynamic value) {

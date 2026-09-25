@@ -220,7 +220,7 @@
   "zero_unit_price": "A line item has zero price — enter a valid price",
   "invalid_installment_count": "Installment count must be at least 1",
   "invalid_discount": "Discount value is invalid",
-  "fx_rate_required": "A valid exchange rate is required for USD invoices",
+  "fx_rate_required": "A valid exchange rate is required for USD documents",
   "credit_due_date": "Due date",
   "select_credit_due_date": "Select due date",
   "hotel_nav_home": "Home",
@@ -977,5 +977,8 @@
   "partners_modules": "Partners",
   "finance_modules": "Finance",
   "catalog_modules": "Catalog",
-  "invoice_lines_chart": "Invoice lines breakdown"
+  "invoice_lines_chart": "Invoice lines breakdown",
+  "currency": "Currency",
+  "fx_rate": "Exchange rate",
+  "currency_mismatch": "Account currencies do not match"
 }
