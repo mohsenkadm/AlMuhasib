@@ -53,7 +53,9 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToListAsync(ct);
         var openingStockValue = Math.Round(
             openingStockRows.Sum(s => s.OpeningQuantity * s.UnitCost), 0);
-        var totalExpenses = await _db.Expenses.ForTenant(tenantId).SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
+        var totalExpenses = await _db.Expenses.ForTenant(tenantId)
+            .Where(e => e.Currency == AccountingCurrency.IQD)
+            .SumAsync(e => (decimal?)e.Amount, ct) ?? 0;
         var distributedProfits = await _db.ProfitDistributions.ForTenant(tenantId)
             .SumAsync(pd => (decimal?)pd.DistributedAmount, ct) ?? 0;
         var profitOpening = await CloudProductCostHelper.GetProfitOpeningBalanceAsync(_db);
@@ -140,6 +142,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
 
         var expensesRaw = await _db.Expenses.ForTenant(tenantId)
             .Include(e => e.ExpenseType)
+            .Where(e => e.Currency == AccountingCurrency.IQD)
             .Select(e => new { ExpenseTypeName = e.ExpenseType.Name, e.Amount })
             .ToListAsync(ct);
 

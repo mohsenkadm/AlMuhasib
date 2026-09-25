@@ -127,16 +127,20 @@ public partial class PosQuickSaleViewModel
 
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var credit = scope.ServiceProvider.GetRequiredService<ICustomerCreditService>();
-        var check = await credit.CheckCreditAsync(SelectedPosCustomer.Id, GrandTotal, isInstallment: true);
-        if (!check.IsAllowed)
-        {
-            BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");
-            return;
-        }
 
         if (SelectedWarehouse is null || SelectedCashBox is null || CartLines.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("أكمل البيانات والسلة");
+            return;
+        }
+
+        var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
+        var check = await credit.CheckCreditAsync(
+            SelectedPosCustomer.Id, GrandTotal, isInstallment: true,
+            SelectedCashBox.Currency, fxRate);
+        if (!check.IsAllowed)
+        {
+            BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");
             return;
         }
 

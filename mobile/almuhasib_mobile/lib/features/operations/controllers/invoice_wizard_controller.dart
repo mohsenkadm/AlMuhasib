@@ -353,6 +353,11 @@ class InvoiceWizardController extends GetxController {
       return;
     }
 
+    if (multiCurrencyEnabled.value && currency.value == 1 && fxRate.value <= 0) {
+      AppExceptionHandler.showError('fx_rate_required'.tr());
+      return;
+    }
+
     saving.value = true;
     try {
       final response = await AppServices.operations.createInvoice(
@@ -365,7 +370,7 @@ class InvoiceWizardController extends GetxController {
           paymentMethod: paymentMethod.value,
           currency: multiCurrencyEnabled.value ? currency.value : 0,
           fxRate: multiCurrencyEnabled.value && currency.value == 1
-              ? (fxRate.value <= 0 ? 1 : fxRate.value)
+              ? fxRate.value
               : 1,
           cashBoxSyncId: cashBox.value?.syncId,
           date: date.value,

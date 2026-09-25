@@ -66,6 +66,7 @@ public class DashboardService : IDashboardService
             var openingStockValue = Math.Round(
                 openingStockRows.Sum(s => s.OpeningQuantity * s.UnitCost), 0);
             var totalExpenses = await context.Expenses
+                .Where(e => e.Currency == AccountingCurrency.IQD)
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
             var distributedProfits = await context.ProfitDistributions
                 .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
@@ -215,6 +216,7 @@ public class DashboardService : IDashboardService
         {
             var expensesRaw = await context.Expenses
                 .Include(e => e.ExpenseType)
+                .Where(e => e.Currency == AccountingCurrency.IQD)
                 .Select(e => new { ExpenseTypeName = e.ExpenseType.Name, e.Amount })
                 .ToListAsync();
 
@@ -483,7 +485,7 @@ public class DashboardService : IDashboardService
 
         // Daily expenses
         var expenseRaw = await context.Expenses
-            .Where(e => e.Date >= from && e.Date < tomorrow)
+            .Where(e => e.Currency == AccountingCurrency.IQD && e.Date >= from && e.Date < tomorrow)
             .Select(e => new { e.Date, e.Amount })
             .ToListAsync();
         var expensesByDay = expenseRaw
@@ -502,7 +504,7 @@ public class DashboardService : IDashboardService
             .ToList();
 
         var expensesPrev = await context.Expenses
-            .Where(e => e.Date >= prevFrom && e.Date < from)
+            .Where(e => e.Currency == AccountingCurrency.IQD && e.Date >= prevFrom && e.Date < from)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
         var profitCurr = data.NetProfitLast14Days.Sum(p => p.Amount);
         var profitPrev = salesPrev - purchasesPrev - expensesPrev;

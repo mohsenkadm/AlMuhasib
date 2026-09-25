@@ -232,7 +232,9 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         var installmentByPlan = planIds.Count == 0
             ? []
             : await Scoped<CloudInstallment>()
-                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                .Where(i => planIds.Contains(i.InstallmentPlanId) &&
+                            i.Status != InstallmentStatus.Paid &&
+                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
                 .GroupBy(i => i.InstallmentPlanId)
                 .Select(g => new { PlanId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
                 .ToListAsync(ct);

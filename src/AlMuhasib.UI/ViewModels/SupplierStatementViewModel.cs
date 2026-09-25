@@ -18,6 +18,8 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalDebit = "0";
     [ObservableProperty] private string _totalCredit = "0";
     [ObservableProperty] private string _balance = "0";
+    [ObservableProperty] private string _balanceUsd = "—";
+    [ObservableProperty] private bool _showBalanceUsd;
     [ObservableProperty] private string _invoiceCount = "0";
 
     [ObservableProperty] private int? _selectedSupplierId;
@@ -54,6 +56,8 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
             TotalDebit = FormatCurrency(result.TotalDebit);
             TotalCredit = FormatCurrency(result.TotalCredit);
             Balance = FormatCurrency(result.Balance);
+            ShowBalanceUsd = result.BalanceUsd != 0;
+            BalanceUsd = ShowBalanceUsd ? $"$ {result.BalanceUsd:N2}" : "—";
             InvoiceCount = result.InvoiceCount.ToString("N0");
 
             _allRows = result.Rows;
@@ -115,7 +119,8 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
             [
                 $"إجمالي المدين: {TotalDebit}",
                 $"إجمالي الدائن: {TotalCredit}",
-                $"الرصيد: {Balance}"
+                $"الرصيد د.ع: {Balance}",
+                ..(ShowBalanceUsd ? new[] { $"الرصيد $: {BalanceUsd}" } : Array.Empty<string>())
             ]
         };
 

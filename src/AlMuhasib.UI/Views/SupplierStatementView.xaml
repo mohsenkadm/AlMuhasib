@@ -45,7 +45,7 @@
                 <TextBlock Text="كشف حساب مورد" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
                 <!-- ═══ Stat Cards ═══ -->
-                <UniformGrid Columns="4" Margin="0,0,0,20">
+                <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
                         Title="اسم المورد"
                         TextValue="{Binding SupplierName}"
@@ -68,12 +68,20 @@
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
                     <controls:AnimatedStatCard
-                        Title="الرصيد"
+                        Title="الرصيد د.ع"
                         TextValue="{Binding Balance}"
                         Icon="ScaleBalance"
                         IconBackground="{DynamicResource AccentLightBrush}"
                         IconForeground="{DynamicResource AccentBrush}"
                         ValueForeground="{DynamicResource AccentBrush}"/>
+                    <controls:AnimatedStatCard
+                        Title="الرصيد $"
+                        TextValue="{Binding BalanceUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                        IconForeground="#1565C0"
+                        ValueForeground="#1565C0"
+                        Visibility="{Binding ShowBalanceUsd, Converter={StaticResource BoolToVis}}"/>
                 </UniformGrid>
 
                 <!-- ═══ Filter Bar ═══ -->

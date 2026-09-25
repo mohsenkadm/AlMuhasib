@@ -507,7 +507,13 @@ class _PaymentStep extends StatelessWidget {
                       child: ChoiceChip(
                         label: const Text('دولار'),
                         selected: controller.currency.value == 1,
-                        onSelected: (_) => controller.currency.value = 1,
+                        onSelected: (_) {
+                          controller.currency.value = 1;
+                          // لا نفترض FxRate=1 — يجب إدخال سعر صرف حقيقي
+                          if (controller.fxRate.value <= 1) {
+                            controller.fxRate.value = 0;
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -515,15 +521,20 @@ class _PaymentStep extends StatelessWidget {
                 if (controller.currency.value == 1) ...[
                   const SizedBox(height: 8),
                   TextFormField(
-                    initialValue: controller.fxRate.value.toString(),
+                    initialValue: controller.fxRate.value > 0
+                        ? controller.fxRate.value.toString()
+                        : '',
                     decoration: const InputDecoration(
-                      labelText: 'سعر الصرف (دولار → دينار)',
+                      labelText: 'سعر الصرف (دولار → دينار) *',
+                      hintText: 'مطلوب',
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) {
                       final parsed = double.tryParse(v.replaceAll(',', ''));
                       if (parsed != null && parsed > 0) {
                         controller.fxRate.value = parsed;
+                      } else {
+                        controller.fxRate.value = 0;
                       }
                     },
                   ),
