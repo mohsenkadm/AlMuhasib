@@ -92,6 +92,8 @@ public partial class CashBankViewModel : ViewModelBase
 
     private readonly List<AccountTransactionRow> _allCashBoxTransactions = [];
     private bool _isClearingCashBoxFilters;
+    private int _cashBoxLoadGeneration;
+    private bool _suppressAccountSelectionReload;
 
     // ══════════════════════════════════════════════════════
     // TAB 1: BANKS (المصارف)
@@ -180,6 +182,7 @@ public partial class CashBankViewModel : ViewModelBase
 
     private readonly List<AccountTransactionRow> _allBankTransactions = [];
     private bool _isClearingBankFilters;
+    private int _bankLoadGeneration;
 
     // ══════════════════════════════════════════════════════
     // TAB 2: TRANSFERS (التحويلات)
@@ -250,7 +253,10 @@ public partial class CashBankViewModel : ViewModelBase
     [RelayCommand]
     private async Task RefreshAllAsync()
     {
+        if (IsBusy) return;
+
         IsBusy = true;
+        _suppressAccountSelectionReload = true;
         try
         {
             var selectedCashBoxId = SelectedCashBox?.Id;
@@ -262,23 +268,36 @@ public partial class CashBankViewModel : ViewModelBase
             await RefreshTransferToAccountsAsync();
             await LoadTransfersAsync();
 
-            if (selectedCashBoxId is int cashId)
-            {
-                SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == cashId);
-                if (SelectedCashBox is not null)
-                    await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
-            }
-
-            if (selectedBankId is int bankId)
-            {
-                SelectedBankAccount = BankAccounts.FirstOrDefault(b => b.Id == bankId);
-                if (SelectedBankAccount is not null)
-                    await LoadBankTransactionsAsync(SelectedBankAccount.Id);
-            }
+            SelectedCashBox = selectedCashBoxId is int cashId
+                ? CashBoxes.FirstOrDefault(c => c.Id == cashId)
+                : null;
+            SelectedBankAccount = selectedBankId is int bankId
+                ? BankAccounts.FirstOrDefault(b => b.Id == bankId)
+                : null;
         }
         finally
         {
+            _suppressAccountSelectionReload = false;
             IsBusy = false;
+        }
+
+        // تحميل واحد للحركات بعد استعادة التحديد (يتجنب التكرار من OnSelected* المتزامن)
+        if (SelectedCashBox is not null)
+            await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+        else
+        {
+            _allCashBoxTransactions.Clear();
+            CashBoxTransactions.Clear();
+            ResetCashBoxStats();
+        }
+
+        if (SelectedBankAccount is not null)
+            await LoadBankTransactionsAsync(SelectedBankAccount.Id);
+        else
+        {
+            _allBankTransactions.Clear();
+            BankTransactions.Clear();
+            ResetBankStats();
         }
     }
 
@@ -378,10 +397,13 @@ public partial class CashBankViewModel : ViewModelBase
 
     partial void OnSelectedCashBoxChanged(CashBox? value)
     {
+        if (_suppressAccountSelectionReload) return;
+
         if (value is not null)
             _ = LoadCashBoxTransactionsAsync(value.Id);
         else
         {
+            _cashBoxLoadGeneration++;
             _allCashBoxTransactions.Clear();
             CashBoxTransactions.Clear();
             ResetCashBoxStats();
@@ -419,6 +441,8 @@ public partial class CashBankViewModel : ViewModelBase
 
     private async Task LoadCashBoxTransactionsAsync(int cashBoxId)
     {
+        var generation = ++_cashBoxLoadGeneration;
+
         _isClearingCashBoxFilters = true;
         CashBoxSearchText = string.Empty;
         CashBoxFromDate = null;
@@ -427,10 +451,14 @@ public partial class CashBankViewModel : ViewModelBase
 
         _allCashBoxTransactions.Clear();
         CashBoxTransactions.Clear();
+        ResetCashBoxStats();
 
         try
         {
             var entries = await _cashBankService.GetCashBoxStatementAsync(cashBoxId);
+            if (generation != _cashBoxLoadGeneration) return;
+
+            _allCashBoxTransactions.Clear();
             foreach (var e in entries)
                 _allCashBoxTransactions.Add(MapEntry(e));
 
@@ -438,6 +466,7 @@ public partial class CashBankViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            if (generation != _cashBoxLoadGeneration) return;
             BeautifulMessageDialog.ShowError($"خطأ في تحميل الحركات: {ex.Message}");
         }
     }
@@ -678,10 +707,13 @@ public partial class CashBankViewModel : ViewModelBase
 
     partial void OnSelectedBankAccountChanged(BankAccount? value)
     {
+        if (_suppressAccountSelectionReload) return;
+
         if (value is not null)
             _ = LoadBankTransactionsAsync(value.Id);
         else
         {
+            _bankLoadGeneration++;
             _allBankTransactions.Clear();
             BankTransactions.Clear();
             ResetBankStats();
@@ -720,6 +752,8 @@ public partial class CashBankViewModel : ViewModelBase
 
     private async Task LoadBankTransactionsAsync(int bankAccountId)
     {
+        var generation = ++_bankLoadGeneration;
+
         _isClearingBankFilters = true;
         BankSearchText = string.Empty;
         BankFromDate = null;
@@ -728,10 +762,14 @@ public partial class CashBankViewModel : ViewModelBase
 
         _allBankTransactions.Clear();
         BankTransactions.Clear();
+        ResetBankStats();
 
         try
         {
             var entries = await _cashBankService.GetBankStatementAsync(bankAccountId);
+            if (generation != _bankLoadGeneration) return;
+
+            _allBankTransactions.Clear();
             foreach (var e in entries)
                 _allBankTransactions.Add(MapEntry(e));
 
@@ -739,6 +777,7 @@ public partial class CashBankViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            if (generation != _bankLoadGeneration) return;
             BeautifulMessageDialog.ShowError($"خطأ في تحميل الحركات: {ex.Message}");
         }
     }
