@@ -313,4 +313,13 @@ public partial class MainWindow : Window
         // منع اختيار التبويب عند الضغط على زر الإغلاق فقط
         e.Handled = true;
     }
+
+    private void ChromeTabContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu { PlacementTarget: FrameworkElement target })
+            return;
+
+        var tab = target.DataContext as DocumentTab;
+        _viewModel.PrepareTabContextMenu(tab);
+    }
 }

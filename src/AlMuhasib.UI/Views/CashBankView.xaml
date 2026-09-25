@@ -15,12 +15,35 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث الكل" Command="{Binding RefreshAllCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="إضافة صندوق" Command="{Binding ShowAddCashBoxCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="CashPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة حساب بنكي" Command="{Binding ShowAddBankCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="BankPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="تحويل بين الحسابات" Command="{Binding CreateTransferCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="SwapHorizontal" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير الصناديق" Command="{Binding ExportCashBoxesCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة الصناديق" Command="{Binding PrintCashBoxesCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         <converters:TransferAccountTypeToTextConverter x:Key="AccountTypeToText" />
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <TabControl SelectedIndex="{Binding SelectedTabIndex}"
                     materialDesign:ColorZoneAssist.Mode="PrimaryLight"
                     Style="{StaticResource ModernTabs}">

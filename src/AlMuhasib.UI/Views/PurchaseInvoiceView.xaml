@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              mc:Ignorable="d"
@@ -15,11 +16,37 @@
              x:Name="Root">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="حفظ الفاتورة" Command="{Binding SaveInvoiceCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="ContentSave" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="فاتورة جديدة" Command="{Binding NewInvoiceCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="اختيار المنتجات" Command="{Binding OpenProductPickerCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="CartPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة صف يدوي" Command="{Binding AddRowCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintInvoiceCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إرسال واتساب" Command="{Binding SendInvoiceWhatsAppCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Whatsapp" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة مورد سريع" Command="{Binding OpenQuickAddSupplierCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="AccountPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBooleanConverter x:Key="InverseBool" />
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <FrameworkElement x:Name="VmProxy" DataContext="{Binding}" Visibility="Collapsed"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"

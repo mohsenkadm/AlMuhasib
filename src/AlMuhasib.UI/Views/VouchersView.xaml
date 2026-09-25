@@ -14,12 +14,31 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="إنشاء سند" Command="{Binding CreateVoucherCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="تحديث القائمة" Command="{Binding LoadVouchersCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="بحث" Command="{Binding SearchVouchersCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportVouchersCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:VoucherTypeToTextConverter x:Key="VoucherTypeToText" />
         <converters:VoucherTypeToBrushConverter x:Key="VoucherTypeToBrush" />
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="16" />
