@@ -101,6 +101,7 @@ public sealed class SalesRepService : ISalesRepService
         var invoicesQ = db.Invoices.AsNoTracking()
             .Where(i => !i.IsDeleted
                         && i.SalesRepresentativeId == salesRepresentativeId
+                        && i.Currency == AccountingCurrency.IQD
                         && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
         if (fromDate is not null) invoicesQ = invoicesQ.Where(i => i.Date >= fromDate);
         if (toDate is not null) invoicesQ = invoicesQ.Where(i => i.Date < toDate);
@@ -185,6 +186,7 @@ public sealed class SalesRepService : ISalesRepService
             var invoicesQ = db.Invoices.AsNoTracking()
                 .Where(i => !i.IsDeleted
                             && i.SalesRepresentativeId == rep.Id
+                            && i.Currency == AccountingCurrency.IQD
                             && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
             if (fromDate is not null) invoicesQ = invoicesQ.Where(i => i.Date >= fromDate);
             if (toDate is not null) invoicesQ = invoicesQ.Where(i => i.Date < toDate);
@@ -271,6 +273,7 @@ public sealed class SalesRepService : ISalesRepService
             var achieved = await db.Invoices.AsNoTracking()
                 .Where(i => !i.IsDeleted
                             && i.SalesRepresentativeId == t.SalesRepresentativeId
+                            && i.Currency == AccountingCurrency.IQD
                             && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
                             && i.Date >= t.PeriodStart
                             && i.Date < t.PeriodEnd.Date.AddDays(1))
@@ -312,6 +315,7 @@ public sealed class SalesRepService : ISalesRepService
             var invoicesQ = db.Invoices.AsNoTracking()
                 .Where(i => !i.IsDeleted
                             && i.CustomerId == customer.Id
+                            && i.Currency == AccountingCurrency.IQD
                             && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
             if (fromDate is not null) invoicesQ = invoicesQ.Where(i => i.Date >= fromDate);
             if (toDate is not null) invoicesQ = invoicesQ.Where(i => i.Date < toDate);

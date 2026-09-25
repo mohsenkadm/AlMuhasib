@@ -203,7 +203,7 @@ public class ExpenseService : IExpenseService
     public async Task<decimal> GetTotalExpensesAsync(DateTime? fromDate = null, DateTime? toDate = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Expenses.AsQueryable();
+        var query = context.Expenses.Where(e => e.Currency == AccountingCurrency.IQD);
         if (fromDate.HasValue) query = query.Where(e => e.Date >= fromDate.Value);
         if (toDate.HasValue) query = query.Where(e => e.Date <= toDate.Value);
         return await query.SumAsync(e => e.Amount);

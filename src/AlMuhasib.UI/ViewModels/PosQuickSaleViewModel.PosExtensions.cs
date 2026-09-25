@@ -135,6 +135,12 @@ public partial class PosQuickSaleViewModel
         }
 
         var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
+        if (SelectedCashBox.Currency == AccountingCurrency.USD && fxRate <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لبيع بالدولار. سجّل سعر الصرف اليومي أولاً.");
+            return;
+        }
+
         var check = await credit.CheckCreditAsync(
             SelectedPosCustomer.Id, GrandTotal, isInstallment: true,
             SelectedCashBox.Currency, fxRate);
@@ -157,7 +163,7 @@ public partial class PosQuickSaleViewModel
                 PaymentMethod = PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Currency = SelectedCashBox.Currency,
-                FxRate = await ResolveFxRateAsync(SelectedCashBox.Currency),
+                FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = "بيع تقسيط POS"
