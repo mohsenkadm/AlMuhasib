@@ -28,21 +28,25 @@ public static class InvoiceFilters
     public static decimal SignedSaleLineAmount(InvoiceType type, decimal amount) =>
         type == InvoiceType.SaleReturn ? -Math.Abs(amount) : amount;
 
+    /// <summary>إجماليات الربح/المبيعات بالعملة الأساسية (دينار) فقط — لا خلط مع الدولار.</summary>
     public static IQueryable<Invoice> ForProfitAndSalesTotals(
         IQueryable<Invoice> invoices,
         IQueryable<InstallmentPlan> plans)
         => invoices.Where(i =>
-            (i.InvoiceType == InvoiceType.Sale
-             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
-            || (i.InvoiceType == InvoiceType.Installment
-                && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
-            || i.InvoiceType == InvoiceType.SaleReturn);
+            i.Currency == AccountingCurrency.IQD &&
+            ((i.InvoiceType == InvoiceType.Sale
+              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+             || (i.InvoiceType == InvoiceType.Installment
+                 && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
+             || i.InvoiceType == InvoiceType.SaleReturn));
 
+    /// <summary>إجماليات المشتريات بالدينار فقط.</summary>
     public static IQueryable<Invoice> ForPurchasesTotals(IQueryable<Invoice> invoices)
         => invoices.Where(i =>
-            (i.InvoiceType == InvoiceType.Purchase
-             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
-            || i.InvoiceType == InvoiceType.PurchaseReturn);
+            i.Currency == AccountingCurrency.IQD &&
+            ((i.InvoiceType == InvoiceType.Purchase
+              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+             || i.InvoiceType == InvoiceType.PurchaseReturn));
 
     public static decimal SumSignedNet(IEnumerable<Invoice> invoices)
         => invoices.Sum(SignedNetAmount);

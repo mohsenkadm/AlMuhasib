@@ -127,7 +127,10 @@ public partial class PosQuickSaleViewModel
 
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var credit = scope.ServiceProvider.GetRequiredService<ICustomerCreditService>();
-        var check = await credit.CheckCreditAsync(SelectedPosCustomer.Id, GrandTotal, isInstallment: true);
+        var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
+        var check = await credit.CheckCreditAsync(
+            SelectedPosCustomer.Id, GrandTotal, isInstallment: true,
+            SelectedCashBox.Currency, fxRate);
         if (!check.IsAllowed)
         {
             BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");

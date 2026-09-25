@@ -409,7 +409,8 @@ public class InvoiceService : IInvoiceService
         decimal preservedRemainingAmount = 0;
         bool preservedIsCreditPaid = false;
         var preserveCreditState = existing?.PaymentMethod == PaymentMethod.Credit
-                                  && invoice.PaymentMethod == PaymentMethod.Credit;
+                                  && invoice.PaymentMethod == PaymentMethod.Credit
+                                  && existing.Currency == invoice.Currency;
         if (preserveCreditState && existing is not null)
         {
             preservedPaidAmount = existing.PaidAmount;

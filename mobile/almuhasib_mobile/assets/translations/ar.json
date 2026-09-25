@@ -219,6 +219,7 @@
   "zero_unit_price": "سعر أحد البنود صفر — أدخل سعراً صحيحاً",
   "invalid_installment_count": "عدد الأقساط يجب أن يكون واحداً على الأقل",
   "invalid_discount": "قيمة الخصم غير صحيحة",
+  "fx_rate_required": "سعر الصرف مطلوب وصالح للفواتير بالدولار",
   "credit_due_date": "تاريخ الاستحقاق",
   "select_credit_due_date": "اختر تاريخ الاستحقاق",
   "hotel_nav_home": "الرئيسية",
