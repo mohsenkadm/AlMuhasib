@@ -6,16 +6,19 @@ using AlMuhasib.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Controls;
+using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.ViewModels;
 
 public partial class SetupWizardViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly MainWindowViewModel _mainWindow;
 
-    public SetupWizardViewModel(IUnitOfWork unitOfWork)
+    public SetupWizardViewModel(IUnitOfWork unitOfWork, MainWindowViewModel mainWindow)
     {
         _unitOfWork = unitOfWork;
+        _mainWindow = mainWindow;
         PageTitle = "إعداد النظام";
 
         ExpenseTypes.Add(new ExpenseTypeRow { Name = "إيجار" });
@@ -29,6 +32,23 @@ public partial class SetupWizardViewModel : ViewModelBase
     }
 
     public event Action? SetupCompleted;
+
+    [RelayCommand]
+    private async Task OpenMigrationWizardAsync()
+    {
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
+            "معالج النقل يتيح إدخال رأس المال والقاصات والمستثمرين والمخازن والمنتجات والعملاء والموردين والأقساط من Excel أو يدوياً دون التنقل بين الشاشات.\n\nهل تريد الانتقال إلى معالج النقل الآن؟",
+            "نقل البيانات من Excel");
+        if (!confirmed) return;
+
+        await _mainWindow.OpenTabAsync(
+            typeof(MigrationWizardViewModel),
+            "معالج النقل",
+            PackIconKind.DatabaseImport,
+            activateIfExists: true);
+
+        _mainWindow.CloseTabForViewModel(this);
+    }
 
     [ObservableProperty] private int _currentStep;
     public int TotalSteps => 6;

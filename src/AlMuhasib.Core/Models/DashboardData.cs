@@ -44,6 +44,30 @@ public class DashboardData
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
     public decimal BankBalance { get; set; }
     public decimal TotalInventoryValue { get; set; }
+
+    // KPI mini-chart trends (last 14 days) + period-over-period %
+    public List<DailySalesPoint> PurchasesLast14Days { get; set; } = [];
+    public List<DailySalesPoint> NetProfitLast14Days { get; set; } = [];
+    public List<DailySalesPoint> OverdueInstallmentsLast14Days { get; set; } = [];
+    public List<DailySalesPoint> InvestorBalanceLast14Days { get; set; } = [];
+    public List<DailySalesPoint> UnpaidInstallmentsLast14Days { get; set; } = [];
+    public List<DailySalesPoint> CustomerCreditLast14Days { get; set; } = [];
+    public List<DailySalesPoint> SupplierCreditLast14Days { get; set; } = [];
+    public List<DailySalesPoint> CashFlowLast14Days { get; set; } = [];
+    public List<DailySalesPoint> BankFlowLast14Days { get; set; } = [];
+    public List<DailySalesPoint> InventoryValueLast14Days { get; set; } = [];
+
+    public decimal TodaySalesTrendPercent { get; set; }
+    public decimal TodayPurchasesTrendPercent { get; set; }
+    public decimal NetProfitTrendPercent { get; set; }
+    public decimal OverdueInstallmentsTrendPercent { get; set; }
+    public decimal InvestorBalanceTrendPercent { get; set; }
+    public decimal UnpaidInstallmentsTrendPercent { get; set; }
+    public decimal CustomerCreditTrendPercent { get; set; }
+    public decimal SupplierCreditTrendPercent { get; set; }
+    public decimal CashBalanceTrendPercent { get; set; }
+    public decimal BankBalanceTrendPercent { get; set; }
+    public decimal InventoryValueTrendPercent { get; set; }
 }
 
 public class DailySalesPoint

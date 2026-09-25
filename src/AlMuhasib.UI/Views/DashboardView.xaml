@@ -895,7 +895,9 @@
                                                Icon="CashRegister"
                                                AccentBrush="{DynamicResource DashboardKpiGreenBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiGreenLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiGreenBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiGreenBrush}"
+                                               ChartValues="{Binding TodaySalesChartValues}"
+                                               TrendPercent="{Binding TodaySalesTrendPercent}" />
 
                     <controls:DashboardKpiCard Grid.Column="1" Margin="4,0,4,0"
                                                HorizontalAlignment="Stretch"
@@ -906,6 +908,8 @@
                                                AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               ChartValues="{Binding TodayPurchasesChartValues}"
+                                               TrendPercent="{Binding TodayPurchasesTrendPercent}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowPurchasesSourceDetailsCommand}">
                         <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="8,6"
@@ -929,6 +933,8 @@
                                                AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiBlueBrush}"
+                                               ChartValues="{Binding NetProfitChartValues}"
+                                               TrendPercent="{Binding NetProfitTrendPercent}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowNetProfitDetailsCommand}" />
 
@@ -939,7 +945,9 @@
                                                Icon="AlertCircleOutline"
                                                AccentBrush="{DynamicResource DashboardKpiRedBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiRedLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiRedBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiRedBrush}"
+                                               ChartValues="{Binding OverdueInstallmentsChartValues}"
+                                               TrendPercent="{Binding OverdueInstallmentsTrendPercent}" />
                 </Grid>
 
                 <!-- Additional Statistics Row -->
@@ -961,6 +969,8 @@
                                                AccentBrush="{DynamicResource DashboardKpiIndigoBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiIndigoLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiIndigoBrush}"
+                                               ChartValues="{Binding InvestorBalanceChartValues}"
+                                               TrendPercent="{Binding InvestorBalanceTrendPercent}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowInvestorBalanceDetailsCommand}" />
 
@@ -971,7 +981,9 @@
                                                Icon="CalendarMultipleCheck"
                                                AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               ChartValues="{Binding UnpaidInstallmentsChartValues}"
+                                               TrendPercent="{Binding UnpaidInstallmentsTrendPercent}" />
 
                     <controls:DashboardKpiCard Grid.Column="2" Margin="3,0,3,0"
                                                HorizontalAlignment="Stretch"
@@ -981,6 +993,8 @@
                                                AccentBrush="{DynamicResource DashboardKpiPinkBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiPinkLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiPinkBrush}"
+                                               ChartValues="{Binding CustomerCreditChartValues}"
+                                               TrendPercent="{Binding CustomerCreditTrendPercent}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowCustomerCreditDetailsCommand}" />
 
@@ -992,6 +1006,8 @@
                                                AccentBrush="{DynamicResource DashboardKpiTealBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiTealLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiTealBrush}"
+                                               ChartValues="{Binding SupplierCreditChartValues}"
+                                               TrendPercent="{Binding SupplierCreditTrendPercent}"
                                                ShowDetailButton="True"
                                                DetailCommand="{Binding ShowSupplierCreditDetailsCommand}" />
                 </Grid>
@@ -1233,7 +1249,9 @@
                                                Icon="SafeSquareOutline"
                                                AccentBrush="{DynamicResource DashboardKpiTealBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiTealLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiTealBrush}">
+                                               ValueBrush="{DynamicResource DashboardKpiTealBrush}"
+                                               ChartValues="{Binding CashBalanceChartValues}"
+                                               TrendPercent="{Binding CashBalanceTrendPercent}">
                         <ItemsControl ItemsSource="{Binding CashBoxes}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -1265,7 +1283,9 @@
                                                Icon="Bank"
                                                AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiBlueBrush}"
+                                               ChartValues="{Binding BankBalanceChartValues}"
+                                               TrendPercent="{Binding BankBalanceTrendPercent}" />
 
                     <!-- Total Inventory -->
                     <controls:DashboardKpiCard Grid.Column="4"
@@ -1276,7 +1296,9 @@
                                                Icon="Warehouse"
                                                AccentBrush="{DynamicResource DashboardKpiIndigoBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiIndigoLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}" />
+                                               ValueBrush="{DynamicResource DashboardKpiIndigoBrush}"
+                                               ChartValues="{Binding InventoryValueChartValues}"
+                                               TrendPercent="{Binding InventoryValueTrendPercent}" />
                 </Grid>
             </Grid>
         </ScrollViewer>

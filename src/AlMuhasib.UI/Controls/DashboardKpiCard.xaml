@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              FlowDirection="RightToLeft"
              x:Name="Root"
@@ -61,7 +62,7 @@
             <Border Height="4" CornerRadius="20,20,0,0"
                     Background="{Binding AccentBrush, ElementName=Root}" />
 
-            <Grid Margin="20,18,20,12">
+            <Grid Margin="20,18,20,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -82,6 +83,27 @@
                                FontSize="24" FontWeight="Bold"
                                Foreground="{Binding ValueBrush, ElementName=Root}"
                                Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                Visibility="{Binding ShowTrend, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                        <Border CornerRadius="8" Padding="8,3"
+                                Background="{Binding AccentLightBrush, ElementName=Root}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Width="12" Height="12"
+                                                         VerticalAlignment="Center" Margin="0,0,4,0"
+                                                         Foreground="{Binding TrendBrush, ElementName=Root}"
+                                                         Kind="{Binding TrendIcon, ElementName=Root}" />
+                                <TextBlock Text="{Binding TrendText, ElementName=Root}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{Binding TrendBrush, ElementName=Root}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="آخر 14 يوم"
+                                   FontSize="10"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource HintForegroundBrush}" />
+                    </StackPanel>
                 </StackPanel>
                 <Button Grid.Column="2"
                         VerticalAlignment="Top"
@@ -116,6 +138,20 @@
                     </Button.Style>
                 </Button>
             </Grid>
+
+            <Border Margin="12,0,12,10" Height="52" CornerRadius="12"
+                    Background="{Binding AccentLightBrush, ElementName=Root}"
+                    Visibility="{Binding ShowMiniChart, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                    ClipToBounds="True">
+                <lvc:CartesianChart x:Name="MiniChart"
+                                    Series="{Binding MiniChartSeries, ElementName=Root}"
+                                    XAxes="{Binding MiniChartXAxes, ElementName=Root}"
+                                    YAxes="{Binding MiniChartYAxes, ElementName=Root}"
+                                    TooltipPosition="Hidden"
+                                    LegendPosition="Hidden"
+                                    AnimationsSpeed="00:00:00.350"
+                                    Margin="4,6,4,2" />
+            </Border>
 
             <ContentPresenter Margin="20,0,20,16"
                               Content="{Binding DetailsContent, ElementName=Root}"
