@@ -642,8 +642,8 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة بيع" FontWeight="Bold" FontSize="14" Foreground="#1B5E20"/>
-                                            <TextBlock Text="بيع ذهب جديد" FontSize="11" Foreground="#558B2F" Margin="0,3,0,0"/>
+                                            <TextBlock Text="فاتورة بيع" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
+                                            <TextBlock Text="بيع ذهب جديد" FontSize="11" Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -663,8 +663,8 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة شراء" FontWeight="Bold" FontSize="14" Foreground="#E65100"/>
-                                            <TextBlock Text="تسجيل مشتريات" FontSize="11" Foreground="#F57C00" Margin="0,3,0,0"/>
+                                            <TextBlock Text="فاتورة شراء" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource DashboardKpiOrangeBrush}"/>
+                                            <TextBlock Text="تسجيل مشتريات" FontSize="11" Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -684,8 +684,8 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="تبديل ذهب" FontWeight="Bold" FontSize="14" Foreground="#5D4037"/>
-                                            <TextBlock Text="فتح فاتورة تبديل" FontSize="11" Foreground="#8D6E63" Margin="0,3,0,0"/>
+                                            <TextBlock Text="تبديل ذهب" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource DashboardKpiOrangeBrush}"/>
+                                            <TextBlock Text="فتح فاتورة تبديل" FontSize="11" Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -705,8 +705,8 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="أسعار المثقال" FontWeight="Bold" FontSize="14" Foreground="#0D47A1"/>
-                                            <TextBlock Text="تحديث الأسعار" FontSize="11" Foreground="#1976D2" Margin="0,3,0,0"/>
+                                            <TextBlock Text="أسعار المثقال" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource DashboardKpiBlueBrush}"/>
+                                            <TextBlock Text="تحديث الأسعار" FontSize="11" Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>

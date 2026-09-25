@@ -324,7 +324,7 @@
                               IsReadOnly="False"
                               HeadersVisibility="Column"
                               Style="{StaticResource PosDataGrid}"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               ScrollViewer.CanContentScroll="False"
                               FrozenColumnCount="1"
@@ -363,11 +363,11 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="المنتج" Width="*" MinWidth="90" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="المنتج" Width="140" MinWidth="90" MaxWidth="220" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding DisplayName}"
-                                                   TextWrapping="Wrap"
+                                                   TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center"
                                                    ToolTip="{Binding DisplayName}"
@@ -444,11 +444,11 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="الكمية" Width="100" MinWidth="88">
+                            <DataGridTemplateColumn Header="الكمية" Width="140" MinWidth="128">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="−" Width="26" Height="26" Padding="0"
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Content="−" Width="28" Height="28" Padding="0"
                                                     Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
@@ -461,7 +461,7 @@
                                                          FontWeight="SemiBold"
                                                          IsReadOnly="{Binding IsOfferGift}"/>
                                             </Border>
-                                            <Button Content="+" Width="26" Height="26" Padding="0"
+                                            <Button Content="+" Width="28" Height="28" Padding="0"
                                                     Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>

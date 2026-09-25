@@ -106,12 +106,12 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#F5FAFF"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HelpListItemHoverBrush}"/>
                                                     <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HelpListItemSelectedBrush}"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource HighlightBrush}"/>
                                                     <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
@@ -126,15 +126,15 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                         <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="6" Padding="6,2" Margin="0,0,8,0">
                                             <TextBlock Text="{Binding CategoryTitle}" FontSize="11"
-                                                       Foreground="#2E7D32" FontWeight="SemiBold"/>
+                                                       Foreground="{DynamicResource DashboardKpiGreenBrush}" FontWeight="SemiBold"/>
                                         </Border>
                                         <TextBlock Text="{Binding Duration}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Visibility="{Binding Duration, Converter={StaticResource NullToCollapsed}}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="#1A237E" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#607D8B"
+                                               Foreground="{DynamicResource HelpVideoTitleBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" Margin="0,4,0,0" MaxHeight="40"
                                                TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
@@ -193,7 +193,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock x:Name="VideoTitleText" Text="{Binding SelectedVideo.Title}"
-                                           FontSize="18" FontWeight="Bold" Foreground="#1A237E"/>
+                                           FontSize="18" FontWeight="Bold" Foreground="{DynamicResource HelpVideoTitleBrush}"/>
                                 <TextBlock x:Name="VideoDescriptionText" Text="{Binding SelectedVideo.Description}"
                                            FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                                            Margin="0,6,0,0"/>

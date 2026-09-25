@@ -52,14 +52,8 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" CornerRadius="18" Padding="28">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#F1F8E9" Offset="0"/>
-                    <GradientStop Color="#E8F5E9" Offset="0.5"/>
-                    <GradientStop Color="#FFFFFF" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
+        <Border Grid.Row="1" CornerRadius="18" Padding="28"
+                Background="{DynamicResource PriceCheckSurfaceBrush}">
             <Grid>
                 <!-- Idle / waiting -->
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -74,13 +68,13 @@
                         </Style>
                     </StackPanel.Style>
                     <materialDesign:PackIcon Kind="BarcodeScan" Width="96" Height="96"
-                                             Foreground="#81C784" HorizontalAlignment="Center"/>
+                                             Foreground="{DynamicResource DashboardKpiGreenBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Text="مرّر الباركود على الماسح" FontSize="28" FontWeight="SemiBold"
-                               Foreground="#33691E" HorizontalAlignment="Center" Margin="0,20,0,8"/>
+                               Foreground="{DynamicResource PriceCheckTitleBrush}" HorizontalAlignment="Center" Margin="0,20,0,8"/>
                     <TextBlock Text="سيظهر اسم المنتج والسعر هنا تلقائياً"
-                               FontSize="16" Foreground="#558B2F" HorizontalAlignment="Center"/>
+                               FontSize="16" Foreground="{DynamicResource PriceCheckBodyBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Text="{Binding StatusMessage}" FontSize="18" FontWeight="SemiBold"
-                               Foreground="#C62828" HorizontalAlignment="Center" Margin="0,24,0,0"
+                               Foreground="#EF5350" HorizontalAlignment="Center" Margin="0,24,0,0"
                                Visibility="{Binding IsError, Converter={StaticResource BoolVis}}"/>
                 </StackPanel>
 
@@ -88,13 +82,13 @@
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
                             Visibility="{Binding HasResult, Converter={StaticResource BoolVis}}">
                     <TextBlock Text="{Binding ProductName}" FontSize="40" FontWeight="Bold"
-                               Foreground="#1B5E20" TextAlignment="Center" TextWrapping="Wrap"
+                               Foreground="{DynamicResource PriceCheckProductBrush}" TextAlignment="Center" TextWrapping="Wrap"
                                MaxWidth="900" HorizontalAlignment="Center"/>
                     <TextBlock Text="{Binding DisplayedBarcode, StringFormat=الباركود: {0}}"
-                               FontSize="18" Foreground="#558B2F" HorizontalAlignment="Center"
+                               FontSize="18" Foreground="{DynamicResource PriceCheckBodyBrush}" HorizontalAlignment="Center"
                                Margin="0,14,0,0" FontFamily="Consolas"/>
                     <TextBlock Text="{Binding PricingTypeName, StringFormat=نوع التسعير: {0}}"
-                               FontSize="16" Foreground="#689F38" HorizontalAlignment="Center"
+                               FontSize="16" Foreground="{DynamicResource PriceCheckBodyBrush}" HorizontalAlignment="Center"
                                Margin="0,8,0,0">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
@@ -147,20 +141,22 @@
 
         <!-- Scanner input (kept ready for keyboard-wedge devices) -->
         <Border Grid.Row="2" Margin="0,14,0,0" CornerRadius="12" Padding="14,10"
-                Background="{DynamicResource CardBrush}" BorderBrush="#C8E6C9" BorderThickness="1">
+                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource DashboardSuccessPanelBorderBrush}" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <materialDesign:PackIcon Kind="BarcodeScan" Width="22" Height="22"
-                                         Foreground="#2E7D32" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                         Foreground="{DynamicResource DashboardKpiGreenBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBox x:Name="BarcodeBox"
                          Grid.Column="1"
                          Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
                          materialDesign:HintAssist.Hint="امسح الباركود هنا ثم Enter"
                          FontSize="18"
                          FontFamily="Consolas"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         CaretBrush="{DynamicResource TextPrimaryBrush}"
                          VerticalContentAlignment="Center"
                          KeyDown="BarcodeBox_KeyDown"/>
             </Grid>
