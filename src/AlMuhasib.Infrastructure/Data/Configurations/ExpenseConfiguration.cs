@@ -10,6 +10,12 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
     {
         builder.ToTable("Expenses");
 
+        builder.Property(e => e.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+
+        builder.Property(e => e.FxRate).HasPrecision(18, 4);
         builder.Property(e => e.Amount).HasPrecision(18, 2);
         builder.Property(e => e.Notes).HasMaxLength(1000);
 

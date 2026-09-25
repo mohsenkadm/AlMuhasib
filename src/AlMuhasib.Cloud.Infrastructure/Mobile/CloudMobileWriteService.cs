@@ -6,6 +6,7 @@ using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Sync;
 using AlMuhasib.Sync.Dtos;
 using AlMuhasib.Sync.Requests;
@@ -218,6 +219,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             LockedThroughDate = request.PeriodLockEnabled == false
                 ? null
                 : request.LockedThroughDate ?? existing?.LockedThroughDate,
+            MultiCurrencyEnabled = request.MultiCurrencyEnabled ?? existing?.MultiCurrencyEnabled ?? false,
             CreatedAt = existing?.CreatedAt ?? now,
             CreatedBy = existing?.CreatedBy ?? username,
             UpdatedAt = now,
@@ -243,7 +245,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             ProductPricingEnabled = saved.ProductPricingEnabled,
             UpdateProductPriceOnPurchase = saved.UpdateProductPriceOnPurchase,
             PeriodLockEnabled = saved.PeriodLockEnabled,
-            LockedThroughDate = saved.LockedThroughDate
+            LockedThroughDate = saved.LockedThroughDate,
+            MultiCurrencyEnabled = saved.MultiCurrencyEnabled
         };
     }
 
@@ -302,6 +305,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SupplierSyncId = request.SupplierSyncId,
             WarehouseSyncId = request.WarehouseSyncId,
             PaymentMethod = request.PaymentMethod,
+            Currency = request.Currency,
+            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "فاتورة موبايل"),
             TotalAmount = subtotal,
             DiscountAmount = request.DiscountAmount,
             NetAmount = netAmount,
@@ -434,6 +439,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             Name = request.Name.Trim(),
             Balance = request.OpeningBalance,
+            Currency = request.Currency,
             CreatedAt = now,
             CreatedBy = username
         };
@@ -453,6 +459,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Name = request.Name.Trim(),
             AccountNumber = request.AccountNumber,
             Balance = request.OpeningBalance,
+            Currency = request.Currency,
             CreatedAt = now,
             CreatedBy = username
         };
@@ -500,6 +507,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             VoucherNumber = string.Empty,
             VoucherType = request.VoucherType,
+            Currency = request.Currency,
+            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "سند موبايل"),
             Amount = request.Amount,
             BankFees = request.BankFees,
             CustomerSyncId = request.CustomerSyncId,
@@ -557,6 +566,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         {
             SyncId = syncId,
             ExpenseTypeSyncId = request.ExpenseTypeSyncId,
+            Currency = request.Currency,
+            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "مصروف موبايل"),
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             CashBoxSyncId = request.CashBoxSyncId,
@@ -618,6 +629,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             FromSyncId = request.FromSyncId,
             ToType = request.ToType,
             ToSyncId = request.ToSyncId,
+            Currency = request.Currency,
+            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "تحويل موبايل"),
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             Notes = request.Notes,
@@ -887,6 +900,10 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         }
 
         var cashBox = await _db.CashBoxes.FirstAsync(c => c.TenantId == tenantId && c.Id == voucher.CashBoxId, ct);
+        AccountingCurrencyRules.EnsureSameCurrency(
+            voucher.Currency, cashBox.Currency, "السند", "القاصة");
+        voucher.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+            voucher.Currency, voucher.FxRate, "سند موبايل");
 
         switch (voucher.VoucherType)
         {
@@ -960,15 +977,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                         i.CustomerId == voucher.CustomerId.Value &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync(ct);
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -995,15 +1013,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                         i.SupplierId == voucher.SupplierId.Value &&
                         i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync(ct);
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);

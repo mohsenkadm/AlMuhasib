@@ -226,10 +226,25 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToList();
 
         data.CashBoxes = await _db.CashBoxes.ForTenant(tenantId)
-            .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance })
+            .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance, Currency = c.Currency })
             .ToListAsync(ct);
+        data.CashBalanceIqd = data.CashBoxes
+            .Where(c => c.Currency == AccountingCurrency.IQD)
+            .Sum(c => c.Balance);
+        data.CashBalanceUsd = data.CashBoxes
+            .Where(c => c.Currency == AccountingCurrency.USD)
+            .Sum(c => c.Balance);
 
-        data.BankBalance = await _db.BankAccounts.ForTenant(tenantId).SumAsync(b => (decimal?)b.Balance, ct) ?? 0;
+        var banks = await _db.BankAccounts.ForTenant(tenantId)
+            .Select(b => new { b.Balance, b.Currency })
+            .ToListAsync(ct);
+        data.BankBalanceIqd = banks
+            .Where(b => b.Currency == AccountingCurrency.IQD)
+            .Sum(b => b.Balance);
+        data.BankBalanceUsd = banks
+            .Where(b => b.Currency == AccountingCurrency.USD)
+            .Sum(b => b.Balance);
+        data.BankBalance = data.BankBalanceIqd;
 
         var stockValues = await _db.WarehouseStocks.ForTenant(tenantId)
             .GroupBy(ws => ws.ProductId)

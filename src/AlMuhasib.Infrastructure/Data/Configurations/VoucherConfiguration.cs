@@ -18,6 +18,13 @@ public class VoucherConfiguration : IEntityTypeConfiguration<Voucher>
             .HasConversion<string>()
             .HasMaxLength(30);
 
+        builder.Property(v => v.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+
+        builder.Property(v => v.FxRate).HasPrecision(18, 4);
+
         builder.Property(v => v.Amount).HasPrecision(18, 2);
         builder.Property(v => v.BankFees).HasPrecision(18, 2);
         builder.Property(v => v.Notes).HasMaxLength(1000);

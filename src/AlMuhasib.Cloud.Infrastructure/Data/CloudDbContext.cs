@@ -38,6 +38,7 @@ public class CloudDbContext : DbContext
     public DbSet<CloudPricingType> PricingTypes => Set<CloudPricingType>();
     public DbSet<CloudProductPrice> ProductPrices => Set<CloudProductPrice>();
     public DbSet<CloudBusinessSettings> BusinessSettings => Set<CloudBusinessSettings>();
+    public DbSet<CloudExchangeRate> ExchangeRates => Set<CloudExchangeRate>();
     public DbSet<CloudWarehouse> Warehouses => Set<CloudWarehouse>();
     public DbSet<CloudCustomer> Customers => Set<CloudCustomer>();
     public DbSet<CloudSupplier> Suppliers => Set<CloudSupplier>();
@@ -181,6 +182,34 @@ public class CloudDbContext : DbContext
                 .WithMany(t => t.ProductPrices)
                 .HasForeignKey(x => x.PricingTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CloudExchangeRate>(e =>
+        {
+            e.Property(r => r.UsdToIqd).HasPrecision(18, 4);
+            e.Property(r => r.Notes).HasMaxLength(500);
+            e.HasIndex(r => r.RateDate);
+            e.HasIndex(r => new { r.TenantId, r.SyncId });
+        });
+
+        modelBuilder.Entity<CloudInvoice>(e =>
+        {
+            e.Property(i => i.FxRate).HasPrecision(18, 4);
+        });
+
+        modelBuilder.Entity<CloudVoucher>(e =>
+        {
+            e.Property(v => v.FxRate).HasPrecision(18, 4);
+        });
+
+        modelBuilder.Entity<CloudExpense>(e =>
+        {
+            e.Property(x => x.FxRate).HasPrecision(18, 4);
+        });
+
+        modelBuilder.Entity<CloudTransfer>(e =>
+        {
+            e.Property(t => t.FxRate).HasPrecision(18, 4);
         });
 
         modelBuilder.Entity<CloudInvoiceItem>(e =>

@@ -190,6 +190,8 @@ class CreateInvoiceRequest {
     this.supplierSyncId,
     required this.warehouseSyncId,
     required this.paymentMethod,
+    this.currency = 0,
+    this.fxRate = 1,
     this.cashBoxSyncId,
     required this.date,
     this.creditDueDate,
@@ -206,6 +208,8 @@ class CreateInvoiceRequest {
         if (supplierSyncId != null) 'supplierSyncId': supplierSyncId,
         'warehouseSyncId': warehouseSyncId,
         'paymentMethod': paymentMethod,
+        'currency': currency,
+        'fxRate': fxRate,
         if (cashBoxSyncId != null) 'cashBoxSyncId': cashBoxSyncId,
         'date': date.toIso8601String(),
         if (creditDueDate != null) 'creditDueDate': creditDueDate!.toIso8601String(),
@@ -221,6 +225,9 @@ class CreateInvoiceRequest {
   final String? supplierSyncId;
   final String warehouseSyncId;
   final int paymentMethod;
+  /// 0 = IQD (default), 1 = USD
+  final int currency;
+  final double fxRate;
   final String? cashBoxSyncId;
   final DateTime date;
   final DateTime? creditDueDate;

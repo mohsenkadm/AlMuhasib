@@ -17,6 +17,7 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalLiquid = "0";
     [ObservableProperty] private string _cashBoxesTotal = "0";
     [ObservableProperty] private string _banksTotal = "0";
+    [ObservableProperty] private string _totalLiquidUsd = "0";
     [ObservableProperty] private string _accountCount = "0";
 
 
@@ -52,6 +53,9 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
             TotalLiquid = FormatCurrency(result.TotalLiquid);
             CashBoxesTotal = FormatCurrency(result.CashBoxesTotal);
             BanksTotal = FormatCurrency(result.BanksTotal);
+            TotalLiquidUsd = result.TotalLiquidUsd > 0
+                ? result.TotalLiquidUsd.ToString("N2") + " $"
+                : "0 $";
             AccountCount = result.AccountCount.ToString("N0");
             if (result.CompositionChart.Count > 0)
                 PieSeries = ChartThemeConfig.PieFromNameAmount(result.CompositionChart);
@@ -71,8 +75,8 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "ملخص_أرصدة_نقدية.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "النوع", "الاسم", "رقم الحساب", "الرصيد" };
-        var rows = _allRows.Select(r => new object[] { r.AccountType, r.Name, r.AccountNumber, r.Balance }).ToList();
+        var cols = new[] { "النوع", "الاسم", "رقم الحساب", "العملة", "الرصيد" };
+        var rows = _allRows.Select(r => new object[] { r.AccountType, r.Name, r.AccountNumber, r.CurrencyLabel, r.Balance }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص أرصدة نقدية", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -80,8 +84,8 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "النوع", "الاسم", "رقم الحساب", "الرصيد" };
-        var rows = _allRows.Select(r => new object[] { r.AccountType, r.Name, r.AccountNumber, r.Balance }).ToList();
+        var cols = new[] { "النوع", "الاسم", "رقم الحساب", "العملة", "الرصيد" };
+        var rows = _allRows.Select(r => new object[] { r.AccountType, r.Name, r.AccountNumber, r.CurrencyLabel, r.Balance }).ToList();
         _exportService.PrintTable("ملخص أرصدة نقدية", cols, rows);
     }
 }

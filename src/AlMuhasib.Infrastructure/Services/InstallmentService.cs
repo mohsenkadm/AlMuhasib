@@ -121,6 +121,22 @@ public class InstallmentService : IInstallmentService
             if (amount > installment.RemainingAmount)
                 throw new InvalidOperationException($"مبلغ الدفع ({amount:N0}) أكبر من المتبقي ({installment.RemainingAmount:N0})");
 
+            var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+
+            if (installment.InstallmentPlan?.InvoiceId is int invoiceId)
+            {
+                var invoiceCurrency = await context.Invoices.AsNoTracking()
+                    .Where(i => i.Id == invoiceId)
+                    .Select(i => (AccountingCurrency?)i.Currency)
+                    .FirstOrDefaultAsync();
+                if (invoiceCurrency is not null)
+                {
+                    AccountingCurrencyRules.EnsureSameCurrency(
+                        invoiceCurrency.Value, cashBox.Currency, "فاتورة القسط", "القاصة");
+                }
+            }
+
             installment.PaidAmount += amount;
             installment.RemainingAmount = installment.Amount - installment.PaidAmount;
             installment.CashBoxId = cashBoxId;
@@ -129,13 +145,9 @@ public class InstallmentService : IInstallmentService
             installment.UpdatedAt = DateTime.UtcNow;
             installment.Status = installment.RemainingAmount <= 0 ? InstallmentStatus.Paid : InstallmentStatus.PartiallyPaid;
 
-            var cashBox = await context.CashBoxes.FindAsync(cashBoxId);
-            if (cashBox is not null)
-            {
-                cashBox.Balance += amount;
-                cashBox.UpdatedBy = username;
-                cashBox.UpdatedAt = DateTime.UtcNow;
-            }
+            cashBox.Balance += amount;
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
             if (_currentUserService.UserId.HasValue)
@@ -560,6 +572,8 @@ public class InstallmentService : IInstallmentService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
+                Currency = AccountingCurrency.IQD,
+                FxRate = 1m,
                 TotalAmount = request.TotalAmount,
                 DiscountAmount = 0,
                 NetAmount = request.TotalAmount,

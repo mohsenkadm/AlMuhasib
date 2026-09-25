@@ -27,6 +27,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IProductPriceService _productPriceService;
     private readonly IProductBatchService _productBatchService;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IExchangeRateService _exchangeRateService;
     private readonly IPosFullscreenService _posFullscreen;
     private readonly DispatcherTimer _searchDebounce;
 
@@ -89,7 +90,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IProductColorService productColorService,
         ILoyaltyService loyaltyService,
         IProductOfferService productOfferService,
-        IPosFullscreenService posFullscreen)
+        IPosFullscreenService posFullscreen,
+        IExchangeRateService exchangeRateService)
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
@@ -101,6 +103,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _productPriceService = productPriceService;
         _productBatchService = productBatchService;
         _featureFlags = featureFlags;
+        _exchangeRateService = exchangeRateService;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "بيع سريع (POS)";
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
@@ -532,6 +535,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
+                Currency = SelectedCashBox.Currency,
+                FxRate = await ResolveFxRateAsync(SelectedCashBox.Currency),
                 Date = DateTime.Now,
                 DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
                     + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
@@ -733,6 +738,21 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             if (SelectedCashBox is not null)
                 p.DefaultPosCashBoxId = SelectedCashBox.Id;
         });
+    }
+
+    private async Task<decimal> ResolveFxRateAsync(AccountingCurrency currency)
+    {
+        if (currency != AccountingCurrency.USD)
+            return 1m;
+        try
+        {
+            var rate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
+            return rate > 0 ? rate : 1m;
+        }
+        catch
+        {
+            return 1m;
+        }
     }
 
     public string FullscreenToggleToolTip =>

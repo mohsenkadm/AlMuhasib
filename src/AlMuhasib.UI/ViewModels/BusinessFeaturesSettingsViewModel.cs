@@ -33,6 +33,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _warehouseTransfers;
     [ObservableProperty] private bool _unitsOfMeasure;
     [ObservableProperty] private bool _transportFees;
+    [ObservableProperty] private bool _multiCurrency;
     [ObservableProperty] private bool _warehouseInvoiceAndDriver;
     [ObservableProperty] private bool _menuWeight;
     [ObservableProperty] private bool _expiryTracking;
@@ -70,7 +71,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
             AutoBackupEnabled, PurchaseReturns, SalesReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
-            WarehouseInvoiceAndDriver, MenuWeight,
+            MultiCurrency, WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
             DamageInvoices,
@@ -114,6 +115,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             var settings = await _businessSettingsService.GetOrCreateAsync();
             ProductPricingEnabled = settings.ProductPricingEnabled || ProductPricingEnabled;
             UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase || UpdateProductPriceOnPurchase;
+            MultiCurrency = settings.MultiCurrencyEnabled || MultiCurrency;
             PeriodLockEnabled = settings.PeriodLockEnabled;
             LockedThroughDate = settings.LockedThroughDate;
             NotifyFeaturesCount();
@@ -141,6 +143,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
         UnitsOfMeasure = p.FeatureFlags.UnitsOfMeasure;
         TransportFees = p.FeatureFlags.TransportFees;
+        MultiCurrency = p.FeatureFlags.MultiCurrency;
         WarehouseInvoiceAndDriver = p.FeatureFlags.WarehouseInvoiceAndDriver;
         MenuWeight = p.FeatureFlags.MenuWeight;
         ExpiryTracking = p.FeatureFlags.ExpiryTracking;
@@ -180,6 +183,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
     partial void OnUnitsOfMeasureChanged(bool value) => NotifyFeaturesCount();
     partial void OnTransportFeesChanged(bool value) => NotifyFeaturesCount();
+    partial void OnMultiCurrencyChanged(bool value) => NotifyFeaturesCount();
     partial void OnWarehouseInvoiceAndDriverChanged(bool value) => NotifyFeaturesCount();
     partial void OnMenuWeightChanged(bool value) => NotifyFeaturesCount();
     partial void OnExpiryTrackingChanged(bool value) => NotifyFeaturesCount();
@@ -231,6 +235,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;
             p.FeatureFlags.UnitsOfMeasure = UnitsOfMeasure;
             p.FeatureFlags.TransportFees = TransportFees;
+            p.FeatureFlags.MultiCurrency = MultiCurrency;
             p.FeatureFlags.WarehouseInvoiceAndDriver = WarehouseInvoiceAndDriver;
             p.FeatureFlags.MenuWeight = MenuWeight;
             p.FeatureFlags.ExpiryTracking = ExpiryTracking;
@@ -262,7 +267,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
                 ProductPricingEnabled,
                 UpdateProductPriceOnPurchase,
                 PeriodLockEnabled,
-                LockedThroughDate);
+                LockedThroughDate,
+                MultiCurrency);
             if (ProductPricingEnabled)
                 await _pricingTypeService.EnsureDefaultExistsAsync();
             if (UnitsOfMeasure)

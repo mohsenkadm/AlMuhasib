@@ -138,6 +138,7 @@ public partial class SalesInvoiceViewModel
         PrintCarContractCommand.NotifyCanExecuteChanged();
         RefreshLoyaltyFeatureVisibility();
         RefreshProductOffersFeatureVisibility();
+        RefreshMultiCurrencyFeatureVisibility();
 
         foreach (var row in Items)
         {

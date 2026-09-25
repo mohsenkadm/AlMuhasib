@@ -180,6 +180,10 @@
                                                     Description="حقل أجور النقل في فواتير البيع والشراء والأقساط مع الظهور في الطباعة"
                                                     Icon="TruckFast" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding TransportFees}"/>
+                        <controls:FeatureToggleCard Title="تنوع العملات"
+                                                    Description="تفعيل الدينار والدولار في الفواتير والسندات والقاصات. العملة الأساسية دينار. معطّل افتراضياً ولا يؤثر على المستخدمين الحاليين"
+                                                    Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
+                                                    IsChecked="{Binding MultiCurrency}"/>
                         <controls:FeatureToggleCard Title="نسخة المخزن والسائق"
                                                     Description="طباعة نسخة فاتورة للمخزن بدون مبالغ واختيار سائق للتوصيل من فاتورة البيع والأقساط"
                                                     Icon="AccountHardHat" IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="#5D4037"

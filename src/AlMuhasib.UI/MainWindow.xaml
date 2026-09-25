@@ -1213,6 +1213,17 @@
                                 <TextBlock Text="سعر الصرف" Margin="6,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
+                        <Button Command="{Binding OpenQuickAccountingFxCommand}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                Visibility="{Binding ShowQuickAccountingFx, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                ToolTip="سعر الصرف اليومي (دولار → دينار)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CurrencyUsd" Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="سعر الصرف" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                         <Button Command="{Binding ToggleThemeCommand}"
                                 Style="{StaticResource OutlinedButton}"
                                 Height="34" Padding="10,0" Margin="0,0,4,0"
@@ -1832,6 +1843,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:BusinessFeaturesSettingsViewModel}">
                             <views:BusinessFeaturesSettingsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExchangeRatesViewModel}">
+                            <views:ExchangeRatesView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CustomFieldSettingsViewModel}">
                             <views:CustomFieldSettingsView />

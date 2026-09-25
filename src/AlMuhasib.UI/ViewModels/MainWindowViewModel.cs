@@ -735,6 +735,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         foreach (var group in MenuItems.Where(i => i.IsGroupHeader))
             group.IsVisible = group.Children.Any(c => c.IsVisible);
+
+        ApplyWorkspaceProfile();
     }
 
     private void ResetMenuVisibilityOnLogout()

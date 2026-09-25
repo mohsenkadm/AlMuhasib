@@ -2,6 +2,7 @@ using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Sync.Dtos;
 using AlMuhasib.Sync.Requests;
 using AlMuhasib.Sync.Responses;
@@ -68,6 +69,8 @@ public sealed partial class SyncEngine : ISyncEngine
 
             foreach (var dto in request.Data.BusinessSettings)
                 accepted += await UpsertBusinessSettingsAsync(tenantId, dto, response, ct);
+            foreach (var dto in request.Data.ExchangeRates)
+                accepted += await UpsertExchangeRateAsync(tenantId, dto, response, ct);
 
             foreach (var dto in request.Data.Warehouses)
                 accepted += await UpsertWarehouseAsync(tenantId, dto, response, ct);
@@ -275,6 +278,7 @@ public sealed partial class SyncEngine : ISyncEngine
         bundle.PricingTypes = await PullEntitiesAsync(_db.PricingTypes, tenantId, since, MapPricingType, ct);
         bundle.ProductPrices = await PullProductPricesAsync(tenantId, since, ct);
         bundle.BusinessSettings = await PullEntitiesAsync(_db.BusinessSettings, tenantId, since, MapBusinessSettings, ct);
+        bundle.ExchangeRates = await PullEntitiesAsync(_db.ExchangeRates, tenantId, since, MapExchangeRate, ct);
         bundle.Warehouses = await PullEntitiesAsync(_db.Warehouses, tenantId, since, MapWarehouse, ct);
         bundle.Customers = await PullEntitiesAsync(_db.Customers, tenantId, since, MapCustomer, ct);
         bundle.Suppliers = await PullEntitiesAsync(_db.Suppliers, tenantId, since, MapSupplier, ct);
@@ -465,6 +469,7 @@ public sealed partial class SyncEngine : ISyncEngine
         if (existing is null) { existing = new CloudBusinessSettings { TenantId = tenantId }; _db.BusinessSettings.Add(existing); }
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.ProductPricingEnabled = dto.ProductPricingEnabled;
+        existing.MultiCurrencyEnabled = dto.MultiCurrencyEnabled;
         existing.UpdateProductPriceOnPurchase = dto.UpdateProductPriceOnPurchase;
         existing.PeriodLockEnabled = dto.PeriodLockEnabled;
         existing.LockedThroughDate = dto.LockedThroughDate?.Date;
@@ -531,6 +536,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Name = dto.Name;
         existing.AccountNumber = dto.AccountNumber;
         existing.Balance = dto.Balance;
+        existing.Currency = dto.Currency;
         return 1;
     }
 
@@ -637,6 +643,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.SupplierId = supplierId;
         existing.WarehouseId = warehouseId;
         existing.PaymentMethod = dto.PaymentMethod;
+        existing.Currency = dto.Currency;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة فاتورة سحابة");
         existing.TotalAmount = dto.TotalAmount;
         existing.DiscountAmount = dto.DiscountAmount;
         existing.NetAmount = dto.NetAmount;
@@ -728,6 +736,8 @@ public sealed partial class SyncEngine : ISyncEngine
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.VoucherNumber = dto.VoucherNumber;
         existing.VoucherType = dto.VoucherType;
+        existing.Currency = dto.Currency;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة سند سحابة");
         existing.Amount = dto.Amount;
         existing.BankFees = dto.BankFees;
         existing.CustomerId = customerId;
@@ -752,6 +762,8 @@ public sealed partial class SyncEngine : ISyncEngine
         if (existing is null) { existing = new CloudExpense { TenantId = tenantId }; _db.Expenses.Add(existing); }
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.ExpenseTypeId = typeId;
+        existing.Currency = dto.Currency;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة مصروف سحابة");
         existing.Amount = dto.Amount;
         existing.Date = dto.Date;
         existing.CashBoxId = cashBoxId;
@@ -769,6 +781,8 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.FromId = fromId;
         existing.ToType = dto.ToType;
         existing.ToId = toId;
+        existing.Currency = dto.Currency;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة تحويل سحابة");
         existing.Amount = dto.Amount;
         existing.Date = dto.Date;
         existing.Notes = dto.Notes;
@@ -956,7 +970,7 @@ public sealed partial class SyncEngine : ISyncEngine
             CustomerSyncId = i.CustomerId.HasValue ? customers.GetValueOrDefault(i.CustomerId.Value) : null,
             SupplierSyncId = i.SupplierId.HasValue ? suppliers.GetValueOrDefault(i.SupplierId.Value) : null,
             WarehouseSyncId = warehouses.GetValueOrDefault(i.WarehouseId),
-            PaymentMethod = i.PaymentMethod, TotalAmount = i.TotalAmount, DiscountAmount = i.DiscountAmount, NetAmount = i.NetAmount,
+            PaymentMethod = i.PaymentMethod, Currency = i.Currency, FxRate = i.FxRate, TotalAmount = i.TotalAmount, DiscountAmount = i.DiscountAmount, NetAmount = i.NetAmount,
             CompanyFeePercentage = i.CompanyFeePercentage, CompanyFeeAmount = i.CompanyFeeAmount,
             RoundingAmount = i.RoundingAmount, RoundingType = i.RoundingType,
             CashBoxSyncId = i.CashBoxId.HasValue ? cashBoxes.GetValueOrDefault(i.CashBoxId.Value) : null,
@@ -1034,7 +1048,7 @@ public sealed partial class SyncEngine : ISyncEngine
         {
             SyncId = v.SyncId, CreatedAt = v.CreatedAt, CreatedBy = v.CreatedBy, UpdatedAt = v.UpdatedAt, UpdatedBy = v.UpdatedBy,
             IsDeleted = v.IsDeleted, DeletedAt = v.DeletedAt, DeletedBy = v.DeletedBy, RowVersion = v.RowVersion,
-            VoucherNumber = v.VoucherNumber, VoucherType = v.VoucherType, Amount = v.Amount, BankFees = v.BankFees,
+            VoucherNumber = v.VoucherNumber, VoucherType = v.VoucherType, Currency = v.Currency, FxRate = v.FxRate, Amount = v.Amount, BankFees = v.BankFees,
             CustomerSyncId = v.CustomerId.HasValue ? customers.GetValueOrDefault(v.CustomerId.Value) : null,
             SupplierSyncId = v.SupplierId.HasValue ? suppliers.GetValueOrDefault(v.SupplierId.Value) : null,
             InvestorSyncId = v.InvestorId.HasValue ? investors.GetValueOrDefault(v.InvestorId.Value) : null,
@@ -1061,6 +1075,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
             ExpenseTypeSyncId = types.GetValueOrDefault(e.ExpenseTypeId),
             CashBoxSyncId = cashBoxes.GetValueOrDefault(e.CashBoxId),
+            Currency = e.Currency, FxRate = e.FxRate,
             Amount = e.Amount, Date = e.Date, Notes = e.Notes
         }).ToList();
     }
@@ -1083,7 +1098,7 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
             FromType = t.FromType, FromSyncId = ResolveId(t.FromType, t.FromId),
             ToType = t.ToType, ToSyncId = ResolveId(t.ToType, t.ToId),
-            Amount = t.Amount, Date = t.Date, Notes = t.Notes
+            Currency = t.Currency, FxRate = t.FxRate, Amount = t.Amount, Date = t.Date, Notes = t.Notes
         }).ToList();
     }
 
@@ -1151,7 +1166,8 @@ public sealed partial class SyncEngine : ISyncEngine
         ProductPricingEnabled = e.ProductPricingEnabled,
         UpdateProductPriceOnPurchase = e.UpdateProductPriceOnPurchase,
         PeriodLockEnabled = e.PeriodLockEnabled,
-        LockedThroughDate = e.LockedThroughDate
+        LockedThroughDate = e.LockedThroughDate,
+        MultiCurrencyEnabled = e.MultiCurrencyEnabled
     };
 
     private static WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()
@@ -1180,14 +1196,16 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
-        Name = e.Name, Balance = e.Balance
+        Name = e.Name, Balance = e.Balance,
+        Currency = e.Currency
     };
 
     private static BankAccountSyncDto MapBankAccount(CloudBankAccount e, Dictionary<int, Guid> _) => new()
     {
         SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
-        Name = e.Name, AccountNumber = e.AccountNumber, Balance = e.Balance
+        Name = e.Name, AccountNumber = e.AccountNumber, Balance = e.Balance,
+        Currency = e.Currency
     };
 
     private static InvestorSyncDto MapInvestor(CloudInvestor e, Dictionary<int, Guid> _) => new()

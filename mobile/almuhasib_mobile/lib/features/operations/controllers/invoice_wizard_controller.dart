@@ -50,6 +50,10 @@ class InvoiceWizardController extends GetxController {
   final installmentStart = DateTime.now().obs;
   final saving = false.obs;
   final productPricingEnabled = false.obs;
+  final multiCurrencyEnabled = false.obs;
+  /// 0 = IQD, 1 = USD
+  final currency = 0.obs;
+  final fxRate = 1.0.obs;
   final bootstrapping = true.obs;
 
   @override
@@ -75,8 +79,14 @@ class InvoiceWizardController extends GetxController {
     try {
       final settings = await AppServices.data.getBusinessSettings();
       productPricingEnabled.value = settings.productPricingEnabled;
+      multiCurrencyEnabled.value = settings.multiCurrencyEnabled;
+      if (!multiCurrencyEnabled.value) {
+        currency.value = 0;
+        fxRate.value = 1;
+      }
     } catch (_) {
       productPricingEnabled.value = false;
+      multiCurrencyEnabled.value = false;
     }
   }
 
@@ -353,6 +363,10 @@ class InvoiceWizardController extends GetxController {
           supplierSyncId: supplier.value?.syncId,
           warehouseSyncId: warehouse.value!.syncId,
           paymentMethod: paymentMethod.value,
+          currency: multiCurrencyEnabled.value ? currency.value : 0,
+          fxRate: multiCurrencyEnabled.value && currency.value == 1
+              ? (fxRate.value <= 0 ? 1 : fxRate.value)
+              : 1,
           cashBoxSyncId: cashBox.value?.syncId,
           date: date.value,
           creditDueDate:

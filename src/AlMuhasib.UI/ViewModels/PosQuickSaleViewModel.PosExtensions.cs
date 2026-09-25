@@ -152,6 +152,8 @@ public partial class PosQuickSaleViewModel
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
+                Currency = SelectedCashBox.Currency,
+                FxRate = await ResolveFxRateAsync(SelectedCashBox.Currency),
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = "بيع تقسيط POS"

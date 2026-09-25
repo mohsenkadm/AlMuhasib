@@ -70,6 +70,7 @@ public class AppDbContext : DbContext
     public DbSet<PricingType> PricingTypes => Set<PricingType>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
     public DbSet<BusinessSettings> BusinessSettings => Set<BusinessSettings>();
+    public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<EntityCustomFieldSettings> EntityCustomFieldSettings => Set<EntityCustomFieldSettings>();
     public DbSet<PackagingType> PackagingTypes => Set<PackagingType>();
     public DbSet<LoyaltySettings> LoyaltySettings => Set<LoyaltySettings>();

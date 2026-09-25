@@ -36,6 +36,7 @@ public class BusinessSettingsService : IBusinessSettingsService
             {
                 ProductPricingEnabled = false,
                 UpdateProductPriceOnPurchase = false,
+                MultiCurrencyEnabled = false,
                 PeriodLockEnabled = false,
                 LockedThroughDate = null,
                 SyncId = AlMuhasib.Sync.ProductPricingSyncIds.BusinessSettings,
@@ -49,24 +50,26 @@ public class BusinessSettingsService : IBusinessSettingsService
         return existing;
     }
 
-    public Task SyncFromFeatureFlagsAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase) =>
-        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase);
+    public Task SyncFromFeatureFlagsAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase, bool multiCurrencyEnabled = false) =>
+        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, multiCurrencyEnabled);
 
-    public Task SaveAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase) =>
-        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, periodLockEnabled: null, lockedThroughDate: null);
+    public Task SaveAsync(bool productPricingEnabled, bool updateProductPriceOnPurchase, bool multiCurrencyEnabled = false) =>
+        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, periodLockEnabled: null, lockedThroughDate: null, multiCurrencyEnabled);
 
     public Task SaveAsync(
         bool productPricingEnabled,
         bool updateProductPriceOnPurchase,
         bool periodLockEnabled,
-        DateTime? lockedThroughDate) =>
-        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, (bool?)periodLockEnabled, lockedThroughDate);
+        DateTime? lockedThroughDate,
+        bool? multiCurrencyEnabled = null) =>
+        SaveAsync(productPricingEnabled, updateProductPriceOnPurchase, (bool?)periodLockEnabled, lockedThroughDate, multiCurrencyEnabled);
 
     private async Task SaveAsync(
         bool productPricingEnabled,
         bool updateProductPriceOnPurchase,
         bool? periodLockEnabled,
-        DateTime? lockedThroughDate)
+        DateTime? lockedThroughDate,
+        bool? multiCurrencyEnabled)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var existing = await context.BusinessSettings
@@ -80,6 +83,7 @@ public class BusinessSettingsService : IBusinessSettingsService
             {
                 ProductPricingEnabled = productPricingEnabled,
                 UpdateProductPriceOnPurchase = updateProductPriceOnPurchase,
+                MultiCurrencyEnabled = multiCurrencyEnabled ?? false,
                 PeriodLockEnabled = periodLockEnabled ?? false,
                 LockedThroughDate = lockedThroughDate?.Date,
                 SyncId = AlMuhasib.Sync.ProductPricingSyncIds.BusinessSettings,
@@ -91,6 +95,8 @@ public class BusinessSettingsService : IBusinessSettingsService
         {
             existing.ProductPricingEnabled = productPricingEnabled;
             existing.UpdateProductPriceOnPurchase = updateProductPriceOnPurchase;
+            if (multiCurrencyEnabled.HasValue)
+                existing.MultiCurrencyEnabled = multiCurrencyEnabled.Value;
             if (periodLockEnabled.HasValue)
             {
                 existing.PeriodLockEnabled = periodLockEnabled.Value;

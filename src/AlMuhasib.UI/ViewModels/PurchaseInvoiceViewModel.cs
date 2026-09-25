@@ -4,6 +4,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
@@ -175,7 +176,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         IProductSizeService productSizeService,
         IProductColorService productColorService,
         IPartyQuickDetailService partyQuickDetail,
-        IProductQuickDetailService productQuickDetail)
+        IProductQuickDetailService productQuickDetail,
+        IExchangeRateService exchangeRateService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -192,6 +194,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
+        ConfigureCurrencyServices(exchangeRateService);
 
         PageTitle = "فاتورة مشتريات";
 
@@ -245,12 +248,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             if (Warehouses.Count > 0)
                 SelectedWarehouse = Warehouses[0];
 
-            var cashBoxes = await _unitOfWork.CashBoxes.GetAllAsync();
-            CashBoxes.Clear();
-            foreach (var cb in cashBoxes)
-                CashBoxes.Add(cb);
-            if (CashBoxes.Count > 0)
-                SelectedCashBox = CashBoxes[0];
+            var cashBoxes = (await _unitOfWork.CashBoxes.GetAllAsync()).ToList();
+            RememberCashBoxesForCurrencyFilter(cashBoxes);
 
             await ReloadProductSearchCatalogAsync();
 
@@ -323,6 +322,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
         CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
@@ -750,6 +751,10 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 SupplierId = supplierId,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
+                Currency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
+                FxRate = ShowMultiCurrency
+                    ? AccountingCurrencyRules.RequireFxRateOrThrow(SelectedCurrency, FxRate, "فاتورة مشتريات")
+                    : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
                 PaidAmount = IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,

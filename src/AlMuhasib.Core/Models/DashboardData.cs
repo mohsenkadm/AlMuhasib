@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Models;
 
 public class DashboardData
@@ -43,6 +45,10 @@ public class DashboardData
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
     public decimal BankBalance { get; set; }
+    public decimal CashBalanceIqd { get; set; }
+    public decimal CashBalanceUsd { get; set; }
+    public decimal BankBalanceIqd { get; set; }
+    public decimal BankBalanceUsd { get; set; }
     public decimal TotalInventoryValue { get; set; }
 
     // KPI mini-chart trends (last 14 days) + period-over-period %
@@ -104,4 +110,5 @@ public class CashBoxSummary
 {
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }

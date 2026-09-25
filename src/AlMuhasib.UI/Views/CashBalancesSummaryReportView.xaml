@@ -42,23 +42,30 @@
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="ملخص أرصدة نقدية" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
-                <UniformGrid Columns="4" Margin="0,0,0,20">
+                <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
-                        Title="إجمالي السيولة"
+                        Title="إجمالي السيولة د.ع"
                         TextValue="{Binding TotalLiquid}"
                         Icon="CashMultiple"
                         IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
-                        Title="القاصات"
+                        Title="سيولة $"
+                        TextValue="{Binding TotalLiquidUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                        IconForeground="#00695C"
+                        ValueForeground="#00695C"/>
+                    <controls:AnimatedStatCard
+                        Title="القاصات د.ع"
                         TextValue="{Binding CashBoxesTotal}"
                         Icon="Cash"
                         IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
-                        Title="المصارف"
+                        Title="المصارف د.ع"
                         TextValue="{Binding BanksTotal}"
                         Icon="Bank"
                         IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
@@ -120,6 +127,8 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
                                 <DataGridTextColumn Header="رقم الحساب" Binding="{Binding AccountNumber}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AccountNumber"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="الرصيد" Binding="{Binding Balance, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Balance"/>
                     </DataGrid.Columns>

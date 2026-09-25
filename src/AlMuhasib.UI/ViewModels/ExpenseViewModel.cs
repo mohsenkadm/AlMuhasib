@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -16,13 +17,20 @@ public partial class ExpenseViewModel : PagedViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IExchangeRateService _exchangeRateService;
 
-    public ExpenseViewModel(IExpenseService expenseService, IUnitOfWork unitOfWork, IExportService exportService, ICurrentUserService currentUserService)
+    public ExpenseViewModel(
+        IExpenseService expenseService,
+        IUnitOfWork unitOfWork,
+        IExportService exportService,
+        ICurrentUserService currentUserService,
+        IExchangeRateService exchangeRateService)
     {
         _expenseService = expenseService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _exchangeRateService = exchangeRateService;
         PageTitle = "المصاريف";
     }
 
@@ -179,12 +187,26 @@ public partial class ExpenseViewModel : PagedViewModelBase
         try
         {
             IsBusy = true;
+            var currency = FormCashBox.Currency;
+            var fxRate = 1m;
+            if (currency == AccountingCurrency.USD)
+            {
+                fxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(FormDate);
+                if (fxRate <= 0)
+                {
+                    BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب للمصروفات بالدولار. سجّل سعر الصرف اليومي أولاً.");
+                    return;
+                }
+            }
+
             await _expenseService.AddExpenseAsync(
                 FormExpenseType.Id,
                 FormAmount,
                 FormDate,
                 FormCashBox.Id,
-                string.IsNullOrWhiteSpace(FormNotes) ? null : FormNotes.Trim());
+                string.IsNullOrWhiteSpace(FormNotes) ? null : FormNotes.Trim(),
+                currency,
+                fxRate);
 
             // Reset form
             FormExpenseType = null;

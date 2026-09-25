@@ -19,7 +19,44 @@ public class CustomerBalanceHelperTests
     }
 
     [Fact]
-    public void AllocateToCreditInvoices_AppliesFifo()
+    public void ComputeOutstandingBalances_KeepsCurrenciesSeparate()
+    {
+        var dual = CustomerBalanceHelper.ComputeOutstandingBalances(
+            creditInvoiceRemainings: [(AccountingCurrency.IQD, 1000), (AccountingCurrency.USD, 50)],
+            unpaidInstallmentRemainings: [(AccountingCurrency.IQD, 200)],
+            unappliedDebtReceipts: [(AccountingCurrency.USD, 10)],
+            receiptAdvances: [(AccountingCurrency.IQD, 100)]);
+
+        Assert.Equal(1100, dual.Iqd);
+        Assert.Equal(40, dual.Usd);
+    }
+
+    [Fact]
+    public void AllocateToCreditInvoices_AppliesFifoSameCurrencyOnly()
+    {
+        var invoices = new List<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount, AccountingCurrency Currency)>
+        {
+            (1, new DateTime(2026, 1, 1), 1000, 0, 1000, AccountingCurrency.IQD),
+            (2, new DateTime(2026, 1, 2), 50, 0, 50, AccountingCurrency.USD),
+            (3, new DateTime(2026, 2, 1), 500, 0, 500, AccountingCurrency.IQD),
+        };
+
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(invoices, 1200, AccountingCurrency.IQD);
+
+        Assert.Equal(2, updates.Count);
+        Assert.Equal(1, updates[0].Id);
+        Assert.Equal(1000, updates[0].PaidAmount);
+        Assert.Equal(0, updates[0].RemainingAmount);
+        Assert.True(updates[0].IsCreditPaid);
+        Assert.Equal(3, updates[1].Id);
+        Assert.Equal(200, updates[1].PaidAmount);
+        Assert.Equal(300, updates[1].RemainingAmount);
+        Assert.False(updates[1].IsCreditPaid);
+        Assert.DoesNotContain(updates, u => u.Id == 2);
+    }
+
+    [Fact]
+    public void AllocateToCreditInvoices_LegacyOverloadAssumesIqd()
     {
         var invoices = new List<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount)>
         {
@@ -54,7 +91,8 @@ public class CustomerBalanceHelperTests
                 PaymentMethod = PaymentMethod.Credit,
                 NetAmount = 1000,
                 PaidAmount = 400,
-                RemainingAmount = 600
+                RemainingAmount = 600,
+                Currency = AccountingCurrency.IQD
             }
         };
 
@@ -67,7 +105,8 @@ public class CustomerBalanceHelperTests
                 VoucherNumber = "DRC1",
                 VoucherType = VoucherType.DebtReceipt,
                 Amount = 400,
-                Notes = CustomerBalanceHelper.DebtReceiptAppliedMarker
+                Notes = CustomerBalanceHelper.DebtReceiptAppliedMarker,
+                Currency = AccountingCurrency.IQD
             }
         };
 
@@ -78,6 +117,49 @@ public class CustomerBalanceHelperTests
         Assert.Contains(rows, r => r.Debit == 1000);
         Assert.Contains(rows, r => r.Credit == 400 && r.Description.Contains("تسديد"));
         Assert.DoesNotContain(rows, r => r.Description.Contains("سند تسديد دين"));
+    }
+
+    [Fact]
+    public void BuildCustomerStatementLedger_DoesNotMixUsdIntoIqdLedger()
+    {
+        var invoices = new[]
+        {
+            new CustomerBalanceInvoiceRow
+            {
+                Id = 1,
+                Date = new DateTime(2026, 1, 10),
+                InvoiceNumber = "S-IQD",
+                InvoiceType = InvoiceType.Sale,
+                PaymentMethod = PaymentMethod.Credit,
+                NetAmount = 1000,
+                PaidAmount = 0,
+                RemainingAmount = 1000,
+                Currency = AccountingCurrency.IQD
+            },
+            new CustomerBalanceInvoiceRow
+            {
+                Id = 2,
+                Date = new DateTime(2026, 1, 11),
+                InvoiceNumber = "S-USD",
+                InvoiceType = InvoiceType.Sale,
+                PaymentMethod = PaymentMethod.Credit,
+                NetAmount = 50,
+                PaidAmount = 0,
+                RemainingAmount = 50,
+                Currency = AccountingCurrency.USD
+            }
+        };
+
+        var (rows, balance) = CustomerBalanceHelper.BuildCustomerStatementLedger(
+            invoices,
+            Array.Empty<CustomerBalanceVoucherRow>(),
+            Array.Empty<CustomerBalanceInstallmentPaymentRow>(),
+            unpaidInstallmentRemaining: 0,
+            currencyFilter: AccountingCurrency.IQD);
+
+        Assert.Equal(1000, balance);
+        Assert.Single(rows.Where(r => r.Debit > 0));
+        Assert.DoesNotContain(rows, r => r.Description.Contains("S-USD"));
     }
 
     [Fact]

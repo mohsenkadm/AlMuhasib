@@ -38,6 +38,9 @@ public class BusinessFeatureFlags
     /// <summary>أجور النقل في فواتير البيع والشراء والأقساط — معطّل افتراضياً.</summary>
     public bool TransportFees { get; set; }
 
+    /// <summary>تنوع العملات (دينار/دولار) — معطّل افتراضياً. العملة الأساسية دينار.</summary>
+    public bool MultiCurrency { get; set; }
+
     /// <summary>نسخة فاتورة للمخزن بدون مبالغ + اختيار سائق للتوصيل — معطّل افتراضياً.</summary>
     public bool WarehouseInvoiceAndDriver { get; set; }
 
