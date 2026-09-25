@@ -167,6 +167,30 @@
                 <Border x:Name="StepContentPanel" Background="{DynamicResource CardBrush}" CornerRadius="16"
                         BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Padding="20">
                     <StackPanel>
+                        <Border Visibility="{Binding IsPricingTypesStep, Converter={StaticResource BoolVis}}"
+                                Background="{DynamicResource DashboardKpiBlueLightBrush}" CornerRadius="10"
+                                Padding="12,10" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="TagMultiple" Width="18" Height="18" VerticalAlignment="Center"
+                                             Foreground="{DynamicResource DashboardKpiBlueBrush}" Margin="0,0,8,0"/>
+                                <TextBlock Text="إن لم تكن أنواع التسعير موجودة سيتم اقتراح (سعر مفرد / جملة / وكيل) — احفظها قبل تسعير المنتجات"
+                                           TextWrapping="Wrap" FontSize="12.5" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource DashboardKpiBlueBrush}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Visibility="{Binding IsProductPricingStep, Converter={StaticResource BoolVis}}"
+                                Background="{DynamicResource DashboardKpiTealLightBrush}" CornerRadius="10"
+                                Padding="12,10" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="TagOutline" Width="18" Height="18" VerticalAlignment="Center"
+                                             Foreground="{DynamicResource DashboardKpiTealBrush}" Margin="0,0,8,0"/>
+                                <TextBlock Text="يُعرض تلقائياً كل منتج بلا سعر — أكمل سعر البيع/الشراء. يُنشأ نوع التسعير الافتراضي إن لم يوجد"
+                                           TextWrapping="Wrap" FontSize="12.5" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource DashboardKpiTealBrush}"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Capital -->
                         <StackPanel Visibility="{Binding IsCapitalStep, Converter={StaticResource BoolVis}}">
                             <UniformGrid Columns="2" Margin="0,0,0,12">
