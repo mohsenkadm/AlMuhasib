@@ -57,14 +57,20 @@
                             <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12"
                                     CornerRadius="12,12,0,0">
                                 <Grid>
-                                    <TextBlock Text="الصناديق" FontSize="16" FontWeight="Bold"
-                                               Foreground="White" VerticalAlignment="Center" />
-                                    <Button HorizontalAlignment="Left"
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="الصناديق" FontSize="16" FontWeight="Bold"
+                                               Foreground="White" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1"
                                             Command="{Binding RefreshAllCommand}"
                                             Style="{StaticResource IconButton}"
                                             Width="36" Height="36"
                                             ToolTip="تحديث القاصات والحركات"
-                                            Foreground="White">
+                                            Foreground="White"
+                                            VerticalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
                                     </Button>
                                 </Grid>
@@ -360,14 +366,20 @@
                             <Border Grid.Row="0" Background="#1565C0" Padding="16,12"
                                     CornerRadius="12,12,0,0">
                                 <Grid>
-                                    <TextBlock Text="البنوك" FontSize="16" FontWeight="Bold"
-                                               Foreground="White" VerticalAlignment="Center" />
-                                    <Button HorizontalAlignment="Left"
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="البنوك" FontSize="16" FontWeight="Bold"
+                                               Foreground="White" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1"
                                             Command="{Binding RefreshAllCommand}"
                                             Style="{StaticResource IconButton}"
                                             Width="36" Height="36"
                                             ToolTip="تحديث المصارف والحركات"
-                                            Foreground="White">
+                                            Foreground="White"
+                                            VerticalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
                                     </Button>
                                 </Grid>
