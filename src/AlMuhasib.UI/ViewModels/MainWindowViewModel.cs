@@ -623,6 +623,12 @@ public partial class MainWindowViewModel : ObservableObject
             return true;
         }
 
+        if (viewModelType == typeof(MigrationWizardViewModel))
+        {
+            deniedMessage = null;
+            return true;
+        }
+
         if (viewModelType == typeof(HotelSetupWizardViewModel))
         {
             deniedMessage = null;

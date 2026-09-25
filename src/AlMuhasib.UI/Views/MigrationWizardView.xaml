@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              x:Name="Root"
@@ -12,18 +11,6 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
-        <Style x:Key="StepCircle" TargetType="Grid">
-            <Setter Property="Width" Value="36"/>
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="Margin" Value="0,0,4,0"/>
-        </Style>
-        <Style x:Key="StepConnector" TargetType="Rectangle">
-            <Setter Property="Width" Value="40"/>
-            <Setter Property="Height" Value="2"/>
-            <Setter Property="Fill" Value="#E0E0E0"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="4,0"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid Margin="0,8,0,8">
@@ -36,20 +23,17 @@
         </Grid.RowDefinitions>
 
         <!-- Hero -->
-        <Border x:Name="HeroHeader" Grid.Row="0" CornerRadius="18" Margin="20,0,20,16" Padding="24,20" Opacity="0">
+        <Border x:Name="HeroHeader" Grid.Row="0" CornerRadius="18" Margin="20,0,20,12" Padding="24,18" Opacity="0">
             <Border.RenderTransform>
                 <TranslateTransform Y="16"/>
             </Border.RenderTransform>
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#283593" Offset="0"/>
-                    <GradientStop Color="#3949AB" Offset="0.5"/>
-                    <GradientStop Color="#5C6BC0" Offset="1"/>
+                    <GradientStop Color="#1A237E" Offset="0"/>
+                    <GradientStop Color="#283593" Offset="0.55"/>
+                    <GradientStop Color="#3949AB" Offset="1"/>
                 </LinearGradientBrush>
             </Border.Background>
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.28" Color="#283593"/>
-            </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -57,370 +41,342 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <md:PackIcon Kind="DatabaseImport" Width="32" Height="32" Foreground="White"/>
-                        <TextBlock Text="معالج النقل من نظام قديم" FontSize="24" FontWeight="Bold"
-                                   Foreground="White" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                        <md:PackIcon Kind="DatabaseImport" Width="30" Height="30" Foreground="White"/>
+                        <TextBlock Text="معالج النقل من نظام قديم / Excel"
+                                   FontSize="22" FontWeight="Bold" Foreground="White" Margin="12,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <TextBlock Text="انقل عملاءك ومورديك ومنتجاتك وأرصدة الأقساط من Excel بأمان وخطوة بخطوة"
-                               FontSize="13" Foreground="#E8EAF6" TextWrapping="Wrap" MaxWidth="560"/>
+                    <TextBlock Text="أدخل البيانات يدوياً أو عبر قالب Excel لكل مرحلة — مع الحفظ قبل الانتقال للخطوة التالية"
+                               FontSize="13" Foreground="#E8EAF6" TextWrapping="Wrap" MaxWidth="640"/>
                 </StackPanel>
                 <Border Grid.Column="1" Background="#22FFFFFF" CornerRadius="12" Padding="14,10" VerticalAlignment="Center">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding StepTitle}" FontSize="13" FontWeight="SemiBold" Foreground="White"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="الخطوة الحالية" FontSize="10" Foreground="#C5CAE9"
-                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <TextBlock Text="{Binding StepTitle}" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="الخطوة الحالية" FontSize="10" Foreground="#C5CAE9" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Step indicator -->
-        <StackPanel x:Name="StepIndicator" Grid.Row="1" Orientation="Horizontal"
-                    HorizontalAlignment="Center" Margin="0,0,0,20" Opacity="0">
-            <StackPanel.RenderTransform>
+        <!-- Compact scrollable step chips -->
+        <ScrollViewer x:Name="StepIndicator" Grid.Row="1" Margin="20,0,20,12"
+                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      Opacity="0">
+            <ScrollViewer.RenderTransform>
                 <TranslateTransform Y="10"/>
-            </StackPanel.RenderTransform>
+            </ScrollViewer.RenderTransform>
+            <ItemsControl ItemsSource="{Binding Steps}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,8,0" CornerRadius="16" Padding="12,8" MinWidth="110"
+                                BorderThickness="1" BorderBrush="{DynamicResource CardBorderBrush}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSaved}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#66BB6A"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="{Binding Icon}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <md:PackIcon.Style>
+                                        <Style TargetType="md:PackIcon">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </md:PackIcon.Style>
+                                </md:PackIcon>
+                                <TextBlock Text="{Binding ShortTitle}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
-            <StackPanel Orientation="Horizontal">
-                <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep0}" Value="True">
-                                        <Setter Property="Fill" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <md:PackIcon Kind="AccountGroup" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <md:PackIcon.Style>
-                            <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep0}" Value="True">
-                                        <Setter Property="Foreground" Value="White"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </md:PackIcon.Style>
-                    </md:PackIcon>
-                </Grid>
-                <Rectangle Style="{StaticResource StepConnector}"/>
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal">
-                <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                        <Setter Property="Fill" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <md:PackIcon Kind="TruckDelivery" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <md:PackIcon.Style>
-                            <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                        <Setter Property="Foreground" Value="White"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </md:PackIcon.Style>
-                    </md:PackIcon>
-                </Grid>
-                <Rectangle Style="{StaticResource StepConnector}"/>
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal">
-                <Grid Style="{StaticResource StepCircle}">
-                    <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                        <Setter Property="Fill" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <md:PackIcon Kind="PackageVariant" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <md:PackIcon.Style>
-                            <Style TargetType="md:PackIcon">
-                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                        <Setter Property="Foreground" Value="White"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </md:PackIcon.Style>
-                    </md:PackIcon>
-                </Grid>
-                <Rectangle Style="{StaticResource StepConnector}"/>
-            </StackPanel>
-
-            <Grid Style="{StaticResource StepCircle}">
-                <Ellipse Fill="{DynamicResource SubtleBorderBrush}">
-                    <Ellipse.Style>
-                        <Style TargetType="Ellipse">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsStep3}" Value="True">
-                                    <Setter Property="Fill" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Ellipse.Style>
-                </Ellipse>
-                <md:PackIcon Kind="CashClock" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <md:PackIcon.Style>
-                        <Style TargetType="md:PackIcon">
-                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsStep3}" Value="True">
-                                    <Setter Property="Foreground" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </md:PackIcon.Style>
-                </md:PackIcon>
-            </Grid>
-        </StackPanel>
-
-        <!-- Completed banner -->
+        <!-- Completed -->
         <Border Grid.Row="2" Margin="20,0,20,12" CornerRadius="12" Padding="16,12"
-                Visibility="{Binding IsCompleted, Converter={StaticResource BoolVis}}">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#E8F5E9" Offset="0"/>
-                    <GradientStop Color="#C8E6C9" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
+                Visibility="{Binding IsCompleted, Converter={StaticResource BoolVis}}"
+                Background="{DynamicResource DashboardKpiGreenLightBrush}">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <md:PackIcon Kind="CheckCircle" Width="28" Height="28" Foreground="#2E7D32" VerticalAlignment="Center"/>
-                <TextBlock Text="اكتمل معالج النقل بنجاح — راجع البيانات في الشاشات المناسبة"
-                           FontSize="14" FontWeight="SemiBold" Foreground="#1B5E20"
-                           Margin="10,0,0,0" VerticalAlignment="Center"/>
+                <md:PackIcon Kind="CheckCircle" Width="26" Height="26" Foreground="{DynamicResource DashboardKpiGreenBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="اكتمل معالج النقل بنجاح — يمكنك متابعة العمل بشكل طبيعي"
+                           FontSize="14" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
             </StackPanel>
         </Border>
 
-        <!-- Step content -->
+        <!-- Content -->
         <ScrollViewer x:Name="StepContentScroller" Grid.Row="3"
                       VerticalScrollBarVisibility="Auto" Padding="20,0,20,8" Opacity="0">
             <ScrollViewer.RenderTransform>
                 <TranslateTransform X="-20"/>
             </ScrollViewer.RenderTransform>
 
-            <md:Card Style="{StaticResource ElevatedCard}" Padding="28" MaxWidth="860"
+            <md:Card Style="{StaticResource ElevatedCard}" Padding="24" MaxWidth="980"
                      HorizontalAlignment="Center" md:ElevationAssist.Elevation="Dp2">
-                <Grid x:Name="StepContentPanel" MinHeight="280">
-                    <Grid.RenderTransform>
-                        <TranslateTransform X="0"/>
-                    </Grid.RenderTransform>
-
-                    <!-- Shared step layout (not completed) -->
-                    <StackPanel>
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-
-                        <!-- Instructions -->
-                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,20">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStep0}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiIndigoLightBrush}"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiOrangeLightBrush}"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiGreenLightBrush}"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsStep3}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <StackPanel>
-                                <TextBlock Text="{Binding StepDescription}" FontSize="13.5"
-                                           TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" LineHeight="22"/>
-                            </StackPanel>
+                <Grid x:Name="StepContentPanel" MinHeight="320">
+                    <StackPanel Visibility="{Binding IsCompleted, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,16">
+                            <TextBlock Text="{Binding StepDescription}" FontSize="13.5" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" LineHeight="22"/>
                         </Border>
 
-                        <!-- Action buttons -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <Button Command="{Binding DownloadTemplateCommand}" Style="{StaticResource OutlinedButton}"
-                                    md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0" Padding="16,8">
+                        <!-- Capital form -->
+                        <StackPanel Visibility="{Binding IsCapitalStep, Converter={StaticResource BoolVis}}" Margin="0,0,0,12">
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="رأس المال" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox Text="{Binding CapitalAmount, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="المبلغ" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="الأرباح الافتتاحية" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox Text="{Binding ProfitOpeningBalance, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="المبلغ" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <DatePicker SelectedDate="{Binding CapitalDate}" Width="180" Margin="0,0,12,0"
+                                            md:HintAssist.Hint="التاريخ" Style="{StaticResource MaterialDesignOutlinedDatePicker}"/>
+                                <TextBox Text="{Binding CapitalNotes, UpdateSourceTrigger=PropertyChanged}" Width="320"
+                                         md:HintAssist.Hint="ملاحظات" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Mode toggle -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12"
+                                    Visibility="{Binding IsCapitalStep, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <Button Command="{Binding SetManualModeCommand}" Margin="0,0,8,0" Padding="14,8"
+                                    md:ButtonAssist.CornerRadius="8">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsManualEntryMode}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <md:PackIcon Kind="Download" VerticalAlignment="Center"/>
-                                    <TextBlock Text="تحميل القالب" Margin="8,0,0,0"/>
+                                    <md:PackIcon Kind="Keyboard" VerticalAlignment="Center"/>
+                                    <TextBlock Text="إدخال يدوي" Margin="8,0,0,0"/>
                                 </StackPanel>
                             </Button>
-                            <Button Command="{Binding BrowseFileCommand}" Style="{StaticResource OutlinedButton}"
-                                    md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0" Padding="16,8">
+                            <Button Command="{Binding SetExcelModeCommand}" Padding="14,8"
+                                    md:ButtonAssist.CornerRadius="8">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsExcelMode}" Value="True">
+                                                <Setter Property="Background" Value="#2E7D32"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <md:PackIcon Kind="FolderOpen" VerticalAlignment="Center"/>
-                                    <TextBlock Text="استعراض ملف" Margin="8,0,0,0"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding ImportStepCommand}" Style="{StaticResource PrimaryButton}"
-                                    md:ButtonAssist.CornerRadius="8" Padding="20,8"
-                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <md:PackIcon Kind="DatabaseImport" VerticalAlignment="Center"/>
-                                    <TextBlock Text="استيراد الآن" Margin="8,0,0,0"/>
+                                    <md:PackIcon Kind="FileExcel" VerticalAlignment="Center"/>
+                                    <TextBlock Text="قالب Excel واستيراد" Margin="8,0,0,0"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
 
-                        <!-- File path drop zone -->
-                        <Border BorderBrush="#BDBDBD" BorderThickness="2" CornerRadius="12"
-                                Padding="20,16" Margin="0,0,0,16" Background="{DynamicResource BackgroundBrush}">
-                            <StackPanel>
-                                <md:PackIcon Kind="FileExcel" Width="36" Height="36"
-                                             Foreground="#2E7D32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                <TextBlock Text="{Binding SelectedFilePath, TargetNullValue='لم يُختر ملف بعد — اضغط استعراض ملف'}"
-                                           TextWrapping="Wrap" HorizontalAlignment="Center"
-                                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" TextAlignment="Center"/>
-                            </StackPanel>
+                        <!-- Manual entry -->
+                        <Border Visibility="{Binding ShowManualEntryForm, Converter={StaticResource BoolVis}}"
+                                Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14" Margin="0,0,0,12"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                         Text="{Binding NewRowName, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="الاسم / المنتج / الزبون"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                <TextBox Grid.Column="1" Margin="0,0,8,0"
+                                         Text="{Binding NewRowExtra, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="إضافي (صنف/موقع/نوع)"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                <TextBox Grid.Column="2" Margin="0,0,8,0"
+                                         Text="{Binding NewRowAmount, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="مبلغ / سعر / رصيد"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                <TextBox Grid.Column="3" Margin="0,0,8,0"
+                                         Text="{Binding NewRowAmount2, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="كمية / نسبة / شراء"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                                <Button Grid.Column="4" Command="{Binding AddManualRowCommand}"
+                                        Style="{StaticResource PrimaryButton}" md:ButtonAssist.CornerRadius="8" Padding="16,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Plus" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إضافة" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </Border>
 
-                        <!-- Progress -->
-                        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,0,0,12"
+                        <!-- Excel panel -->
+                        <StackPanel Visibility="{Binding ShowExcelPanel, Converter={StaticResource BoolVis}}" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Button Command="{Binding DownloadTemplateCommand}" Style="{StaticResource OutlinedButton}"
+                                        md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0" Padding="14,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Download" VerticalAlignment="Center"/>
+                                        <TextBlock Text="تحميل القالب" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding BrowseFileCommand}" Style="{StaticResource OutlinedButton}"
+                                        md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0" Padding="14,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="FolderOpen" VerticalAlignment="Center"/>
+                                        <TextBlock Text="استعراض Excel" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding LoadPreviewCommand}" Style="{StaticResource PrimaryButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="14,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Eye" VerticalAlignment="Center"/>
+                                        <TextBlock Text="عرض في الجدول" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <Border BorderBrush="#BDBDBD" BorderThickness="1.5" CornerRadius="10" Padding="14"
+                                    Background="{DynamicResource BackgroundBrush}">
+                                <TextBlock Text="{Binding SelectedFilePath, TargetNullValue='لم يُختر ملف بعد'}"
+                                           TextWrapping="Wrap" FontSize="12.5"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </Border>
+                        </StackPanel>
+
+                        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,0,0,10"
                                      Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}"/>
 
-                        <!-- Result stats -->
-                        <UniformGrid Columns="3" Margin="0,0,0,12"
+                        <!-- Data grid -->
+                        <DataGrid ItemsSource="{Binding CurrentRows}"
+                                  Visibility="{Binding ShowDataGrid, Converter={StaticResource BoolVis}}"
+                                  AutoGenerateColumns="False" CanUserAddRows="False"
+                                  MaxHeight="280" Style="{StaticResource ModernDataGrid}"
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" IsReadOnly="False"/>
+                                <DataGridTextColumn Header="إضافي" Binding="{Binding CategoryName}" Width="100"/>
+                                <DataGridTextColumn Header="الهاتف/الباركود" Binding="{Binding Phone}" Width="110"/>
+                                <DataGridTextColumn Header="المبلغ/السعر" Binding="{Binding Amount, StringFormat=N0}" Width="100"/>
+                                <DataGridTextColumn Header="كمية/نسبة" Binding="{Binding Quantity, StringFormat=N0}" Width="90"/>
+                                <DataGridTextColumn Header="تكلفة/شراء" Binding="{Binding UnitCost, StringFormat=N0}" Width="90"/>
+                                <DataGridTextColumn Header="منتج" Binding="{Binding ProductName}" Width="110"/>
+                                <DataGridTextColumn Header="نوع تسعير" Binding="{Binding PricingTypeName}" Width="100"/>
+                                <DataGridTextColumn Header="أقساط" Binding="{Binding NumberOfInstallments}" Width="70"/>
+                                <DataGridTextColumn Header="الحالة" Binding="{Binding ErrorText}" Width="100"/>
+                                <DataGridTemplateColumn Header="" Width="50">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.RemoveRowCommand, ElementName=Root}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource MaterialDesignIconButton}"
+                                                    ToolTip="حذف الصف">
+                                                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18" Foreground="#C62828"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <UniformGrid Columns="2" Margin="0,12,0,0"
                                      Visibility="{Binding HasLastResult, Converter={StaticResource BoolVis}}">
-                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,6,0">
+                            <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12" Margin="0,0,6,0">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="مستورد" FontSize="11" Foreground="#2E7D32" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding LastImportedCount}" FontSize="22" FontWeight="Bold"
-                                               Foreground="#1B5E20" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="محفوظ" FontSize="11" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
+                                    <TextBlock Text="{Binding LastImportedCount}" FontSize="20" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="12,10" Margin="3,0">
+                            <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="10" Padding="12" Margin="6,0,0,0">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="متخطى" FontSize="11" Foreground="#EF6C00" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding LastSkippedCount}" FontSize="22" FontWeight="Bold"
-                                               Foreground="#E65100" HorizontalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="12,10" Margin="6,0,0,0">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="الحالة" FontSize="11" Foreground="#1565C0" HorizontalAlignment="Center"/>
-                                    <md:PackIcon Kind="Check" Width="22" Height="22" Foreground="#1565C0" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="متخطى" FontSize="11" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource DashboardKpiOrangeBrush}"/>
+                                    <TextBlock Text="{Binding LastSkippedCount}" FontSize="20" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource DashboardKpiOrangeBrush}"/>
                                 </StackPanel>
                             </Border>
                         </UniformGrid>
 
-                        <!-- Preview for steps 0-2 -->
-                        <StackPanel Visibility="{Binding HasPreviewRows, Converter={StaticResource BoolVis}}">
-                            <TextBlock Text="معاينة العينة" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                            <Border BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" MaxHeight="120">
-                                <ItemsControl ItemsSource="{Binding PreviewSampleRows}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       TextWrapping="Wrap" Margin="0,2"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Installment grid for step 3 -->
-                        <StackPanel>
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStep3}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,8"
-                                       Visibility="{Binding HasInstallmentRows, Converter={StaticResource BoolVis}}">
-                                <TextBlock Text="معاينة أرصدة الأقساط" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
-                                <controls:ColumnFilterToggle IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                               ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                               ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
-                                                               TargetDataGrid="{Binding ElementName=InstallmentImportPreviewGrid}"
-                                                               Margin="8,0,0,0"
-                                                               VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <DataGrid x:Name="InstallmentImportPreviewGrid"
-                                      ItemsSource="{Binding InstallmentImportRows}"
-                                      Visibility="{Binding HasInstallmentRows, Converter={StaticResource BoolVis}}"
-                                      AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="200"
-                                      Style="{StaticResource ModernDataGrid}"
-                                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                                      behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                      behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="#" Binding="{Binding RowNumber}" Width="40"
-                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RowNumber"/>
-                                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
-                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
-                                                        <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
-                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding TotalAmount, StringFormat=N0}" Width="90"
-                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
-                                    <DataGridTextColumn Header="أقساط" Binding="{Binding NumberOfInstallments}" Width="60"
-                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NumberOfInstallments"/>
-                                    <DataGridTextColumn Header="الحالة" Binding="{Binding ErrorsText}" Width="120"
-                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ErrorsText"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </StackPanel>
-
-                        <TextBlock Text="{Binding StatusMessage}" FontSize="12.5"
-                                   Foreground="{DynamicResource PrimaryHueMidBrush}"
-                                   TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding StatusMessage}" FontSize="12.5" Margin="0,10,0,0"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
             </md:Card>
         </ScrollViewer>
 
         <!-- Navigation -->
-        <Grid Grid.Row="4" Margin="20,12,20,8">
+        <Grid Grid.Row="4" Margin="20,10,20,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0" Command="{Binding PreviousStepCommand}"
                     Visibility="{Binding CanGoBack, Converter={StaticResource BoolVis}}"
-                    Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8" MinWidth="120">
+                    Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8" MinWidth="110">
                 <StackPanel Orientation="Horizontal">
                     <md:PackIcon Kind="ArrowRight" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBlock Text="السابق"/>
                 </StackPanel>
             </Button>
 
-            <Button Grid.Column="2" md:ButtonAssist.CornerRadius="8" MinWidth="140"
+            <Button Grid.Column="2" Command="{Binding SaveCurrentStepCommand}" Margin="0,0,10,0"
+                    Visibility="{Binding IsCompleted, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                    Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8" MinWidth="130"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <md:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock Text="حفظ الخطوة"/>
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Column="3" md:ButtonAssist.CornerRadius="8" MinWidth="140"
                     IsEnabled="{Binding CanGoNext}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
@@ -428,20 +384,19 @@
                         <Setter Property="Content">
                             <Setter.Value>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="التالي"/>
+                                    <TextBlock Text="حفظ والتالي"/>
                                     <md:PackIcon Kind="ArrowLeft" VerticalAlignment="Center" Margin="6,0,0,0"/>
                                 </StackPanel>
                             </Setter.Value>
                         </Setter>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsLastStep}" Value="True">
-                                <Setter Property="Command" Value="{Binding FinishCommand}"/>
                                 <Setter Property="Background" Value="#388E3C"/>
                                 <Setter Property="Content">
                                     <Setter.Value>
                                         <StackPanel Orientation="Horizontal">
                                             <md:PackIcon Kind="Check" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
-                                            <TextBlock Text="إنهاء" Foreground="White"/>
+                                            <TextBlock Text="حفظ وإنهاء" Foreground="White"/>
                                         </StackPanel>
                                     </Setter.Value>
                                 </Setter>

@@ -160,6 +160,42 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalInventoryValue;
 
+    // ── KPI sparkline values (last 14 days) ────────────────
+    public ObservableCollection<decimal> TodaySalesChartValues { get; } = [];
+    public ObservableCollection<decimal> TodayPurchasesChartValues { get; } = [];
+    public ObservableCollection<decimal> NetProfitChartValues { get; } = [];
+    public ObservableCollection<decimal> OverdueInstallmentsChartValues { get; } = [];
+    public ObservableCollection<decimal> InvestorBalanceChartValues { get; } = [];
+    public ObservableCollection<decimal> UnpaidInstallmentsChartValues { get; } = [];
+    public ObservableCollection<decimal> CustomerCreditChartValues { get; } = [];
+    public ObservableCollection<decimal> SupplierCreditChartValues { get; } = [];
+    public ObservableCollection<decimal> CashBalanceChartValues { get; } = [];
+    public ObservableCollection<decimal> BankBalanceChartValues { get; } = [];
+    public ObservableCollection<decimal> InventoryValueChartValues { get; } = [];
+
+    [ObservableProperty] private decimal? _todaySalesTrendPercent;
+    [ObservableProperty] private decimal? _todayPurchasesTrendPercent;
+    [ObservableProperty] private decimal? _netProfitTrendPercent;
+    [ObservableProperty] private decimal? _overdueInstallmentsTrendPercent;
+    [ObservableProperty] private decimal? _investorBalanceTrendPercent;
+    [ObservableProperty] private decimal? _unpaidInstallmentsTrendPercent;
+    [ObservableProperty] private decimal? _customerCreditTrendPercent;
+    [ObservableProperty] private decimal? _supplierCreditTrendPercent;
+    [ObservableProperty] private decimal? _cashBalanceTrendPercent;
+    [ObservableProperty] private decimal? _bankBalanceTrendPercent;
+    [ObservableProperty] private decimal? _inventoryValueTrendPercent;
+
+    private List<DailySalesPoint>? _cachedPurchasesPoints;
+    private List<DailySalesPoint>? _cachedNetProfitPoints;
+    private List<DailySalesPoint>? _cachedOverduePoints;
+    private List<DailySalesPoint>? _cachedInvestorPoints;
+    private List<DailySalesPoint>? _cachedUnpaidPoints;
+    private List<DailySalesPoint>? _cachedCustomerCreditPoints;
+    private List<DailySalesPoint>? _cachedSupplierCreditPoints;
+    private List<DailySalesPoint>? _cachedCashFlowPoints;
+    private List<DailySalesPoint>? _cachedBankFlowPoints;
+    private List<DailySalesPoint>? _cachedInventoryPoints;
+
     public DashboardViewModel(IDashboardService dashboardService, ISmartAlertService smartAlertService,
         MainWindowViewModel mainWindow, ICurrentUserService currentUserService)
     {
@@ -510,8 +546,20 @@ public partial class DashboardViewModel : ViewModelBase
 
                 _cachedSalesPoints = data.SalesLast30Days;
                 _cachedExpenseShares = data.ExpenseDistribution;
+                _cachedPurchasesPoints = data.PurchasesLast14Days;
+                _cachedNetProfitPoints = data.NetProfitLast14Days;
+                _cachedOverduePoints = data.OverdueInstallmentsLast14Days;
+                _cachedInvestorPoints = data.InvestorBalanceLast14Days;
+                _cachedUnpaidPoints = data.UnpaidInstallmentsLast14Days;
+                _cachedCustomerCreditPoints = data.CustomerCreditLast14Days;
+                _cachedSupplierCreditPoints = data.SupplierCreditLast14Days;
+                _cachedCashFlowPoints = data.CashFlowLast14Days;
+                _cachedBankFlowPoints = data.BankFlowLast14Days;
+                _cachedInventoryPoints = data.InventoryValueLast14Days;
+
                 BuildSalesChart(_cachedSalesPoints);
                 BuildExpenseChart(_cachedExpenseShares);
+                ApplyKpiSparklines(data);
 
                 // Tables
                 RecentTransactions.Clear();
@@ -570,8 +618,66 @@ public partial class DashboardViewModel : ViewModelBase
                 BuildSalesChart(_cachedSalesPoints);
             if (_cachedExpenseShares is not null)
                 BuildExpenseChart(_cachedExpenseShares);
+            // Sparkline paints are accent-bound; notify collections so cards rebuild.
+            RefreshSparklineCollections();
         });
         return Task.CompletedTask;
+    }
+
+    private void ApplyKpiSparklines(DashboardData data)
+    {
+        ReplaceChartValues(TodaySalesChartValues, TakeLast14(_cachedSalesPoints));
+        ReplaceChartValues(TodayPurchasesChartValues, data.PurchasesLast14Days);
+        ReplaceChartValues(NetProfitChartValues, data.NetProfitLast14Days);
+        ReplaceChartValues(OverdueInstallmentsChartValues, data.OverdueInstallmentsLast14Days);
+        ReplaceChartValues(InvestorBalanceChartValues, data.InvestorBalanceLast14Days);
+        ReplaceChartValues(UnpaidInstallmentsChartValues, data.UnpaidInstallmentsLast14Days);
+        ReplaceChartValues(CustomerCreditChartValues, data.CustomerCreditLast14Days);
+        ReplaceChartValues(SupplierCreditChartValues, data.SupplierCreditLast14Days);
+        ReplaceChartValues(CashBalanceChartValues, data.CashFlowLast14Days);
+        ReplaceChartValues(BankBalanceChartValues, data.BankFlowLast14Days);
+        ReplaceChartValues(InventoryValueChartValues, data.InventoryValueLast14Days);
+
+        TodaySalesTrendPercent = data.TodaySalesTrendPercent;
+        TodayPurchasesTrendPercent = data.TodayPurchasesTrendPercent;
+        NetProfitTrendPercent = data.NetProfitTrendPercent;
+        OverdueInstallmentsTrendPercent = data.OverdueInstallmentsTrendPercent;
+        InvestorBalanceTrendPercent = data.InvestorBalanceTrendPercent;
+        UnpaidInstallmentsTrendPercent = data.UnpaidInstallmentsTrendPercent;
+        CustomerCreditTrendPercent = data.CustomerCreditTrendPercent;
+        SupplierCreditTrendPercent = data.SupplierCreditTrendPercent;
+        CashBalanceTrendPercent = data.CashBalanceTrendPercent;
+        BankBalanceTrendPercent = data.BankBalanceTrendPercent;
+        InventoryValueTrendPercent = data.InventoryValueTrendPercent;
+    }
+
+    private void RefreshSparklineCollections()
+    {
+        ReplaceChartValues(TodaySalesChartValues, TakeLast14(_cachedSalesPoints));
+        ReplaceChartValues(TodayPurchasesChartValues, _cachedPurchasesPoints);
+        ReplaceChartValues(NetProfitChartValues, _cachedNetProfitPoints);
+        ReplaceChartValues(OverdueInstallmentsChartValues, _cachedOverduePoints);
+        ReplaceChartValues(InvestorBalanceChartValues, _cachedInvestorPoints);
+        ReplaceChartValues(UnpaidInstallmentsChartValues, _cachedUnpaidPoints);
+        ReplaceChartValues(CustomerCreditChartValues, _cachedCustomerCreditPoints);
+        ReplaceChartValues(SupplierCreditChartValues, _cachedSupplierCreditPoints);
+        ReplaceChartValues(CashBalanceChartValues, _cachedCashFlowPoints);
+        ReplaceChartValues(BankBalanceChartValues, _cachedBankFlowPoints);
+        ReplaceChartValues(InventoryValueChartValues, _cachedInventoryPoints);
+    }
+
+    private static List<DailySalesPoint> TakeLast14(List<DailySalesPoint>? points)
+    {
+        if (points is null || points.Count == 0) return [];
+        return points.Count <= 14 ? points : points.Skip(points.Count - 14).ToList();
+    }
+
+    private static void ReplaceChartValues(ObservableCollection<decimal> target, IEnumerable<DailySalesPoint>? points)
+    {
+        target.Clear();
+        if (points is null) return;
+        foreach (var p in points)
+            target.Add(p.Amount);
     }
 
     private void BuildSalesChart(List<DailySalesPoint> points)

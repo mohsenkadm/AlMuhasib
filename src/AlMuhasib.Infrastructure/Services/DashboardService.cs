@@ -376,6 +376,263 @@ public class DashboardService : IDashboardService
             System.Diagnostics.Debug.WriteLine($"Dashboard InventoryValue error: {ex.Message}");
         }
 
+        // ── KPI sparkline trends (last 14 days) ───────────────
+        try
+        {
+            await PopulateKpiTrendsAsync(context, data, today, tomorrow);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dashboard KPI trends error: {ex.Message}");
+        }
+
         return data;
+    }
+
+    private static async Task PopulateKpiTrendsAsync(
+        AppDbContext context, DashboardData data, DateTime today, DateTime tomorrow)
+    {
+        const int days = 14;
+        var from = today.AddDays(-(days - 1));
+        var prevFrom = from.AddDays(-days);
+
+        static List<DailySalesPoint> FillDays(DateTime fromDate, int dayCount, IReadOnlyDictionary<DateTime, decimal> byDay)
+        {
+            return Enumerable.Range(0, dayCount)
+                .Select(offset =>
+                {
+                    var d = fromDate.AddDays(offset);
+                    byDay.TryGetValue(d, out var amount);
+                    return new DailySalesPoint { Date = d, Amount = amount };
+                })
+                .ToList();
+        }
+
+        static decimal TrendPercent(decimal currentPeriod, decimal previousPeriod)
+        {
+            if (previousPeriod == 0)
+                return currentPeriod == 0 ? 0 : 100;
+            return Math.Round((currentPeriod - previousPeriod) / Math.Abs(previousPeriod) * 100m, 1);
+        }
+
+        // Sales last 14 (slice from 30-day series when available)
+        if (data.SalesLast30Days.Count >= days)
+        {
+            data.SalesLast30Days = data.SalesLast30Days; // keep full for main chart
+        }
+
+        var sales14 = data.SalesLast30Days
+            .Where(p => p.Date >= from && p.Date < tomorrow)
+            .ToList();
+        if (sales14.Count < days)
+        {
+            var salesRaw = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date >= from && i.Date < tomorrow)
+                .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
+                .ToListAsync();
+            var salesByDay = salesRaw
+                .GroupBy(i => i.Date.Date)
+                .ToDictionary(g => g.Key, g => g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount)));
+            sales14 = FillDays(from, days, salesByDay);
+        }
+        else
+        {
+            sales14 = FillDays(from, days, sales14.ToDictionary(p => p.Date.Date, p => p.Amount));
+        }
+
+        var salesPrev = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
+                .Where(i => i.Date >= prevFrom && i.Date < from));
+        var salesCurr = sales14.Sum(p => p.Amount);
+        data.TodaySalesTrendPercent = TrendPercent(salesCurr, salesPrev);
+
+        // Purchases last 14
+        var purchaseRaw = await InvoiceFilters.ForPurchasesTotals(context.Invoices)
+            .Where(i => i.Date >= from && i.Date < tomorrow)
+            .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
+            .ToListAsync();
+        var purchasesByDay = purchaseRaw
+            .GroupBy(i => i.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount)));
+        data.PurchasesLast14Days = FillDays(from, days, purchasesByDay);
+        var purchasesPrev = await InvoiceSignedSums.SumSignedNetAsync(
+            InvoiceFilters.ForPurchasesTotals(context.Invoices)
+                .Where(i => i.Date >= prevFrom && i.Date < from));
+        data.TodayPurchasesTrendPercent = TrendPercent(data.PurchasesLast14Days.Sum(p => p.Amount), purchasesPrev);
+
+        // Daily expenses
+        var expenseRaw = await context.Expenses
+            .Where(e => e.Date >= from && e.Date < tomorrow)
+            .Select(e => new { e.Date, e.Amount })
+            .ToListAsync();
+        var expensesByDay = expenseRaw
+            .GroupBy(e => e.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+
+        data.NetProfitLast14Days = Enumerable.Range(0, days)
+            .Select(offset =>
+            {
+                var d = from.AddDays(offset);
+                purchasesByDay.TryGetValue(d, out var purch);
+                expensesByDay.TryGetValue(d, out var exp);
+                var sale = sales14.FirstOrDefault(s => s.Date == d)?.Amount ?? 0;
+                return new DailySalesPoint { Date = d, Amount = sale - purch - exp };
+            })
+            .ToList();
+
+        var expensesPrev = await context.Expenses
+            .Where(e => e.Date >= prevFrom && e.Date < from)
+            .SumAsync(e => (decimal?)e.Amount) ?? 0;
+        var profitCurr = data.NetProfitLast14Days.Sum(p => p.Amount);
+        var profitPrev = salesPrev - purchasesPrev - expensesPrev;
+        data.NetProfitTrendPercent = TrendPercent(profitCurr, profitPrev);
+
+        // Overdue installment counts by due date (snapshot of currently unpaid)
+        var overdueRaw = await context.Installments
+            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate < tomorrow && i.DueDate >= from)
+            .Select(i => new { i.DueDate, i.RemainingAmount })
+            .ToListAsync();
+        var overdueByDay = overdueRaw
+            .GroupBy(i => i.DueDate.Date)
+            .ToDictionary(g => g.Key, g => (decimal)g.Count());
+        data.OverdueInstallmentsLast14Days = FillDays(from, days, overdueByDay);
+        var overduePrevCount = await context.Installments
+            .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate >= prevFrom && i.DueDate < from);
+        data.OverdueInstallmentsTrendPercent = TrendPercent(
+            data.OverdueInstallmentsLast14Days.Sum(p => p.Amount), overduePrevCount);
+
+        // Investor net daily flow (deposit - withdrawal)
+        var invTx = await context.InvestorTransactions
+            .Where(t => t.Date >= from && t.Date < tomorrow)
+            .Select(t => new { t.Date, t.Type, t.Amount })
+            .ToListAsync();
+        var invByDay = invTx
+            .GroupBy(t => t.Date.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(t => t.Type == InvestorTransactionType.Deposit ? t.Amount
+                    : t.Type == InvestorTransactionType.Withdrawal ? -t.Amount
+                    : 0));
+        // Reconstruct approximate running balance ending at current InvestorBalance
+        var flowSeries = FillDays(from, days, invByDay);
+        var flowSum = flowSeries.Sum(p => p.Amount);
+        var startBalance = data.InvestorBalance - flowSum;
+        var running = startBalance;
+        data.InvestorBalanceLast14Days = flowSeries.Select(p =>
+        {
+            running += p.Amount;
+            return new DailySalesPoint { Date = p.Date, Amount = running };
+        }).ToList();
+        var invPrevTx = await context.InvestorTransactions
+            .Where(t => t.Date >= prevFrom && t.Date < from)
+            .Select(t => new { t.Type, t.Amount })
+            .ToListAsync();
+        var invPrevFlow = invPrevTx.Sum(t => t.Type == InvestorTransactionType.Deposit ? t.Amount
+            : t.Type == InvestorTransactionType.Withdrawal ? -t.Amount
+            : 0);
+        data.InvestorBalanceTrendPercent = TrendPercent(flowSum, invPrevFlow);
+
+        // Unpaid installment remaining by due date in window
+        var unpaidRaw = await context.Installments
+            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= from && i.DueDate < tomorrow)
+            .Select(i => new { i.DueDate, i.RemainingAmount })
+            .ToListAsync();
+        var unpaidByDay = unpaidRaw
+            .GroupBy(i => i.DueDate.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingAmount));
+        data.UnpaidInstallmentsLast14Days = FillDays(from, days, unpaidByDay);
+        var unpaidPrev = await context.Installments
+            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= prevFrom && i.DueDate < from)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        data.UnpaidInstallmentsTrendPercent = TrendPercent(
+            data.UnpaidInstallmentsLast14Days.Sum(p => p.Amount), unpaidPrev);
+
+        // Customer credit invoices created per day
+        var custCreditRaw = await context.Invoices
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date >= from && i.Date < tomorrow)
+            .Select(i => new { i.Date, i.RemainingAmount })
+            .ToListAsync();
+        var custByDay = custCreditRaw
+            .GroupBy(i => i.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingAmount));
+        data.CustomerCreditLast14Days = FillDays(from, days, custByDay);
+        var custPrev = await context.Invoices
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date >= prevFrom && i.Date < from)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        data.CustomerCreditTrendPercent = TrendPercent(
+            data.CustomerCreditLast14Days.Sum(p => p.Amount), custPrev);
+
+        // Supplier credit
+        var suppCreditRaw = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date >= from && i.Date < tomorrow)
+            .Select(i => new { i.Date, i.RemainingAmount })
+            .ToListAsync();
+        var suppByDay = suppCreditRaw
+            .GroupBy(i => i.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingAmount));
+        data.SupplierCreditLast14Days = FillDays(from, days, suppByDay);
+        var suppPrev = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date >= prevFrom && i.Date < from)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        data.SupplierCreditTrendPercent = TrendPercent(
+            data.SupplierCreditLast14Days.Sum(p => p.Amount), suppPrev);
+
+        // Cash flow from vouchers linked to cash boxes (receipt +, payment -)
+        var cashVouchers = await context.Vouchers
+            .Where(v => v.BankAccountId == null && v.Date >= from && v.Date < tomorrow)
+            .Select(v => new { v.Date, v.VoucherType, v.Amount })
+            .ToListAsync();
+        var cashByDay = cashVouchers
+            .GroupBy(v => v.Date.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount
+                    : v.VoucherType == VoucherType.Payment ? -v.Amount
+                    : 0));
+        data.CashFlowLast14Days = FillDays(from, days, cashByDay);
+        var cashPrevRaw = await context.Vouchers
+            .Where(v => v.BankAccountId == null && v.Date >= prevFrom && v.Date < from)
+            .Select(v => new { v.VoucherType, v.Amount })
+            .ToListAsync();
+        var cashPrev = cashPrevRaw.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount
+            : v.VoucherType == VoucherType.Payment ? -v.Amount
+            : 0);
+        data.CashBalanceTrendPercent = TrendPercent(data.CashFlowLast14Days.Sum(p => p.Amount), cashPrev);
+
+        // Bank flow
+        var bankVouchers = await context.Vouchers
+            .Where(v => v.BankAccountId != null && v.Date >= from && v.Date < tomorrow)
+            .Select(v => new { v.Date, v.VoucherType, v.Amount })
+            .ToListAsync();
+        var bankByDay = bankVouchers
+            .GroupBy(v => v.Date.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount
+                    : v.VoucherType == VoucherType.Payment ? -v.Amount
+                    : 0));
+        data.BankFlowLast14Days = FillDays(from, days, bankByDay);
+        var bankPrevRaw = await context.Vouchers
+            .Where(v => v.BankAccountId != null && v.Date >= prevFrom && v.Date < from)
+            .Select(v => new { v.VoucherType, v.Amount })
+            .ToListAsync();
+        var bankPrev = bankPrevRaw.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount
+            : v.VoucherType == VoucherType.Payment ? -v.Amount
+            : 0);
+        data.BankBalanceTrendPercent = TrendPercent(data.BankFlowLast14Days.Sum(p => p.Amount), bankPrev);
+
+        // Inventory proxy: purchase net amounts per day (stock inflow value)
+        data.InventoryValueLast14Days = data.PurchasesLast14Days
+            .Select(p => new DailySalesPoint { Date = p.Date, Amount = p.Amount })
+            .ToList();
+        data.InventoryValueTrendPercent = data.TodayPurchasesTrendPercent;
     }
 }

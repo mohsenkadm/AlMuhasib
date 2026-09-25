@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Media;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Services;
 using LiveChartsCore;
@@ -199,6 +200,40 @@ public static class ChartThemeConfig
         AnimationsSpeed = TimeSpan.FromMilliseconds(800),
         EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut
     };
+
+    /// <summary>Compact sparkline for KPI cards (no markers, soft area fill).</summary>
+    public static LineSeries<decimal> Sparkline(decimal[] values, SKColor accent) => new()
+    {
+        Values = values,
+        Name = string.Empty,
+        Stroke = new SolidColorPaint(accent, _isDark ? 2.2f : 2f),
+        GeometrySize = 0,
+        GeometryStroke = null,
+        GeometryFill = null,
+        Fill = new SolidColorPaint(accent.WithAlpha((byte)(_isDark ? 70 : 45))),
+        LineSmoothness = 0.7,
+        AnimationsSpeed = TimeSpan.FromMilliseconds(450),
+        EasingFunction = LiveChartsCore.EasingFunctions.QuadraticOut,
+        IsHoverable = false
+    };
+
+    /// <summary>Hidden axes for sparkline charts inside KPI cards.</summary>
+    public static Axis CreateSparklineAxis(bool isY = false) => new()
+    {
+        IsVisible = false,
+        LabelsPaint = null,
+        SeparatorsPaint = null
+    };
+
+    public static SKColor BrushToSkColor(Brush? brush, SKColor fallback)
+    {
+        if (brush is SolidColorBrush solid)
+        {
+            var c = solid.Color;
+            return new SKColor(c.R, c.G, c.B, c.A);
+        }
+        return fallback;
+    }
 
     /// <summary>Styled PieSeries slice.</summary>
     public static PieSeries<decimal> Pie(decimal value, string name, int colorIndex, bool isDoughnut = true) => new()
