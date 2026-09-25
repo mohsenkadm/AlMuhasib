@@ -5,6 +5,7 @@ using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,22 +21,35 @@ public partial class CashBankViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
+    private readonly IFeatureFlagService _featureFlags;
 
     public CashBankViewModel(
         ICashBankService cashBankService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        MainWindowViewModel mainWindow)
+        MainWindowViewModel mainWindow,
+        IFeatureFlagService featureFlags)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
+        _featureFlags = featureFlags;
         PageTitle = "القاصات والمصرف";
         TransferPager.Bind(LoadTransfersAsync);
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
+        SelectedCashBoxCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
+        SelectedBankCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
+        _featureFlags.FlagsChanged += (_, _) =>
+            FeatureUiRefresh.Invoke(() => ShowMultiCurrency = _featureFlags.MultiCurrency);
     }
+
+    [ObservableProperty] private bool _showMultiCurrency;
+    [ObservableProperty] private CurrencyOption? _selectedCashBoxCurrencyOption;
+    [ObservableProperty] private CurrencyOption? _selectedBankCurrencyOption;
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
     // ── Tab selection ──────────────────────────────────────
     [ObservableProperty]
@@ -359,7 +373,12 @@ public partial class CashBankViewModel : ViewModelBase
             }
             else
             {
-                await _cashBankService.AddCashBoxAsync(NewCashBoxName.Trim(), NewCashBoxBalance);
+                await _cashBankService.AddCashBoxAsync(
+                    NewCashBoxName.Trim(),
+                    NewCashBoxBalance,
+                    ShowMultiCurrency
+                        ? (SelectedCashBoxCurrencyOption?.Currency ?? AccountingCurrency.IQD)
+                        : AccountingCurrency.IQD);
             }
 
             IsAddCashBoxVisible = false;
@@ -586,7 +605,13 @@ public partial class CashBankViewModel : ViewModelBase
             if (IsEditBankMode && EditingBankId is int id)
                 await _cashBankService.UpdateBankAccountAsync(id, NewBankName.Trim(), accNum);
             else
-                await _cashBankService.AddBankAccountAsync(NewBankName.Trim(), accNum, NewBankBalance);
+                await _cashBankService.AddBankAccountAsync(
+                    NewBankName.Trim(),
+                    accNum,
+                    NewBankBalance,
+                    ShowMultiCurrency
+                        ? (SelectedBankCurrencyOption?.Currency ?? AccountingCurrency.IQD)
+                        : AccountingCurrency.IQD);
 
             IsAddBankVisible = false;
             IsEditBankMode = false;

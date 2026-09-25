@@ -76,7 +76,14 @@ public class ExpenseService : IExpenseService
         await context.SaveChangesAsync();
     }
 
-    public async Task<Expense> AddExpenseAsync(int expenseTypeId, decimal amount, DateTime date, int cashBoxId, string? notes)
+    public async Task<Expense> AddExpenseAsync(
+        int expenseTypeId,
+        decimal amount,
+        DateTime date,
+        int cashBoxId,
+        string? notes,
+        AccountingCurrency? currency = null,
+        decimal fxRate = 1m)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -84,11 +91,23 @@ public class ExpenseService : IExpenseService
         {
             var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
                 ?? throw new InvalidOperationException("القاصة غير موجودة");
+            var resolvedCurrency = currency ?? cashBox.Currency;
+            if (cashBox.Currency != resolvedCurrency)
+                throw new InvalidOperationException("عملة المصروف يجب أن تطابق عملة القاصة المختارة");
             if (cashBox.Balance < amount)
                 throw new InvalidOperationException($"رصيد القاصة غير كافٍ. الرصيد الحالي: {cashBox.Balance:N0}");
 
             cashBox.Balance -= amount;
-            var expense = new Expense { ExpenseTypeId = expenseTypeId, Amount = amount, Date = date, CashBoxId = cashBoxId, Notes = notes };
+            var expense = new Expense
+            {
+                ExpenseTypeId = expenseTypeId,
+                Amount = amount,
+                Date = date,
+                CashBoxId = cashBoxId,
+                Notes = notes,
+                Currency = resolvedCurrency,
+                FxRate = fxRate > 0 ? fxRate : 1m
+            };
             await context.Expenses.AddAsync(expense);
             await context.SaveChangesAsync();
 

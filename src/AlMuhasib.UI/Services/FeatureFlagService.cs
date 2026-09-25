@@ -26,6 +26,7 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool LoyaltySystem => Current.LoyaltySystem;
     public bool ProductOffers => Current.ProductOffers;
     public bool TransportFees => Current.TransportFees;
+    public bool MultiCurrency => Current.MultiCurrency;
     public bool WarehouseInvoiceAndDriver => Current.WarehouseInvoiceAndDriver;
     public bool SalesRepresentatives => Current.SalesRepresentatives;
     public bool DamageInvoices => Current.DamageInvoices;

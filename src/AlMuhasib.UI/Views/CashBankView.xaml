@@ -160,6 +160,14 @@
                                              Style="{StaticResource FilledTextBox}"
                                              FontSize="13" Margin="0,0,0,8"
                                              IsEnabled="{Binding IsEditCashBoxMode, Converter={StaticResource InverseBooleanConverter}}" />
+                                    <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                              SelectedItem="{Binding SelectedCashBoxCurrencyOption}"
+                                              DisplayMemberPath="DisplayName"
+                                              materialDesign:HintAssist.Hint="عملة القاصة"
+                                              Style="{StaticResource FilledComboBox}"
+                                              FontSize="13" Margin="0,0,0,8"
+                                              IsEnabled="{Binding IsEditCashBoxMode, Converter={StaticResource InverseBooleanConverter}}"
+                                              Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                         <Button Content="حفظ" Command="{Binding SaveCashBoxCommand}"
                                                 Style="{StaticResource PrimaryButton}"
@@ -477,6 +485,14 @@
                                              Style="{StaticResource FilledTextBox}"
                                              FontSize="13" Margin="0,0,0,8"
                                              IsEnabled="{Binding IsEditBankMode, Converter={StaticResource InverseBooleanConverter}}" />
+                                    <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                              SelectedItem="{Binding SelectedBankCurrencyOption}"
+                                              DisplayMemberPath="DisplayName"
+                                              materialDesign:HintAssist.Hint="عملة الحساب"
+                                              Style="{StaticResource FilledComboBox}"
+                                              FontSize="13" Margin="0,0,0,8"
+                                              IsEnabled="{Binding IsEditBankMode, Converter={StaticResource InverseBooleanConverter}}"
+                                              Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                         <Button Content="حفظ" Command="{Binding SaveBankCommand}"
                                                 Style="{StaticResource PrimaryButton}"

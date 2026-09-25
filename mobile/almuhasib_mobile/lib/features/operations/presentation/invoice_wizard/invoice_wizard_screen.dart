@@ -488,6 +488,47 @@ class _PaymentStep extends StatelessWidget {
                   ),
                 ).fadeSlideInList(index: index, slideY: 0.05);
               }),
+              if (controller.multiCurrencyEnabled.value) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('دينار'),
+                        selected: controller.currency.value == 0,
+                        onSelected: (_) {
+                          controller.currency.value = 0;
+                          controller.fxRate.value = 1;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('دولار'),
+                        selected: controller.currency.value == 1,
+                        onSelected: (_) => controller.currency.value = 1,
+                      ),
+                    ),
+                  ],
+                ),
+                if (controller.currency.value == 1) ...[
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: controller.fxRate.value.toString(),
+                    decoration: const InputDecoration(
+                      labelText: 'سعر الصرف (دولار → دينار)',
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) {
+                      final parsed = double.tryParse(v.replaceAll(',', ''));
+                      if (parsed != null && parsed > 0) {
+                        controller.fxRate.value = parsed;
+                      }
+                    },
+                  ),
+                ],
+              ],
               if (controller.paymentMethod.value == 0) ...[
                 const SizedBox(height: 4),
                 _PickerButton(
@@ -497,8 +538,19 @@ class _PaymentStep extends StatelessWidget {
                   filled: controller.cashBox.value != null,
                   onPressed: () => controller.pickLookup(
                     title: 'select_cashbox'.tr(),
-                    loader: (search) =>
-                        AppServices.data.getCashBoxes(search: search),
+                    loader: (search) async {
+                      final boxes =
+                          await AppServices.data.getCashBoxes(search: search);
+                      if (!controller.multiCurrencyEnabled.value) {
+                        return boxes;
+                      }
+                      final code =
+                          controller.currency.value == 1 ? 'USD' : 'IQD';
+                      return boxes
+                          .where((b) =>
+                              (b.extra ?? 'IQD').toUpperCase() == code)
+                          .toList();
+                    },
                     onSelected: (cashBox) =>
                         controller.cashBox.value = cashBox,
                   ),

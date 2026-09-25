@@ -67,6 +67,8 @@ public sealed class CreateInvoiceRequest
     public Guid? SupplierSyncId { get; set; }
     public Guid WarehouseSyncId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public Guid? CashBoxSyncId { get; set; }
     public DateTime Date { get; set; }
     public DateTime? CreditDueDate { get; set; }
@@ -99,6 +101,7 @@ public sealed class UpdateBusinessSettingsRequest
     public bool UpdateProductPriceOnPurchase { get; set; }
     public bool? PeriodLockEnabled { get; set; }
     public DateTime? LockedThroughDate { get; set; }
+    public bool? MultiCurrencyEnabled { get; set; }
 }
 
 public sealed class UpsertCashBoxRequest
@@ -106,6 +109,7 @@ public sealed class UpsertCashBoxRequest
     public Guid? SyncId { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal OpeningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public sealed class UpsertBankAccountRequest
@@ -114,6 +118,7 @@ public sealed class UpsertBankAccountRequest
     public string Name { get; set; } = string.Empty;
     public string? AccountNumber { get; set; }
     public decimal OpeningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public sealed class UpsertExpenseTypeRequest
@@ -126,6 +131,8 @@ public sealed class CreateVoucherRequest
 {
     public Guid? SyncId { get; set; }
     public VoucherType VoucherType { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public Guid? CustomerSyncId { get; set; }
@@ -141,6 +148,8 @@ public sealed class CreateExpenseRequest
 {
     public Guid? SyncId { get; set; }
     public Guid ExpenseTypeSyncId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public Guid CashBoxSyncId { get; set; }
@@ -154,6 +163,8 @@ public sealed class CreateTransferRequest
     public Guid FromSyncId { get; set; }
     public TransferAccountType ToType { get; set; }
     public Guid ToSyncId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }

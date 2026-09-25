@@ -34,7 +34,7 @@ public class CashBankService : ICashBankService
         return await context.CashBoxes.ToListAsync();
     }
 
-    public async Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0)
+    public async Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var username = _currentUserService.Username;
@@ -42,6 +42,7 @@ public class CashBankService : ICashBankService
         {
             Name = name,
             Balance = initialBalance,
+            Currency = currency,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };
@@ -56,7 +57,7 @@ public class CashBankService : ICashBankService
                 Action = AuditAction.Add,
                 EntityName = "CashBox",
                 EntityId = cashBox.Id,
-                NewValues = $"قاصة: {name}, الرصيد: {initialBalance:N0}",
+                NewValues = $"قاصة: {name}, الرصيد: {initialBalance:N0}, العملة: {currency}",
                 Timestamp = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
@@ -149,7 +150,7 @@ public class CashBankService : ICashBankService
         return await context.BankAccounts.ToListAsync();
     }
 
-    public async Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0)
+    public async Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var username = _currentUserService.Username;
@@ -158,6 +159,7 @@ public class CashBankService : ICashBankService
             Name = name,
             AccountNumber = accountNumber,
             Balance = initialBalance,
+            Currency = currency,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };
@@ -172,7 +174,7 @@ public class CashBankService : ICashBankService
                 Action = AuditAction.Add,
                 EntityName = "BankAccount",
                 EntityId = bank.Id,
-                NewValues = $"مصرف: {name}, الرصيد: {initialBalance:N0}",
+                NewValues = $"مصرف: {name}, الرصيد: {initialBalance:N0}, العملة: {currency}",
                 Timestamp = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
@@ -335,10 +337,14 @@ public class CashBankService : ICashBankService
         {
             var username = _currentUserService.Username;
 
+            AccountingCurrency fromCurrency;
+            AccountingCurrency toCurrency;
+
             if (fromType == TransferAccountType.CashBox)
             {
                 var cashBox = await context.CashBoxes.FindAsync(fromId)
                     ?? throw new InvalidOperationException("القاصة المصدر غير موجودة");
+                fromCurrency = cashBox.Currency;
                 if (cashBox.Balance < amount)
                     throw new InvalidOperationException($"رصيد القاصة ({cashBox.Balance:N0}) غير كافٍ للتحويل ({amount:N0})");
                 cashBox.Balance -= amount;
@@ -349,6 +355,7 @@ public class CashBankService : ICashBankService
             {
                 var bank = await context.BankAccounts.FindAsync(fromId)
                     ?? throw new InvalidOperationException("المصرف المصدر غير موجود");
+                fromCurrency = bank.Currency;
                 if (bank.Balance < amount)
                     throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ للتحويل ({amount:N0})");
                 bank.Balance -= amount;
@@ -360,6 +367,7 @@ public class CashBankService : ICashBankService
             {
                 var cashBox = await context.CashBoxes.FindAsync(toId)
                     ?? throw new InvalidOperationException("القاصة الهدف غير موجودة");
+                toCurrency = cashBox.Currency;
                 cashBox.Balance += amount;
                 cashBox.UpdatedBy = username;
                 cashBox.UpdatedAt = DateTime.UtcNow;
@@ -368,15 +376,21 @@ public class CashBankService : ICashBankService
             {
                 var bank = await context.BankAccounts.FindAsync(toId)
                     ?? throw new InvalidOperationException("المصرف الهدف غير موجود");
+                toCurrency = bank.Currency;
                 bank.Balance += amount;
                 bank.UpdatedBy = username;
                 bank.UpdatedAt = DateTime.UtcNow;
             }
 
+            if (fromCurrency != toCurrency)
+                throw new InvalidOperationException("لا يمكن التحويل بين قاصة/حساب بعملتين مختلفتين. أنشئ تحويلاً ضمن نفس العملة فقط.");
+
             var transfer = new Transfer
             {
                 FromType = fromType, FromId = fromId,
                 ToType = toType, ToId = toId,
+                Currency = fromCurrency,
+                FxRate = 1m,
                 Amount = amount, Date = DateTime.Now,
                 Notes = notes, CreatedBy = username, CreatedAt = DateTime.UtcNow
             };
@@ -545,6 +559,24 @@ public class CashBankService : ICashBankService
             var username = _currentUserService.Username;
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
+
+            if (voucher.FxRate <= 0)
+                voucher.FxRate = 1m;
+
+            var cashBoxForCurrency = await context.CashBoxes.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == voucher.CashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+            if (cashBoxForCurrency.Currency != voucher.Currency)
+                throw new InvalidOperationException("عملة السند يجب أن تطابق عملة القاصة المختارة");
+
+            if (voucher.BankAccountId.HasValue)
+            {
+                var bank = await context.BankAccounts.AsNoTracking()
+                    .FirstOrDefaultAsync(b => b.Id == voucher.BankAccountId.Value)
+                    ?? throw new InvalidOperationException("المصرف غير موجود");
+                if (bank.Currency != voucher.Currency)
+                    throw new InvalidOperationException("عملة السند يجب أن تطابق عملة المصرف المختار");
+            }
 
             // Always assign server-side to avoid stale UI numbers and soft-delete collisions.
             voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);

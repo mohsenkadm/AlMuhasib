@@ -218,6 +218,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             LockedThroughDate = request.PeriodLockEnabled == false
                 ? null
                 : request.LockedThroughDate ?? existing?.LockedThroughDate,
+            MultiCurrencyEnabled = request.MultiCurrencyEnabled ?? existing?.MultiCurrencyEnabled ?? false,
             CreatedAt = existing?.CreatedAt ?? now,
             CreatedBy = existing?.CreatedBy ?? username,
             UpdatedAt = now,
@@ -243,7 +244,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             ProductPricingEnabled = saved.ProductPricingEnabled,
             UpdateProductPriceOnPurchase = saved.UpdateProductPriceOnPurchase,
             PeriodLockEnabled = saved.PeriodLockEnabled,
-            LockedThroughDate = saved.LockedThroughDate
+            LockedThroughDate = saved.LockedThroughDate,
+            MultiCurrencyEnabled = saved.MultiCurrencyEnabled
         };
     }
 
@@ -302,6 +304,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SupplierSyncId = request.SupplierSyncId,
             WarehouseSyncId = request.WarehouseSyncId,
             PaymentMethod = request.PaymentMethod,
+            Currency = request.Currency,
+            FxRate = request.FxRate <= 0 ? 1m : request.FxRate,
             TotalAmount = subtotal,
             DiscountAmount = request.DiscountAmount,
             NetAmount = netAmount,
@@ -434,6 +438,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             Name = request.Name.Trim(),
             Balance = request.OpeningBalance,
+            Currency = request.Currency,
             CreatedAt = now,
             CreatedBy = username
         };
@@ -453,6 +458,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Name = request.Name.Trim(),
             AccountNumber = request.AccountNumber,
             Balance = request.OpeningBalance,
+            Currency = request.Currency,
             CreatedAt = now,
             CreatedBy = username
         };
@@ -500,6 +506,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             VoucherNumber = string.Empty,
             VoucherType = request.VoucherType,
+            Currency = request.Currency,
+            FxRate = request.FxRate <= 0 ? 1m : request.FxRate,
             Amount = request.Amount,
             BankFees = request.BankFees,
             CustomerSyncId = request.CustomerSyncId,
@@ -557,6 +565,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         {
             SyncId = syncId,
             ExpenseTypeSyncId = request.ExpenseTypeSyncId,
+            Currency = request.Currency,
+            FxRate = request.FxRate <= 0 ? 1m : request.FxRate,
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             CashBoxSyncId = request.CashBoxSyncId,
@@ -618,6 +628,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             FromSyncId = request.FromSyncId,
             ToType = request.ToType,
             ToSyncId = request.ToSyncId,
+            Currency = request.Currency,
+            FxRate = request.FxRate <= 0 ? 1m : request.FxRate,
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             Notes = request.Notes,

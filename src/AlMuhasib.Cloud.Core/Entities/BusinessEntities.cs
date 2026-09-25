@@ -49,6 +49,7 @@ public class CloudBusinessSettings : CloudBaseEntity
     public bool UpdateProductPriceOnPurchase { get; set; }
     public bool PeriodLockEnabled { get; set; }
     public DateTime? LockedThroughDate { get; set; }
+    public bool MultiCurrencyEnabled { get; set; }
 }
 public class CloudWarehouse : CloudBaseEntity { public string Name { get; set; } = string.Empty; public string? Location { get; set; } }
 public class CloudCustomer : CloudBaseEntity
@@ -68,12 +69,24 @@ public class CloudSupplier : CloudBaseEntity
     public string? Address { get; set; }
     public string? Notes { get; set; }
 }
-public class CloudCashBox : CloudBaseEntity { public string Name { get; set; } = string.Empty; public decimal Balance { get; set; } }
+public class CloudCashBox : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+}
 public class CloudBankAccount : CloudBaseEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? AccountNumber { get; set; }
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+}
+public class CloudExchangeRate : CloudBaseEntity
+{
+    public DateTime RateDate { get; set; } = DateTime.Today;
+    public decimal UsdToIqd { get; set; }
+    public string Notes { get; set; } = string.Empty;
 }
 public class CloudInvestor : CloudBaseEntity
 {
@@ -144,6 +157,8 @@ public class CloudInvoice : CloudBaseEntity
     public int? SupplierId { get; set; }
     public int WarehouseId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal NetAmount { get; set; }
@@ -228,6 +243,8 @@ public class CloudVoucher : CloudBaseEntity
 {
     public string VoucherNumber { get; set; } = string.Empty;
     public VoucherType VoucherType { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public int? CustomerId { get; set; }
@@ -253,6 +270,8 @@ public class CloudVoucher : CloudBaseEntity
 public class CloudExpense : CloudBaseEntity
 {
     public int ExpenseTypeId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public int CashBoxId { get; set; }
@@ -266,6 +285,8 @@ public class CloudTransfer : CloudBaseEntity
     public int FromId { get; set; }
     public TransferAccountType ToType { get; set; }
     public int ToId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }

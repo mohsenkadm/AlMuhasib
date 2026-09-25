@@ -46,6 +46,21 @@ public class InvoiceService : IInvoiceService
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
 
+            if (invoice.FxRate <= 0)
+                invoice.FxRate = 1m;
+
+            if (invoice.CashBoxId.HasValue)
+            {
+                var cashBoxCurrency = await context.CashBoxes.AsNoTracking()
+                    .Where(c => c.Id == invoice.CashBoxId.Value)
+                    .Select(c => (AccountingCurrency?)c.Currency)
+                    .FirstOrDefaultAsync();
+                if (cashBoxCurrency is null)
+                    throw new InvalidOperationException("القاصة غير موجودة");
+                if (cashBoxCurrency.Value != invoice.Currency)
+                    throw new InvalidOperationException("عملة الفاتورة يجب أن تطابق عملة القاصة المختارة");
+            }
+
             var itemsList = items.ToList();
             decimal subtotal = 0m;
             foreach (var item in itemsList)

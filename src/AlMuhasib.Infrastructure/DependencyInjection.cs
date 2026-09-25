@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IPackagingTypeService, PackagingTypeService>();
         services.AddScoped<IProductPriceService, ProductPriceService>();
         services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
+        services.AddScoped<IExchangeRateService, ExchangeRateService>();
         services.AddScoped<IAccountingPeriodLockService, AccountingPeriodLockService>();
         services.AddScoped<ICustomFieldSettingsService, CustomFieldSettingsService>();
         services.AddScoped<LoyaltyService>();

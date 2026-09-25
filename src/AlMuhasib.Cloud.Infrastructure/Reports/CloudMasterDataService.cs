@@ -183,7 +183,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             ProductPricingEnabled = settings.ProductPricingEnabled,
             UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase,
             PeriodLockEnabled = settings.PeriodLockEnabled,
-            LockedThroughDate = settings.LockedThroughDate
+            LockedThroughDate = settings.LockedThroughDate,
+            MultiCurrencyEnabled = settings.MultiCurrencyEnabled
         };
     }
 
@@ -309,7 +310,14 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         }
 
         return query.OrderBy(c => c.Name)
-            .Select(c => new LookupItem { Id = c.Id, SyncId = c.SyncId, Name = c.Name })
+            .Select(c => new LookupItem
+            {
+                Id = c.Id,
+                SyncId = c.SyncId,
+                Name = c.Name,
+                Extra = c.Currency.ToString(),
+                Balance = c.Balance
+            })
             .ToListAsync(ct);
     }
 
@@ -323,7 +331,14 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         }
 
         return query.OrderBy(b => b.Name)
-            .Select(b => new LookupItem { Id = b.Id, SyncId = b.SyncId, Name = b.Name })
+            .Select(b => new LookupItem
+            {
+                Id = b.Id,
+                SyncId = b.SyncId,
+                Name = b.Name,
+                Extra = b.Currency.ToString(),
+                Balance = b.Balance
+            })
             .ToListAsync(ct);
     }
 
