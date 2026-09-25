@@ -1027,7 +1027,7 @@ public sealed partial class CloudReportService
         // Add transfers
         var cashBoxes = cashBoxId.HasValue
             ? await context.CashBoxes.Where(c => c.Id == cashBoxId.Value).ToListAsync()
-            : await context.CashBoxes.ToListAsync();
+            : await context.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).ToListAsync();
         var ids = cashBoxes.Select(c => c.Id).ToHashSet();
         var nameMap = cashBoxes.ToDictionary(c => c.Id, c => c.Name);
 
