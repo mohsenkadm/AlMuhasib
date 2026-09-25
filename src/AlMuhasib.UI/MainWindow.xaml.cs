@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => UpdateMaximizeIcon();
         Loaded += OnFirstLoaded;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.SplitLayoutChanged += OnSplitLayoutChanged;
         PreviewKeyDown += OnPreviewKeyDown;
         PreviewMouseDown += (_, _) => TouchActivity();
         PreviewMouseMove += (_, _) => TouchActivity();
@@ -321,5 +322,31 @@ public partial class MainWindow : Window
 
         var tab = target.DataContext as DocumentTab;
         _viewModel.PrepareTabContextMenu(tab);
+    }
+
+    /// <summary>
+    /// GridSplitter writes local Width values that break bindings; always reset via ClearValue.
+    /// </summary>
+    private void OnSplitLayoutChanged(bool split)
+    {
+        if (SplitPrimaryColumn is null || SplitSplitterColumn is null || SplitSecondaryColumn is null)
+            return;
+
+        SplitPrimaryColumn.ClearValue(ColumnDefinition.WidthProperty);
+        SplitSplitterColumn.ClearValue(ColumnDefinition.WidthProperty);
+        SplitSecondaryColumn.ClearValue(ColumnDefinition.WidthProperty);
+
+        if (split)
+        {
+            SplitPrimaryColumn.Width = new GridLength(1, GridUnitType.Star);
+            SplitSplitterColumn.Width = new GridLength(6);
+            SplitSecondaryColumn.Width = new GridLength(1, GridUnitType.Star);
+        }
+        else
+        {
+            SplitPrimaryColumn.Width = new GridLength(1, GridUnitType.Star);
+            SplitSplitterColumn.Width = new GridLength(0);
+            SplitSecondaryColumn.Width = new GridLength(0);
+        }
     }
 }

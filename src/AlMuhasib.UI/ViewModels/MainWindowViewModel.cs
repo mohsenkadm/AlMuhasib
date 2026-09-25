@@ -863,14 +863,20 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ApplyActiveTabState(DocumentTab tab)
     {
+        var previousPrimaryVm = CurrentViewModel;
+
         foreach (var t in OpenTabs)
             t.IsSelected = t == tab;
+
+        // Avoid hosting the same view-model instance in both ContentControls.
+        if (IsSplitViewActive && SecondaryTab?.Id == tab.Id)
+            SecondaryViewModel = null;
 
         CurrentViewModel = tab.ViewModel;
         PageTitle = tab.Title;
         TabContentGeneration++;
         OnTabViewModelActivated(tab.ViewModel);
-        SyncSplitAfterTabChange(tab);
+        SyncSplitAfterTabChange(tab, previousPrimaryVm);
     }
 
     private void OnTabViewModelActivated(ViewModelBase viewModel)

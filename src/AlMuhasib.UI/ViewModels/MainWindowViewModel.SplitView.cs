@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +16,8 @@ public sealed record SplitTargetItem(
 
 public partial class MainWindowViewModel
 {
+    private bool _suppressSplitSync;
+
     [ObservableProperty]
     private bool _isSplitViewActive;
 
@@ -30,14 +31,8 @@ public partial class MainWindowViewModel
     [ObservableProperty]
     private DocumentTab? _tabContextMenuTarget;
 
-    [ObservableProperty]
-    private GridLength _primaryPaneWidth = new(1, GridUnitType.Star);
-
-    [ObservableProperty]
-    private GridLength _splitSplitterWidth = new(0);
-
-    [ObservableProperty]
-    private GridLength _secondaryPaneWidth = new(0);
+    /// <summary>Raised when split layout columns must be reset (GridSplitter breaks Width bindings).</summary>
+    public event Action<bool>? SplitLayoutChanged;
 
     public ObservableCollection<SplitTargetItem> SplitScreenTargets { get; } = [];
 
@@ -105,7 +100,6 @@ public partial class MainWindowViewModel
 
         ActivateTab(primary);
 
-        // Prefer an already-open tab that is not the primary pane.
         var secondary = OpenTabs.FirstOrDefault(t =>
             t.ViewModelType == target.ViewModelType && t.Id != primary.Id);
 
@@ -118,40 +112,88 @@ public partial class MainWindowViewModel
                 activateIfExists: false,
                 target.PermissionScreenName);
 
-            secondary = OpenTabs.LastOrDefault(t => t.ViewModelType == target.ViewModelType);
+            secondary = OpenTabs.LastOrDefault(t =>
+                t.ViewModelType == target.ViewModelType && t.Id != primary.Id);
         }
 
-        if (secondary is null || secondary.Id == primary.Id)
+        if (secondary is null)
         {
             _toast.ShowWarning("تعذّر فتح الواجهة في النصف الآخر.");
             return;
         }
 
-        // OpenTabAsync activates the new tab — restore primary as the focused pane.
         ActivateTab(primary);
         EnterSplitView(secondary);
     }
 
+    /// <summary>Show the right-clicked tab in the other pane (or duplicate if it is already active).</summary>
     [RelayCommand]
-    private void ShowTabInOtherPane(DocumentTab? tab)
+    private async Task ShowTabInOtherPaneAsync(DocumentTab? tab)
     {
         tab ??= TabContextMenuTarget;
-        var primary = SelectedTab;
-        if (tab is null || primary is null || tab.Id == primary.Id)
+        if (tab is null)
             return;
 
+        var primary = SelectedTab;
+        if (primary is null || tab.Id == primary.Id)
+        {
+            await SplitThisScreenAsync(tab);
+            return;
+        }
+
+        // Keep the currently selected tab as primary; put the clicked tab on the right.
         EnterSplitView(tab);
+    }
+
+    /// <summary>Duplicate this screen and show both halves side by side.</summary>
+    [RelayCommand]
+    private async Task SplitThisScreenAsync(DocumentTab? tab)
+    {
+        tab ??= TabContextMenuTarget ?? SelectedTab;
+        if (tab is null)
+            return;
+
+        if (OpenTabs.Count >= MaxOpenTabs)
+        {
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لتقسيم هذه الشاشة.");
+            return;
+        }
+
+        ActivateTab(tab);
+
+        await OpenTabAsync(
+            tab.ViewModelType,
+            tab.Title,
+            tab.Icon,
+            activateIfExists: false,
+            tab.PermissionScreenName);
+
+        var secondary = OpenTabs.LastOrDefault(t =>
+            t.ViewModelType == tab.ViewModelType && t.Id != tab.Id);
+
+        if (secondary is null)
+        {
+            _toast.ShowWarning("تعذّر تقسيم هذه الشاشة إلى نصفين.");
+            return;
+        }
+
+        ActivateTab(tab);
+        EnterSplitView(secondary);
     }
 
     [RelayCommand]
     private void ExitSplitView()
     {
-        IsSplitViewActive = false;
-        SecondaryViewModel = null;
         if (SecondaryTab is not null)
             SecondaryTab.IsInSecondaryPane = false;
+
+        SecondaryViewModel = null;
         SecondaryTab = null;
+        IsSplitViewActive = false;
         ApplySplitLayout(false);
+
+        if (SelectedTab is not null)
+            PageTitle = SelectedTab.Title;
     }
 
     [RelayCommand]
@@ -160,9 +202,30 @@ public partial class MainWindowViewModel
         if (!IsSplitViewActive || SelectedTab is null || SecondaryTab is null)
             return;
 
-        var previousSecondary = SecondaryTab;
-        EnterSplitView(SelectedTab);
-        ActivateTab(previousSecondary);
+        var left = SelectedTab;
+        var right = SecondaryTab;
+
+        _suppressSplitSync = true;
+        try
+        {
+            // Detach both panes first — a ViewModel cannot live in two ContentControls.
+            SecondaryViewModel = null;
+            left.IsInSecondaryPane = false;
+            right.IsInSecondaryPane = false;
+
+            ActivateTab(right);
+
+            SecondaryTab = left;
+            left.IsInSecondaryPane = true;
+            SecondaryViewModel = left.ViewModel;
+            IsSplitViewActive = true;
+            ApplySplitLayout(true);
+            PageTitle = $"{right.Title} | {left.Title}";
+        }
+        finally
+        {
+            _suppressSplitSync = false;
+        }
     }
 
     private void EnterSplitView(DocumentTab secondary)
@@ -170,8 +233,12 @@ public partial class MainWindowViewModel
         if (SelectedTab is not null && secondary.Id == SelectedTab.Id)
             return;
 
-        if (SecondaryTab is not null)
+        if (SecondaryTab is not null && SecondaryTab.Id != secondary.Id)
             SecondaryTab.IsInSecondaryPane = false;
+
+        // Clear first to avoid visual-tree conflict if secondary was previously primary.
+        if (ReferenceEquals(CurrentViewModel, secondary.ViewModel))
+            return;
 
         SecondaryTab = secondary;
         secondary.IsInSecondaryPane = true;
@@ -183,27 +250,14 @@ public partial class MainWindowViewModel
             : $"{SelectedTab.Title} | {secondary.Title}";
     }
 
-    private void ApplySplitLayout(bool split)
-    {
-        if (split)
-        {
-            PrimaryPaneWidth = new GridLength(1, GridUnitType.Star);
-            SplitSplitterWidth = new GridLength(6);
-            SecondaryPaneWidth = new GridLength(1, GridUnitType.Star);
-        }
-        else
-        {
-            PrimaryPaneWidth = new GridLength(1, GridUnitType.Star);
-            SplitSplitterWidth = new GridLength(0);
-            SecondaryPaneWidth = new GridLength(0);
-            if (SelectedTab is not null)
-                PageTitle = SelectedTab.Title;
-        }
-    }
+    private void ApplySplitLayout(bool split) => SplitLayoutChanged?.Invoke(split);
 
-    private void SyncSplitAfterTabChange(DocumentTab active)
+    /// <summary>
+    /// Called from <see cref="ApplyActiveTabState"/> after the primary pane view model changes.
+    /// </summary>
+    private void SyncSplitAfterTabChange(DocumentTab active, ViewModelBase? previousPrimaryVm)
     {
-        if (!IsSplitViewActive)
+        if (_suppressSplitSync || !IsSplitViewActive)
             return;
 
         if (SecondaryTab is null || !OpenTabs.Contains(SecondaryTab))
@@ -212,10 +266,37 @@ public partial class MainWindowViewModel
             return;
         }
 
-        // Same tab cannot host in both panes.
+        // User selected the tab that was in the secondary pane → swap instead of collapsing.
         if (SecondaryTab.Id == active.Id)
         {
-            ExitSplitView();
+            var newSecondary = OpenTabs.FirstOrDefault(t =>
+                previousPrimaryVm is not null
+                && ReferenceEquals(t.ViewModel, previousPrimaryVm)
+                && t.Id != active.Id);
+
+            if (newSecondary is null)
+            {
+                ExitSplitView();
+                return;
+            }
+
+            _suppressSplitSync = true;
+            try
+            {
+                SecondaryViewModel = null;
+                SecondaryTab.IsInSecondaryPane = false;
+
+                SecondaryTab = newSecondary;
+                newSecondary.IsInSecondaryPane = true;
+                SecondaryViewModel = newSecondary.ViewModel;
+                PageTitle = $"{active.Title} | {newSecondary.Title}";
+                ApplySplitLayout(true);
+            }
+            finally
+            {
+                _suppressSplitSync = false;
+            }
+
             return;
         }
 

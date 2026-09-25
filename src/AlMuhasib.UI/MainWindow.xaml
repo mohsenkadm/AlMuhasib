@@ -879,6 +879,13 @@
                                                     </Style>
                                                 </MenuItem.ItemContainerStyle>
                                             </MenuItem>
+                                            <MenuItem Header="تقسيم هذه الشاشة إلى نصفين"
+                                                      Command="{Binding PlacementTarget.Tag.SplitThisScreenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="16" Height="16"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
                                             <MenuItem Header="عرض في النصف الآخر"
                                                       Command="{Binding PlacementTarget.Tag.ShowTabInOtherPaneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -1235,7 +1242,7 @@
                 <Border.RenderTransform>
                     <TranslateTransform Y="0"/>
                 </Border.RenderTransform>
-                <Grid>
+                <Grid x:Name="SplitContentGrid">
                     <Grid.Resources>
 
                         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
@@ -1871,9 +1878,9 @@
                     
                     </Grid.Resources>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="{Binding PrimaryPaneWidth}"/>
-                        <ColumnDefinition Width="{Binding SplitSplitterWidth}"/>
-                        <ColumnDefinition Width="{Binding SecondaryPaneWidth}"/>
+                        <ColumnDefinition x:Name="SplitPrimaryColumn" Width="*"/>
+                        <ColumnDefinition x:Name="SplitSplitterColumn" Width="0"/>
+                        <ColumnDefinition x:Name="SplitSecondaryColumn" Width="0"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Primary pane -->
