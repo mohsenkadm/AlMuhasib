@@ -116,7 +116,8 @@ public class DashboardService : IDashboardService
         try
         {
             data.UnpaidInstallmentsBalance = await context.Installments
-                .Where(i => i.Status != InstallmentStatus.Paid)
+                .Where(i => i.Status != InstallmentStatus.Paid &&
+                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         }
         catch (Exception ex)
@@ -129,14 +130,17 @@ public class DashboardService : IDashboardService
         {
             var creditRemaining = await context.Invoices
                 .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
-                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                            i.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
             var unappliedDebt = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
+                            v.Currency == AccountingCurrency.IQD &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
                 .SumAsync(v => (decimal?)v.Amount) ?? 0;
             var unappliedReceipts = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.Receipt &&
+                            v.Currency == AccountingCurrency.IQD &&
                             !v.InvoiceId.HasValue &&
                             !v.InstallmentId.HasValue &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -156,11 +160,13 @@ public class DashboardService : IDashboardService
         {
             var supplierRemaining = await context.Invoices
                 .Where(i => i.InvoiceType == InvoiceType.Purchase &&
-                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                            i.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
             var unappliedPayments = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.Payment &&
                             v.SupplierId != null &&
+                            v.Currency == AccountingCurrency.IQD &&
                             !v.InvoiceId.HasValue &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
                 .SumAsync(v => (decimal?)v.Amount) ?? 0;

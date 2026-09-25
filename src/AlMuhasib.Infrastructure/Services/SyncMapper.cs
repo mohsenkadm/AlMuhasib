@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Sync.Dtos;
 using AlMuhasib.Sync.Requests;
@@ -745,7 +746,10 @@ internal static class SyncMapper
             entity.CustomerId = dto.CustomerSyncId.HasValue && cust.TryGetValue(dto.CustomerSyncId.Value, out var cId) ? cId : null;
             entity.SupplierId = dto.SupplierSyncId.HasValue && sup.TryGetValue(dto.SupplierSyncId.Value, out var sId) ? sId : null;
             entity.WarehouseId = wId;
-            entity.PaymentMethod = dto.PaymentMethod; entity.Currency = dto.Currency; entity.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate; entity.TotalAmount = dto.TotalAmount; entity.DiscountAmount = dto.DiscountAmount;
+            entity.PaymentMethod = dto.PaymentMethod;
+            entity.Currency = dto.Currency;
+            entity.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة فاتورة");
+            entity.TotalAmount = dto.TotalAmount; entity.DiscountAmount = dto.DiscountAmount;
             entity.NetAmount = dto.NetAmount; entity.CompanyFeePercentage = dto.CompanyFeePercentage; entity.CompanyFeeAmount = dto.CompanyFeeAmount;
             entity.RoundingAmount = dto.RoundingAmount; entity.RoundingType = dto.RoundingType;
             entity.CashBoxId = dto.CashBoxSyncId.HasValue && cb.TryGetValue(dto.CashBoxSyncId.Value, out var cbId) ? cbId : null;
@@ -834,7 +838,7 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Vouchers.Add(entity);
             ApplyBase(entity, dto);
-            entity.VoucherNumber = dto.VoucherNumber; entity.VoucherType = dto.VoucherType; entity.Currency = dto.Currency; entity.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate; entity.Amount = dto.Amount; entity.BankFees = dto.BankFees;
+            entity.VoucherNumber = dto.VoucherNumber; entity.VoucherType = dto.VoucherType; entity.Currency = dto.Currency; entity.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة سند"); entity.Amount = dto.Amount; entity.BankFees = dto.BankFees;
             entity.CustomerId = dto.CustomerSyncId.HasValue && cust.TryGetValue(dto.CustomerSyncId.Value, out var cId) ? cId : null;
             entity.SupplierId = dto.SupplierSyncId.HasValue && sup.TryGetValue(dto.SupplierSyncId.Value, out var sId) ? sId : null;
             entity.InvestorId = dto.InvestorSyncId.HasValue && inv.TryGetValue(dto.InvestorSyncId.Value, out var iId) ? iId : null;
@@ -859,7 +863,7 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Expenses.Add(entity);
             ApplyBase(entity, dto); entity.ExpenseTypeId = tId; entity.CashBoxId = cbId;
-            entity.Currency = dto.Currency; entity.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate; entity.Amount = dto.Amount; entity.Date = dto.Date; entity.Notes = dto.Notes;
+            entity.Currency = dto.Currency; entity.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة مصروف"); entity.Amount = dto.Amount; entity.Date = dto.Date; entity.Notes = dto.Notes;
         }
         await db.SaveChangesAsync(ct);
     }
@@ -877,7 +881,7 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Transfers.Add(entity);
             ApplyBase(entity, dto); entity.FromType = dto.FromType; entity.FromId = fromId; entity.ToType = dto.ToType; entity.ToId = toId;
-            entity.Currency = dto.Currency; entity.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate; entity.Amount = dto.Amount; entity.Date = dto.Date; entity.Notes = dto.Notes;
+            entity.Currency = dto.Currency; entity.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة تحويل"); entity.Amount = dto.Amount; entity.Date = dto.Date; entity.Notes = dto.Notes;
         }
         await db.SaveChangesAsync(ct);
     }

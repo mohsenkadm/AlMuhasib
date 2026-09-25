@@ -28,14 +28,19 @@ public class CustomerCreditService : ICustomerCreditService
         {
             currentDebt = await context.Installments.AsNoTracking()
                 .Include(i => i.InstallmentPlan)
-                .Where(i => i.InstallmentPlan!.CustomerId == customerId && i.RemainingAmount > 0)
+                .Where(i => i.InstallmentPlan!.CustomerId == customerId &&
+                            i.RemainingAmount > 0 &&
+                            i.InstallmentPlan.Invoice!.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => i.RemainingAmount);
             limit = customer.MaxInstallmentDebt;
         }
         else
         {
             currentDebt = await context.Invoices.AsNoTracking()
-                .Where(i => i.CustomerId == customerId && i.PaymentMethod == PaymentMethod.Credit && i.RemainingAmount > 0)
+                .Where(i => i.CustomerId == customerId &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.RemainingAmount > 0 &&
+                            i.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => i.RemainingAmount);
             limit = customer.MaxCreditLimit;
         }

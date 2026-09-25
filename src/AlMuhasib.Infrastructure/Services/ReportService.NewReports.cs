@@ -927,7 +927,7 @@ public partial class ReportService
 
         var banks = bankAccountId.HasValue
             ? await context.BankAccounts.Where(b => b.Id == bankAccountId.Value).ToListAsync()
-            : await context.BankAccounts.ToListAsync();
+            : await context.BankAccounts.Where(b => b.Currency == AccountingCurrency.IQD).ToListAsync();
         var bankMap = banks.ToDictionary(b => b.Id, b => b.Name);
         var bankIds = banks.Select(b => b.Id).ToHashSet();
 
@@ -1030,7 +1030,7 @@ public partial class ReportService
         // Add transfers
         var cashBoxes = cashBoxId.HasValue
             ? await context.CashBoxes.Where(c => c.Id == cashBoxId.Value).ToListAsync()
-            : await context.CashBoxes.ToListAsync();
+            : await context.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).ToListAsync();
         var ids = cashBoxes.Select(c => c.Id).ToHashSet();
         var nameMap = cashBoxes.ToDictionary(c => c.Id, c => c.Name);
 
@@ -1124,29 +1124,36 @@ public partial class ReportService
             AccountType = "قاصة",
             Name = c.Name,
             AccountNumber = "—",
-            Balance = c.Balance
+            Balance = c.Balance,
+            Currency = c.Currency
         }).Concat(banks.Select(b => new CashBalanceRow
         {
             AccountType = "مصرف",
             Name = b.Name,
             AccountNumber = b.AccountNumber ?? "—",
-            Balance = b.Balance
-        })).OrderBy(r => r.AccountType).ThenBy(r => r.Name).ToList();
+            Balance = b.Balance,
+            Currency = b.Currency
+        })).OrderBy(r => r.Currency).ThenBy(r => r.AccountType).ThenBy(r => r.Name).ToList();
 
-        var cashTotal = cashBoxes.Sum(c => c.Balance);
-        var bankTotal = banks.Sum(b => b.Balance);
+        var cashTotal = cashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).Sum(c => c.Balance);
+        var bankTotal = banks.Where(b => b.Currency == AccountingCurrency.IQD).Sum(b => b.Balance);
+        var cashTotalUsd = cashBoxes.Where(c => c.Currency == AccountingCurrency.USD).Sum(c => c.Balance);
+        var bankTotalUsd = banks.Where(b => b.Currency == AccountingCurrency.USD).Sum(b => b.Balance);
 
         return new CashBalancesSummaryReportResult
         {
             CashBoxesTotal = cashTotal,
             BanksTotal = bankTotal,
             TotalLiquid = cashTotal + bankTotal,
+            CashBoxesTotalUsd = cashTotalUsd,
+            BanksTotalUsd = bankTotalUsd,
+            TotalLiquidUsd = cashTotalUsd + bankTotalUsd,
             AccountCount = rows.Count,
             Rows = rows,
             CompositionChart =
             [
-                new NameAmountPoint { Name = "قاصات", Amount = cashTotal },
-                new NameAmountPoint { Name = "مصارف", Amount = bankTotal }
+                new NameAmountPoint { Name = "قاصات د.ع", Amount = cashTotal },
+                new NameAmountPoint { Name = "مصارف د.ع", Amount = bankTotal }
             ]
         };
     }

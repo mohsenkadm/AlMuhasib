@@ -1,5 +1,6 @@
 ﻿using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -92,8 +93,10 @@ public class ExpenseService : IExpenseService
             var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
                 ?? throw new InvalidOperationException("القاصة غير موجودة");
             var resolvedCurrency = currency ?? cashBox.Currency;
-            if (cashBox.Currency != resolvedCurrency)
-                throw new InvalidOperationException("عملة المصروف يجب أن تطابق عملة القاصة المختارة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                resolvedCurrency, cashBox.Currency, "المصروف", "القاصة");
+            var resolvedFx = AccountingCurrencyRules.RequireFxRateOrThrow(
+                resolvedCurrency, fxRate, "مصروف");
             if (cashBox.Balance < amount)
                 throw new InvalidOperationException($"رصيد القاصة غير كافٍ. الرصيد الحالي: {cashBox.Balance:N0}");
 
@@ -106,7 +109,7 @@ public class ExpenseService : IExpenseService
                 CashBoxId = cashBoxId,
                 Notes = notes,
                 Currency = resolvedCurrency,
-                FxRate = fxRate > 0 ? fxRate : 1m
+                FxRate = resolvedFx
             };
             await context.Expenses.AddAsync(expense);
             await context.SaveChangesAsync();

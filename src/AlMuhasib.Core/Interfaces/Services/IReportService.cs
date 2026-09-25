@@ -462,6 +462,8 @@ public class SupplierStatementResult
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal Balance { get; set; }
+    /// <summary>رصيد مستحق بالدولار (منفصل عن Balance بالدينار).</summary>
+    public decimal BalanceUsd { get; set; }
     public int InvoiceCount { get; set; }
     public List<SupplierStatementRow> Rows { get; set; } = [];
 }
@@ -1433,6 +1435,9 @@ public class CashBalancesSummaryReportResult
     public decimal CashBoxesTotal { get; set; }
     public decimal BanksTotal { get; set; }
     public decimal TotalLiquid { get; set; }
+    public decimal CashBoxesTotalUsd { get; set; }
+    public decimal BanksTotalUsd { get; set; }
+    public decimal TotalLiquidUsd { get; set; }
     public int AccountCount { get; set; }
     public List<CashBalanceRow> Rows { get; set; } = [];
     public List<NameAmountPoint> CompositionChart { get; set; } = [];
@@ -1444,6 +1449,8 @@ public class CashBalanceRow
     public string Name { get; set; } = string.Empty;
     public string AccountNumber { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class TransfersReportResult

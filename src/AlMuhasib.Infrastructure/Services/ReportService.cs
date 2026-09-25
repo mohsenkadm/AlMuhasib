@@ -853,7 +853,10 @@ public partial class ReportService : IReportService
         var rows = new List<SupplierStatementRow>();
 
         var invQ = context.Invoices
-            .Where(i => i.SupplierId == supplierId && i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Credit);
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD);
         if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
         foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
@@ -878,6 +881,7 @@ public partial class ReportService : IReportService
         // سندات الصرف غير المطبّقة فقط — المطبّقة تظهر عبر PaidAmount لتجنب الازدواج
         var vQ = context.Vouchers.Where(v => v.SupplierId == supplierId &&
                                             v.VoucherType == VoucherType.Payment &&
+                                            v.Currency == AccountingCurrency.IQD &&
                                             (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)));
         if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
@@ -888,12 +892,27 @@ public partial class ReportService : IReportService
         decimal balance = 0;
         foreach (var r in rows) { balance += r.Credit - r.Debit; r.RunningBalance = balance; }
 
+        var usdCredit = await context.Invoices.AsNoTracking()
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var usdPayments = await context.Vouchers.AsNoTracking()
+            .Where(v => v.SupplierId == supplierId &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.USD &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
         var invoiceCount = rows.Count(r => r.Credit > 0);
         return new SupplierStatementResult
         {
             SupplierName = supplier.Name,
             TotalDebit = rows.Sum(r => r.Debit), TotalCredit = rows.Sum(r => r.Credit),
-            Balance = balance, InvoiceCount = invoiceCount, Rows = rows
+            Balance = balance,
+            BalanceUsd = SupplierBalanceHelper.ComputeOutstandingPayables(usdCredit, usdPayments),
+            InvoiceCount = invoiceCount, Rows = rows
         };
     }
 
@@ -923,9 +942,10 @@ public partial class ReportService : IReportService
         foreach (var voucher in pending)
         {
             var snapshot = creditInvoices
-                .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+                .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
                 .ToList();
-            var updates = SupplierBalanceHelper.AllocateToPurchaseInvoices(snapshot, voucher.Amount);
+            var updates = SupplierBalanceHelper.AllocateToPurchaseInvoices(
+                snapshot, voucher.Amount, voucher.Currency);
             if (updates.Count == 0)
                 continue;
 
@@ -1430,7 +1450,9 @@ public partial class ReportService : IReportService
         var totalOut = rows.Sum(r => r.Outgoing);
         var currentBal = cashBoxId.HasValue
             ? (await context.CashBoxes.FindAsync(cashBoxId.Value))?.Balance ?? 0
-            : (await context.CashBoxes.ToListAsync()).Sum(c => c.Balance);
+            : await context.CashBoxes
+                .Where(c => c.Currency == AccountingCurrency.IQD)
+                .SumAsync(c => (decimal?)c.Balance) ?? 0;
 
         return new CashFlowResult
         {
@@ -1563,7 +1585,8 @@ public partial class ReportService : IReportService
         }
 
         decimal installmentReceivables = await context.Installments
-            .Where(i => i.RemainingAmount > 0)
+            .Where(i => i.RemainingAmount > 0 &&
+                        i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .SumAsync(i => i.RemainingAmount);
 
         decimal assetsTotal = cashBoxesTotal + banksTotal + customerDebts + inventoryValue + installmentReceivables;
@@ -2043,20 +2066,25 @@ public partial class ReportService : IReportService
             }
 
             var outstandingCredit = await context.Invoices.AsNoTracking()
-                .Where(i => i.CustomerId == customer.Id && i.PaymentMethod == PaymentMethod.Credit)
+                .Where(i => i.CustomerId == customer.Id &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
 
             var outstandingInstallments = 0m;
             if (planIds.Count > 0)
             {
                 outstandingInstallments = await context.Installments.AsNoTracking()
-                    .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                    .Where(i => planIds.Contains(i.InstallmentPlanId) &&
+                                i.Status != InstallmentStatus.Paid &&
+                                i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
                     .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
             }
 
             var unappliedDebt = await context.Vouchers.AsNoTracking()
                 .Where(v => v.CustomerId == customer.Id &&
                             v.VoucherType == VoucherType.DebtReceipt &&
+                            v.Currency == AccountingCurrency.IQD &&
                             !v.InvoiceId.HasValue &&
                             !v.InstallmentId.HasValue &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -2065,6 +2093,7 @@ public partial class ReportService : IReportService
             var unappliedReceipts = await context.Vouchers.AsNoTracking()
                 .Where(v => v.CustomerId == customer.Id &&
                             v.VoucherType == VoucherType.Receipt &&
+                            v.Currency == AccountingCurrency.IQD &&
                             !v.InvoiceId.HasValue &&
                             !v.InstallmentId.HasValue &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -2131,12 +2160,14 @@ public partial class ReportService : IReportService
                 .Where(i => i.SupplierId == supplier.Id &&
                             i.InvoiceType == InvoiceType.Purchase &&
                             i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == AccountingCurrency.IQD &&
                             i.RemainingAmount > 0)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
 
             var unappliedPayments = await context.Vouchers.AsNoTracking()
                 .Where(v => v.SupplierId == supplier.Id &&
                             v.VoucherType == VoucherType.Payment &&
+                            v.Currency == AccountingCurrency.IQD &&
                             !v.InvoiceId.HasValue &&
                             (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
                 .SumAsync(v => (decimal?)v.Amount) ?? 0m;

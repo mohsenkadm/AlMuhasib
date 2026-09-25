@@ -109,7 +109,9 @@ public class AccountingValidationService : IAccountingValidationService
             return new ValidationResult { Category = "\u0627\u0644\u0639\u0645\u064a\u0644", IsValid = false, Message = $"\u0627\u0644\u0639\u0645\u064a\u0644 #{customerId} \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f" };
 
         var creditRemaining = await context.Invoices
-            .Where(i => i.CustomerId == customerId && i.PaymentMethod == PaymentMethod.Credit)
+            .Where(i => i.CustomerId == customerId &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
         var planIds = await context.InstallmentPlans
@@ -119,18 +121,22 @@ public class AccountingValidationService : IAccountingValidationService
         var installmentRemaining = planIds.Count == 0
             ? 0m
             : await context.Installments
-                .Where(i => planIds.Contains(i.InstallmentPlanId) && i.Status != InstallmentStatus.Paid)
+                .Where(i => planIds.Contains(i.InstallmentPlanId) &&
+                            i.Status != InstallmentStatus.Paid &&
+                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
         var unappliedDebt = await context.Vouchers
             .Where(v => v.CustomerId == customerId &&
                         v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var receipts = await context.Vouchers
             .Where(v => v.CustomerId == customerId &&
                         v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 

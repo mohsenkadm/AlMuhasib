@@ -2,6 +2,7 @@ using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Sync.Dtos;
 using AlMuhasib.Sync.Requests;
 using AlMuhasib.Sync.Responses;
@@ -643,7 +644,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.WarehouseId = warehouseId;
         existing.PaymentMethod = dto.PaymentMethod;
         existing.Currency = dto.Currency;
-        existing.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة فاتورة سحابة");
         existing.TotalAmount = dto.TotalAmount;
         existing.DiscountAmount = dto.DiscountAmount;
         existing.NetAmount = dto.NetAmount;
@@ -736,7 +737,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.VoucherNumber = dto.VoucherNumber;
         existing.VoucherType = dto.VoucherType;
         existing.Currency = dto.Currency;
-        existing.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة سند سحابة");
         existing.Amount = dto.Amount;
         existing.BankFees = dto.BankFees;
         existing.CustomerId = customerId;
@@ -762,7 +763,7 @@ public sealed partial class SyncEngine : ISyncEngine
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.ExpenseTypeId = typeId;
         existing.Currency = dto.Currency;
-        existing.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة مصروف سحابة");
         existing.Amount = dto.Amount;
         existing.Date = dto.Date;
         existing.CashBoxId = cashBoxId;
@@ -781,7 +782,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.ToType = dto.ToType;
         existing.ToId = toId;
         existing.Currency = dto.Currency;
-        existing.FxRate = dto.FxRate <= 0 ? 1m : dto.FxRate;
+        existing.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة تحويل سحابة");
         existing.Amount = dto.Amount;
         existing.Date = dto.Date;
         existing.Notes = dto.Notes;
