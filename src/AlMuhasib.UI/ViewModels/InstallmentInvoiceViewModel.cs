@@ -30,6 +30,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private readonly IPricingTypeService _pricingTypeService;
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
+    private readonly IExchangeRateService _exchangeRateService;
     private readonly InvoiceCostGuard _costGuard;
 
     private Invoice? _savedInvoice;
@@ -201,7 +202,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         IFeatureFlagService featureFlags,
         IProductUnitService productUnitService,
         IPartyQuickDetailService partyQuickDetail,
-        IProductQuickDetailService productQuickDetail)
+        IProductQuickDetailService productQuickDetail,
+        IExchangeRateService exchangeRateService)
     {
         _invoiceService = invoiceService;
         _installmentService = installmentService;
@@ -219,6 +221,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _pricingTypeService = pricingTypeService;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
+        _exchangeRateService = exchangeRateService;
         _costGuard = new InvoiceCostGuard(unitOfWork, productPriceService, featureFlags.ProductPricingEnabled);
 
         PageTitle = "فاتورة أقساط";
@@ -702,6 +705,18 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                 customerId = newCustomer.Id;
             }
 
+            var currency = SelectedCashBox?.Currency ?? AccountingCurrency.IQD;
+            var fxRate = 1m;
+            if (currency == AccountingCurrency.USD)
+            {
+                fxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(InvoiceDate);
+                if (fxRate <= 0)
+                {
+                    BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لفاتورة أقساط بالدولار. سجّل سعر الصرف اليومي أولاً.");
+                    return;
+                }
+            }
+
             var invoice = new Invoice
             {
                 InvoiceNumber = InvoiceNumber,
@@ -710,6 +725,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                 DriverId = ShowDriverSelection ? SelectedDriver?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
+                Currency = currency,
+                FxRate = fxRate,
                 CashBoxId = SelectedCashBox?.Id,
                 Date = InvoiceDate,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,

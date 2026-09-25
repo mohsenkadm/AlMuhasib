@@ -218,7 +218,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
         var creditByCustomer = await Scoped<CloudInvoice>()
             .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) &&
-                        i.PaymentMethod == PaymentMethod.Credit)
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD)
             .GroupBy(i => i.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
             .ToListAsync(ct);
@@ -245,6 +246,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         var unappliedDebt = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .GroupBy(v => v.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
@@ -253,6 +255,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         var receipts = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .GroupBy(v => v.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })

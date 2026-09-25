@@ -1,6 +1,7 @@
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -46,8 +47,8 @@ public class InvoiceService : IInvoiceService
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
 
-            if (invoice.FxRate <= 0)
-                invoice.FxRate = 1m;
+            invoice.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                invoice.Currency, invoice.FxRate, "فاتورة");
 
             if (invoice.CashBoxId.HasValue)
             {
@@ -57,8 +58,8 @@ public class InvoiceService : IInvoiceService
                     .FirstOrDefaultAsync();
                 if (cashBoxCurrency is null)
                     throw new InvalidOperationException("القاصة غير موجودة");
-                if (cashBoxCurrency.Value != invoice.Currency)
-                    throw new InvalidOperationException("عملة الفاتورة يجب أن تطابق عملة القاصة المختارة");
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    invoice.Currency, cashBoxCurrency.Value, "الفاتورة", "القاصة");
             }
 
             var itemsList = items.ToList();
@@ -858,6 +859,12 @@ public class InvoiceService : IInvoiceService
             if (amount > invoice.RemainingAmount)
                 throw new InvalidOperationException($"مبلغ الدفع ({amount:N0}) أكبر من المتبقي ({invoice.RemainingAmount:N0})");
 
+            // Update CashBox balance
+            var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                invoice.Currency, cashBox.Currency, "الفاتورة", "القاصة");
+
             invoice.PaidAmount += amount;
             invoice.RemainingAmount = invoice.NetAmount - invoice.PaidAmount;
             invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
@@ -865,18 +872,13 @@ public class InvoiceService : IInvoiceService
             invoice.UpdatedBy = username;
             invoice.UpdatedAt = DateTime.UtcNow;
 
-            // Update CashBox balance
-            var cashBox = await context.CashBoxes.FindAsync(cashBoxId);
-            if (cashBox is not null)
-            {
-                if (invoice.InvoiceType == InvoiceType.Purchase)
-                    cashBox.Balance -= amount;
-                else
-                    cashBox.Balance += amount;
+            if (invoice.InvoiceType == InvoiceType.Purchase)
+                cashBox.Balance -= amount;
+            else
+                cashBox.Balance += amount;
 
-                cashBox.UpdatedBy = username;
-                cashBox.UpdatedAt = DateTime.UtcNow;
-            }
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
 
             // إنشاء سند قبض دين للمزامنة وكشف الحساب (معلّم كمطبّق لأن الفاتورة حُدّثت أعلاه)
             if (invoice.CustomerId.HasValue && invoice.InvoiceType != InvoiceType.Purchase)
@@ -943,6 +945,8 @@ public class InvoiceService : IInvoiceService
                 VoucherNumber = voucherNumber,
                 VoucherType = VoucherType.Payment,
                 Amount = amount,
+                Currency = invoice.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(invoice.Currency, invoice.FxRate, "سند دفعة مقدمة"),
                 SupplierId = invoice.SupplierId,
                 InvoiceId = invoice.Id,
                 CashBoxId = cashBoxId,
@@ -967,6 +971,8 @@ public class InvoiceService : IInvoiceService
                 VoucherNumber = voucherNumber,
                 VoucherType = VoucherType.DebtReceipt,
                 Amount = amount,
+                Currency = invoice.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(invoice.Currency, invoice.FxRate, "سند دفعة مقدمة"),
                 CustomerId = invoice.CustomerId,
                 InvoiceId = invoice.Id,
                 CashBoxId = cashBoxId,

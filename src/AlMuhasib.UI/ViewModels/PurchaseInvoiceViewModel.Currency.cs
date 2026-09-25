@@ -63,12 +63,23 @@ public partial class PurchaseInvoiceViewModel
         try
         {
             FxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(InvoiceDate);
-            if (FxRate <= 0) FxRate = 1m;
+            if (FxRate <= 0) FxRate = 0m;
         }
         catch
         {
-            FxRate = 1m;
+            FxRate = 0m;
         }
+    }
+
+    private void ApplyCurrencyFromDocument(AccountingCurrency currency, decimal fxRate)
+    {
+        SelectedCurrency = currency;
+        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == currency);
+        FxRate = currency == AccountingCurrency.IQD
+            ? 1m
+            : (fxRate > 0 ? fxRate : 0m);
+        ShowFxRateInput = ShowMultiCurrency && currency == AccountingCurrency.USD;
+        ApplyCashBoxCurrencyFilter();
     }
 
     private void RememberCashBoxesForCurrencyFilter(IEnumerable<CashBox> boxes)

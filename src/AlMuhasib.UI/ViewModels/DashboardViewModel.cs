@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
@@ -571,7 +572,9 @@ public partial class DashboardViewModel : ViewModelBase
                 // Bottom
                 CashBoxes.Clear();
                 foreach (var c in data.CashBoxes) CashBoxes.Add(c);
-                TotalCashBalance = data.CashBoxes.Sum(c => c.Balance);
+                TotalCashBalance = data.CashBalanceIqd != 0 || data.CashBalanceUsd != 0
+                    ? data.CashBalanceIqd
+                    : data.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).Sum(c => c.Balance);
                 BankBalance = data.BankBalance;
                 TotalInventoryValue = data.TotalInventoryValue;
 

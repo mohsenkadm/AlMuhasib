@@ -438,6 +438,8 @@ public class CustomerStatementResult
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal Balance { get; set; }
+    /// <summary>رصيد مستحق بالدولار (منفصل عن Balance بالدينار).</summary>
+    public decimal BalanceUsd { get; set; }
     public int TransactionCount { get; set; }
     public List<CustomerStatementRow> Rows { get; set; } = [];
 }

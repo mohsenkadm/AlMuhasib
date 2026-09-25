@@ -4,6 +4,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
@@ -321,6 +322,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
         CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
@@ -749,8 +752,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsCashPayment ? PaymentMethod.Cash : PaymentMethod.Credit,
                 Currency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
-                FxRate = ShowMultiCurrency && SelectedCurrency == AccountingCurrency.USD
-                    ? (FxRate > 0 ? FxRate : 1m)
+                FxRate = ShowMultiCurrency
+                    ? AccountingCurrencyRules.RequireFxRateOrThrow(SelectedCurrency, FxRate, "فاتورة مشتريات")
                     : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,

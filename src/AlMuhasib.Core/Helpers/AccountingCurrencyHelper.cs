@@ -25,8 +25,10 @@ public static class AccountingCurrencyHelper
         if (currency == AccountingCurrency.IQD)
             return RoundIqd(amount);
 
-        var fx = fxRate <= 0 ? 1m : fxRate;
-        return RoundIqd(amount * fx);
+        if (fxRate <= 0)
+            throw new InvalidOperationException("لا يمكن تحويل مبلغ دولار بدون سعر صرف صالح.");
+
+        return RoundIqd(amount * fxRate);
     }
 
     public static decimal Convert(
@@ -38,10 +40,12 @@ public static class AccountingCurrencyHelper
         if (from == to)
             return from == AccountingCurrency.USD ? RoundUsd(amount) : RoundIqd(amount);
 
-        var fx = fxRate <= 0 ? 1m : fxRate;
+        if (fxRate <= 0)
+            throw new InvalidOperationException("لا يمكن التحويل بين العملات بدون سعر صرف صالح.");
+
         return to == AccountingCurrency.IQD
-            ? RoundIqd(amount * fx)
-            : RoundUsd(amount / fx);
+            ? RoundIqd(amount * fxRate)
+            : RoundUsd(amount / fxRate);
     }
 
     public static decimal RoundIqd(decimal value) =>

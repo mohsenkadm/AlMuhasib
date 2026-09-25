@@ -323,8 +323,14 @@ public class DashboardService : IDashboardService
         try
         {
             data.CashBoxes = await context.CashBoxes
-                .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance })
+                .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance, Currency = c.Currency })
                 .ToListAsync();
+            data.CashBalanceIqd = data.CashBoxes
+                .Where(c => c.Currency == AccountingCurrency.IQD)
+                .Sum(c => c.Balance);
+            data.CashBalanceUsd = data.CashBoxes
+                .Where(c => c.Currency == AccountingCurrency.USD)
+                .Sum(c => c.Balance);
         }
         catch (Exception ex)
         {
@@ -333,8 +339,17 @@ public class DashboardService : IDashboardService
 
         try
         {
-            data.BankBalance = await context.BankAccounts
-                .SumAsync(b => (decimal?)b.Balance) ?? 0;
+            var banks = await context.BankAccounts
+                .Select(b => new { b.Balance, b.Currency })
+                .ToListAsync();
+            data.BankBalanceIqd = banks
+                .Where(b => b.Currency == AccountingCurrency.IQD)
+                .Sum(b => b.Balance);
+            data.BankBalanceUsd = banks
+                .Where(b => b.Currency == AccountingCurrency.USD)
+                .Sum(b => b.Balance);
+            // توافق خلفي: المجموع بالدينار فقط (لا خلط عملات)
+            data.BankBalance = data.BankBalanceIqd;
         }
         catch (Exception ex)
         {

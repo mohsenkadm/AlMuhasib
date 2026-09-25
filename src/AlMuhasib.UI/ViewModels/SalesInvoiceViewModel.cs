@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Print;
@@ -537,6 +538,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         if (SelectedPaymentMethod == PaymentMethod.Credit)
             CreditDueDate = invoice.CreditDueDate ?? DateTime.Today.AddMonths(1);
+
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
@@ -1252,8 +1255,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsDamageMode ? PaymentMethod.Cash : SelectedPaymentMethod,
                 Currency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
-                FxRate = ShowMultiCurrency && SelectedCurrency == AccountingCurrency.USD
-                    ? (FxRate > 0 ? FxRate : 1m)
+                FxRate = ShowMultiCurrency
+                    ? AccountingCurrencyRules.RequireFxRateOrThrow(SelectedCurrency, FxRate, "فاتورة مبيعات")
                     : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,

@@ -1,6 +1,7 @@
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
@@ -560,22 +561,22 @@ public class CashBankService : ICashBankService
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
 
-            if (voucher.FxRate <= 0)
-                voucher.FxRate = 1m;
+            voucher.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                voucher.Currency, voucher.FxRate, "سند");
 
             var cashBoxForCurrency = await context.CashBoxes.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == voucher.CashBoxId)
                 ?? throw new InvalidOperationException("القاصة غير موجودة");
-            if (cashBoxForCurrency.Currency != voucher.Currency)
-                throw new InvalidOperationException("عملة السند يجب أن تطابق عملة القاصة المختارة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                voucher.Currency, cashBoxForCurrency.Currency, "السند", "القاصة");
 
             if (voucher.BankAccountId.HasValue)
             {
                 var bank = await context.BankAccounts.AsNoTracking()
                     .FirstOrDefaultAsync(b => b.Id == voucher.BankAccountId.Value)
                     ?? throw new InvalidOperationException("المصرف غير موجود");
-                if (bank.Currency != voucher.Currency)
-                    throw new InvalidOperationException("عملة السند يجب أن تطابق عملة المصرف المختار");
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    voucher.Currency, bank.Currency, "السند", "المصرف");
             }
 
             // Always assign server-side to avoid stale UI numbers and soft-delete collisions.
@@ -981,15 +982,16 @@ public class CashBankService : ICashBankService
             .Where(i => i.CustomerId == voucher.CustomerId.Value &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync();
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -1013,15 +1015,16 @@ public class CashBankService : ICashBankService
             .Where(i => i.SupplierId == voucher.SupplierId.Value &&
                         i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync();
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -1046,6 +1049,9 @@ public class CashBankService : ICashBankService
 
         if (voucher.SupplierId.HasValue && invoice.SupplierId != voucher.SupplierId)
             throw new InvalidOperationException("الفاتورة لا تخص المورد المحدد");
+
+        AccountingCurrencyRules.EnsureSameCurrency(
+            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
 
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
@@ -1073,6 +1079,9 @@ public class CashBankService : ICashBankService
         if (voucher.CustomerId.HasValue && invoice.CustomerId != voucher.CustomerId)
             throw new InvalidOperationException("الفاتورة لا تخص العميل المحدد");
 
+        AccountingCurrencyRules.EnsureSameCurrency(
+            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
+
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
 
@@ -1098,6 +1107,19 @@ public class CashBankService : ICashBankService
         if (voucher.CustomerId.HasValue &&
             installment.InstallmentPlan?.CustomerId != voucher.CustomerId)
             throw new InvalidOperationException("القسط لا يخص العميل المحدد");
+
+        if (installment.InstallmentPlan?.InvoiceId is int invoiceId)
+        {
+            var invoiceCurrency = await context.Invoices.AsNoTracking()
+                .Where(i => i.Id == invoiceId)
+                .Select(i => (AccountingCurrency?)i.Currency)
+                .FirstOrDefaultAsync();
+            if (invoiceCurrency is not null)
+            {
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    voucher.Currency, invoiceCurrency.Value, "السند", "فاتورة القسط");
+            }
+        }
 
         if (installment.RemainingAmount <= 0)
             throw new InvalidOperationException("القسط مسدد بالكامل");
