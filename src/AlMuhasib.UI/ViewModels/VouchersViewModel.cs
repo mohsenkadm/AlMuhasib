@@ -701,6 +701,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             {
                 VoucherNumber = VoucherNumber,
                 VoucherType = SelectedVoucherType,
+                Currency = SelectedCashBox.Currency,
+                FxRate = 1m,
                 Amount = Amount,
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,

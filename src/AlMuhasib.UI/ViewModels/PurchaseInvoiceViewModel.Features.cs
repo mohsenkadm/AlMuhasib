@@ -81,6 +81,7 @@ public partial class PurchaseInvoiceViewModel
             && _featureFlags.AddMissingProductsOnPurchase;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
         ClothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
+        RefreshMultiCurrencyFeatureVisibility();
         OnPropertyChanged(nameof(ShowCustomField1));
         OnPropertyChanged(nameof(ShowCustomField2));
 

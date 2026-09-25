@@ -110,8 +110,12 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="14" FontWeight="Medium"
-                                                       VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="0" VerticalAlignment="Center">
+                                                <Run Text="{Binding Name}" FontSize="14" FontWeight="Medium"/>
+                                                <Run Text=" (" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <Run Text="{Binding Currency}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                <Run Text=")" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            </TextBlock>
                                             <TextBlock Grid.Column="1" Text="{Binding Balance, StringFormat=N0}"
                                                        FontSize="14" FontWeight="Bold"
                                                        Foreground="{DynamicResource PrimaryHueMidBrush}"
@@ -430,8 +434,12 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Name}"
-                                                       FontSize="14" FontWeight="Medium" />
+                                            <TextBlock Grid.Row="0" Grid.Column="0">
+                                                <Run Text="{Binding Name}" FontSize="14" FontWeight="Medium"/>
+                                                <Run Text=" (" FontSize="12" Foreground="Gray"/>
+                                                <Run Text="{Binding Currency}" FontSize="12" Foreground="Gray"/>
+                                                <Run Text=")" FontSize="12" Foreground="Gray"/>
+                                            </TextBlock>
                                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Balance, StringFormat=N0}"
                                                        FontSize="14" FontWeight="Bold"
                                                        Foreground="#1565C0" Margin="8,0,0,0" />

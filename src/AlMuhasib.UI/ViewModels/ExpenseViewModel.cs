@@ -184,7 +184,9 @@ public partial class ExpenseViewModel : PagedViewModelBase
                 FormAmount,
                 FormDate,
                 FormCashBox.Id,
-                string.IsNullOrWhiteSpace(FormNotes) ? null : FormNotes.Trim());
+                string.IsNullOrWhiteSpace(FormNotes) ? null : FormNotes.Trim(),
+                FormCashBox.Currency,
+                1m);
 
             // Reset form
             FormExpenseType = null;
