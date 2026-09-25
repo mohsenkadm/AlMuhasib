@@ -468,15 +468,6 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     }
 
     [RelayCommand]
-    private void UpdatePreviewProfit(ProfitPreviewItem? item)
-    {
-        if (item is null) return;
-        if (item.ProfitAmount < 0)
-            item.ProfitAmount = 0;
-        RecalculateTotal();
-    }
-
-    [RelayCommand]
     private async Task ConfirmDistributionAsync()
     {
         if (DistributionCashBox is null)
