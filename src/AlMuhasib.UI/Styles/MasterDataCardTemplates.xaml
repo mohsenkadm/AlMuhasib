@@ -476,8 +476,17 @@
                 <StackPanel Grid.Row="3" Style="{StaticResource MasterDataCardActionsPanel}">
                     <Button Command="{Binding DataContext.EditInvestorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             CommandParameter="{Binding}"
-                            Style="{StaticResource TableEditIconButton}">
+                            Style="{StaticResource TableEditIconButton}"
+                            IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            ToolTip="تعديل">
                         <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding DataContext.DeleteInvestorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource TableDeleteIconButton}"
+                            IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            ToolTip="حذف (بعد سحب الرصيد المتبقي)">
+                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                     </Button>
                 </StackPanel>
             </Grid>

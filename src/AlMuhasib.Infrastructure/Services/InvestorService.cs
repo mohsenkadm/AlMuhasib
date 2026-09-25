@@ -78,6 +78,21 @@ public class InvestorService : IInvestorService
         await context.SaveChangesAsync();
     }
 
+    public async Task DeleteInvestorAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var investor = await context.Investors.FindAsync(id)
+            ?? throw new InvalidOperationException("المستثمر غير موجود");
+
+        // لا يُحذف مستثمر له رأس مال متبقٍ — يجب سحب الرصيد أولاً للحفاظ على توازن القاصة
+        if (investor.TotalDeposit != 0)
+            throw new InvalidOperationException(
+                $"لا يمكن حذف المستثمر «{investor.Name}» لأن له رصيد إيداع متبقٍ ({investor.TotalDeposit:N0}). اسحب الرصيد أولاً ثم أعد المحاولة.");
+
+        investor.MarkSoftDeleted(_currentUserService.Username ?? "system");
+        await context.SaveChangesAsync();
+    }
+
     public async Task SaveOpeningBalancesAsync(IEnumerable<InvestorOpeningBalanceItem> items)
     {
         var list = items.ToList();

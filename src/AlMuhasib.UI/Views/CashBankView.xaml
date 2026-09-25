@@ -56,8 +56,18 @@
                             <!-- Header -->
                             <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12"
                                     CornerRadius="12,12,0,0">
-                                <TextBlock Text="الصناديق" FontSize="16" FontWeight="Bold"
-                                           Foreground="White" />
+                                <Grid>
+                                    <TextBlock Text="الصناديق" FontSize="16" FontWeight="Bold"
+                                               Foreground="White" VerticalAlignment="Center" />
+                                    <Button HorizontalAlignment="Left"
+                                            Command="{Binding RefreshAllCommand}"
+                                            Style="{StaticResource IconButton}"
+                                            Width="36" Height="36"
+                                            ToolTip="تحديث القاصات والحركات"
+                                            Foreground="White">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
+                                    </Button>
+                                </Grid>
                             </Border>
 
                             <!-- List -->
@@ -84,25 +94,31 @@
 
                             <!-- Add / Edit CashBox panel -->
                             <StackPanel Grid.Row="2" Margin="12,8">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
-                                            Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <WrapPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                           Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                     <Button Content="إضافة صندوق" Command="{Binding ShowAddCashBoxCommand}"
                                             Style="{StaticResource PrimaryButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanAdd}" />
                                     <Button Content="تعديل" Command="{Binding ShowEditCashBoxCommand}"
                                             Style="{StaticResource OutlinedButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanEdit}" />
                                     <Button Content="حذف" Command="{Binding DeleteCashBoxCommand}"
                                             Style="{StaticResource FlatButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanDelete}" />
-                                    <Button Content="تسوية" Command="{Binding ShowAdjustCashBoxCommand}"
+                                    <Button Command="{Binding ShowAdjustCashBoxCommand}"
                                             Style="{StaticResource OutlinedButton}"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanEdit}"
-                                            ToolTip="تسوية رصيد الصندوق بقيد موثّق"/>
-                                </StackPanel>
+                                            ToolTip="تسوية رصيد الصندوق بقيد موثّق">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ScaleBalance" Width="16" Height="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="تسوية" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
 
                                 <!-- Add / Edit form -->
                                 <StackPanel Visibility="{Binding IsAddCashBoxVisible, Converter={StaticResource BoolToVis}}">
@@ -343,8 +359,18 @@
 
                             <Border Grid.Row="0" Background="#1565C0" Padding="16,12"
                                     CornerRadius="12,12,0,0">
-                                <TextBlock Text="البنوك" FontSize="16" FontWeight="Bold"
-                                           Foreground="White" />
+                                <Grid>
+                                    <TextBlock Text="البنوك" FontSize="16" FontWeight="Bold"
+                                               Foreground="White" VerticalAlignment="Center" />
+                                    <Button HorizontalAlignment="Left"
+                                            Command="{Binding RefreshAllCommand}"
+                                            Style="{StaticResource IconButton}"
+                                            Width="36" Height="36"
+                                            ToolTip="تحديث المصارف والحركات"
+                                            Foreground="White">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
+                                    </Button>
+                                </Grid>
                             </Border>
 
                             <ListBox Grid.Row="1" ItemsSource="{Binding BankAccounts}"
@@ -376,24 +402,31 @@
 
                             <!-- Add Bank panel -->
                             <StackPanel Grid.Row="2" Margin="12,8">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
-                                            Visibility="{Binding IsAddBankVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <WrapPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                           Visibility="{Binding IsAddBankVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                     <Button Content="إضافة بنك" Command="{Binding ShowAddBankCommand}"
                                             Style="{StaticResource PrimaryButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanAdd}" />
                                     <Button Content="تعديل" Command="{Binding ShowEditBankCommand}"
                                             Style="{StaticResource OutlinedButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanEdit}" />
                                     <Button Content="حذف" Command="{Binding DeleteBankCommand}"
                                             Style="{StaticResource FlatButton}"
-                                            Margin="0,0,8,0"
+                                            Margin="0,0,8,8"
                                             IsEnabled="{Binding CanDelete}" />
-                                    <Button Content="تسوية" Command="{Binding ShowAdjustBankCommand}"
+                                    <Button Command="{Binding ShowAdjustBankCommand}"
                                             Style="{StaticResource OutlinedButton}"
-                                            IsEnabled="{Binding CanEdit}"/>
-                                </StackPanel>
+                                            Margin="0,0,8,8"
+                                            IsEnabled="{Binding CanEdit}"
+                                            ToolTip="تسوية رصيد المصرف بقيد موثّق">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ScaleBalance" Width="16" Height="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="تسوية" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
 
                                 <StackPanel Visibility="{Binding IsAddBankVisible, Converter={StaticResource BoolToVis}}">
                                     <TextBox Text="{Binding NewBankName, UpdateSourceTrigger=PropertyChanged}"

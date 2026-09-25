@@ -122,12 +122,57 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         if (row is not null)
             SelectedInvestor = row;
         if (SelectedInvestor is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل المستثمرين");
+            return;
+        }
         FormName = SelectedInvestor.Name;
         FormPhone = SelectedInvestor.Phone ?? string.Empty;
         FormProfitPercentage = SelectedInvestor.ProfitPercentage;
         _editingInvestorId = SelectedInvestor.Id;
         IsEditing = true;
         await ResetCustomFieldEditorsAsync(SelectedInvestor.CustomFieldsJson);
+    }
+
+    [RelayCommand]
+    private async Task DeleteInvestorAsync(InvestorRow? row)
+    {
+        if (row is not null)
+            SelectedInvestor = row;
+        if (SelectedInvestor is null) return;
+        if (!CanDelete)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية حذف المستثمرين");
+            return;
+        }
+
+        if (SelectedInvestor.TotalDeposit != 0)
+        {
+            BeautifulMessageDialog.ShowWarning(
+                $"لا يمكن حذف «{SelectedInvestor.Name}» لأن له رصيد إيداع متبقٍ ({SelectedInvestor.TotalDeposit:N0}).\nاسحب الرصيد أولاً من تبويب السحب.");
+            return;
+        }
+
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
+            $"حذف المستثمر «{SelectedInvestor.Name}»؟\nسيُخفى من القوائم مع الإبقاء على السجلات التاريخية (توزيعات/حركات).");
+        if (!confirmed) return;
+
+        try
+        {
+            IsBusy = true;
+            await _investorService.DeleteInvestorAsync(SelectedInvestor.Id);
+            ResetForm();
+            await ResetCustomFieldEditorsAsync(null);
+            await RefreshAllAsync();
+            _investorRefresh.NotifyChanged();
+            BeautifulMessageDialog.ShowSuccess("تم حذف المستثمر");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally { IsBusy = false; }
     }
 
     partial void OnIsCardViewChanged(bool value) =>
@@ -364,7 +409,11 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         try
         {
             IsBusy = true;
-            DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+
+            if (DistributableProfits <= 0)
+            {
+                DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+            }
 
             if (DistributableProfits <= 0)
             {
@@ -398,6 +447,21 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     }
 
     [RelayCommand]
+    private async Task ReloadDistributableProfitsAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
     private void RecalculateTotal()
     {
         TotalToDistribute = ProfitPreviews.Where(p => p.IsIncluded).Sum(p => p.ProfitAmount);
@@ -412,7 +476,20 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
             return;
         }
 
-var confirmed = BeautifulMessageDialog.ShowConfirm(
+        RecalculateTotal();
+        if (TotalToDistribute <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("لا يوجد مبلغ للتوزيع");
+            return;
+        }
+        if (TotalToDistribute > DistributableProfits)
+        {
+            BeautifulMessageDialog.ShowWarning(
+                $"إجمالي التوزيع ({TotalToDistribute:N0}) يتجاوز الأرباح القابلة ({DistributableProfits:N0}). عدّل المبالغ أو زد الأرباح القابلة.");
+            return;
+        }
+
+        var confirmed = BeautifulMessageDialog.ShowConfirm(
                 $"سيتم توزيع مبلغ {TotalToDistribute:N0} على المستثمرين المحددين\nهل تريد المتابعة؟");
             if (!confirmed) return;
 
@@ -556,13 +633,30 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
             await LoadCustomFieldDefinitionsAsync();
             await ResetCustomFieldEditorsAsync(null);
+            await RefreshAllAsync();
+        }
+        finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private async Task RefreshAllAsync()
+    {
+        var wasBusy = IsBusy;
+        if (!wasBusy) IsBusy = true;
+        try
+        {
             await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
             await LoadRecentDepositsAsync();
             await LoadRecentWithdrawalsAsync();
             DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+            if (StatementInvestor is not null)
+                await LoadStatementAsync();
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            if (!wasBusy) IsBusy = false;
+        }
     }
 
     public async Task RefreshInvestorsAsync()

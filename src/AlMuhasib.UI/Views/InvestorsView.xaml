@@ -121,7 +121,16 @@
                                                      ExportCommand="{Binding ExportInvestorsCommand}"
                                                      PrintCommand="{Binding PrintTableCommand}"
                                                      ShowCardToggle="True"
-                                                     ShowFilter="False"/>
+                                                     ShowFilter="False">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <Button Command="{Binding RefreshAllCommand}"
+                                        ToolTip="تحديث الجداول والأرصدة"
+                                        Style="{StaticResource IconButton}"
+                                        Width="36" Height="36" Foreground="White">
+                                    <md:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
+                                </Button>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
 
                         <Grid Grid.Row="1">
                         <DataGrid x:Name="InvestorsGrid"
@@ -195,15 +204,25 @@
                                                     Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=7}"/>
                                 <DataGridTextColumn x:Name="ColCf8" Header="حقل 8" Width="100" Visibility="Collapsed"
                                                     Binding="{Binding CustomFieldsJson, Converter={StaticResource CustomFieldSlotConverter}, ConverterParameter=8}"/>
-                                <DataGridTemplateColumn Header="" Width="Auto">
+                                <DataGridTemplateColumn Header="إجراءات" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Style="{StaticResource FlatButton}"
-                                                    Command="{Binding DataContext.EditInvestorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="تعديل" Padding="4">
-                                                <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
-                                            </Button>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource TableEditIconButton}"
+                                                        Command="{Binding DataContext.EditInvestorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        ToolTip="تعديل" Margin="0,0,4,0">
+                                                    <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Style="{StaticResource TableDeleteIconButton}"
+                                                        Command="{Binding DataContext.DeleteInvestorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        ToolTip="حذف (بعد سحب الرصيد المتبقي)">
+                                                    <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                </Button>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -328,7 +347,16 @@
                                                      ShowCardToggle="False"
                                                      ShowExport="False"
                                                      ShowPrint="False"
-                                                     ShowFilter="False"/>
+                                                     ShowFilter="False">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <Button Command="{Binding RefreshAllCommand}"
+                                        ToolTip="تحديث"
+                                        Style="{StaticResource IconButton}"
+                                        Width="36" Height="36" Foreground="White">
+                                    <md:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
+                                </Button>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
                         <DataGrid x:Name="RecentDepositsGrid" Grid.Row="1" ItemsSource="{Binding RecentDeposits}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
@@ -510,7 +538,16 @@
                                                      ShowCardToggle="False"
                                                      ShowExport="False"
                                                      ShowPrint="False"
-                                                     ShowFilter="False"/>
+                                                     ShowFilter="False">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <Button Command="{Binding RefreshAllCommand}"
+                                        ToolTip="تحديث"
+                                        Style="{StaticResource IconButton}"
+                                        Width="36" Height="36" Foreground="White">
+                                    <md:PackIcon Kind="Refresh" Width="20" Height="20" Foreground="White"/>
+                                </Button>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
                         <DataGrid x:Name="RecentWithdrawalsGrid" Grid.Row="1" ItemsSource="{Binding RecentWithdrawals}"
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
@@ -609,6 +646,8 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="200"/>
                                 <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -618,15 +657,20 @@
                                         SelectedDate="{Binding DistributionDate}"
                                         Style="{StaticResource FilledDatePicker}"/>
 
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="الأرباح القابلة:" FontWeight="SemiBold" Margin="0,0,8,0"
-                                           VerticalAlignment="Center" FontSize="14"/>
-                                <TextBlock Text="{Binding DistributableProfits, StringFormat=N0}"
-                                           FontWeight="Bold" FontSize="16" Foreground="#388E3C"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
+                            <TextBox Grid.Column="2"
+                                     md:HintAssist.Hint="الأرباح القابلة للتوزيع"
+                                     Text="{Binding DistributableProfits, UpdateSourceTrigger=LostFocus}"
+                                     Style="{StaticResource NumericTextBox}"
+                                     ToolTip="يمكن تعديل المبلغ قبل المعاينة أو التأكيد"/>
 
-                            <Button Grid.Column="4" Content="معاينة التوزيع"
+                            <Button Grid.Column="4" Command="{Binding ReloadDistributableProfitsCommand}"
+                                    Style="{StaticResource IconButton}" Width="40" Height="40"
+                                    ToolTip="إعادة تحميل الأرباح المحسوبة من النظام"
+                                    VerticalAlignment="Center">
+                                <md:PackIcon Kind="Refresh" Width="20" Height="20"/>
+                            </Button>
+
+                            <Button Grid.Column="6" Content="معاينة التوزيع"
                                     Command="{Binding PreviewDistributionCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
                                     md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
@@ -652,6 +696,7 @@
                         <DataGrid x:Name="ProfitPreviewsGrid" Grid.Row="1" ItemsSource="{Binding ProfitPreviews}"
                                   AutoGenerateColumns="False" IsReadOnly="False"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
+                                  CellEditEnding="ProfitPreviewsGrid_OnCellEditEnding"
                                   Style="{StaticResource ModernDataGrid}">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="تحديد" Binding="{Binding IsIncluded, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
@@ -690,7 +735,9 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="الربح" Binding="{Binding ProfitAmount, StringFormat=N0}" Width="140" IsReadOnly="True">
+                                <DataGridTextColumn Header="الربح (قابل للتعديل)"
+                                                    Binding="{Binding ProfitAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}"
+                                                    Width="160" IsReadOnly="False">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="Bold"/>
@@ -699,6 +746,12 @@
                                             <Setter Property="Margin" Value="8,0"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
+                                    <DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Padding" Value="8,4"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTemplateColumn Header="واتساب" Width="70" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellStyle>
@@ -723,22 +776,29 @@
                 <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="16" Margin="0,12,0,0" md:ElevationAssist.Elevation="Dp1"
                          Visibility="{Binding IsPreviewReady, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="إجمالي التوزيع:" FontWeight="SemiBold" FontSize="14"
                                        Margin="0,0,8,0" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding TotalToDistribute, StringFormat=N0}"
                                        FontWeight="Bold" FontSize="18" Foreground="#388E3C"
-                                       VerticalAlignment="Center" Margin="0,0,24,0"/>
-                            <ComboBox md:HintAssist.Hint="الصندوق"
+                                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <ComboBox md:HintAssist.Hint="صندوق الصرف"
                                       ItemsSource="{Binding CashBoxes}"
                                       SelectedItem="{Binding DistributionCashBox}"
                                       DisplayMemberPath="Name" Width="200"
-                                      Style="{StaticResource FilledComboBox}"/>
+                                      Style="{StaticResource FilledComboBox}"
+                                      VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Content="إعادة الحساب" Command="{Binding RecalculateTotalCommand}"
-                                    Style="{StaticResource FlatButton}" Margin="0,0,8,0"/>
+                                    Style="{StaticResource OutlinedButton}" Margin="0,0,8,0"
+                                    Padding="16,8"/>
                             <Button Content="تأكيد التوزيع" Command="{Binding ConfirmDistributionCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
                                     md:ButtonAssist.CornerRadius="8" Padding="24,8"
@@ -844,11 +904,18 @@
                                                      ShowFilter="False">
                             <controls:ListTableHeaderBar.ExtraContent>
                                 <Button Command="{Binding ShareStatementWhatsAppCommand}"
-                                        ToolTip="إرسال الكشف عبر واتساب"
-                                        Background="{DynamicResource DashboardKpiGreenLightBrush}" BorderBrush="#A5D6A7" BorderThickness="1"
-                                        Width="36" Height="36" Cursor="Hand"
-                                        md:ButtonAssist.CornerRadius="8">
-                                    <md:PackIcon Kind="Whatsapp" Width="20" Height="20" Foreground="#25D366"/>
+                                        ToolTip="إرسال كشف الأرباح للمستثمر عبر واتساب (PDF)"
+                                        Background="#25D366" BorderThickness="0"
+                                        Height="36" Padding="12,0" Cursor="Hand"
+                                        md:ButtonAssist.CornerRadius="8"
+                                        Foreground="White">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="Whatsapp" Width="18" Height="18"
+                                                     Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إرسال الكشف" Margin="8,0,0,0"
+                                                   FontWeight="SemiBold" Foreground="White"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </Button>
                             </controls:ListTableHeaderBar.ExtraContent>
                         </controls:ListTableHeaderBar>
