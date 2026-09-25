@@ -1207,7 +1207,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode && !IsDamageMode)
         {
             var creditCheck = await _customerCreditService.CheckCreditAsync(
-                SelectedCustomer.Id, GrandTotal, isInstallment: false);
+                SelectedCustomer.Id, GrandTotal, isInstallment: false,
+                ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
+                ShowMultiCurrency ? FxRate : 1m);
             if (!creditCheck.IsAllowed)
             {
                 InvoiceValidationDialog.ShowBlockingError(creditCheck.Message);

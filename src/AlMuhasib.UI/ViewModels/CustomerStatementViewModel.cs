@@ -18,6 +18,8 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalDebit = "0";
     [ObservableProperty] private string _totalCredit = "0";
     [ObservableProperty] private string _balance = "0";
+    [ObservableProperty] private string _balanceUsd = "—";
+    [ObservableProperty] private bool _showBalanceUsd;
     [ObservableProperty] private string _transactionCount = "0";
     [ObservableProperty] private string _periodLabel = "جميع الفترات";
 
@@ -93,6 +95,8 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
             TotalDebit = FormatCurrency(result.TotalDebit);
             TotalCredit = FormatCurrency(result.TotalCredit);
             Balance = FormatCurrency(result.Balance);
+            ShowBalanceUsd = result.BalanceUsd != 0;
+            BalanceUsd = ShowBalanceUsd ? $"$ {result.BalanceUsd:N2}" : "—";
             TransactionCount = result.TransactionCount.ToString("N0");
             PeriodLabel = BuildPeriodLabel();
 
@@ -135,8 +139,10 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
             $"عدد الحركات: {TransactionCount}",
             $"إجمالي المدين: {TotalDebit}",
             $"إجمالي الدائن: {TotalCredit}",
-            $"الرصيد: {Balance}"
+            $"الرصيد د.ع: {Balance}"
         };
+        if (ShowBalanceUsd)
+            summary.Add($"الرصيد $: {BalanceUsd}");
         _exportService.PrintTable(title, cols, rows, summary);
     }
 
@@ -171,7 +177,8 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
                 $"عدد الحركات: {TransactionCount}",
                 $"إجمالي المدين: {TotalDebit}",
                 $"إجمالي الدائن: {TotalCredit}",
-                $"الرصيد: {Balance}"
+                $"الرصيد د.ع: {Balance}",
+                ..(ShowBalanceUsd ? new[] { $"الرصيد $: {BalanceUsd}" } : Array.Empty<string>())
             ]
         };
 

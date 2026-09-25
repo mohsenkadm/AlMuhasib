@@ -201,8 +201,8 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
     {
         var context = _db;
         var salesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
-        var expQ = context.Expenses.AsQueryable();
-        var bankQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.BankReceipt);
+        var expQ = context.Expenses.Where(e => e.Currency == AccountingCurrency.IQD);
+        var bankQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.BankReceipt && v.Currency == AccountingCurrency.IQD);
         var distQ = context.ProfitDistributions.AsQueryable();
 
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); bankQ = bankQ.Where(v => v.Date >= from.Value); distQ = distQ.Where(p => p.Date >= from.Value); }
@@ -261,7 +261,8 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
 
             var purchases = await CalculateCogsAsync(context, effectiveFrom, effectiveToExclusive);
             var expenses = await context.Expenses
-                .Where(e => e.Date >= effectiveFrom && e.Date < effectiveToExclusive)
+                .Where(e => e.Currency == AccountingCurrency.IQD
+                            && e.Date >= effectiveFrom && e.Date < effectiveToExclusive)
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
             var gross = sales - purchases;
@@ -287,6 +288,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
+                         && ii.Invoice.Currency == AccountingCurrency.IQD
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale
                              || ii.Invoice.InvoiceType == InvoiceType.Installment
                              || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
@@ -1060,7 +1062,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
     public async Task<ExpensesReportResult> GetExpensesReportAsync(DateTime? from, DateTime? to, int? expenseTypeId, int? cashBoxId)
     {
         var context = _db;
-        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox).AsQueryable();
+        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox).Where(e => e.Currency == AccountingCurrency.IQD);
         if (from.HasValue) query = query.Where(e => e.Date >= from.Value);
         if (to.HasValue) query = query.Where(e => e.Date < EndOfDay(to));
         if (expenseTypeId.HasValue) query = query.Where(e => e.ExpenseTypeId == expenseTypeId.Value);
@@ -1101,7 +1103,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         var rows = new List<IncomeExpenseRow>();
 
         var salesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
-        var expQ = context.Expenses.Include(e => e.ExpenseType).AsQueryable();
+        var expQ = context.Expenses.Include(e => e.ExpenseType).Where(e => e.Currency == AccountingCurrency.IQD);
         if (from.HasValue) { salesQ = salesQ.Where(i => i.Date >= from.Value); expQ = expQ.Where(e => e.Date >= from.Value); }
         if (to.HasValue) { salesQ = salesQ.Where(i => i.Date < EndOfDay(to)); expQ = expQ.Where(e => e.Date < EndOfDay(to)); }
 
@@ -1141,7 +1143,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(i => InvoiceFilters.SignedNetAmount(i.InvoiceType, i.NetAmount)) })
             .ToList();
         var monthlyExp = await context.Expenses
-            .Where(e => e.Date >= f && e.Date <= t)
+            .Where(e => e.Currency == AccountingCurrency.IQD && e.Date >= f && e.Date <= t)
             .GroupBy(e => new { e.Date.Year, e.Date.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(e => e.Amount) }).ToListAsync();
 
@@ -1315,7 +1317,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             });
         }
 
-        var expQ = context.Expenses.Include(e => e.CashBox).AsQueryable();
+        var expQ = context.Expenses.Include(e => e.CashBox).Where(e => e.Currency == AccountingCurrency.IQD);
         if (cashBoxId.HasValue) expQ = expQ.Where(e => e.CashBoxId == cashBoxId.Value);
         if (from.HasValue) expQ = expQ.Where(e => e.Date >= from.Value);
         if (to.HasValue) expQ = expQ.Where(e => e.Date < EndOfDay(to));
@@ -1370,7 +1372,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         decimal totalSales = await CloudInvoiceFilters.SumSignedNetAsync(salesQ);
         decimal costOfSales = await CalculateCogsAsync(context, null, endOfDay.AddTicks(1));
         decimal totalExpenses = await context.Expenses
-            .Where(e => e.Date <= endOfDay)
+            .Where(e => e.Currency == AccountingCurrency.IQD && e.Date <= endOfDay)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
         decimal salesProfit = totalSales - costOfSales;

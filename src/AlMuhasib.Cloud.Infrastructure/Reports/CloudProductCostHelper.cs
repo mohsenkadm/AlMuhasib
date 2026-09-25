@@ -73,7 +73,8 @@ public static class CloudProductCostHelper
         var query = context.InvoiceItems
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
-                         && (ii.Invoice!.InvoiceType == InvoiceType.Purchase
+                         && ii.Invoice!.Currency == AccountingCurrency.IQD
+                         && (ii.Invoice.InvoiceType == InvoiceType.Purchase
                              || ii.Invoice.InvoiceType == InvoiceType.PurchaseReturn));
 
         if (productIds is not null)

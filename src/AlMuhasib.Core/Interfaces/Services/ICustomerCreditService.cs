@@ -1,8 +1,18 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface ICustomerCreditService
 {
     Task<CreditCheckResult> CheckCreditAsync(int customerId, decimal additionalAmount, bool isInstallment);
+
+    Task<CreditCheckResult> CheckCreditAsync(
+        int customerId,
+        decimal additionalAmount,
+        bool isInstallment,
+        AccountingCurrency currency,
+        decimal fxRate);
+
     Task UpdateReliabilityScoreAsync(int customerId);
 }
 

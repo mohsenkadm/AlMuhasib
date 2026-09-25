@@ -220,6 +220,7 @@
   "zero_unit_price": "A line item has zero price — enter a valid price",
   "invalid_installment_count": "Installment count must be at least 1",
   "invalid_discount": "Discount value is invalid",
+  "fx_rate_required": "A valid exchange rate is required for USD invoices",
   "credit_due_date": "Due date",
   "select_credit_due_date": "Select due date",
   "hotel_nav_home": "Home",

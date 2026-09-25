@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,53 +15,92 @@ public class CustomerCreditService : ICustomerCreditService
         _contextFactory = contextFactory;
     }
 
-    public async Task<CreditCheckResult> CheckCreditAsync(int customerId, decimal additionalAmount, bool isInstallment)
+    public Task<CreditCheckResult> CheckCreditAsync(int customerId, decimal additionalAmount, bool isInstallment)
+        => CheckCreditAsync(customerId, additionalAmount, isInstallment, AccountingCurrency.IQD, 1m);
+
+    public async Task<CreditCheckResult> CheckCreditAsync(
+        int customerId,
+        decimal additionalAmount,
+        bool isInstallment,
+        AccountingCurrency currency,
+        decimal fxRate)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var customer = await context.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId);
         if (customer is null)
             return new CreditCheckResult { IsAllowed = false, Message = "العميل غير موجود" };
 
-        decimal currentDebt;
-        decimal? limit;
+        decimal? limit = isInstallment ? customer.MaxInstallmentDebt : customer.MaxCreditLimit;
 
+        decimal currentDebtIqd;
         if (isInstallment)
         {
-            currentDebt = await context.Installments.AsNoTracking()
-                .Include(i => i.InstallmentPlan)
-                .Where(i => i.InstallmentPlan!.CustomerId == customerId &&
-                            i.RemainingAmount > 0 &&
-                            i.InstallmentPlan.Invoice!.Currency == AccountingCurrency.IQD)
-                .SumAsync(i => i.RemainingAmount);
-            limit = customer.MaxInstallmentDebt;
+            var rows = await context.Installments.AsNoTracking()
+                .Where(i => i.InstallmentPlan!.CustomerId == customerId && i.RemainingAmount > 0)
+                .Select(i => new
+                {
+                    i.RemainingAmount,
+                    Currency = i.InstallmentPlan!.Invoice!.Currency,
+                    FxRate = i.InstallmentPlan.Invoice.FxRate
+                })
+                .ToListAsync();
+            currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
         }
         else
         {
-            currentDebt = await context.Invoices.AsNoTracking()
+            var rows = await context.Invoices.AsNoTracking()
                 .Where(i => i.CustomerId == customerId &&
                             i.PaymentMethod == PaymentMethod.Credit &&
-                            i.RemainingAmount > 0 &&
-                            i.Currency == AccountingCurrency.IQD)
-                .SumAsync(i => i.RemainingAmount);
-            limit = customer.MaxCreditLimit;
+                            i.RemainingAmount > 0)
+                .Select(i => new { i.RemainingAmount, i.Currency, i.FxRate })
+                .ToListAsync();
+            currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
         }
 
-        if (limit is null or <= 0)
-            return new CreditCheckResult { IsAllowed = true, CurrentDebt = currentDebt, Limit = limit };
-
-        var projected = currentDebt + additionalAmount;
-        if (projected > limit)
+        decimal additionalIqd;
+        try
+        {
+            additionalIqd = AccountingCurrencyRules.ToBaseIqdStrict(additionalAmount, currency, fxRate);
+        }
+        catch (InvalidOperationException ex)
         {
             return new CreditCheckResult
             {
                 IsAllowed = false,
-                CurrentDebt = currentDebt,
-                Limit = limit,
-                Message = $"تجاوز حد الائتمان: الدين الحالي {currentDebt:N0} + الجديد {additionalAmount:N0} > الحد {limit:N0} د.ع"
+                Message = ex.Message,
+                CurrentDebt = currentDebtIqd,
+                Limit = limit
             };
         }
 
-        return new CreditCheckResult { IsAllowed = true, CurrentDebt = currentDebt, Limit = limit };
+        if (limit is null or <= 0)
+            return new CreditCheckResult { IsAllowed = true, CurrentDebt = currentDebtIqd, Limit = limit };
+
+        var projected = currentDebtIqd + additionalIqd;
+        if (projected > limit)
+        {
+            var currencyHint = currency == AccountingCurrency.USD
+                ? $" (فاتورة ${additionalAmount:N2} ≈ {additionalIqd:N0} د.ع)"
+                : string.Empty;
+            return new CreditCheckResult
+            {
+                IsAllowed = false,
+                CurrentDebt = currentDebtIqd,
+                Limit = limit,
+                Message =
+                    $"تجاوز حد الائتمان: الدين الحالي {currentDebtIqd:N0} + الجديد {additionalIqd:N0}{currencyHint} > الحد {limit:N0} د.ع"
+            };
+        }
+
+        return new CreditCheckResult { IsAllowed = true, CurrentDebt = currentDebtIqd, Limit = limit };
+    }
+
+    private static decimal DebtToIqd(decimal amount, AccountingCurrency currency, decimal fxRate)
+    {
+        if (amount <= 0) return 0;
+        if (currency == AccountingCurrency.IQD) return amount;
+        if (fxRate <= 0) return 0;
+        return AccountingCurrencyHelper.RoundIqd(amount * fxRate);
     }
 
     public async Task UpdateReliabilityScoreAsync(int customerId)
