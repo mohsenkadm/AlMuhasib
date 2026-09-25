@@ -16,6 +16,7 @@ public partial class PersonProfileViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IUserPreferencesService _preferences;
 
     private List<PersonLookupItem> _allPeople = [];
     private PersonProfileResult? _currentProfile;
@@ -66,12 +67,14 @@ public partial class PersonProfileViewModel : ViewModelBase
         IPersonProfileService personProfileService,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        IWhatsAppShareService whatsAppShare)
+        IWhatsAppShareService whatsAppShare,
+        IUserPreferencesService preferences)
     {
         _personProfileService = personProfileService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _whatsAppShare = whatsAppShare;
+        _preferences = preferences;
         PageTitle = "ملف الشخص";
 
         TypeFilters.Add(new PersonTypeFilterItem(null, "الكل", PackIconKind.AccountMultiple) { IsSelected = true });
@@ -304,10 +307,10 @@ public partial class PersonProfileViewModel : ViewModelBase
 
         (TypeAccent, TypeAccentLight, TypeIcon) = profile.PartyType switch
         {
-            PersonPartyType.Customer => ("#1565C0", "#E3F2FD", PackIconKind.Account),
-            PersonPartyType.Supplier => ("#EF6C00", "#FFF3E0", PackIconKind.Factory),
-            PersonPartyType.Investor => ("#2E7D32", "#E8F5E9", PackIconKind.TrendingUp),
-            _ => ("#1565C0", "#E3F2FD", PackIconKind.Account)
+            PersonPartyType.Customer => ("#1565C0", AccentSurface("#163A6C", "#E3F2FD"), PackIconKind.Account),
+            PersonPartyType.Supplier => ("#EF6C00", AccentSurface("#3D2A14", "#FFF3E0"), PackIconKind.Factory),
+            PersonPartyType.Investor => ("#2E7D32", AccentSurface("#1B3324", "#E8F5E9"), PackIconKind.TrendingUp),
+            _ => ("#1565C0", AccentSurface("#163A6C", "#E3F2FD"), PackIconKind.Account)
         };
 
         TotalDebit = FormatCurrency(profile.TotalDebit);
@@ -389,18 +392,18 @@ public partial class PersonProfileViewModel : ViewModelBase
         CustomerTabSearch = string.Empty;
     }
 
-    private static PersonTimelineDisplayItem CreateTimelineDisplay(PersonTimelineItem item, int index)
+    private PersonTimelineDisplayItem CreateTimelineDisplay(PersonTimelineItem item, int index)
     {
         var (icon, accent, accentLight) = item.Category switch
         {
-            PersonTimelineCategory.Invoice => (PackIconKind.FileDocumentOutline, "#1565C0", "#E3F2FD"),
-            PersonTimelineCategory.Voucher => (PackIconKind.Receipt, "#00838F", "#E0F7FA"),
-            PersonTimelineCategory.InstallmentPayment => (PackIconKind.CalendarCheck, "#6A1B9A", "#F3E5F5"),
-            PersonTimelineCategory.OpeningBalance => (PackIconKind.History, "#455A64", "#ECEFF1"),
-            PersonTimelineCategory.Deposit => (PackIconKind.CashPlus, "#2E7D32", "#E8F5E9"),
-            PersonTimelineCategory.Withdrawal => (PackIconKind.CashMinus, "#C62828", "#FFEBEE"),
-            PersonTimelineCategory.ProfitDistribution => (PackIconKind.ChartLine, "#558B2F", "#F1F8E9"),
-            _ => (PackIconKind.CircleOutline, "#607D8B", "#ECEFF1")
+            PersonTimelineCategory.Invoice => (PackIconKind.FileDocumentOutline, "#1565C0", AccentSurface("#163A6C", "#E3F2FD")),
+            PersonTimelineCategory.Voucher => (PackIconKind.Receipt, "#00838F", AccentSurface("#143A5C", "#E0F7FA")),
+            PersonTimelineCategory.InstallmentPayment => (PackIconKind.CalendarCheck, "#6A1B9A", AccentSurface("#3D2230", "#F3E5F5")),
+            PersonTimelineCategory.OpeningBalance => (PackIconKind.History, "#455A64", AccentSurface("#1A2448", "#ECEFF1")),
+            PersonTimelineCategory.Deposit => (PackIconKind.CashPlus, "#2E7D32", AccentSurface("#1B3324", "#E8F5E9")),
+            PersonTimelineCategory.Withdrawal => (PackIconKind.CashMinus, "#C62828", AccentSurface("#3D2226", "#FFEBEE")),
+            PersonTimelineCategory.ProfitDistribution => (PackIconKind.ChartLine, "#558B2F", AccentSurface("#1A2E22", "#F1F8E9")),
+            _ => (PackIconKind.CircleOutline, "#607D8B", AccentSurface("#1A2448", "#ECEFF1"))
         };
 
         return new PersonTimelineDisplayItem
@@ -420,6 +423,9 @@ public partial class PersonProfileViewModel : ViewModelBase
             AnimationDelayMs = Math.Min(index * 40, 600)
         };
     }
+
+    private string AccentSurface(string darkHex, string lightHex) =>
+        _preferences.Current.IsDarkTheme ? darkHex : lightHex;
 
     private static PackIconKind MapSectionIcon(string key) => key switch
     {

@@ -99,11 +99,7 @@
         </Grid.RenderTransform>
 
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#F5F9FC" Offset="0"/>
-                <GradientStop Color="#EEF5F8" Offset="0.45"/>
-                <GradientStop Color="#F7FBFD" Offset="1"/>
-            </LinearGradientBrush>
+            <DynamicResource ResourceKey="DashboardAmbientBrush"/>
         </Grid.Background>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -189,7 +185,7 @@
                                             <Border CornerRadius="10" Padding="8,2" Margin="0,0,10,0"
                                                     Background="{DynamicResource PrimaryHueLightBrush}" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding TypeLabel}" FontSize="11"
-                                                           Foreground="#1565C0" FontWeight="SemiBold"/>
+                                                           Foreground="{DynamicResource HighlightBrush}" FontWeight="SemiBold"/>
                                             </Border>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
@@ -227,7 +223,7 @@
                 <Border Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}"
                         Padding="40,60" Margin="0,20,0,0"
                         CornerRadius="24"
-                        Background="#80FFFFFF"
+                        Background="{DynamicResource CardBrush}"
                         BorderBrush="{DynamicResource SubtleBorderBrush}"
                         BorderThickness="1">
                     <StackPanel HorizontalAlignment="Center" MaxWidth="420">
@@ -259,7 +255,7 @@
                             </Border.Triggers>
                             <materialDesign:PackIcon Kind="AccountSearch"
                                                      Width="40" Height="40"
-                                                     Foreground="#1565C0"
+                                                     Foreground="{DynamicResource HighlightBrush}"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"/>
                         </Border>
@@ -285,13 +281,8 @@
                     <!-- Hero header -->
                     <Border CornerRadius="24" Padding="24,22" Margin="0,0,0,16"
                             BorderThickness="1"
-                            BorderBrush="{Binding TypeAccent, Converter={StaticResource HexToBrushConverter}}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#FFFFFFFF" Offset="0"/>
-                                <GradientStop Color="#F3F8FC" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                            BorderBrush="{Binding TypeAccent, Converter={StaticResource HexToBrushConverter}}"
+                            Background="{DynamicResource CardBrush}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -390,8 +381,8 @@
                             TextValue="{Binding TransactionCount}"
                             Icon="SwapHorizontal"
                             IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
-                            IconForeground="#1565C0"
-                            ValueForeground="#1565C0"/>
+                            IconForeground="{DynamicResource DashboardKpiBlueBrush}"
+                            ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                     </UniformGrid>
 
                     <!-- Customer extras -->
@@ -450,7 +441,7 @@
                                          Style="{StaticResource FilledTextBox}"/>
                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                                     <materialDesign:PackIcon Kind="ChartBoxOutline" Width="20" Height="20"
-                                                             Foreground="#1565C0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                             Foreground="{DynamicResource HighlightBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="تحليلات العميل" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </DockPanel>
@@ -845,15 +836,15 @@
         </ScrollViewer>
 
         <!-- Busy overlay -->
-        <Border Background="#66FFFFFF"
+        <Border Background="#99000000"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                              IsIndeterminate="True" Width="42" Height="42"
-                             Foreground="#1565C0"/>
+                             Foreground="{DynamicResource HighlightBrush}"/>
                 <TextBlock Text="جاري التحميل..." Margin="0,12,0,0"
                            HorizontalAlignment="Center"
-                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                           Foreground="White"/>
             </StackPanel>
         </Border>
     </Grid>
