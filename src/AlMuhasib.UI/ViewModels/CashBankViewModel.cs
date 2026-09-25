@@ -247,6 +247,41 @@ public partial class CashBankViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task RefreshAllAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var selectedCashBoxId = SelectedCashBox?.Id;
+            var selectedBankId = SelectedBankAccount?.Id;
+
+            await LoadCashBoxesAsync();
+            await LoadBankAccountsAsync();
+            await RefreshTransferFromAccountsAsync();
+            await RefreshTransferToAccountsAsync();
+            await LoadTransfersAsync();
+
+            if (selectedCashBoxId is int cashId)
+            {
+                SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == cashId);
+                if (SelectedCashBox is not null)
+                    await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+            }
+
+            if (selectedBankId is int bankId)
+            {
+                SelectedBankAccount = BankAccounts.FirstOrDefault(b => b.Id == bankId);
+                if (SelectedBankAccount is not null)
+                    await LoadBankTransactionsAsync(SelectedBankAccount.Id);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     // TAB 0: CASH BOXES
     // ══════════════════════════════════════════════════════
@@ -559,7 +594,16 @@ public partial class CashBankViewModel : ViewModelBase
     [RelayCommand]
     private void ShowAdjustCashBox()
     {
-        if (SelectedCashBox is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تسوية الأرصدة");
+            return;
+        }
+        if (SelectedCashBox is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر صندوقاً أولاً");
+            return;
+        }
         AdjustIsBank = false;
         AdjustAmount = 0;
         AdjustReason = string.Empty;
@@ -570,7 +614,16 @@ public partial class CashBankViewModel : ViewModelBase
     [RelayCommand]
     private void ShowAdjustBank()
     {
-        if (SelectedBankAccount is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تسوية الأرصدة");
+            return;
+        }
+        if (SelectedBankAccount is null)
+        {
+            BeautifulMessageDialog.ShowWarning("اختر مصرفاً أولاً");
+            return;
+        }
         AdjustIsBank = true;
         AdjustAmount = 0;
         AdjustReason = string.Empty;

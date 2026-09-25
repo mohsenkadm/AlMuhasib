@@ -23,4 +23,14 @@ public partial class InvestorsView : UserControl
             vm => vm is InvestorsViewModel i ? i.GetCustomFieldColumnStates() : null,
             nameof(InvestorsViewModel.CustomFieldColumnsVersion));
     }
+
+    private void ProfitPreviewsGrid_OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+    {
+        if (e.EditAction != DataGridEditAction.Commit) return;
+        if (DataContext is not InvestorsViewModel vm) return;
+
+        // إعادة حساب الإجمالي بعد تعديل مبلغ الربح أو التحديد
+        Dispatcher.BeginInvoke(new Action(() => vm.RecalculateTotalCommand.Execute(null)),
+            System.Windows.Threading.DispatcherPriority.Background);
+    }
 }

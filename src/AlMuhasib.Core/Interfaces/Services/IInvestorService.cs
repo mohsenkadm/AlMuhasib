@@ -10,6 +10,11 @@ public interface IInvestorService
     Task<Investor> AddInvestorAsync(string name, string? phone, decimal profitPercentage, string? customFieldsJson = null);
     Task UpdateInvestorAsync(int id, string name, string? phone, decimal profitPercentage, string? customFieldsJson = null);
 
+    /// <summary>
+    /// حذف ناعم للمستثمر. يُرفض إن بقي رصيد إيداع؛ السجل التاريخي يبقى محفوظاً.
+    /// </summary>
+    Task DeleteInvestorAsync(int id);
+
     /// <summary>حفظ الأرصدة الافتتاحية للمستثمرين (لا تؤثر على القاصة)</summary>
     Task SaveOpeningBalancesAsync(IEnumerable<InvestorOpeningBalanceItem> items);
 
