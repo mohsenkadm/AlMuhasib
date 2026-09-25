@@ -1,12 +1,27 @@
 <UserControl x:Class="AlMuhasib.UI.Views.RealEstate.RealEstateDashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="عقد جديد" Command="{Binding OpenNewContractCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="FileDocumentPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+<ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <StackPanel>
             <DockPanel Margin="0,0,0,16">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">

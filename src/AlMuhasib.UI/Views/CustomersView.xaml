@@ -9,11 +9,34 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="إضافة عميل" Command="{Binding OpenAddDialogCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="AccountPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تنزيل قالب Excel" Command="{Binding DownloadImportTemplateCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="FileDownloadOutline" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="استيراد من Excel" Command="{Binding ImportFromExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="FileUploadOutline" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
         <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="24">
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

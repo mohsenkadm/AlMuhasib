@@ -13,10 +13,24 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

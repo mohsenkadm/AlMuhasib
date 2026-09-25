@@ -7,7 +7,24 @@
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <Grid Margin="24">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث" Command="{Binding SearchCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintAuditLogCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

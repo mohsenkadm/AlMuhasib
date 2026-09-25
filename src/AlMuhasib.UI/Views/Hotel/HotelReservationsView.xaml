@@ -7,7 +7,31 @@
              xmlns:local="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <Grid>
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث الحجوزات" Command="{Binding LoadReservationsCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="حجز جديد" Command="{Binding OpenNewReservationCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="CalendarPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة التفاصيل" Command="{Binding DetailPrintCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
     <controls:HotelListPageShell PageTitle="إدارة الحجوزات"
                                  ListTitle="الحجوزات"
                                  ShowStatsBar="True"

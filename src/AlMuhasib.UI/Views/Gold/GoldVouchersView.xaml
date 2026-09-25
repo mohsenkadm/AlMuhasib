@@ -8,10 +8,32 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding LoadCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="إنشاء" Command="{Binding OpenCreateDialogCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="حفظ" Command="{Binding SaveCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="ContentSave" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="24">
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

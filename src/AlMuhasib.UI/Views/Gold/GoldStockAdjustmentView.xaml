@@ -1,11 +1,28 @@
 <UserControl x:Class="AlMuhasib.UI.Views.Gold.GoldStockAdjustmentView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="قراءة الميزان" Command="{Binding ReadScaleCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Scale" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="تنفيذ" Command="{Binding SubmitCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Check" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إعادة تعيين" Command="{Binding ResetFormCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+<ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <StackPanel MaxWidth="640" HorizontalAlignment="Stretch">
             <md:Card Padding="0" Margin="0,0,0,16" UniformCornerRadius="16"
                      BorderBrush="#D4AF37" BorderThickness="1" md:ElevationAssist.Elevation="Dp3">

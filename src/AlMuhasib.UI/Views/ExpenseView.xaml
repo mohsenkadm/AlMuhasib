@@ -7,7 +7,31 @@
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
-    <Grid Margin="24">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث" Command="{Binding SearchCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="إضافة نوع مصروف" Command="{Binding AddExpenseTypeCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة مصروف" Command="{Binding AddExpenseCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="CashPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير المصاريف" Command="{Binding ExportExpensesCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة المصاريف" Command="{Binding PrintExpensesCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

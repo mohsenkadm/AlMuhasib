@@ -16,6 +16,24 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحميل الملف" Command="{Binding LoadProfileCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="AccountDetails" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تذكير واتساب" Command="{Binding SendDebtReminderWhatsAppCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Whatsapp" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
 
@@ -93,7 +111,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid x:Name="RootPanel" Opacity="0">
+    <Grid x:Name="RootPanel" Opacity="0" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RenderTransform>
             <TranslateTransform Y="18"/>
         </Grid.RenderTransform>

@@ -6,7 +6,16 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <Grid Margin="24">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

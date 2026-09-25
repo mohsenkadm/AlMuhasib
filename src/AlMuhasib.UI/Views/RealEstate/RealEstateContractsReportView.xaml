@@ -7,7 +7,24 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding LoadReportCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintReportCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+<ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <StackPanel>
             <TextBlock Text="تقرير عقود العقارات" FontSize="24" FontWeight="Bold"
                        Foreground="#2E7D32" Margin="0,0,0,16"/>

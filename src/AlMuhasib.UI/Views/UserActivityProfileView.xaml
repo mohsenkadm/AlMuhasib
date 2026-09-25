@@ -15,11 +15,20 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث الكل" Command="{Binding RefreshAllCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="بحث" Command="{Binding SearchCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="20" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
