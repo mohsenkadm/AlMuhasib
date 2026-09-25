@@ -99,6 +99,30 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="DashboardChartCard" TargetType="materialDesign:Card" BasedOn="{StaticResource SectionCard}">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="Background" Value="{DynamicResource DashboardChartCardBrush}"/>
+        </Style>
+
+        <Style x:Key="DashboardChartHost" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource DashboardChartWellBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DashboardChartWellBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="14,10,10,8"/>
+            <Setter Property="Margin" Value="16,4,16,16"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="FlowDirection" Value="LeftToRight"/>
+        </Style>
+
+        <Style x:Key="DashboardChartHeader" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource DashboardChartHeaderBrush}"/>
+            <Setter Property="Padding" Value="18,14,18,12"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DashboardChartWellBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+
         <Style x:Key="DashboardTaskButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -996,59 +1020,93 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource SectionCard}">
+                    <materialDesign:Card Grid.Column="0" Style="{StaticResource DashboardChartCard}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="4"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="300"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
-                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource DashboardKpiOrangeLightBrush}">
-                                    <materialDesign:PackIcon Kind="ChartAreaspline" Width="22" Height="22"
-                                                             Foreground="{StaticResource GoldPrimaryBrush}"
-                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="مبيعات آخر 30 يوم" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="اتجاه الإيرادات اليومية (د.ع)" FontSize="11"
-                                               Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                            <Border Grid.Row="1" Background="{DynamicResource DashboardChartWellBrush}" CornerRadius="14" Padding="8"
-                                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}" BorderThickness="1" FlowDirection="LeftToRight">
+
+                            <Border Grid.Row="0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#B8860B" Offset="0"/>
+                                        <GradientStop Color="#D4AF37" Offset="0.55"/>
+                                        <GradientStop Color="#F5E6A3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
+                                <DockPanel LastChildFill="True">
+                                    <Border Style="{StaticResource DashboardIconBadge}"
+                                            Background="{DynamicResource DashboardKpiOrangeLightBrush}"
+                                            DockPanel.Dock="Right" Margin="12,0,0,0">
+                                        <materialDesign:PackIcon Kind="ChartAreaspline" Width="22" Height="22"
+                                                                 Foreground="{StaticResource GoldPrimaryBrush}"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="مبيعات آخر 30 يوم" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="اتجاه الإيرادات اليومية (د.ع)" FontSize="11.5"
+                                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource DashboardChartHost}">
                                 <lvc:CartesianChart Series="{Binding SalesSeries}"
                                                     XAxes="{Binding SalesXAxes}"
                                                     YAxes="{Binding SalesYAxes}"
                                                     TooltipPosition="Top"
+                                                    LegendPosition="Hidden"
                                                     MinHeight="260"
                                                     AnimationsSpeed="00:00:00"/>
                             </Border>
                         </Grid>
                     </materialDesign:Card>
 
-                    <materialDesign:Card Grid.Column="2" Style="{StaticResource SectionCard}">
+                    <materialDesign:Card Grid.Column="2" Style="{StaticResource DashboardChartCard}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="4"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="300"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Style="{StaticResource DashboardSectionHeaderPanel}">
-                                <Border Style="{StaticResource DashboardIconBadge}" Background="{DynamicResource NotepadPaperBrush}">
-                                    <materialDesign:PackIcon Kind="ChartPie" Width="22" Height="22"
-                                                             Foreground="{StaticResource GoldAccentBrush}"
-                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="توزيع المخزون بالعيار" Style="{StaticResource SectionHeader}"/>
-                                    <TextBlock Text="حصة كل عيار من إجمالي الغرامات" FontSize="11"
-                                               Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                            <Border Grid.Row="1" Background="{DynamicResource DashboardChartWellBrush}" CornerRadius="14" Padding="8"
-                                    BorderBrush="{DynamicResource DashboardChartWellBorderBrush}" BorderThickness="1" FlowDirection="LeftToRight">
+
+                            <Border Grid.Row="0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#8D6E63" Offset="0"/>
+                                        <GradientStop Color="#C9A227" Offset="0.55"/>
+                                        <GradientStop Color="#E8D5A3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
+                                <DockPanel LastChildFill="True">
+                                    <Border Style="{StaticResource DashboardIconBadge}"
+                                            Background="{DynamicResource NotepadPaperBrush}"
+                                            DockPanel.Dock="Right" Margin="12,0,0,0">
+                                        <materialDesign:PackIcon Kind="ChartDonut" Width="22" Height="22"
+                                                                 Foreground="{StaticResource GoldAccentBrush}"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="توزيع المخزون بالعيار" Style="{StaticResource SectionHeader}"/>
+                                        <TextBlock Text="حصة كل عيار من إجمالي الغرامات" FontSize="11.5"
+                                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource DashboardChartHost}">
                                 <lvc:PieChart Series="{Binding StockSeries}"
                                               LegendPosition="Bottom"
                                               MinHeight="260"
+                                              InitialRotation="-90"
                                               AnimationsSpeed="00:00:00"/>
                             </Border>
                         </Grid>
