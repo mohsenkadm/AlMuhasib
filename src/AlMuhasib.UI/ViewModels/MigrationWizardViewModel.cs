@@ -29,6 +29,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private readonly IInstallmentService _installmentService;
     private readonly HashSet<MigrationStepKind> _savedSteps = [];
     private bool _needsCapital = true;
+    private bool _needsPricingTypes = true;
+    private bool _needsProductPricing = true;
 
     [ObservableProperty] private int _currentStepIndex;
     [ObservableProperty] private string _statusMessage = string.Empty;
@@ -74,9 +76,17 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public bool CanGoBack => CurrentStepIndex > 0 && !IsCompleted;
     public bool IsLastStep => CurrentStepIndex >= TotalSteps - 1 && TotalSteps > 0;
     public bool CanGoNext => !IsCompleted && !IsBusy;
-    public bool CanSkip => !IsCompleted && !IsBusy && CurrentStepInfo?.IsOptional == true
-                           && CurrentKind != MigrationStepKind.Capital
-                           && CurrentKind != MigrationStepKind.Warehouses;
+    public bool CanSkip
+    {
+        get
+        {
+            if (IsCompleted || IsBusy || CurrentStepInfo is null) return false;
+            if (CurrentKind is MigrationStepKind.Capital or MigrationStepKind.Warehouses) return false;
+            if (CurrentKind == MigrationStepKind.PricingTypes && _needsPricingTypes) return false;
+            if (CurrentKind == MigrationStepKind.ProductPricing && _needsProductPricing) return false;
+            return CurrentStepInfo.IsOptional;
+        }
+    }
     public bool HasLastResult => LastImportedCount > 0 || LastSkippedCount > 0;
     public bool HasRows => CurrentRows.Count > 0;
     public bool IsCapitalStep => CurrentKind == MigrationStepKind.Capital;
@@ -141,10 +151,31 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         _needsCapital = !await _unitOfWork.CapitalEntries.AnyAsync();
+        await RefreshPricingNeedFlagsAsync();
         BuildSteps();
         await RefreshLookupsAsync();
         UpdateProgress();
         NotifyStepProps();
+        await PrepareCurrentStepAsync();
+    }
+
+    private async Task RefreshPricingNeedFlagsAsync()
+    {
+        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        _needsPricingTypes = types.Count == 0;
+
+        var productIds = (await _unitOfWork.Products.GetAllAsync()).Select(p => p.Id).ToHashSet();
+        if (productIds.Count == 0)
+        {
+            // ستُضاف المنتجات لاحقاً في المعالج — نُبقي خطوة التسعير ظاهرة ومرنة
+            _needsProductPricing = true;
+            return;
+        }
+
+        var pricedProductIds = (await _unitOfWork.ProductPrices.GetAllAsync())
+            .Select(p => p.ProductId)
+            .ToHashSet();
+        _needsProductPricing = productIds.Any(id => !pricedProductIds.Contains(id));
     }
 
     private void BuildSteps()
@@ -182,12 +213,23 @@ public partial class MigrationWizardViewModel : ViewModelBase
         Add(MigrationStepKind.Products, "المنتجات",
             "المنتجات مع الصنف والسعر المفرد والكمية الافتتاحية والتكلفة.",
             PackIconKind.PackageVariant);
+
+        // أنواع التسعير: إلزامية إن لم تكن موجودة، وإلا اختيارية لإضافة المزيد
         Add(MigrationStepKind.PricingTypes, "أنواع التسعير",
-            "أنواع التسعير مثل مفرد وجملة ووكيل.",
-            PackIconKind.TagMultiple);
+            _needsPricingTypes
+                ? "لا توجد أنواع تسعير بعد — أضفها الآن (مثل: سعر مفرد، جملة، وكيل)."
+                : "أضف أنواع تسعير إضافية أو تخطَّ إن كانت مكتملة.",
+            PackIconKind.TagMultiple,
+            optional: !_needsPricingTypes);
+
+        // تسعير المنتجات: إلزامية إن وُجدت منتجات بلا أسعار
         Add(MigrationStepKind.ProductPricing, "تسعير المنتجات",
-            "أسعار البيع والشراء حسب نوع التسعير للمنتجات المضافة.",
-            PackIconKind.TagOutline);
+            _needsProductPricing
+                ? "سعّر المنتجات المضافة — يُنشأ النوع الافتراضي تلقائياً إن لم يوجد."
+                : "حدّث أسعار المنتجات أو تخطَّ إن كانت مسعّرة مسبقاً.",
+            PackIconKind.TagOutline,
+            optional: !_needsProductPricing);
+
         Add(MigrationStepKind.Customers, "العملاء",
             "العملاء مع أرصدة آجلة افتتاحية — يُنشأ العميل تلقائياً.",
             PackIconKind.AccountGroup);
@@ -227,7 +269,132 @@ public partial class MigrationWizardViewModel : ViewModelBase
         StepTransitionToken++;
         UpdateProgress();
         NotifyStepProps();
-        _ = RefreshLookupsAsync();
+        _ = PrepareStepAfterNavigationAsync();
+    }
+
+    private async Task PrepareStepAfterNavigationAsync()
+    {
+        await RefreshLookupsAsync();
+        await PrepareCurrentStepAsync();
+        NotifyStepProps();
+    }
+
+    /// <summary>
+    /// يجهّز محتوى الخطوة: يقترح أنواع تسعير إن لم توجد، ويملأ جدول تسعير المنتجات للمنتجات بلا أسعار.
+    /// </summary>
+    private async Task PrepareCurrentStepAsync()
+    {
+        if (CurrentKind is null || IsCompleted) return;
+
+        try
+        {
+            if (CurrentKind == MigrationStepKind.PricingTypes)
+            {
+                await RefreshPricingNeedFlagsAsync();
+                UpdatePricingStepOptionality();
+                if (CurrentRows.Count == 0 && _needsPricingTypes)
+                {
+                    foreach (var name in new[] { "سعر مفرد", "جملة", "وكيل" })
+                        CurrentRows.Add(new MigrationNamedBalanceRow { Name = name });
+                    StatusMessage = "تم اقتراح أنواع تسعير افتراضية — عدّلها ثم احفظ";
+                }
+            }
+            else if (CurrentKind == MigrationStepKind.ProductPricing)
+            {
+                await _pricingTypeService.EnsureDefaultExistsAsync();
+                await RefreshLookupsAsync();
+                await RefreshPricingNeedFlagsAsync();
+                UpdatePricingStepOptionality();
+
+                if (CurrentRows.Count == 0)
+                    await PrefillProductPricingRowsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"تعذّر تجهيز الخطوة: {ex.Message}";
+        }
+
+        OnPropertyChanged(nameof(HasRows));
+        OnPropertyChanged(nameof(ShowDataGrid));
+        OnPropertyChanged(nameof(CanSkip));
+        OnPropertyChanged(nameof(StepDescription));
+    }
+
+    private void UpdatePricingStepOptionality()
+    {
+        foreach (var step in Steps)
+        {
+            if (step.Kind == MigrationStepKind.PricingTypes)
+            {
+                step.IsOptional = !_needsPricingTypes;
+                step.Description = _needsPricingTypes
+                    ? "لا توجد أنواع تسعير بعد — أضفها الآن (مثل: سعر مفرد، جملة، وكيل)."
+                    : "أضف أنواع تسعير إضافية أو تخطَّ إن كانت مكتملة.";
+            }
+            else if (step.Kind == MigrationStepKind.ProductPricing)
+            {
+                step.IsOptional = !_needsProductPricing;
+                step.Description = _needsProductPricing
+                    ? "سعّر المنتجات المضافة — يُنشأ النوع الافتراضي تلقائياً إن لم يوجد."
+                    : "حدّث أسعار المنتجات أو تخطَّ إن كانت مسعّرة مسبقاً.";
+            }
+        }
+    }
+
+    private async Task PrefillProductPricingRowsAsync()
+    {
+        var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
+        if (products.Count == 0)
+        {
+            StatusMessage = "لا توجد منتجات بعد — أضف منتجات في الخطوة السابقة أو تخطَّ";
+            return;
+        }
+
+        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        if (types.Count == 0)
+        {
+            await _pricingTypeService.EnsureDefaultExistsAsync();
+            types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        }
+
+        var defaultType = types.FirstOrDefault(t => t.IsDefault) ?? types.FirstOrDefault();
+        var existingPrices = (await _unitOfWork.ProductPrices.GetAllAsync()).ToList();
+        var pricedKeys = existingPrices
+            .Select(p => (p.ProductId, p.PricingTypeId))
+            .ToHashSet();
+
+        var added = 0;
+        foreach (var product in products)
+        {
+            if (defaultType is null) break;
+            if (pricedKeys.Contains((product.Id, defaultType.Id))) continue;
+
+            var existingUnit = existingPrices.FirstOrDefault(p => p.ProductId == product.Id);
+            CurrentRows.Add(new MigrationNamedBalanceRow
+            {
+                Name = product.Name,
+                ProductName = product.Name,
+                PricingTypeName = defaultType.Name,
+                SalePrice = existingUnit?.SalePrice ?? 0,
+                Amount = existingUnit?.SalePrice ?? 0,
+                PurchasePrice = existingUnit?.PurchasePrice ?? 0,
+                UnitCost = existingUnit?.PurchasePrice ?? 0
+            });
+            added++;
+        }
+
+        // إن كانت كل المنتجات مسعّرة للنوع الافتراضي، اعرض صفوفاً فارغة للأنواع الأخرى عند الحاجة
+        if (added == 0 && _needsProductPricing == false)
+        {
+            StatusMessage = "كل المنتجات لديها أسعار للنوع الافتراضي — يمكنك إضافة تسعير لأنواع أخرى";
+        }
+        else if (added > 0)
+        {
+            StatusMessage = $"تم تجهيز {added} منتج بدون سعر — أكمل الأسعار ثم احفظ";
+            _needsProductPricing = true;
+            UpdatePricingStepOptionality();
+        }
     }
 
     private void SyncStepFlags()
@@ -1115,6 +1282,11 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 Warn("لم يُحفظ أي منتج — تحقق من الأسماء");
                 return false;
             }
+
+            await RefreshPricingNeedFlagsAsync();
+            // بعد إضافة منتجات جديدة نحتاج خطوة التسعير إن وُجدت منتجات بلا أسعار
+            _needsProductPricing = true;
+            UpdatePricingStepOptionality();
             return true;
         }
         catch
@@ -1129,7 +1301,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
         var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name))
             .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First()).ToList();
-        if (rows.Count == 0) { Warn("أضف أنواع تسعير أو اضغط تخطي"); return false; }
+
+        if (rows.Count == 0)
+        {
+            if (!_needsPricingTypes) return true;
+            Warn("أضف نوع تسعير واحداً على الأقل (مثل: سعر مفرد)");
+            return false;
+        }
 
         var existing = (await _pricingTypeService.GetActiveAsync()).ToList();
         var saved = 0;
@@ -1145,26 +1323,72 @@ public partial class MigrationWizardViewModel : ViewModelBase
             });
             saved++;
         }
-        LastImportedCount = saved;
+
+        // ضمان وجود نوع افتراضي دائماً
+        await _pricingTypeService.EnsureDefaultExistsAsync();
+        await RefreshPricingNeedFlagsAsync();
+        UpdatePricingStepOptionality();
+
+        LastImportedCount = Math.Max(saved, rows.Count);
+        if (_needsPricingTypes && saved == 0 && existing.Count == 0)
+        {
+            Warn("تعذّر إنشاء أنواع التسعير");
+            return false;
+        }
+        _needsPricingTypes = false;
+        UpdatePricingStepOptionality();
         return true;
     }
 
     private async Task<bool> SaveProductPricingAsync()
     {
+        // إن لم توجد أنواع تسعير أنشئ الافتراضي أولاً
+        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        if (types.Count == 0)
+        {
+            await _pricingTypeService.EnsureDefaultExistsAsync();
+            types = (await _pricingTypeService.GetActiveAsync()).ToList();
+            await RefreshLookupsAsync();
+        }
+
+        if (types.Count == 0)
+        {
+            Warn("لا توجد أنواع تسعير — ارجع لخطوة أنواع التسعير أولاً");
+            return false;
+        }
+
         var rows = CurrentRows.Where(r =>
-                !string.IsNullOrWhiteSpace(r.ProductName) && !string.IsNullOrWhiteSpace(r.PricingTypeName))
+                !string.IsNullOrWhiteSpace(r.ProductName ?? r.Name))
             .ToList();
-        if (rows.Count == 0) { Warn("أضف أسعار منتجات أو اضغط تخطي"); return false; }
+
+        // إن كانت الخطوة إلزامية والجدول فارغ — عبّئه ثم اطلب الإدخال
+        if (rows.Count == 0)
+        {
+            await PrefillProductPricingRowsAsync();
+            rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.ProductName ?? r.Name)).ToList();
+        }
+
+        if (rows.Count == 0)
+        {
+            if (!_needsProductPricing) return true;
+            Warn("لا توجد منتجات لتسعيرها — أضف منتجات أولاً أو تخطَّ لاحقاً بعد إضافة المنتجات");
+            return false;
+        }
+
+        // صفوف بلا نوع تسعير → استخدم الافتراضي
+        var defaultType = types.FirstOrDefault(t => t.IsDefault) ?? types.First();
+        foreach (var row in rows.Where(r => string.IsNullOrWhiteSpace(r.PricingTypeName)))
+            row.PricingTypeName = defaultType.Name;
 
         var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
-        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
         var prices = new List<ProductPrice>();
         var skipped = 0;
 
         foreach (var row in rows)
         {
+            var productName = (row.ProductName ?? row.Name).Trim();
             var product = products.FirstOrDefault(p =>
-                string.Equals(p.Name, row.ProductName!.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(p.Name, productName, StringComparison.OrdinalIgnoreCase));
             var type = types.FirstOrDefault(t =>
                 string.Equals(t.Name, row.PricingTypeName!.Trim(), StringComparison.OrdinalIgnoreCase));
             if (product is null || type is null)
@@ -1174,13 +1398,26 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 row.ErrorText = product is null ? "المنتج غير موجود" : "نوع التسعير غير موجود";
                 continue;
             }
+
+            var sale = row.SalePrice > 0 ? row.SalePrice : row.Amount;
+            var purchase = row.PurchasePrice > 0 ? row.PurchasePrice : row.UnitCost;
+            if (sale <= 0 && purchase <= 0)
+            {
+                skipped++;
+                row.IsValid = false;
+                row.ErrorText = "أدخل سعر البيع أو الشراء";
+                continue;
+            }
+
             prices.Add(new ProductPrice
             {
                 ProductId = product.Id,
                 PricingTypeId = type.Id,
-                SalePrice = row.SalePrice > 0 ? row.SalePrice : row.Amount,
-                PurchasePrice = row.PurchasePrice > 0 ? row.PurchasePrice : row.UnitCost
+                SalePrice = sale,
+                PurchasePrice = purchase
             });
+            row.IsValid = true;
+            row.ErrorText = null;
         }
 
         if (prices.Count > 0)
@@ -1188,11 +1425,17 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
         LastImportedCount = prices.Count;
         LastSkippedCount = skipped;
+        await RefreshPricingNeedFlagsAsync();
+        UpdatePricingStepOptionality();
+
         if (prices.Count == 0)
         {
-            Warn("لم يُحفظ أي سعر — تأكد أن أسماء المنتجات وأنواع التسعير مطابقة لما أُدخل سابقاً");
+            Warn("لم يُحفظ أي سعر — تأكد من أسماء المنتجات وأنواع التسعير وأدخل مبلغاً أكبر من صفر");
             return false;
         }
+
+        _needsProductPricing = false;
+        UpdatePricingStepOptionality();
         return true;
     }
 
