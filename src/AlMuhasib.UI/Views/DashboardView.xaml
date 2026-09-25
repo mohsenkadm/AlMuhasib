@@ -665,8 +665,10 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14" Foreground="#1B5E20" />
-                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11" Foreground="#558B2F" Margin="0,3,0,0" />
+                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14"
+                                                       Foreground="{DynamicResource DashboardKpiGreenBrush}" />
+                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11"
+                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -686,8 +688,10 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14" Foreground="#E65100" />
-                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11" Foreground="#F57C00" Margin="0,3,0,0" />
+                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14"
+                                                       Foreground="{DynamicResource DashboardKpiOrangeBrush}" />
+                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11"
+                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>
@@ -707,8 +711,10 @@
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14" Foreground="#0D47A1" />
-                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11" Foreground="#1976D2" Margin="0,3,0,0" />
+                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14"
+                                                       Foreground="{DynamicResource DashboardKpiBlueBrush}" />
+                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11"
+                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Button>

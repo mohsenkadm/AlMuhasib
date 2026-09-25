@@ -84,6 +84,31 @@
     <SolidColorBrush x:Key="DashboardSuccessPanelBorderBrush" Color="#C8E6C9"/>
     <SolidColorBrush x:Key="DashboardSuccessForegroundBrush" Color="#2E7D32"/>
     <SolidColorBrush x:Key="DashboardQuickActionBrush" Color="#F5FFFFFF"/>
+    <SolidColorBrush x:Key="DashboardQuickActionTitleBrush" Color="#212121"/>
+    <SolidColorBrush x:Key="DashboardQuickActionSubtitleBrush" Color="#616161"/>
+    <LinearGradientBrush x:Key="InvoiceSalesHeaderBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#F1F8F4" Offset="0"/>
+        <GradientStop Color="#FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InvoiceSalesTotalsBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E8F5E9" Offset="0"/>
+        <GradientStop Color="#C8E6C9" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InvoicePurchaseHeaderBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#E3F2FD" Offset="0"/>
+        <GradientStop Color="#FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InvoicePurchaseTotalsBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E3F2FD" Offset="0"/>
+        <GradientStop Color="#BBDEFB" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="PriceCheckSurfaceBrush" Color="#F1F8E9"/>
+    <SolidColorBrush x:Key="PriceCheckTitleBrush" Color="#33691E"/>
+    <SolidColorBrush x:Key="PriceCheckBodyBrush" Color="#558B2F"/>
+    <SolidColorBrush x:Key="PriceCheckProductBrush" Color="#1B5E20"/>
+    <SolidColorBrush x:Key="HelpListItemHoverBrush" Color="#F5FAFF"/>
+    <SolidColorBrush x:Key="HelpListItemSelectedBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="HelpVideoTitleBrush" Color="#1A237E"/>
     <SolidColorBrush x:Key="DashboardAlertTitleBrush" Color="#E65100"/>
     <SolidColorBrush x:Key="DashboardAlertBodyBrush" Color="#6D4C41"/>
     <SolidColorBrush x:Key="DashboardAlertItemBorderBrush" Color="#FFE082"/>
@@ -3644,7 +3669,8 @@
         <Setter Property="Margin" Value="0,0,0,8"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
-        <Setter Property="BorderBrush" Value="#E3EDF7"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="HorizontalContentAlignment" Value="Right"/>
@@ -3655,7 +3681,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="12" Padding="{TemplateBinding Padding}">
-                        <ContentPresenter/>
+                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

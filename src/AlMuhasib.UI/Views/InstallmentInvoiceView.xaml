@@ -199,6 +199,8 @@
                                                      materialDesign:HintAssist.Hint="الباركود + Enter"
                                                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                                                      BorderThickness="0" Background="Transparent" FontSize="13"
+                                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                                     CaretBrush="{DynamicResource TextPrimaryBrush}"
                                                      b:EnterKeyCommandBehavior.Command="{Binding ProcessBarcodeCommand}"/>
                                         </Grid>
                                     </Border>

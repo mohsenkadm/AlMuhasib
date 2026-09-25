@@ -1915,7 +1915,7 @@
                         <StackPanel>
                             <TextBlock Text="أدوات مساعدة"
                                        FontSize="13" FontWeight="Bold"
-                                       Foreground="#1565C0"
+                                       Foreground="{DynamicResource HighlightBrush}"
                                        Margin="4,2,4,10"/>
                             <Button Style="{StaticResource QuickAssistActionButton}"
                                     Command="{Binding OpenPrintSettingsCommand}">
@@ -1925,7 +1925,7 @@
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="إعدادات الطباعة" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="إعدادات الطباعة" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1936,7 +1936,7 @@
                                                                  Foreground="#EF6C00"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="حاسبة ويندوز" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="حاسبة ويندوز" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1947,7 +1947,7 @@
                                                                  Foreground="#7B1FA2"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="لوحة المفاتيح" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="لوحة المفاتيح" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1958,7 +1958,7 @@
                                                                  Foreground="#2E7D32"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="لوحة التحكم" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="لوحة التحكم" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1970,7 +1970,7 @@
                                                                  Foreground="{DynamicResource TextSecondaryBrush}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="نسخ احتياطي" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1983,7 +1983,7 @@
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="تحديث النظام" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="تحديث النظام" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -1996,7 +1996,7 @@
                                                                  Foreground="#2E7D32"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="فحص التحديث الآن" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="فحص التحديث الآن" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -2008,7 +2008,7 @@
                                                                  Foreground="#00838F"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="جولة التعريف" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="جولة التعريف" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -2020,7 +2020,7 @@
                                                                  Foreground="#1565C0"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="فيديوهات تعريفية" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="فيديوهات تعريفية" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource QuickAssistActionButton}"
@@ -2032,7 +2032,7 @@
                                                                  Foreground="#25D366"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="دعم واتساب" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="دعم واتساب" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <TextBlock Text="ملف العمل"
@@ -2050,7 +2050,7 @@
                                                                  Foreground="#F9A825"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="بيانات تجريبية" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="بيانات تجريبية" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                             <UniformGrid Columns="3" Margin="0,0,0,4">
@@ -2076,7 +2076,7 @@
                                                                  Foreground="#3949AB"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <TextBlock Text="تخصيص القائمة" VerticalAlignment="Center" FontWeight="Medium"/>
+                                    <TextBlock Text="تخصيص القائمة" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

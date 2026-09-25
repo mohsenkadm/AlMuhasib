@@ -351,10 +351,26 @@ public sealed class ThemeService
         SetBrush(res, "DashboardSuccessPanelBrush", isDark ? "#1A2E22" : "#E8F5E9");
         SetBrush(res, "DashboardSuccessPanelBorderBrush", isDark ? "#2E4D38" : "#C8E6C9");
         SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");
-        SetBrush(res, "DashboardQuickActionBrush", isDark ? "#F0FFFFFF" : "#F5FFFFFF");
+        // Glass on hero: translucent dark navy in dark (not near-white).
+        SetBrush(res, "DashboardQuickActionBrush", isDark ? "#D0121B42" : "#F5FFFFFF");
+        SetBrush(res, "DashboardQuickActionTitleBrush", isDark ? DarkText : "#212121");
+        SetBrush(res, "DashboardQuickActionSubtitleBrush", isDark ? DarkTextSecondary : "#616161");
         SetBrush(res, "DashboardAlertTitleBrush", isDark ? "#FFB74D" : "#E65100");
         SetBrush(res, "DashboardAlertBodyBrush", isDark ? "#BCAAA4" : "#6D4C41");
         SetBrush(res, "DashboardAlertItemBorderBrush", isDark ? "#5D4037" : "#FFE082");
+
+        // Invoice / price-check surfaces that were hardcoded pastel/white.
+        res["InvoiceSalesHeaderBrush"] = CreateInvoiceSalesHeaderBrush(isDark);
+        res["InvoiceSalesTotalsBrush"] = CreateInvoiceSalesTotalsBrush(isDark);
+        res["InvoicePurchaseHeaderBrush"] = CreateInvoicePurchaseHeaderBrush(isDark);
+        res["InvoicePurchaseTotalsBrush"] = CreateInvoicePurchaseTotalsBrush(isDark);
+        SetBrush(res, "PriceCheckSurfaceBrush", isDark ? "#152A22" : "#F1F8E9");
+        SetBrush(res, "PriceCheckTitleBrush", isDark ? "#A5D6A7" : "#33691E");
+        SetBrush(res, "PriceCheckBodyBrush", isDark ? "#81C784" : "#558B2F");
+        SetBrush(res, "PriceCheckProductBrush", isDark ? DarkText : "#1B5E20");
+        SetBrush(res, "HelpListItemHoverBrush", isDark ? DarkHover : "#F5FAFF");
+        SetBrush(res, "HelpListItemSelectedBrush", isDark ? DarkSelected : "#E3F2FD");
+        SetBrush(res, "HelpVideoTitleBrush", isDark ? DarkHighlight : "#1A237E");
 
         SetBrush(res, "DashboardKpiGreenBrush", isDark ? "#81C784" : "#2E7D32");
         SetBrush(res, "DashboardKpiGreenLightBrush", isDark ? "#1B3324" : "#E8F5E9");
@@ -437,6 +453,74 @@ public sealed class ThemeService
         {
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#40FFFFFF")!, 0));
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#24FFFFFF")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateInvoiceSalesHeaderBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A2E22")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkCard)!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F1F8F4")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FFFFFF")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateInvoiceSalesTotalsBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A2E22")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#243D2E")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E8F5E9")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#C8E6C9")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateInvoicePurchaseHeaderBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkHighlightLight)!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkCard)!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E3F2FD")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FFFFFF")!, 1));
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateInvoicePurchaseTotalsBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(DarkHighlightLight)!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A3048")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E3F2FD")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#BBDEFB")!, 1));
         }
 
         return brush;
