@@ -6,7 +6,24 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
-    <controls:HotelListPageShell PageTitle="إدارة النظافة"
+    
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding LoadTasksCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+<controls:HotelListPageShell PageTitle="إدارة النظافة"
                                  ListTitle="مهام النظافة"
                                  ShowStatsBar="True"
                                  ShowPagination="False"
@@ -25,7 +42,7 @@
                                  ShowCardToggle="False">
 
         <controls:HotelListPageShell.ToolbarContent>
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
                 <Button Command="{Binding LoadTasksCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
                     <StackPanel Orientation="Horizontal">
                         <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
