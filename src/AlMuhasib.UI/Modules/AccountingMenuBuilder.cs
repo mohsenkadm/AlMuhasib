@@ -14,12 +14,20 @@ public static class AccountingMenuBuilder
             // شاشات مباشرة (ليست داخل كروب)
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
-            Item("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.SalesReturn),
-            Item("فاتورة تلف", PackIconKind.DeleteAlert, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.DamageInvoice),
             Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
-            Item("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
 
             // كروبات تفتح نافذة جانبية مثل التقارير
+            FlyoutGroup(
+                key: "sales-tools",
+                title: "مرتجعات وتلف وفحص السعر",
+                icon: PackIconKind.ClipboardListOutline,
+                accent: "#AD1457",
+                accentLight: "#FCE4EC",
+                [
+                    ("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.SalesReturn),
+                    ("فاتورة تلف", PackIconKind.DeleteAlert, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.DamageInvoice),
+                    ("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
+                ]),
             FlyoutGroup(
                 key: "inventory",
                 title: "المنتجات والمخزون",
