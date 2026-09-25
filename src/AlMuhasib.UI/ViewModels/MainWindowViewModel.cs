@@ -870,6 +870,7 @@ public partial class MainWindowViewModel : ObservableObject
         PageTitle = tab.Title;
         TabContentGeneration++;
         OnTabViewModelActivated(tab.ViewModel);
+        SyncSplitAfterTabChange(tab);
     }
 
     private void OnTabViewModelActivated(ViewModelBase viewModel)
@@ -923,6 +924,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var index = OpenTabs.IndexOf(tab);
         var wasSelected = SelectedTab == tab;
+        SyncSplitAfterTabClosed(tab);
 
         PushClosedTab(tab);
         OpenTabs.Remove(tab);
@@ -1113,6 +1115,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Closes and disposes all tabs (logout).</summary>
     public void CloseAllTabs()
     {
+        ExitSplitView();
         foreach (var tab in OpenTabs.ToList())
         {
             OpenTabs.Remove(tab);

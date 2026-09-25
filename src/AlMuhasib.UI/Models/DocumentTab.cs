@@ -25,6 +25,10 @@ public partial class DocumentTab : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isPinned;
 
+    /// <summary>True when this tab is shown in the secondary split pane.</summary>
+    [ObservableProperty]
+    private bool _isInSecondaryPane;
+
     public Type ViewModelType { get; init; } = null!;
     public ViewModelBase ViewModel { get; init; } = null!;
     public IServiceScope Scope { get; init; } = null!;

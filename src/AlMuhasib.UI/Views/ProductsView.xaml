@@ -16,13 +16,36 @@
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة منتج" Command="{Binding OpenAddDialogCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="خصم جماعي" Command="{Binding OpenBulkDiscountDialogCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Sale" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="مسح تحديد الخصم" Command="{Binding ClearBulkDiscountSelectionCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="SelectionOff" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:ProductDiscountDisplayConverter x:Key="ProductDiscountDisplayConverter"/>
         <converters:VehiclePlateTypeDisplayConverter x:Key="PlateTypeDisplay"/>
         <helpers:CustomFieldSlotConverter x:Key="CustomFieldSlotConverter"/>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <FrameworkElement x:Name="VmProxy" Visibility="Collapsed"/>
         <!-- ═══════════════════════════════════════════ -->
         <!-- MAIN CONTENT                    -->

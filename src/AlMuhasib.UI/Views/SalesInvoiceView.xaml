@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:loyalty="clr-namespace:AlMuhasib.UI.Controls.Loyalty"
              mc:Ignorable="d"
@@ -17,10 +18,39 @@
              Focusable="True">
 
     <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="حفظ الفاتورة" Command="{Binding SaveInvoiceCommand}" InputGestureText="Ctrl+S">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="ContentSave" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="فاتورة جديدة" Command="{Binding NewInvoiceCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="اختيار المنتجات" Command="{Binding OpenProductPickerCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="CartPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إضافة صف يدوي" Command="{Binding AddRowCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="فحص الربح" Command="{Binding CheckProfitCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="ChartLine" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintInvoiceCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="إرسال واتساب" Command="{Binding SendInvoiceWhatsAppCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Whatsapp" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="حاسبة العملة" Command="{Binding OpenCurrencyChangeCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Cash" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
-    <Grid>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
         <FrameworkElement x:Name="VmProxy" DataContext="{Binding}" Visibility="Collapsed"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"

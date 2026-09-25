@@ -845,7 +845,7 @@
                             <DataTemplate DataType="{x:Type models:DocumentTab}">
                                 <Grid Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
                                     <Grid.ContextMenu>
-                                        <ContextMenu>
+                                        <ContextMenu Opened="ChromeTabContextMenu_Opened">
                                             <MenuItem Header="إغلاق التبويب"
                                                       Command="{Binding PlacementTarget.Tag.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -864,6 +864,30 @@
                                             <MenuItem Header="فتح في تبويب جديد"
                                                       Command="{Binding PlacementTarget.Tag.OpenTabInNewTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <MenuItem Header="تقسيم الشاشة"
+                                                      ItemsSource="{Binding PlacementTarget.Tag.SplitScreenTargets, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="ViewSplitVertical" Width="16" Height="16"/>
+                                                </MenuItem.Icon>
+                                                <MenuItem.ItemContainerStyle>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="Header" Value="{Binding Title}"/>
+                                                        <Setter Property="Command"
+                                                                Value="{Binding PlacementTarget.Tag.SplitWithScreenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                        <Setter Property="CommandParameter" Value="{Binding}"/>
+                                                    </Style>
+                                                </MenuItem.ItemContainerStyle>
+                                            </MenuItem>
+                                            <MenuItem Header="عرض في النصف الآخر"
+                                                      Command="{Binding PlacementTarget.Tag.ShowTabInOtherPaneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="تبديل الجانبين"
+                                                      Command="{Binding PlacementTarget.Tag.SwapSplitPanesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      Visibility="{Binding PlacementTarget.Tag.IsSplitViewActive, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <MenuItem Header="إلغاء التقسيم"
+                                                      Command="{Binding PlacementTarget.Tag.ExitSplitViewCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      Visibility="{Binding PlacementTarget.Tag.IsSplitViewActive, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                             <Separator/>
                                             <MenuItem Header="إعادة فتح التبويب المغلق"
                                                       InputGestureText="Ctrl+Shift+T"
@@ -891,6 +915,21 @@
                                                    TextTrimming="CharacterEllipsis"
                                                    MaxWidth="128"
                                                    VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="ViewSplitVertical" Width="12" Height="12"
+                                                                 Margin="6,0,0,0" VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource HighlightBrush}"
+                                                                 ToolTip="معروض في النصف الآخر">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsInSecondaryPane}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
                                     </StackPanel>
                                     <Button Grid.Column="1"
                                             Style="{StaticResource ChromeTabPinButton}"
@@ -1197,10 +1236,8 @@
                     <TranslateTransform Y="0"/>
                 </Border.RenderTransform>
                 <Grid>
-                    <ContentControl Content="{Binding CurrentViewModel}"
-                                    HorizontalContentAlignment="Stretch"
-                                    VerticalContentAlignment="Stretch">
-                    <ContentControl.Resources>
+                    <Grid.Resources>
+
                         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
                             <views:DashboardView />
                         </DataTemplate>
@@ -1831,11 +1868,110 @@
                         <DataTemplate DataType="{x:Type vm:DeveloperSystemSwitchViewModel}">
                             <views:DeveloperSystemSwitchView />
                         </DataTemplate>
-                    </ContentControl.Resources>
-                </ContentControl>
+                    
+                    </Grid.Resources>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding PrimaryPaneWidth}"/>
+                        <ColumnDefinition Width="{Binding SplitSplitterWidth}"/>
+                        <ColumnDefinition Width="{Binding SecondaryPaneWidth}"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Primary pane -->
+                    <Border Grid.Column="0"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}"
+                            CornerRadius="10"
+                            Background="{DynamicResource BackgroundBrush}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSplitViewActive}" Value="True">
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Padding" Value="8"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Padding="10,6" Margin="0,0,0,8"
+                                    Background="{DynamicResource CardBrush}" CornerRadius="8"
+                                    Visibility="{Binding IsSplitViewActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Left"
+                                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                            ToolTip="إلغاء التقسيم"
+                                            Command="{Binding ExitSplitViewCommand}"
+                                            Width="28" Height="28" Padding="0">
+                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                                    </Button>
+                                    <TextBlock Text="{Binding SelectedTab.Title}" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </Border>
+                            <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}"
+                                            HorizontalContentAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter Grid.Column="1"
+                                  Width="6"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  Background="{DynamicResource SubtleBorderBrush}"
+                                  ShowsPreview="True"
+                                  Visibility="{Binding IsSplitViewActive, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <!-- Secondary pane -->
+                    <Border Grid.Column="2"
+                            BorderBrush="{DynamicResource HighlightBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="8"
+                            Background="{DynamicResource BackgroundBrush}"
+                            Visibility="{Binding IsSplitViewActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Padding="10,6" Margin="0,0,0,8"
+                                    Background="{DynamicResource CardBrush}" CornerRadius="8">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Left"
+                                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                            ToolTip="إلغاء التقسيم"
+                                            Command="{Binding ExitSplitViewCommand}"
+                                            Width="28" Height="28" Padding="0" Margin="0,0,6,0">
+                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                                    </Button>
+                                    <Button DockPanel.Dock="Left"
+                                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                            ToolTip="تبديل الجانبين"
+                                            Command="{Binding SwapSplitPanesCommand}"
+                                            Width="28" Height="28" Padding="0" Margin="0,0,8,0">
+                                        <materialDesign:PackIcon Kind="SwapHorizontal" Width="16" Height="16"/>
+                                    </Button>
+                                    <TextBlock Text="{Binding SecondaryTab.Title}" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </Border>
+                            <ContentControl Grid.Row="1" Content="{Binding SecondaryViewModel}"
+                                            HorizontalContentAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
 
                 <!-- Toast alerts (يسار الشاشة — مكدسة) -->
                 <controls:ToastHost x:Name="AppToastHost"
+                                    Grid.Column="0" Grid.ColumnSpan="3"
                                     Panel.ZIndex="500"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
