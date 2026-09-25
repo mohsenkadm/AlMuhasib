@@ -740,6 +740,21 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         });
     }
 
+    private async Task<decimal> ResolveFxRateAsync(AccountingCurrency currency)
+    {
+        if (currency != AccountingCurrency.USD)
+            return 1m;
+        try
+        {
+            var rate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
+            return rate > 0 ? rate : 1m;
+        }
+        catch
+        {
+            return 1m;
+        }
+    }
+
     public string FullscreenToggleToolTip =>
         IsFullscreenActive ? "العودة داخل النظام" : "فتح الكاشير بملء الشاشة";
 
